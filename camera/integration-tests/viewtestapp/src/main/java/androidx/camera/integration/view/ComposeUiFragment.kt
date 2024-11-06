@@ -26,6 +26,9 @@ import androidx.camera.core.CameraSelector.DEFAULT_BACK_CAMERA
 import androidx.camera.core.CameraSelector.DEFAULT_FRONT_CAMERA
 import androidx.camera.core.CameraSelector.LENS_FACING_BACK
 import androidx.camera.core.CameraSelector.LENS_FACING_FRONT
+import androidx.camera.integration.view.MainActivity.CAMERA_DIRECTION_BACK
+import androidx.camera.integration.view.MainActivity.CAMERA_DIRECTION_FRONT
+import androidx.camera.integration.view.MainActivity.INTENT_EXTRA_CAMERA_DIRECTION
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
@@ -47,9 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.fragment.app.Fragment
 
-/**
- * A fragment that demonstrates how to use [ComposeView] to display a [PreviewView].
- */
+/** A fragment that demonstrates how to use [ComposeView] to display a [PreviewView]. */
 class ComposeUiFragment : Fragment() {
 
     private var currentScaleType = PreviewView.ScaleType.FILL_CENTER
@@ -66,24 +67,32 @@ class ComposeUiFragment : Fragment() {
     ): View {
         val bundle: Bundle? = requireActivity().intent.extras
         if (bundle != null) {
-            val scaleTypeId = bundle.getInt(
-                MainActivity.INTENT_EXTRA_SCALE_TYPE,
-                MainActivity.DEFAULT_SCALE_TYPE_ID
-            )
+            val scaleTypeId =
+                bundle.getInt(
+                    MainActivity.INTENT_EXTRA_SCALE_TYPE,
+                    MainActivity.DEFAULT_SCALE_TYPE_ID
+                )
             currentScaleType = PreviewView.ScaleType.values()[scaleTypeId]
+
+            lensFacing =
+                when (bundle.getString(INTENT_EXTRA_CAMERA_DIRECTION, CAMERA_DIRECTION_BACK)) {
+                    CAMERA_DIRECTION_BACK -> LENS_FACING_BACK
+                    CAMERA_DIRECTION_FRONT -> LENS_FACING_FRONT
+                    else -> LENS_FACING_BACK
+                }
         }
         val previewView = PreviewView(requireContext())
         previewView.scaleType = currentScaleType
 
-        toneMappingEffect = ToneMappingSurfaceEffect(
-            CameraEffect.PREVIEW or CameraEffect.VIDEO_CAPTURE
-        )
+        toneMappingEffect =
+            ToneMappingSurfaceEffect(CameraEffect.PREVIEW or CameraEffect.VIDEO_CAPTURE)
 
         cameraController = LifecycleCameraController(requireContext())
         cameraController.setEnabledUseCases(
             CameraController.VIDEO_CAPTURE or CameraController.IMAGE_CAPTURE
         )
         previewView.controller = cameraController
+        updateCameraOrientation()
         cameraController.bindToLifecycle(viewLifecycleOwner)
 
         return ComposeView(requireContext()).apply { setContent { AddPreviewView(previewView) } }
@@ -95,22 +104,26 @@ class ComposeUiFragment : Fragment() {
     }
 
     private fun onToggleCamera() {
-        cameraController.cameraSelector = if (lensFacing == LENS_FACING_BACK) {
-            lensFacing = LENS_FACING_FRONT
-            DEFAULT_FRONT_CAMERA
-        } else {
-            lensFacing = LENS_FACING_BACK
-            DEFAULT_BACK_CAMERA
-        }
+        lensFacing = if (lensFacing == LENS_FACING_BACK) LENS_FACING_FRONT else LENS_FACING_BACK
+        updateCameraOrientation()
     }
 
     private fun onToggleEffect() {
-        hasEffect = if (hasEffect) {
-            cameraController.clearEffects()
-            false
+        hasEffect =
+            if (hasEffect) {
+                cameraController.clearEffects()
+                false
+            } else {
+                cameraController.setEffects(setOf(toneMappingEffect))
+                true
+            }
+    }
+
+    private fun updateCameraOrientation() {
+        if (lensFacing == LENS_FACING_BACK) {
+            cameraController.cameraSelector = DEFAULT_BACK_CAMERA
         } else {
-            cameraController.setEffects(setOf(toneMappingEffect))
-            true
+            cameraController.cameraSelector = DEFAULT_FRONT_CAMERA
         }
     }
 
@@ -124,20 +137,15 @@ class ComposeUiFragment : Fragment() {
 
     @Composable
     private fun AddPreviewView(previewView: PreviewView) {
-        previewView.layoutParams = LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        )
-        Box(modifier = Modifier.fillMaxSize()) {
-            AndroidView(
-                factory = {
-                    previewView
-                }
+        previewView.layoutParams =
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
             )
+        Box(modifier = Modifier.fillMaxSize()) {
+            AndroidView(factory = { previewView })
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(20.dp),
+                modifier = Modifier.fillMaxSize().padding(20.dp),
                 verticalArrangement = Arrangement.Bottom
             ) {
                 Row(
@@ -150,9 +158,7 @@ class ComposeUiFragment : Fragment() {
                     ) {
                         Text("Effect")
                     }
-                    Button(onClick = ::onToggleCamera) {
-                        Text("Toggle")
-                    }
+                    Button(onClick = ::onToggleCamera) { Text("Toggle") }
                 }
                 Spacer(modifier = Modifier.height(10.dp))
                 Row(

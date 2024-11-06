@@ -23,7 +23,6 @@
  */
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import androidx.build.LibraryType
-import androidx.build.Publish
 
 plugins {
     id("AndroidXPlugin")
@@ -46,9 +45,7 @@ dependencies {
     androidTestImplementation(libs.kotlinCoroutinesRx2)
     androidTestImplementation("androidx.arch.core:core-testing:2.2.0")
     androidTestImplementation(project(":internal-testutils-common"))
-    kspAndroidTest(
-            project(path: ":room:room-compiler", configuration: "shadowAndImplementation")
-    )
+    kspAndroidTest(project(":room:room-compiler"))
 }
 
 androidx {
@@ -56,8 +53,7 @@ androidx {
     type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "RxJava2 integration in Room Paging"
-    publish = Publish.SNAPSHOT_AND_RELEASE
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }
 
 android {

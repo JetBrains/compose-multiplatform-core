@@ -39,6 +39,7 @@ import androidx.annotation.RequiresApi;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -46,14 +47,14 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Implementation for HDR image capture use case.
+ * Implementation for HDR image capture use case that implements {@link CaptureProcessorImpl} that
+ * processing the results from a burst capture of 3 frames.
  *
- * <p>This class should be implemented by OEM and deployed to the target devices. 3P developers
- * don't need to implement this, unless this is used for related testing usage.
+ * <p>This is only for testing camera-extensions and should not be used as a sample OEM
+ * implementation.
  *
  * @since 1.0
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @SuppressLint("UnknownNullness")
 public final class HdrImageCaptureExtenderImpl implements ImageCaptureExtenderImpl {
     private static final String TAG = "HdrImageCaptureExtender";
@@ -207,7 +208,7 @@ public final class HdrImageCaptureExtenderImpl implements ImageCaptureExtenderIm
     }
 
     @RequiresApi(23)
-    static final class HdrImageCaptureExtenderCaptureProcessorImpl implements CaptureProcessorImpl {
+    final class HdrImageCaptureExtenderCaptureProcessorImpl implements CaptureProcessorImpl {
         private ImageWriter mImageWriter;
         @Override
         public void onOutputSurface(@NonNull Surface surface, int imageFormat) {
@@ -256,8 +257,9 @@ public final class HdrImageCaptureExtenderImpl implements ImageCaptureExtenderIm
 
             // Do processing here
             // The sample here simply returns the normal image result
+            long timestamp = imageDataPairs.get(UNDER_STAGE_ID).first.getTimestamp();
             Image normalImage = imageDataPairs.get(NORMAL_STAGE_ID).first;
-            outputImage.setTimestamp(imageDataPairs.get(UNDER_STAGE_ID).first.getTimestamp());
+            outputImage.setTimestamp(timestamp);
             if (outputImage.getWidth() != normalImage.getWidth()
                     || outputImage.getHeight() != normalImage.getHeight()) {
                 throw new IllegalStateException(String.format("input image "
@@ -318,7 +320,7 @@ public final class HdrImageCaptureExtenderImpl implements ImageCaptureExtenderIm
             if (resultCallback != null) {
                 executorForCallback.execute(
                         () -> resultCallback.onCaptureCompleted(
-                                captureResult.get(CaptureResult.SENSOR_TIMESTAMP),
+                                timestamp,
                                 getFilteredResults(captureResult)));
             }
 
@@ -329,13 +331,12 @@ public final class HdrImageCaptureExtenderImpl implements ImageCaptureExtenderIm
         private List<Pair<CaptureResult.Key, Object>> getFilteredResults(
                 TotalCaptureResult captureResult) {
             List<Pair<CaptureResult.Key, Object>> list = new ArrayList<>();
-            if (captureResult.get(CaptureResult.JPEG_ORIENTATION) != null) {
-                list.add(new Pair<>(CaptureResult.JPEG_ORIENTATION,
-                        captureResult.get(CaptureResult.JPEG_ORIENTATION)));
-            }
-            if (captureResult.get(CaptureResult.JPEG_QUALITY) != null) {
-                list.add(new Pair<>(CaptureResult.JPEG_QUALITY,
-                        captureResult.get(CaptureResult.JPEG_QUALITY)));
+
+            for (CaptureResult.Key availableCaptureResultKey : getAvailableCaptureResultKeys()) {
+                if (captureResult.get(availableCaptureResultKey) != null) {
+                    list.add(new Pair<>(availableCaptureResultKey,
+                            captureResult.get(availableCaptureResultKey)));
+                }
             }
             return list;
         }
@@ -410,6 +411,13 @@ public final class HdrImageCaptureExtenderImpl implements ImageCaptureExtenderIm
     @NonNull
     @Override
     public List<CaptureResult.Key> getAvailableCaptureResultKeys() {
-        return null;
+        return Arrays.asList(CaptureResult.SENSOR_TIMESTAMP);
     }
+
+    /**
+     * This method is used to check if test lib is running. If OEM implementation exists, invoking
+     * this method will throw {@link NoSuchMethodError}. This can be used to determine if OEM
+     * implementation is used or not.
+     */
+    public static void checkTestlibRunning() {}
 }

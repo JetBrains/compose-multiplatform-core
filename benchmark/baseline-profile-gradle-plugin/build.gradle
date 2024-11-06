@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.*
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -45,11 +45,11 @@ configurations {
 }
 
 dependencies {
-    compileOnly(libs.androidGradlePluginz)
-    compileOnly(libs.kotlinGradlePluginz)
+    compileOnly(libs.androidGradlePlugin)
+    compileOnly(libs.kotlinGradlePlugin)
 
     implementation(gradleApi())
-    implementation(libs.protobuf)
+    implementation("com.google.protobuf:protobuf-java:3.22.3")
     implementation(libs.agpTestingPlatformCoreProto)
 
     testImplementation(gradleTestKit())
@@ -58,8 +58,8 @@ dependencies {
     testImplementation(libs.kotlinTest)
     testImplementation(libs.truth)
 
-    neededForGradleTestKit(libs.androidGradlePluginz)
-    neededForGradleTestKit(libs.kotlinGradlePluginz)
+    neededForGradleTestKit(libs.androidGradlePlugin)
+    neededForGradleTestKit(libs.kotlinGradlePlugin)
     neededForGradleTestKit(libs.kotlinStdlib)
 
     neededForGradleTestKitAgp80("com.android.tools.build:gradle:8.0.0")
@@ -101,7 +101,6 @@ gradlePlugin {
 
 androidx {
     name = "Baseline Profile Gradle Plugin"
-    publish = Publish.SNAPSHOT_AND_RELEASE
     type = LibraryType.GRADLE_PLUGIN
     inceptionYear = "2022"
     description = "Android Baseline Profile Gradle Plugin"

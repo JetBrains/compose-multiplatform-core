@@ -16,6 +16,7 @@
 
 package androidx.privacysandbox.sdkruntime.client.controller
 
+import android.content.Context
 import android.os.Binder
 import android.os.Bundle
 import androidx.privacysandbox.sdkruntime.client.activity.LocalSdkActivityHandlerRegistry
@@ -25,6 +26,7 @@ import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
 import androidx.privacysandbox.sdkruntime.core.activity.ActivityHolder
 import androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandlerCompat
 import androidx.privacysandbox.sdkruntime.core.controller.LoadSdkCallback
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
@@ -36,15 +38,23 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class LocalControllerTest {
 
+    private lateinit var applicationContext: Context
     private lateinit var localSdkRegistry: StubLocalSdkRegistry
     private lateinit var appOwnedSdkRegistry: StubAppOwnedSdkInterfaceRegistry
     private lateinit var controller: LocalController
 
     @Before
     fun setUp() {
+        applicationContext = ApplicationProvider.getApplicationContext()
         localSdkRegistry = StubLocalSdkRegistry()
         appOwnedSdkRegistry = StubAppOwnedSdkInterfaceRegistry()
-        controller = LocalController(SDK_PACKAGE_NAME, localSdkRegistry, appOwnedSdkRegistry)
+        controller =
+            LocalController(
+                SDK_PACKAGE_NAME,
+                applicationContext,
+                localSdkRegistry,
+                appOwnedSdkRegistry
+            )
     }
 
     @Test
@@ -88,11 +98,8 @@ class LocalControllerTest {
 
     @Test
     fun getAppOwnedSdkSandboxInterfaces_returnsResultsFromAppOwnedSdkRegistry() {
-        val appOwnedInterface = AppOwnedSdkSandboxInterfaceCompat(
-            name = "TestSDK",
-            version = 1,
-            binder = Binder()
-        )
+        val appOwnedInterface =
+            AppOwnedSdkSandboxInterfaceCompat(name = "TestSDK", version = 1, binder = Binder())
         appOwnedSdkRegistry.appOwnedSdks = listOf(appOwnedInterface)
 
         val result = controller.getAppOwnedSdkSandboxInterfaces()
@@ -101,11 +108,12 @@ class LocalControllerTest {
 
     @Test
     fun registerSdkSandboxActivityHandler_delegateToLocalSdkActivityHandlerRegistry() {
-        val handler = object : SdkSandboxActivityHandlerCompat {
-            override fun onActivityCreated(activityHolder: ActivityHolder) {
-                // do nothing
+        val handler =
+            object : SdkSandboxActivityHandlerCompat {
+                override fun onActivityCreated(activityHolder: ActivityHolder) {
+                    // do nothing
+                }
             }
-        }
 
         val token = controller.registerSdkSandboxActivityHandler(handler)
 
@@ -116,22 +124,27 @@ class LocalControllerTest {
     @Test
     fun registerSdkSandboxActivityHandler_registerWithCorrectSdkPackageName() {
         val token =
-            controller.registerSdkSandboxActivityHandler(object : SdkSandboxActivityHandlerCompat {
+            controller.registerSdkSandboxActivityHandler(
+                object : SdkSandboxActivityHandlerCompat {
+                    override fun onActivityCreated(activityHolder: ActivityHolder) {
+                        // do nothing
+                    }
+                }
+            )
+
+        val anotherSdkController =
+            LocalController(
+                "LocalControllerTest.anotherSdk",
+                applicationContext,
+                localSdkRegistry,
+                appOwnedSdkRegistry
+            )
+        val anotherSdkHandler =
+            object : SdkSandboxActivityHandlerCompat {
                 override fun onActivityCreated(activityHolder: ActivityHolder) {
                     // do nothing
                 }
-            })
-
-        val anotherSdkController = LocalController(
-            "LocalControllerTest.anotherSdk",
-            localSdkRegistry,
-            appOwnedSdkRegistry
-        )
-        val anotherSdkHandler = object : SdkSandboxActivityHandlerCompat {
-            override fun onActivityCreated(activityHolder: ActivityHolder) {
-                // do nothing
             }
-        }
         val anotherSdkToken =
             anotherSdkController.registerSdkSandboxActivityHandler(anotherSdkHandler)
 
@@ -143,17 +156,24 @@ class LocalControllerTest {
 
     @Test
     fun unregisterSdkSandboxActivityHandler_delegateToLocalSdkActivityHandlerRegistry() {
-        val handler = object : SdkSandboxActivityHandlerCompat {
-            override fun onActivityCreated(activityHolder: ActivityHolder) {
-                // do nothing
+        val handler =
+            object : SdkSandboxActivityHandlerCompat {
+                override fun onActivityCreated(activityHolder: ActivityHolder) {
+                    // do nothing
+                }
             }
-        }
 
         val token = controller.registerSdkSandboxActivityHandler(handler)
         controller.unregisterSdkSandboxActivityHandler(handler)
 
         val registeredHandler = LocalSdkActivityHandlerRegistry.getHandlerByToken(token)
         assertThat(registeredHandler).isNull()
+    }
+
+    @Test
+    fun getClientPackageName_returnsAppPackageName() {
+        val result = controller.getClientPackageName()
+        assertThat(result).isEqualTo(applicationContext.getPackageName())
     }
 
     private class StubLocalSdkRegistry : SdkRegistry {

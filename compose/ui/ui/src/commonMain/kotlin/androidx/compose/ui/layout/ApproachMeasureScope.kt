@@ -14,25 +14,20 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalComposeUiApi::class)
-
 package androidx.compose.ui.layout
 
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.internal.requirePreconditionNotNull
+import androidx.compose.ui.internal.throwIllegalArgumentExceptionForNullCheck
 import androidx.compose.ui.node.LayoutModifierNodeCoordinator
 import androidx.compose.ui.node.NodeCoordinator
 import androidx.compose.ui.node.checkMeasuredSize
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntSize
 
-/**
- * The receiver scope of a layout's intrinsic approach measurements lambdas.
- */
+/** The receiver scope of a layout's intrinsic approach measurements lambdas. */
 sealed interface ApproachIntrinsicMeasureScope : IntrinsicMeasureScope {
 
-    /**
-     * Constraints used to measure the layout in the lookahead pass.
-     */
+    /** Constraints used to measure the layout in the lookahead pass. */
     val lookaheadConstraints: Constraints
 
     /**
@@ -44,16 +39,15 @@ sealed interface ApproachIntrinsicMeasureScope : IntrinsicMeasureScope {
 }
 
 /**
- * [ApproachMeasureScope] provides access to lookahead results to allow
- * [ApproachLayoutModifierNode] to leverage lookahead results to define how
- * measurements and placements approach their destination.
+ * [ApproachMeasureScope] provides access to lookahead results to allow [ApproachLayoutModifierNode]
+ * to leverage lookahead results to define how measurements and placements approach their
+ * destination.
  *
- * [ApproachMeasureScope.lookaheadSize] provides the target size of the layout.
- * By knowing the target size and position, layout adjustments such as animations can be defined
- * in [ApproachLayoutModifierNode] to morph the layout gradually in both size and position
- * to arrive at its precalculated bounds.
+ * [ApproachMeasureScope.lookaheadSize] provides the target size of the layout. By knowing the
+ * target size and position, layout adjustments such as animations can be defined in
+ * [ApproachLayoutModifierNode] to morph the layout gradually in both size and position to arrive at
+ * its precalculated bounds.
  */
-@ExperimentalComposeUiApi
 sealed interface ApproachMeasureScope : ApproachIntrinsicMeasureScope, MeasureScope
 
 internal class ApproachMeasureScopeImpl(
@@ -61,9 +55,11 @@ internal class ApproachMeasureScopeImpl(
     var approachNode: ApproachLayoutModifierNode,
 ) : ApproachMeasureScope, MeasureScope by coordinator, LookaheadScope {
     override val lookaheadConstraints: Constraints
-        get() = requireNotNull(coordinator.lookaheadConstraints) {
-            "Error: Lookahead constraints requested before lookahead measure."
-        }
+        get() =
+            requirePreconditionNotNull(coordinator.lookaheadConstraints) {
+                "Error: Lookahead constraints requested before lookahead measure."
+            }
+
     override val lookaheadSize: IntSize
         get() = coordinator.lookaheadDelegate!!.measureResult.let { IntSize(it.width, it.height) }
 
@@ -74,19 +70,19 @@ internal class ApproachMeasureScopeImpl(
         if (this is NodeCoordinator) {
             return lookaheadDelegate?.lookaheadLayoutCoordinates ?: this
         }
-        throw IllegalArgumentException("Unsupported LayoutCoordinates: $this")
+        throwIllegalArgumentExceptionForNullCheck("Unsupported LayoutCoordinates")
     }
 
     override val Placeable.PlacementScope.lookaheadScopeCoordinates: LayoutCoordinates
         get() {
             val lookaheadRoot = coordinator.layoutNode.lookaheadRoot
-            requireNotNull(lookaheadRoot) {
+            requirePreconditionNotNull(lookaheadRoot) {
                 "Error: Requesting LookaheadScopeCoordinates is not permitted from outside of a" +
                     " LookaheadScope."
             }
             return if (lookaheadRoot.isVirtualLookaheadRoot) {
                 lookaheadRoot.parent?.innerCoordinator
-                // Root node is in a lookahead scope
+                    // Root node is in a lookahead scope
                     ?: lookaheadRoot.children[0].outerCoordinator
             } else {
                 lookaheadRoot.outerCoordinator
@@ -96,7 +92,7 @@ internal class ApproachMeasureScopeImpl(
     override fun layout(
         width: Int,
         height: Int,
-        alignmentLines: Map<AlignmentLine, Int>,
+        alignmentLines: Map<out AlignmentLine, Int>,
         rulers: (RulerScope.() -> Unit)?,
         placementBlock: Placeable.PlacementScope.() -> Unit
     ): MeasureResult {
@@ -105,9 +101,9 @@ internal class ApproachMeasureScopeImpl(
             override val width = width
             override val height = height
 
-            @Suppress("PrimitiveInCollection")
-            override val alignmentLines = alignmentLines
+            @Suppress("PrimitiveInCollection") override val alignmentLines = alignmentLines
             override val rulers = rulers
+
             override fun placeChildren() {
                 coordinator.placementScope.placementBlock()
             }

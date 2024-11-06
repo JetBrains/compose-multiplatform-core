@@ -16,11 +16,8 @@
 
 package androidx.compose.runtime
 
-import org.jetbrains.annotations.TestOnly
-
 @TestOnly
-fun Composition.getSlots(): Iterable<Any?> =
-    (this as CompositionImpl).slotTable.slots.asIterable()
+fun Composition.getSlots(): Iterable<Any?> = (this as CompositionImpl).slotTable.slots.asIterable()
 
 @TestOnly
 fun Composer.getInsertTableSlots(): Iterable<Any?> =

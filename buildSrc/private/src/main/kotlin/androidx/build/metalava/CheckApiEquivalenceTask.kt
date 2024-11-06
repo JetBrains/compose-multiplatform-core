@@ -46,18 +46,12 @@ abstract class CheckApiEquivalenceTask : DefaultTask() {
         val checkedInApiLocations = checkedInApis.get()
         val checkedInApiFiles =
             checkedInApiLocations.flatMap { checkedInApiLocation ->
-                listOf(
-                    checkedInApiLocation.publicApiFile,
-                    checkedInApiLocation.restrictedApiFile
-                )
+                listOf(checkedInApiLocation.publicApiFile, checkedInApiLocation.restrictedApiFile)
             }
 
         val builtApiLocation = builtApi.get()
         val builtApiFiles =
-            listOf(
-                builtApiLocation.publicApiFile,
-                builtApiLocation.restrictedApiFile
-            )
+            listOf(builtApiLocation.publicApiFile, builtApiLocation.restrictedApiFile)
 
         return checkedInApiFiles + builtApiFiles
     }
@@ -96,7 +90,7 @@ fun summarizeDiff(a: File, b: File, maxSummaryLines: Int = 50): String {
     return diffLines.joinToString("\n")
 }
 
-fun checkEqual(expected: File, actual: File) {
+fun checkEqual(expected: File, actual: File, updateTaskName: String = "updateApi") {
     if (!FileUtils.contentEquals(expected, actual)) {
         val diff = summarizeDiff(expected, actual)
         val message =
@@ -105,7 +99,7 @@ fun checkEqual(expected: File, actual: File) {
                     Declared definition is $expected
                     True     definition is $actual
 
-                    Please run `./gradlew updateApi` to confirm these changes are
+                    Please run `./gradlew ${updateTaskName}` to confirm these changes are
                     intentional by updating the API definition.
 
                     Difference between these files:

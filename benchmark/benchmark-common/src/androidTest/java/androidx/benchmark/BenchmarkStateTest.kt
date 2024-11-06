@@ -17,7 +17,9 @@
 package androidx.benchmark
 
 import android.Manifest
+import androidx.annotation.RequiresApi
 import androidx.benchmark.BenchmarkState.Companion.ExperimentalExternalReport
+import androidx.benchmark.json.BenchmarkData
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.FlakyTest
 import androidx.test.filters.LargeTest
@@ -70,23 +72,18 @@ class BenchmarkStateTest {
             }
 
             state.pauseTiming()
-            runAndSpin(durationUs = 700) {
-                allocate(80)
-            }
+            runAndSpin(durationUs = 700) { allocate(80) }
             state.resumeTiming()
         }
         // The point of these asserts are to verify that pause/resume work, and that metrics that
         // come out are reasonable, not perfect - this isn't always run in stable perf environments
-        val medianTime = state.getReport().getMetricResult("timeNs").median.toLong()
+        val medianTime = state.peekTestResult().metrics["timeNs"]!!.median.toLong()
         assertTrue(
             "median time (ns) $medianTime should be roughly 300us",
             medianTime in us2ns(280)..us2ns(900)
         )
-        val medianAlloc = state.getReport().getMetricResult("allocationCount").median.toInt()
-        assertTrue(
-            "median allocs $medianAlloc should be approximately 40",
-            medianAlloc in 40..50
-        )
+        val medianAlloc = state.peekTestResult().metrics["allocationCount"]!!.median.toInt()
+        assertTrue("median allocs $medianAlloc should be approximately 40", medianAlloc in 40..50)
     }
 
     @Test
@@ -159,24 +156,25 @@ class BenchmarkStateTest {
             total++
         }
 
-        val report = state.getReport()
+        val testResult = state.peekTestResult()
 
         // '50' assumes we're not running in a special mode
         // that affects repeat count (dry run)
-        val expectedRepeatCount = 50 +
-            if (simplifiedTimingOnlyMode) 0 else BenchmarkState.REPEAT_COUNT_ALLOCATION
-        val expectedCount = report.warmupIterations +
-            report.repeatIterations * expectedRepeatCount +
-            if (Arguments.profiler == MethodTracing && !simplifiedTimingOnlyMode) 1 else 0
+        val expectedRepeatCount =
+            50 + if (simplifiedTimingOnlyMode) 0 else BenchmarkState.REPEAT_COUNT_ALLOCATION
+        val expectedCount =
+            testResult.warmupIterations!! +
+                testResult.repeatIterations!! * expectedRepeatCount +
+                if (Arguments.profiler == MethodTracing && !simplifiedTimingOnlyMode) 1 else 0
         assertEquals(expectedCount, total)
 
         if (Arguments.iterations != null) {
-            assertEquals(Arguments.iterations, report.repeatIterations)
+            assertEquals(Arguments.iterations, testResult.repeatIterations)
         }
 
         // verify we're not in warmup mode
-        assertTrue(report.warmupIterations > 0)
-        assertTrue(report.repeatIterations > 1)
+        assertTrue(testResult.warmupIterations!! > 0)
+        assertTrue(testResult.repeatIterations!! > 1)
     }
 
     @Test
@@ -199,15 +197,18 @@ class BenchmarkStateTest {
     @Test
     @Suppress("DEPRECATION")
     fun bundle() {
-        val bundle = BenchmarkState().apply {
-            while (keepRunning()) {
-                // nothing, we're ignoring numbers
-            }
-        }.getFullStatusReport(
-            key = "foo",
-            reportMetrics = true,
-            tracePath = Outputs.outputDirectory.absolutePath + "/bar"
-        )
+        val bundle =
+            BenchmarkState()
+                .apply {
+                    while (keepRunning()) {
+                        // nothing, we're ignoring numbers
+                    }
+                }
+                .getFullStatusReport(
+                    key = "foo",
+                    reportMetrics = true,
+                    tracePath = Outputs.outputDirectory.absolutePath + "/bar"
+                )
 
         val displayStringV1 = (bundle.get("android.studio.display.benchmark") as String)
         val displayStringV2 = (bundle.get("android.studio.v2display.benchmark") as String)
@@ -235,7 +236,7 @@ class BenchmarkStateTest {
     fun notStarted() {
         val initialPriority = ThreadPriority.get()
         try {
-            BenchmarkState().getReport().getMetricResult("timeNs").median
+            BenchmarkState().peekTestResult().metrics["timeNs"]!!.median
             fail("expected exception")
         } catch (e: IllegalStateException) {
             assertEquals(initialPriority, ThreadPriority.get())
@@ -249,7 +250,7 @@ class BenchmarkStateTest {
         try {
             BenchmarkState().run {
                 keepRunning()
-                getReport().getMetricResult("timeNs").median
+                peekTestResult().metrics["timeNs"]!!.median
             }
             fail("expected exception")
         } catch (e: IllegalStateException) {
@@ -271,34 +272,30 @@ class BenchmarkStateTest {
             thermalThrottleSleepSeconds = 0,
             repeatIterations = 1
         )
-        val expectedReport = BenchmarkResult(
-            className = "className",
-            testName = "testName",
-            totalRunTimeNs = 900000000,
-            metrics = listOf(
-                MetricResult(
-                    name = "timeNs",
-                    data = listOf(100.0, 200.0, 300.0)
-                )
-            ),
-            repeatIterations = 1,
-            thermalThrottleSleepSeconds = 0,
-            warmupIterations = 1
-        )
+        val expectedReport =
+            BenchmarkData.TestResult(
+                className = "className",
+                name = "testName",
+                totalRunTimeNs = 900000000,
+                metrics = listOf(MetricResult(name = "timeNs", data = listOf(100.0, 200.0, 300.0))),
+                repeatIterations = 1,
+                thermalThrottleSleepSeconds = 0,
+                warmupIterations = 1,
+                profilerOutputs = null,
+            )
         assertEquals(expectedReport, ResultWriter.reports.last())
     }
 
+    @RequiresApi(22) // 21 profiler has flaky platform crashes, see b/353716346
     private fun validateProfilerUsage(simplifiedTimingOnlyMode: Boolean?) {
         val config = MicrobenchmarkConfig(profiler = ProfilerConfig.StackSamplingLegacy())
 
-        val benchmarkState = if (simplifiedTimingOnlyMode != null) {
-            BenchmarkState(
-                config = config,
-                simplifiedTimingOnlyMode = simplifiedTimingOnlyMode
-            )
-        } else {
-            BenchmarkState(config)
-        }
+        val benchmarkState =
+            if (simplifiedTimingOnlyMode != null) {
+                BenchmarkState(config = config, simplifiedTimingOnlyMode = simplifiedTimingOnlyMode)
+            } else {
+                BenchmarkState(config)
+            }
 
         // count iters with profiler enabled vs disabled
         var profilerDisabledIterations = 0
@@ -332,25 +329,26 @@ class BenchmarkStateTest {
         }
     }
 
-    @Test fun profiler_default() = validateProfilerUsage(null)
-    @Test fun profiler_false() = validateProfilerUsage(false)
-    @Test fun profiler_true() = validateProfilerUsage(true)
+    @SdkSuppress(minSdkVersion = 22) // 21 profiler has flaky platform crashes, see b/353716346
+    @Test
+    fun profiler_default() = validateProfilerUsage(null)
+
+    @SdkSuppress(minSdkVersion = 22) // 21 profiler has flaky platform crashes, see b/353716346
+    @Test
+    fun profiler_false() = validateProfilerUsage(false)
+
+    @SdkSuppress(minSdkVersion = 22) // 21 profiler has flaky platform crashes, see b/353716346
+    @Test
+    fun profiler_true() = validateProfilerUsage(true)
 
     @OptIn(ExperimentalBenchmarkStateApi::class)
     @Test
     fun experimentalConstructor() {
         // min values that don't fail
-        BenchmarkState(
-            warmupCount = null,
-            measurementCount = 1
-        )
+        BenchmarkState(warmupCount = null, measurementCount = 1)
 
         // test failures
-        assertFailsWith<IllegalArgumentException> {
-            BenchmarkState(warmupCount = 0)
-        }
-        assertFailsWith<IllegalArgumentException> {
-            BenchmarkState(measurementCount = 0)
-        }
+        assertFailsWith<IllegalArgumentException> { BenchmarkState(warmupCount = 0) }
+        assertFailsWith<IllegalArgumentException> { BenchmarkState(measurementCount = 0) }
     }
 }

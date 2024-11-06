@@ -17,7 +17,6 @@
 package androidx.room.solver.query.result
 
 import androidx.room.compiler.codegen.XCodeBlock
-import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.addLocalVal
 import androidx.room.compiler.processing.XType
 import androidx.room.ext.GuavaTypeNames
 import androidx.room.solver.CodeGenScope
@@ -29,34 +28,27 @@ class ImmutableListQueryResultAdapter(
     override fun convert(outVarName: String, cursorVarName: String, scope: CodeGenScope) {
         scope.builder.apply {
             rowAdapter.onCursorReady(cursorVarName = cursorVarName, scope = scope)
-            val collectionType = GuavaTypeNames.IMMUTABLE_LIST.parametrizedBy(
-                typeArg.asTypeName()
-            )
-            val immutableListBuilderType = GuavaTypeNames
-                .IMMUTABLE_LIST_BUILDER.parametrizedBy(typeArg.asTypeName())
+            val collectionType = GuavaTypeNames.IMMUTABLE_LIST.parametrizedBy(typeArg.asTypeName())
+            val immutableListBuilderType =
+                GuavaTypeNames.IMMUTABLE_LIST_BUILDER.parametrizedBy(typeArg.asTypeName())
             val immutableListBuilderName = scope.getTmpVar("_immutableListBuilder")
             addLocalVariable(
                 name = immutableListBuilderName,
                 typeName = immutableListBuilderType,
-                assignExpr = XCodeBlock.of(
-                    language = language,
-                    "%T.builder()",
-                    GuavaTypeNames.IMMUTABLE_LIST
-                )
+                assignExpr =
+                    XCodeBlock.of(
+                        language = language,
+                        "%T.builder()",
+                        GuavaTypeNames.IMMUTABLE_LIST
+                    )
             )
 
             val tmpVarName = scope.getTmpVar("_item")
-            beginControlFlow("while (%L.moveToNext())", cursorVarName).apply {
-                addLocalVariable(
-                    name = tmpVarName,
-                    typeName = typeArg.asTypeName()
-                )
+            val stepName = if (scope.useDriverApi) "step" else "moveToNext"
+            beginControlFlow("while (%L.$stepName())", cursorVarName).apply {
+                addLocalVariable(name = tmpVarName, typeName = typeArg.asTypeName())
                 rowAdapter.convert(tmpVarName, cursorVarName, scope)
-                addStatement(
-                    "%L.add(%L)",
-                    immutableListBuilderName,
-                    tmpVarName
-                )
+                addStatement("%L.add(%L)", immutableListBuilderName, tmpVarName)
             }
             endControlFlow()
             addLocalVal(
@@ -67,4 +59,6 @@ class ImmutableListQueryResultAdapter(
             )
         }
     }
+
+    override fun isMigratedToDriver() = true
 }

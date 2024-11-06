@@ -29,7 +29,6 @@ import androidx.constraintlayout.core.state.Transition
  *
  * Layout items are defined with [ConstraintSetScope.createRefFor], each layout item must be defined
  * with a unique ID from other items in the same scope:
- *
  * ```
  * val textRef = createRefFor("text")
  * val imageRef = createRefFor("image")
@@ -37,14 +36,12 @@ import androidx.constraintlayout.core.state.Transition
  *
  * You may also use [ConstraintSetScope.createRefsFor] to declare up to 16 items at a time using the
  * destructuring declaration pattern:
- *
  * ```
  * val (textRef, imageRef) = createRefsFor("text", "image")
  * ```
  *
  * Individual constraints are defined with [ConstraintSetScope.constrain]. Where you can tell each
  * layout reference how to constrain to other references including the **`parent`**:
- *
  * ```
  * constrain(textRef) {
  *     centerTo(parent)
@@ -56,21 +53,16 @@ import androidx.constraintlayout.core.state.Transition
  * ```
  *
  * Here, we constrain the *textRef* to the center of the *parent*, while the image is centered
- * vertically to *textRef* and is horizontally placed to the right of its end anchor with a
- * margin (keep in mind, when using `center...`, `start` or `end` the layout direction will
- * automatically change in RTL locales).
+ * vertically to *textRef* and is horizontally placed to the right of its end anchor with a margin
+ * (keep in mind, when using `center...`, `start` or `end` the layout direction will automatically
+ * change in RTL locales).
  *
  * See [ConstrainScope] to learn more about how to constrain elements together.
- *
- * &nbsp;
  *
  * In the ConstraintLayout or MotionLayout Composables, the children must be bound using
  * [Modifier.layoutId][androidx.compose.ui.layout.layoutId].
  *
- *
  * So, the whole snippet with ConstraintLayout would look like this:
- *
- *
  * ```
  * val textId = "text"
  * val imageId = "image"
@@ -101,17 +93,13 @@ import androidx.constraintlayout.core.state.Transition
  *
  * ## Helpers
  * You may also use helpers, a set of virtual (not shown on screen) components that provide special
- * layout behaviors, you may find these in the [ConstraintSetScope] with the '`create...`' prefix,
- * a few of these are **Guidelines**, **Chains** and **Barriers**.
- *
- * &nbsp;
+ * layout behaviors, you may find these in the [ConstraintSetScope] with the '`create...`' prefix, a
+ * few of these are **Guidelines**, **Chains** and **Barriers**.
  *
  * ### Guidelines
  * Lines to which other [ConstrainedLayoutReference]s may be constrained to, these are defined at
  * either a fixed or percent position from an anchor of the ConstraintLayout parent (top, bottom,
  * start, end, absoluteLeft, absoluteRight).
- *
- * &nbsp;
  *
  * Example:
  * ```
@@ -135,11 +123,10 @@ import androidx.constraintlayout.core.state.Transition
  * ### Chains
  * Chains may be either horizontal or vertical, these, take a set of [ConstrainedLayoutReference]s
  * and create bi-directional constraints on each of them at the same orientation of the chain in the
- * given order, meaning that an horizontal chain will create constraints between the start and end anchors.
+ * given order, meaning that an horizontal chain will create constraints between the start and end
+ * anchors.
  *
  * The result, a layout that evenly distributes the space within its elements.
- *
- * &nbsp;
  *
  * For example, to make a layout with three text elements distributed so that the spacing between
  * them (and around them) is equal:
@@ -149,7 +136,6 @@ import androidx.constraintlayout.core.state.Transition
  * ```
  *
  * You may set margins within elements in a chain with [ConstraintLayoutScope.withChainParams]:
- *
  * ```
  * val (textRef0, textRef1, textRef2) = createRefsFor("text0", "text1", "text2")
  * createHorizontalChain(
@@ -161,28 +147,25 @@ import androidx.constraintlayout.core.state.Transition
  * ```
  *
  * You can also change the way space is distributed, as chains have three different styles:
- * - [ChainStyle.Spread]  Layouts are evenly distributed after margins are accounted for (the space
- * around and between each item is even). This is the **default** style for chains.
- * - [ChainStyle.SpreadInside]  The first and last layouts are affixed to each end of the chain,
- * and the rest of the items are evenly distributed (after margins are accounted for).
- * I.e.: Items are spread from the inside, distributing the space between them with no space around
- * the first and last items.
+ * - [ChainStyle.Spread] Layouts are evenly distributed after margins are accounted for (the space
+ *   around and between each item is even). This is the **default** style for chains.
+ * - [ChainStyle.SpreadInside] The first and last layouts are affixed to each end of the chain, and
+ *   the rest of the items are evenly distributed (after margins are accounted for). I.e.: Items are
+ *   spread from the inside, distributing the space between them with no space around the first and
+ *   last items.
  * - [ChainStyle.Packed] The layouts are packed together after margins are accounted for, by
- * default, they're packed together at the middle, you can change this behavior with the **bias**
- * parameter of [ChainStyle.Packed].
+ *   default, they're packed together at the middle, you can change this behavior with the **bias**
+ *   parameter of [ChainStyle.Packed].
  * - Alternatively, you can make every Layout in the chain to be [Dimension.fillToConstraints] and
- * then set a particular weight to each of them to create a **weighted chain**.
+ *   then set a particular weight to each of them to create a **weighted chain**.
  *
  * #### Weighted Chain
  * Weighted chains are useful when you want the size of the elements to depend on the remaining size
  * of the chain. As opposed to just distributing the space around and/or in-between the items.
  *
- * &nbsp;
- *
  * For example, to create a layout with three text elements in a row where each element takes the
- * exact same size regardless of content, you can use a simple weighted chain where each item has the
- * same weight:
- *
+ * exact same size regardless of content, you can use a simple weighted chain where each item has
+ * the same weight:
  * ```
  * val (textRef0, textRef1, textRef2) = createRefsFor("text0", "text1", "text2")
  * createHorizontalChain(
@@ -203,17 +186,13 @@ import androidx.constraintlayout.core.state.Transition
  * Also note that when using [ConstraintSetScope] you can apply the same constrains to multiple
  * references at a time.
  *
- * &nbsp;
- *
  * Keep in mind that chains have a relatively high performance cost. For example, if you plan on
  * having multiple chains one below the other, consider instead, applying just one chain and using
  * it as a reference to constrain all other elements to the ones that match their position in that
  * one chain. It may provide increased performance with no significant changes in the layout output.
  *
- * Alternatively, consider if other helpers such as [ConstraintSetScope.createGrid] can
- * accomplish the same layout.
- *
- * &nbsp;
+ * Alternatively, consider if other helpers such as [ConstraintSetScope.createGrid] can accomplish
+ * the same layout.
  *
  * See
  * - [ConstraintSetScope.createHorizontalChain]
@@ -224,12 +203,9 @@ import androidx.constraintlayout.core.state.Transition
  * Barriers take a set of [ConstrainedLayoutReference]s and creates the most further point in a
  * given direction where other [ConstrainedLayoutReference] can constrain to.
  *
- * &nbsp;
- *
  * This is useful in situations where elements in a layout may have different sizes but you want to
  * always constrain to the largest item, for example, if you have a text element on top of another
  * and want an image to always be constrained to the end of them:
- *
  * ```
  * val (textRef0, textRef1, imageRef) = createRefsFor("text0", "text1", "image")
  *
@@ -267,12 +243,11 @@ import androidx.constraintlayout.core.state.Transition
  */
 @Immutable
 interface ConstraintSet {
-    /**
-     * Applies the [ConstraintSet] to a state.
-     */
+    /** Applies the [ConstraintSet] to a state. */
     fun applyTo(state: State, measurables: List<Measurable>)
 
     fun override(name: String, value: Float) = this
+
     fun applyTo(transition: Transition, type: Int) {
         // nothing here, used in MotionLayout
     }
@@ -312,12 +287,9 @@ internal interface DerivedConstraintSet : ConstraintSet {
 @PublishedApi
 internal class RawConstraintSet(private val clObject: CLObject) : ConstraintSet {
     private val layoutVariables = LayoutVariables()
+
     override fun applyTo(state: State, measurables: List<Measurable>) {
-        ConstraintSetParser.populateState(
-            clObject,
-            state,
-            layoutVariables
-        )
+        ConstraintSetParser.populateState(clObject, state, layoutVariables)
     }
 
     override fun equals(other: Any?): Boolean {

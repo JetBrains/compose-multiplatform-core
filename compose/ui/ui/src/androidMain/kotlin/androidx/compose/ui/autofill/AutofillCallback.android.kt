@@ -20,15 +20,13 @@ import android.os.Build
 import android.util.Log
 import android.view.View
 import android.view.autofill.AutofillManager
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
-import androidx.compose.ui.ExperimentalComposeUiApi
 
 /**
  * Autofill Manager callback.
  *
- * This callback is called when we receive autofill events. It adds some logs that can be useful
- * for debug purposes.
+ * This callback is called when we receive autofill events. It adds some logs that can be useful for
+ * debug purposes.
  */
 @RequiresApi(Build.VERSION_CODES.O)
 internal object AutofillCallback : AutofillManager.AutofillCallback() {
@@ -39,7 +37,8 @@ internal object AutofillCallback : AutofillManager.AutofillCallback() {
             when (event) {
                 EVENT_INPUT_SHOWN -> "Autofill popup was shown."
                 EVENT_INPUT_HIDDEN -> "Autofill popup was hidden."
-                EVENT_INPUT_UNAVAILABLE -> """
+                EVENT_INPUT_UNAVAILABLE ->
+                    """
                         |Autofill popup isn't shown because autofill is not available.
                         |
                         |Did you set up autofill?
@@ -50,26 +49,19 @@ internal object AutofillCallback : AutofillManager.AutofillCallback() {
                         |1. Go to Settings > System > Languages&input > Advanced
                         |2. Click on the settings icon next to the Autofill Service
                         |3. Add your account
-                        """.trimMargin()
+                        """
+                        .trimMargin()
                 else -> "Unknown status event."
             }
         )
     }
 
-    /**
-     * Registers the autofill debug callback.
-     */
-    @ExperimentalComposeUiApi
-    @DoNotInline
+    /** Registers the autofill debug callback. */
     fun register(autofill: AndroidAutofill) {
         autofill.autofillManager.registerCallback(this)
     }
 
-    /**
-     * Unregisters the autofill debug callback.
-     */
-    @ExperimentalComposeUiApi
-    @DoNotInline
+    /** Unregisters the autofill debug callback. */
     fun unregister(autofill: AndroidAutofill) {
         autofill.autofillManager.unregisterCallback(this)
     }

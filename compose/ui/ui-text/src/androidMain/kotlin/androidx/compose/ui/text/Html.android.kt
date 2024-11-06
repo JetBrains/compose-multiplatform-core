@@ -50,34 +50,76 @@ import org.xml.sax.Attributes
 import org.xml.sax.ContentHandler
 import org.xml.sax.XMLReader
 
-actual fun String.parseAsHtml(): AnnotatedString {
+/**
+ * Converts a string with HTML tags into [AnnotatedString].
+ *
+ * If you define your string in the resources, make sure to use HTML-escaped opening brackets
+ * <code>&amp;lt;</code> instead of <code><</code>.
+ *
+ * For a list of supported tags go check
+ * [Styling with HTML markup](https://developer.android.com/guide/topics/resources/string-resource#StylingWithHTML)
+ * guide. Note that bullet lists are not **yet** available.
+ *
+ * @param htmlString HTML-tagged string to be parsed to construct AnnotatedString
+ * @param linkStyles style configuration to be applied to links present in the string in different
+ *   styles
+ * @param linkInteractionListener a listener that will be attached to links that are present in the
+ *   string and triggered when user clicks on those links. When set to null, which is a default, the
+ *   system will try to open the corresponding links with the
+ *   [androidx.compose.ui.platform.UriHandler] composition local
+ *
+ * Note that any link style passed directly to this method will be merged with the styles set
+ * directly on a HTML-tagged string. For example, if you set a color of the link via the span
+ * annotation to "red" but also pass a green color via the [linkStyles], the link will be displayed
+ * as green. If, however, you pass a green background via the [linkStyles] instead, the link will be
+ * displayed as red on a green background.
+ *
+ * Example of displaying styled string from resources
+ *
+ * @sample androidx.compose.ui.text.samples.AnnotatedStringFromHtml
+ * @see LinkAnnotation
+ */
+fun AnnotatedString.Companion.fromHtml(
+    htmlString: String,
+    linkStyles: TextLinkStyles? = null,
+    linkInteractionListener: LinkInteractionListener? = null
+): AnnotatedString {
     // Check ContentHandlerReplacementTag kdoc for more details
-    val stringToParse = "<$ContentHandlerReplacementTag />$this"
-    val spanned = HtmlCompat.fromHtml(
-        stringToParse,
-        HtmlCompat.FROM_HTML_MODE_COMPACT,
-        null,
-        TagHandler
-    )
-    return spanned.toAnnotatedString()
+    val stringToParse = "<$ContentHandlerReplacementTag />$htmlString"
+    val spanned =
+        HtmlCompat.fromHtml(stringToParse, HtmlCompat.FROM_HTML_MODE_COMPACT, null, TagHandler)
+    return spanned.toAnnotatedString(linkStyles, linkInteractionListener)
 }
 
 @VisibleForTesting
-internal fun Spanned.toAnnotatedString(): AnnotatedString {
+internal fun Spanned.toAnnotatedString(
+    linkStyles: TextLinkStyles? = null,
+    linkInteractionListener: LinkInteractionListener? = null
+): AnnotatedString {
     return AnnotatedString.Builder(capacity = length)
         .append(this)
-        .also { it.addSpans(this) }
+        .also { it.addSpans(this, linkStyles, linkInteractionListener) }
         .toAnnotatedString()
 }
 
-private fun AnnotatedString.Builder.addSpans(spanned: Spanned) {
+private fun AnnotatedString.Builder.addSpans(
+    spanned: Spanned,
+    linkStyles: TextLinkStyles?,
+    linkInteractionListener: LinkInteractionListener?
+) {
     spanned.getSpans(0, length, Any::class.java).forEach { span ->
         val range = TextRange(spanned.getSpanStart(span), spanned.getSpanEnd(span))
-        addSpan(span, range.start, range.end)
+        addSpan(span, range.start, range.end, linkStyles, linkInteractionListener)
     }
 }
 
-private fun AnnotatedString.Builder.addSpan(span: Any, start: Int, end: Int) {
+private fun AnnotatedString.Builder.addSpan(
+    span: Any,
+    start: Int,
+    end: Int,
+    linkStyles: TextLinkStyles?,
+    linkInteractionListener: LinkInteractionListener?
+) {
     when (span) {
         is AbsoluteSizeSpan -> {
             // TODO(soboleva) need density object or make dip/px new units in TextUnit
@@ -116,27 +158,30 @@ private fun AnnotatedString.Builder.addSpan(span: Any, start: Int, end: Int) {
             addStyle(SpanStyle(textDecoration = TextDecoration.Underline), start, end)
         }
         is URLSpan -> {
-            span.url?.let {
-                addLink(LinkAnnotation.Url(it), start, end)
+            span.url?.let { url ->
+                val link = LinkAnnotation.Url(url, linkStyles, linkInteractionListener)
+                addLink(link, start, end)
             }
         }
     }
 }
 
 private fun AlignmentSpan.toParagraphStyle(): ParagraphStyle {
-    val alignment = when (this.alignment) {
-        Layout.Alignment.ALIGN_NORMAL -> TextAlign.Start
-        Layout.Alignment.ALIGN_CENTER -> TextAlign.Center
-        Layout.Alignment.ALIGN_OPPOSITE -> TextAlign.End
-        else -> TextAlign.Unspecified
-    }
+    val alignment =
+        when (this.alignment) {
+            Layout.Alignment.ALIGN_NORMAL -> TextAlign.Start
+            Layout.Alignment.ALIGN_CENTER -> TextAlign.Center
+            Layout.Alignment.ALIGN_OPPOSITE -> TextAlign.End
+            else -> TextAlign.Unspecified
+        }
     return ParagraphStyle(textAlign = alignment)
 }
 
 private fun StyleSpan.toSpanStyle(): SpanStyle? {
-    /** StyleSpan doc: styles are cumulative -- if both bold and italic are set in
-     * separate spans, or if the base style is bold and a span calls for italic,
-     * you get bold italic.  You can't turn off a style from the base style.
+    /**
+     * StyleSpan doc: styles are cumulative -- if both bold and italic are set in separate spans, or
+     * if the base style is bold and a span calls for italic, you get bold italic. You can't turn
+     * off a style from the base style.
      */
     return when (style) {
         Typeface.BOLD -> {
@@ -153,42 +198,50 @@ private fun StyleSpan.toSpanStyle(): SpanStyle? {
 }
 
 private fun TypefaceSpan.toSpanStyle(): SpanStyle {
-    val fontFamily = when (family) {
-        FontFamily.Cursive.name -> FontFamily.Cursive
-        FontFamily.Monospace.name -> FontFamily.Monospace
-        FontFamily.SansSerif.name -> FontFamily.SansSerif
-        FontFamily.Serif.name -> FontFamily.Serif
-        else -> { optionalFontFamilyFromName(family) }
-    }
+    val fontFamily =
+        when (family) {
+            FontFamily.Cursive.name -> FontFamily.Cursive
+            FontFamily.Monospace.name -> FontFamily.Monospace
+            FontFamily.SansSerif.name -> FontFamily.SansSerif
+            FontFamily.Serif.name -> FontFamily.Serif
+            else -> {
+                optionalFontFamilyFromName(family)
+            }
+        }
     return SpanStyle(fontFamily = fontFamily)
 }
 
 /**
  * Mirrors [androidx.compose.ui.text.font.PlatformTypefaces.optionalOnDeviceFontFamilyByName]
- * behavior with both font weight and font style being Normal in this case */
+ * behavior with both font weight and font style being Normal in this case
+ */
 private fun optionalFontFamilyFromName(familyName: String?): FontFamily? {
     if (familyName.isNullOrEmpty()) return null
     val typeface = Typeface.create(familyName, Typeface.NORMAL)
-    return typeface.takeIf { typeface != Typeface.DEFAULT &&
-        typeface != Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-    }?.let { FontFamily(it) }
+    return typeface
+        .takeIf {
+            typeface != Typeface.DEFAULT &&
+                typeface != Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+        }
+        ?.let { FontFamily(it) }
 }
 
-private val TagHandler = object : TagHandler {
-    override fun handleTag(
-        opening: Boolean,
-        tag: String?,
-        output: Editable?,
-        xmlReader: XMLReader?
-    ) {
-        if (xmlReader == null || output == null) return
+private val TagHandler =
+    object : TagHandler {
+        override fun handleTag(
+            opening: Boolean,
+            tag: String?,
+            output: Editable?,
+            xmlReader: XMLReader?
+        ) {
+            if (xmlReader == null || output == null) return
 
-        if (opening && tag == ContentHandlerReplacementTag) {
-            val currentContentHandler = xmlReader.contentHandler
-            xmlReader.contentHandler = AnnotationContentHandler(currentContentHandler, output)
+            if (opening && tag == ContentHandlerReplacementTag) {
+                val currentContentHandler = xmlReader.contentHandler
+                xmlReader.contentHandler = AnnotationContentHandler(currentContentHandler, output)
+            }
         }
     }
-}
 
 private class AnnotationContentHandler(
     private val contentHandler: ContentHandler,
@@ -229,7 +282,8 @@ private class AnnotationContentHandler(
     private fun handleAnnotationEnd() {
         // iterate through all of the spans that we added when handling the opening tag. Calculate
         // the true position of the span and make a replacement
-        output.getSpans(0, output.length, AnnotationSpan::class.java)
+        output
+            .getSpans(0, output.length, AnnotationSpan::class.java)
             .filter { output.getSpanFlags(it) == SPAN_MARK_MARK }
             .fastForEach { annotation ->
                 val start = output.getSpanStart(annotation)
@@ -247,13 +301,13 @@ private class AnnotationContentHandler(
 private class AnnotationSpan(val key: String, val value: String)
 
 /**
- * This tag is added at the beginning of a string fed to the HTML parser in order to trigger
- * a TagHandler's callback early on so we can replace the ContentHandler with our
- * own [AnnotationContentHandler]. This is needed to handle the opening <annotation> tags since by
- * the time TagHandler is triggered, the parser already visited and left the opening <annotation>
- * tag which contains the attributes. Note that closing tag doesn't have the attributes and
- * therefore not enough to construct the intermediate [AnnotationSpan] object that is later
- * transformed into [AnnotatedString]'s string annotation.
+ * This tag is added at the beginning of a string fed to the HTML parser in order to trigger a
+ * TagHandler's callback early on so we can replace the ContentHandler with our own
+ * [AnnotationContentHandler]. This is needed to handle the opening <annotation> tags since by the
+ * time TagHandler is triggered, the parser already visited and left the opening <annotation> tag
+ * which contains the attributes. Note that closing tag doesn't have the attributes and therefore
+ * not enough to construct the intermediate [AnnotationSpan] object that is later transformed into
+ * [AnnotatedString]'s string annotation.
  */
 private const val ContentHandlerReplacementTag = "ContentHandlerReplacementTag"
 private const val AnnotationTag = "annotation"

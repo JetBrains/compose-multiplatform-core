@@ -21,6 +21,7 @@ import android.os.Bundle
 import androidx.credentials.CredentialOption.Companion.BUNDLE_KEY_TYPE_PRIORITY_VALUE
 import androidx.credentials.CredentialOption.Companion.createFrom
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.collect.ImmutableSet
 import com.google.common.truth.Truth.assertThat
@@ -37,7 +38,9 @@ class GetPublicKeyCredentialOptionTest {
         Assert.assertThrows(
             "Expected empty Json to throw error",
             IllegalArgumentException::class.java
-        ) { GetPublicKeyCredentialOption("") }
+        ) {
+            GetPublicKeyCredentialOption("")
+        }
     }
 
     @Test
@@ -58,17 +61,15 @@ class GetPublicKeyCredentialOptionTest {
         val getPublicKeyCredentialOption = GetPublicKeyCredentialOption(TEST_REQUEST_JSON)
 
         assertThat(getPublicKeyCredentialOption.typePriorityHint)
-            .isEqualTo(EXPECTED_PASSKEY_PRIORITY);
+            .isEqualTo(EXPECTED_PASSKEY_PRIORITY)
     }
 
     @Test
     fun getter_frameworkProperties_success() {
         val requestJsonExpected = "{\"hi\":{\"there\":{\"lol\":\"Value\"}}}"
         val expectedAutoSelectAllowed = true
-        val expectedAllowedProviders: Set<ComponentName> = setOf(
-            ComponentName("pkg", "cls"),
-            ComponentName("pkg2", "cls2")
-        )
+        val expectedAllowedProviders: Set<ComponentName> =
+            setOf(ComponentName("pkg", "cls"), ComponentName("pkg2", "cls2"))
         val clientDataHash = "hash".toByteArray()
         val expectedData = Bundle()
         val expectedPriorityInt = EXPECTED_PASSKEY_PRIORITY
@@ -81,16 +82,21 @@ class GetPublicKeyCredentialOptionTest {
             requestJsonExpected
         )
         expectedData.putInt(BUNDLE_KEY_TYPE_PRIORITY_VALUE, expectedPriorityInt)
-        expectedData.putByteArray(GetPublicKeyCredentialOption.BUNDLE_KEY_CLIENT_DATA_HASH,
-            clientDataHash)
+        expectedData.putByteArray(
+            GetPublicKeyCredentialOption.BUNDLE_KEY_CLIENT_DATA_HASH,
+            clientDataHash
+        )
         expectedData.putBoolean(
             CredentialOption.BUNDLE_KEY_IS_AUTO_SELECT_ALLOWED,
             expectedAutoSelectAllowed
         )
 
-        val option = GetPublicKeyCredentialOption(
-            requestJsonExpected, clientDataHash, expectedAllowedProviders
-        )
+        val option =
+            GetPublicKeyCredentialOption(
+                requestJsonExpected,
+                clientDataHash,
+                expectedAllowedProviders
+            )
 
         assertThat(option.type).isEqualTo(PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL)
         assertThat(equals(option.requestData, expectedData)).isTrue()
@@ -104,13 +110,14 @@ class GetPublicKeyCredentialOptionTest {
     @Test
     fun frameworkConversion_success() {
         val clientDataHash = "hash".toByteArray()
-        val expectedAllowedProviders: Set<ComponentName> = ImmutableSet.of(
-            ComponentName("pkg", "cls"),
-            ComponentName("pkg2", "cls2")
-        )
-        val option = GetPublicKeyCredentialOption(
-            TEST_REQUEST_JSON, clientDataHash, expectedAllowedProviders
-        )
+        val expectedAllowedProviders: Set<ComponentName> =
+            ImmutableSet.of(ComponentName("pkg", "cls"), ComponentName("pkg2", "cls2"))
+        val option =
+            GetPublicKeyCredentialOption(
+                TEST_REQUEST_JSON,
+                clientDataHash,
+                expectedAllowedProviders
+            )
         // Add additional data to the request data and candidate query data to make sure
         // they persist after the conversion
         // Add additional data to the request data and candidate query data to make sure
@@ -124,14 +131,16 @@ class GetPublicKeyCredentialOptionTest {
         val customCandidateQueryDataValue = true
         candidateQueryData.putBoolean(customCandidateQueryDataKey, customCandidateQueryDataValue)
 
-        val convertedOption = createFrom(
-            option.type, requestData, candidateQueryData,
-            option.isSystemProviderRequired, option.allowedProviders
-        )
+        val convertedOption =
+            createFrom(
+                option.type,
+                requestData,
+                candidateQueryData,
+                option.isSystemProviderRequired,
+                option.allowedProviders
+            )
 
-        assertThat(convertedOption).isInstanceOf(
-            GetPublicKeyCredentialOption::class.java
-        )
+        assertThat(convertedOption).isInstanceOf(GetPublicKeyCredentialOption::class.java)
         val convertedSubclassOption = convertedOption as GetPublicKeyCredentialOption
         assertThat(convertedSubclassOption.requestJson).isEqualTo(option.requestJson)
         assertThat(convertedSubclassOption.allowedProviders)
@@ -142,9 +151,48 @@ class GetPublicKeyCredentialOptionTest {
             .isEqualTo(customCandidateQueryDataValue)
     }
 
+    @SdkSuppress(minSdkVersion = 34)
+    @Test
+    fun frameworkConversion_frameworkClass_success() {
+        val clientDataHash = "hash".toByteArray()
+        val expectedAllowedProviders: Set<ComponentName> =
+            ImmutableSet.of(ComponentName("pkg", "cls"), ComponentName("pkg2", "cls2"))
+        val option =
+            GetPublicKeyCredentialOption(
+                TEST_REQUEST_JSON,
+                clientDataHash,
+                expectedAllowedProviders
+            )
+        // Add additional data to the request data and candidate query data to make sure
+        // they persist after the conversion
+        // Add additional data to the request data and candidate query data to make sure
+        // they persist after the conversion
+        val requestData = option.requestData
+        val customRequestDataKey = "customRequestDataKey"
+        val customRequestDataValue = "customRequestDataValue"
+        requestData.putString(customRequestDataKey, customRequestDataValue)
+        val candidateQueryData = option.candidateQueryData
+        val customCandidateQueryDataKey = "customRequestDataKey"
+        val customCandidateQueryDataValue = true
+        candidateQueryData.putBoolean(customCandidateQueryDataKey, customCandidateQueryDataValue)
+
+        val convertedOption =
+            createFrom(
+                android.credentials.CredentialOption.Builder(
+                        option.type,
+                        requestData,
+                        candidateQueryData
+                    )
+                    .setAllowedProviders(option.allowedProviders)
+                    .setIsSystemProviderRequired(option.isSystemProviderRequired)
+                    .build()
+            )
+
+        assertEquals(convertedOption, option)
+    }
+
     companion object Constant {
         private const val TEST_REQUEST_JSON = "{\"hi\":{\"there\":{\"lol\":\"Value\"}}}"
-        const val EXPECTED_PASSKEY_PRIORITY: @PriorityHints Int = PriorityHints
-            .PRIORITY_PASSKEY_OR_SIMILAR
+        const val EXPECTED_PASSKEY_PRIORITY = CredentialOption.PRIORITY_PASSKEY_OR_SIMILAR
     }
 }

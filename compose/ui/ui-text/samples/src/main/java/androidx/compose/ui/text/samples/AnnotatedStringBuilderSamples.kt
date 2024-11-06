@@ -17,14 +17,22 @@
 package androidx.compose.ui.text.samples
 
 import androidx.annotation.Sampled
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.AnnotatedString.Range
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextIndent
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
 
@@ -33,14 +41,31 @@ fun AnnotatedStringConstructorSample() {
     AnnotatedString(
         text = "Hello World",
         // make "Hello" italic.
-        spanStyles = listOf(
-            AnnotatedString.Range(SpanStyle(fontStyle = FontStyle.Italic), 0, 5)
-        ),
+        spanStyles = listOf(AnnotatedString.Range(SpanStyle(fontStyle = FontStyle.Italic), 0, 5)),
         // create two paragraphs with different alignment and indent settings.
-        paragraphStyles = listOf(
-            AnnotatedString.Range(ParagraphStyle(textAlign = TextAlign.Center), 0, 6),
-            AnnotatedString.Range(ParagraphStyle(textIndent = TextIndent(5.sp)), 6, 11)
-        )
+        paragraphStyles =
+            listOf(
+                AnnotatedString.Range(ParagraphStyle(textAlign = TextAlign.Center), 0, 6),
+                AnnotatedString.Range(ParagraphStyle(textIndent = TextIndent(5.sp)), 6, 11)
+            )
+    )
+}
+
+@Sampled
+fun AnnotatedStringMainConstructorSample() {
+    AnnotatedString(
+        text = "Jetpack Compose",
+        // mark all text as a link, separate it into two paragraphs and make "Compose" italic
+        annotations =
+            listOf(
+                AnnotatedString.Range(
+                    LinkAnnotation.Url("https://developer.android.com/jetpack/compose"),
+                    0,
+                    15
+                ),
+                AnnotatedString.Range(ParagraphStyle(textAlign = TextAlign.Center), 0, 8),
+                AnnotatedString.Range(SpanStyle(fontStyle = FontStyle.Italic), 8, 15)
+            )
     )
 }
 
@@ -138,14 +163,10 @@ fun AnnotatedStringBuilderLambdaSample() {
     // create an AnnotatedString using the lambda builder
     buildAnnotatedString {
         // append "Hello" with red text color
-        withStyle(SpanStyle(color = Color.Red)) {
-            append("Hello")
-        }
+        withStyle(SpanStyle(color = Color.Red)) { append("Hello") }
         append(" ")
         // append "Hello" with blue text color
-        withStyle(SpanStyle(color = Color.Blue)) {
-            append("World!")
-        }
+        withStyle(SpanStyle(color = Color.Blue)) { append("World!") }
     }
 }
 
@@ -161,4 +182,86 @@ fun AnnotatedStringAddStringAnnotationSample() {
             end = 21
         )
     }
+}
+
+@Composable
+@Sampled
+fun AnnotatedStringWithLinkSample() {
+    // Display a link in the text
+    BasicText(
+        buildAnnotatedString {
+            append("Build better apps faster with ")
+            withLink(
+                LinkAnnotation.Url(
+                    "https://developer.android.com/jetpack/compose",
+                    TextLinkStyles(style = SpanStyle(color = Color.Blue))
+                )
+            ) {
+                append("Jetpack Compose")
+            }
+        }
+    )
+}
+
+@Sampled
+@Composable
+fun AnnotatedStringWithHoveredLinkStylingSample() {
+    // Display a link in the text that gets an underline when hovered
+    BasicText(
+        buildAnnotatedString {
+            append("Build better apps faster with ")
+            val link =
+                LinkAnnotation.Url(
+                    "https://developer.android.com/jetpack/compose",
+                    TextLinkStyles(
+                        style = SpanStyle(color = Color.Blue),
+                        hoveredStyle = SpanStyle(textDecoration = TextDecoration.Underline)
+                    )
+                )
+            withLink(link) { append("Jetpack Compose") }
+        }
+    )
+}
+
+@Composable
+@Sampled
+fun AnnotatedStringWithListenerSample() {
+    // Display a link in the text and log metrics whenever user clicks on it. In that case we handle
+    // the link using openUri method of the LocalUriHandler
+    val uriHandler = LocalUriHandler.current
+    BasicText(
+        buildAnnotatedString {
+            append("Build better apps faster with ")
+            val link =
+                LinkAnnotation.Url(
+                    "https://developer.android.com/jetpack/compose",
+                    TextLinkStyles(SpanStyle(color = Color.Blue))
+                ) {
+                    val url = (it as LinkAnnotation.Url).url
+                    // log some metrics
+                    uriHandler.openUri(url)
+                }
+            withLink(link) { append("Jetpack Compose") }
+        }
+    )
+}
+
+@Composable
+@Sampled
+@Suppress("UNCHECKED_CAST")
+fun AnnotatedStringMapAnnotationsSamples(text: AnnotatedString, linkColor: Color) {
+    // An example of applying color to the links in the given text where the `linkColor` would
+    // usually come from the theme in your app
+    val linkStyles = TextLinkStyles(style = SpanStyle(color = linkColor))
+    BasicText(
+        text.mapAnnotations {
+            when (it.item) {
+                is LinkAnnotation.Url ->
+                    (it as Range<LinkAnnotation.Url>).copy(it.item.copy(styles = linkStyles))
+                is LinkAnnotation.Clickable ->
+                    (it as Range<LinkAnnotation.Clickable>).copy(it.item.copy(styles = linkStyles))
+                else -> it
+            }
+        }
+    )
 }

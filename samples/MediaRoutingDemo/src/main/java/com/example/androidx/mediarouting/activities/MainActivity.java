@@ -47,7 +47,6 @@ import android.widget.TabHost.TabSpec;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -80,6 +79,7 @@ import com.example.androidx.mediarouting.providers.SampleMediaRouteProvider;
 import com.example.androidx.mediarouting.session.SessionManager;
 import com.example.androidx.mediarouting.ui.LibraryAdapter;
 import com.example.androidx.mediarouting.ui.PlaylistAdapter;
+import com.google.common.base.Function;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -137,11 +137,14 @@ public class MainActivity extends AppCompatActivity {
         routesManager.reloadDialogType();
 
         // Create a route selector for the type of routes that we care about.
-        mSelector = new MediaRouteSelector.Builder()
-                .addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
-                .addControlCategory(MediaControlIntent.CATEGORY_LIVE_AUDIO)
-                .addControlCategory(SampleMediaRouteProvider.CATEGORY_SAMPLE_ROUTE)
-                .build();
+        mSelector =
+                new MediaRouteSelector.Builder()
+                        .addControlCategory(MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)
+                        .addControlCategory(MediaControlIntent.CATEGORY_REMOTE_AUDIO_PLAYBACK)
+                        .addControlCategory(MediaControlIntent.CATEGORY_REMOTE_VIDEO_PLAYBACK)
+                        .addControlCategory(MediaControlIntent.CATEGORY_LIVE_AUDIO)
+                        .addControlCategory(SampleMediaRouteProvider.CATEGORY_SAMPLE_ROUTE)
+                        .build();
 
         mMediaRouter.setOnPrepareTransferListener(mOnPrepareTransferListener);
 
@@ -265,8 +268,9 @@ public class MainActivity extends AppCompatActivity {
         mMediaRouter.setMediaSessionCompat(mMediaSession);
 
         // Set up playback manager and player
-        mPlayer = Player.create(MainActivity.this,
-                mMediaRouter.getSelectedRoute(), mMediaSession);
+        mPlayer =
+                Player.createPlayerForActivity(
+                        MainActivity.this, mMediaRouter.getSelectedRoute(), mMediaSession);
 
         mSessionManager.setPlayer(mPlayer);
         mSessionManager.setCallback(new SampleSessionManagerCallback());
@@ -611,6 +615,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onItemChanged(@NonNull PlaylistItem item) {
+            updateUi();
         }
     }
 
@@ -646,6 +651,9 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onRouteChanged(@NonNull MediaRouter router, @NonNull RouteInfo route) {
             Log.d(TAG, "onRouteChanged: route=" + route);
+            if (route.isSelected()) {
+                updateRouteDescription();
+            }
         }
 
         @Override
@@ -659,25 +667,28 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "onRouteSelected: requestedRoute=" + requestedRoute
                     + ", route=" + selectedRoute + ", reason=" + reason);
 
-            if (reason != MediaRouter.UNSELECT_REASON_ROUTE_CHANGED) {
-                mPlayer = Player.create(MainActivity.this, selectedRoute, mMediaSession);
+            boolean needToRecreatePlayer =
+                    !selectedRoute.isSystemRoute() || mPlayer.isRemotePlayback();
+
+            if (needToRecreatePlayer) {
+                Player oldPlayer = mPlayer;
+                PlaylistItem currentItem = mSessionManager.getCurrentItem();
+                if (currentItem != null
+                        && currentItem.getState() != MediaItemStatus.PLAYBACK_STATE_PENDING) {
+                    // We haven't received a prepare transfer call for this. We set that up now.
+                    if (reason == MediaRouter.UNSELECT_REASON_STOPPED) {
+                        mSessionManager.pause();
+                    }
+                    mSessionManager.suspend(currentItem.getPosition());
+                }
+                mPlayer =
+                        Player.createPlayerForActivity(
+                                MainActivity.this, selectedRoute, mMediaSession);
                 mPlayer.updatePresentation();
                 mSessionManager.setPlayer(mPlayer);
-            }
-            updateUi();
-        }
-
-        @Override
-        public void onRouteUnselected(@NonNull MediaRouter router, @NonNull RouteInfo route,
-                int reason) {
-            Log.d(TAG, "onRouteUnselected: route=" + route);
-
-            if (reason != MediaRouter.UNSELECT_REASON_ROUTE_CHANGED) {
-                mMediaSession.setActive(false);
-                mSessionManager.stop();
-
-                mPlayer.updatePresentation();
-                mPlayer.release();
+                mSessionManager.unsuspend();
+                updateUi();
+                oldPlayer.release();
             }
         }
 
@@ -769,17 +780,14 @@ public class MainActivity extends AppCompatActivity {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static boolean canDrawOverlays(Context context) {
             return Settings.canDrawOverlays(context);
         }
 
-        @DoNotInline
         static boolean shouldShowRequestPermissionRationale(Activity activity, String permission) {
             return activity.shouldShowRequestPermissionRationale(permission);
         }
 
-        @DoNotInline
         static void requestPermissions(Activity activity, String[] permissions, int requestCode) {
             activity.requestPermissions(permissions, requestCode);
         }
@@ -795,34 +803,23 @@ public class MainActivity extends AppCompatActivity {
                     + ", to=" + toRoute.getId());
             final PlaylistItem currentItem = getCheckedPlaylistItem();
 
-            if (currentItem != null) {
-                if (mPlayer.isRemotePlayback()) {
-                    RemotePlayer remotePlayer = (RemotePlayer) mPlayer;
-                    ListenableFuture<PlaylistItem> cacheRemoteState =
-                            remotePlayer.cacheRemoteState(currentItem);
-                    return Futures.transform(
-                            cacheRemoteState,
-                            (playlistItem) -> handleTransfer(playlistItem.getPosition(), toRoute),
-                            Runnable::run);
-                } else {
-                    long cachedPosition = getCurrentEstimatedPosition(currentItem);
-                    handleTransfer(cachedPosition, toRoute);
-                }
+            if (currentItem == null) {
+                return null; // No ongoing playback. Nothing to prepare.
             }
-            return Futures.immediateVoidFuture();
-        }
-
-        public Void handleTransfer(long currentPosition, RouteInfo destinationRoute) {
-            mSessionManager.suspend(currentPosition);
-            mMediaSession.setActive(false);
-            mPlayer.release();
-
-            mPlayer = Player.create(MainActivity.this, destinationRoute, mMediaSession);
-            mPlayer.updatePresentation();
-            mSessionManager.setPlayer(mPlayer);
-            mSessionManager.unsuspend();
-
-            return null;
+            if (mPlayer.isRemotePlayback()) {
+                RemotePlayer remotePlayer = (RemotePlayer) mPlayer;
+                ListenableFuture<PlaylistItem> cacheRemoteState =
+                        remotePlayer.cacheRemoteState(currentItem);
+                Function<PlaylistItem, Void> function =
+                        (playlistItem) -> {
+                            mSessionManager.suspend(playlistItem.getPosition());
+                            return null;
+                        };
+                return Futures.transform(cacheRemoteState, function, Runnable::run);
+            } else {
+                mSessionManager.suspend(getCurrentEstimatedPosition(currentItem));
+                return Futures.immediateVoidFuture();
+            }
         }
     }
 }

@@ -27,10 +27,10 @@ import android.view.Display.DEFAULT_DISPLAY
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.window.demo.common.EdgeToEdgeActivity
 import androidx.window.layout.FoldingFeature
 import androidx.window.layout.WindowInfoTracker
 import androidx.window.layout.WindowLayoutInfo
@@ -41,7 +41,7 @@ import kotlinx.coroutines.launch
  * Demo activity that reacts to foldable device state change and shows content on the outside
  * display when the device is folded.
  */
-class PresentationActivity : AppCompatActivity() {
+class PresentationActivity : EdgeToEdgeActivity() {
     private val TAG = "FoldablePresentation"
 
     private var presentation: DemoPresentation? = null
@@ -104,9 +104,11 @@ class PresentationActivity : AppCompatActivity() {
             // targeting  the screen on the other side when the device may be closed/locked.
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
                 presentation!!.window?.attributes?.flags =
-                    presentation!!.window?.attributes?.flags?.or(
-                        android.R.attr.showWhenLocked or android.R.attr.turnScreenOn
-                    )
+                    presentation!!
+                        .window
+                        ?.attributes
+                        ?.flags
+                        ?.or(android.R.attr.showWhenLocked or android.R.attr.turnScreenOn)
             }
             presentation!!.show()
             break
@@ -119,9 +121,7 @@ class PresentationActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Method to be called from layout XML definition.
-     */
+    /** Method to be called from layout XML definition. */
     fun startPresentation(view: View) {
         startPresentation(view.context)
     }
@@ -132,9 +132,7 @@ class PresentationActivity : AppCompatActivity() {
         presentation = null
     }
 
-    /**
-     * The presentation to show on the secondary display.
-     */
+    /** The presentation to show on the secondary display. */
     private class DemoPresentation(context: Context?, display: Display?) :
         Presentation(context, display) {
 
@@ -144,14 +142,11 @@ class PresentationActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Updates the display of the current fold feature state.
-     */
+    /** Updates the display of the current fold feature state. */
     private fun updateCurrentState(info: WindowLayoutInfo) {
         val stateStringBuilder = StringBuilder()
 
-        stateStringBuilder.append(getString(R.string.deviceState))
-            .append(": ")
+        stateStringBuilder.append(getString(R.string.deviceState)).append(": ")
 
         info.displayFeatures
             .mapNotNull { it as? FoldingFeature }

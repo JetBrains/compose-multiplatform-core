@@ -16,12 +16,14 @@
 
 package androidx.camera.camera2.internal;
 
+import static android.media.CamcorderProfile.QUALITY_HIGH;
+import static android.media.CamcorderProfile.QUALITY_LOW;
+
 import android.media.CamcorderProfile;
 import android.media.EncoderProfiles;
 import android.os.Build;
 import android.util.Size;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -40,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 
 /** An implementation that provides the {@link EncoderProfilesProxy}. */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class Camera2EncoderProfilesProvider implements EncoderProfilesProvider {
 
     private static final String TAG = "Camera2EncoderProfilesProvider";
@@ -95,11 +96,39 @@ public class Camera2EncoderProfilesProvider implements EncoderProfilesProvider {
         } else {
             EncoderProfilesProxy profiles = getProfilesInternal(quality);
             if (profiles != null && !isEncoderProfilesResolutionValidInQuirk(profiles)) {
-                profiles = null;
+                if (quality == QUALITY_HIGH) {
+                    profiles = findHighestQualityProfiles();
+                } else if (quality == QUALITY_LOW) {
+                    profiles = findLowestQualityProfiles();
+                } else {
+                    profiles = null;
+                }
             }
             mEncoderProfilesCache.put(quality, profiles);
             return profiles;
         }
+    }
+
+    @Nullable
+    private EncoderProfilesProxy findHighestQualityProfiles() {
+        for (int quality : QUALITY_HIGH_TO_LOW) {
+            EncoderProfilesProxy profiles = getAll(quality);
+            if (profiles != null) {
+                return profiles;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private EncoderProfilesProxy findLowestQualityProfiles() {
+        for (int quality = QUALITY_HIGH_TO_LOW.size() - 1; quality >= 0; quality--) {
+            EncoderProfilesProxy profiles = getAll(quality);
+            if (profiles != null) {
+                return profiles;
+            }
+        }
+        return null;
     }
 
     @Nullable
@@ -164,7 +193,6 @@ public class Camera2EncoderProfilesProvider implements EncoderProfilesProvider {
 
     @RequiresApi(31)
     static class Api31Impl {
-        @DoNotInline
         static EncoderProfiles getAll(String cameraId, int quality) {
             return CamcorderProfile.getAll(cameraId, quality);
         }

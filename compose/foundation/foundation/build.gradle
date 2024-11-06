@@ -21,6 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+import androidx.build.KotlinTarget
 import androidx.build.LibraryType
 import androidx.build.PlatformIdentifier
 
@@ -30,24 +32,24 @@ plugins {
     id("AndroidXComposePlugin")
 }
 
-
 androidXMultiplatform {
     android()
-    desktop()
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlibCommon)
-                api("androidx.collection:collection:1.4.0")
+                implementation(libs.kotlinStdlib)
+                api(project(":collection:collection"))
                 api(project(":compose:animation:animation"))
                 api(project(":compose:runtime:runtime"))
                 api(project(":compose:ui:ui"))
-                implementation("androidx.compose.ui:ui-text:1.6.0")
-                implementation("androidx.compose.ui:ui-util:1.6.0")
-                implementation(project(':compose:foundation:foundation-layout'))
+                implementation(project(":compose:ui:ui-text"))
+                implementation(project(":compose:ui:ui-util"))
+                implementation(project(":compose:foundation:foundation-layout"))
             }
         }
 
@@ -67,30 +69,27 @@ androidXMultiplatform {
         androidMain {
             dependsOn(jvmMain)
             dependencies {
-                api("androidx.annotation:annotation:1.1.0")
-                api("androidx.annotation:annotation-experimental:1.4.0")
+                api("androidx.annotation:annotation:1.8.1")
+                api("androidx.annotation:annotation-experimental:1.4.1")
                 implementation("androidx.emoji2:emoji2:1.3.0")
-                implementation("androidx.core:core:1.12.0")
+                implementation("androidx.core:core:1.13.1")
             }
         }
 
-        desktopMain {
-            dependsOn(jvmMain)
-            dependencies {
-                implementation(libs.kotlinStdlib)
-            }
+        commonStubsMain {
+            dependsOn(commonMain)
         }
 
-        jvmTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(project(":compose:ui:ui-test"))
-                implementation(project(":compose:ui:ui-test-junit4"))
-            }
+        jvmStubsMain {
+            dependsOn(commonStubsMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
         }
 
         androidInstrumentedTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:test-utils"))
                 implementation(project(":internal-testutils-fonts"))
@@ -110,11 +109,14 @@ androidXMultiplatform {
                 implementation(libs.dexmakerMockito)
                 implementation(libs.mockitoCore)
                 implementation(libs.mockitoKotlin)
+
+                implementation(libs.leakcanary)
+                implementation(libs.leakcanaryInstrumentation)
             }
         }
 
         androidUnitTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
@@ -127,17 +129,6 @@ androidXMultiplatform {
                 implementation(project(":constraintlayout:constraintlayout-compose"))
             }
         }
-
-        desktopTest {
-            dependsOn(jvmTest)
-            dependencies {
-                implementation(libs.truth)
-                implementation(libs.junit)
-                implementation(libs.skikoCurrentOs)
-                implementation(libs.mockitoCore)
-                implementation(libs.mockitoKotlin)
-            }
-        }
     }
 }
 
@@ -148,15 +139,24 @@ dependencies {
 
 // Screenshot tests related setup
 android {
+    compileSdk 35
     sourceSets.androidTest.assets.srcDirs +=
             project.rootDir.absolutePath + "/../../golden/compose/foundation/foundation"
     namespace "androidx.compose.foundation"
+    buildTypes.configureEach {
+        consumerProguardFiles("proguard-rules.pro")
+    }
+    // TODO(b/345531033)
+    experimentalProperties["android.lint.useK2Uast"] = false
 }
 
 androidx {
     name = "Compose Foundation"
-    type = LibraryType.PUBLISHED_KOTLIN_ONLY_LIBRARY
+    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2018"
     description = "Higher level abstractions of the Compose UI primitives. This library is design system agnostic, providing the high-level building blocks for both application and design-system developers"
     legacyDisableKotlinStrictApiMode = true
+    metalavaK2UastEnabled = false
+    samples(project(":compose:foundation:foundation:foundation-samples"))
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

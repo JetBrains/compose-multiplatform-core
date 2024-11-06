@@ -20,7 +20,6 @@ import androidx.compose.foundation.text.matchers.isZero
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.createFontFamilyResolver
@@ -36,7 +35,6 @@ import kotlin.math.floor
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(InternalFoundationTextApi::class)
 @RunWith(AndroidJUnit4::class)
 @SmallTest
 class TextLayoutResultIntegrationTest {
@@ -44,7 +42,6 @@ class TextLayoutResultIntegrationTest {
     private val fontFamily = TEST_FONT_FAMILY
     private val density = Density(density = 1f)
     private val context = InstrumentationRegistry.getInstrumentation().context
-    @OptIn(ExperimentalTextApi::class)
     private val fontFamilyResolver = createFontFamilyResolver(context)
     private val layoutDirection = LayoutDirection.Ltr
 
@@ -55,18 +52,17 @@ class TextLayoutResultIntegrationTest {
             val text = "Hello"
             val spanStyle = SpanStyle(fontSize = fontSize, fontFamily = fontFamily)
             val annotatedString = AnnotatedString(text, spanStyle)
-            val textDelegate = TextDelegate(
-                text = annotatedString,
-                style = TextStyle.Default,
-                density = this,
-                fontFamilyResolver = fontFamilyResolver
-            )
+            val textDelegate =
+                TextDelegate(
+                    text = annotatedString,
+                    style = TextStyle.Default,
+                    density = this,
+                    fontFamilyResolver = fontFamilyResolver
+                )
 
             val layoutResult = textDelegate.layout(Constraints(0, 200), layoutDirection)
 
-            assertThat(layoutResult.size.width).isEqualTo(
-                (fontSize.toPx() * text.length).toIntPx()
-            )
+            assertThat(layoutResult.size.width).isEqualTo((fontSize.toPx() * text.length).toIntPx())
         }
     }
 
@@ -76,12 +72,13 @@ class TextLayoutResultIntegrationTest {
         val width = 80
         val spanStyle = SpanStyle(fontSize = 20.sp, fontFamily = fontFamily)
         val annotatedString = AnnotatedString(text, spanStyle)
-        val textDelegate = TextDelegate(
-            text = annotatedString,
-            style = TextStyle.Default,
-            density = density,
-            fontFamilyResolver = fontFamilyResolver
-        )
+        val textDelegate =
+            TextDelegate(
+                text = annotatedString,
+                style = TextStyle.Default,
+                density = density,
+                fontFamilyResolver = fontFamilyResolver
+            )
 
         val layoutResult = textDelegate.layout(Constraints(maxWidth = width), layoutDirection)
 
@@ -95,12 +92,13 @@ class TextLayoutResultIntegrationTest {
             val spanStyle = SpanStyle(fontSize = fontSize, fontFamily = fontFamily)
             val text = "hello"
             val annotatedString = AnnotatedString(text, spanStyle)
-            val textDelegate = TextDelegate(
-                text = annotatedString,
-                style = TextStyle.Default,
-                density = this,
-                fontFamilyResolver = fontFamilyResolver
-            )
+            val textDelegate =
+                TextDelegate(
+                    text = annotatedString,
+                    style = TextStyle.Default,
+                    density = this,
+                    fontFamilyResolver = fontFamilyResolver
+                )
 
             val layoutResult = textDelegate.layout(Constraints(), layoutDirection)
 
@@ -110,12 +108,13 @@ class TextLayoutResultIntegrationTest {
 
     @Test
     fun layout_build_layoutResult() {
-        val textDelegate = TextDelegate(
-            text = AnnotatedString(text = "Hello"),
-            style = TextStyle.Default,
-            density = density,
-            fontFamilyResolver = fontFamilyResolver
-        )
+        val textDelegate =
+            TextDelegate(
+                text = AnnotatedString(text = "Hello"),
+                style = TextStyle.Default,
+                density = density,
+                fontFamilyResolver = fontFamilyResolver
+            )
 
         val layoutResult = textDelegate.layout(Constraints(0, 20), layoutDirection)
 
@@ -125,17 +124,16 @@ class TextLayoutResultIntegrationTest {
     @Test
     fun getPositionForOffset_First_Character() {
         val text = "Hello"
-        val annotatedString = AnnotatedString(
-            text,
-            SpanStyle(fontSize = 20.sp, fontFamily = fontFamily)
-        )
+        val annotatedString =
+            AnnotatedString(text, SpanStyle(fontSize = 20.sp, fontFamily = fontFamily))
 
-        val textDelegate = TextDelegate(
-            text = annotatedString,
-            style = TextStyle.Default,
-            density = density,
-            fontFamilyResolver = fontFamilyResolver
-        )
+        val textDelegate =
+            TextDelegate(
+                text = annotatedString,
+                style = TextStyle.Default,
+                density = density,
+                fontFamilyResolver = fontFamilyResolver
+            )
         val layoutResult = textDelegate.layout(Constraints(), layoutDirection)
 
         val selection = layoutResult.getOffsetForPosition(Offset.Zero)
@@ -150,22 +148,22 @@ class TextLayoutResultIntegrationTest {
             val characterIndex = 2 // Start from 0.
             val text = "Hello"
 
-            val annotatedString = AnnotatedString(
-                text,
-                SpanStyle(fontSize = fontSize, fontFamily = fontFamily)
-            )
+            val annotatedString =
+                AnnotatedString(text, SpanStyle(fontSize = fontSize, fontFamily = fontFamily))
 
-            val textDelegate = TextDelegate(
-                text = annotatedString,
-                style = TextStyle.Default,
-                density = this,
-                fontFamilyResolver = fontFamilyResolver
-            )
+            val textDelegate =
+                TextDelegate(
+                    text = annotatedString,
+                    style = TextStyle.Default,
+                    density = this,
+                    fontFamilyResolver = fontFamilyResolver
+                )
             val layoutResult = textDelegate.layout(Constraints(), layoutDirection)
 
-            val selection = layoutResult.getOffsetForPosition(
-                position = Offset((fontSize.toPx() * characterIndex + 1), 0f)
-            )
+            val selection =
+                layoutResult.getOffsetForPosition(
+                    position = Offset((fontSize.toPx() * characterIndex + 1), 0f)
+                )
 
             assertThat(selection).isEqualTo(characterIndex)
         }
@@ -176,12 +174,13 @@ class TextLayoutResultIntegrationTest {
         val text = "Hello"
         val spanStyle = SpanStyle(fontSize = 20.sp, fontFamily = fontFamily)
         val annotatedString = AnnotatedString(text, spanStyle)
-        val textDelegate = TextDelegate(
-            text = annotatedString,
-            style = TextStyle.Default,
-            density = density,
-            fontFamilyResolver = fontFamilyResolver
-        )
+        val textDelegate =
+            TextDelegate(
+                text = annotatedString,
+                style = TextStyle.Default,
+                density = density,
+                fontFamilyResolver = fontFamilyResolver
+            )
 
         val layoutResult = textDelegate.layout(Constraints(), layoutDirection)
 
@@ -198,21 +197,19 @@ class TextLayoutResultIntegrationTest {
         val annotatedString = AnnotatedString(text, spanStyle)
         val maxLines = 3
 
-        val textDelegate = TextDelegate(
-            text = annotatedString,
-            style = TextStyle.Default,
-            maxLines = maxLines,
-            density = density,
-            fontFamilyResolver = fontFamilyResolver
-        )
+        val textDelegate =
+            TextDelegate(
+                text = annotatedString,
+                style = TextStyle.Default,
+                maxLines = maxLines,
+                density = density,
+                fontFamilyResolver = fontFamilyResolver
+            )
 
         textDelegate.layoutIntrinsics(layoutDirection)
         // Tries to make 5 lines of text, which exceeds the given maxLines(3).
         val maxWidth = textDelegate.maxIntrinsicWidth / 5
-        val layoutResult = textDelegate.layout(
-            Constraints(maxWidth = maxWidth),
-            layoutDirection
-        )
+        val layoutResult = textDelegate.layout(Constraints(maxWidth = maxWidth), layoutDirection)
 
         assertThat(layoutResult.didOverflowHeight).isTrue()
     }
@@ -224,21 +221,19 @@ class TextLayoutResultIntegrationTest {
         val annotatedString = AnnotatedString(text, spanStyle)
         val maxLines = 10
 
-        val textDelegate = TextDelegate(
-            text = annotatedString,
-            style = TextStyle.Default,
-            maxLines = maxLines,
-            density = density,
-            fontFamilyResolver = fontFamilyResolver
-        )
+        val textDelegate =
+            TextDelegate(
+                text = annotatedString,
+                style = TextStyle.Default,
+                maxLines = maxLines,
+                density = density,
+                fontFamilyResolver = fontFamilyResolver
+            )
 
         textDelegate.layoutIntrinsics(layoutDirection)
         // Tries to make 5 lines of text, which doesn't exceed the given maxLines(10).
         val maxWidth = textDelegate.maxIntrinsicWidth / 5
-        val layoutResult = textDelegate.layout(
-            Constraints(maxWidth = maxWidth),
-            layoutDirection
-        )
+        val layoutResult = textDelegate.layout(Constraints(maxWidth = maxWidth), layoutDirection)
 
         assertThat(layoutResult.didOverflowHeight).isFalse()
     }
@@ -249,24 +244,20 @@ class TextLayoutResultIntegrationTest {
         val spanStyle = SpanStyle(fontSize = 20.sp, fontFamily = fontFamily)
         val annotatedString = AnnotatedString(text, spanStyle)
 
-        val textDelegate = TextDelegate(
-            text = annotatedString,
-            style = TextStyle.Default,
-            density = density,
-            fontFamilyResolver = fontFamilyResolver
-        )
+        val textDelegate =
+            TextDelegate(
+                text = annotatedString,
+                style = TextStyle.Default,
+                density = density,
+                fontFamilyResolver = fontFamilyResolver
+            )
 
-        val maxIntrinsicsHeight = textDelegate.layout(
-            Constraints(),
-            layoutDirection
-        ).multiParagraph.height
+        val maxIntrinsicsHeight =
+            textDelegate.layout(Constraints(), layoutDirection).multiParagraph.height
 
         // Make maxHeight smaller than needed.
         val maxHeight = floor(maxIntrinsicsHeight / 2).toInt()
-        val layoutResult = textDelegate.layout(
-            Constraints(maxHeight = maxHeight),
-            layoutDirection
-        )
+        val layoutResult = textDelegate.layout(Constraints(maxHeight = maxHeight), layoutDirection)
 
         assertThat(layoutResult.didOverflowHeight).isTrue()
     }
@@ -277,24 +268,20 @@ class TextLayoutResultIntegrationTest {
         val spanStyle = SpanStyle(fontSize = 20.sp, fontFamily = fontFamily)
         val annotatedString = AnnotatedString(text, spanStyle)
 
-        val textDelegate = TextDelegate(
-            text = annotatedString,
-            style = TextStyle.Default,
-            density = density,
-            fontFamilyResolver = fontFamilyResolver
-        )
+        val textDelegate =
+            TextDelegate(
+                text = annotatedString,
+                style = TextStyle.Default,
+                density = density,
+                fontFamilyResolver = fontFamilyResolver
+            )
 
-        val maxIntrinsicsHeight = textDelegate.layout(
-            Constraints(),
-            layoutDirection
-        ).multiParagraph.height
+        val maxIntrinsicsHeight =
+            textDelegate.layout(Constraints(), layoutDirection).multiParagraph.height
 
         // Make max height larger than the needed.
         val maxHeight = floor(maxIntrinsicsHeight * 2).toInt()
-        val layoutResult = textDelegate.layout(
-            Constraints(maxHeight = maxHeight),
-            layoutDirection
-        )
+        val layoutResult = textDelegate.layout(Constraints(maxHeight = maxHeight), layoutDirection)
 
         assertThat(layoutResult.didOverflowHeight).isFalse()
     }

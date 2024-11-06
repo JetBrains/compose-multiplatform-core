@@ -26,6 +26,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.IconToggleButton
+import androidx.wear.compose.material3.IconToggleButtonDefaults
+import androidx.wear.compose.material3.samples.icons.WifiOffIcon
+import androidx.wear.compose.material3.samples.icons.WifiOnIcon
 
 @Sampled
 @Composable
@@ -33,11 +36,26 @@ fun IconToggleButtonSample() {
     var checked by remember { mutableStateOf(true) }
     IconToggleButton(
         checked = checked,
-        onCheckedChange = { checked = !checked }
+        onCheckedChange = { checked = !checked },
+        shapes = IconToggleButtonDefaults.animatedShapes(),
     ) {
-        Icon(
-            imageVector = Icons.Filled.Favorite,
-            contentDescription = "Favorite icon"
-        )
+        Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Favorite icon")
+    }
+}
+
+@Sampled
+@Composable
+fun IconToggleButtonVariantSample() {
+    var checked by remember { mutableStateOf(true) }
+    IconToggleButton(
+        checked = checked,
+        onCheckedChange = { checked = !checked },
+        shapes = IconToggleButtonDefaults.variantAnimatedShapes(),
+    ) {
+        if (checked) {
+            WifiOnIcon()
+        } else {
+            WifiOffIcon()
+        }
     }
 }

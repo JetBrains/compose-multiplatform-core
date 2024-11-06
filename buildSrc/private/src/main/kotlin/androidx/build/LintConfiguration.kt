@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package androidx.build
 
-import com.android.build.api.dsl.KotlinMultiplatformAndroidTarget
 import com.android.build.api.dsl.Lint
+import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.api.KotlinMultiplatformAndroidPlugin
@@ -31,7 +30,6 @@ import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.plugins.JavaPlugin
-import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePlugin
@@ -40,13 +38,15 @@ import org.jetbrains.kotlin.tooling.core.withClosure
 
 /** Single entry point to Android Lint configuration. */
 fun Project.configureLint() {
-    project.plugins.all { plugin ->
+    project.plugins.configureEach { plugin ->
         when (plugin) {
             is AppPlugin -> configureAndroidProjectForLint(isLibrary = false)
             is LibraryPlugin -> configureAndroidProjectForLint(isLibrary = true)
-            is KotlinMultiplatformAndroidPlugin -> configureAndroidMultiplatformProjectForLint(
-                extensions.getByType<AndroidXMultiplatformExtension>().agpKmpExtension
-            )
+            is KotlinMultiplatformAndroidPlugin ->
+                configureAndroidMultiplatformProjectForLint(
+                    extensions.getByType<AndroidXMultiplatformExtension>().agpKmpExtension,
+                    extensions.getByType<KotlinMultiplatformAndroidComponentsExtension>()
+                )
             // Only configure non-multiplatform Java projects via JavaPlugin. Multiplatform
             // projects targeting Java (e.g. `jvm { withJava() }`) are configured via
             // KotlinBasePlugin.
@@ -78,29 +78,21 @@ private fun Project.configureAndroidProjectForLint(isLibrary: Boolean) =
 
         configureLint(extension.lint, isLibrary)
     }
+
+@Suppress("TYPEALIAS_EXPANSION_DEPRECATION")
 private fun Project.configureAndroidMultiplatformProjectForLint(
-    extension: KotlinMultiplatformAndroidTarget
+    extension: DeprecatedKotlinMultiplatformAndroidTarget,
+    componentsExtension: KotlinMultiplatformAndroidComponentsExtension
 ) {
-    // The lintAnalyze task is used by `androidx-studio-integration-lint.sh`.
-    tasks.register("lintAnalyze") { task -> task.enabled = false }
-    configureLint(extension.lint, true)
+    componentsExtension.finalizeDsl {
+        // The lintAnalyze task is used by `androidx-studio-integration-lint.sh`.
+        tasks.register("lintAnalyze") { task -> task.enabled = false }
+        configureLint(extension.lint, isLibrary = true)
+    }
 }
 
 /** Android Lint configuration entry point for non-Android projects. */
 private fun Project.configureNonAndroidProjectForLint() = afterEvaluate {
-    // TODO(aurimas): remove this workaround for b/293900782 after upgrading to AGP 8.2.0-beta01
-    if (
-        path == ":collection:collection-benchmark-kmp" ||
-            path == ":benchmark:benchmark-darwin-samples"
-    ) {
-        return@afterEvaluate
-    }
-    // The lint plugin expects certain configurations and source sets which are only added by
-    // the Java and Android plugins. If this is a multiplatform project targeting JVM, we'll
-    // need to manually create these configurations and source sets based on their multiplatform
-    // JVM equivalents.
-    addSourceSetsForMultiplatformAfterEvaluate()
-
     // For Android projects, the Android Gradle Plugin is responsible for applying the lint plugin;
     // however, we need to apply it ourselves for non-Android projects.
     apply(mapOf("plugin" to "com.android.lint"))
@@ -113,48 +105,6 @@ private fun Project.configureNonAndroidProjectForLint() = afterEvaluate {
     // For Android projects, we can run lint configuration last using `DslLifecycle.finalizeDsl`;
     // however, we need to run it using `Project.afterEvaluate` for non-Android projects.
     configureLint(project.extensions.getByType(), isLibrary = true)
-}
-
-/**
- * If the project is using multiplatform, adds configurations and source sets expected by the lint
- * plugin, which allows it to configure itself when running against a non-Android multiplatform
- * project.
- *
- * The version of lint that we're using does not directly support Kotlin multiplatform, but we can
- * synthesize the necessary configurations and source sets from existing `jvm` configurations and
- * `kotlinSourceSets`, respectively.
- *
- * This method *must* run after evaluation.
- */
-private fun Project.addSourceSetsForMultiplatformAfterEvaluate() {
-    val kmpTargets = project.multiplatformExtension?.targets ?: return
-
-    // Synthesize target configurations based on multiplatform configurations.
-    val kmpApiElements = kmpTargets.map { it.apiElementsConfigurationName }
-    val kmpRuntimeElements = kmpTargets.map { it.runtimeElementsConfigurationName }
-    listOf(kmpRuntimeElements to "runtimeElements", kmpApiElements to "apiElements").forEach {
-        (kmpConfigNames, targetConfigName) ->
-        project.configurations.maybeCreate(targetConfigName).apply {
-            kmpConfigNames
-                .mapNotNull { configName -> project.configurations.findByName(configName) }
-                .forEach { config -> extendsFrom(config) }
-        }
-    }
-
-    // Synthesize source sets based on multiplatform source sets.
-    val javaExtension =
-        project.extensions.findByType(JavaPluginExtension::class.java)
-            ?: throw GradleException("Failed to find extension of type 'JavaPluginExtension'")
-    listOf("main" to "main", "test" to "test").forEach { (kmpCompilationName, targetSourceSetName)
-        ->
-        javaExtension.sourceSets.maybeCreate(targetSourceSetName).apply {
-            kmpTargets
-                .mapNotNull { target -> target.compilations.findByName(kmpCompilationName) }
-                .flatMap { compilation -> compilation.kotlinSourceSets }
-                .flatMap { sourceSet -> sourceSet.kotlin.srcDirs }
-                .forEach { srcDirs -> java.srcDirs += srcDirs }
-        }
-    }
 }
 
 /**
@@ -211,7 +161,6 @@ private fun Project.findLintProject(path: String): Project? {
 
 private fun Project.configureLint(lint: Lint, isLibrary: Boolean) {
     val extension = project.androidXExtension
-    val isMultiplatform = project.multiplatformExtension != null
     val lintChecksProject = findLintProject(":lint-checks") ?: return
     project.dependencies.add("lintChecks", lintChecksProject)
 
@@ -263,13 +212,6 @@ private fun Project.configureLint(lint: Lint, isLibrary: Boolean) {
             fatal.add("VisibleForTests")
         }
 
-        if (isMultiplatform) {
-            // Disable classfile-based checks because lint cannot find the class files for
-            // multiplatform projects and `SourceSet.java.classesDirectory` is not configurable.
-            // This is not ideal, but it's better than having no lint checks at all.
-            disable.add("LintError")
-        }
-
         // Disable a check that's only relevant for apps that ship to Play Store. (b/299278101)
         disable.add("ExpiredTargetSdkVersion")
 
@@ -301,7 +243,11 @@ private fun Project.configureLint(lint: Lint, isLibrary: Boolean) {
             fatal.add("UnusedResources")
             fatal.add("KotlinPropertyAccess")
             fatal.add("LambdaLast")
-            fatal.add("UnknownNullness")
+            if (extension.type != LibraryType.PUBLISHED_PROTO_LIBRARY) {
+                // Enforce UnknownNullness for all device targeting projects except for proto
+                // projects that generate code without proper nullability annotations.
+                fatal.add("UnknownNullness")
+            }
 
             // Too many Kotlin features require synthetic accessors - we want to rely on R8 to
             // remove these accessors
@@ -341,6 +287,12 @@ private fun Project.configureLint(lint: Lint, isLibrary: Boolean) {
             disable.add("IllegalExperimentalApiUsage")
         }
 
+        // Only allow the JSpecifyNullness check to be run when opted-in, while migrating projects
+        // to use JSpecify annotations.
+        if (!project.useJSpecifyAnnotations()) {
+            disable.add("JSpecifyNullness")
+        }
+
         fatal.add("UastImplementation") // go/hide-uast-impl
         fatal.add("KotlincFE10") // b/239982263
 
@@ -370,19 +322,16 @@ private fun Project.configureLint(lint: Lint, isLibrary: Boolean) {
 private fun ConfigurableFileCollection.withChangesAllowed(
     block: ConfigurableFileCollection.() -> Unit
 ) {
-    // The `disallowChanges` field is defined on `ConfigurableFileCollection` prior to Gradle 8.6
-    // and on the inner ValueState in later versions.
+    // The `disallowChanges` field is defined on `ConfigurableFileCollection` inner `ValueState`.
     val (target, field) =
-        findDeclaredFieldOnClass("disallowChanges")?.let { field -> Pair(this, field) }
-            ?: findDeclaredFieldOnClass("valueState")?.let { valueState ->
-                valueState.isAccessible = true
-                val target = valueState.get(this)
-                target.findDeclaredFieldOnClass("disallowChanges")?.let { field ->
-                    // For Gradle 8.6 and later,
-                    Pair(target, field)
-                }
+        findDeclaredFieldOnClass("valueState")?.let { valueState ->
+            valueState.isAccessible = true
+            val target = valueState.get(this)
+            target.findDeclaredFieldOnClass("disallowChanges")?.let { field ->
+                // For Gradle 8.6 and later,
+                Pair(target, field)
             }
-            ?: throw NoSuchFieldException()
+        } ?: throw NoSuchFieldException()
 
     // Make the field temporarily accessible while we run the `block`.
     field.isAccessible = true

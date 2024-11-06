@@ -37,6 +37,14 @@
         android:title="@string/effects"
         app:showAsAction="never" />
     <item
+        android:id="@+id/overlay_effect"
+        android:title="@string/overlay_effect"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/media3effect"
+        android:title="@string/media3_effect"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/mlkit"
         android:title="@string/mlkit"
         app:showAsAction="never" />

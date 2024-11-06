@@ -51,7 +51,6 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.TextView;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntDef;
@@ -116,7 +115,10 @@ public final class TextViewCompat {
      * @attr name android:drawableTop
      * @attr name android:drawableEnd
      * @attr name android:drawableBottom
+     * @deprecated Call {@link TextView#setCompoundDrawablesRelative()} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "textView.setCompoundDrawablesRelative(start, top, end, bottom)")
     public static void setCompoundDrawablesRelative(@NonNull TextView textView,
             @Nullable Drawable start, @Nullable Drawable top, @Nullable Drawable end,
             @Nullable Drawable bottom) {
@@ -141,7 +143,10 @@ public final class TextViewCompat {
      * @attr name android:drawableTop
      * @attr name android:drawableEnd
      * @attr name android:drawableBottom
+     * @deprecated Call {@link TextView#setCompoundDrawablesRelativeWithIntrinsicBounds()} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "textView.setCompoundDrawablesRelativeWithIntrinsicBounds(start, top, end, bottom)")
     public static void setCompoundDrawablesRelativeWithIntrinsicBounds(@NonNull TextView textView,
             @Nullable Drawable start, @Nullable Drawable top, @Nullable Drawable end,
             @Nullable Drawable bottom) {
@@ -165,7 +170,10 @@ public final class TextViewCompat {
      * @attr name android:drawableTop
      * @attr name android:drawableEnd
      * @attr name android:drawableBottom
+     * @deprecated Call {@link TextView#setCompoundDrawablesRelativeWithIntrinsicBounds()} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "textView.setCompoundDrawablesRelativeWithIntrinsicBounds(start, top, end, bottom)")
     public static void setCompoundDrawablesRelativeWithIntrinsicBounds(@NonNull TextView textView,
             @DrawableRes int start, @DrawableRes int top, @DrawableRes int end,
             @DrawableRes int bottom) {
@@ -175,7 +183,10 @@ public final class TextViewCompat {
     /**
      * Returns the maximum number of lines displayed in the given TextView, or -1 if the maximum
      * height was set in pixels instead.
+     * @deprecated Call {@link TextView#getMaxLines()} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "textView.getMaxLines()")
     public static int getMaxLines(@NonNull TextView textView) {
         return textView.getMaxLines();
     }
@@ -183,7 +194,10 @@ public final class TextViewCompat {
     /**
      * Returns the minimum number of lines displayed in the given TextView, or -1 if the minimum
      * height was set in pixels instead.
+     * @deprecated Call {@link TextView#getMinLines()} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "textView.getMinLines()")
     public static int getMinLines(@NonNull TextView textView) {
         return textView.getMinLines();
     }
@@ -207,7 +221,10 @@ public final class TextViewCompat {
 
     /**
      * Returns drawables for the start, top, end, and bottom borders from the given text view.
+     * @deprecated Call {@link TextView#getCompoundDrawablesRelative()} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "textView.getCompoundDrawablesRelative()")
     @NonNull
     public static Drawable[] getCompoundDrawablesRelative(@NonNull TextView textView) {
         return textView.getCompoundDrawablesRelative();
@@ -406,7 +423,10 @@ public final class TextViewCompat {
      *
      * @param textView The TextView to set the action selection mode callback on.
      * @param callback The action selection mode callback to set on textView.
+     * @deprecated Call {@link TextView#setCustomSelectionActionModeCallback(ActionMode.Callback)} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "textView.setCustomSelectionActionModeCallback(callback)")
     public static void setCustomSelectionActionModeCallback(@NonNull final TextView textView,
                 @NonNull final ActionMode.Callback callback) {
         textView.setCustomSelectionActionModeCallback(
@@ -1005,12 +1025,10 @@ public final class TextViewCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void setAutoSizeTextTypeWithDefaults(TextView textView, int autoSizeTextType) {
             textView.setAutoSizeTextTypeWithDefaults(autoSizeTextType);
         }
 
-        @DoNotInline
         static void setAutoSizeTextTypeUniformWithConfiguration(TextView textView,
                 int autoSizeMinTextSize, int autoSizeMaxTextSize, int autoSizeStepGranularity,
                 int unit) {
@@ -1018,33 +1036,27 @@ public final class TextViewCompat {
                     autoSizeMaxTextSize, autoSizeStepGranularity, unit);
         }
 
-        @DoNotInline
         static void setAutoSizeTextTypeUniformWithPresetSizes(TextView textView, int[] presetSizes,
                 int unit) {
             textView.setAutoSizeTextTypeUniformWithPresetSizes(presetSizes, unit);
         }
 
-        @DoNotInline
         static int getAutoSizeTextType(TextView textView) {
             return textView.getAutoSizeTextType();
         }
 
-        @DoNotInline
         static int getAutoSizeStepGranularity(TextView textView) {
             return textView.getAutoSizeStepGranularity();
         }
 
-        @DoNotInline
         static int getAutoSizeMinTextSize(TextView textView) {
             return textView.getAutoSizeMinTextSize();
         }
 
-        @DoNotInline
         static int getAutoSizeMaxTextSize(TextView textView) {
             return textView.getAutoSizeMaxTextSize();
         }
 
-        @DoNotInline
         static int[] getAutoSizeTextAvailableSizes(TextView textView) {
             return textView.getAutoSizeTextAvailableSizes();
         }
@@ -1056,22 +1068,18 @@ public final class TextViewCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void setFirstBaselineToTopHeight(TextView textView, int firstBaselineToTopHeight) {
             textView.setFirstBaselineToTopHeight(firstBaselineToTopHeight);
         }
 
-        @DoNotInline
         static PrecomputedText.Params getTextMetricsParams(TextView textView) {
             return textView.getTextMetricsParams();
         }
 
-        @DoNotInline
         static String[] getDigitStrings(DecimalFormatSymbols decimalFormatSymbols) {
             return decimalFormatSymbols.getDigitStrings();
         }
 
-        @DoNotInline
         static CharSequence castToCharSequence(PrecomputedText precomputedText) {
             return precomputedText;
         }
@@ -1084,42 +1092,34 @@ public final class TextViewCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static int getBreakStrategy(TextView textView) {
             return textView.getBreakStrategy();
         }
 
-        @DoNotInline
         static void setBreakStrategy(TextView textView, int breakStrategy) {
             textView.setBreakStrategy(breakStrategy);
         }
 
-        @DoNotInline
         static int getHyphenationFrequency(TextView textView) {
             return textView.getHyphenationFrequency();
         }
 
-        @DoNotInline
         static void setHyphenationFrequency(TextView textView, int hyphenationFrequency) {
             textView.setHyphenationFrequency(hyphenationFrequency);
         }
 
-        @DoNotInline
         static PorterDuff.Mode getCompoundDrawableTintMode(TextView textView) {
             return textView.getCompoundDrawableTintMode();
         }
 
-        @DoNotInline
         static ColorStateList getCompoundDrawableTintList(TextView textView) {
             return textView.getCompoundDrawableTintList();
         }
 
-        @DoNotInline
         static void setCompoundDrawableTintList(TextView textView, ColorStateList tint) {
             textView.setCompoundDrawableTintList(tint);
         }
 
-        @DoNotInline
         static void setCompoundDrawableTintMode(TextView textView, PorterDuff.Mode tintMode) {
             textView.setCompoundDrawableTintMode(tintMode);
         }
@@ -1131,7 +1131,6 @@ public final class TextViewCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static DecimalFormatSymbols getInstance(Locale locale) {
             return DecimalFormatSymbols.getInstance(locale);
         }
@@ -1143,7 +1142,6 @@ public final class TextViewCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         public static void setLineHeight(
                 @NonNull TextView textView,
                 int unit,

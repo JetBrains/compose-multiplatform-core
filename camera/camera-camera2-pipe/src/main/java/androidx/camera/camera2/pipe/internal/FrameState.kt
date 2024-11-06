@@ -16,8 +16,6 @@
 
 package androidx.camera.camera2.pipe.internal
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraTimestamp
 import androidx.camera.camera2.pipe.Frame
 import androidx.camera.camera2.pipe.FrameId
@@ -46,7 +44,6 @@ import kotlinx.coroutines.Deferred
  * This class represents a successfully started frame from the camera, and placeholders for the
  * images and metadata ([FrameInfo]) that we expect the camera to produce.
  */
-@RequiresApi(21)
 internal class FrameState(
     val requestMetadata: RequestMetadata,
     val frameNumber: FrameNumber,
@@ -69,9 +66,8 @@ internal class FrameState(
      * State always begins in the [STARTED] state, and ends in the [COMPLETE] state. There are three
      * paths to get there, and is used to control when certain methods on the listener are invoked.
      *
-     * [STARTED] -> [COMPLETE]
-     * [STARTED] -> [FRAME_INFO_COMPLETE] -> [COMPLETE]
-     * [STARTED] -> [STREAM_RESULTS_COMPLETE] -> [COMPLETE]
+     * [STARTED] -> [COMPLETE] [STARTED] -> [FRAME_INFO_COMPLETE] -> [COMPLETE] [STARTED] ->
+     * [STREAM_RESULTS_COMPLETE] -> [COMPLETE]
      */
     private enum class State {
         STARTED,
@@ -97,15 +93,17 @@ internal class FrameState(
             outputFrameListeners[i].onFrameInfoAvailable()
         }
 
-        val state = state.updateAndGet { current ->
-            when (current) {
-                STARTED -> FRAME_INFO_COMPLETE
-                STREAM_RESULTS_COMPLETE -> COMPLETE
-                else -> throw IllegalStateException(
-                    "Unexpected frame state for $this! State is $current "
-                )
+        val state =
+            state.updateAndGet { current ->
+                when (current) {
+                    STARTED -> FRAME_INFO_COMPLETE
+                    STREAM_RESULTS_COMPLETE -> COMPLETE
+                    else ->
+                        throw IllegalStateException(
+                            "Unexpected frame state for $this! State is $current "
+                        )
+                }
             }
-        }
 
         if (state == COMPLETE) {
             invokeOnFrameComplete()
@@ -127,15 +125,17 @@ internal class FrameState(
             outputFrameListeners[i].onImagesAvailable()
         }
 
-        val state = state.updateAndGet { current ->
-            when (current) {
-                STARTED -> STREAM_RESULTS_COMPLETE
-                FRAME_INFO_COMPLETE -> COMPLETE
-                else -> throw IllegalStateException(
-                    "Unexpected frame state for $this! State is $current "
-                )
+        val state =
+            state.updateAndGet { current ->
+                when (current) {
+                    STARTED -> STREAM_RESULTS_COMPLETE
+                    FRAME_INFO_COMPLETE -> COMPLETE
+                    else ->
+                        throw IllegalStateException(
+                            "Unexpected frame state for $this! State is $current "
+                        )
+                }
             }
-        }
 
         if (state == COMPLETE) {
             invokeOnFrameComplete()
@@ -159,12 +159,12 @@ internal class FrameState(
         private val count = atomic(1)
 
         /**
-         * To avoid holding onto multiple status objects, this Deferred will hold *either* an
-         * object of type T OR the [OutputStatus] that was passed down when this output was
-         * completed.
+         * To avoid holding onto multiple status objects, this Deferred will hold *either* an object
+         * of type T OR the [OutputStatus] that was passed down when this output was completed.
          */
         protected val internalResult = CompletableDeferred<OutputResult<T>>()
-        val result: Deferred<OutputResult<T>> get() = internalResult
+        val result: Deferred<OutputResult<T>>
+            get() = internalResult
 
         fun increment(): Boolean {
             val current =
@@ -198,14 +198,14 @@ internal class FrameState(
             }
 
         abstract fun outputOrNull(): T?
+
         abstract suspend fun await(): T?
 
         protected abstract fun release()
     }
 
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    inner class FrameInfoOutput : FrameOutput<FrameInfo>(),
-        OutputDistributor.OutputListener<FrameInfo> {
+    inner class FrameInfoOutput :
+        FrameOutput<FrameInfo>(), OutputDistributor.OutputListener<FrameInfo> {
 
         override fun onOutputComplete(
             cameraFrameNumber: FrameNumber,
@@ -219,6 +219,7 @@ internal class FrameState(
         }
 
         override suspend fun await(): FrameInfo? = result.await().output
+
         override fun outputOrNull() = result.outputOrNull()
 
         override fun release() {
@@ -226,10 +227,8 @@ internal class FrameState(
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     inner class ImageOutput(val streamId: StreamId) :
-        FrameOutput<SharedOutputImage>(),
-        OutputDistributor.OutputListener<OutputImage> {
+        FrameOutput<SharedOutputImage>(), OutputDistributor.OutputListener<OutputImage> {
         override fun onOutputComplete(
             cameraFrameNumber: FrameNumber,
             cameraTimestamp: CameraTimestamp,
@@ -261,6 +260,7 @@ internal class FrameState(
 
     companion object {
         private val frameIds = atomic(0L)
+
         private fun nextFrameId(): FrameId = FrameId(frameIds.incrementAndGet())
     }
 }

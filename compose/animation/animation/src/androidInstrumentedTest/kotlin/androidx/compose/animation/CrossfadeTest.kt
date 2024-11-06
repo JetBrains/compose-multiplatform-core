@@ -31,26 +31,27 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import leakcanary.DetectLeaksAfterTestSuccess
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @MediumTest
-@OptIn(ExperimentalTestApi::class)
 class CrossfadeTest {
-
-    @get:Rule
     val rule = createComposeRule()
+    // Detect leaks BEFORE and AFTER compose rule work
+    @get:Rule
+    val ruleChain: RuleChain = RuleChain.outerRule(DetectLeaksAfterTestSuccess()).around(rule)
 
     @Test
     fun crossfadeTest_showsContent() {
@@ -58,9 +59,7 @@ class CrossfadeTest {
 
         rule.setContent {
             val showFirst by remember { mutableStateOf(true) }
-            Crossfade(showFirst) {
-                BasicText(if (it) First else Second)
-            }
+            Crossfade(showFirst) { BasicText(if (it) First else Second) }
         }
         rule.mainClock.advanceTimeBy(DefaultDurationMillis.toLong())
 
@@ -76,20 +75,14 @@ class CrossfadeTest {
         rule.setContent {
             Crossfade(showFirst) {
                 BasicText(if (it) First else Second)
-                DisposableEffect(Unit) {
-                    onDispose {
-                        disposed = true
-                    }
-                }
+                DisposableEffect(Unit) { onDispose { disposed = true } }
             }
         }
 
         rule.mainClock.advanceTimeByFrame() // Kick off the animation
         rule.mainClock.advanceTimeBy(DefaultDurationMillis.toLong())
 
-        rule.runOnUiThread {
-            showFirst = false
-        }
+        rule.runOnUiThread { showFirst = false }
 
         // Wait for content to be disposed
         rule.mainClock.advanceTimeUntil { disposed }
@@ -106,25 +99,16 @@ class CrossfadeTest {
         var showFirst by mutableStateOf(true)
         var disposed = false
         rule.setContent {
-            Crossfade(
-                showFirst,
-                animationSpec = TweenSpec(durationMillis = duration)
-            ) {
+            Crossfade(showFirst, animationSpec = TweenSpec(durationMillis = duration)) {
                 BasicText(if (it) First else Second)
-                DisposableEffect(Unit) {
-                    onDispose {
-                        disposed = true
-                    }
-                }
+                DisposableEffect(Unit) { onDispose { disposed = true } }
             }
         }
 
         rule.mainClock.advanceTimeByFrame() // Kick off the animation
         rule.mainClock.advanceTimeBy(duration.toLong())
 
-        rule.runOnUiThread {
-            showFirst = false
-        }
+        rule.runOnUiThread { showFirst = false }
 
         rule.mainClock.advanceTimeBy(duration.toLong())
         rule.mainClock.advanceTimeByFrame()
@@ -139,9 +123,7 @@ class CrossfadeTest {
         var current by mutableStateOf<String?>(null)
 
         rule.setContent {
-            Crossfade(current) { value ->
-                BasicText(if (value == null) First else Second)
-            }
+            Crossfade(current) { value -> BasicText(if (value == null) First else Second) }
         }
 
         rule.mainClock.advanceTimeByFrame() // Kick off the animation
@@ -150,9 +132,7 @@ class CrossfadeTest {
         rule.onNodeWithText(First).assertExists()
         rule.onNodeWithText(Second).assertDoesNotExist()
 
-        rule.runOnUiThread {
-            current = "other"
-        }
+        rule.runOnUiThread { current = "other" }
 
         rule.mainClock.advanceTimeBy(DefaultDurationMillis.toLong())
         rule.mainClock.advanceTimeByFrame()
@@ -173,10 +153,7 @@ class CrossfadeTest {
         var counter2 = 0
         rule.setContent {
             val saveableStateHolder = rememberSaveableStateHolder()
-            Crossfade(
-                showFirst,
-                animationSpec = TweenSpec(durationMillis = duration)
-            ) {
+            Crossfade(showFirst, animationSpec = TweenSpec(durationMillis = duration)) {
                 saveableStateHolder.SaveableStateProvider(it) {
                     if (it) {
                         counter1 = rememberSaveable { counter++ }
@@ -190,9 +167,7 @@ class CrossfadeTest {
         rule.mainClock.advanceTimeByFrame() // Kick off the animation
         rule.mainClock.advanceTimeBy(duration.toLong())
 
-        rule.runOnUiThread {
-            showFirst = false
-        }
+        rule.runOnUiThread { showFirst = false }
 
         rule.mainClock.advanceTimeBy(duration.toLong())
         rule.mainClock.advanceTimeByFrame()
@@ -200,9 +175,7 @@ class CrossfadeTest {
 
         // and go back to the second screen
 
-        rule.runOnUiThread {
-            showFirst = true
-        }
+        rule.runOnUiThread { showFirst = true }
 
         rule.mainClock.advanceTimeBy(duration.toLong())
         rule.mainClock.advanceTimeByFrame()
@@ -224,9 +197,7 @@ class CrossfadeTest {
                 if (it > 0) {
                     holder.SaveableStateProvider(true) {
                         var count by rememberSaveable { mutableStateOf(0) }
-                        LaunchedEffect(Unit) {
-                            list.add(++count)
-                        }
+                        LaunchedEffect(Unit) { list.add(++count) }
                     }
                 }
                 Box(Modifier.requiredSize(200.dp))
@@ -239,12 +210,11 @@ class CrossfadeTest {
                 withFrameMillis {
                     assertFalse(transition.isRunning)
                     assertEquals(transition.currentState, transition.targetState)
-                    // This state change should now change the contentKey & hence trigger an animation
+                    // This state change should now change the contentKey & hence trigger an
+                    // animation
                     targetState = -1
                 }
-                withFrameMillis {
-                    assertTrue(transition.isRunning)
-                }
+                withFrameMillis { assertTrue(transition.isRunning) }
             }
         }
         rule.waitForIdle()

@@ -31,7 +31,6 @@ import android.view.TextureView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.Logger;
 import androidx.camera.core.Preview;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
@@ -42,12 +41,13 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.Objects;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class creates implementations of PreviewSurfaceProvider that provide Surfaces that have been
  * pre-configured for specific work flows.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class SurfaceTextureProvider {
     private static final String TAG = "SurfaceTextureProvider";
 
@@ -205,6 +205,8 @@ public final class SurfaceTextureProvider {
             @Nullable Runnable onClosed) {
         return CallbackToFutureAdapter.getFuture((completer) -> {
             glExecutor.execute(() -> {
+                Object lock = new Object();
+                AtomicBoolean surfaceTextureReleased = new AtomicBoolean(false);
                 EGLContextParams contextParams = createDummyEGLContext();
                 EGL14.eglMakeCurrent(contextParams.display, contextParams.outputSurface,
                         contextParams.outputSurface, contextParams.context);
@@ -212,16 +214,29 @@ public final class SurfaceTextureProvider {
                 GLES20.glGenTextures(1, textureIds, 0);
                 SurfaceTexture surfaceTexture = new SurfaceTexture(textureIds[0]);
                 surfaceTexture.setDefaultBufferSize(width, height);
-                surfaceTexture.setOnFrameAvailableListener(it ->
+                surfaceTexture.setOnFrameAvailableListener(it -> {
+                    try {
                         glExecutor.execute(() -> {
-                            it.updateTexImage();
-                            if (frameAvailableListener != null) {
-                                frameAvailableListener.onFrameAvailable(surfaceTexture);
+                            synchronized (lock) {
+                                if (surfaceTextureReleased.get()) {
+                                    return;
+                                }
+                                it.updateTexImage();
+                                if (frameAvailableListener != null) {
+                                    frameAvailableListener.onFrameAvailable(surfaceTexture);
+                                }
                             }
-                        }));
+                        });
+                    } catch (RejectedExecutionException e) {
+                        Logger.d(TAG, "The handler of the glExecutor might have been quited.");
+                    }
+                });
 
                 completer.set(
                         new SurfaceTextureHolder(surfaceTexture, () -> glExecutor.execute(() -> {
+                            synchronized (lock) {
+                                surfaceTextureReleased.set(true);
+                            }
                             surfaceTexture.release();
                             GLES20.glDeleteTextures(1, textureIds, 0);
                             terminateEGLContext(contextParams);
@@ -333,7 +348,6 @@ public final class SurfaceTextureProvider {
      * {@link Preview}. See {@link #createSurfaceTextureProvider(SurfaceTextureCallback)} for
      * code example.
      */
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     public interface SurfaceTextureCallback {
 
         /**

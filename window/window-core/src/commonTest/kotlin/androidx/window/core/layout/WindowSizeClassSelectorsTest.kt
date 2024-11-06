@@ -13,96 +13,179 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package androidx.window.core.layout
 
+import androidx.window.core.layout.WindowSizeClass.Companion.BREAKPOINTS_V1
+import androidx.window.core.layout.WindowSizeClass.Companion.HEIGHT_DP_EXPANDED_LOWER_BOUND
+import androidx.window.core.layout.WindowSizeClass.Companion.HEIGHT_DP_MEDIUM_LOWER_BOUND
+import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_EXPANDED_LOWER_BOUND
+import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOWER_BOUND
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertNull
 
 class WindowSizeClassSelectorsTest {
 
-    private val widthDp = 100
-    private val heightDp = 200
+    val coreSet = BREAKPOINTS_V1
 
     @Test
-    fun widestOrEqualWidthDp_return_null_if_no_width_match() {
-        val sizeClass = WindowSizeClass(widthDp, heightDp)
+    fun compute_window_size_class_with_floats_truncates() {
+        // coreSet does not contain 10, 10
+        val intResult =
+            coreSet.computeWindowSizeClass(
+                WIDTH_DP_MEDIUM_LOWER_BOUND,
+                HEIGHT_DP_MEDIUM_LOWER_BOUND
+            )
+        val floatResult =
+            coreSet.computeWindowSizeClass(
+                WIDTH_DP_MEDIUM_LOWER_BOUND + .9f,
+                HEIGHT_DP_MEDIUM_LOWER_BOUND + .9f
+            )
 
-        val actual = setOf(sizeClass).widestOrEqualWidthDp(0, heightDp)
-
-        assertNull(actual)
+        assertEquals(intResult, floatResult)
     }
 
     @Test
-    fun widestOrEqualWidthDp_return_widest_match() {
-        val smallSizeClass = WindowSizeClass(widthDp / 2, heightDp)
-        val mediumSizeClass = WindowSizeClass(widthDp, heightDp)
-        val largeSizeClass = WindowSizeClass(widthDp * 2, heightDp)
+    fun compute_window_size_class_returns_zero_for_default() {
+        // coreSet does not contain 10, 10
+        val actual = coreSet.computeWindowSizeClass(10, 10)
 
-        val actual = setOf(smallSizeClass, mediumSizeClass, largeSizeClass)
-            .widestOrEqualWidthDp(widthDp + 1, heightDp)
-
-        assertEquals(mediumSizeClass, actual)
+        assertEquals(WindowSizeClass(0, 0), actual)
     }
 
     @Test
-    fun widestOrEqualWidthDp_return_exact_match() {
-        val smallSizeClass = WindowSizeClass(widthDp / 2, heightDp)
-        val mediumSizeClass = WindowSizeClass(widthDp, heightDp)
-        val largeSizeClass = WindowSizeClass(widthDp * 2, heightDp)
+    fun compute_window_size_class_returns_exact_match() {
+        val expected = WindowSizeClass(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND)
 
-        val actual = setOf(smallSizeClass, mediumSizeClass, largeSizeClass)
-            .widestOrEqualWidthDp(widthDp, heightDp)
+        // coreSet contains WindowSizeClass(MEDIUM, MEDIUM)
+        val actual =
+            coreSet.computeWindowSizeClass(
+                WIDTH_DP_MEDIUM_LOWER_BOUND,
+                HEIGHT_DP_MEDIUM_LOWER_BOUND
+            )
 
-        assertEquals(mediumSizeClass, actual)
+        assertEquals(expected, actual)
     }
 
     @Test
-    fun widestOrEqualWidthDp_multiple_matches_return_width() {
-        val smallSizeClass = WindowSizeClass(widthDp, heightDp / 2)
-        val mediumSizeClass = WindowSizeClass(widthDp, heightDp)
-        val largeSizeClass = WindowSizeClass(widthDp, heightDp * 2)
+    fun compute_window_size_class_returns_bounded_match() {
+        val expected = WindowSizeClass(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND)
 
-        val actual = setOf(smallSizeClass, mediumSizeClass, largeSizeClass)
-            .widestOrEqualWidthDp(widthDp, heightDp * 3)
+        // coreSet contains WindowSizeClass(MEDIUM, MEDIUM)
+        val actual =
+            coreSet.computeWindowSizeClass(
+                WIDTH_DP_MEDIUM_LOWER_BOUND + 1,
+                HEIGHT_DP_MEDIUM_LOWER_BOUND + 1
+            )
 
-        assertEquals(largeSizeClass, actual)
+        assertEquals(expected, actual)
     }
 
     @Test
-    fun widestOrEqualWidth_throws_on_negative_height() {
-        assertFailsWith(IllegalArgumentException::class) {
-            val sizeClass = WindowSizeClass(widthDp, heightDp)
+    fun compute_window_size_class_prefers_width() {
+        val expected = WindowSizeClass(minWidthDp = 100, minHeightDp = 50)
 
-            setOf(sizeClass).widestOrEqualWidthDp(0, -1)
-        }
+        val actual =
+            setOf(
+                    WindowSizeClass(minWidthDp = 100, minHeightDp = 50),
+                    WindowSizeClass(minWidthDp = 50, minHeightDp = 100)
+                )
+                .computeWindowSizeClass(100, 100)
+
+        assertEquals(expected, actual)
     }
 
     @Test
-    fun widestOrEqualWidth_throws_on_negative_width() {
-        assertFailsWith(IllegalArgumentException::class) {
-            val sizeClass = WindowSizeClass(widthDp, heightDp)
+    fun compute_window_size_class_breaks_tie_with_height() {
+        val expected = WindowSizeClass(minWidthDp = 100, minHeightDp = 100)
 
-            setOf(sizeClass).widestOrEqualWidthDp(-1, 0)
-        }
+        val actual =
+            setOf(
+                    WindowSizeClass(minWidthDp = 100, minHeightDp = 50),
+                    WindowSizeClass(minWidthDp = 100, minHeightDp = 100)
+                )
+                .computeWindowSizeClass(200, 200)
+
+        assertEquals(expected, actual)
     }
 
     @Test
-    fun widestOrEqualWidthDp_return_null_if_no_height_match() {
-        val sizeClass = WindowSizeClass(widthDp, heightDp)
+    fun compute_window_size_class_preferring_height_returns_zero_for_default() {
+        // coreSet does not contain 10, 10
+        val actual = coreSet.computeWindowSizeClassPreferHeight(10, 10)
 
-        val actual = setOf(sizeClass).widestOrEqualWidthDp(widthDp, heightDp - 1)
-
-        assertNull(actual)
+        assertEquals(WindowSizeClass(0, 0), actual)
     }
 
     @Test
-    fun widestOrEqualWidthDp_return_value_if_has_exact_height_match() {
-        val sizeClass = WindowSizeClass(widthDp, heightDp)
+    fun compute_window_size_class_preferring_height_returns_exact_match() {
+        val expected = WindowSizeClass(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND)
 
-        val actual = setOf(sizeClass).widestOrEqualWidthDp(widthDp, heightDp)
+        // coreSet contains WindowSizeClass(MEDIUM, MEDIUM)
+        val actual =
+            coreSet.computeWindowSizeClassPreferHeight(
+                WIDTH_DP_MEDIUM_LOWER_BOUND,
+                HEIGHT_DP_MEDIUM_LOWER_BOUND
+            )
 
-        assertEquals(sizeClass, actual)
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun compute_window_size_class_preferring_height_returns_bounded_match() {
+        val expected = WindowSizeClass(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND)
+
+        // coreSet contains WindowSizeClass(MEDIUM, MEDIUM)
+        val actual =
+            coreSet.computeWindowSizeClassPreferHeight(
+                WIDTH_DP_MEDIUM_LOWER_BOUND + 1,
+                HEIGHT_DP_MEDIUM_LOWER_BOUND + 1
+            )
+
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun compute_window_size_class_preferring_height_prefers_height() {
+        val expected = WindowSizeClass(minWidthDp = 50, minHeightDp = 100)
+
+        val actual =
+            setOf(
+                    WindowSizeClass(minWidthDp = 100, minHeightDp = 50),
+                    WindowSizeClass(minWidthDp = 50, minHeightDp = 100)
+                )
+                .computeWindowSizeClassPreferHeight(100, 100)
+
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun compute_window_size_class_preferring_height_breaks_tie_with_width() {
+        val expected = WindowSizeClass(minWidthDp = 100, minHeightDp = 100)
+
+        val actual =
+            setOf(
+                    WindowSizeClass(minWidthDp = 50, minHeightDp = 100),
+                    WindowSizeClass(minWidthDp = 100, minHeightDp = 100)
+                )
+                .computeWindowSizeClass(200, 200)
+
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun edge_case_matching_bucket_has_min_height_0() {
+        val expected = WindowSizeClass(WIDTH_DP_EXPANDED_LOWER_BOUND, 0)
+        val actual = BREAKPOINTS_V1.computeWindowSizeClass(1290, 400)
+
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun edge_case_matching_bucket_has_min_width_0() {
+        val expected = WindowSizeClass(0, HEIGHT_DP_EXPANDED_LOWER_BOUND)
+        val actual = BREAKPOINTS_V1.computeWindowSizeClassPreferHeight(400, 1290)
+
+        assertEquals(expected, actual)
     }
 }

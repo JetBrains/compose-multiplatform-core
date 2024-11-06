@@ -39,7 +39,6 @@ import android.util.Range;
 import android.util.Rational;
 import android.util.Size;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -92,7 +91,6 @@ import java.util.Set;
  * support for this camera device.
  */
 @OptIn(markerClass = ExperimentalCamera2Interop.class)
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 final class SupportedSurfaceCombination {
     private static final String TAG = "SupportedSurfaceCombination";
     private final List<SurfaceCombination> mSurfaceCombinations = new ArrayList<>();
@@ -184,10 +182,10 @@ final class SupportedSurfaceCombination {
 
         if (mDynamicRangeResolver.is10BitDynamicRangeSupported()) {
             generate10BitSupportedCombinationList();
+        }
 
-            if (isUltraHdrSupported()) {
-                generateUltraHdrSupportedCombinationList();
-            }
+        if (isUltraHdrSupported()) {
+            generateUltraHdrSupportedCombinationList();
         }
 
         mIsStreamUseCaseSupported = StreamUseCaseUtil.isStreamUseCaseSupported(mCharacteristics);
@@ -290,7 +288,12 @@ final class SupportedSurfaceCombination {
 
         List<SurfaceCombination> supportedSurfaceCombinations = new ArrayList<>();
 
-        if (featureSettings.getRequiredMaxBitDepth() == DynamicRange.BIT_DEPTH_8_BIT) {
+        if (featureSettings.isUltraHdrOn()) {
+            // For Ultra HDR output, only the default camera mode is currently supported.
+            if (featureSettings.getCameraMode() == CameraMode.DEFAULT) {
+                supportedSurfaceCombinations.addAll(mSurfaceCombinationsUltraHdr);
+            }
+        } else if (featureSettings.getRequiredMaxBitDepth() == DynamicRange.BIT_DEPTH_8_BIT) {
             switch (featureSettings.getCameraMode()) {
                 case CameraMode.CONCURRENT_CAMERA:
                     supportedSurfaceCombinations = mConcurrentSurfaceCombinations;
@@ -307,11 +310,7 @@ final class SupportedSurfaceCombination {
         } else if (featureSettings.getRequiredMaxBitDepth() == DynamicRange.BIT_DEPTH_10_BIT) {
             // For 10-bit outputs, only the default camera mode is currently supported.
             if (featureSettings.getCameraMode() == CameraMode.DEFAULT) {
-                if (featureSettings.isUltraHdrOn()) {
-                    supportedSurfaceCombinations.addAll(mSurfaceCombinationsUltraHdr);
-                } else {
-                    supportedSurfaceCombinations.addAll(mSurfaceCombinations10Bit);
-                }
+                supportedSurfaceCombinations.addAll(mSurfaceCombinations10Bit);
             }
         }
 
@@ -559,6 +558,7 @@ final class SupportedSurfaceCombination {
      * @param newUseCaseConfigsSupportedSizeMap newly added UseCaseConfig to supported output
      *                                          sizes map.
      * @param isPreviewStabilizationOn          whether the preview stabilization is enabled.
+     * @param hasVideoCapture                   whether the use cases has video capture.
      * @return the suggested stream specifications, which is a pair of mappings. The first
      * mapping is from UseCaseConfig to the suggested stream specification representing new
      * UseCases. The second mapping is from attachedSurfaceInfo to the suggested stream
@@ -575,7 +575,8 @@ final class SupportedSurfaceCombination {
             @CameraMode.Mode int cameraMode,
             @NonNull List<AttachedSurfaceInfo> attachedSurfaces,
             @NonNull Map<UseCaseConfig<?>, List<Size>> newUseCaseConfigsSupportedSizeMap,
-            boolean isPreviewStabilizationOn) {
+            boolean isPreviewStabilizationOn,
+            boolean hasVideoCapture) {
         // Refresh Preview Size based on current display configurations.
         refreshPreviewSize();
 
@@ -788,7 +789,8 @@ final class SupportedSurfaceCombination {
                                 resolvedDynamicRanges.get(useCaseConfig)))
                         .setImplementationOptions(
                                 StreamUseCaseUtil.getStreamSpecImplementationOptions(useCaseConfig)
-                        );
+                        )
+                        .setZslDisabled(hasVideoCapture);
                 if (targetFramerateForDevice != null) {
                     streamSpecBuilder.setExpectedFrameRateRange(targetFramerateForDevice);
                 }
@@ -863,6 +865,13 @@ final class SupportedSurfaceCombination {
             @NonNull Map<UseCaseConfig<?>, DynamicRange> resolvedDynamicRanges,
             boolean isPreviewStabilizationOn, boolean isUltraHdrOn) {
         int requiredMaxBitDepth = getRequiredMaxBitDepth(resolvedDynamicRanges);
+
+        if (cameraMode != CameraMode.DEFAULT && isUltraHdrOn) {
+            throw new IllegalArgumentException(String.format("Camera device id is %s. Ultra HDR "
+                            + "is not currently supported in %s camera mode.",
+                    mCameraId,
+                    CameraMode.toLabelString(cameraMode)));
+        }
 
         if (cameraMode != CameraMode.DEFAULT
                 && requiredMaxBitDepth == DynamicRange.BIT_DEPTH_10_BIT) {
@@ -1290,8 +1299,7 @@ final class SupportedSurfaceCombination {
                 GuaranteedConfigurationsUtil.generateSupportedCombinationList(mHardwareLevel,
                         mIsRawSupported, mIsBurstCaptureSupported));
 
-        mSurfaceCombinations.addAll(
-                mExtraSupportedSurfaceCombinationsContainer.get(mCameraId, mHardwareLevel));
+        mSurfaceCombinations.addAll(mExtraSupportedSurfaceCombinationsContainer.get(mCameraId));
     }
 
     private void generateUltraHighSupportedCombinationList() {
@@ -1541,7 +1549,6 @@ final class SupportedSurfaceCombination {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static Size[] getHighResolutionOutputSizes(StreamConfigurationMap streamConfigurationMap,
                 int format) {
             return streamConfigurationMap.getHighResolutionOutputSizes(format);

@@ -125,33 +125,77 @@ class TileServiceViewAdapterTest(
         assertThatTileHasInflatedSuccessfully()
     }
 
-    private fun assertThatTileHasInflatedSuccessfully() {
+    @Test
+    fun testTilePreviewWithDefaultPlatformData() {
+        initAndInflate("$testFile.tilePreviewWithDefaultPlatformData")
+
+        assertThatTileHasInflatedSuccessfully(expectedText = "80")
+    }
+
+    @Test
+    fun testTilePreviewWithOverriddenPlatformData() {
+        initAndInflate("$testFile.tilePreviewWithOverriddenPlatformData")
+
+        assertThatTileHasInflatedSuccessfully(expectedText = "180")
+    }
+
+    @Test
+    fun testGetAnimations() {
+        initAndInflate("$testFile.testGetAnimations")
+        val animations = tileServiceViewAdapter.getAnimations()
+
+        assertEquals(2, animations.size)
+        assertEquals(2000L, animations[0].durationMs)
+        assertEquals(2000L, animations[1].durationMs)
+    }
+
+    @Test
+    fun testGetTerminalAndNotTerminalAnimation() {
+        initAndInflate("$testFile.testGetTerminalAndNotTerminalAnimation")
+        val animations = tileServiceViewAdapter.getAnimations()
+
+        assertEquals(2, animations.size)
+        assertEquals(false, animations[0].isTerminal)
+        assertEquals(true, animations[1].isTerminal)
+    }
+
+    @Test
+    fun testGetAnimationsWithCondition() {
+        initAndInflate("$testFile.testGetAnimationsWithCondition")
+        val animations = tileServiceViewAdapter.getAnimations()
+
+        assertEquals(2, animations.size)
+        assertEquals(false, animations[0].isTerminal)
+        assertEquals(true, animations[1].isTerminal)
+    }
+
+    private fun assertThatTileHasInflatedSuccessfully(expectedText: String = "Hello world!") {
         activityTestRule.runOnUiThread {
-            val textView = when (
-                val child = (tileServiceViewAdapter.getChildAt(0) as ViewGroup).getChildAt(0)
-            ) {
-                is TextView -> child
-                // layout elements are wrapped with a FrameLayout
-                else -> (child as? FrameLayout)?.getChildAt(0) as? TextView
-            }
+            val textView =
+                when (
+                    val child = (tileServiceViewAdapter.getChildAt(0) as ViewGroup).getChildAt(0)
+                ) {
+                    is TextView -> child
+                    // layout elements are wrapped with a FrameLayout
+                    else -> (child as? FrameLayout)?.getChildAt(0) as? TextView
+                }
             assertNotNull(textView)
-            assertEquals("Hello world!", textView?.text.toString())
+            assertEquals(expectedText, textView?.text.toString())
         }
     }
 
     private fun assertThatTileHasNotInflated() {
-        activityTestRule.runOnUiThread {
-            assertEquals(0, tileServiceViewAdapter.childCount)
-        }
+        activityTestRule.runOnUiThread { assertEquals(0, tileServiceViewAdapter.childCount) }
     }
 
     companion object {
         @Parameterized.Parameters
         @JvmStatic
-        fun parameters() = listOf(
-            TEST_TILE_PREVIEWS_KOTLIN_FILE,
-            TEST_TILE_PREVIEWS_JAVA_FILE,
-        )
+        fun parameters() =
+            listOf(
+                TEST_TILE_PREVIEWS_KOTLIN_FILE,
+                TEST_TILE_PREVIEWS_JAVA_FILE,
+            )
 
         class TestActivity : Activity() {
             override fun onCreate(savedInstanceState: Bundle?) {

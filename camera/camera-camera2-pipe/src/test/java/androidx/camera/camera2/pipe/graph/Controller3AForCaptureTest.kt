@@ -15,19 +15,18 @@
  */
 
 @file:OptIn(ExperimentalCoroutinesApi::class)
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 
 package androidx.camera.camera2.pipe.graph
 
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.RequestNumber
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
+import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceProcessor.Companion.requiredParameters
 import androidx.camera.camera2.pipe.testing.FakeFrameMetadata
 import androidx.camera.camera2.pipe.testing.FakeGraphProcessor
 import androidx.camera.camera2.pipe.testing.FakeRequestMetadata
@@ -79,21 +78,26 @@ class Controller3AForCaptureTest {
         val result = controller3A.lock3AForCapture()
         assertThat(result.isCompleted).isFalse()
 
-        val on3aModesResultMetadata = mapOf(
-            CaptureResult.CONTROL_AF_MODE to CaptureResult.CONTROL_AF_MODE_CONTINUOUS_PICTURE,
-            CaptureResult.CONTROL_AE_MODE to CaptureResult.CONTROL_AE_MODE_ON,
-            CaptureResult.CONTROL_AWB_MODE to CaptureResult.CONTROL_AWB_MODE_AUTO,
-        )
+        val on3aModesResultMetadata =
+            mapOf(
+                CaptureResult.CONTROL_AF_MODE to CaptureResult.CONTROL_AF_MODE_CONTINUOUS_PICTURE,
+                CaptureResult.CONTROL_AE_MODE to CaptureResult.CONTROL_AE_MODE_ON,
+                CaptureResult.CONTROL_AWB_MODE to CaptureResult.CONTROL_AWB_MODE_AUTO,
+            )
 
         // Since requirement is to trigger both AF and AE precapture metering. The result of
         // lock3AForCapture call will complete once AE and AF have reached their desired states. In
         // this response i.e cameraResponse1, AF is still scanning so the result won't be complete.
         val cameraResponse = async {
             listener3A.sendPartialCaptureResult(
-                resultMetadata = on3aModesResultMetadata + mapOf(
-                    CaptureResult.CONTROL_AF_STATE to CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN,
-                    CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_SEARCHING
-                )
+                resultMetadata =
+                    on3aModesResultMetadata +
+                        mapOf(
+                            CaptureResult.CONTROL_AF_STATE to
+                                CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN,
+                            CaptureResult.CONTROL_AE_STATE to
+                                CaptureResult.CONTROL_AE_STATE_SEARCHING
+                        )
             )
         }
 
@@ -104,10 +108,14 @@ class Controller3AForCaptureTest {
         // lock3AForCapture call will complete.
         launch {
             listener3A.sendPartialCaptureResult(
-                resultMetadata = on3aModesResultMetadata + mapOf(
-                    CaptureResult.CONTROL_AF_STATE to CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
-                    CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_CONVERGED
-                )
+                resultMetadata =
+                    on3aModesResultMetadata +
+                        mapOf(
+                            CaptureResult.CONTROL_AF_STATE to
+                                CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
+                            CaptureResult.CONTROL_AE_STATE to
+                                CaptureResult.CONTROL_AE_STATE_CONVERGED
+                        )
             )
         }
 
@@ -125,20 +133,26 @@ class Controller3AForCaptureTest {
         val result = controller3A.lock3AForCapture(waitForAwb = true)
         assertThat(result.isCompleted).isFalse()
 
-        val on3aModesResultMetadata = mapOf(
-            CaptureResult.CONTROL_AF_MODE to CaptureResult.CONTROL_AF_MODE_CONTINUOUS_PICTURE,
-            CaptureResult.CONTROL_AE_MODE to CaptureResult.CONTROL_AE_MODE_ON,
-            CaptureResult.CONTROL_AWB_MODE to CaptureResult.CONTROL_AWB_MODE_AUTO,
-        )
+        val on3aModesResultMetadata =
+            mapOf(
+                CaptureResult.CONTROL_AF_MODE to CaptureResult.CONTROL_AF_MODE_CONTINUOUS_PICTURE,
+                CaptureResult.CONTROL_AE_MODE to CaptureResult.CONTROL_AE_MODE_ON,
+                CaptureResult.CONTROL_AWB_MODE to CaptureResult.CONTROL_AWB_MODE_AUTO,
+            )
 
         // AF/AE completed, but AWB still ongoing so result will be incomplete
         val cameraResponse = async {
             listener3A.sendPartialCaptureResult(
-                resultMetadata = on3aModesResultMetadata + mapOf(
-                    CaptureResult.CONTROL_AF_STATE to CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
-                    CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_CONVERGED,
-                    CaptureResult.CONTROL_AWB_STATE to CaptureResult.CONTROL_AWB_STATE_SEARCHING,
-                )
+                resultMetadata =
+                    on3aModesResultMetadata +
+                        mapOf(
+                            CaptureResult.CONTROL_AF_STATE to
+                                CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
+                            CaptureResult.CONTROL_AE_STATE to
+                                CaptureResult.CONTROL_AE_STATE_CONVERGED,
+                            CaptureResult.CONTROL_AWB_STATE to
+                                CaptureResult.CONTROL_AWB_STATE_SEARCHING,
+                        )
             )
         }
 
@@ -149,11 +163,16 @@ class Controller3AForCaptureTest {
         // lock3AForCapture call will complete.
         launch {
             listener3A.sendPartialCaptureResult(
-                resultMetadata = on3aModesResultMetadata + mapOf(
-                    CaptureResult.CONTROL_AF_STATE to CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
-                    CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_CONVERGED,
-                    CaptureResult.CONTROL_AWB_STATE to CaptureResult.CONTROL_AWB_STATE_CONVERGED,
-                )
+                resultMetadata =
+                    on3aModesResultMetadata +
+                        mapOf(
+                            CaptureResult.CONTROL_AF_STATE to
+                                CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
+                            CaptureResult.CONTROL_AE_STATE to
+                                CaptureResult.CONTROL_AE_STATE_CONVERGED,
+                            CaptureResult.CONTROL_AWB_STATE to
+                                CaptureResult.CONTROL_AWB_STATE_CONVERGED,
+                        )
             )
         }
 
@@ -171,22 +190,25 @@ class Controller3AForCaptureTest {
         val result = controller3A.lock3AForCapture()
         assertThat(result.isCompleted).isFalse()
 
-        val off3aModesResultMetadata = mapOf(
-            CaptureResult.CONTROL_AF_MODE to CaptureResult.CONTROL_AF_MODE_OFF,
-            CaptureResult.CONTROL_AE_MODE to CaptureResult.CONTROL_AE_MODE_OFF,
-            CaptureResult.CONTROL_AWB_MODE to CaptureResult.CONTROL_AWB_MODE_OFF,
-        )
+        val off3aModesResultMetadata =
+            mapOf(
+                CaptureResult.CONTROL_AF_MODE to CaptureResult.CONTROL_AF_MODE_OFF,
+                CaptureResult.CONTROL_AE_MODE to CaptureResult.CONTROL_AE_MODE_OFF,
+                CaptureResult.CONTROL_AWB_MODE to CaptureResult.CONTROL_AWB_MODE_OFF,
+            )
 
         // Since the 3A modes are off, the result of lock3AForCapture call will complete without
         // waiting to be converged.
         launch {
             listener3A.sendPartialCaptureResult(
-                resultMetadata = off3aModesResultMetadata + mapOf(
-                    CaptureResult.CONTROL_AF_STATE to
-                        CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN,
-                    CaptureResult.CONTROL_AE_STATE to
-                        CaptureResult.CONTROL_AE_STATE_SEARCHING
-                )
+                resultMetadata =
+                    off3aModesResultMetadata +
+                        mapOf(
+                            CaptureResult.CONTROL_AF_STATE to
+                                CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN,
+                            CaptureResult.CONTROL_AE_STATE to
+                                CaptureResult.CONTROL_AE_STATE_SEARCHING
+                        )
             )
         }
 
@@ -206,18 +228,22 @@ class Controller3AForCaptureTest {
         val result = controller3A.lock3AForCapture(triggerAf = false)
         assertThat(result.isCompleted).isFalse()
 
-        val on3aModesResultMetadata = mapOf(
-            CaptureResult.CONTROL_AF_MODE to CaptureResult.CONTROL_AF_MODE_CONTINUOUS_PICTURE,
-            CaptureResult.CONTROL_AE_MODE to CaptureResult.CONTROL_AE_MODE_ON,
-            CaptureResult.CONTROL_AWB_MODE to CaptureResult.CONTROL_AWB_MODE_AUTO,
-        )
+        val on3aModesResultMetadata =
+            mapOf(
+                CaptureResult.CONTROL_AF_MODE to CaptureResult.CONTROL_AF_MODE_CONTINUOUS_PICTURE,
+                CaptureResult.CONTROL_AE_MODE to CaptureResult.CONTROL_AE_MODE_ON,
+                CaptureResult.CONTROL_AWB_MODE to CaptureResult.CONTROL_AWB_MODE_AUTO,
+            )
 
         // In this response, AF is still scanning so the result won't be complete.
         val cameraResponse = async {
             listener3A.sendPartialCaptureResult(
-                resultMetadata = on3aModesResultMetadata + mapOf(
-                    CaptureResult.CONTROL_AF_STATE to CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN
-                )
+                resultMetadata =
+                    on3aModesResultMetadata +
+                        mapOf(
+                            CaptureResult.CONTROL_AF_STATE to
+                                CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN
+                        )
             )
         }
 
@@ -227,11 +253,14 @@ class Controller3AForCaptureTest {
         // One we are notified that AF and AE are in the desired states, the result will complete.
         launch {
             listener3A.sendPartialCaptureResult(
-                resultMetadata = on3aModesResultMetadata + mapOf(
-                    CaptureResult.CONTROL_AF_STATE to
-                        CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED,
-                    CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_CONVERGED
-                )
+                resultMetadata =
+                    on3aModesResultMetadata +
+                        mapOf(
+                            CaptureResult.CONTROL_AF_STATE to
+                                CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED,
+                            CaptureResult.CONTROL_AE_STATE to
+                                CaptureResult.CONTROL_AE_STATE_CONVERGED
+                        )
             )
         }
 
@@ -249,19 +278,24 @@ class Controller3AForCaptureTest {
         val result = controller3A.lock3AForCapture(triggerAf = false)
         assertThat(result.isCompleted).isFalse()
 
-        val on3aModesResultMetadata = mapOf(
-            CaptureResult.CONTROL_AF_MODE to CaptureResult.CONTROL_AF_MODE_AUTO,
-            CaptureResult.CONTROL_AE_MODE to CaptureResult.CONTROL_AE_MODE_ON,
-            CaptureResult.CONTROL_AWB_MODE to CaptureResult.CONTROL_AWB_MODE_AUTO,
-        )
+        val on3aModesResultMetadata =
+            mapOf(
+                CaptureResult.CONTROL_AF_MODE to CaptureResult.CONTROL_AF_MODE_AUTO,
+                CaptureResult.CONTROL_AE_MODE to CaptureResult.CONTROL_AE_MODE_ON,
+                CaptureResult.CONTROL_AWB_MODE to CaptureResult.CONTROL_AWB_MODE_AUTO,
+            )
 
         // In this response, AF is still scanning so the result won't be complete.
         val cameraResponse = async {
             listener3A.sendPartialCaptureResult(
-                resultMetadata = on3aModesResultMetadata + mapOf(
-                    CaptureResult.CONTROL_AF_STATE to CaptureResult.CONTROL_AF_STATE_INACTIVE,
-                    CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_SEARCHING
-                )
+                resultMetadata =
+                    on3aModesResultMetadata +
+                        mapOf(
+                            CaptureResult.CONTROL_AF_STATE to
+                                CaptureResult.CONTROL_AF_STATE_INACTIVE,
+                            CaptureResult.CONTROL_AE_STATE to
+                                CaptureResult.CONTROL_AE_STATE_SEARCHING
+                        )
             )
         }
 
@@ -272,10 +306,14 @@ class Controller3AForCaptureTest {
         // convergence.
         launch {
             listener3A.sendPartialCaptureResult(
-                resultMetadata = on3aModesResultMetadata + mapOf(
-                    CaptureResult.CONTROL_AF_STATE to CaptureResult.CONTROL_AF_STATE_INACTIVE,
-                    CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_CONVERGED
-                )
+                resultMetadata =
+                    on3aModesResultMetadata +
+                        mapOf(
+                            CaptureResult.CONTROL_AF_STATE to
+                                CaptureResult.CONTROL_AF_STATE_INACTIVE,
+                            CaptureResult.CONTROL_AE_STATE to
+                                CaptureResult.CONTROL_AE_STATE_CONVERGED
+                        )
             )
         }
 
@@ -292,20 +330,24 @@ class Controller3AForCaptureTest {
     fun testCustomizedExitCondition_lock3AForCaptureWithoutAeState() = runTest {
         // Arrange, prepare customized locked conditions which allow an empty AE/AF state.
         val lockCondition: (FrameMetadata) -> Boolean = lockCondition@{ frameMetadata ->
-            val aeUnlocked = frameMetadata[CaptureResult.CONTROL_AE_STATE]?.let {
-                listOf(
-                    CaptureResult.CONTROL_AE_STATE_CONVERGED,
-                    CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED,
-                    CaptureResult.CONTROL_AE_STATE_LOCKED
-                ).contains(it)
-            } ?: true
+            val aeUnlocked =
+                frameMetadata[CaptureResult.CONTROL_AE_STATE]?.let {
+                    listOf(
+                            CaptureResult.CONTROL_AE_STATE_CONVERGED,
+                            CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED,
+                            CaptureResult.CONTROL_AE_STATE_LOCKED
+                        )
+                        .contains(it)
+                } ?: true
 
-            val afUnlocked = frameMetadata[CaptureResult.CONTROL_AF_STATE]?.let {
-                listOf(
-                    CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
-                    CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED
-                ).contains(it)
-            } ?: true
+            val afUnlocked =
+                frameMetadata[CaptureResult.CONTROL_AF_STATE]?.let {
+                    listOf(
+                            CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
+                            CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED
+                        )
+                        .contains(it)
+                } ?: true
 
             return@lockCondition aeUnlocked && afUnlocked
         }
@@ -325,10 +367,10 @@ class Controller3AForCaptureTest {
                     FakeFrameMetadata(
                         frameNumber = FrameNumber(frameNumber++),
                         resultMetadata =
-                        mapOf(
-                            CaptureResult.CONTROL_AF_STATE to
-                                CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN,
-                        )
+                            mapOf(
+                                CaptureResult.CONTROL_AF_STATE to
+                                    CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN,
+                            )
                     )
                 )
                 delay(FRAME_RATE_MS)
@@ -338,19 +380,17 @@ class Controller3AForCaptureTest {
         assertThat(result.isCompleted).isFalse()
 
         // Act, simulate the locked result without AE state.
-        listener3A.onRequestSequenceCreated(
-            FakeRequestMetadata(requestNumber = RequestNumber(1))
-        )
+        listener3A.onRequestSequenceCreated(FakeRequestMetadata(requestNumber = RequestNumber(1)))
         listener3A.onPartialCaptureResult(
             FakeRequestMetadata(requestNumber = RequestNumber(1)),
             FrameNumber(120L),
             FakeFrameMetadata(
                 frameNumber = FrameNumber(120L),
                 resultMetadata =
-                mapOf(
-                    CaptureResult.CONTROL_AF_STATE to
-                        CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
-                )
+                    mapOf(
+                        CaptureResult.CONTROL_AF_STATE to
+                            CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
+                    )
             )
         )
 
@@ -393,12 +433,12 @@ class Controller3AForCaptureTest {
                 FakeFrameMetadata(
                     frameNumber = FrameNumber(101L),
                     resultMetadata =
-                    mapOf(
-                        CaptureResult.CONTROL_AF_STATE to
-                            CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
-                        CaptureResult.CONTROL_AE_STATE to
-                            CaptureResult.CONTROL_AE_STATE_CONVERGED
-                    )
+                        mapOf(
+                            CaptureResult.CONTROL_AF_STATE to
+                                CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
+                            CaptureResult.CONTROL_AE_STATE to
+                                CaptureResult.CONTROL_AE_STATE_CONVERGED
+                        )
                 )
             )
         }
@@ -423,12 +463,12 @@ class Controller3AForCaptureTest {
                 FakeFrameMetadata(
                     frameNumber = FrameNumber(101L),
                     resultMetadata =
-                    mapOf(
-                        CaptureResult.CONTROL_AF_STATE to
-                            CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN,
-                        CaptureResult.CONTROL_AE_STATE to
-                            CaptureResult.CONTROL_AE_STATE_CONVERGED
-                    )
+                        mapOf(
+                            CaptureResult.CONTROL_AF_STATE to
+                                CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN,
+                            CaptureResult.CONTROL_AE_STATE to
+                                CaptureResult.CONTROL_AE_STATE_CONVERGED
+                        )
                 )
             )
         }
@@ -438,14 +478,20 @@ class Controller3AForCaptureTest {
         assertThat(result3A.status).isEqualTo(Result3A.Status.OK)
 
         // We now check if the correct sequence of requests were submitted by unlock3APostCapture
-        // call. There should be a request to cancel AF and AE precapture metering.
-        val request1 = captureSequenceProcessor.nextEvent().requestSequence
+        // call. There should be a request to cancel AF and AE precapture metering
+        val event1 = captureSequenceProcessor.nextEvent()
         if (cancelAf) {
-            assertThat(request1!!.requiredParameters[CaptureRequest.CONTROL_AF_TRIGGER])
-                .isEqualTo(CaptureRequest.CONTROL_AF_TRIGGER_CANCEL)
+            assertThat(event1.requiredParameters)
+                .containsEntry(
+                    CaptureRequest.CONTROL_AF_TRIGGER,
+                    CaptureRequest.CONTROL_AF_TRIGGER_CANCEL
+                )
         }
-        assertThat(request1!!.requiredParameters[CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER])
-            .isEqualTo(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL)
+        assertThat(event1.requiredParameters)
+            .containsEntry(
+                CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
+                CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL
+            )
     }
 
     private fun testUnlock3APostCaptureAndroidLAndBelow(cancelAf: Boolean = true) = runTest {
@@ -470,31 +516,37 @@ class Controller3AForCaptureTest {
 
         // We now check if the correct sequence of requests were submitted by unlock3APostCapture
         // call. There should be a request to cancel AF and lock ae.
-        val request1 = captureSequenceProcessor.nextEvent().requestSequence
+        val event1 = captureSequenceProcessor.nextEvent()
         if (cancelAf) {
-            assertThat(request1!!.requiredParameters[CaptureRequest.CONTROL_AF_TRIGGER])
-                .isEqualTo(CaptureRequest.CONTROL_AF_TRIGGER_CANCEL)
+            assertThat(event1.requiredParameters)
+                .containsEntry(
+                    CaptureRequest.CONTROL_AF_TRIGGER,
+                    CaptureRequest.CONTROL_AF_TRIGGER_CANCEL
+                )
         }
-        assertThat(request1!!.requiredParameters[CaptureRequest.CONTROL_AE_LOCK]).isEqualTo(true)
+
+        assertThat(event1.requiredParameters).containsEntry(CaptureRequest.CONTROL_AE_LOCK, true)
 
         // Then another request to unlock ae.
-        val request2 = captureSequenceProcessor.nextEvent().requestSequence
-        assertThat(request2!!.requiredParameters[CaptureRequest.CONTROL_AE_LOCK]).isEqualTo(false)
+        val captureSequence2 = captureSequenceProcessor.nextEvent()
+        assertThat(captureSequence2.requiredParameters)
+            .containsEntry(CaptureRequest.CONTROL_AE_LOCK, false)
     }
 
-    private suspend fun assertCorrectCaptureSequenceInLock3AForCapture(
-        isAfTriggered: Boolean = true
-    ) {
-        val request1 = captureSequenceProcessor.nextEvent().requestSequence
-        assertThat(request1!!.requiredParameters[CaptureRequest.CONTROL_AF_TRIGGER]).apply {
+    private fun assertCorrectCaptureSequenceInLock3AForCapture(isAfTriggered: Boolean = true) {
+        val event1 = captureSequenceProcessor.nextEvent()
+        assertThat(event1.requiredParameters[CaptureRequest.CONTROL_AF_TRIGGER]).apply {
             if (isAfTriggered) {
                 isEqualTo(CaptureRequest.CONTROL_AF_TRIGGER_START)
             } else {
                 isNotEqualTo(CaptureRequest.CONTROL_AF_TRIGGER_IDLE)
             }
         }
-        assertThat(request1.requiredParameters[CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER])
-            .isEqualTo(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START)
+        assertThat(event1.requiredParameters)
+            .containsEntry(
+                CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
+                CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START
+            )
     }
 
     companion object {
@@ -508,15 +560,10 @@ private fun Listener3A.sendPartialCaptureResult(
     frameNumber: Long = 101L,
     resultMetadata: Map<CaptureResult.Key<*>, Any?>
 ) {
-    onRequestSequenceCreated(
-        FakeRequestMetadata(requestNumber = RequestNumber(requestNumber))
-    )
+    onRequestSequenceCreated(FakeRequestMetadata(requestNumber = RequestNumber(requestNumber)))
     onPartialCaptureResult(
         FakeRequestMetadata(requestNumber = RequestNumber(requestNumber)),
         FrameNumber(frameNumber),
-        FakeFrameMetadata(
-            frameNumber = FrameNumber(101L),
-            resultMetadata = resultMetadata
-        )
+        FakeFrameMetadata(frameNumber = FrameNumber(101L), resultMetadata = resultMetadata)
     )
 }

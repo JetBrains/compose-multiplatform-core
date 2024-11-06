@@ -16,20 +16,26 @@
 
 package androidx.compose.foundation.lazy.grid
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.collection.IntList
+import androidx.collection.MutableIntList
+import androidx.collection.emptyIntList
+import androidx.collection.mutableIntListOf
 import androidx.compose.foundation.lazy.layout.LazyLayoutIntervalContent
 import androidx.compose.foundation.lazy.layout.MutableIntervalList
 import androidx.compose.runtime.Composable
 
-@OptIn(ExperimentalFoundationApi::class)
-internal class LazyGridIntervalContent(
-    content: LazyGridScope.() -> Unit
-) : LazyGridScope, LazyLayoutIntervalContent<LazyGridInterval>() {
+internal class LazyGridIntervalContent(content: LazyGridScope.() -> Unit) :
+    LazyGridScope, LazyLayoutIntervalContent<LazyGridInterval>() {
     internal val spanLayoutProvider: LazyGridSpanLayoutProvider = LazyGridSpanLayoutProvider(this)
 
     override val intervals = MutableIntervalList<LazyGridInterval>()
 
     internal var hasCustomSpans = false
+
+    private var _headerIndexes: MutableIntList? = null
+
+    val headerIndexes: IntList
+        get() = _headerIndexes ?: emptyIntList()
 
     init {
         apply(content)
@@ -72,12 +78,22 @@ internal class LazyGridIntervalContent(
         if (span != null) hasCustomSpans = true
     }
 
+    override fun stickyHeader(
+        key: Any?,
+        contentType: Any?,
+        content: @Composable LazyGridItemScope.(Int) -> Unit
+    ) {
+        val headersIndexes = _headerIndexes ?: mutableIntListOf().also { _headerIndexes = it }
+        val headerIndex = intervals.size
+        headersIndexes.add(headerIndex)
+        item(key, { GridItemSpan(maxLineSpan) }, contentType) { content.invoke(this, headerIndex) }
+    }
+
     private companion object {
         val DefaultSpan: LazyGridItemSpanScope.(Int) -> GridItemSpan = { GridItemSpan(1) }
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 internal class LazyGridInterval(
     override val key: ((index: Int) -> Any)?,
     val span: LazyGridItemSpanScope.(Int) -> GridItemSpan,

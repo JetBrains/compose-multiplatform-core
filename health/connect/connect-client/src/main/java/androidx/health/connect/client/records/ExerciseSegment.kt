@@ -72,6 +72,10 @@ public class ExerciseSegment(
         return SESSION_TO_SEGMENTS_MAPPING[sessionType]?.contains(segmentType) ?: false
     }
 
+    override fun toString(): String {
+        return "ExerciseSegment(startTime=$startTime, endTime=$endTime, segmentType=$segmentType, repetitions=$repetitions)"
+    }
+
     companion object {
         /** Next Id: 68. */
 
@@ -394,10 +398,7 @@ public class ExerciseSegment(
                 ExerciseSessionRecord.EXERCISE_TYPE_YOGA to setOf(EXERCISE_SEGMENT_TYPE_YOGA),
             )
 
-        /**
-         * List of supported segment types on Health Platform.
-         *
-         */
+        /** List of supported segment types on Health Platform. */
         @Retention(AnnotationRetention.SOURCE)
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @IntDef(

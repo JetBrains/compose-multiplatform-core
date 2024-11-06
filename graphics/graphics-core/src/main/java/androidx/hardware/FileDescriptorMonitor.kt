@@ -22,6 +22,7 @@ import java.io.File
 import java.lang.NumberFormatException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.collections.removeLast as removeLastKt
 
 /**
  * Class to monitor open file descriptors and clean up those with fences that have already signalled
@@ -40,6 +41,7 @@ internal class FileDescriptorMonitor(
     private var mExecutor: HandlerThreadExecutor
 
     private data class FdSignalPair(val fd: Int, val signalTime: Long)
+
     private val pendingFileDescriptors = ArrayList<FdSignalPair>()
 
     init {
@@ -50,7 +52,7 @@ internal class FileDescriptorMonitor(
     private fun closePendingFileDescriptors() {
         pendingFileDescriptors.sortByDescending { fdSignalTimePair -> fdSignalTimePair.signalTime }
         while (pendingFileDescriptors.size > MAX_FD) {
-            val fdSignalPair = pendingFileDescriptors.removeLast()
+            val fdSignalPair = pendingFileDescriptors.removeLastKt()
             try {
                 val fd = fdSignalPair.fd
                 // Re-query the signal time in case the fd was re-used
@@ -67,8 +69,9 @@ internal class FileDescriptorMonitor(
 
     private fun Long.signalTimeDiffMillis(): Long {
         val now = System.nanoTime()
-        val signalled = this != SyncFenceCompat.SIGNAL_TIME_INVALID &&
-            this != SyncFenceCompat.SIGNAL_TIME_PENDING
+        val signalled =
+            this != SyncFenceCompat.SIGNAL_TIME_INVALID &&
+                this != SyncFenceCompat.SIGNAL_TIME_PENDING
         return if (signalled && now > this) {
             TimeUnit.NANOSECONDS.toMillis(now - this)
         } else {
@@ -121,9 +124,7 @@ internal class FileDescriptorMonitor(
     }
 
     fun addCleanupCallback(callback: () -> Unit) {
-        synchronized(mCleanupCompleteCallbacks) {
-            mCleanupCompleteCallbacks.add(callback)
-        }
+        synchronized(mCleanupCompleteCallbacks) { mCleanupCompleteCallbacks.add(callback) }
     }
 
     /**
@@ -151,8 +152,9 @@ internal class FileDescriptorMonitor(
 
     /**
      * Stop scheduling of the periodic clean up of file descriptors
+     *
      * @param cancelPending Cancels any pending request to clean up contents. If false, the last
-     * pending request to clean up content will still be scheduled but no more will be afterwards.
+     *   pending request to clean up content will still be scheduled but no more will be afterwards.
      */
     fun stopMonitoring(cancelPending: Boolean = false) {
         if (mIsMonitoring.get()) {
@@ -165,8 +167,8 @@ internal class FileDescriptorMonitor(
     }
 
     /**
-     * Returns true if [startMonitoring] has been invoked without a corresponding call
-     * to [stopMonitoring]
+     * Returns true if [startMonitoring] has been invoked without a corresponding call to
+     * [stopMonitoring]
      */
     val isMonitoring: Boolean
         get() = mIsMonitoring.get()
@@ -174,9 +176,7 @@ internal class FileDescriptorMonitor(
     companion object {
         const val TAG = "FileDescriptorMonitor"
 
-        /**
-         * Delta in which if a fence has signalled it should be removed
-         */
+        /** Delta in which if a fence has signalled it should be removed */
         const val SIGNAL_TIME_DELTA_MILLIS = 3000
 
         const val MONITOR_DELAY = 1000L

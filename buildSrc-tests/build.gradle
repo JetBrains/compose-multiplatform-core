@@ -54,17 +54,34 @@ sourceSets {
 apply from: "${buildscript.sourceFile.parentFile.parent}/buildSrc/shared-dependencies.gradle"
 
 dependencies {
+    api(libs.javaxInject)
+    api(libs.shadow)
+    api(libs.guavaAndroid)
+    api(libs.kotlinGradlePluginApi)
+    api(libs.kotlinNativeUtils)
+    api(libs.kotlinStdlib)
+
     implementation(project(":benchmark:benchmark-gradle-plugin"))
     implementation(project(":inspection:inspection-gradle-plugin"))
     implementation(project(":stableaidl:stableaidl-gradle-plugin"))
-    implementation(findGradleKotlinDsl())
+    implementation(project(":binarycompatibilityvalidator:binarycompatibilityvalidator"))
+    implementation(project.ext.findGradleKotlinDsl())
+    // Workaround for targeting KotlinTarget.KOTLIN_1_9, but linking agaist kotlin compiler
+    // embeddable 2.0 in buildSrc
+    implementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:${libs.versions.kotlin.get()}")
+    implementation(libs.kotlinGradlePluginAnnotations)
+    implementation(libs.kotlinToolingCore)
+    implementation(libs.binaryCompatibilityValidator)
+    implementation(libs.jetbrainsBinaryCompatibilityValidator)
+    implementation(libs.xmlApis)
+
+    testImplementation(libs.checkmark)
+    testImplementation libs.hamcrestCore
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(project(":internal-testutils-gradle-plugin"))
     testImplementation(project(":internal-testutils-truth"))
     testImplementation(gradleTestKit())
-    testImplementation(libs.checkmark)
-    testImplementation(libs.toml)
 }
 
 tasks.withType(Test).configureEach {
@@ -80,23 +97,15 @@ androidx {
 
 // Also do style checking of the buildSrc project from within this project
 // We run that from this project so that it doesn't block other projects while it runs
-def ktlintDir = file("../buildSrc")
+def ktfmtDir = file("../buildSrc")
 def subdirs = ["plugins", "private", "public"]
 
-tasks["ktlint"].configure({ t ->
-    t.overrideDirectory = ktlintDir
-    t.overrideSubdirectories = subdirs
-})
-tasks["ktlintFormat"].configure({ t ->
-    t.overrideDirectory = ktlintDir
-    t.overrideSubdirectories = subdirs
-})
-
 tasks["ktCheck"].configure({ t ->
-    t.overrideDirectory = ktlintDir
+    t.overrideDirectory = ktfmtDir
     t.overrideSubdirectories = subdirs
 })
 tasks["ktFormat"].configure({ t ->
-    t.overrideDirectory = ktlintDir
+    t.overrideDirectory = ktfmtDir
     t.overrideSubdirectories = subdirs
 })
+

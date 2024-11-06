@@ -60,19 +60,16 @@ import com.squareup.kotlinpoet.javapoet.KClassName
 internal sealed class KspTypeElement(
     env: KspProcessingEnv,
     override val declaration: KSClassDeclaration
-) : KspElement(env, declaration),
+) :
+    KspElement(env, declaration),
     XTypeElement,
     XHasModifiers by KspHasModifiers.create(declaration),
     XAnnotated by KspAnnotated.create(env, declaration, NO_USE_SITE),
     KspMemberContainer {
 
-    override val name: String by lazy {
-        declaration.simpleName.asString()
-    }
+    override val name: String by lazy { declaration.simpleName.asString() }
 
-    override val packageName: String by lazy {
-        packageElement.qualifiedName
-    }
+    override val packageName: String by lazy { packageElement.qualifiedName }
 
     override val packageElement: XPackageElement by lazy {
         KspPackageElement(env, declaration.packageName.asString())
@@ -95,63 +92,67 @@ internal sealed class KspTypeElement(
     }
 
     override val type: KspType by lazy {
-        env.wrap(
-            ksType = declaration.asType(emptyList()),
-            allowPrimitives = false
-        )
+        env.wrap(ksType = declaration.asType(emptyList()), allowPrimitives = false)
     }
 
     override val superClass: XType? by lazy {
+        val anyTypeElement = env.requireTypeElement(Any::class)
         if (isInterface()) {
             // interfaces don't have super classes (they do have super types)
             null
-        } else if (this == env.commonTypes.anyType.typeElement) {
+        } else if (this == anyTypeElement) {
             null
         } else {
             declaration.superTypes
-                .singleOrNull {
-                    val declaration = it.resolve().declaration.replaceTypeAliases()
-                    declaration is KSClassDeclaration && declaration.classKind == ClassKind.CLASS
-                }?.let { env.wrap(it) }
-                ?: env.commonTypes.anyType
+                .firstOrNull {
+                    val type = it.resolve()
+                    val declaration = type.declaration.replaceTypeAliases()
+                    declaration is KSClassDeclaration &&
+                        (declaration.classKind == ClassKind.CLASS &&
+                            // Filter out error class declarations, for consistency with KAPT these
+                            // are exposed as super interfaces.
+                            (isFromJava() || !type.isError))
+                }
+                ?.let { env.wrap(it).makeNonNullable() } ?: anyTypeElement.type
         }
     }
 
     override val superInterfaces by lazy {
-        declaration.superTypes.asSequence()
+        declaration.superTypes
             .filter {
-                val declaration = it.resolve().declaration.replaceTypeAliases()
-                declaration is KSClassDeclaration && declaration.classKind == ClassKind.INTERFACE
-            }.mapTo(mutableListOf()) { env.wrap(it) }
+                val type = it.resolve()
+                val declaration = type.declaration.replaceTypeAliases()
+                declaration is KSClassDeclaration &&
+                    (declaration.classKind == ClassKind.INTERFACE ||
+                        // Workaround https://github.com/google/ksp/issues/1443 by exposing
+                        // error class declarations as super interfaces.
+                        (isFromKotlin() && type.isError))
+            }
+            .mapTo(mutableListOf()) { env.wrap(it).makeNonNullable() }
     }
 
     @Deprecated(
         "Use asClassName().toJavaPoet() to be clear the name is for JavaPoet.",
-        replaceWith = ReplaceWith(
-            "asClassName().toJavaPoet()",
-            "androidx.room.compiler.codegen.toJavaPoet"
-        )
+        replaceWith =
+            ReplaceWith("asClassName().toJavaPoet()", "androidx.room.compiler.codegen.toJavaPoet")
     )
-    override val className: ClassName by lazy {
-        xClassName.java
-    }
+    override val className: ClassName by lazy { xClassName.java }
 
     private val xClassName: XClassName by lazy {
-        val java = declaration.asJTypeName(env.resolver).tryBox().also { typeName ->
-            check(typeName is JClassName) {
-                "Internal error. The type name for $declaration should be a class name but " +
-                    "received ${typeName::class}"
-            }
-        } as JClassName
+        val java =
+            declaration.asJTypeName(env.resolver).tryBox().also { typeName ->
+                check(typeName is JClassName) {
+                    "Internal error. The type name for $declaration should be a class name but " +
+                        "received ${typeName::class}"
+                }
+            } as JClassName
         val kotlin = declaration.asKTypeName(env.resolver) as KClassName
         XClassName(java, kotlin, XNullability.NONNULL)
     }
 
     override fun asClassName() = xClassName
 
-    private val allMethods = MemoizedSequence {
-        collectAllMethods(this)
-    }
+    private val allMethods = MemoizedSequence { collectAllMethods(this) }
 
     private val allFieldsIncludingPrivateSupers = MemoizedSequence {
         collectFieldsIncludingPrivateSupers(this)
@@ -167,18 +168,15 @@ internal sealed class KspTypeElement(
      */
     private val _declaredProperties by lazy {
         buildList {
-            addAll(declaration.getDeclarationsInSourceOrder())
-            addAll(
-                declaration.findCompanionObject().getDeclarationsInSourceOrder()
-                    .filter { it.isStatic() }
-            )
-        }.filterIsInstance(KSPropertyDeclaration::class.java)
-            .map {
-                KspFieldElement(
-                    env = env,
-                    declaration = it
+                addAll(declaration.getDeclarationsInSourceOrder())
+                addAll(
+                    declaration.findCompanionObject().getDeclarationsInSourceOrder().filter {
+                        it.isStatic()
+                    }
                 )
             }
+            .filterIsInstance(KSPropertyDeclaration::class.java)
+            .map { KspFieldElement(env = env, declaration = it) }
     }
 
     private val _constructors by lazy {
@@ -187,9 +185,7 @@ internal sealed class KspTypeElement(
         } else {
             val constructors = declaration.getConstructors().toList()
             buildList {
-                addAll(
-                    constructors.map { env.wrapFunctionDeclaration(it) as XConstructorElement }
-                )
+                addAll(constructors.map { env.wrapFunctionDeclaration(it) as XConstructorElement })
                 constructors
                     .filter { it.hasOverloads() }
                     .forEach { addAll(enumerateSyntheticConstructors(it)) }
@@ -215,32 +211,31 @@ internal sealed class KspTypeElement(
     }
 
     private val _declaredFields by lazy {
-        _declaredProperties.filter {
-            it.declaration.hasBackingField
-        }
+        _declaredProperties.filter { it.declaration.hasBackingField }
     }
 
     private fun syntheticGetterSetterMethods(field: KspFieldElement): List<XMethodElement> {
-      if (declaration.isCompanionObject) {
+        if (declaration.isCompanionObject) {
+            return field.syntheticAccessors
+        }
+        if (field.isStatic() && !field.declaration.hasJvmStaticAnnotation()) {
+            return field.syntheticAccessors.filter { it.accessor.hasJvmStaticAnnotation() }
+        }
+        if (field.isStatic() && field.declaration.hasJvmStaticAnnotation()) {
+            // Getter and setter are copied from companion object into current type
+            // element by Compiler in KAPT when @JvmStatic is present, in this case, the
+            // copied over method element should swap its enclosing element to be
+            // current type element instead of companion object.
+            return field.syntheticAccessors.map { element ->
+                KspSyntheticPropertyMethodElement.create(
+                    env,
+                    field,
+                    element.accessor,
+                    isSyntheticStatic = true
+                )
+            }
+        }
         return field.syntheticAccessors
-      }
-      if (field.isStatic() && !field.declaration.hasJvmStaticAnnotation()) {
-        return field.syntheticAccessors.filter {
-          it.accessor.hasJvmStaticAnnotation()
-        }
-      }
-      if (field.isStatic() && field.declaration.hasJvmStaticAnnotation()) {
-        // Getter and setter are copied from companion object into current type
-        // element by Compiler in KAPT when @JvmStatic is present, in this case, the
-        // copied over method element should swap its enclosing element to be
-        // current type element instead of companion object.
-        return field.syntheticAccessors.map { element ->
-          KspSyntheticPropertyMethodElement.create(
-            env, field, element.accessor, isSyntheticStatic = true
-          )
-        }
-      }
-      return field.syntheticAccessors
     }
 
     override fun isNested(): Boolean {
@@ -287,9 +282,10 @@ internal sealed class KspTypeElement(
     }
 
     override fun isRecordClass(): Boolean {
+        val recordType = env.findType("java.lang.Record") ?: return false
         // Need to also check super type since @JvmRecord is @Retention(SOURCE)
         return hasAnnotation(JvmRecord::class) ||
-            superClass?.isTypeOf(java.lang.Record::class) == true
+            superClass?.let { recordType.isAssignableFrom(it) } == true
     }
 
     override fun getDeclaredFields(): List<XFieldElement> {
@@ -301,59 +297,46 @@ internal sealed class KspTypeElement(
             return null
         }
         return declaration.primaryConstructor?.let {
-            KspConstructorElement(
-                env = env,
-                declaration = it
-            )
+            KspConstructorElement(env = env, declaration = it)
         }
     }
 
     private val _declaredMethods by lazy {
-      buildList {
-          declaration.getDeclarationsInSourceOrder()
-            .forEach {
-              if (it is KSFunctionDeclaration && !it.isConstructor()) {
-                add(
-                  KspMethodElement.create(
-                    env = env,
-                    declaration = it
-                  )
-                )
-             } else if (it is KSPropertyDeclaration) {
-                addAll(
-                  syntheticGetterSetterMethods(
-                    KspFieldElement(
-                      env = env,
-                      declaration = it
-                    )
-                  )
-                )
+        buildList {
+                declaration.getDeclarationsInSourceOrder().forEach {
+                    if (it is KSFunctionDeclaration && !it.isConstructor()) {
+                        add(KspMethodElement.create(env = env, declaration = it))
+                    } else if (it is KSPropertyDeclaration) {
+                        addAll(
+                            syntheticGetterSetterMethods(
+                                KspFieldElement(env = env, declaration = it)
+                            )
+                        )
+                    }
+                }
+                declaration.findCompanionObject().getDeclarationsInSourceOrder().forEach {
+                    if (
+                        it.hasJvmStaticAnnotation() &&
+                            it is KSFunctionDeclaration &&
+                            !it.isConstructor()
+                    ) {
+                        add(
+                            KspMethodElement.create(
+                                env = env,
+                                declaration = it,
+                                isSyntheticStatic = true
+                            )
+                        )
+                    } else if (it is KSPropertyDeclaration) {
+                        addAll(
+                            syntheticGetterSetterMethods(
+                                KspFieldElement(env = env, declaration = it)
+                            )
+                        )
+                    }
+                }
             }
-          }
-          declaration.findCompanionObject().getDeclarationsInSourceOrder()
-            .forEach {
-              if (it.hasJvmStaticAnnotation() &&
-                  it is KSFunctionDeclaration &&
-                  !it.isConstructor()) {
-                add(
-                  KspMethodElement.create(
-                    env = env,
-                    declaration = it,
-                    isSyntheticStatic = true
-                  )
-                )
-              } else if (it is KSPropertyDeclaration) {
-                addAll(
-                  syntheticGetterSetterMethods(
-                    KspFieldElement(
-                      env = env,
-                      declaration = it
-                    )
-                  )
-                )
-              }
-            }
-        }.filterMethodsByConfig(env)
+            .filterMethodsByConfig(env)
     }
 
     override fun getDeclaredMethods(): List<XMethodElement> {
@@ -369,7 +352,9 @@ internal sealed class KspTypeElement(
     ): List<KspSyntheticConstructorElement> {
         val parameters = declaration.parameters
         val defaultParamsCount = parameters.count { it.hasDefault }
-        if (defaultParamsCount < 1) { return emptyList() }
+        if (defaultParamsCount < 1) {
+            return emptyList()
+        }
         val constructorEnumeration = mutableListOf<KspSyntheticConstructorElement>()
         for (defaultParameterToUseCount in 0..defaultParamsCount - 1) {
             val parameterEnumeration = mutableListOf<KSValueParameter>()
@@ -377,23 +362,24 @@ internal sealed class KspTypeElement(
             for (parameter in parameters) {
                 if (parameter.hasDefault) {
                     if (defaultParameterUsedCount++ >= defaultParameterToUseCount) {
-                      continue
+                        continue
                     }
                 }
                 parameterEnumeration.add(parameter)
             }
             constructorEnumeration.add(
-                KspSyntheticConstructorElement(env, declaration, parameterEnumeration))
+                KspSyntheticConstructorElement(env, declaration, parameterEnumeration)
+            )
         }
-        val isPreCompiled =
-            declaration.origin == KOTLIN_LIB || declaration.origin == JAVA_LIB
+        val isPreCompiled = declaration.origin == KOTLIN_LIB || declaration.origin == JAVA_LIB
         return if (isPreCompiled) constructorEnumeration.reversed() else constructorEnumeration
     }
 
     override fun getSuperInterfaceElements() = superInterfaces.mapNotNull { it.typeElement }
 
     override fun getEnclosedTypeElements(): List<XTypeElement> {
-        return declaration.declarations.filterIsInstance<KSClassDeclaration>()
+        return declaration.declarations
+            .filterIsInstance<KSClassDeclaration>()
             .filterNot { it.classKind == ClassKind.ENUM_ENTRY }
             .map { env.wrapClassDeclaration(it) }
             .toList()
@@ -401,47 +387,39 @@ internal sealed class KspTypeElement(
 
     override fun isFromJava(): Boolean {
         return when (declaration.origin) {
-            JAVA, JAVA_LIB -> true
+            JAVA,
+            JAVA_LIB -> true
             else -> false
         }
     }
 
     override fun isFromKotlin(): Boolean {
         return when (declaration.origin) {
-            KOTLIN, KOTLIN_LIB -> true
+            KOTLIN,
+            KOTLIN_LIB -> true
             else -> false
         }
     }
 
-    private class DefaultKspTypeElement(
-        env: KspProcessingEnv,
-        declaration: KSClassDeclaration
-    ) : KspTypeElement(env, declaration)
+    private class DefaultKspTypeElement(env: KspProcessingEnv, declaration: KSClassDeclaration) :
+        KspTypeElement(env, declaration)
 
-    private class KspEnumTypeElement(
-        env: KspProcessingEnv,
-        declaration: KSClassDeclaration
-    ) : KspTypeElement(env, declaration), XEnumTypeElement {
+    private class KspEnumTypeElement(env: KspProcessingEnv, declaration: KSClassDeclaration) :
+        KspTypeElement(env, declaration), XEnumTypeElement {
         override val entries: Set<XEnumEntry> by lazy {
             declaration.declarations
                 .filterIsInstance<KSClassDeclaration>()
                 .filter { it.classKind == ClassKind.ENUM_ENTRY }
-                .mapTo(mutableSetOf()) {
-                    KspEnumEntry(env, it, this)
-                }
+                .mapTo(mutableSetOf()) { KspEnumEntry(env, it, this) }
         }
     }
 
     @OptIn(KspExperimental::class)
-    fun KSDeclarationContainer?.getDeclarationsInSourceOrder() = this?.let {
-        env.resolver.getDeclarationsInSourceOrder(it)
-    } ?: emptySequence()
+    fun KSDeclarationContainer?.getDeclarationsInSourceOrder() =
+        this?.let { env.resolver.getDeclarationsInSourceOrder(it) } ?: emptySequence()
 
     companion object {
-        fun create(
-            env: KspProcessingEnv,
-            ksClassDeclaration: KSClassDeclaration
-        ): KspTypeElement {
+        fun create(env: KspProcessingEnv, ksClassDeclaration: KSClassDeclaration): KspTypeElement {
             return when (ksClassDeclaration.classKind) {
                 ClassKind.ENUM_CLASS -> KspEnumTypeElement(env, ksClassDeclaration)
                 ClassKind.ENUM_ENTRY -> error("Expected declaration to not be an enum entry.")

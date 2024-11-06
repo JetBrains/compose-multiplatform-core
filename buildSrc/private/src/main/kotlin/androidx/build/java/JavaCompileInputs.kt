@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("TYPEALIAS_EXPANSION_DEPRECATION")
 
 package androidx.build.java
 
+import androidx.build.DeprecatedKotlinMultiplatformAndroidTarget
 import androidx.build.getAndroidJar
 import androidx.build.multiplatformExtension
-import com.android.build.api.dsl.KotlinMultiplatformAndroidTarget
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
+import com.android.build.api.variant.LibraryVariant
 import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
@@ -46,22 +49,40 @@ data class JavaCompileInputs(
 ) {
     companion object {
         // Constructs a JavaCompileInputs from a library and its variant
-        @Suppress("DEPRECATION") // BaseVariant
-        fun fromLibraryVariant(
-            variant: com.android.build.gradle.api.BaseVariant,
-            project: Project,
-            bootClasspath: FileCollection
-        ): JavaCompileInputs {
-            val sourceCollection = getSourceCollection(variant, project)
-            val commonModuleSourceCollection = getCommonModuleSourceCollection(variant, project)
+        fun fromLibraryVariant(variant: LibraryVariant, project: Project): JavaCompileInputs {
+            val kotlinCollection = project.files(variant.sources.kotlin?.all)
+            val javaCollection = project.files(variant.sources.java?.all)
 
-            val dependencyClasspath = variant.getCompileClasspath(null).filter { it.exists() }
+            val androidJvmTarget =
+                project.multiplatformExtension
+                    ?.targets
+                    ?.requirePlatform(KotlinPlatformType.androidJvm)
+                    ?.findCompilation(compilationName = variant.name)
+
+            val sourceCollection =
+                androidJvmTarget?.let { project.files(project.sourceFiles(it)) }
+                    ?: (kotlinCollection + javaCollection)
+
+            val commonModuleSourceCollection =
+                project
+                    .files(androidJvmTarget?.let { project.commonModuleSourcePaths(it) })
+                    .builtBy(
+                        // Remove task dependency when b/332711506 is fixed, which should get us an
+                        // API to get all sources (static and generated)
+                        project.tasks.named("compileReleaseJavaWithJavac")
+                    )
+
+            val bootClasspath =
+                project.extensions
+                    .findByType(LibraryAndroidComponentsExtension::class.java)!!
+                    .sdkComponents
+                    .bootClasspath
 
             return JavaCompileInputs(
                 sourcePaths = sourceCollection,
                 commonModuleSourcePaths = commonModuleSourceCollection,
-                dependencyClasspath = dependencyClasspath,
-                bootClasspath = bootClasspath
+                dependencyClasspath = variant.compileClasspath,
+                bootClasspath = project.files(bootClasspath)
             )
         }
 
@@ -80,9 +101,8 @@ data class JavaCompileInputs(
                         .trimIndent()
                 }
             val jvmTarget = kmpExtension.targets.requirePlatform(KotlinPlatformType.jvm)
-            val jvmCompilation = jvmTarget.findCompilation(
-                compilationName = KotlinCompilation.MAIN_COMPILATION_NAME
-            )
+            val jvmCompilation =
+                jvmTarget.findCompilation(compilationName = KotlinCompilation.MAIN_COMPILATION_NAME)
 
             val sourceCollection = project.sourceFiles(jvmCompilation)
 
@@ -112,9 +132,10 @@ data class JavaCompileInputs(
                 """
                         .trimIndent()
                 }
-            val target = kmpExtension.targets.withType(
-                KotlinMultiplatformAndroidTarget::class.java
-            ).single()
+            val target =
+                kmpExtension.targets
+                    .withType(DeprecatedKotlinMultiplatformAndroidTarget::class.java)
+                    .single()
             val compilation = target.findCompilation(KotlinCompilation.MAIN_COMPILATION_NAME)
             val sourceCollection = project.sourceFiles(compilation)
 
@@ -124,8 +145,8 @@ data class JavaCompileInputs(
                 sourcePaths = sourceCollection,
                 commonModuleSourcePaths = commonModuleSourcePaths,
                 dependencyClasspath =
-                target.compilations[KotlinCompilation.MAIN_COMPILATION_NAME]
-                    .compileDependencyFiles,
+                    target.compilations[KotlinCompilation.MAIN_COMPILATION_NAME]
+                        .compileDependencyFiles,
                 bootClasspath = project.getAndroidJar()
             )
         }
@@ -141,69 +162,6 @@ data class JavaCompileInputs(
                 dependencyClasspath = dependencyClasspath,
                 bootClasspath = project.getAndroidJar()
             )
-        }
-
-        @Suppress("DEPRECATION") // BaseVariant, SourceKind
-        private fun getSourceCollection(
-            variant: com.android.build.gradle.api.BaseVariant,
-            project: Project
-        ): FileCollection {
-            // If the project has the kotlin-multiplatform plugin, we want to return a combined
-            // collection of all the source files inside '*main' source sets. i.e., given a module
-            // with a common and Android source set, this will look inside commonMain and
-            // androidMain.
-            val taskDependencies = mutableListOf<Any>(variant.javaCompileProvider)
-            val sourceCollection: ConfigurableFileCollection =
-                project.multiplatformExtension?.let { kmpExtension ->
-                    project.sourceFiles(
-                        kmpExtension.targets
-                            .requirePlatform(KotlinPlatformType.androidJvm)
-                            .findCompilation(compilationName = variant.name)
-                    )
-                }
-                    ?: project.files(
-                           project.provider {
-                               variant
-                                   .getSourceFolders(com.android.build.gradle.api.SourceKind.JAVA)
-                                   .map { folder ->
-                                       for (builtBy in folder.builtBy) {
-                                           taskDependencies.add(builtBy)
-                                       }
-                                       folder.dir
-                                   }
-                           }
-                       )
-
-            for (dep in taskDependencies) {
-                sourceCollection.builtBy(dep)
-            }
-            return sourceCollection
-        }
-
-        @Suppress("DEPRECATION") // BaseVariant, SourceKind
-        private fun getCommonModuleSourceCollection(
-            variant: com.android.build.gradle.api.BaseVariant,
-            project: Project
-        ): FileCollection {
-            // If the project has the kotlin-multiplatform plugin, we want to return a combined
-            // collection of all the source files inside '*main' source sets. I.e, given a module
-            // with a common and Android source set, this will look inside commonMain and
-            // androidMain.
-            val taskDependencies = mutableListOf<Any>(variant.javaCompileProvider)
-            val sourceCollection: ConfigurableFileCollection =
-                project.multiplatformExtension?.let { kmpExtension ->
-                    project.commonModuleSourcePaths(
-                        kmpExtension.targets
-                            .requirePlatform(KotlinPlatformType.androidJvm)
-                            .findCompilation(compilationName = variant.name)
-                    )
-                }
-                    ?: project.files()
-
-            for (dep in taskDependencies) {
-                sourceCollection.builtBy(dep)
-            }
-            return sourceCollection
         }
 
         /**
@@ -234,21 +192,21 @@ data class JavaCompileInputs(
             kotlinCompilation: Provider<KotlinCompilation<*>>
         ): ConfigurableFileCollection {
             return project.files(
-                    project.provider {
-                        kotlinCompilation.get().allKotlinSourceSets
-                            .flatMap {
-                                it.kotlin.sourceDirectories
-                            }
-                            .also {
-                                require(it.isNotEmpty()) {
-                                    """
+                project.provider {
+                    kotlinCompilation
+                        .get()
+                        .allKotlinSourceSets
+                        .flatMap { it.kotlin.sourceDirectories }
+                        .also {
+                            require(it.isNotEmpty()) {
+                                """
                                     Didn't find any source sets for $kotlinCompilation in ${project.path}.
                                     """
-                                        .trimIndent()
-                                }
+                                    .trimIndent()
                             }
-                    }
-                )
+                        }
+                }
+            )
         }
 
         private fun Project.commonModuleSourcePaths(
@@ -256,13 +214,11 @@ data class JavaCompileInputs(
         ): ConfigurableFileCollection {
             return project.files(
                 project.provider {
-                    kotlinCompilation.get().allKotlinSourceSets
-                        .filter {
-                            it.dependsOn.isEmpty()
-                        }
-                        .flatMap {
-                            it.kotlin.sourceDirectories.files
-                        }
+                    kotlinCompilation
+                        .get()
+                        .allKotlinSourceSets
+                        .filter { it.dependsOn.isEmpty() }
+                        .flatMap { it.kotlin.sourceDirectories.files }
                 }
             )
         }

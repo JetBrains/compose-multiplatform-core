@@ -29,7 +29,6 @@ import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.api.artifacts.result.ResolvedArtifactResult
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.AttributeContainer
-import org.gradle.api.attributes.Bundling
 import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.LibraryElements
 import org.gradle.api.attributes.Usage
@@ -41,6 +40,8 @@ import org.gradle.util.GradleVersion
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinUsages
+import org.jetbrains.kotlin.gradle.targets.js.KotlinJsCompilerAttribute
+import org.jetbrains.kotlin.gradle.targets.js.KotlinWasmTargetAttribute
 import org.jetbrains.kotlin.konan.target.KonanTarget
 
 /**
@@ -308,15 +309,19 @@ ${verificationException.message?.prependIndent("    ")}
             vararg dependencies: Dependency
         ): List<Configuration> {
             return listOf(
-                LibraryElements.JAR,
-                "aar"
-            ).map { libraryElement ->
+                LibraryElements.JAR to TargetJvmEnvironment.STANDARD_JVM,
+                LibraryElements.JAR to TargetJvmEnvironment.ANDROID,
+                "aar" to TargetJvmEnvironment.ANDROID,
+            ).map { (libraryElement, jvmEnvironment) ->
                 createConfiguration(*dependencies) {
                     attributes.apply {
                         attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, libraryElement)
                         attribute(Usage.USAGE_ATTRIBUTE, Usage.JAVA_RUNTIME)
                         attribute(Category.CATEGORY_ATTRIBUTE, Category.LIBRARY)
-                        attribute(Bundling.BUNDLING_ATTRIBUTE, Bundling.EXTERNAL)
+                        attribute(
+                            TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
+                            jvmEnvironment
+                        )
                     }
                 }
             }
@@ -334,7 +339,6 @@ ${verificationException.message?.prependIndent("    ")}
                 createConfiguration(*dependencies) {
                     attributes.apply {
                         attribute(Category.CATEGORY_ATTRIBUTE, Category.LIBRARY)
-                        attribute(Bundling.BUNDLING_ATTRIBUTE, Bundling.EXTERNAL)
                         attribute(
                             TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
                             TargetJvmEnvironment.STANDARD_JVM
@@ -369,7 +373,6 @@ ${verificationException.message?.prependIndent("    ")}
                         attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, libraryElement)
                         attribute(Usage.USAGE_ATTRIBUTE, Usage.JAVA_API)
                         attribute(Category.CATEGORY_ATTRIBUTE, Category.LIBRARY)
-                        attribute(Bundling.BUNDLING_ATTRIBUTE, Bundling.EXTERNAL)
                     }
                 }
             }
@@ -410,6 +413,41 @@ ${verificationException.message?.prependIndent("    ")}
                     }
                 }
             }
+
+            val wasmJs = KOTlIN_USAGES.map { kotlinUsage ->
+                createConfiguration(*dependencies) {
+                    attributes.apply {
+                        attribute(KotlinPlatformType.attribute, KotlinPlatformType.wasm)
+                        attribute(Usage.USAGE_ATTRIBUTE, kotlinUsage)
+                        attribute(
+                            KotlinWasmTargetAttribute.wasmTargetAttribute,
+                            KotlinWasmTargetAttribute.js
+                        )
+                        attribute(Category.CATEGORY_ATTRIBUTE, Category.LIBRARY)
+                        attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE, "non-jvm")
+                    }
+                }
+            }
+
+            val js =
+                KOTlIN_USAGES.map { kotlinUsage ->
+                    createConfiguration(*dependencies) {
+                        attributes.apply {
+                            attribute(Category.CATEGORY_ATTRIBUTE, Category.LIBRARY)
+                            attribute(
+                                TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
+                                "non-jvm"
+                            )
+                            attribute(Usage.USAGE_ATTRIBUTE, kotlinUsage)
+                            attribute(
+                                KotlinJsCompilerAttribute.jsCompilerAttribute,
+                                KotlinJsCompilerAttribute.ir
+                            )
+                            attribute(KotlinPlatformType.attribute, KotlinPlatformType.js)
+                        }
+                    }
+                }
+
             val commonArtifacts = KOTlIN_USAGES.map { kotlinUsage ->
                 createConfiguration(*dependencies) {
                     attributes.apply {
@@ -419,7 +457,7 @@ ${verificationException.message?.prependIndent("    ")}
                     }
                 }
             }
-            return jvmAndAndroid + konanTargetConfigurations + commonArtifacts
+            return jvmAndAndroid + wasmJs + js + konanTargetConfigurations + commonArtifacts
         }
 
         private fun createKonanTargetConfiguration(

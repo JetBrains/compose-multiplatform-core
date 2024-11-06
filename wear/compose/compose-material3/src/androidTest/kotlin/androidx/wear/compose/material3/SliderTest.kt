@@ -38,19 +38,19 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.width
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.wear.compose.material3.internal.Strings
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
 
-@OptIn(ExperimentalWearMaterial3Api::class)
-public class SliderTest {
-    @get:Rule
-    public val rule = createComposeRule()
+class SliderTest {
+    @get:Rule val rule = createComposeRule()
 
     @Test
-    public fun supports_testtag() {
+    fun supports_testtag() {
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 value = 1f,
                 onValueChange = {},
                 valueRange = 0f..10f,
@@ -63,11 +63,11 @@ public class SliderTest {
     }
 
     @Test
-    public fun coerces_value_top_limit() {
+    fun coerces_value_top_limit() {
         val state = mutableStateOf(4f)
 
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueRange = 0f..10f,
@@ -75,19 +75,16 @@ public class SliderTest {
                 modifier = Modifier.testTag(TEST_TAG)
             )
         }
-        rule.runOnIdle {
-            state.value = 20f
-        }
-        rule.onNodeWithTag(TEST_TAG)
-            .assertRangeInfoEquals(ProgressBarRangeInfo(10f, 0f..10f, 4))
+        rule.runOnIdle { state.value = 20f }
+        rule.onNodeWithTag(TEST_TAG).assertRangeInfoEquals(ProgressBarRangeInfo(10f, 0f..10f, 4))
     }
 
     @Test
-    public fun coerces_value_lower_limit() {
+    fun coerces_value_lower_limit() {
         val state = mutableStateOf(4f)
 
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueRange = 0f..10f,
@@ -95,32 +92,24 @@ public class SliderTest {
                 modifier = Modifier.testTag(TEST_TAG)
             )
         }
-        rule.runOnIdle {
-            state.value = -20f
-        }
-        rule.onNodeWithTag(TEST_TAG)
-            .assertRangeInfoEquals(ProgressBarRangeInfo(0f, 0f..10f, 4))
+        rule.runOnIdle { state.value = -20f }
+        rule.onNodeWithTag(TEST_TAG).assertRangeInfoEquals(ProgressBarRangeInfo(0f, 0f..10f, 4))
     }
 
     @Test(expected = IllegalArgumentException::class)
-    public fun throws_when_steps_negative() {
+    fun throws_when_steps_negative() {
         rule.setContent {
-            DefaultInlineSlider(
-                value = 0f,
-                valueRange = 0f..10f,
-                onValueChange = {},
-                steps = -1
-            )
+            DefaultSlider(value = 0f, valueRange = 0f..10f, onValueChange = {}, steps = -1)
         }
     }
 
     @Test
-    public fun coerces_value_exactly() {
+    fun coerces_value_exactly() {
         val state = mutableStateOf(0f)
         val range = 0f..1f
 
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
@@ -129,21 +118,18 @@ public class SliderTest {
             )
         }
 
-        rule.runOnUiThread {
-            state.value = 0.6f
-        }
+        rule.runOnUiThread { state.value = 0.6f }
 
-        rule.onNodeWithTag(TEST_TAG)
-            .assertRangeInfoEquals(ProgressBarRangeInfo(0.6f, range, 4))
+        rule.onNodeWithTag(TEST_TAG).assertRangeInfoEquals(ProgressBarRangeInfo(0.6f, range, 4))
     }
 
     @Test
-    public fun coerces_value_to_previous() {
+    fun coerces_value_to_previous() {
         val state = mutableStateOf(0f)
         val range = 0f..1f
 
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
@@ -152,21 +138,18 @@ public class SliderTest {
             )
         }
 
-        rule.runOnUiThread {
-            state.value = 0.65f
-        }
+        rule.runOnUiThread { state.value = 0.65f }
 
-        rule.onNodeWithTag(TEST_TAG)
-            .assertRangeInfoEquals(ProgressBarRangeInfo(0.6f, range, 4))
+        rule.onNodeWithTag(TEST_TAG).assertRangeInfoEquals(ProgressBarRangeInfo(0.6f, range, 4))
     }
 
     @Test
-    public fun coerces_value_to_next() {
+    fun coerces_value_to_next() {
         val state = mutableStateOf(0f)
         val range = 0f..1f
 
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
@@ -175,19 +158,16 @@ public class SliderTest {
             )
         }
 
-        rule.runOnUiThread {
-            state.value = 0.55f
-        }
+        rule.runOnUiThread { state.value = 0.55f }
 
-        rule.onNodeWithTag(TEST_TAG)
-            .assertRangeInfoEquals(ProgressBarRangeInfo(0.6f, range, 4))
+        rule.onNodeWithTag(TEST_TAG).assertRangeInfoEquals(ProgressBarRangeInfo(0.6f, range, 4))
     }
 
     @Test
-    public fun decreases_value_by_clicking_left() {
+    fun decreases_value_by_clicking_left() {
         val state = mutableStateOf(2f)
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
@@ -197,16 +177,14 @@ public class SliderTest {
         }
 
         rule.onNodeWithTag(TEST_TAG).performTouchInput { click(Offset(15f, height / 2f)) }
-        rule.runOnIdle {
-            Truth.assertThat(state.value).isWithin(0.001f).of(1f)
-        }
+        rule.runOnIdle { Truth.assertThat(state.value).isWithin(0.001f).of(1f) }
     }
 
     @Test
-    public fun increases_value_by_clicking_right() {
+    fun increases_value_by_clicking_right() {
         val state = mutableStateOf(2f)
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
@@ -216,31 +194,17 @@ public class SliderTest {
         }
 
         rule.onNodeWithTag(TEST_TAG).performTouchInput { click(Offset(width - 15f, height / 2f)) }
-        rule.runOnIdle {
-            Truth.assertThat(state.value).isWithin(0.001f).of(3f)
-        }
+        rule.runOnIdle { Truth.assertThat(state.value).isWithin(0.001f).of(3f) }
     }
 
     @Test
-    public fun ignores_left_click_when_disabled() {
+    fun ignores_left_click_when_disabled() {
         val state = mutableStateOf(2f)
         rule.setContentWithTheme {
-            InlineSlider(
+            Slider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 enabled = false,
-                increaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Increase, "Increase",
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
-                decreaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Decrease, "Decrease",
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
                 onValueChange = { state.value = it },
                 valueRange = 1f..4f,
                 steps = 2
@@ -248,48 +212,32 @@ public class SliderTest {
         }
 
         rule.onNodeWithTag(TEST_TAG).performTouchInput { click(Offset(15f, height / 2f)) }
-        rule.runOnIdle {
-            Truth.assertThat(state.value).isWithin(0.001f).of(2f)
-        }
+        rule.runOnIdle { Truth.assertThat(state.value).isWithin(0.001f).of(2f) }
     }
 
     @Test
-    public fun ignores_right_click_when_disabled() {
+    fun ignores_right_click_when_disabled() {
         val state = mutableStateOf(2f)
         rule.setContentWithTheme {
-            InlineSlider(
+            Slider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 enabled = false,
                 onValueChange = { state.value = it },
-                increaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Increase, "Increase",
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
-                decreaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Decrease, "Decrease",
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
                 valueRange = 1f..4f,
                 steps = 2
             )
         }
 
         rule.onNodeWithTag(TEST_TAG).performTouchInput { click(Offset(width - 15f, height / 2f)) }
-        rule.runOnIdle {
-            Truth.assertThat(state.value).isWithin(0.001f).of(2f)
-        }
+        rule.runOnIdle { Truth.assertThat(state.value).isWithin(0.001f).of(2f) }
     }
 
     @Test
-    public fun reaches_min_clicking_left() {
+    fun reaches_min_clicking_left() {
         val state = mutableStateOf(1f)
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
@@ -299,16 +247,14 @@ public class SliderTest {
         }
 
         rule.onNodeWithTag(TEST_TAG).performTouchInput { click(Offset(15f, height / 2f)) }
-        rule.runOnIdle {
-            Truth.assertThat(state.value).isWithin(0.001f).of(1f)
-        }
+        rule.runOnIdle { Truth.assertThat(state.value).isWithin(0.001f).of(1f) }
     }
 
     @Test
-    public fun reaches_max_clicking_right() {
+    fun reaches_max_clicking_right() {
         val state = mutableStateOf(4f)
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
@@ -318,32 +264,22 @@ public class SliderTest {
         }
 
         rule.onNodeWithTag(TEST_TAG).performTouchInput { click(Offset(width - 15f, height / 2f)) }
-        rule.runOnIdle {
-            Truth.assertThat(state.value).isWithin(0.001f).of(4f)
-        }
+        rule.runOnIdle { Truth.assertThat(state.value).isWithin(0.001f).of(4f) }
     }
 
     @Test
-    public fun sets_custom_decrease_icon() {
+    fun sets_custom_decrease_icon() {
         val iconTag = "iconTag_test"
 
         rule.setContentWithTheme {
-            InlineSlider(
+            Slider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = 0f,
                 steps = 5,
                 onValueChange = {},
-                increaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Increase, "Increase",
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
                 decreaseIcon = {
                     Icon(
-                        modifier = Modifier
-                            .testTag(iconTag)
-                            .size(InlineSliderDefaults.IconSize),
+                        modifier = Modifier.testTag(iconTag).size(SliderDefaults.IconSize),
                         imageVector = Icons.Default.Star,
                         contentDescription = ""
                     )
@@ -352,34 +288,27 @@ public class SliderTest {
         }
 
         rule.waitForIdle()
-        rule.onNodeWithTag(iconTag, true)
+        rule
+            .onNodeWithTag(iconTag, true)
             .assertExists()
             .assertLeftPositionInRootIsEqualTo(IconsOuterHorizontalMargin)
     }
 
     @Test
-    public fun sets_custom_increase_icon() {
+    fun sets_custom_increase_icon() {
         val iconTag = "iconTag_test"
 
         rule.setContentWithTheme {
-            InlineSlider(
+            Slider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = 0f,
                 steps = 5,
                 onValueChange = {},
                 increaseIcon = {
                     Icon(
-                        modifier = Modifier
-                            .testTag(iconTag)
-                            .size(InlineSliderDefaults.IconSize),
+                        modifier = Modifier.testTag(iconTag).size(SliderDefaults.IconSize),
                         imageVector = Icons.Default.Star,
                         contentDescription = ""
-                    )
-                },
-                decreaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Decrease, "Decrease",
-                        Modifier.size(InlineSliderDefaults.IconSize)
                     )
                 },
             )
@@ -387,84 +316,62 @@ public class SliderTest {
         val unclippedBoundsInRoot = rule.onRoot().getUnclippedBoundsInRoot()
 
         rule.waitForIdle()
-        rule.onNodeWithTag(iconTag, true)
+        rule
+            .onNodeWithTag(iconTag, true)
             .assertExists()
             .assertLeftPositionInRootIsEqualTo(
-                unclippedBoundsInRoot.width -
-                    IconsOuterHorizontalMargin - DefaultIconWidth
+                unclippedBoundsInRoot.width - IconsOuterHorizontalMargin - DefaultIconWidth
             )
     }
 
     @Test
-    public fun sets_custom_description_for_decrease_icon() {
-        val testContentDescription = "testContentDescription"
-
+    fun sets_custom_description_for_decrease_icon() {
         rule.setContentWithTheme {
-            InlineSlider(
+            Slider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = 0f,
                 steps = 5,
-                increaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Increase, "Increase",
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
-                decreaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Decrease, testContentDescription,
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
                 onValueChange = {},
             )
         }
 
         rule.waitForIdle()
-        rule.onNodeWithTag(TEST_TAG, true)
+        rule
+            .onNodeWithTag(TEST_TAG, true)
             // 0 is the index of decrease button, 1 - increase button
             .onChildAt(0)
             .onChild()
-            .assertContentDescriptionContains(testContentDescription)
+            .assertContentDescriptionContains(
+                getString(Strings.SliderDecreaseButtonContentDescription)
+            )
     }
 
     @Test
-    public fun sets_custom_description_for_increase_icon() {
-        val testContentDescription = "testContentDescription"
-
+    fun sets_custom_description_for_increase_icon() {
         rule.setContentWithTheme {
-            InlineSlider(
+            Slider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = 0f,
                 steps = 5,
-                increaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Increase, testContentDescription,
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
-                decreaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Decrease, "Decrease",
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
                 onValueChange = {},
             )
         }
 
         rule.waitForIdle()
-        rule.onNodeWithTag(TEST_TAG, true)
+        rule
+            .onNodeWithTag(TEST_TAG, true)
             // 0 is the index of decrease button, 1 - increase button
             .onChildAt(1)
             .onChild()
-            .assertContentDescriptionContains(testContentDescription)
+            .assertContentDescriptionContains(
+                getString(Strings.SliderIncreaseButtonContentDescription)
+            )
     }
 
     @Test
-    public fun supports_testtag_in_integer_slider() {
+    fun supports_testtag_in_integer_slider() {
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 value = 1,
                 onValueChange = {},
                 valueProgression = 0..10,
@@ -476,9 +383,9 @@ public class SliderTest {
     }
 
     @Test
-    public fun default_step_in_valueProgression_in_integer_slider() {
+    fun default_step_in_valueProgression_in_integer_slider() {
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 value = 2,
                 onValueChange = {},
                 valueProgression = 0..10,
@@ -486,14 +393,13 @@ public class SliderTest {
             )
         }
 
-        rule.onNodeWithTag(TEST_TAG)
-            .assertRangeInfoEquals(ProgressBarRangeInfo(2f, 0f..10f, 9))
+        rule.onNodeWithTag(TEST_TAG).assertRangeInfoEquals(ProgressBarRangeInfo(2f, 0f..10f, 9))
     }
 
     @Test
-    public fun custom_valueProgression_in_integer_slider() {
+    fun custom_valueProgression_in_integer_slider() {
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 value = 2,
                 onValueChange = {},
                 valueProgression = IntProgression.fromClosedRange(0, 10, 2),
@@ -501,14 +407,13 @@ public class SliderTest {
             )
         }
 
-        rule.onNodeWithTag(TEST_TAG)
-            .assertRangeInfoEquals(ProgressBarRangeInfo(2f, 0f..10f, 4))
+        rule.onNodeWithTag(TEST_TAG).assertRangeInfoEquals(ProgressBarRangeInfo(2f, 0f..10f, 4))
     }
 
     @Test
-    public fun valueProgression_trimmed_in_integer_slider() {
+    fun valueProgression_trimmed_in_integer_slider() {
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 value = 6,
                 onValueChange = {},
                 valueProgression = IntProgression.fromClosedRange(0, 16, 6),
@@ -516,54 +421,47 @@ public class SliderTest {
             )
         }
 
-        rule.onNodeWithTag(TEST_TAG)
-            .assertRangeInfoEquals(ProgressBarRangeInfo(6f, 0f..12f, 1))
+        rule.onNodeWithTag(TEST_TAG).assertRangeInfoEquals(ProgressBarRangeInfo(6f, 0f..12f, 1))
     }
 
     @Test
-    public fun coerces_value_top_limit_in_integer_slider() {
+    fun coerces_value_top_limit_in_integer_slider() {
         val state = mutableStateOf(4)
 
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueProgression = 0..10,
                 modifier = Modifier.testTag(TEST_TAG)
             )
         }
-        rule.runOnIdle {
-            state.value = 20
-        }
-        rule.onNodeWithTag(TEST_TAG)
-            .assertRangeInfoEquals(ProgressBarRangeInfo(10f, 0f..10f, 9))
+        rule.runOnIdle { state.value = 20 }
+        rule.onNodeWithTag(TEST_TAG).assertRangeInfoEquals(ProgressBarRangeInfo(10f, 0f..10f, 9))
     }
 
     @Test
-    public fun coerces_value_lower_limit_in_integer_slider() {
+    fun coerces_value_lower_limit_in_integer_slider() {
         val state = mutableStateOf(4)
 
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueProgression = 0..10,
                 modifier = Modifier.testTag(TEST_TAG)
             )
         }
-        rule.runOnIdle {
-            state.value = -20
-        }
-        rule.onNodeWithTag(TEST_TAG)
-            .assertRangeInfoEquals(ProgressBarRangeInfo(0f, 0f..10f, 9))
+        rule.runOnIdle { state.value = -20 }
+        rule.onNodeWithTag(TEST_TAG).assertRangeInfoEquals(ProgressBarRangeInfo(0f, 0f..10f, 9))
     }
 
     @Test
-    public fun coerces_value_exactly_in_integer_slider() {
+    fun coerces_value_exactly_in_integer_slider() {
         val state = mutableStateOf(0)
 
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
@@ -571,20 +469,17 @@ public class SliderTest {
             )
         }
 
-        rule.runOnUiThread {
-            state.value = 6
-        }
+        rule.runOnUiThread { state.value = 6 }
 
-        rule.onNodeWithTag(TEST_TAG)
-            .assertRangeInfoEquals(ProgressBarRangeInfo(6f, 0f..12f, 3))
+        rule.onNodeWithTag(TEST_TAG).assertRangeInfoEquals(ProgressBarRangeInfo(6f, 0f..12f, 3))
     }
 
     @Test
-    public fun coerces_value_to_previous_in_integer_slider() {
+    fun coerces_value_to_previous_in_integer_slider() {
         val state = mutableStateOf(0)
 
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
@@ -592,20 +487,17 @@ public class SliderTest {
             )
         }
 
-        rule.runOnUiThread {
-            state.value = 7
-        }
+        rule.runOnUiThread { state.value = 7 }
 
-        rule.onNodeWithTag(TEST_TAG)
-            .assertRangeInfoEquals(ProgressBarRangeInfo(6f, 0f..12f, 3))
+        rule.onNodeWithTag(TEST_TAG).assertRangeInfoEquals(ProgressBarRangeInfo(6f, 0f..12f, 3))
     }
 
     @Test
-    public fun coerces_value_to_next_in_integer_slider() {
+    fun coerces_value_to_next_in_integer_slider() {
         val state = mutableStateOf(0)
 
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
@@ -613,19 +505,16 @@ public class SliderTest {
             )
         }
 
-        rule.runOnUiThread {
-            state.value = 8
-        }
+        rule.runOnUiThread { state.value = 8 }
 
-        rule.onNodeWithTag(TEST_TAG)
-            .assertRangeInfoEquals(ProgressBarRangeInfo(9f, 0f..12f, 3))
+        rule.onNodeWithTag(TEST_TAG).assertRangeInfoEquals(ProgressBarRangeInfo(9f, 0f..12f, 3))
     }
 
     @Test
-    public fun decreases_value_by_clicking_left_in_integer_slider() {
+    fun decreases_value_by_clicking_left_in_integer_slider() {
         val state = mutableStateOf(2)
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
@@ -634,16 +523,14 @@ public class SliderTest {
         }
 
         rule.onNodeWithTag(TEST_TAG).performTouchInput { click(Offset(15f, height / 2f)) }
-        rule.runOnIdle {
-            Truth.assertThat(state.value).isEqualTo(1)
-        }
+        rule.runOnIdle { Truth.assertThat(state.value).isEqualTo(1) }
     }
 
     @Test
-    public fun increases_value_by_clicking_right_in_integer_slider() {
+    fun increases_value_by_clicking_right_in_integer_slider() {
         val state = mutableStateOf(2)
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
@@ -652,47 +539,31 @@ public class SliderTest {
         }
 
         rule.onNodeWithTag(TEST_TAG).performTouchInput { click(Offset(width - 15f, height / 2f)) }
-        rule.runOnIdle {
-            Truth.assertThat(state.value).isEqualTo(3)
-        }
+        rule.runOnIdle { Truth.assertThat(state.value).isEqualTo(3) }
     }
 
     @Test
-    public fun ignores_left_click_when_disabled_in_integer_slider() {
+    fun ignores_left_click_when_disabled_in_integer_slider() {
         val state = mutableStateOf(2)
         rule.setContentWithTheme {
-            InlineSlider(
+            Slider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 enabled = false,
-                increaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Increase, "Increase",
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
-                decreaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Decrease, "Decrease",
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
                 onValueChange = { state.value = it },
                 valueProgression = 1..4,
             )
         }
 
         rule.onNodeWithTag(TEST_TAG).performTouchInput { click(Offset(15f, height / 2f)) }
-        rule.runOnIdle {
-            Truth.assertThat(state.value).isEqualTo(2)
-        }
+        rule.runOnIdle { Truth.assertThat(state.value).isEqualTo(2) }
     }
 
     @Test
-    public fun reaches_min_clicking_left_in_integer_slider() {
+    fun reaches_min_clicking_left_in_integer_slider() {
         val state = mutableStateOf(1)
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
@@ -701,16 +572,14 @@ public class SliderTest {
         }
 
         rule.onNodeWithTag(TEST_TAG).performTouchInput { click(Offset(15f, height / 2f)) }
-        rule.runOnIdle {
-            Truth.assertThat(state.value).isEqualTo(1)
-        }
+        rule.runOnIdle { Truth.assertThat(state.value).isEqualTo(1) }
     }
 
     @Test
-    public fun reaches_max_clicking_right_in_integer_slider() {
+    fun reaches_max_clicking_right_in_integer_slider() {
         val state = mutableStateOf(4)
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
@@ -719,34 +588,20 @@ public class SliderTest {
         }
 
         rule.onNodeWithTag(TEST_TAG).performTouchInput { click(Offset(width - 15f, height / 2f)) }
-        rule.runOnIdle {
-            Truth.assertThat(state.value).isEqualTo(4)
-        }
+        rule.runOnIdle { Truth.assertThat(state.value).isEqualTo(4) }
     }
 
     @Composable
-    private fun DefaultInlineSlider(
+    private fun DefaultSlider(
         value: Float,
         onValueChange: (Float) -> Unit,
         modifier: Modifier = Modifier,
         valueRange: ClosedFloatingPointRange<Float>,
         steps: Int
     ) {
-        InlineSlider(
+        Slider(
             modifier = modifier,
             value = value,
-            increaseIcon = {
-                Icon(
-                    InlineSliderDefaults.Increase, "Increase",
-                    Modifier.size(InlineSliderDefaults.IconSize)
-                )
-            },
-            decreaseIcon = {
-                Icon(
-                    InlineSliderDefaults.Decrease, "Decrease",
-                    Modifier.size(InlineSliderDefaults.IconSize)
-                )
-            },
             onValueChange = onValueChange,
             valueRange = valueRange,
             steps = steps
@@ -754,32 +609,23 @@ public class SliderTest {
     }
 
     @Composable
-    private fun DefaultInlineSlider(
+    private fun DefaultSlider(
         value: Int,
         onValueChange: (Int) -> Unit,
         modifier: Modifier = Modifier,
         valueProgression: IntProgression
     ) {
-        InlineSlider(
+        Slider(
             modifier = modifier,
             value = value,
-            increaseIcon = {
-                Icon(
-                    InlineSliderDefaults.Increase, "Increase",
-                    Modifier.size(InlineSliderDefaults.IconSize)
-                )
-            },
-            decreaseIcon = {
-                Icon(
-                    InlineSliderDefaults.Decrease, "Decrease",
-                    Modifier.size(InlineSliderDefaults.IconSize)
-                )
-            },
             onValueChange = onValueChange,
             valueProgression = valueProgression,
         )
     }
 
-    private val IconsOuterHorizontalMargin = 6.dp
+    private fun getString(string: Strings) =
+        InstrumentationRegistry.getInstrumentation().context.resources.getString(string.value)
+
+    private val IconsOuterHorizontalMargin = 12.dp
     private val DefaultIconWidth = 24.dp
 }

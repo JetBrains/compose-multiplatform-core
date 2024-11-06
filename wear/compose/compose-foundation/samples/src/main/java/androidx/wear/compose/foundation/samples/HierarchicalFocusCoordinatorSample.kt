@@ -40,11 +40,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
 import androidx.wear.compose.foundation.HierarchicalFocusCoordinator
 import androidx.wear.compose.foundation.rememberActiveFocusRequester
 
-@OptIn(ExperimentalWearFoundationApi::class)
 @Sampled
 @Composable
 fun HierarchicalFocusCoordinatorSample() {
@@ -56,23 +54,27 @@ fun HierarchicalFocusCoordinatorSample() {
                 var focused by remember { mutableStateOf(false) }
                 HierarchicalFocusCoordinator(requiresFocus = { selected == ix }) {
                     val focusRequester = rememberActiveFocusRequester()
-                    BasicText("$ix",
-                        style = TextStyle(
-                            color = Color.White,
-                            fontSize = 20.sp,
-                            textAlign = TextAlign.Center
-                        ),
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { selected = ix }
-                            .onFocusChanged { focused = it.isFocused }
-                            .focusRequester(focusRequester)
-                            .focusable()
-                            .then(if (focused) {
-                                Modifier.border(BorderStroke(2.dp, Color.Red))
-                            } else {
-                                Modifier
-                            })
+                    BasicText(
+                        "$ix",
+                        style =
+                            TextStyle(
+                                color = Color.White,
+                                fontSize = 20.sp,
+                                textAlign = TextAlign.Center
+                            ),
+                        modifier =
+                            Modifier.weight(1f)
+                                .clickable { selected = ix }
+                                .onFocusChanged { focused = it.isFocused }
+                                .focusRequester(focusRequester)
+                                .focusable()
+                                .then(
+                                    if (focused) {
+                                        Modifier.border(BorderStroke(2.dp, Color.Red))
+                                    } else {
+                                        Modifier
+                                    }
+                                )
                     )
                 }
             }

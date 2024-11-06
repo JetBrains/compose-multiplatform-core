@@ -19,9 +19,9 @@ package androidx.core.view;
 import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
 import android.view.accessibility.AccessibilityEvent;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.R;
@@ -48,6 +48,10 @@ public final class ViewGroupCompat {
      */
     public static final int LAYOUT_MODE_OPTICAL_BOUNDS = 1;
 
+    private static final WindowInsets CONSUMED = WindowInsetsCompat.CONSUMED.toWindowInsets();
+
+    static boolean sCompatInsetsDispatchInstalled = false;
+
     /*
      * Hide the constructor.
      */
@@ -71,6 +75,7 @@ public final class ViewGroupCompat {
      * @deprecated Use {@link ViewGroup#onRequestSendAccessibilityEvent(View, AccessibilityEvent)}
      * directly.
      */
+    @androidx.annotation.ReplaceWith(expression = "group.onRequestSendAccessibilityEvent(child, event)")
     @Deprecated
     public static boolean onRequestSendAccessibilityEvent(ViewGroup group, View child,
             AccessibilityEvent event) {
@@ -95,6 +100,7 @@ public final class ViewGroupCompat {
      *
      * @deprecated Use {@link ViewGroup#setMotionEventSplittingEnabled(boolean)} directly.
      */
+    @androidx.annotation.ReplaceWith(expression = "group.setMotionEventSplittingEnabled(split)")
     @Deprecated
     public static void setMotionEventSplittingEnabled(ViewGroup group, boolean split) {
         group.setMotionEventSplittingEnabled(split);
@@ -111,7 +117,10 @@ public final class ViewGroupCompat {
      * @return the layout mode to use during layout operations
      *
      * @see #setLayoutMode(ViewGroup, int)
+     * @deprecated Call {@link ViewGroup#getLayoutMode()} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "group.getLayoutMode()")
     public static int getLayoutMode(@NonNull ViewGroup group) {
         return group.getLayoutMode();
     }
@@ -125,7 +134,10 @@ public final class ViewGroupCompat {
      * @param mode the layout mode to use during layout operations
      *
      * @see #getLayoutMode(ViewGroup)
+     * @deprecated Call {@link ViewGroup#setLayoutMode()} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "group.setLayoutMode(mode)")
     public static void setLayoutMode(@NonNull ViewGroup group, int mode) {
         group.setLayoutMode(mode);
     }
@@ -186,23 +198,89 @@ public final class ViewGroupCompat {
         return ViewCompat.SCROLL_AXIS_NONE;
     }
 
+    /**
+     * Installs a custom {@link View.OnApplyWindowInsetsListener} which dispatches WindowInsets to
+     * the given root and its descendants in a way compatible with Android R+ that consuming or
+     * modifying insets will only affect the descendants.
+     * <P>
+     * Note: When using this method, ensure that ViewCompat.setOnApplyWindowInsetsListener() is used
+     * instead of the platform call.
+     *
+     * @param root The root view that the custom listener is installed on. Note: the listener will
+     *             consume the insets, so make sure the given root is the root view of the window,
+     *             or its siblings might not be able to get insets dispatched.
+     */
+    public static void installCompatInsetsDispatch(@NonNull View root) {
+        if (Build.VERSION.SDK_INT >= 30) {
+            return;
+        }
+        final View.OnApplyWindowInsetsListener listener = (view, windowInsets) -> {
+            dispatchApplyWindowInsets(view, windowInsets);
+
+            // The insets have been dispatched to descendants of the given view. Here returns the
+            // consumed insets to prevent redundant dispatching by the framework.
+            return CONSUMED;
+        };
+        root.setTag(R.id.tag_compat_insets_dispatch, listener);
+        root.setOnApplyWindowInsetsListener(listener);
+        sCompatInsetsDispatchInstalled = true;
+    }
+
+    static WindowInsets dispatchApplyWindowInsets(View view, WindowInsets windowInsets) {
+        final Object wrappedUserListener = view.getTag(R.id.tag_on_apply_window_listener);
+        final Object animCallback = view.getTag(R.id.tag_window_insets_animation_callback);
+        final View.OnApplyWindowInsetsListener listener =
+                (wrappedUserListener instanceof View.OnApplyWindowInsetsListener)
+                        ? (View.OnApplyWindowInsetsListener) wrappedUserListener
+                        : (animCallback instanceof View.OnApplyWindowInsetsListener)
+                                ? (View.OnApplyWindowInsetsListener) animCallback
+                                : null;
+
+        // Don't call View#onApplyWindowInsets directly, but via View#dispatchApplyWindowInsets.
+        // Otherwise, the view won't get PFLAG3_APPLYING_INSETS and it will dispatch insets on its
+        // own.
+        final WindowInsets[] outInsets = new WindowInsets[1];
+        view.setOnApplyWindowInsetsListener((v, w) -> {
+            outInsets[0] = listener != null
+                    ? listener.onApplyWindowInsets(v, w)
+                    : v.onApplyWindowInsets(w);
+
+            // Only apply window insets to this view.
+            return CONSUMED;
+        });
+        view.dispatchApplyWindowInsets(windowInsets);
+
+        // Restore the listener.
+        final Object compatInsetsDispatch = view.getTag(R.id.tag_compat_insets_dispatch);
+        view.setOnApplyWindowInsetsListener(
+                compatInsetsDispatch instanceof View.OnApplyWindowInsetsListener
+                        ? (View.OnApplyWindowInsetsListener) compatInsetsDispatch
+                        : listener);
+
+        if (outInsets[0] != null && !outInsets[0].isConsumed() && view instanceof ViewGroup) {
+            final ViewGroup parent = (ViewGroup) view;
+            final int count = parent.getChildCount();
+            for (int i = 0; i < count; i++) {
+                dispatchApplyWindowInsets(parent.getChildAt(i), outInsets[0]);
+            }
+        }
+        return outInsets[0];
+    }
+
     @RequiresApi(21)
     static class Api21Impl {
         private Api21Impl() {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void setTransitionGroup(ViewGroup viewGroup, boolean isTransitionGroup) {
             viewGroup.setTransitionGroup(isTransitionGroup);
         }
 
-        @DoNotInline
         static boolean isTransitionGroup(ViewGroup viewGroup) {
             return viewGroup.isTransitionGroup();
         }
 
-        @DoNotInline
         static int getNestedScrollAxes(ViewGroup viewGroup) {
             return viewGroup.getNestedScrollAxes();
         }

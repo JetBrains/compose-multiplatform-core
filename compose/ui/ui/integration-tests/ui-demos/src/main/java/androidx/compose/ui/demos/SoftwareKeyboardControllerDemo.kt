@@ -27,7 +27,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -36,7 +35,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SoftwareKeyboardControllerDemo() {
     Column(Modifier.padding(16.dp)) {
@@ -44,19 +42,18 @@ fun SoftwareKeyboardControllerDemo() {
 
         val focusRequester = remember { FocusRequester() }
 
-        val text = if (isHidden) {
-            "Click on TextField to show keyboard, even after hiding"
-        } else {
-            "Keyboard shown (input ignored)"
-        }
+        val text =
+            if (isHidden) {
+                "Click on TextField to show keyboard, even after hiding"
+            } else {
+                "Keyboard shown (input ignored)"
+            }
 
         BasicTextField(
             value = text,
             onValueChange = {},
             textStyle = TextStyle.Default.copy(fontSize = 18.sp),
-            modifier = Modifier
-                .focusRequester(focusRequester)
-                .height(200.dp)
+            modifier = Modifier.focusRequester(focusRequester).height(200.dp)
         )
 
         val keyboardController = LocalSoftwareKeyboardController.current

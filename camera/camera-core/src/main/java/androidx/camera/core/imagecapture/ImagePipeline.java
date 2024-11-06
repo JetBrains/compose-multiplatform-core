@@ -22,18 +22,18 @@ import static androidx.camera.core.impl.ImageInputConfig.OPTION_INPUT_FORMAT;
 import static androidx.camera.core.impl.utils.Threads.checkMainThread;
 import static androidx.camera.core.impl.utils.TransformUtils.hasCropping;
 import static androidx.camera.core.internal.utils.ImageUtil.isJpegFormats;
+import static androidx.camera.core.internal.utils.ImageUtil.isRawFormats;
 
 import static java.util.Objects.requireNonNull;
 
 import android.graphics.ImageFormat;
+import android.hardware.camera2.CameraCharacteristics;
 import android.media.ImageReader;
-import android.os.Build;
 import android.util.Size;
 
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.CameraEffect;
 import androidx.camera.core.ForwardingImageProxy;
@@ -60,7 +60,6 @@ import java.util.List;
  * <p>This class is responsible for building the entire pipeline, from creating camera request to
  * post-processing the output.
  */
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class ImagePipeline {
 
     static final byte JPEG_QUALITY_MAX_QUALITY = 100;
@@ -90,8 +89,9 @@ public class ImagePipeline {
     @VisibleForTesting
     public ImagePipeline(
             @NonNull ImageCaptureConfig useCaseConfig,
-            @NonNull Size cameraSurfaceSize) {
-        this(useCaseConfig, cameraSurfaceSize, /*cameraEffect=*/ null,
+            @NonNull Size cameraSurfaceSize,
+            @NonNull CameraCharacteristics cameraCharacteristics) {
+        this(useCaseConfig, cameraSurfaceSize, cameraCharacteristics, /*cameraEffect=*/ null,
                 /*isVirtualCamera=*/ false, /* postviewSize */ null, ImageFormat.YUV_420_888);
     }
 
@@ -99,9 +99,10 @@ public class ImagePipeline {
     public ImagePipeline(
             @NonNull ImageCaptureConfig useCaseConfig,
             @NonNull Size cameraSurfaceSize,
+            @NonNull CameraCharacteristics cameraCharacteristics,
             @Nullable CameraEffect cameraEffect,
             boolean isVirtualCamera) {
-        this(useCaseConfig, cameraSurfaceSize, cameraEffect, isVirtualCamera,
+        this(useCaseConfig, cameraSurfaceSize, cameraCharacteristics, cameraEffect, isVirtualCamera,
                 null, ImageFormat.YUV_420_888);
     }
 
@@ -109,6 +110,7 @@ public class ImagePipeline {
     public ImagePipeline(
             @NonNull ImageCaptureConfig useCaseConfig,
             @NonNull Size cameraSurfaceSize,
+            @Nullable CameraCharacteristics cameraCharacteristics,
             @Nullable CameraEffect cameraEffect,
             boolean isVirtualCamera,
             @Nullable Size postviewSize,
@@ -121,13 +123,23 @@ public class ImagePipeline {
         mCaptureNode = new CaptureNode();
         mProcessingNode = new ProcessingNode(
                 requireNonNull(mUseCaseConfig.getIoExecutor(CameraXExecutors.ioExecutor())),
+                cameraCharacteristics,
                 cameraEffect != null ? new InternalImageProcessor(cameraEffect) : null);
+
+        // Pass down [RAW_SENSOR, JPEG] to the pipeline if simultaneous capture is enabled.
+        List<Integer> outputFormats = new ArrayList<>();
+        if (mUseCaseConfig.getSecondaryInputFormat() != ImageFormat.UNKNOWN) {
+            outputFormats.add(ImageFormat.RAW_SENSOR);
+            outputFormats.add(ImageFormat.JPEG);
+        } else {
+            outputFormats.add(getOutputFormat());
+        }
 
         // Connect nodes
         mPipelineIn = CaptureNode.In.of(
                 cameraSurfaceSize,
                 mUseCaseConfig.getInputFormat(),
-                getOutputFormat(),
+                outputFormats,
                 isVirtualCamera,
                 mUseCaseConfig.getImageReaderProxyProvider(),
                 postviewSize,
@@ -144,6 +156,10 @@ public class ImagePipeline {
         SessionConfig.Builder builder = SessionConfig.Builder.createFrom(mUseCaseConfig,
                 resolution);
         builder.addNonRepeatingSurface(mPipelineIn.getSurface());
+        if (mPipelineIn.getOutputFormats().size() > 1
+                && mPipelineIn.getSecondarySurface() != null) {
+            builder.addNonRepeatingSurface(mPipelineIn.getSecondarySurface());
+        }
 
         // Postview surface is generated when initializing CaptureNode.
         if (mPipelineIn.getPostviewSurface() != null) {
@@ -249,6 +265,9 @@ public class ImagePipeline {
         if (inputFormat != null && inputFormat == ImageFormat.JPEG_R) {
             return ImageFormat.JPEG_R;
         }
+        if (inputFormat != null && inputFormat == ImageFormat.RAW_SENSOR) {
+            return ImageFormat.RAW_SENSOR;
+        }
 
         // By default, use JPEG format.
         return ImageFormat.JPEG;
@@ -268,11 +287,7 @@ public class ImagePipeline {
             @NonNull ListenableFuture<Void> captureFuture) {
         return new ProcessingRequest(
                 captureBundle,
-                takePictureRequest.getOutputFileOptions(),
-                takePictureRequest.getCropRect(),
-                takePictureRequest.getRotationDegrees(),
-                takePictureRequest.getJpegQuality(),
-                takePictureRequest.getSensorToBufferTransform(),
+                takePictureRequest,
                 takePictureCallback,
                 captureFuture,
                 requestId);
@@ -304,11 +319,16 @@ public class ImagePipeline {
             builder.addAllCameraCaptureCallbacks(
                     takePictureRequest.getSessionConfigCameraCaptureCallbacks());
             builder.addSurface(mPipelineIn.getSurface());
+            if (mPipelineIn.getOutputFormats().size() > 1
+                    && mPipelineIn.getSecondarySurface() != null) {
+                builder.addSurface(mPipelineIn.getSecondarySurface());
+            }
             builder.setPostviewEnabled(shouldEnablePostview());
 
-            // Only sets the JPEG rotation and quality for JPEG formats. Some devices do not
+            // Sets the JPEG rotation and quality for JPEG and RAW formats. Some devices do not
             // handle these configs for non-JPEG images. See b/204375890.
-            if (isJpegFormats(mPipelineIn.getInputFormat())) {
+            if (isJpegFormats(mPipelineIn.getInputFormat())
+                    || isRawFormats(mPipelineIn.getInputFormat())) {
                 if (EXIF_ROTATION_AVAILABILITY.isRotationOptionSupported()) {
                     builder.addImplementationOption(CaptureConfig.OPTION_ROTATION,
                             takePictureRequest.getRotationDegrees());
@@ -325,6 +345,10 @@ public class ImagePipeline {
             builder.addTag(tagBundleKey, captureStage.getId());
             builder.setId(requestId);
             builder.addCameraCaptureCallback(mPipelineIn.getCameraCaptureCallback());
+            if (mPipelineIn.getOutputFormats().size() > 1
+                    && mPipelineIn.getSecondaryCameraCaptureCallback() != null) {
+                builder.addCameraCaptureCallback(mPipelineIn.getSecondaryCameraCaptureCallback());
+            }
             captureConfigs.add(builder.build());
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-// VERSION: v0_8
+// VERSION: v0_100
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 package androidx.wear.compose.material3.tokens
 
 internal enum class TypographyKeyTokens {
+    ArcLarge,
+    ArcMedium,
+    ArcSmall,
     BodyExtraSmall,
     BodyLarge,
     BodyMedium,
@@ -30,6 +33,11 @@ internal enum class TypographyKeyTokens {
     LabelLarge,
     LabelMedium,
     LabelSmall,
+    NumeralExtraLarge,
+    NumeralExtraSmall,
+    NumeralLarge,
+    NumeralMedium,
+    NumeralSmall,
     TitleLarge,
     TitleMedium,
     TitleSmall,

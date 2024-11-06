@@ -16,7 +16,6 @@
 
 package androidx.room.solver
 
-import androidx.annotation.VisibleForTesting
 import androidx.room.compiler.codegen.XCodeBlock
 import androidx.room.writer.TypeWriter
 
@@ -28,7 +27,8 @@ class CodeGenScope(
     // TODO(b/319660042): Remove once migration to driver API is done.
     val useDriverApi: Boolean = false
 ) {
-    val language = writer.codeLanguage
+    val language = writer.context.codeLanguage
+    val javaLambdaSyntaxAvailable = writer.context.javaLambdaSyntaxAvailable
     val builder by lazy { XCodeBlock.builder(language) }
     private val tmpVarIndices = mutableMapOf<String, Int>()
 
@@ -36,9 +36,7 @@ class CodeGenScope(
         const val TMP_VAR_DEFAULT_PREFIX = "_tmp"
         const val CLASS_PROPERTY_PREFIX = "__"
 
-        @VisibleForTesting
-        fun getTmpVarString(index: Int) =
-            getTmpVarString(TMP_VAR_DEFAULT_PREFIX, index)
+        internal fun getTmpVarString(index: Int) = getTmpVarString(TMP_VAR_DEFAULT_PREFIX, index)
 
         private fun getTmpVarString(prefix: String, index: Int) =
             "$prefix${if (index == 0) "" else "_$index"}"
@@ -61,9 +59,7 @@ class CodeGenScope(
 
     fun generate(): XCodeBlock = builder.build()
 
-    /**
-     * Copies all variable indices but excludes generated code.
-     */
+    /** Copies all variable indices but excludes generated code. */
     fun fork(): CodeGenScope {
         val forked = CodeGenScope(writer, useDriverApi)
         forked.tmpVarIndices.putAll(tmpVarIndices)

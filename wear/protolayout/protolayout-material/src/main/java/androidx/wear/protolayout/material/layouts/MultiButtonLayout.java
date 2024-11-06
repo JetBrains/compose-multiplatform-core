@@ -55,7 +55,8 @@ import java.util.List;
  * LayoutDefaults.MultiButtonLayoutDefaults#MAX_BUTTONS} number of buttons arranged inline with the
  * Material guidelines. Can be used as a content passed in to the {@link PrimaryLayout}, but if
  * there is {@link LayoutDefaults.MultiButtonLayoutDefaults#MAX_BUTTONS} buttons it should be used
- * on its own.
+ * on its own. Visuals and design samples can be found
+ *  * <a href="https://developer.android.com/design/ui/wear/guides/surfaces/tiles-layouts#button-centric-buttons">here</a>.
  *
  * <p>When accessing the contents of a container for testing, note that this element can't be simply
  * casted back to the original type, i.e.:
@@ -76,7 +77,6 @@ import java.util.List;
  * MultiButtonLayout myMbl = MultiButtonLayout.fromLayoutElement(box.getContents().get(0));
  * }</pre>
  */
-// TODO(b/274916652): Link visuals once they are available.
 public class MultiButtonLayout implements LayoutElement {
     /** Tool tag for Metadata in Modifiers, so we know that Box is actually a MultiButtonLayout. */
     static final String METADATA_TAG = "MBL";
@@ -87,6 +87,7 @@ public class MultiButtonLayout implements LayoutElement {
     /** Button distribution where the last row has more buttons than other rows. */
     public static final int FIVE_BUTTON_DISTRIBUTION_BOTTOM_HEAVY = 2;
 
+    /** Button distribution values. */
     @RestrictTo(Scope.LIBRARY)
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({FIVE_BUTTON_DISTRIBUTION_TOP_HEAVY, FIVE_BUTTON_DISTRIBUTION_BOTTOM_HEAVY})
@@ -101,7 +102,7 @@ public class MultiButtonLayout implements LayoutElement {
     /** Builder class for {@link MultiButtonLayout}. */
     public static final class Builder implements LayoutElement.Builder {
         @NonNull private final List<LayoutElement> mButtonsContent = new ArrayList<>();
-        private @ButtonDistribution int mFiveButtonDistribution =
+        @ButtonDistribution private int mFiveButtonDistribution =
                 FIVE_BUTTON_DISTRIBUTION_BOTTOM_HEAVY;
 
         /**

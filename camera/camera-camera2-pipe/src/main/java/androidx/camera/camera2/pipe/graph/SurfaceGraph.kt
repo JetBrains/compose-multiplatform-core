@@ -18,13 +18,14 @@ package androidx.camera.camera2.pipe.graph
 
 import android.view.Surface
 import androidx.annotation.GuardedBy
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraController
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraSurfaceManager
 import androidx.camera.camera2.pipe.StreamId
+import androidx.camera.camera2.pipe.SurfaceTracker
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.media.ImageSource
+import javax.inject.Provider
 
 /**
  * A SurfaceGraph tracks the current stream-to-surface mapping state for a [CameraGraph] instance.
@@ -32,23 +33,31 @@ import androidx.camera.camera2.pipe.media.ImageSource
  * It's primary responsibility is aggregating the current stream-to-surface mapping and passing the
  * most up to date version to the [CameraController] instance.
  */
-@RequiresApi(21)
 internal class SurfaceGraph(
-    private val streamGraph: StreamGraphImpl,
-    private val cameraController: CameraController,
+    private val streamGraphImpl: StreamGraphImpl,
+    private val cameraController: Provider<CameraController>,
     private val surfaceManager: CameraSurfaceManager,
     private val imageSources: Map<StreamId, ImageSource>
-) {
+) : SurfaceTracker, AutoCloseable {
     private val lock = Any()
 
+    /**
+     * A map of [StreamId]s to [Surface]s that stores the mapping of [Surface]s set on the streams
+     * on a [CameraGraph].
+     */
     @GuardedBy("lock")
     private val surfaceMap = imageSources.mapValuesTo(mutableMapOf()) { it.value.surface }
 
+    /**
+     * A map of [Surface]s to closeables from [CameraSurfaceManager]. This keeps track of the token
+     * each [Surface] is associated with, as well as the current tokens that remain active.
+     */
     @GuardedBy("lock")
     private val surfaceUsageMap: MutableMap<Surface, AutoCloseable> = mutableMapOf()
 
-    @GuardedBy("lock")
-    private var closed: Boolean = false
+    @GuardedBy("lock") private var shouldRegisterSurfaces = true
+
+    @GuardedBy("lock") private var closed: Boolean = false
 
     operator fun set(streamId: StreamId, surface: Surface?) {
         check(!imageSources.keys.contains(streamId)) {
@@ -73,17 +82,16 @@ internal class SurfaceGraph(
 
                 if (surface == null) {
                     // TODO: Tell the graph processor that it should resubmit the repeating request
-                    // or
-                    //  reconfigure the camera2 captureSession
+                    // or reconfigure the camera2 captureSession
                     val oldSurface = surfaceMap.remove(streamId)
-                    if (oldSurface != null) {
+                    if (shouldRegisterSurfaces && oldSurface != null) {
                         oldSurfaceToken = surfaceUsageMap.remove(oldSurface)
                     }
                 } else {
                     val oldSurface = surfaceMap[streamId]
                     surfaceMap[streamId] = surface
 
-                    if (oldSurface != surface) {
+                    if (shouldRegisterSurfaces && oldSurface != surface) {
                         check(!surfaceUsageMap.containsKey(surface)) {
                             "Surface ($surface) is already in use!"
                         }
@@ -99,7 +107,30 @@ internal class SurfaceGraph(
         closeable?.close()
     }
 
-    fun close() {
+    override fun unregisterAllSurfaces() {
+        val closeables =
+            synchronized(lock) {
+                shouldRegisterSurfaces = false
+                surfaceUsageMap.values.toList().also { surfaceUsageMap.clear() }
+            }
+        for (closeable in closeables) {
+            closeable.close()
+        }
+    }
+
+    override fun registerAllSurfaces() {
+        synchronized(lock) {
+            check(!closed)
+            for (surface in surfaceMap.values) {
+                surfaceManager.registerSurface(surface).also { token ->
+                    surfaceUsageMap[surface] = token
+                }
+            }
+            shouldRegisterSurfaces = true
+        }
+    }
+
+    override fun close() {
         val closeables =
             synchronized(lock) {
                 if (closed) {
@@ -126,20 +157,19 @@ internal class SurfaceGraph(
         if (surfaces.isEmpty()) {
             return
         }
-        cameraController.updateSurfaceMap(surfaces)
+        cameraController.get().updateSurfaceMap(surfaces)
     }
 
     private fun buildSurfaceMap(): Map<StreamId, Surface> =
         synchronized(lock) {
             val surfaces = mutableMapOf<StreamId, Surface>()
-            for (outputConfig in streamGraph.outputConfigs) {
+            for (outputConfig in streamGraphImpl.outputConfigs) {
                 for (stream in outputConfig.streamBuilder) {
                     val surface = surfaceMap[stream.id]
                     if (surface == null) {
                         if (!outputConfig.deferrable) {
                             // If output is non-deferrable, a surface must be available or the
-                            // config
-                            // is not yet valid. Exit now with an empty map.
+                            // config is not yet valid. Exit now with an empty map.
                             return emptyMap()
                         }
                     } else {

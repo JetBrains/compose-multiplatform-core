@@ -17,7 +17,6 @@
 package androidx.compose.foundation.benchmark.lazy
 
 import android.os.Build
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
@@ -49,14 +48,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-@OptIn(ExperimentalFoundationApi::class)
 @LargeTest
 @RunWith(Parameterized::class)
 class LazyStaggeredGridScrollingBenchmark(
     private val testCase: LazyStaggeredGridScrollingTestCase
 ) {
-    @get:Rule
-    val benchmarkRule = ComposeBenchmarkRule()
+    @get:Rule val benchmarkRule = ComposeBenchmarkRule()
 
     @Test
     fun scrollProgrammatically_noNewItems() {
@@ -165,19 +162,16 @@ class LazyStaggeredGridScrollingBenchmark(
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun initParameters(): Array<LazyStaggeredGridScrollingTestCase> =
-            arrayOf(
-                Vertical,
-                Horizontal
-            )
+            arrayOf(Vertical, Horizontal)
 
         // Copied from AndroidComposeTestCaseRunner
         private val supportsRenderNode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-        private val supportsMRenderNode = Build.VERSION.SDK_INT < Build.VERSION_CODES.P &&
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+        private val supportsMRenderNode =
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.P &&
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 class LazyStaggeredGridScrollingTestCase(
     private val name: String,
     val isVertical: Boolean,
@@ -188,51 +182,32 @@ class LazyStaggeredGridScrollingTestCase(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
-private val Vertical = LazyStaggeredGridScrollingTestCase(
-    "Vertical",
-    isVertical = true
-) { state ->
-    LazyVerticalStaggeredGrid(
-        columns = StaggeredGridCells.Fixed(2),
-        state = state,
-        modifier = Modifier
-            .requiredHeight(400.dp)
-            .fillMaxWidth(),
-        flingBehavior = NoFlingBehavior
-    ) {
-        items(2) {
-            FirstLargeItem()
-        }
-        items(items) {
-            RegularItem()
+private val Vertical =
+    LazyStaggeredGridScrollingTestCase("Vertical", isVertical = true) { state ->
+        LazyVerticalStaggeredGrid(
+            columns = StaggeredGridCells.Fixed(2),
+            state = state,
+            modifier = Modifier.requiredHeight(400.dp).fillMaxWidth(),
+            flingBehavior = NoFlingBehavior
+        ) {
+            items(2) { FirstLargeItem() }
+            items(items) { RegularItem() }
         }
     }
-}
 
-@OptIn(ExperimentalFoundationApi::class)
-private val Horizontal = LazyStaggeredGridScrollingTestCase(
-    "Horizontal",
-    isVertical = false
-) { state ->
-    LazyHorizontalStaggeredGrid(
-        rows = StaggeredGridCells.Fixed(2),
-        state = state,
-        modifier = Modifier
-            .requiredWidth(400.dp)
-            .fillMaxHeight(),
-        flingBehavior = NoFlingBehavior
-    ) {
-        items(2) {
-            FirstLargeItem()
-        }
-        items(items) {
-            RegularItem()
+private val Horizontal =
+    LazyStaggeredGridScrollingTestCase("Horizontal", isVertical = false) { state ->
+        LazyHorizontalStaggeredGrid(
+            rows = StaggeredGridCells.Fixed(2),
+            state = state,
+            modifier = Modifier.requiredWidth(400.dp).fillMaxHeight(),
+            flingBehavior = NoFlingBehavior
+        ) {
+            items(2) { FirstLargeItem() }
+            items(items) { RegularItem() }
         }
     }
-}
 
-@OptIn(ExperimentalFoundationApi::class)
 class StaggeredGridRemeasureTestCase(
     val firstItemIndex: Int = 0,
     val scrollUp: Boolean = false,
@@ -254,25 +229,23 @@ class StaggeredGridRemeasureTestCase(
 
     @Composable
     fun RegularItem() {
-        Box(
-            Modifier
-                .requiredSize(20.dp)
-                .background(Color.Red, RoundedCornerShape(8.dp))
-        )
+        Box(Modifier.requiredSize(20.dp).background(Color.Red, RoundedCornerShape(8.dp)))
     }
 
     @Composable
     override fun Content() {
-        val scrollBy = if (addNewItemOnToggle) {
-            with(LocalDensity.current) { 15.dp.roundToPx() }
-        } else {
-            5
-        } * if (scrollUp) -1 else 1
-        targetItemOffset = if (scrollUp) {
-            with(LocalDensity.current) { 20.dp.roundToPx() + scrollBy }
-        } else {
-            scrollBy
-        }
+        val scrollBy =
+            if (addNewItemOnToggle) {
+                with(LocalDensity.current) { 15.dp.roundToPx() }
+            } else {
+                5
+            } * if (scrollUp) -1 else 1
+        targetItemOffset =
+            if (scrollUp) {
+                with(LocalDensity.current) { 20.dp.roundToPx() + scrollBy }
+            } else {
+                scrollBy
+            }
 
         InitializeScrollHelper(scrollAmount = scrollBy)
         state = rememberLazyStaggeredGridState()
@@ -293,15 +266,11 @@ class StaggeredGridRemeasureTestCase(
     }
 
     override suspend fun programmaticScroll(amount: Int) {
-        runBlocking {
-            state.scrollBy(amount.toFloat())
-        }
+        runBlocking { state.scrollBy(amount.toFloat()) }
     }
 
     override fun setUp() {
-        runBlocking {
-            state.scrollToItem(firstItemIndex, 0)
-        }
+        runBlocking { state.scrollToItem(firstItemIndex, 0) }
     }
 
     override fun tearDown() {

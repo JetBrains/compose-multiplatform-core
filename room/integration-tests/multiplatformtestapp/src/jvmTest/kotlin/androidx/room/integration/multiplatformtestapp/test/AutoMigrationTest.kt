@@ -17,6 +17,7 @@
 package androidx.room.integration.multiplatformtestapp.test
 
 import androidx.room.Room
+import androidx.room.RoomDatabase
 import androidx.room.testing.MigrationTestHelper
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
@@ -29,17 +30,19 @@ class AutoMigrationTest : BaseAutoMigrationTest() {
     private val driver: SQLiteDriver = BundledSQLiteDriver()
 
     @get:Rule
-    val migrationTestHelper = MigrationTestHelper(
-        schemaDirectoryPath = Path("schemas-ksp"),
-        databasePath = tempFilePath,
-        driver = driver,
-        databaseClass = AutoMigrationDatabase::class
-    )
+    val migrationTestHelper =
+        MigrationTestHelper(
+            schemaDirectoryPath = Path("schemas-ksp"),
+            databasePath = tempFilePath,
+            driver = driver,
+            databaseClass = AutoMigrationDatabase::class,
+            autoMigrationSpecs = listOf(ProvidedSpecFrom2To3())
+        )
 
     override fun getTestHelper() = migrationTestHelper
 
-    override fun getRoomDatabase(): AutoMigrationDatabase {
+    override fun getDatabaseBuilder(): RoomDatabase.Builder<AutoMigrationDatabase> {
         return Room.databaseBuilder<AutoMigrationDatabase>(tempFilePath.toString())
-            .setDriver(driver).build()
+            .setDriver(driver)
     }
 }

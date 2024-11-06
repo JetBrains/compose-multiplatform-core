@@ -22,11 +22,12 @@ plugins {
 }
 
 android {
+    compileSdkVersion 35
     defaultConfig {
         applicationId "androidx.wear.compose.integration.demos"
         minSdk 25
-        versionCode 21
-        versionName "1.21"
+        versionCode 51
+        versionName "1.51"
     }
 
     buildTypes {
@@ -55,12 +56,13 @@ dependencies {
     implementation(project(":compose:ui:ui"))
     implementation(project(":compose:ui:ui-util"))
     implementation(project(":compose:ui:ui:ui-samples"))
-    implementation(project(":compose:material:material-icons-core"))
+    implementation("androidx.compose.material:material-icons-core:1.6.7")
 
     implementation(project(':wear:compose:compose-foundation'))
     implementation(project(":wear:compose:compose-foundation-samples"))
     implementation(project(':wear:compose:compose-material'))
     implementation(project(":wear:compose:compose-material-samples"))
+    implementation(project(':wear:compose:compose-material3'))
     implementation(project(':wear:compose:integration-tests:demos:common'))
     implementation(project(":wear:compose:compose-material3-integration-tests"))
 

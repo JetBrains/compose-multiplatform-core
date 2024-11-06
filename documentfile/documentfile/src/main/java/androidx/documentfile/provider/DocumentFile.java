@@ -22,9 +22,10 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.provider.DocumentsContractCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 
@@ -82,8 +83,7 @@ import java.io.File;
 public abstract class DocumentFile {
     static final String TAG = "DocumentFile";
 
-    @Nullable
-    private final DocumentFile mParent;
+    private final @Nullable DocumentFile mParent;
 
     DocumentFile(@Nullable DocumentFile parent) {
         mParent = parent;
@@ -97,8 +97,7 @@ public abstract class DocumentFile {
      * {@link #getUri()} will return {@code file://} Uris for files explored
      * through this tree.
      */
-    @NonNull
-    public static DocumentFile fromFile(@NonNull File file) {
+    public static @NonNull DocumentFile fromFile(@NonNull File file) {
         return new RawDocumentFile(null, file);
     }
 
@@ -112,8 +111,8 @@ public abstract class DocumentFile {
      *            {@link Intent#ACTION_OPEN_DOCUMENT} or
      *            {@link Intent#ACTION_CREATE_DOCUMENT} request.
      */
-    @Nullable
-    public static DocumentFile fromSingleUri(@NonNull Context context, @NonNull Uri singleUri) {
+    public static @Nullable DocumentFile fromSingleUri(@NonNull Context context,
+            @NonNull Uri singleUri) {
         return new SingleDocumentFile(null, context, singleUri);
     }
 
@@ -126,8 +125,8 @@ public abstract class DocumentFile {
      * @param treeUri the {@link Intent#getData()} from a successful
      *            {@link Intent#ACTION_OPEN_DOCUMENT_TREE} request.
      */
-    @Nullable
-    public static DocumentFile fromTreeUri(@NonNull Context context, @NonNull Uri treeUri) {
+    public static @Nullable DocumentFile fromTreeUri(@NonNull Context context,
+            @NonNull Uri treeUri) {
         if (Build.VERSION.SDK_INT >= 21) {
             String documentId = DocumentsContractCompat.getTreeDocumentId(treeUri);
             if (DocumentsContractCompat.isDocumentUri(context, treeUri)) {
@@ -171,8 +170,8 @@ public abstract class DocumentFile {
      * @see android.provider.DocumentsContract#createDocument(ContentResolver,
      *      Uri, String, String)
      */
-    @Nullable
-    public abstract DocumentFile createFile(@NonNull String mimeType, @NonNull String displayName);
+    public abstract @Nullable DocumentFile createFile(@NonNull String mimeType,
+            @NonNull String displayName);
 
     /**
      * Create a new directory as a direct child of this directory.
@@ -184,8 +183,7 @@ public abstract class DocumentFile {
      * @see android.provider.DocumentsContract#createDocument(ContentResolver,
      *      Uri, String, String)
      */
-    @Nullable
-    public abstract DocumentFile createDirectory(@NonNull String displayName);
+    public abstract @Nullable DocumentFile createDirectory(@NonNull String displayName);
 
     /**
      * Return a Uri for the underlying document represented by this file. This
@@ -200,24 +198,21 @@ public abstract class DocumentFile {
      * @see ContentResolver#openOutputStream(Uri)
      * @see ContentResolver#openFileDescriptor(Uri, String)
      */
-    @NonNull
-    public abstract Uri getUri();
+    public abstract @NonNull Uri getUri();
 
     /**
      * Return the display name of this document.
      *
      * @see android.provider.DocumentsContract.Document#COLUMN_DISPLAY_NAME
      */
-    @Nullable
-    public abstract String getName();
+    public abstract @Nullable String getName();
 
     /**
      * Return the MIME type of this document.
      *
      * @see android.provider.DocumentsContract.Document#COLUMN_MIME_TYPE
      */
-    @Nullable
-    public abstract String getType();
+    public abstract @Nullable String getType();
 
     /**
      * Return the parent file of this document. Only defined inside of the
@@ -228,8 +223,7 @@ public abstract class DocumentFile {
      * parent offered here is purely a convenience method, and it may be
      * incorrect if the underlying tree structure changes.
      */
-    @Nullable
-    public DocumentFile getParentFile() {
+    public @Nullable DocumentFile getParentFile() {
         return mParent;
     }
 
@@ -326,8 +320,7 @@ public abstract class DocumentFile {
      * @see android.provider.DocumentsContract#buildChildDocumentsUriUsingTree(Uri,
      *      String)
      */
-    @NonNull
-    public abstract DocumentFile[] listFiles();
+    public abstract DocumentFile @NonNull [] listFiles();
 
     /**
      * Search through {@link #listFiles()} for the first document matching the
@@ -337,8 +330,7 @@ public abstract class DocumentFile {
      * @throws UnsupportedOperationException when working with a single document
      *             created from {@link #fromSingleUri(Context, Uri)}.
      */
-    @Nullable
-    public DocumentFile findFile(@NonNull String displayName) {
+    public @Nullable DocumentFile findFile(@NonNull String displayName) {
         for (DocumentFile doc : listFiles()) {
             if (displayName.equals(doc.getName())) {
                 return doc;

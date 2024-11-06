@@ -29,6 +29,8 @@ import androidx.core.telecom.test.utils.BaseTelecomTest
 import androidx.core.telecom.test.utils.ManagedConnection
 import androidx.core.telecom.test.utils.ManagedConnectionService
 import androidx.core.telecom.test.utils.TestUtils
+import androidx.core.telecom.test.utils.TestUtils.ALL_CALL_CAPABILITIES
+import androidx.core.telecom.test.utils.TestUtils.OUTGOING_NAME
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
@@ -53,26 +55,38 @@ import org.junit.runner.RunWith
 class ManagedCallsTest : BaseTelecomTest() {
     private val address = Uri.parse("tel:555-TEST")
     private val mManagedConnectionService = ManagedConnectionService()
-    private val mPhoneAccountHandle = PhoneAccountHandle(
-        ComponentName(
-            "androidx.core.telecom.test",
-            "androidx.core.telecom.test.utils.ManagedConnectionService"
-        ), "2"
-    )
-    private val mPhoneAccount = PhoneAccount.builder(mPhoneAccountHandle, "ManagedJetpackAcct")
-        .setAddress(address)
-        .setSubscriptionAddress(address)
-        .setCapabilities(
-            PhoneAccount.CAPABILITY_CALL_PROVIDER or
-                PhoneAccount.CAPABILITY_VIDEO_CALLING or
-                PhoneAccount.CAPABILITY_RTT or
-                PhoneAccount.CAPABILITY_CONNECTION_MANAGER or
-                PhoneAccount.CAPABILITY_PLACE_EMERGENCY_CALLS or
-                PhoneAccount.CAPABILITY_ADHOC_CONFERENCE_CALLING
+    private val mPhoneAccountHandle =
+        PhoneAccountHandle(
+            ComponentName(
+                "androidx.core.telecom.test",
+                "androidx.core.telecom.test.utils.ManagedConnectionService"
+            ),
+            "2"
         )
-        .addSupportedUriScheme(PhoneAccount.SCHEME_TEL)
-        .addSupportedUriScheme(PhoneAccount.SCHEME_VOICEMAIL)
-        .build()
+    private val mPhoneAccount =
+        PhoneAccount.builder(mPhoneAccountHandle, "ManagedJetpackAcct")
+            .setAddress(address)
+            .setSubscriptionAddress(address)
+            .setCapabilities(
+                PhoneAccount.CAPABILITY_CALL_PROVIDER or
+                    PhoneAccount.CAPABILITY_VIDEO_CALLING or
+                    PhoneAccount.CAPABILITY_RTT or
+                    PhoneAccount.CAPABILITY_CONNECTION_MANAGER or
+                    PhoneAccount.CAPABILITY_PLACE_EMERGENCY_CALLS or
+                    PhoneAccount.CAPABILITY_ADHOC_CONFERENCE_CALLING
+            )
+            .addSupportedUriScheme(PhoneAccount.SCHEME_TEL)
+            .addSupportedUriScheme(PhoneAccount.SCHEME_VOICEMAIL)
+            .build()
+
+    val OUTGOING_MANAGED_CALL_ATTRIBUTES =
+        CallAttributesCompat(
+            OUTGOING_NAME,
+            Uri.parse("tel:" + TestUtils.TEST_PHONE_NUMBER),
+            CallAttributesCompat.DIRECTION_OUTGOING,
+            CallAttributesCompat.CALL_TYPE_AUDIO_CALL,
+            ALL_CALL_CAPABILITIES
+        )
 
     @Before
     fun setUp() {
@@ -87,31 +101,29 @@ class ManagedCallsTest : BaseTelecomTest() {
         mTelecomManager.unregisterPhoneAccount(mPhoneAccountHandle)
     }
 
-    /**
-     * verify simulated managed calling is working in the jetpack layer.
-     */
+    /** verify simulated managed calling is working in the jetpack layer. */
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
     @LargeTest
     @Test
     fun testAddManagedCall() {
         val deferredConnection = CompletableDeferred<ManagedConnection>()
         runBlocking {
-            val connection = addManagedCall(TestUtils.OUTGOING_CALL_ATTRIBUTES, deferredConnection)
+            val connection = addManagedCall(OUTGOING_MANAGED_CALL_ATTRIBUTES, deferredConnection)
             disconnectAndDestroyConnection(connection)
         }
     }
 
-    /***********************************************************************************************
-     *                           Helpers
-     *********************************************************************************************/
-
+    /**
+     * ********************************************************************************************
+     * Helpers
+     * *******************************************************************************************
+     */
     private suspend fun addManagedCall(
         callAttributes: CallAttributesCompat,
         deferredConnection: CompletableDeferred<ManagedConnection>
     ): ManagedConnection {
-        val request = ManagedConnectionService.PendingConnectionRequest(
-            callAttributes, deferredConnection
-        )
+        val request =
+            ManagedConnectionService.PendingConnectionRequest(callAttributes, deferredConnection)
         mManagedConnectionService.createConnectionRequest(
             mTelecomManager,
             mPhoneAccountHandle,

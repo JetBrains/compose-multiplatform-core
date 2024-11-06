@@ -21,7 +21,6 @@ import android.util.Log;
 
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 
 /**
@@ -54,7 +53,6 @@ import androidx.annotation.RestrictTo;
  * </pre>
  *
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public final class Logger {
 
@@ -96,6 +94,16 @@ public final class Logger {
      */
     static void resetMinLogLevel() {
         sMinLogLevel = DEFAULT_MIN_LOG_LEVEL;
+    }
+
+    /**
+     * Returns {@code true} if logging with the tag {@code tag} is enabled at the
+     * {@link Log#VERBOSE} level. This is true when the minimum logging level is less than or equal
+     * to {@link Log#VERBOSE}, or if the log level of {@code tag} was explicitly set to
+     * {@link Log#VERBOSE} at least.
+     */
+    public static boolean isVerboseEnabled(@NonNull String tag) {
+        return isLogLevelEnabled(truncateTag(tag), Log.VERBOSE);
     }
 
     /**

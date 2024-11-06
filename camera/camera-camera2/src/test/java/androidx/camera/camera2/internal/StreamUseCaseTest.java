@@ -25,6 +25,8 @@ import static androidx.camera.core.DynamicRange.BIT_DEPTH_8_BIT;
 import static androidx.camera.core.ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY;
 import static androidx.camera.core.ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 
@@ -38,6 +40,7 @@ import androidx.annotation.NonNull;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
 import androidx.camera.camera2.internal.SupportedSurfaceCombination.FeatureSettings;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
+import androidx.camera.core.CompositionSettings;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.UseCase;
@@ -173,6 +176,42 @@ public class StreamUseCaseTest {
         assertTrue(streamUseCaseMap.get(mMockSurface1) == Long.valueOf(
                 CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE));
         assertTrue(streamUseCaseMap.get(mMockSurface2) == Long.valueOf(
+                CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW));
+    }
+
+    @Test
+    public void populateSurfaceToStreamUseCaseMapping_previewAndNoSurfaceVideoCapture() {
+        Map<DeferrableSurface, Long> streamUseCaseMap = new HashMap<>();
+        MutableOptionsBundle previewOptionsBundle = MutableOptionsBundle.create();
+        previewOptionsBundle.insertOption(STREAM_USE_CASE_STREAM_SPEC_OPTION,
+                Long.valueOf(CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW));
+        SessionConfig previewSessionConfig =
+                new SessionConfig.Builder()
+                        .addSurface(mMockSurface1)
+                        .addImplementationOptions(
+                                new Camera2ImplConfig(previewOptionsBundle)).build();
+        UseCaseConfig<?> previewConfig = getFakeUseCaseConfigWithOptions(true, false, false,
+                UseCaseConfigFactory.CaptureType.PREVIEW, ImageFormat.PRIVATE);
+        MutableOptionsBundle videoOptionsBundle = MutableOptionsBundle.create();
+        videoOptionsBundle.insertOption(STREAM_USE_CASE_STREAM_SPEC_OPTION,
+                Long.valueOf(CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD));
+        // VideoCapture doesn't contain a surface
+        SessionConfig videoCaptureSessionConfig =
+                new SessionConfig.Builder()
+                        .addImplementationOptions(
+                                new Camera2ImplConfig(videoOptionsBundle)).build();
+        UseCaseConfig<?> videoCaptureConfig = getFakeUseCaseConfigWithOptions(true, false, false,
+                UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE, ImageFormat.PRIVATE);
+        ArrayList<SessionConfig> sessionConfigs = new ArrayList<>();
+        sessionConfigs.add(previewSessionConfig);
+        sessionConfigs.add(videoCaptureSessionConfig);
+        ArrayList<UseCaseConfig<?>> useCaseConfigs = new ArrayList<>();
+        useCaseConfigs.add(previewConfig);
+        useCaseConfigs.add(videoCaptureConfig);
+        StreamUseCaseUtil.populateSurfaceToStreamUseCaseMapping(sessionConfigs, useCaseConfigs,
+                streamUseCaseMap);
+        assertThat(streamUseCaseMap.size()).isEqualTo(1);
+        assertThat(streamUseCaseMap.get(mMockSurface1)).isEqualTo(Long.valueOf(
                 CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW));
     }
 
@@ -443,7 +482,8 @@ public class StreamUseCaseTest {
                 UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE));
         children.add(new FakeUseCase(new FakeUseCaseConfig.Builder().getUseCaseConfig(),
                 UseCaseConfigFactory.CaptureType.VIDEO_CAPTURE));
-        StreamSharing streamSharing = new StreamSharing(new FakeCamera(), children,
+        StreamSharing streamSharing = new StreamSharing(new FakeCamera(), null,
+                CompositionSettings.DEFAULT, CompositionSettings.DEFAULT, children,
                 useCaseConfigFactory);
         Map<Integer, AttachedSurfaceInfo> surfaceConfigAttachedSurfaceInfoMap =
                 new HashMap<>();

@@ -22,7 +22,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -38,7 +37,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.platform.testTag
@@ -53,7 +51,6 @@ class ComposeTestActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun TestView(context: Context) {
     val scrollHeight = 2 * context.resources.configuration.screenHeightDp
@@ -69,14 +66,12 @@ private fun TestView(context: Context) {
             ) {
                 Text("Top", modifier = Modifier.padding(top = 20.dp).testTag("top-text"))
                 Spacer(modifier = Modifier.size(scrollHeight.dp))
-                Row(
+                Column(
                     modifier = Modifier.padding(bottom = 20.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Button(onClick = { text = "Updated" }) {
-                        Text("Update")
-                    }
                     Text(text)
+                    Button(onClick = { text = "Updated" }) { Text("Update") }
                 }
             }
         }

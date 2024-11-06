@@ -1,4 +1,4 @@
-# Benchmarking in AndroidX
+# MACRObenchmarking in AndroidX
 
 [TOC]
 
@@ -10,7 +10,7 @@
       <td><strong>Benchmark</strong></td>
     </tr>
     <tr>
-        <td>Measure high-level entry points(Activity launch / Scrolling a list)</td>
+        <td>Measure high-level entry points (Activity launch / Scrolling a list)</td>
         <td>Measure individual functions</td>
     </tr>
     <tr>
@@ -22,12 +22,12 @@
         <td>Fast iteration speed (Often less than 10 seconds)</td>
     </tr>
     <tr>
-        <td>Configure compilation with CompilationMode</td>
+        <td>Configure compilation with <a href="https://developer.android.com/reference/androidx/benchmark/macro/CompilationMode">CompilationMode</a></td>
         <td>Always fully AOT (<code>speed</code>) compiled.</td>
     </tr>
     <tr>
         <td>Min API 23</td>
-        <td>Min API 14</td>
+        <td>Min API 19</td>
     </tr>
     <tr>
         <td>Relatively lower stability measurements</td>
@@ -104,15 +104,23 @@ As in the public documentation, macrobenchmarks in the AndroidX repo are
 comprised of an app, and a separate macrobenchmark test module. In the AndroidX
 repository, there are additional requirements:
 
-1.  Macrobenchmark test module path in `settings.gradle` must end with
+1.  Macrobenchmark test module path in `settings.gradle` **must** end with
     `macrobenchmark` to run in CI.
 
-1.  Macrobenchmark target module path in `settings.gradle` must end with
+1.  Macrobenchmark target module path in `settings.gradle` **should** end with
     `macrobenchmark-target` to follow convention.
 
-1.  Each library group should declare its own in-group macrobenchmark test and
-    app module. More than one is allowed, which is sometimes necessary to
-    compare different startup behaviors, see e.g.
+1.  Macrobenchmark modules **must** use project dependencies where available (so
+    `implementation(project(":activity:activity-ktx"))` rather than
+    `implementation("androidx.activity:activity-ktx:1.5.0")`). This prevents
+    accidentally testing against out-of-date versions, and increases coverage of
+    lower level libraries.
+
+1.  Each library group **must** declare its own in-group macrobenchmark test and
+    app module, with out using these modules for anything else (e.g. samples).
+    We want to be intentional about which changes affect measurements. More than
+    one of either is allowed, which is sometimes necessary to compare different
+    startup behaviors, see e.g.
     `:emoji2:integration-tests:init-<disabled/enabled>-macrobenchmark-target`.
     Note that comparing multiple app variants are not currently supported by CI.
 
@@ -122,7 +130,7 @@ Compose Macrobenchmark Examples:
 
 *   [`:compose:integration-tests:macrobenchmark`](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/integration-tests/macrobenchmark/)
 
-Note: Compose macrobenchmarks are generally duplicated with View system
+Note: Compose macrobenchmarks are ideally duplicated with View system
 counterparts, defined in `:benchmark:integration-tests:macrobenchmark-target`.
 This is how we compare performance of the two systems.
 

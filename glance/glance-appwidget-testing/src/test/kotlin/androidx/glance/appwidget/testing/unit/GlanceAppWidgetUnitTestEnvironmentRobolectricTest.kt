@@ -28,36 +28,35 @@ import androidx.glance.testing.unit.hasTestTag
 import androidx.glance.testing.unit.hasText
 import androidx.glance.text.Text
 import androidx.test.core.app.ApplicationProvider
+import kotlin.time.Duration.Companion.seconds
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowLog
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
-/**
- * Holds tests that use Robolectric for providing application resources and context.
- */
+/** Holds tests that use Robolectric for providing application resources and context. */
 class GlanceAppWidgetUnitTestEnvironmentRobolectricTest {
     private lateinit var context: Context
 
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
+        ShadowLog.stream = System.out
     }
 
     @Test
-    fun runTest_localContextRead() = runGlanceAppWidgetUnitTest {
-        setContext(context)
+    fun runTest_localContextRead() =
+        runGlanceAppWidgetUnitTest(timeout = 5.seconds) {
+            setContext(context)
 
-        provideComposable {
-            ComposableReadingLocalContext()
+            provideComposable { ComposableReadingLocalContext() }
+
+            onNode(hasTestTag("test-tag")).assert(hasText("Test string: MyTest"))
         }
-
-        onNode(hasTestTag("test-tag"))
-            .assert(hasText("Test string: MyTest"))
-    }
 
     @Composable
     fun ComposableReadingLocalContext() {

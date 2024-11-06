@@ -19,6 +19,8 @@ package androidx.compose.integration.macrobenchmark
 import android.content.Intent
 import android.graphics.Point
 import androidx.benchmark.macro.CompilationMode
+import androidx.benchmark.macro.ExperimentalMetricApi
+import androidx.benchmark.macro.FrameTimingGfxInfoMetric
 import androidx.benchmark.macro.FrameTimingMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.platform.app.InstrumentationRegistry
@@ -30,8 +32,7 @@ import org.junit.Rule
 import org.junit.Test
 
 class ComplexNestedListsScrollBenchmark {
-    @get:Rule
-    val benchmarkRule = MacrobenchmarkRule()
+    @get:Rule val benchmarkRule = MacrobenchmarkRule()
 
     private lateinit var device: UiDevice
 
@@ -41,13 +42,14 @@ class ComplexNestedListsScrollBenchmark {
         device = UiDevice.getInstance(instrumentation)
     }
 
+    @OptIn(ExperimentalMetricApi::class)
     @Test
     fun start() {
         benchmarkRule.measureRepeated(
             packageName = PACKAGE_NAME,
-            metrics = listOf(FrameTimingMetric()),
+            metrics = listOf(FrameTimingMetric(), FrameTimingGfxInfoMetric()),
             compilationMode = CompilationMode.Full(),
-            iterations = 8,
+            iterations = 5,
             setupBlock = {
                 val intent = Intent()
                 intent.action = ACTION
@@ -57,7 +59,7 @@ class ComplexNestedListsScrollBenchmark {
             val lazyColumn = device.findObject(By.desc(CONTENT_DESCRIPTION))
             // Setting a gesture margin is important otherwise gesture nav is triggered.
             lazyColumn.setGestureMargin(device.displayWidth / 5)
-            for (i in 1..10) {
+            for (i in 1..8) {
                 // From center we scroll 2/3 of it which is 1/3 of the screen.
                 lazyColumn.drag(Point(lazyColumn.visibleCenter.x, lazyColumn.visibleCenter.y / 3))
                 device.wait(Until.findObject(By.desc(COMPOSE_IDLE)), 3000)

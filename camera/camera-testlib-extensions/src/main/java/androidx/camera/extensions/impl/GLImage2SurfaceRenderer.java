@@ -54,8 +54,6 @@ import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.RequiresApi;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -70,7 +68,6 @@ import java.util.Objects;
  * take as input a {@link Image} and write to a {@link android.graphics.SurfaceTexture}. It has only
  * been tested on a Pixel 2XL.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 final class GLImage2SurfaceRenderer {
     private static final String TAG = "GLImage2SurfaceRenderer";
 
@@ -79,6 +76,7 @@ final class GLImage2SurfaceRenderer {
     private EGLContext mEGLContext;
     private EGLSurface mEGLPbufferSurface;
     private EGLSurface mWindowSurface;
+    private int mTextureId;
 
     private int mProgram;
     private int mPositionHandle;
@@ -187,7 +185,7 @@ final class GLImage2SurfaceRenderer {
 
         int[] textureIds = new int[1];
         GLES20.glGenTextures(1, textureIds, 0);
-
+        mTextureId = textureIds[0];
         GLES20.glUniform1i(mTextureYHandle, 0);
 
         initVertexBuffer();
@@ -242,6 +240,15 @@ final class GLImage2SurfaceRenderer {
         GLES20.glEnableVertexAttribArray(mPositionHandle);
     }
 
+    public static ByteBuffer clone(ByteBuffer original) {
+        ByteBuffer clone = ByteBuffer.allocate(original.capacity());
+        original.rewind();
+        clone.put(original);
+        original.rewind();
+        clone.flip();
+        return clone;
+    }
+
     void renderTexture(Image image) {
         GLES20.glUseProgram(mProgram);
         GLES20.glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
@@ -249,10 +256,13 @@ final class GLImage2SurfaceRenderer {
 
         // Bind Y texture
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTextureId);
+
+        // ByteBuffer needs to be cloned otherwise it might cause failure in emulator.
+        ByteBuffer clonedBuffer = clone(image.getPlanes()[0].getBuffer());
         GLES20.glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, mInputSize.getWidth(),
                 mInputSize.getHeight(), 0, GL_LUMINANCE, GL_UNSIGNED_BYTE,
-                image.getPlanes()[0].getBuffer());
+                clonedBuffer);
         GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
                 GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
         GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,

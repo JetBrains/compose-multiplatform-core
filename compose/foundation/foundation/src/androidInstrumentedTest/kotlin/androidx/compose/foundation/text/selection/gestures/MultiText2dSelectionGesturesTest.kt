@@ -71,13 +71,13 @@ internal class MultiText2dSelectionGesturesTest : AbstractSelectionGesturesTest(
                         repeat(sideLength) { j ->
                             BasicText(
                                 text = text,
-                                style = TextStyle(
-                                    fontFamily = fontFamily,
-                                    fontSize = fontSize,
-                                ),
-                                modifier = Modifier
-                                    .padding(24.dp)
-                                    .testTag("${i * sideLength + j + 1}"),
+                                style =
+                                    TextStyle(
+                                        fontFamily = fontFamily,
+                                        fontSize = fontSize,
+                                    ),
+                                modifier =
+                                    Modifier.padding(24.dp).testTag("${i * sideLength + j + 1}"),
                             )
                         }
                     }
@@ -111,7 +111,7 @@ internal class MultiText2dSelectionGesturesTest : AbstractSelectionGesturesTest(
         dragTest(
             dragPosition = characterPosition(3, 6),
             selectableId = 3,
-            offset = 6,
+            offset = 5,
             crossed = true
         )
     }
@@ -131,7 +131,7 @@ internal class MultiText2dSelectionGesturesTest : AbstractSelectionGesturesTest(
         dragTest(
             dragPosition = characterPosition(5, 10),
             selectableId = 5,
-            offset = 10,
+            offset = 14,
             crossed = false
         )
     }
@@ -151,7 +151,7 @@ internal class MultiText2dSelectionGesturesTest : AbstractSelectionGesturesTest(
         dragTest(
             dragPosition = characterPosition(7, 5),
             selectableId = 7,
-            offset = 5,
+            offset = 9,
             crossed = false
         )
     }
@@ -178,12 +178,7 @@ internal class MultiText2dSelectionGesturesTest : AbstractSelectionGesturesTest(
 
     @Test
     fun dragTopContainer() {
-        dragTest(
-            dragPosition = topEnd,
-            selectableId = 1,
-            offset = 0,
-            crossed = true
-        )
+        dragTest(dragPosition = topEnd, selectableId = 1, offset = 0, crossed = true)
     }
 
     @Test
@@ -208,12 +203,7 @@ internal class MultiText2dSelectionGesturesTest : AbstractSelectionGesturesTest(
 
     @Test
     fun dragBottomContainer() {
-        dragTest(
-            dragPosition = bottomStart,
-            selectableId = 9,
-            offset = 19,
-            crossed = false
-        )
+        dragTest(dragPosition = bottomStart, selectableId = 9, offset = 19, crossed = false)
     }
 
     @Test
@@ -264,35 +254,23 @@ internal class MultiText2dSelectionGesturesTest : AbstractSelectionGesturesTest(
         offset: Int,
         crossed: Boolean,
     ) {
-        performTouchGesture {
-            longPress(characterPosition(5, 6))
-        }
+        performTouchGesture { longPress(characterPosition(5, 6)) }
 
-        assertSelection(
-            startSelectableId = 5,
-            startOffset = 5,
-            endSelectableId = 5,
-            endOffset = 9,
-            handlesCrossed = false
-        )
+        assertSelection(startOffset = 5, endSelectableId = 5, endOffset = 9, handlesCrossed = false)
 
         touchDragTo(dragPosition)
 
         assertSelection(
-            startSelectableId = 5,
-            startOffset = 5,
+            startOffset = if (crossed) 9 else 5,
             endSelectableId = selectableId,
             endOffset = offset,
             handlesCrossed = crossed
         )
 
-        performTouchGesture {
-            up()
-        }
+        performTouchGesture { up() }
 
         assertSelection(
-            startSelectableId = 5,
-            startOffset = 5,
+            startOffset = if (crossed) 9 else 5,
             endSelectableId = selectableId,
             endOffset = offset,
             handlesCrossed = crossed
@@ -309,7 +287,8 @@ internal class MultiText2dSelectionGesturesTest : AbstractSelectionGesturesTest(
             rule.onNodeWithTag(pointerAreaTag).fetchSemanticsNode().positionInRoot
         val nodePosition = rule.onNodeWithTag(tag).fetchSemanticsNode().positionInRoot
         val textLayoutResult = rule.onNodeWithTag(tag).fetchTextLayoutResult()
-        return textLayoutResult.getBoundingBox(offset)
+        return textLayoutResult
+            .getBoundingBox(offset)
             .translate(nodePosition - pointerAreaPosition)
             .centerLeft
             .nudge(HorizontalDirection.END)
@@ -329,7 +308,6 @@ internal class MultiText2dSelectionGesturesTest : AbstractSelectionGesturesTest(
     }
 
     private fun assertSelection(
-        startSelectableId: Int,
         startOffset: Int,
         endSelectableId: Int,
         endOffset: Int,
@@ -338,16 +316,18 @@ internal class MultiText2dSelectionGesturesTest : AbstractSelectionGesturesTest(
         assertThat(selection.value)
             .isEqualTo(
                 Selection(
-                    start = Selection.AnchorInfo(
-                        direction = ResolvedTextDirection.Ltr,
-                        offset = startOffset,
-                        selectableId = startSelectableId.toLong()
-                    ),
-                    end = Selection.AnchorInfo(
-                        direction = ResolvedTextDirection.Ltr,
-                        offset = endOffset,
-                        selectableId = endSelectableId.toLong()
-                    ),
+                    start =
+                        Selection.AnchorInfo(
+                            direction = ResolvedTextDirection.Ltr,
+                            offset = startOffset,
+                            selectableId = 5L
+                        ),
+                    end =
+                        Selection.AnchorInfo(
+                            direction = ResolvedTextDirection.Ltr,
+                            offset = endOffset,
+                            selectableId = endSelectableId.toLong()
+                        ),
                     handlesCrossed = handlesCrossed,
                 )
             )

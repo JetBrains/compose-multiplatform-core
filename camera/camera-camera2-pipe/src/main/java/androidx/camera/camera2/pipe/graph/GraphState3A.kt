@@ -18,7 +18,6 @@ package androidx.camera.camera2.pipe.graph
 
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.params.MeteringRectangle
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.AeMode
 import androidx.camera.camera2.pipe.AfMode
 import androidx.camera.camera2.pipe.AwbMode
@@ -38,33 +37,40 @@ import javax.inject.Inject
  * the af state. However for ae and awb, the lock type is boolean and should be explicitly set to
  * 'true' in the subsequent requests once we have locked ae/awb and want them to stay locked.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @CameraGraphScope
 internal class GraphState3A @Inject constructor() {
     var aeMode: AeMode? = null
         get() = synchronized(this) { field }
         private set
+
     var afMode: AfMode? = null
         get() = synchronized(this) { field }
         private set
+
     var awbMode: AwbMode? = null
         get() = synchronized(this) { field }
         private set
+
     var flashMode: FlashMode? = null
         get() = synchronized(this) { field }
         private set
+
     var aeRegions: List<MeteringRectangle>? = null
         get() = synchronized(this) { field }
         private set
+
     var afRegions: List<MeteringRectangle>? = null
         get() = synchronized(this) { field }
         private set
+
     var awbRegions: List<MeteringRectangle>? = null
         get() = synchronized(this) { field }
         private set
+
     var aeLock: Boolean? = null
         get() = synchronized(this) { field }
         private set
+
     var awbLock: Boolean? = null
         get() = synchronized(this) { field }
         private set

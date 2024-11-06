@@ -17,16 +17,28 @@
 package androidx.wear.compose.material3.samples
 
 import androidx.annotation.Sampled
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.AppCard
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.CardDefaults
@@ -43,6 +55,18 @@ fun CardSample() {
         onClick = { /* Do something */ },
     ) {
         Text("Card")
+    }
+}
+
+@Sampled
+@Composable
+fun CardWithOnLongClickSample(onLongClickHandler: () -> Unit) {
+    Card(
+        onClick = { /* Do something */ },
+        onLongClick = onLongClickHandler,
+        onLongClickLabel = "Long click"
+    ) {
+        Text("Card with long click")
     }
 }
 
@@ -69,15 +93,51 @@ fun AppCardWithIconSample() {
             Icon(
                 painter = painterResource(id = android.R.drawable.star_big_off),
                 contentDescription = "Star icon",
-                modifier = Modifier
-                    .size(CardDefaults.AppImageSize)
-                    .wrapContentSize(align = Alignment.Center),
+                modifier =
+                    Modifier.size(CardDefaults.AppImageSize)
+                        .wrapContentSize(align = Alignment.Center),
             )
         },
         title = { Text("Card title") },
         time = { Text("now") },
     ) {
         Text("Card content")
+    }
+}
+
+@Sampled
+@Composable
+fun AppCardWithImageSample() {
+    val configuration = LocalConfiguration.current
+    // Add padding to the end of the image in order to maintain the correct proportions
+    // between the image and the card.
+    val imageEndPaddingDp = (0.15f * configuration.screenWidthDp).dp
+    AppCard(
+        onClick = { /* Do something */ },
+        appName = { Text("App name") },
+        appImage = {
+            Icon(
+                painter = painterResource(id = android.R.drawable.star_big_off),
+                contentDescription = "Star icon",
+                modifier =
+                    Modifier.size(CardDefaults.AppImageSize)
+                        .wrapContentSize(align = Alignment.Center),
+            )
+        },
+        title = { Text("With image") },
+        time = { Text("now") },
+    ) {
+        Spacer(modifier = Modifier.height(4.dp))
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Image(
+                modifier =
+                    Modifier.weight(1f).aspectRatio(16f / 9f).clip(RoundedCornerShape(16.dp)),
+                painter = painterResource(id = R.drawable.card_content_image),
+                contentScale = ContentScale.Crop,
+                contentDescription = null
+            )
+            Spacer(modifier = Modifier.width(imageEndPaddingDp))
+        }
     }
 }
 
@@ -106,18 +166,57 @@ fun TitleCardWithSubtitleAndTimeSample() {
 
 @Sampled
 @Composable
-fun TitleCardWithImageSample() {
+fun TitleCardWithMultipleImagesSample() {
+    TitleCard(
+        onClick = { /* Do something */ },
+        title = { Text("Title card") },
+        time = { Text("now") },
+        modifier = Modifier.semantics { contentDescription = "Background image" }
+    ) {
+        Spacer(Modifier.height(4.dp))
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Image(
+                modifier =
+                    Modifier.weight(2f)
+                        .height(68.dp)
+                        .align(Alignment.CenterVertically)
+                        .clip(RoundedCornerShape(16.dp)),
+                painter = painterResource(id = R.drawable.card_content_image),
+                contentScale = ContentScale.Crop,
+                contentDescription = null
+            )
+            Spacer(Modifier.width(4.dp))
+            Image(
+                modifier =
+                    Modifier.weight(1f)
+                        .height(68.dp)
+                        .align(Alignment.CenterVertically)
+                        .clip(RoundedCornerShape(16.dp)),
+                painter = painterResource(id = R.drawable.card_content_image),
+                contentScale = ContentScale.Crop,
+                contentDescription = null
+            )
+        }
+    }
+}
+
+@Sampled
+@Composable
+fun TitleCardWithImageBackgroundSample() {
     TitleCard(
         onClick = { /* Do something */ },
         title = { Text("Card title") },
         time = { Text("now") },
-        colors = CardDefaults.imageCardColors(
-            containerPainter = CardDefaults.imageWithScrimBackgroundPainter(
-                backgroundImagePainter = painterResource(id = R.drawable.backgroundimage)
+        colors =
+            CardDefaults.imageCardColors(
+                containerPainter =
+                    CardDefaults.imageWithScrimBackgroundPainter(
+                        backgroundImagePainter = painterResource(id = R.drawable.backgroundimage)
+                    ),
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                titleColor = MaterialTheme.colorScheme.onSurface
             ),
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            titleColor = MaterialTheme.colorScheme.onSurface
-        ),
+        contentPadding = CardDefaults.ImageContentPadding,
         modifier = Modifier.semantics { contentDescription = "Background image" }
     ) {
         Text("Card content")

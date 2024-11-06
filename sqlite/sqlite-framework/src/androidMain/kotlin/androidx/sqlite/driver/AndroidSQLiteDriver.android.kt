@@ -21,10 +21,9 @@ import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 
 /**
- * A [SQLiteDriver] implemented by [android.database] and that uses the Android's SDK SQLite
- * APIs.
+ * A [SQLiteDriver] implemented by [android.database] and that uses the Android's SDK SQLite APIs.
  */
-class AndroidSQLiteDriver : SQLiteDriver {
+public class AndroidSQLiteDriver : SQLiteDriver {
     override fun open(fileName: String): SQLiteConnection {
         val database = SQLiteDatabase.openOrCreateDatabase(fileName, null)
         return AndroidSQLiteConnection(database)

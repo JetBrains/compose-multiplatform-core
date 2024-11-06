@@ -16,19 +16,19 @@
 
 package androidx.compose.foundation.text.input.internal
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.text.findFollowingBreak
+import androidx.compose.foundation.text.findPrecedingBreak
 import androidx.compose.foundation.text.input.OutputTransformation
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.delete
 import androidx.compose.foundation.text.input.insert
-import androidx.compose.foundation.text.input.internal.selection.calculateAdjacentCursorPosition
+import androidx.compose.foundation.text.input.internal.selection.calculateNextCursorPositionAndWedgeAffinity
 import androidx.compose.ui.text.TextRange
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-@OptIn(ExperimentalFoundationApi::class)
 @RunWith(JUnit4::class)
 class TransformedTextSelectionMovementTest {
 
@@ -88,7 +88,7 @@ class TransformedTextSelectionMovementTest {
         assertThat(state.selection).isEqualTo(TextRange(2))
         assertThat(transformedState.visualText.selection).isEqualTo(TextRange(4))
         assertThat(transformedState.selectionWedgeAffinity)
-            .isEqualTo(SelectionWedgeAffinity(WedgeAffinity.End))
+            .isEqualTo(SelectionWedgeAffinity(WedgeAffinity.Start))
     }
 
     @Test
@@ -117,7 +117,7 @@ class TransformedTextSelectionMovementTest {
         assertThat(state.selection).isEqualTo(TextRange(0))
         assertThat(transformedState.visualText.selection).isEqualTo(TextRange(0))
         assertThat(transformedState.selectionWedgeAffinity)
-            .isEqualTo(SelectionWedgeAffinity(WedgeAffinity.Start))
+            .isEqualTo(SelectionWedgeAffinity(WedgeAffinity.End))
     }
 
     @Test
@@ -158,22 +158,26 @@ class TransformedTextSelectionMovementTest {
     }
 
     private fun calculateNextCursorPosition(state: TransformedTextFieldState) {
-        val newCursor = calculateAdjacentCursorPosition(
-            state.visualText.toString(),
-            state.visualText.selection.end,
-            forward = true,
-            state
-        )
+        val cursor = state.visualText.selection.end
+        val (newCursor, wedgeAffinity) =
+            calculateNextCursorPositionAndWedgeAffinity(
+                proposedCursor = state.visualText.toString().findFollowingBreak(cursor),
+                cursor = cursor,
+                transformedTextFieldState = state
+            )
         state.placeCursorBeforeCharAt(newCursor)
+        wedgeAffinity?.let { state.selectionWedgeAffinity = SelectionWedgeAffinity(wedgeAffinity) }
     }
 
     private fun calculatePreviousCursorPosition(state: TransformedTextFieldState) {
-        val newCursor = calculateAdjacentCursorPosition(
-            state.visualText.toString(),
-            state.visualText.selection.end,
-            forward = false,
-            state
-        )
+        val cursor = state.visualText.selection.end
+        val (newCursor, wedgeAffinity) =
+            calculateNextCursorPositionAndWedgeAffinity(
+                proposedCursor = state.visualText.toString().findPrecedingBreak(cursor),
+                cursor = cursor,
+                transformedTextFieldState = state
+            )
         state.placeCursorBeforeCharAt(newCursor)
+        wedgeAffinity?.let { state.selectionWedgeAffinity = SelectionWedgeAffinity(wedgeAffinity) }
     }
 }

@@ -23,9 +23,6 @@ plugins {
 android {
     defaultConfig {
         applicationId "androidx.camera.integration.core"
-        minSdkVersion 21
-        versionCode 1
-        multiDexEnabled true
 
         externalNativeBuild {
             cmake {
@@ -65,7 +62,6 @@ dependencies {
     implementation(project(":camera:camera-mlkit-vision"))
     implementation(project(":camera:camera-view"))
     implementation(project(":camera:camera-video"))
-    implementation(project(":camera:camera-viewfinder-core"))
     // Needed because AGP enforces same version between main and androidTest classpaths
     implementation(project(":concurrent:concurrent-futures"))
 
@@ -99,7 +95,7 @@ dependencies {
     debugImplementation(libs.testRunner)
 
     // Align dependencies in debugRuntimeClasspath and debugAndroidTestRuntimeClasspath.
-    androidTestImplementation("androidx.annotation:annotation-experimental:1.4.0")
+    androidTestImplementation("androidx.annotation:annotation-experimental:1.4.1")
 
     // Testing framework
     androidTestImplementation(libs.testCore)
@@ -121,8 +117,11 @@ dependencies {
     androidTestImplementation(project(":concurrent:concurrent-futures"))
     androidTestImplementation(project(":concurrent:concurrent-futures-ktx"))
     androidTestImplementation(project(":internal-testutils-runtime"))
+    androidTestImplementation(project(":internal-testutils-lifecycle"))
     androidTestImplementation(project(":internal-testutils-truth"))
+    androidTestImplementation("androidx.core:core:1.1.0")
     androidTestImplementation("androidx.lifecycle:lifecycle-runtime-testing:2.3.1")
+    androidTestImplementation("androidx.palette:palette:1.0.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
     androidTestImplementation("org.jetbrains.kotlinx:atomicfu:0.13.1")
 

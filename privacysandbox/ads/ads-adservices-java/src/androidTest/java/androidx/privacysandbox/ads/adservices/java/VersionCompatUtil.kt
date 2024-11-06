@@ -32,6 +32,7 @@ object VersionCompatUtil {
             SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= minVersion
     }
 
+    // Helper method to determine if version is testable, for APIs that are S+ only
     fun isTestableVersion(minAdServicesVersion: Int, minExtServicesVersion: Int): Boolean {
         return isTPlusWithMinAdServicesVersion(minAdServicesVersion) ||
             isSWithMinExtServicesVersion(minExtServicesVersion)

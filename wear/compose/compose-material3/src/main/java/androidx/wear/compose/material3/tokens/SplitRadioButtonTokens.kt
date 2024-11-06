@@ -14,33 +14,41 @@
  * limitations under the License.
  */
 
-// VERSION: v0_41
+// VERSION: v0_100
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 package androidx.wear.compose.material3.tokens
 internal object SplitRadioButtonTokens {
     val DisabledOpacity = 0.38f
-    val DisabledSelectedContainerColor = ColorSchemeKeyTokens.PrimaryContainer
-    val DisabledSelectedContentColor = ColorSchemeKeyTokens.OnPrimaryContainer
-    val DisabledSelectedSecondaryLabelColor = ColorSchemeKeyTokens.OnPrimaryContainer
-    val DisabledSelectedSecondaryLabelOpacity = 0.8f
-    val DisabledSelectedSplitContainerColor = ColorSchemeKeyTokens.Primary
-    val DisabledSelectedSplitContainerOpacity = 0.15f
-    val DisabledUnselectedContainerColor = ColorSchemeKeyTokens.Surface
+    val DisabledSelectedContainerColor = ColorSchemeKeyTokens.OnSurface
+    val DisabledSelectedContainerOpacity = 0.12f
+    val DisabledSelectedContentColor = ColorSchemeKeyTokens.OnSurface
+    val DisabledSelectedControlColor = ColorSchemeKeyTokens.OnSurface
+    val DisabledSelectedControlOpacity = 0.12f
+    val DisabledSelectedSecondaryLabelColor = ColorSchemeKeyTokens.OnSurface
+    val DisabledSelectedSplitContainerColor = ColorSchemeKeyTokens.OnSurface
+    val DisabledSelectedSplitContainerOpacity = 0.16f
+    val DisabledUnselectedContainerColor = ColorSchemeKeyTokens.OnSurface
+    val DisabledUnselectedContainerOpacity = 0.12f
     val DisabledUnselectedContentColor = ColorSchemeKeyTokens.OnSurface
-    val DisabledUnselectedSecondaryLabelColor = ColorSchemeKeyTokens.OnSurfaceVariant
-    val DisabledUnselectedSplitContainerColor = ColorSchemeKeyTokens.SurfaceBright
+    val DisabledUnselectedControlColor = ColorSchemeKeyTokens.OnSurface
+    val DisabledUnselectedControlOpacity = 0.12f
+    val DisabledUnselectedSecondaryLabelColor = ColorSchemeKeyTokens.OnSurface
+    val DisabledUnselectedSplitContainerColor = ColorSchemeKeyTokens.OnSurface
+    val DisabledUnselectedSplitContainerOpacity = 0.16f
     val LabelFont = TypographyKeyTokens.LabelMedium
     val SecondaryLabelFont = TypographyKeyTokens.LabelSmall
     val SelectedContainerColor = ColorSchemeKeyTokens.PrimaryContainer
     val SelectedContentColor = ColorSchemeKeyTokens.OnPrimaryContainer
+    val SelectedControlColor = ColorSchemeKeyTokens.Primary
     val SelectedSecondaryLabelColor = ColorSchemeKeyTokens.OnPrimaryContainer
-    val SelectedSecondaryLabelOpacity = 0.8f
-    val SelectedSplitContainerColor = ColorSchemeKeyTokens.Primary
-    val SelectedSplitContainerOpacity = 0.15f
+    val SelectedSecondaryLabelOpacity = 0.9f
+    val SelectedSplitContainerColor = ColorSchemeKeyTokens.OnPrimaryContainer
+    val SelectedSplitContainerOpacity = 0.12f
     val Shape = ShapeKeyTokens.CornerLarge
-    val UnselectedContainerColor = ColorSchemeKeyTokens.Surface
+    val UnselectedContainerColor = ColorSchemeKeyTokens.SurfaceContainer
     val UnselectedContentColor = ColorSchemeKeyTokens.OnSurface
+    val UnselectedControlColor = ColorSchemeKeyTokens.Outline
     val UnselectedSecondaryLabelColor = ColorSchemeKeyTokens.OnSurfaceVariant
-    val UnselectedSplitContainerColor = ColorSchemeKeyTokens.SurfaceBright
+    val UnselectedSplitContainerColor = ColorSchemeKeyTokens.SurfaceContainerHigh
 }

@@ -31,7 +31,8 @@ plugins {
 
 dependencies {
     api(libs.kotlinStdlib)
-    api("androidx.annotation:annotation:1.1.0")
+    implementation(libs.kotlinCoroutinesCore)
+    api("androidx.annotation:annotation:1.8.1")
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testExtJunit)
@@ -39,6 +40,7 @@ dependencies {
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
+    implementation("androidx.core:core:1.13.0")
 }
 
 android {
@@ -56,5 +58,5 @@ androidx {
     type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "contains core definitions for the privacysandbox ui library."
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

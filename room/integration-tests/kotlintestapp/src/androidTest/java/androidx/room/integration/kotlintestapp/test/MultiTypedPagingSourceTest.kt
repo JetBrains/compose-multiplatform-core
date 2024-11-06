@@ -27,16 +27,19 @@ import androidx.room.integration.kotlintestapp.testutil.ItemStore
 import androidx.room.integration.kotlintestapp.testutil.PagingDb
 import androidx.room.integration.kotlintestapp.testutil.PagingEntity
 import androidx.room.integration.kotlintestapp.testutil.PagingEntityDao
+import androidx.room.paging.LimitOffsetPagingSource
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.filters.FlakyTest
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SmallTest
+import androidx.testutils.FilteringCoroutineContext
 import androidx.testutils.FilteringExecutor
 import java.util.concurrent.Executors
+import kotlin.test.Ignore
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -47,7 +50,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -68,7 +70,10 @@ class MultiTypedPagingSourceTest(
 
     // Multiple threads are necessary to prevent deadlock, since Room will acquire a thread to
     // dispatch on, when using the query / transaction dispatchers.
-    private val queryExecutor = FilteringExecutor(Executors.newFixedThreadPool(2))
+    private val queryContext = FilteringCoroutineContext(Executors.newFixedThreadPool(2))
+    private val queryExecutor: FilteringExecutor
+        get() = queryContext.executor
+
     private val mainThreadQueries = mutableListOf<Pair<String, String>>()
     private val pagingSources = mutableListOf<PagingSource<Int, PagingEntity>>()
 
@@ -76,7 +81,7 @@ class MultiTypedPagingSourceTest(
     fun init() {
         coroutineScope = CoroutineScope(Dispatchers.Main)
         itemStore = ItemStore(coroutineScope)
-        db = buildAndReturnDb(queryExecutor, mainThreadQueries)
+        db = buildAndReturnDb(queryContext, mainThreadQueries)
     }
 
     @After
@@ -87,6 +92,7 @@ class MultiTypedPagingSourceTest(
         pagingSources.clear()
     }
 
+    @Ignore("Due to b/365183141")
     @Test
     fun simple_emptyStart_thenAddAnItem() {
         simple_emptyStart_thenAddAnItem(preOpenDb = true)
@@ -104,14 +110,10 @@ class MultiTypedPagingSourceTest(
         db.getDao().insert(items)
         runTest {
             val initialLoad = itemStore.awaitInitialLoad()
-            assertThat(
-                initialLoad
-            ).containsExactlyElementsIn(
-                items.createExpected(
-                    fromIndex = 0,
-                    toIndex = CONFIG.initialLoadSize
+            assertThat(initialLoad)
+                .containsExactlyElementsIn(
+                    items.createExpected(fromIndex = 0, toIndex = CONFIG.initialLoadSize)
                 )
-            )
             // now access more items that should trigger loading more
             withContext(Dispatchers.Main) {
                 itemStore.get(20)
@@ -133,23 +135,17 @@ class MultiTypedPagingSourceTest(
         // open db
         val items = createItems(startId = 0, count = 100)
         db.getDao().insert(items)
-        val pager = Pager(
-            config = CONFIG,
-            initialKey = 98
-        ) {
-            db.getDao().loadItems()
-        }
+        val pager = Pager(config = CONFIG, initialKey = 98) { db.getDao().loadItems() }
         runTest(pager) {
             val initialLoad = itemStore.awaitInitialLoad()
-            assertThat(
-                initialLoad
-            ).containsExactlyElementsIn(
-                items.createExpected(
-                    // Paging 3 implementation loads starting from initial key
-                    fromIndex = 98,
-                    toIndex = 100
+            assertThat(initialLoad)
+                .containsExactlyElementsIn(
+                    items.createExpected(
+                        // Paging 3 implementation loads starting from initial key
+                        fromIndex = 98,
+                        toIndex = 100
+                    )
                 )
-            )
             // now access more items that should trigger loading more
             withContext(Dispatchers.Main) {
                 itemStore.get(40)
@@ -173,23 +169,17 @@ class MultiTypedPagingSourceTest(
         val items = createItems(startId = 0, count = 50)
         db.getDao().insert(items)
 
-        val pager = Pager(
-            config = CONFIG,
-            initialKey = 80
-        ) {
-            db.getDao().loadItems()
-        }
+        val pager = Pager(config = CONFIG, initialKey = 80) { db.getDao().loadItems() }
         runTest(pager = pager) {
             val initialLoad = itemStore.awaitInitialLoad()
-            assertThat(
-                initialLoad
-            ).containsExactlyElementsIn(
-                // should return last page when key is too large
-                items.createExpected(
-                    fromIndex = 41,
-                    toIndex = 50,
+            assertThat(initialLoad)
+                .containsExactlyElementsIn(
+                    // should return last page when key is too large
+                    items.createExpected(
+                        fromIndex = 41,
+                        toIndex = 50,
+                    )
                 )
-            )
             // now trigger a prepend
             withContext(Dispatchers.Main) {
                 itemStore.get(20)
@@ -203,81 +193,73 @@ class MultiTypedPagingSourceTest(
         val items = createItems(startId = 0, count = 200)
         db.getDao().insert(items)
 
-        val config = PagingConfig(
-            pageSize = 3,
-            initialLoadSize = 9,
-            enablePlaceholders = true,
-            jumpThreshold = 80
-        )
-        val pager = Pager(
-            config = config,
-        ) {
-            db.getDao().loadItems()
-        }
+        val config =
+            PagingConfig(
+                pageSize = 3,
+                initialLoadSize = 9,
+                enablePlaceholders = true,
+                jumpThreshold = 80
+            )
+        val pager =
+            Pager(
+                config = config,
+            ) {
+                db.getDao().loadItems()
+            }
         runTest(pager = pager) {
             val initialLoad = itemStore.awaitInitialLoad()
-            assertThat(
-                initialLoad
-            ).containsExactlyElementsIn(
-                items.createExpected(
-                    fromIndex = 0,
-                    toIndex = config.initialLoadSize,
+            assertThat(initialLoad)
+                .containsExactlyElementsIn(
+                    items.createExpected(
+                        fromIndex = 0,
+                        toIndex = config.initialLoadSize,
+                    )
                 )
-            )
             // now trigger a jump, accessed index needs to be larger than jumpThreshold
-            withContext(Dispatchers.Main) {
-                itemStore.get(120)
-            }
+            withContext(Dispatchers.Main) { itemStore.get(120) }
             // the jump should trigger a refresh load with new generation
             itemStore.awaitGeneration(2)
             itemStore.awaitInitialLoad()
             // the refresh should load around anchorPosition of 120, with refresh key as 116
             // and null placeholders before and after
-            assertThat(
-                itemStore.peekItems()
-            ).containsExactlyElementsIn(
-                items.createExpected(
-                    fromIndex = 116,
-                    toIndex = 116 + config.initialLoadSize,
+            assertThat(itemStore.peekItems())
+                .containsExactlyElementsIn(
+                    items.createExpected(
+                        fromIndex = 116,
+                        toIndex = 116 + config.initialLoadSize,
+                    )
                 )
-            )
         }
     }
 
+    @Ignore("Due to b/365183141")
     @Test
-    @Ignore // b/287517337, b/287477564, b/287366097, b/287085166
     fun prependWithDelayedInvalidation() {
         val items = createItems(startId = 0, count = 90)
         db.getDao().insert(items)
 
-        val pager = Pager(
-            config = CONFIG,
-            initialKey = 20,
-            pagingSourceFactory = { db.getDao().loadItems().also { pagingSources.add(it) } }
-        )
+        val pager =
+            Pager(
+                config = CONFIG,
+                initialKey = 20,
+                pagingSourceFactory = { db.getDao().loadItems().also { pagingSources.add(it) } }
+            )
 
         runTest(pager) {
             val initialLoad = itemStore.awaitInitialLoad()
-            assertThat(
-                initialLoad
-            ).containsExactlyElementsIn(
-                // should load starting from initial Key = 30
-                items.createExpected(
-                    fromIndex = 20,
-                    toIndex = 20 + CONFIG.initialLoadSize
+            assertThat(initialLoad)
+                .containsExactlyElementsIn(
+                    // should load starting from initial Key = 30
+                    items.createExpected(fromIndex = 20, toIndex = 20 + CONFIG.initialLoadSize)
                 )
-            )
 
             // now do some changes in the database but don't let change notifications go through
             // to the data source. it should not crash :)
-             queryExecutor.filterFunction = {
-                 // TODO(b/): Avoid relying on function name, very brittle.
-                 !it.toString().contains("refreshInvalidationAsync")
-             }
+            queryContext.filterFunction = { context, _ ->
+                context[CoroutineName]?.name?.contains("Room Invalidation Tracker Refresh") != true
+            }
 
-            db.getDao().deleteItems(
-                items.subList(0, 60).map { it.id }
-            )
+            db.getDao().deleteItems(items.subList(0, 60).map { it.id })
 
             // make sure we blocked the refresh runnable until after the exception generates a
             // new paging source
@@ -291,37 +273,24 @@ class MultiTypedPagingSourceTest(
             assertTrue(pagingSources[0].invalid)
             itemStore.awaitInitialLoad()
 
-            // the initial load triggers a call to refreshVersionsAsync which calls
-            // mRefreshRunnable. The runnable is getting filtered out but we need this one to
-            // complete, so we executed the latest queued mRefreshRunnable.
-            assertThat(queryExecutor.deferredSize()).isEqualTo(2)
-            queryExecutor.executeLatestDeferred()
+            // The runnable of refreshVersionsAsync in the delete is getting filtered out but we
+            // need it to complete, so we execute it.
             assertThat(queryExecutor.deferredSize()).isEqualTo(1)
+            queryExecutor.executeLatestDeferred()
 
             // it might be reloaded in any range so just make sure everything is there
             // expects 30 items because items 60 - 89 left in database, so presenter should have
             // items 60-68 from initialLoad + 21 null placeholders
             assertThat(itemStore.peekItems()).hasSize(30)
             withContext(Dispatchers.Main) {
-                (0 until 10).forEach {
-                    itemStore.get(it)
-                }
+                (0 until 10).forEach { itemStore.get(it) }
                 // now ensure all of them are loaded
                 // only waiting for 9 items because because the 10th item and onwards are nulls from
                 // placeholders
                 (0 until 9).forEach {
-                    assertThat(
-                        itemStore.awaitItem(it)
-                    ).isEqualTo(
-                        items[60 + it]
-                    )
+                    assertThat(itemStore.awaitItem(it)).isEqualTo(items[60 + it])
                 }
             }
-
-            // Runs the original invalidationTracker.refreshRunnable.
-            // Note that the second initial load's call to mRefreshRunnable resets the flag to
-            // false, so this mRefreshRunnable will not detect changes in the table anymore.
-            queryExecutor.executeAll()
 
             itemStore.awaitInitialLoad()
 
@@ -330,9 +299,7 @@ class MultiTypedPagingSourceTest(
 
             // if a third generation is created, awaitGeneration(3) will return instead of timing
             // out.
-            val expectError = assertFailsWith<AssertionError> {
-                itemStore.awaitGeneration(3)
-            }
+            val expectError = assertFailsWith<AssertionError> { itemStore.awaitGeneration(3) }
             assertThat(expectError.message).isEqualTo("didn't complete in expected time")
 
             assertThat(itemStore.currentGenerationId).isEqualTo(2)
@@ -340,46 +307,43 @@ class MultiTypedPagingSourceTest(
         }
     }
 
-    @FlakyTest(bugId = 260592924)
+    // This test is no longer valid since LimitOffsetPagingSource now uses invalidation via Flow
+    // and slow observers don't block others.
     @Test
+    @Ignore("b/329315924")
     fun prependWithBlockingObserver() {
         val items = createItems(startId = 0, count = 90)
         db.getDao().insert(items)
 
-        val pager = Pager(
-            config = CONFIG,
-            initialKey = 20,
-            pagingSourceFactory = { db.getDao().loadItems().also { pagingSources.add(it) } }
-        )
+        val pager =
+            Pager(
+                config = CONFIG,
+                initialKey = 20,
+                pagingSourceFactory = { db.getDao().loadItems().also { pagingSources.add(it) } }
+            )
 
         // to block the PagingSource's observer, this observer needs to be registered first
-        val blockingObserver = object : InvalidationTracker.Observer("PagingEntity") {
-            // make sure observer blocks the time longer than the timeout of waiting for
-            // paging source invalidation, so that we can assert new generation failure later
-            override fun onInvalidated(tables: Set<String>) {
-                Thread.sleep(3_500)
+        val blockingObserver =
+            object : InvalidationTracker.Observer("PagingEntity") {
+                // make sure observer blocks the time longer than the timeout of waiting for
+                // paging source invalidation, so that we can assert new generation failure later
+                override fun onInvalidated(tables: Set<String>) {
+                    Thread.sleep(3_500)
+                }
             }
-        }
-        db.invalidationTracker.addObserver(
-            blockingObserver
-        )
+        db.invalidationTracker.addObserver(blockingObserver)
 
         runTest(pager) {
             val initialLoad = itemStore.awaitInitialLoad()
-            val initialItems = items.createExpected(
-                fromIndex = 20,
-                toIndex = 20 + CONFIG.initialLoadSize
-            )
-            assertThat(
-                initialLoad
-            ).containsExactlyElementsIn(
-                // should load starting from initial Key = 20
-                initialItems
-            )
+            val initialItems =
+                items.createExpected(fromIndex = 20, toIndex = 20 + CONFIG.initialLoadSize)
+            assertThat(initialLoad)
+                .containsExactlyElementsIn(
+                    // should load starting from initial Key = 20
+                    initialItems
+                )
 
-            db.getDao().deleteItems(
-                items.subList(0, 60).map { it.id }
-            )
+            db.getDao().deleteItems(items.subList(0, 60).map { it.id })
 
             // Now get more items. The pagingSource's load() will check for invalidation.
             // Normally the check would return "invalidation = true" but in this test case,
@@ -387,9 +351,7 @@ class MultiTypedPagingSourceTest(
             // This means the paging source is not being invalidated.
             itemStore.get(10)
 
-            val expectError = assertFailsWith<AssertionError> {
-                itemStore.awaitGeneration(2)
-            }
+            val expectError = assertFailsWith<AssertionError> { itemStore.awaitGeneration(2) }
             assertThat(expectError.message).isEqualTo("didn't complete in expected time")
 
             // and stale PagingSource would return item 70 instead of item 10
@@ -409,32 +371,28 @@ class MultiTypedPagingSourceTest(
         }
     }
 
-    @FlakyTest(bugId = 261205680)
+    @Ignore("Due to b/365183141")
     @Test
     fun appendWithDelayedInvalidation() {
         val items = createItems(startId = 0, count = 90)
         db.getDao().insert(items)
         runTest {
+            val isBasePagingSourceFactory =
+                pagingSourceFactory.invoke(db.getDao()) is LimitOffsetPagingSource
+
             val initialLoad = itemStore.awaitInitialLoad()
-            assertThat(
-                initialLoad
-            ).containsExactlyElementsIn(
-                items.createExpected(
-                    fromIndex = 0,
-                    toIndex = CONFIG.initialLoadSize
+            assertThat(initialLoad)
+                .containsExactlyElementsIn(
+                    items.createExpected(fromIndex = 0, toIndex = CONFIG.initialLoadSize)
                 )
-            )
 
             // now do some changes in the database but don't let change notifications go through
             // to the data source. it should not crash :)
-            queryExecutor.filterFunction = {
-                // TODO(b/): Avoid relying on function name, very brittle.
-                !it.toString().contains("refreshInvalidationAsync")
+            queryContext.filterFunction = { context, _ ->
+                context[CoroutineName]?.name?.contains("Room Invalidation Tracker Refresh") != true
             }
 
-            db.getDao().deleteItems(
-                items.subList(0, 80).map { it.id }
-            )
+            db.getDao().deleteItems(items.subList(0, 80).map { it.id })
 
             // make sure we blocked the refresh runnable until after the exception generates a
             // new paging source
@@ -446,15 +404,25 @@ class MultiTypedPagingSourceTest(
 
             itemStore.awaitGeneration(2)
             assertTrue(pagingSources[0].invalid)
-            // initial load is executed but refreshVersionsAsync's call to mRefreshRunnable is
-            // actually queued up here
+            // initial load is executed and calls refreshVersionsAsync due to runInTransaction
+            // and the refresh runnable is actually queued up here
             itemStore.awaitInitialLoad()
-            // the initial load triggers a call to refreshVersionsAsync which calls
-            // mRefreshRunnable. The runnable is getting filtered out but we need this one to
-            // complete, so we executed the latest queued mRefreshRunnable.
-            assertThat(queryExecutor.deferredSize()).isEqualTo(2)
-            queryExecutor.executeLatestDeferred()
-            assertThat(queryExecutor.deferredSize()).isEqualTo(1)
+
+            if (isBasePagingSourceFactory) {
+                // when test factory is for base paging source, the initial load does not enqueues
+                // a refresh, so we only expect the one from the deleteItems()
+                assertThat(queryExecutor.deferredSize()).isEqualTo(1)
+                queryExecutor.executeLatestDeferred()
+            } else {
+                // when test factory is not for base paging source (futures or rx) then the initial
+                // load triggers a call to refreshVersionsAsync due to runInTransaction
+                // and a refresh runnable is enqueue. The runnable is getting filtered out but we
+                // need the runnable from the initial load to complete, so we executed the latest
+                // queued runnable.
+                assertThat(queryExecutor.deferredSize()).isEqualTo(2)
+                queryExecutor.executeLatestDeferred()
+                assertThat(queryExecutor.deferredSize()).isEqualTo(1)
+            }
 
             // second paging source should be generated
             assertThat(pagingSources.size).isEqualTo(2)
@@ -462,23 +430,19 @@ class MultiTypedPagingSourceTest(
             // it might be reloaded in any range so just make sure everything is there
             assertThat(itemStore.peekItems()).hasSize(10)
             withContext(Dispatchers.Main) {
-                (0 until 10).forEach {
-                    itemStore.get(it)
-                }
+                (0 until 10).forEach { itemStore.get(it) }
                 // now ensure all of them are loaded
                 (0 until 10).forEach {
-                    assertThat(
-                        itemStore.awaitItem(it)
-                    ).isEqualTo(
-                        items[80 + it]
-                    )
+                    assertThat(itemStore.awaitItem(it)).isEqualTo(items[80 + it])
                 }
             }
 
-            // Runs the original invalidationTracker.refreshRunnable.
-            // Note that the second initial load's call to mRefreshRunnable resets the flag to
-            // false, so this mRefreshRunnable will not detect changes in the table anymore.
-            queryExecutor.executeAll()
+            if (!isBasePagingSourceFactory) {
+                // Runs the refresh runnable fromm the invalidation tracker due to the deleteItems()
+                // Note that the second initial load's call to the refresh runnable resets the flag
+                // to false, so this runnable will not detect changes in the table anymore.
+                queryExecutor.executeAll()
+            }
 
             itemStore.awaitInitialLoad()
 
@@ -487,9 +451,7 @@ class MultiTypedPagingSourceTest(
 
             // if a third generation is created, awaitGeneration(3) will return instead of timing
             // out.
-            val expectError = assertFailsWith<AssertionError> {
-                itemStore.awaitGeneration(3)
-            }
+            val expectError = assertFailsWith<AssertionError> { itemStore.awaitGeneration(3) }
             assertThat(expectError.message).isEqualTo("didn't complete in expected time")
 
             assertThat(itemStore.currentGenerationId).isEqualTo(2)
@@ -497,9 +459,7 @@ class MultiTypedPagingSourceTest(
         }
     }
 
-    private fun simple_emptyStart_thenAddAnItem(
-        preOpenDb: Boolean
-    ) {
+    private fun simple_emptyStart_thenAddAnItem(preOpenDb: Boolean) {
         if (preOpenDb) {
             // trigger db open
             db.openHelper.writableDatabase
@@ -532,23 +492,20 @@ class MultiTypedPagingSourceTest(
     }
 
     private companion object {
-        /**
-         * Runs this test class against all variants of Room Paging
-         */
+        /** Runs this test class against all variants of Room Paging */
         @Parameterized.Parameters(name = "pagingSourceFactory={0}")
         @JvmStatic
-        fun parameters() = listOf(
-            PagingEntityDao::loadItems,
-            PagingEntityDao::loadItemsListenableFuture,
-            PagingEntityDao::loadItemsRx2,
-            PagingEntityDao::loadItemsRx3
-        )
+        fun parameters() =
+            listOf(
+                PagingEntityDao::loadItems,
+                PagingEntityDao::loadItemsListenableFuture,
+                PagingEntityDao::loadItemsRx2,
+                PagingEntityDao::loadItemsRx3
+            )
     }
 }
 
-/**
- * Tests the secondary constructor of Room Paging implementations via RawQuery
- */
+/** Tests the secondary constructor of Room Paging implementations via RawQuery */
 @RunWith(Parameterized::class)
 @SmallTest
 class MultiTypedPagingSourceTestWithRawQuery(
@@ -561,14 +518,17 @@ class MultiTypedPagingSourceTestWithRawQuery(
 
     // Multiple threads are necessary to prevent deadlock, since Room will acquire a thread to
     // dispatch on, when using the query / transaction dispatchers.
-    private val queryExecutor = FilteringExecutor(Executors.newFixedThreadPool(2))
+    private val queryContext = FilteringCoroutineContext(Executors.newFixedThreadPool(2))
+    private val queryExecutor: FilteringExecutor
+        get() = queryContext.executor
+
     private val mainThreadQueries = mutableListOf<Pair<String, String>>()
 
     @Before
     fun init() {
         coroutineScope = CoroutineScope(Dispatchers.Main)
         itemStore = ItemStore(coroutineScope)
-        db = buildAndReturnDb(queryExecutor, mainThreadQueries)
+        db = buildAndReturnDb(queryContext, mainThreadQueries)
     }
 
     @After
@@ -583,19 +543,13 @@ class MultiTypedPagingSourceTestWithRawQuery(
         // open db
         val items = createItems(startId = 15, count = 50)
         db.getDao().insert(items)
-        val query = SimpleSQLiteQuery(
-            "SELECT * FROM PagingEntity ORDER BY id ASC"
-        )
+        val query = SimpleSQLiteQuery("SELECT * FROM PagingEntity ORDER BY id ASC")
         runTest(query) {
             val initialLoad = itemStore.awaitInitialLoad()
-            assertThat(
-                initialLoad
-            ).containsExactlyElementsIn(
-                items.createExpected(
-                    fromIndex = 0,
-                    toIndex = CONFIG.initialLoadSize
+            assertThat(initialLoad)
+                .containsExactlyElementsIn(
+                    items.createExpected(fromIndex = 0, toIndex = CONFIG.initialLoadSize)
                 )
-            )
             // now access more items that should trigger loading more
             withContext(Dispatchers.Main) {
                 itemStore.get(20)
@@ -612,28 +566,23 @@ class MultiTypedPagingSourceTestWithRawQuery(
     }
 
     @Test
-    @Ignore // b/312434479
     fun loadEverythingRawQuery_inReverse() {
         // open db
         val items = createItems(startId = 0, count = 100)
         db.getDao().insert(items)
-        val query = SimpleSQLiteQuery(
-            "SELECT * FROM PagingEntity ORDER BY id ASC"
-        )
-        val pager = Pager(config = CONFIG, initialKey = 98) {
-            pagingSourceFactoryRaw(db.getDao(), query)
-        }
+        val query = SimpleSQLiteQuery("SELECT * FROM PagingEntity ORDER BY id ASC")
+        val pager =
+            Pager(config = CONFIG, initialKey = 98) { pagingSourceFactoryRaw(db.getDao(), query) }
         runTest(query, pager) {
             val initialLoad = itemStore.awaitInitialLoad()
-            assertThat(
-                initialLoad
-            ).containsExactlyElementsIn(
-                items.createExpected(
-                    // Paging 3 implementation loads starting from initial key
-                    fromIndex = 98,
-                    toIndex = 100
+            assertThat(initialLoad)
+                .containsExactlyElementsIn(
+                    items.createExpected(
+                        // Paging 3 implementation loads starting from initial key
+                        fromIndex = 98,
+                        toIndex = 100
+                    )
                 )
-            )
             // now access more items that should trigger loading more
             withContext(Dispatchers.Main) {
                 itemStore.get(40)
@@ -655,21 +604,19 @@ class MultiTypedPagingSourceTestWithRawQuery(
         val items = createItems(startId = 15, count = 70)
         db.getDao().insert(items)
 
-        val query = SimpleSQLiteQuery(
-            "SELECT * FROM PagingEntity ORDER BY id ASC LIMIT 30 OFFSET 5"
-        )
+        val query =
+            SimpleSQLiteQuery("SELECT * FROM PagingEntity ORDER BY id ASC LIMIT 30 OFFSET 5")
         runTest(query) {
             val initialLoad = itemStore.awaitInitialLoad()
-            assertThat(
-                initialLoad
-            ).containsExactlyElementsIn(
-                // returns items 20 to 28 with 21 null place holders after
-                items.createBoundedExpected(
-                    fromIndex = 5,
-                    toIndex = 5 + CONFIG.initialLoadSize,
-                    toPlaceholderIndex = 35,
+            assertThat(initialLoad)
+                .containsExactlyElementsIn(
+                    // returns items 20 to 28 with 21 null place holders after
+                    items.createBoundedExpected(
+                        fromIndex = 5,
+                        toIndex = 5 + CONFIG.initialLoadSize,
+                        toPlaceholderIndex = 35,
+                    )
                 )
-            )
             // now access more items that should trigger loading more
             withContext(Dispatchers.Main) {
                 itemStore.get(15)
@@ -679,11 +626,10 @@ class MultiTypedPagingSourceTestWithRawQuery(
 
             // normally itemStore.get(50) is valid, but user-set LIMIT should bound item count to 30
             // itemStore.get(50) should now become invalid
-            val expectedException = assertFailsWith<IndexOutOfBoundsException> {
-                withContext(Dispatchers.Main) {
-                    itemStore.get(50)
+            val expectedException =
+                assertFailsWith<IndexOutOfBoundsException> {
+                    withContext(Dispatchers.Main) { itemStore.get(50) }
                 }
-            }
             assertThat(expectedException.message).isEqualTo("Index: 50, Size: 30")
             assertThat(itemStore.currentGenerationId).isEqualTo(1)
         }
@@ -693,25 +639,25 @@ class MultiTypedPagingSourceTestWithRawQuery(
     fun rawQuery_multipleArguments() {
         val items = createItems(startId = 0, count = 80)
         db.getDao().insert(items)
-        val query = SimpleSQLiteQuery(
-            "SELECT * " +
-                "FROM PagingEntity " +
-                "WHERE id > 49 AND id < 76 " +
-                "ORDER BY id ASC " +
-                "LIMIT 20"
-        )
+        val query =
+            SimpleSQLiteQuery(
+                "SELECT * " +
+                    "FROM PagingEntity " +
+                    "WHERE id > 49 AND id < 76 " +
+                    "ORDER BY id ASC " +
+                    "LIMIT 20"
+            )
         runTest(query) {
             val initialLoad = itemStore.awaitInitialLoad()
-            assertThat(
-                initialLoad
-            ).containsExactlyElementsIn(
-                // returns items 50 to 58 with 11 null place holders after
-                items.createBoundedExpected(
-                    fromIndex = 50,
-                    toIndex = 50 + CONFIG.initialLoadSize,
-                    toPlaceholderIndex = 70,
+            assertThat(initialLoad)
+                .containsExactlyElementsIn(
+                    // returns items 50 to 58 with 11 null place holders after
+                    items.createBoundedExpected(
+                        fromIndex = 50,
+                        toIndex = 50 + CONFIG.initialLoadSize,
+                        toPlaceholderIndex = 70,
+                    )
                 )
-            )
             // now access more items that should trigger loading more
             withContext(Dispatchers.Main) {
                 itemStore.get(15)
@@ -720,11 +666,10 @@ class MultiTypedPagingSourceTestWithRawQuery(
             }
 
             // normally itemStore.get(50) is valid, but user-set LIMIT should bound item count to 20
-            val expectedException = assertFailsWith<IndexOutOfBoundsException> {
-                withContext(Dispatchers.Main) {
-                    itemStore.get(50)
+            val expectedException =
+                assertFailsWith<IndexOutOfBoundsException> {
+                    withContext(Dispatchers.Main) { itemStore.get(50) }
                 }
-            }
             assertThat(expectedException.message).isEqualTo("Index: 50, Size: 20")
             assertThat(itemStore.currentGenerationId).isEqualTo(1)
         }
@@ -743,44 +688,41 @@ class MultiTypedPagingSourceTestWithRawQuery(
     }
 
     private companion object {
-        /**
-         * Runs this test class against all variants of Room Paging
-         */
+        /** Runs this test class against all variants of Room Paging */
         @Parameterized.Parameters(name = "pagingSourceFactory={0}")
         @JvmStatic
-        fun parameters() = listOf(
-            PagingEntityDao::loadItemsRaw,
-            PagingEntityDao::loadItemsRawListenableFuture,
-            PagingEntityDao::loadItemsRawRx2,
-            PagingEntityDao::loadItemsRawRx3
-        )
+        fun parameters() =
+            listOf(
+                PagingEntityDao::loadItemsRaw,
+                PagingEntityDao::loadItemsRawListenableFuture,
+                PagingEntityDao::loadItemsRawRx2,
+                PagingEntityDao::loadItemsRawRx3
+            )
     }
 }
 
 private fun buildAndReturnDb(
-    queryExecutor: FilteringExecutor,
+    queryContext: FilteringCoroutineContext,
     mainThreadQueries: MutableList<Pair<String, String>>
 ): PagingDb {
-    val mainThread: Thread = runBlocking(Dispatchers.Main) {
-        Thread.currentThread()
-    }
+    val mainThread: Thread = runBlocking(Dispatchers.Main) { Thread.currentThread() }
     return Room.inMemoryDatabaseBuilder(
-        ApplicationProvider.getApplicationContext(),
-        PagingDb::class.java
-    ).setQueryCallback(
-        object : RoomDatabase.QueryCallback {
-            override fun onQuery(sqlQuery: String, bindArgs: List<Any?>) {
-                if (Thread.currentThread() === mainThread) {
-                    mainThreadQueries.add(
-                        sqlQuery to Throwable().stackTraceToString()
-                    )
+            ApplicationProvider.getApplicationContext(),
+            PagingDb::class.java
+        )
+        .setQueryCallback(
+            object : RoomDatabase.QueryCallback {
+                override fun onQuery(sqlQuery: String, bindArgs: List<Any?>) {
+                    if (Thread.currentThread() === mainThread) {
+                        mainThreadQueries.add(sqlQuery to Throwable().stackTraceToString())
+                    }
                 }
             }
+        ) {
+            // instantly execute the log callback so that we can check the thread.
+            it.run()
         }
-    ) {
-        // instantly execute the log callback so that we can check the thread.
-        it.run()
-    }.setQueryExecutor(queryExecutor)
+        .setQueryCoroutineContext(queryContext)
         .build()
 }
 
@@ -790,11 +732,10 @@ private fun runTestWithPager(
     pager: Pager<Int, PagingEntity>,
     block: suspend () -> Unit
 ) {
-    val collection = coroutineScope.launch(Dispatchers.Main) {
-        pager.flow.collectLatest {
-            itemStore.collectFrom(it)
+    val collection =
+        coroutineScope.launch(Dispatchers.Main) {
+            pager.flow.collectLatest { itemStore.collectFrom(it) }
         }
-    }
     runBlocking {
         try {
             block()
@@ -804,20 +745,11 @@ private fun runTestWithPager(
     }
 }
 
-internal fun createItems(
-    startId: Int,
-    count: Int
-): List<PagingEntity> {
-    return List(count) { pos ->
-        PagingEntity(
-            id = pos + startId
-        )
-    }
+internal fun createItems(startId: Int, count: Int): List<PagingEntity> {
+    return List(count) { pos -> PagingEntity(id = pos + startId) }
 }
 
-/**
- * Created an expected elements list from the current list.
- */
+/** Created an expected elements list from the current list. */
 internal fun List<PagingEntity>.createExpected(
     fromIndex: Int,
     toIndex: Int,
@@ -840,8 +772,9 @@ internal fun List<PagingEntity>.createBoundedExpected(
     return result
 }
 
-internal val CONFIG = PagingConfig(
-    pageSize = 3,
-    initialLoadSize = 9,
-    enablePlaceholders = true,
-)
+internal val CONFIG =
+    PagingConfig(
+        pageSize = 3,
+        initialLoadSize = 9,
+        enablePlaceholders = true,
+    )

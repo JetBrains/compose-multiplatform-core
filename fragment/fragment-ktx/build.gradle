@@ -21,8 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -38,7 +37,7 @@ dependencies {
     api("androidx.core:core-ktx:1.2.0") {
         because "Mirror fragment dependency graph for -ktx artifacts"
     }
-    api("androidx.collection:collection-ktx:1.1.0") {
+    api("androidx.collection:collection-ktx:1.4.2") {
         because "Mirror fragment dependency graph for -ktx artifacts"
     }
     api("androidx.lifecycle:lifecycle-livedata-core-ktx:2.6.1") {
@@ -62,10 +61,10 @@ dependencies {
 
 androidx {
     name = "Fragment Kotlin Extensions"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2018"
     description = "Kotlin extensions for 'fragment' artifact"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }
 
 android {

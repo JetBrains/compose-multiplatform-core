@@ -19,13 +19,14 @@ package androidx.car.app.messaging.model;
 import android.graphics.Bitmap;
 import android.net.Uri;
 
-import androidx.annotation.NonNull;
 import androidx.car.app.model.CarIcon;
 import androidx.car.app.model.CarText;
 import androidx.car.app.model.ItemList;
 import androidx.car.app.model.ListTemplate;
 import androidx.core.app.Person;
 import androidx.core.graphics.drawable.IconCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -169,12 +170,13 @@ public final class TestConversationFactory {
         List<CarMessage> messages = new ArrayList<>(1);
         messages.add(createMinimalMessage());
 
-        return new ConversationItem.Builder()
-                .setId("conversation_id")
-                .setTitle(CarText.create("Conversation Title"))
-                .setSelf(createMinimalMessageSender())
-                .setMessages(messages)
-                .setConversationCallback(EMPTY_CONVERSATION_CALLBACK);
+        return new ConversationItem.Builder(
+                "conversation_id",
+                CarText.create("Conversation Title"),
+                createMinimalMessageSender(),
+                messages,
+                EMPTY_CONVERSATION_CALLBACK
+        );
     }
 
     /**

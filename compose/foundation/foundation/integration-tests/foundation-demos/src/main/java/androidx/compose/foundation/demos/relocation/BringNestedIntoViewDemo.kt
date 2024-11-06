@@ -18,7 +18,6 @@
 
 package androidx.compose.foundation.demos.relocation
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -47,7 +46,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BringNestedIntoViewDemo() {
     Column {
@@ -66,14 +64,10 @@ fun BringNestedIntoViewDemo() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ScrollableGrid(rows: Int, columns: Int, requesters: List<BringIntoViewRequester>) {
     Column(
-        Modifier
-            .border(3.dp, Color.Blue)
-            .size(200.dp, 250.dp)
-            .verticalScroll(rememberScrollState())
+        Modifier.border(3.dp, Color.Blue).size(200.dp, 250.dp).verticalScroll(rememberScrollState())
     ) {
         repeat(rows) { row ->
             Row(
@@ -92,9 +86,7 @@ private fun ScrollableGrid(rows: Int, columns: Int, requesters: List<BringIntoVi
                     val index = row * columns + column
                     TextCircle(
                         index.toString(),
-                        Modifier
-                            .size(75.dp)
-                            .bringIntoViewRequester(requesters[index])
+                        Modifier.size(75.dp).bringIntoViewRequester(requesters[index])
                     )
                 }
             }
@@ -102,7 +94,6 @@ private fun ScrollableGrid(rows: Int, columns: Int, requesters: List<BringIntoVi
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ControlGrid(rows: Int, columns: Int, requesters: List<BringIntoViewRequester>) {
     val coroutineScope = rememberCoroutineScope()
@@ -111,18 +102,9 @@ private fun ControlGrid(rows: Int, columns: Int, requesters: List<BringIntoViewR
             Row {
                 repeat(columns) { column ->
                     val requester = requesters[row * columns + column]
-                    IconButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                requester.bringIntoView()
-                            }
-                        }
-                    ) {
+                    IconButton(onClick = { coroutineScope.launch { requester.bringIntoView() } }) {
                         val index = row * columns + column
-                        TextCircle(
-                            index.toString(),
-                            Modifier.size(50.dp)
-                        )
+                        TextCircle(index.toString(), Modifier.size(50.dp))
                     }
                 }
             }
@@ -132,15 +114,7 @@ private fun ControlGrid(rows: Int, columns: Int, requesters: List<BringIntoViewR
 
 @Composable
 private fun TextCircle(text: String, modifier: Modifier = Modifier) {
-    Box(
-        modifier
-            .aspectRatio(1f)
-            .background(Color.Red, shape = CircleShape)
-    ) {
-        Text(
-            text = text,
-            color = Color.White,
-            modifier = Modifier.align(Alignment.Center)
-        )
+    Box(modifier.aspectRatio(1f).background(Color.Red, shape = CircleShape)) {
+        Text(text = text, color = Color.White, modifier = Modifier.align(Alignment.Center))
     }
 }

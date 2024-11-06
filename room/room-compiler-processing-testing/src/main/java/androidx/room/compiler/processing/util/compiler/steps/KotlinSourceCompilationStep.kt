@@ -19,17 +19,15 @@ package androidx.room.compiler.processing.util.compiler.steps
 import androidx.room.compiler.processing.util.compiler.KotlinCliRunner
 import java.io.File
 import org.jetbrains.kotlin.cli.common.ExitCode
-import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 
 /**
- * Compiles kotlin sources.
+ * Compiles Kotlin sources.
  *
- * Note that annotation/symbol processors are not run by this step.
+ * Note that annotation / symbol processors are not run by this step.
  */
 internal object KotlinSourceCompilationStep : KotlinCompilationStep {
     override val name = "kotlinSourceCompilation"
 
-    @OptIn(ExperimentalCompilerApi::class)
     override fun execute(
         workingDir: File,
         arguments: CompilationStepArguments
@@ -37,27 +35,29 @@ internal object KotlinSourceCompilationStep : KotlinCompilationStep {
         if (arguments.sourceSets.none { it.hasKotlinSource }) {
             return CompilationStepResult.skip(arguments)
         }
-        val result = KotlinCliRunner.runKotlinCli(
-            arguments = arguments,
-            destinationDir = workingDir.resolve(CLASS_OUT_FOLDER_NAME),
-            pluginRegistrars = emptyList()
-        )
-        val diagnostics = resolveDiagnostics(
-            diagnostics = result.diagnostics,
-            sourceSets = arguments.sourceSets
-        )
+        val result =
+            KotlinCliRunner.runKotlinCli(
+                arguments = arguments,
+                destinationDir = workingDir.resolve(CLASS_OUT_FOLDER_NAME),
+            )
+        val diagnostics =
+            resolveDiagnostics(diagnostics = result.diagnostics, sourceSets = arguments.sourceSets)
         return CompilationStepResult(
             success = result.exitCode == ExitCode.OK,
             generatedSourceRoots = emptyList(),
             diagnostics = diagnostics,
-            nextCompilerArguments = arguments.copy(
-                additionalClasspaths = listOf(workingDir.resolve(CLASS_OUT_FOLDER_NAME)) +
-                    arguments.additionalClasspaths,
-                // NOTE: ideally, we should remove kotlin sources but we know that there are no more
-                // kotlin steps so we skip unnecessary work
-                sourceSets = arguments.sourceSets
-            ),
-            outputClasspath = listOf(result.compiledClasspath)
+            nextCompilerArguments =
+                arguments.copy(
+                    additionalClasspaths =
+                        listOf(workingDir.resolve(CLASS_OUT_FOLDER_NAME)) +
+                            arguments.additionalClasspaths,
+                    // NOTE: ideally, we should remove kotlin sources but we know that there are no
+                    // more
+                    // kotlin steps so we skip unnecessary work
+                    sourceSets = arguments.sourceSets
+                ),
+            outputClasspath = listOf(result.compiledClasspath),
+            generatedResources = emptyList()
         )
     }
 

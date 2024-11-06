@@ -47,6 +47,20 @@ class JpegMetadataCorrectorTest {
     }
 
     @Test
+    fun needCorrectJpegMetadataOnSamsungS10e() {
+        ReflectionHelpers.setStaticField(Build::class.java, "BRAND", "SAMSUNG")
+        ReflectionHelpers.setStaticField(Build::class.java, "DEVICE", "beyond0")
+        assertThat(JpegMetadataCorrector(DeviceQuirks.getAll()).needCorrectJpegMetadata()).isTrue()
+    }
+
+    @Test
+    fun needCorrectJpegMetadataOnSamsungS10Plus() {
+        ReflectionHelpers.setStaticField(Build::class.java, "BRAND", "SAMSUNG")
+        ReflectionHelpers.setStaticField(Build::class.java, "DEVICE", "beyond2")
+        assertThat(JpegMetadataCorrector(DeviceQuirks.getAll()).needCorrectJpegMetadata()).isTrue()
+    }
+
+    @Test
     fun doesNotNeedCorrectJpegMetadataOnSamsungA23() {
         ReflectionHelpers.setStaticField(Build::class.java, "BRAND", "SAMSUNG")
         ReflectionHelpers.setStaticField(Build::class.java, "DEVICE", "a23")
@@ -63,21 +77,23 @@ class JpegMetadataCorrectorTest {
             BitmapFactory.decodeByteArray(brokenJpegByteArray, 0, brokenJpegByteArray.size)
         }
 
-        val fakeImageProxy = TestImageUtil.createJpegFakeImageProxy(
-            FakeImageInfo(),
-            brokenJpegByteArray,
-            WIDTH,
-            HEIGHT
-        )
+        val fakeImageProxy =
+            TestImageUtil.createJpegFakeImageProxy(
+                FakeImageInfo(),
+                brokenJpegByteArray,
+                WIDTH,
+                HEIGHT
+            )
         val correctedJpegByteArray =
             JpegMetadataCorrector(DeviceQuirks.getAll()).jpegImageToJpegByteArray(fakeImageProxy)
         assertThat(
-            BitmapFactory.decodeByteArray(
-                correctedJpegByteArray,
-                0,
-                correctedJpegByteArray.size
+                BitmapFactory.decodeByteArray(
+                    correctedJpegByteArray,
+                    0,
+                    correctedJpegByteArray.size
+                )
             )
-        ).isNotNull()
+            .isNotNull()
     }
 
     @Test
@@ -90,12 +106,7 @@ class JpegMetadataCorrectorTest {
             TestImageUtil.createJpegFakeImageProxy(FakeImageInfo(), jpegByteArray, WIDTH, HEIGHT)
         val resultJpegByteArray =
             JpegMetadataCorrector(DeviceQuirks.getAll()).jpegImageToJpegByteArray(fakeImageProxy)
-        assertThat(
-            BitmapFactory.decodeByteArray(
-                resultJpegByteArray,
-                0,
-                resultJpegByteArray.size
-            )
-        ).isNotNull()
+        assertThat(BitmapFactory.decodeByteArray(resultJpegByteArray, 0, resultJpegByteArray.size))
+            .isNotNull()
     }
 }

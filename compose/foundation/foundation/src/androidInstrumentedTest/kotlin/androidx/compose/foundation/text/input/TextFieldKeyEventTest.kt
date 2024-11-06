@@ -16,11 +16,13 @@
 
 package androidx.compose.foundation.text.input
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.text.BasicSecureTextField
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TEST_FONT_FAMILY
 import androidx.compose.foundation.text.input.TextFieldLineLimits.MultiLine
 import androidx.compose.foundation.text.input.TextFieldLineLimits.SingleLine
@@ -30,6 +32,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
@@ -40,11 +47,13 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.withKeyDown
 import androidx.compose.ui.test.withKeysDown
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -58,13 +67,9 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(
-    ExperimentalFoundationApi::class,
-    ExperimentalTestApi::class
-)
+@OptIn(ExperimentalTestApi::class)
 class TextFieldKeyEventTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private val tag = "TextFieldTestTag"
 
@@ -73,6 +78,15 @@ class TextFieldKeyEventTest {
     @Test
     fun textField_typedEvents() {
         keysSequenceTest {
+            pressKey(Key.H)
+            press(Key.ShiftLeft + Key.I)
+            expectedText("hI")
+        }
+    }
+
+    @Test
+    fun textField_typedEvents_no_text_layout() {
+        keysSequenceTest(noTextLayout = true) {
             pressKey(Key.H)
             press(Key.ShiftLeft + Key.I)
             expectedText("hI")
@@ -188,8 +202,26 @@ class TextFieldKeyEventTest {
     }
 
     @Test
+    fun textField_backspace_no_text_layout() {
+        keysSequenceTest("hello", noTextLayout = true) {
+            pressKey(Key.DirectionRight)
+            pressKey(Key.DirectionRight)
+            pressKey(Key.Backspace)
+            expectedText("hllo")
+        }
+    }
+
+    @Test
     fun textField_delete() {
         keysSequenceTest("hello") {
+            pressKey(Key.Delete)
+            expectedText("ello")
+        }
+    }
+
+    @Test
+    fun textField_delete_no_text_layout() {
+        keysSequenceTest("hello", noTextLayout = true) {
             pressKey(Key.Delete)
             expectedText("ello")
         }
@@ -457,10 +489,7 @@ class TextFieldKeyEventTest {
 
     @Test
     fun textField_pageNavigationDown() {
-        keysSequenceTest(
-            initText = "A\nB\nC\nD\nE",
-            modifier = Modifier.requiredSize(73.dp)
-        ) {
+        keysSequenceTest(initText = "A\nB\nC\nD\nE", modifier = Modifier.requiredSize(73.dp)) {
             pressKey(Key.PageDown)
             expectedSelection(TextRange(4))
         }
@@ -662,6 +691,166 @@ class TextFieldKeyEventTest {
         }
     }
 
+    @Test
+    fun textField_singleLine_pressEnter_parentClickable() {
+        var parentClickCount = 0
+        var keyboardActionCount = 0
+        rule.setContent {
+            Box(Modifier.clickable { parentClickCount++ }) {
+                BasicTextField(
+                    state = rememberTextFieldState(),
+                    textStyle = TextStyle(fontFamily = TEST_FONT_FAMILY, fontSize = 30.sp),
+                    modifier = Modifier.testTag(tag),
+                    lineLimits = SingleLine,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    onKeyboardAction = { keyboardActionCount++ }
+                )
+            }
+        }
+
+        rule.onNodeWithTag(tag).requestFocus()
+        rule.onNodeWithTag(tag).performKeyInput { pressKey(Key.Enter) }
+
+        rule.runOnIdle {
+            assertThat(parentClickCount).isEqualTo(0)
+            assertThat(keyboardActionCount).isEqualTo(1)
+        }
+    }
+
+    @Test
+    fun textField_multiLine_pressEnter_parentClickable() {
+        var parentClickCount = 0
+        var keyboardActionCount = 0
+        val state = TextFieldState()
+        rule.setContent {
+            Box(Modifier.clickable { parentClickCount++ }) {
+                BasicTextField(
+                    state = state,
+                    textStyle = TextStyle(fontFamily = TEST_FONT_FAMILY, fontSize = 30.sp),
+                    modifier = Modifier.testTag(tag),
+                    lineLimits = MultiLine(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    onKeyboardAction = { keyboardActionCount++ }
+                )
+            }
+        }
+
+        rule.onNodeWithTag(tag).requestFocus()
+        rule.onNodeWithTag(tag).performKeyInput { pressKey(Key.Enter) }
+
+        rule.runOnIdle {
+            assertThat(parentClickCount).isEqualTo(0)
+            assertThat(keyboardActionCount).isEqualTo(0)
+            assertThat(state.text).isEqualTo("\n")
+        }
+    }
+
+    @Test
+    fun textField_consumedKeyDownEvent_keyUpDoesNotPropagate() {
+        val parentKeyEvents = mutableListOf<KeyEvent>()
+        val state = TextFieldState()
+        rule.setContent {
+            Box(
+                Modifier.onKeyEvent {
+                    parentKeyEvents += it
+                    true
+                }
+            ) {
+                BasicTextField(
+                    state = state,
+                    textStyle = TextStyle(fontFamily = TEST_FONT_FAMILY, fontSize = 30.sp),
+                    modifier = Modifier.testTag(tag),
+                )
+            }
+        }
+
+        rule.onNodeWithTag(tag).requestFocus()
+        rule.onNodeWithTag(tag).performKeyInput { pressKey(Key.A) }
+
+        rule.runOnIdle {
+            // even key up even shouldn't be passed to parent listener since the down event is
+            // consumed by BasicTextField
+            assertThat(parentKeyEvents).isEmpty()
+            assertThat(state.text).isEqualTo("a")
+        }
+    }
+
+    @Test
+    fun textField_simultaneousConsumedKeyDownEvents_keyUpDoesNotPropagate() {
+        val parentKeyEvents = mutableListOf<KeyEvent>()
+        val state = TextFieldState()
+        rule.setContent {
+            Box(
+                Modifier.onKeyEvent {
+                    parentKeyEvents += it
+                    true
+                }
+            ) {
+                BasicTextField(
+                    state = state,
+                    textStyle = TextStyle(fontFamily = TEST_FONT_FAMILY, fontSize = 30.sp),
+                    modifier = Modifier.testTag(tag),
+                )
+            }
+        }
+
+        rule.onNodeWithTag(tag).requestFocus()
+        rule.onNodeWithTag(tag).performKeyInput {
+            keyDown(Key.A)
+            keyDown(Key.B)
+            keyDown(Key.C)
+            keyUp(Key.C)
+            keyUp(Key.B)
+            keyUp(Key.A)
+        }
+
+        rule.runOnIdle {
+            // even key up even shouldn't be passed to parent listener since the down event is
+            // consumed by BasicTextField
+            assertThat(parentKeyEvents).isEmpty()
+            assertThat(state.text).isEqualTo("abc")
+        }
+    }
+
+    @Test
+    fun textField_simultaneousMetaConsumedKeyDownEvents_keyUpDoesNotPropagate() {
+        val parentKeyEvents = mutableListOf<KeyEvent>()
+        val state = TextFieldState()
+        rule.setContent {
+            Box(
+                Modifier.onKeyEvent {
+                    parentKeyEvents += it
+                    true
+                }
+            ) {
+                BasicTextField(
+                    state = state,
+                    textStyle = TextStyle(fontFamily = TEST_FONT_FAMILY, fontSize = 30.sp),
+                    modifier = Modifier.testTag(tag),
+                )
+            }
+        }
+
+        rule.onNodeWithTag(tag).requestFocus()
+        rule.onNodeWithTag(tag).performKeyInput {
+            keyDown(Key.ShiftLeft)
+            keyDown(Key.A)
+            keyUp(Key.ShiftLeft)
+            keyUp(Key.A)
+        }
+
+        rule.runOnIdle {
+            // even key up even shouldn't be passed to parent listener since the down event is
+            // consumed by BasicTextField
+            assertThat(parentKeyEvents.size).isEqualTo(2)
+            assertThat(parentKeyEvents[0].key).isEqualTo(Key.ShiftLeft)
+            assertThat(parentKeyEvents[0].type).isEqualTo(KeyEventType.KeyDown)
+            assertThat(parentKeyEvents[1].key).isEqualTo(Key.ShiftLeft)
+            assertThat(parentKeyEvents[1].type).isEqualTo(KeyEventType.KeyUp)
+            assertThat(state.text).isEqualTo("A")
+        }
+    }
+
     private inner class SequenceScope(
         val state: TextFieldState,
         val clipboardManager: ClipboardManager,
@@ -682,30 +871,30 @@ class TextFieldKeyEventTest {
         }
 
         fun expectedText(text: String) {
-            rule.runOnIdle {
-                assertThat(state.text.toString()).isEqualTo(text)
-            }
+            rule.runOnIdle { assertThat(state.text.toString()).isEqualTo(text) }
         }
 
         fun expectedSelection(selection: TextRange) {
-            rule.runOnIdle {
-                assertThat(state.selection).isEqualTo(selection)
-            }
+            rule.runOnIdle { assertThat(state.selection).isEqualTo(selection) }
         }
 
         fun expectedClipboardText(text: String) {
-            rule.runOnIdle {
-                assertThat(clipboardManager.getText()?.text).isEqualTo(text)
-            }
+            rule.runOnIdle { assertThat(clipboardManager.getText()?.text).isEqualTo(text) }
         }
     }
 
+    /**
+     * @param noTextLayout Whether the BasicTextField under test should calculate its text layout. A
+     *   text layout calculation can be prevented by specifying a decorator but not calling the
+     *   inner text field.
+     */
     private fun keysSequenceTest(
         initText: String = "",
         initSelection: TextRange = TextRange.Zero,
         modifier: Modifier = Modifier.fillMaxSize(),
         singleLine: Boolean = false,
         secure: Boolean = false,
+        noTextLayout: Boolean = false,
         sequence: SequenceScope.() -> Unit,
     ) {
         val state = TextFieldState(initText, initSelection)
@@ -719,25 +908,25 @@ class TextFieldKeyEventTest {
                 if (!secure) {
                     BasicTextField(
                         state = state,
-                        textStyle = TextStyle(
-                            fontFamily = TEST_FONT_FAMILY,
-                            fontSize = 30.sp
-                        ),
-                        modifier = modifier
-                            .focusRequester(focusRequester)
-                            .testTag(tag),
+                        textStyle = TextStyle(fontFamily = TEST_FONT_FAMILY, fontSize = 30.sp),
+                        modifier = modifier.focusRequester(focusRequester).testTag(tag),
                         lineLimits = if (singleLine) SingleLine else MultiLine(),
+                        decorator = {
+                            if (!noTextLayout) {
+                                it()
+                            }
+                        }
                     )
                 } else {
                     BasicSecureTextField(
                         state = state,
-                        textStyle = TextStyle(
-                            fontFamily = TEST_FONT_FAMILY,
-                            fontSize = 30.sp
-                        ),
-                        modifier = modifier
-                            .focusRequester(focusRequester)
-                            .testTag(tag)
+                        textStyle = TextStyle(fontFamily = TEST_FONT_FAMILY, fontSize = 30.sp),
+                        modifier = modifier.focusRequester(focusRequester).testTag(tag),
+                        decorator = {
+                            if (!noTextLayout) {
+                                it()
+                            }
+                        }
                     )
                 }
             }

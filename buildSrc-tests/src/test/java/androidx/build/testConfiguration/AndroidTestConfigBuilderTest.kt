@@ -27,9 +27,7 @@ import org.junit.runners.JUnit4
 import org.xml.sax.InputSource
 import org.xml.sax.helpers.DefaultHandler
 
-/**
- * Simple check that the test config templates are able to be parsed as valid xml.
- */
+/** Simple check that the test config templates are able to be parsed as valid xml. */
 @RunWith(JUnit4::class)
 class AndroidTestConfigBuilderTest {
 
@@ -38,7 +36,8 @@ class AndroidTestConfigBuilderTest {
     @Before
     fun init() {
         builder = ConfigBuilder()
-        builder.configName("placeHolderAndroidTest.xml")
+        builder
+            .configName("placeHolderAndroidTest.xml")
             .isMicrobenchmark(false)
             .applicationId("com.androidx.placeholder.Placeholder")
             .isPostsubmit(true)
@@ -51,18 +50,16 @@ class AndroidTestConfigBuilderTest {
 
     @Test
     fun testXmlAgainstGoldenDefault() {
-        MatcherAssert.assertThat(
-            builder.buildXml(),
-            CoreMatchers.`is`(goldenDefaultConfig)
-        )
+        MatcherAssert.assertThat(builder.buildXml(), CoreMatchers.`is`(goldenDefaultConfig))
     }
 
     @Test
-    fun testXmlAgainstGoldenWithInitialSetupApks() {
+    fun testXmlAgainstGoldenMainSandboxConfiguration() {
         builder.initialSetupApks(listOf("init-placeholder.apk"))
+        builder.enablePrivacySandbox(true)
         MatcherAssert.assertThat(
             builder.buildXml(),
-            CoreMatchers.`is`(goldenConfigWithInitialSetupApks)
+            CoreMatchers.`is`(goldenConfigForMainSandboxConfiguration)
         )
     }
 
@@ -70,15 +67,19 @@ class AndroidTestConfigBuilderTest {
     fun testXmlAgainstGoldenWithSplits() {
         builder.appApkName("app.apk")
         builder.appSplits(listOf("split1.apk", "split2.apk"))
-        MatcherAssert.assertThat(
-            builder.buildXml(),
-            CoreMatchers.`is`(goldenConfigWithSplits)
-        )
+        MatcherAssert.assertThat(builder.buildXml(), CoreMatchers.`is`(goldenConfigWithSplits))
     }
 
     @Test
     fun testXmlAgainstGoldenMicrobenchmark() {
         builder.isMicrobenchmark(true)
+
+        // example of value set by enableInternalMicrobenchmarkDefaults
+        builder.instrumentationArgsMap["androidx.benchmark.cpuEventCounter.enable"] = "true"
+
+        // NOTE: blocklisted arg is removed
+        builder.instrumentationArgsMap["androidx.benchmark.profiling.skipWhenDurationRisksAnr"] =
+            "true"
         MatcherAssert.assertThat(
             builder.buildXml(),
             CoreMatchers.`is`(goldenDefaultConfigBenchmark)
@@ -90,6 +91,12 @@ class AndroidTestConfigBuilderTest {
         builder.isMacrobenchmark(true)
         builder.instrumentationArgsMap["androidx.test.argument1"] = "something1"
         builder.instrumentationArgsMap["androidx.test.argument2"] = "something2"
+        builder.appApkSha256("654321")
+        builder.appApkName("targetApp.apk")
+
+        // NOTE: blocklisted arg is removed
+        builder.instrumentationArgsMap["androidx.benchmark.profiling.skipWhenDurationRisksAnr"] =
+            "true"
         MatcherAssert.assertThat(
             builder.buildXml(),
             CoreMatchers.`is`(goldenDefaultConfigMacroBenchmark)
@@ -102,7 +109,8 @@ class AndroidTestConfigBuilderTest {
         builder.instrumentationArgsMap["androidx.test.argument2"] = "something2"
         MatcherAssert.assertThat(
             builder.buildJson(),
-            CoreMatchers.`is`("""
+            CoreMatchers.`is`(
+                """
                 {
                   "name": "placeHolderAndroidTest.xml",
                   "minSdkVersion": "15",
@@ -127,7 +135,8 @@ class AndroidTestConfigBuilderTest {
                   ],
                   "additionalApkKeys": []
                 }
-            """.trimIndent()
+            """
+                    .trimIndent()
             )
         )
     }
@@ -137,7 +146,8 @@ class AndroidTestConfigBuilderTest {
         builder.additionalApkKeys(listOf("customKey"))
         MatcherAssert.assertThat(
             builder.buildJson(),
-            CoreMatchers.`is`("""
+            CoreMatchers.`is`(
+                """
                 {
                   "name": "placeHolderAndroidTest.xml",
                   "minSdkVersion": "15",
@@ -156,18 +166,19 @@ class AndroidTestConfigBuilderTest {
                     "customKey"
                   ]
                 }
-            """.trimIndent()
+            """
+                    .trimIndent()
             )
         )
     }
 
     @Test
     fun testJsonAgainstGoldenPresubmitBenchmark() {
-        builder.isMicrobenchmark(true)
-            .isPostsubmit(false)
+        builder.isMicrobenchmark(true).isPostsubmit(false)
         MatcherAssert.assertThat(
             builder.buildJson(),
-            CoreMatchers.`is`("""
+            CoreMatchers.`is`(
+                """
                 {
                   "name": "placeHolderAndroidTest.xml",
                   "minSdkVersion": "15",
@@ -188,18 +199,19 @@ class AndroidTestConfigBuilderTest {
                   ],
                   "additionalApkKeys": []
                 }
-            """.trimIndent()
+            """
+                    .trimIndent()
             )
         )
     }
 
     @Test
     fun testJsonAgainstAppTestGolden() {
-        builder.appApkName("app-placeholder.apk")
-            .appApkSha256("654321")
+        builder.appApkName("app-placeholder.apk").appApkSha256("654321")
         MatcherAssert.assertThat(
             builder.buildJson(),
-            CoreMatchers.`is`("""
+            CoreMatchers.`is`(
+                """
                 {
                   "name": "placeHolderAndroidTest.xml",
                   "minSdkVersion": "15",
@@ -218,7 +230,8 @@ class AndroidTestConfigBuilderTest {
                   ],
                   "additionalApkKeys": []
                 }
-            """.trimIndent()
+            """
+                    .trimIndent()
             )
         )
     }
@@ -236,12 +249,10 @@ class AndroidTestConfigBuilderTest {
                 minSdk = "15",
                 serviceApkName = "servicePlaceholder.apk",
                 serviceApkSha256 = "654321",
-                tags = listOf(
-                    "placeholder_tag",
-                    "media_compat"
-                ),
+                tags = listOf("placeholder_tag", "media_compat"),
             ),
-            CoreMatchers.`is`("""
+            CoreMatchers.`is`(
+                """
                 {
                   "name": "foo.json",
                   "minSdkVersion": "15",
@@ -269,7 +280,8 @@ class AndroidTestConfigBuilderTest {
                   ],
                   "additionalApkKeys": []
                 }
-                """.trimIndent()
+                """
+                    .trimIndent()
             )
         )
     }
@@ -293,8 +305,7 @@ class AndroidTestConfigBuilderTest {
 
     @Test
     fun testValidTestConfigXml_presubmitWithAppApk() {
-        builder.isPostsubmit(false)
-            .appApkName("Placeholder.apk")
+        builder.isPostsubmit(false).appApkName("Placeholder.apk")
         validate(builder.buildXml())
     }
 
@@ -318,25 +329,18 @@ class AndroidTestConfigBuilderTest {
 
     @Test
     fun testValidTestConfigXml_presubmitBenchmark() {
-        builder.isPostsubmit(false)
-            .isMicrobenchmark(true)
+        builder.isPostsubmit(false).isMicrobenchmark(true)
         validate(builder.buildXml())
     }
 
     private fun validate(xml: String) {
         val parser = SAXParserFactory.newInstance().newSAXParser()
-        return parser.parse(
-            InputSource(
-                StringReader(
-                    xml
-                )
-            ),
-            DefaultHandler()
-        )
+        return parser.parse(InputSource(StringReader(xml)), DefaultHandler())
     }
 }
 
-private val goldenDefaultConfig = """
+private val goldenDefaultConfig =
+    """
     <?xml version="1.0" encoding="utf-8"?>
     <!-- Copyright (C) 2020 The Android Open Source Project
     Licensed under the Apache License, Version 2.0 (the "License")
@@ -367,9 +371,11 @@ private val goldenDefaultConfig = """
     <option name="package" value="com.androidx.placeholder.Placeholder" />
     </test>
     </configuration>
-""".trimIndent()
+"""
+        .trimIndent()
 
-private val goldenConfigWithInitialSetupApks = """
+private val goldenConfigForMainSandboxConfiguration =
+    """
     <?xml version="1.0" encoding="utf-8"?>
     <!-- Copyright (C) 2020 The Android Open Source Project
     Licensed under the Apache License, Version 2.0 (the "License")
@@ -396,14 +402,22 @@ private val goldenConfigWithInitialSetupApks = """
     <option name="test-file-name" value="init-placeholder.apk" />
     <option name="test-file-name" value="placeholder.apk" />
     </target_preparer>
+    <target_preparer class="com.android.tradefed.targetprep.RunCommandTargetPreparer">
+    <option name="run-command" value="cmd sdk_sandbox set-state --enabled"/>
+    <option name="run-command" value="device_config set_sync_disabled_for_tests persistent" />
+    <option name="teardown-command" value="cmd sdk_sandbox set-state --reset"/>
+    <option name="teardown-command" value="device_config set_sync_disabled_for_tests none" />
+    </target_preparer>
     <test class="com.android.tradefed.testtype.AndroidJUnitTest">
     <option name="runner" value="com.example.Runner"/>
     <option name="package" value="com.androidx.placeholder.Placeholder" />
     </test>
     </configuration>
-""".trimIndent()
+"""
+        .trimIndent()
 
-private val goldenConfigWithSplits = """
+private val goldenConfigWithSplits =
+    """
     <?xml version="1.0" encoding="utf-8"?>
     <!-- Copyright (C) 2020 The Android Open Source Project
     Licensed under the Apache License, Version 2.0 (the "License")
@@ -435,9 +449,11 @@ private val goldenConfigWithSplits = """
     <option name="package" value="com.androidx.placeholder.Placeholder" />
     </test>
     </configuration>
-""".trimIndent()
+"""
+        .trimIndent()
 
-private val goldenDefaultConfigBenchmark = """
+private val goldenDefaultConfigBenchmark =
+    """
     <?xml version="1.0" encoding="utf-8"?>
     <!-- Copyright (C) 2020 The Android Open Source Project
     Licensed under the Apache License, Version 2.0 (the "License")
@@ -457,8 +473,8 @@ private val goldenDefaultConfigBenchmark = """
     <option name="config-descriptor:metadata" key="applicationId" value="com.androidx.placeholder.Placeholder" />
     <option name="wifi:disable" value="true" />
     <option name="instrumentation-arg" key="notAnnotation" value="androidx.test.filters.FlakyTest" />
-    <option name="instrumentation-arg" key="listener" value="androidx.benchmark.junit4.InstrumentationResultsRunListener" />
-    <option name="instrumentation-arg" key="listener" value="androidx.benchmark.junit4.SideEffectRunListener" />
+    <option name="instrumentation-arg" key="androidx.benchmark.cpuEventCounter.enable" value="true" />
+    <option name="instrumentation-arg" key="androidx.benchmark.output.payload.testApkSha256" value="123456" />
     <include name="google/unbundled/common/setup" />
     <target_preparer class="com.android.tradefed.targetprep.suite.SuiteApkInstaller">
     <option name="cleanup-apks" value="true" />
@@ -472,11 +488,15 @@ private val goldenDefaultConfigBenchmark = """
     <test class="com.android.tradefed.testtype.AndroidJUnitTest">
     <option name="runner" value="com.example.Runner"/>
     <option name="package" value="com.androidx.placeholder.Placeholder" />
+    <option name="device-listeners" value="androidx.benchmark.junit4.InstrumentationResultsRunListener" />
+    <option name="device-listeners" value="androidx.benchmark.junit4.SideEffectRunListener" />
     </test>
     </configuration>
-""".trimIndent()
+"""
+        .trimIndent()
 
-private val goldenDefaultConfigMacroBenchmark = """
+private val goldenDefaultConfigMacroBenchmark =
+    """
     <?xml version="1.0" encoding="utf-8"?>
     <!-- Copyright (C) 2020 The Android Open Source Project
     Licensed under the Apache License, Version 2.0 (the "License")
@@ -498,17 +518,21 @@ private val goldenDefaultConfigMacroBenchmark = """
     <option name="instrumentation-arg" key="notAnnotation" value="androidx.test.filters.FlakyTest" />
     <option name="instrumentation-arg" key="androidx.test.argument1" value="something1" />
     <option name="instrumentation-arg" key="androidx.test.argument2" value="something2" />
-    <option name="instrumentation-arg" key="listener" value="androidx.benchmark.junit4.InstrumentationResultsRunListener" />
-    <option name="instrumentation-arg" key="listener" value="androidx.benchmark.macro.junit4.SideEffectRunListener" />
+    <option name="instrumentation-arg" key="androidx.benchmark.output.payload.testApkSha256" value="123456" />
+    <option name="instrumentation-arg" key="androidx.benchmark.output.payload.appApkSha256" value="654321" />
     <include name="google/unbundled/common/setup" />
     <target_preparer class="com.android.tradefed.targetprep.suite.SuiteApkInstaller">
     <option name="cleanup-apks" value="true" />
     <option name="install-arg" value="-t" />
     <option name="test-file-name" value="placeholder.apk" />
+    <option name="test-file-name" value="targetApp.apk" />
     </target_preparer>
     <test class="com.android.tradefed.testtype.AndroidJUnitTest">
     <option name="runner" value="com.example.Runner"/>
     <option name="package" value="com.androidx.placeholder.Placeholder" />
+    <option name="device-listeners" value="androidx.benchmark.macro.junit4.InstrumentationResultsRunListener" />
+    <option name="device-listeners" value="androidx.benchmark.macro.junit4.SideEffectRunListener" />
     </test>
     </configuration>
-""".trimIndent()
+"""
+        .trimIndent()

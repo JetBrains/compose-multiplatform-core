@@ -17,7 +17,6 @@
 package androidx.compose.foundation.samples
 
 import androidx.annotation.Sampled
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Composable
@@ -41,10 +40,7 @@ fun BasicTextFieldWithValueOnValueChangeSample() {
     var text by remember { mutableStateOf("") }
     // A reference implementation that demonstrates how to create a TextField with the legacy
     // state hoisting design around `BasicTextField(TextFieldState)`
-    StringTextField(
-        value = text,
-        onValueChange = { text = it }
-    )
+    StringTextField(value = text, onValueChange = { text = it })
 }
 
 @Composable
@@ -65,29 +61,27 @@ private fun StringTextField(
     // This is effectively a rememberUpdatedState, but it combines the updated state (text) with
     // some state that is preserved across updates (selection).
     var valueWithSelection by remember {
-        mutableStateOf(
-            TextFieldValue(
-                text = value,
-                selection = TextRange(value.length)
-            )
-        )
+        mutableStateOf(TextFieldValue(text = value, selection = TextRange(value.length)))
     }
     valueWithSelection = valueWithSelection.copy(text = value)
 
     BasicTextField(
         state = state,
-        modifier = modifier.then(StateSyncingModifier(
-            state = state,
-            value = valueWithSelection,
-            onValueChanged = {
-                // Don't fire the callback if only the selection/cursor changed.
-                if (it.text != valueWithSelection.text) {
-                    onValueChange(it.text)
-                }
-                valueWithSelection = it
-            },
-            writeSelectionFromTextFieldValue = false
-        )),
+        modifier =
+            modifier.then(
+                StateSyncingModifier(
+                    state = state,
+                    value = valueWithSelection,
+                    onValueChanged = {
+                        // Don't fire the callback if only the selection/cursor changed.
+                        if (it.text != valueWithSelection.text) {
+                            onValueChange(it.text)
+                        }
+                        valueWithSelection = it
+                    },
+                    writeSelectionFromTextFieldValue = false
+                )
+            ),
         // other arguments
     )
 }
@@ -98,9 +92,8 @@ private fun StringTextField(
  * directly. Effectively a fancy `rememberUpdatedState`.
  *
  * @param writeSelectionFromTextFieldValue If true, [update] will synchronize the selection from the
- * [TextFieldValue] to the [TextFieldState]. The text will be synchronized regardless.
+ *   [TextFieldValue] to the [TextFieldState]. The text will be synchronized regardless.
  */
-@OptIn(ExperimentalFoundationApi::class)
 private class StateSyncingModifier(
     private val state: TextFieldState,
     private val value: TextFieldValue,
@@ -130,7 +123,6 @@ private class StateSyncingModifier(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 private class StateSyncingModifierNode(
     private val state: TextFieldState,
     private var onValueChanged: (TextFieldValue) -> Unit,
@@ -200,11 +192,7 @@ private class StateSyncingModifierNode(
     private fun observeTextState(fireOnValueChanged: Boolean = true) {
         lateinit var value: TextFieldValue
         observeReads {
-            value = TextFieldValue(
-                state.text.toString(),
-                state.selection,
-                state.composition
-            )
+            value = TextFieldValue(state.text.toString(), state.selection, state.composition)
         }
 
         // This code is outside of the observeReads lambda so we don't observe any state reads the

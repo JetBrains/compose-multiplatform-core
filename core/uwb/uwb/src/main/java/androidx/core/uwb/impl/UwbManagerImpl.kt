@@ -20,6 +20,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.os.Binder
 import android.os.IBinder
 import android.util.Log
 import androidx.core.uwb.RangingCapabilities
@@ -28,12 +29,15 @@ import androidx.core.uwb.RangingParameters.Companion.CONFIG_PROVISIONED_MULTICAS
 import androidx.core.uwb.RangingParameters.Companion.CONFIG_PROVISIONED_UNICAST_DS_TWR
 import androidx.core.uwb.RangingParameters.Companion.CONFIG_UNICAST_DS_TWR
 import androidx.core.uwb.UwbAddress
+import androidx.core.uwb.UwbAvailabilityCallback
 import androidx.core.uwb.UwbClientSessionScope
 import androidx.core.uwb.UwbComplexChannel
 import androidx.core.uwb.UwbControleeSessionScope
 import androidx.core.uwb.UwbControllerSessionScope
 import androidx.core.uwb.UwbManager
 import androidx.core.uwb.backend.IUwb
+import androidx.core.uwb.backend.IUwbAvailabilityObserver
+import androidx.core.uwb.backend.IUwbClient
 import androidx.core.uwb.exceptions.UwbServiceNotAvailableException
 import androidx.core.uwb.helper.checkSystemFeature
 import androidx.core.uwb.helper.handleApiException
@@ -41,34 +45,42 @@ import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.nearby.Nearby
+import com.google.android.gms.nearby.uwb.UwbClient
+import java.util.concurrent.Executor
 import kotlinx.coroutines.tasks.await
 
 internal class UwbManagerImpl(private val context: Context) : UwbManager {
     companion object {
         const val TAG = "UwbMangerImpl"
-        val PUBLIC_AVAILABLE_CONFIG_IDS = setOf(
-            CONFIG_UNICAST_DS_TWR,
-            CONFIG_MULTICAST_DS_TWR,
-            CONFIG_PROVISIONED_UNICAST_DS_TWR,
-            CONFIG_PROVISIONED_MULTICAST_DS_TWR
-        )
+        val PUBLIC_AVAILABLE_CONFIG_IDS =
+            setOf(
+                CONFIG_UNICAST_DS_TWR,
+                CONFIG_MULTICAST_DS_TWR,
+                CONFIG_PROVISIONED_UNICAST_DS_TWR,
+                CONFIG_PROVISIONED_MULTICAST_DS_TWR
+            )
         var iUwb: IUwb? = null
+        var aospAvailabilityClient: IUwbClient? = null
+        var gmsAvailabilityClient: UwbClient? = null
     }
 
     init {
-        val connection = object : ServiceConnection {
-            override fun onServiceConnected(className: ComponentName, service: IBinder) {
-                iUwb = IUwb.Stub.asInterface(service)
-                Log.i(TAG, "iUwb service created successfully.")
+        val connection =
+            object : ServiceConnection {
+                override fun onServiceConnected(className: ComponentName, service: IBinder) {
+                    iUwb = IUwb.Stub.asInterface(service)
+                    Log.i(TAG, "iUwb service created successfully.")
+                }
+
+                override fun onServiceDisconnected(p0: ComponentName?) {
+                    iUwb = null
+                }
             }
-            override fun onServiceDisconnected(p0: ComponentName?) {
-                iUwb = null
-            }
-        }
         val intent = Intent("androidx.core.uwb.backend.service")
         intent.setPackage("androidx.core.uwb.backend")
         context.bindService(intent, connection, Context.BIND_AUTO_CREATE)
     }
+
     @Deprecated("Renamed to controleeSessionScope")
     override suspend fun clientSessionScope(): UwbClientSessionScope {
         return createClientSessionScope(false)
@@ -82,25 +94,43 @@ internal class UwbManagerImpl(private val context: Context) : UwbManager {
         return createClientSessionScope(true) as UwbControllerSessionScope
     }
 
+    override suspend fun isAvailable(): Boolean {
+        checkSystemFeature(context)
+        return if (isGmsDevice()) Nearby.getUwbControllerClient(context).isAvailable.await()
+        else {
+            val client = iUwb?.controllerClient
+            client?.isAvailable ?: false
+        }
+    }
+
+    private fun isGmsDevice(): Boolean {
+        val pm = context.packageManager
+        val hasGmsCore =
+            GoogleApiAvailability.getInstance()
+                .isGooglePlayServicesAvailable(context, /* minApkVersion */ 230100000) ==
+                ConnectionResult.SUCCESS
+        val isChinaGcoreDevice =
+            pm.hasSystemFeature("cn.google.services") &&
+                pm.hasSystemFeature("com.google.android.feature.services_updater")
+        return hasGmsCore && !isChinaGcoreDevice
+    }
+
     private suspend fun createClientSessionScope(isController: Boolean): UwbClientSessionScope {
         checkSystemFeature(context)
-        val pm = context.packageManager
-        val hasGmsCore = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(
-            context, /* minApkVersion */230100000) == ConnectionResult.SUCCESS
-        val isChinaGcoreDevice = pm.hasSystemFeature("cn.google.services") &&
-            pm.hasSystemFeature("com.google.android.feature.services_updater")
-        return if (hasGmsCore && !isChinaGcoreDevice) createGmsClientSessionScope(isController)
+        return if (isGmsDevice()) createGmsClientSessionScope(isController)
         else createAospClientSessionScope(isController)
     }
 
     private suspend fun createGmsClientSessionScope(isController: Boolean): UwbClientSessionScope {
         Log.i(TAG, "Creating Gms Client session scope")
-        val uwbClient = if (isController)
-            Nearby.getUwbControllerClient(context) else Nearby.getUwbControleeClient(context)
+        val uwbClient =
+            if (isController) Nearby.getUwbControllerClient(context)
+            else Nearby.getUwbControleeClient(context)
         if (!uwbClient.isAvailable().await()) {
             Log.e(TAG, "Uwb availability : false")
-            throw UwbServiceNotAvailableException("Cannot start a ranging session when UWB is " +
-                "unavailable")
+            throw UwbServiceNotAvailableException(
+                "Cannot start a ranging session when UWB is " + "unavailable"
+            )
         }
         try {
             val nearbyLocalAddress = uwbClient.localAddress.await()
@@ -108,18 +138,20 @@ internal class UwbManagerImpl(private val context: Context) : UwbManager {
             val localAddress = UwbAddress(nearbyLocalAddress.address)
             val supportedConfigIds = nearbyRangingCapabilities.supportedConfigIds.toMutableList()
             supportedConfigIds.retainAll(PUBLIC_AVAILABLE_CONFIG_IDS)
-            val rangingCapabilities = RangingCapabilities(
-                nearbyRangingCapabilities.supportsDistance(),
-                nearbyRangingCapabilities.supportsAzimuthalAngle(),
-                nearbyRangingCapabilities.supportsElevationAngle(),
-                nearbyRangingCapabilities.minRangingInterval,
-                nearbyRangingCapabilities.supportedChannels.toSet(),
-                nearbyRangingCapabilities.supportedNtfConfigs.toSet(),
-                supportedConfigIds.toSet(),
-                nearbyRangingCapabilities.supportedSlotDurations.toSet(),
-                nearbyRangingCapabilities.supportedRangingUpdateRates.toSet(),
-                nearbyRangingCapabilities.supportsRangingIntervalReconfigure(),
-                nearbyRangingCapabilities.hasBackgroundRangingSupport())
+            val rangingCapabilities =
+                RangingCapabilities(
+                    nearbyRangingCapabilities.supportsDistance(),
+                    nearbyRangingCapabilities.supportsAzimuthalAngle(),
+                    nearbyRangingCapabilities.supportsElevationAngle(),
+                    nearbyRangingCapabilities.minRangingInterval,
+                    nearbyRangingCapabilities.supportedChannels.toSet(),
+                    nearbyRangingCapabilities.supportedNtfConfigs.toSet(),
+                    supportedConfigIds.toSet(),
+                    nearbyRangingCapabilities.supportedSlotDurations.toSet(),
+                    nearbyRangingCapabilities.supportedRangingUpdateRates.toSet(),
+                    nearbyRangingCapabilities.supportsRangingIntervalReconfigure(),
+                    nearbyRangingCapabilities.hasBackgroundRangingSupport()
+                )
             return if (isController) {
                 val uwbComplexChannel = uwbClient.complexChannel.await()
                 UwbControllerSessionScopeImpl(
@@ -129,23 +161,20 @@ internal class UwbManagerImpl(private val context: Context) : UwbManager {
                     UwbComplexChannel(uwbComplexChannel.channel, uwbComplexChannel.preambleIndex)
                 )
             } else {
-                UwbControleeSessionScopeImpl(
-                    uwbClient,
-                    rangingCapabilities,
-                    localAddress
-                )
+                UwbControleeSessionScopeImpl(uwbClient, rangingCapabilities, localAddress)
             }
         } catch (e: ApiException) {
             handleApiException(e)
-            throw RuntimeException("Unexpected error. This indicates that the library is not " +
-                "up-to-date with the service backend.")
+            throw RuntimeException(
+                "Unexpected error. This indicates that the library is not " +
+                    "up-to-date with the service backend."
+            )
         }
     }
 
     private fun createAospClientSessionScope(isController: Boolean): UwbClientSessionScope {
         Log.i(TAG, "Creating Aosp Client session scope")
-        val uwbClient = if (isController)
-            iUwb?.controllerClient else iUwb?.controleeClient
+        val uwbClient = if (isController) iUwb?.controllerClient else iUwb?.controleeClient
         if (uwbClient == null) {
             Log.e(TAG, "Failed to get UwbClient. AOSP backend is not available.")
         }
@@ -153,21 +182,25 @@ internal class UwbManagerImpl(private val context: Context) : UwbManager {
             val aospLocalAddress = uwbClient!!.localAddress
             val aospRangingCapabilities = uwbClient.rangingCapabilities
             val localAddress = aospLocalAddress?.address?.let { UwbAddress(it) }
-            val rangingCapabilities = aospRangingCapabilities?.let {
-                RangingCapabilities(
-                    it.supportsDistance,
-                    it.supportsAzimuthalAngle,
-                    it.supportsElevationAngle,
-                    it.minRangingInterval,
-                    it.supportedChannels.toSet(),
-                    it.supportedNtfConfigs.toSet(),
-                    it.supportedConfigIds.toMutableList()
-                        .filter { it in PUBLIC_AVAILABLE_CONFIG_IDS }.toSet(),
-                    it.supportedSlotDurations.toSet(),
-                    it.supportedRangingUpdateRates.toSet(),
-                    it.supportsRangingIntervalReconfigure,
-                    it.hasBackgroundRangingSupport)
-            }
+            val rangingCapabilities =
+                aospRangingCapabilities?.let {
+                    RangingCapabilities(
+                        it.supportsDistance,
+                        it.supportsAzimuthalAngle,
+                        it.supportsElevationAngle,
+                        it.minRangingInterval,
+                        it.supportedChannels.toSet(),
+                        it.supportedNtfConfigs.toSet(),
+                        it.supportedConfigIds
+                            .toMutableList()
+                            .filter { it in PUBLIC_AVAILABLE_CONFIG_IDS }
+                            .toSet(),
+                        it.supportedSlotDurations.toSet(),
+                        it.supportedRangingUpdateRates.toSet(),
+                        it.supportsRangingIntervalReconfigure,
+                        it.hasBackgroundRangingSupport
+                    )
+                }
             return if (isController) {
                 val uwbComplexChannel = uwbClient.complexChannel
                 UwbControllerSessionScopeAospImpl(
@@ -177,14 +210,54 @@ internal class UwbManagerImpl(private val context: Context) : UwbManager {
                     UwbComplexChannel(uwbComplexChannel!!.channel, uwbComplexChannel.preambleIndex)
                 )
             } else {
-                UwbControleeSessionScopeAospImpl(
-                    uwbClient,
-                    rangingCapabilities!!,
-                    localAddress!!
-                )
+                UwbControleeSessionScopeAospImpl(uwbClient, rangingCapabilities!!, localAddress!!)
             }
         } catch (e: Exception) {
             throw e
+        }
+    }
+
+    override fun setUwbAvailabilityCallback(executor: Executor, observer: UwbAvailabilityCallback) {
+        checkSystemFeature(context)
+        val identity = Binder.clearCallingIdentity()
+        if (isGmsDevice()) {
+            try {
+                gmsAvailabilityClient?.unsubscribeFromUwbAvailability()
+
+                gmsAvailabilityClient = Nearby.getUwbControllerClient(context)
+                gmsAvailabilityClient?.subscribeToUwbAvailability { isAvailable, reason ->
+                    executor.execute { observer.onUwbStateChanged(isAvailable, reason) }
+                }
+            } catch (e: RuntimeException) {
+                throw e
+            } finally {
+                Binder.restoreCallingIdentity(identity)
+            }
+        } else {
+            try {
+                val availabilityObserver =
+                    object : IUwbAvailabilityObserver.Stub() {
+                        override fun onUwbStateChanged(isAvailable: Boolean, reason: Int) {
+                            executor.execute { observer.onUwbStateChanged(isAvailable, reason) }
+                        }
+                    }
+                aospAvailabilityClient = iUwb?.controllerClient
+                aospAvailabilityClient?.subscribeToAvailability(availabilityObserver)
+            } catch (e: RuntimeException) {
+                throw e
+            } finally {
+                Binder.restoreCallingIdentity(identity)
+            }
+        }
+    }
+
+    override fun clearUwbAvailabilityCallback() {
+        if (isGmsDevice()) {
+            gmsAvailabilityClient?.unsubscribeFromUwbAvailability()
+            gmsAvailabilityClient = null
+        } else {
+            aospAvailabilityClient?.unsubscribeFromAvailability()
+            aospAvailabilityClient = null
         }
     }
 }

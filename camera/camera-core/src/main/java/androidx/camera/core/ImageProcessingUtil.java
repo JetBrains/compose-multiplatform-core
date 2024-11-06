@@ -45,15 +45,15 @@ import java.util.Locale;
  * Utility class to convert an {@link Image} from YUV to RGB.
  *
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public final class ImageProcessingUtil {
 
     private static final String TAG = "ImageProcessingUtil";
+    public static final String JNI_LIB_NAME = "image_processing_util_jni";
     private static int sImageCount = 0;
 
     static {
-        System.loadLibrary("image_processing_util_jni");
+        System.loadLibrary(JNI_LIB_NAME);
     }
 
     enum Result {

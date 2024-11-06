@@ -17,6 +17,7 @@
 package androidx.camera.core.imagecapture
 
 import android.graphics.ImageFormat.JPEG
+import android.graphics.ImageFormat.RAW_SENSOR
 import android.graphics.ImageFormat.YUV_420_888
 import android.os.Build
 import android.os.Looper.getMainLooper
@@ -42,9 +43,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
-/**
- * Unit tests for [CaptureNode].
- */
+/** Unit tests for [CaptureNode]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
 @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
@@ -59,11 +58,9 @@ class CaptureNodeTest {
 
     @Before
     fun setUp() {
-        captureNodeIn = CaptureNode.In.of(Size(10, 10), JPEG, JPEG, false, null)
+        captureNodeIn = CaptureNode.In.of(Size(10, 10), JPEG, listOf(JPEG), false, null)
         captureNodeOut = captureNode.transform(captureNodeIn)
-        captureNodeOut.edge.setListener {
-            imagePropagated.add(it.imageProxy)
-        }
+        captureNodeOut.edge.setListener { imagePropagated.add(it.imageProxy) }
     }
 
     @After
@@ -72,13 +69,47 @@ class CaptureNodeTest {
     }
 
     @Test
+    fun isNotSimultaneousCapture_createOneImageReaders() {
+        // Arrange: enable isSimultaneousCaptureEnabled in CaptureNode.In
+        val input = CaptureNode.In.of(Size(10, 10), RAW_SENSOR, listOf(RAW_SENSOR), false, null)
+
+        // Act: transform.
+        val node = CaptureNode()
+        val output = node.transform(input)
+
+        // Assert
+        assertThat(output.outputFormats.size).isEqualTo(1)
+        assertThat(output.outputFormats[0]).isEqualTo(RAW_SENSOR)
+        assertThat(input.surface).isNotNull()
+        assertThat(input.cameraCaptureCallback).isNotNull()
+        assertThat(input.secondarySurface).isNull()
+        assertThat(input.secondaryCameraCaptureCallback).isNull()
+    }
+
+    @Test
+    fun isSimultaneousCapture_createTwoImageReaders() {
+        // Arrange: enable isSimultaneousCaptureEnabled in CaptureNode.In
+        val input =
+            CaptureNode.In.of(Size(10, 10), RAW_SENSOR, listOf(RAW_SENSOR, JPEG), false, null)
+
+        // Act: transform.
+        val node = CaptureNode()
+        val output = node.transform(input)
+
+        // Assert
+        assertThat(output.outputFormats.size).isEqualTo(2)
+        assertThat(input.surface).isNotNull()
+        assertThat(input.cameraCaptureCallback).isNotNull()
+        assertThat(input.secondarySurface).isNotNull()
+        assertThat(input.secondaryCameraCaptureCallback).isNotNull()
+    }
+
+    @Test
     fun hasImageReaderProxyProvider_useTheProvidedImageReader() {
         // Arrange: create a fake ImageReaderProxyProvider.
         val imageReader = FakeImageReaderProxy(CaptureNode.MAX_IMAGES)
-        val imageReaderProvider = ImageReaderProxyProvider { _, _, _, _, _ ->
-            imageReader
-        }
-        val input = CaptureNode.In.of(Size(10, 10), JPEG, JPEG, false, imageReaderProvider)
+        val imageReaderProvider = ImageReaderProxyProvider { _, _, _, _, _ -> imageReader }
+        val input = CaptureNode.In.of(Size(10, 10), JPEG, listOf(JPEG), false, imageReaderProvider)
         // Act: transform.
         val node = CaptureNode()
         node.transform(input)
@@ -116,24 +147,29 @@ class CaptureNodeTest {
         // create 2 requests: A and B and prepare TagBundles.
         val captureNode = CaptureNode()
         val imageReaderProxy = FakeImageReaderProxy(2)
-        captureNodeIn = CaptureNode.In.of(Size(10, 10), JPEG, JPEG,
-            /* isVirtualCamera */ true, { _, _, _, _, _ -> imageReaderProxy })
+        captureNodeIn =
+            CaptureNode.In.of(
+                Size(10, 10),
+                JPEG,
+                listOf(JPEG),
+                /* isVirtualCamera */ true,
+                { _, _, _, _, _ -> imageReaderProxy }
+            )
         captureNodeOut = captureNode.transform(captureNodeIn)
-        captureNodeOut.edge.setListener {
-            imagePropagated.add(it.imageProxy)
-        }
+        captureNodeOut.edge.setListener { imagePropagated.add(it.imageProxy) }
 
         // Create request A
         val captureBundleA = createCaptureBundle(intArrayOf(1))
         val callbackA = FakeTakePictureCallback()
         var captureFutureCompleterA: CallbackToFutureAdapter.Completer<Void>? = null
-        val captureFuture1 = CallbackToFutureAdapter.getFuture {
-            captureFutureCompleterA = it
-            "test"
-        }
+        val captureFuture1 =
+            CallbackToFutureAdapter.getFuture {
+                captureFutureCompleterA = it
+                "test"
+            }
         val requestA = FakeProcessingRequest(captureBundleA, callbackA, captureFuture1)
         val tagBundleKeyA = captureBundleA.hashCode().toString()
-        val tagBundleA = TagBundle.create(Pair(tagBundleKeyA, /* stage id */1))
+        val tagBundleA = TagBundle.create(Pair(tagBundleKeyA, /* stage id */ 1))
 
         // Create request B
         val captureBundleB = createCaptureBundle(intArrayOf(2))
@@ -141,12 +177,13 @@ class CaptureNodeTest {
         val requestB =
             FakeProcessingRequest(captureBundleB, callbackB, Futures.immediateFuture(null))
         val tagBundleKeyB = captureBundleB.hashCode().toString()
-        val tagBundleB = TagBundle.create(Pair(tagBundleKeyB, /* stage id */2))
+        val tagBundleB = TagBundle.create(Pair(tagBundleKeyB, /* stage id */ 2))
 
         // Act: send request A and abort it
         captureNodeIn.requestEdge.accept(requestA)
         captureFutureCompleterA!!.setException(
-            ImageCaptureException(ImageCapture.ERROR_CAMERA_CLOSED, "aborted", null))
+            ImageCaptureException(ImageCapture.ERROR_CAMERA_CLOSED, "aborted", null)
+        )
 
         // Image from requestA arrives before sending request B
         val imageA = imageReaderProxy.triggerImageAvailableSync(tagBundleA)
@@ -166,6 +203,109 @@ class CaptureNodeTest {
         assertThat(imagePropagated.get(0).imageInfo.tagBundle.getTag(tagBundleKeyB)).isEqualTo(2)
     }
 
+    @Test
+    fun requestNoProgressSent_ensureProgress100IsNotInvoked() {
+        // Arrange: Configure the CaptureNode and submit fake request.
+        val captureNode = CaptureNode()
+        val imageReaderProxy = FakeImageReaderProxy(2)
+        captureNodeIn =
+            CaptureNode.In.of(
+                Size(10, 10),
+                JPEG,
+                listOf(JPEG),
+                /* isVirtualCamera */ true,
+                { _, _, _, _, _ -> imageReaderProxy }
+            )
+        captureNodeOut = captureNode.transform(captureNodeIn)
+        captureNodeOut.edge.setListener { imagePropagated.add(it.imageProxy) }
+
+        // Create request
+        val captureBundle = createCaptureBundle(intArrayOf(1))
+        val takePictureCallback = FakeTakePictureCallback()
+        val request = FakeProcessingRequest(captureBundle, takePictureCallback)
+        val tagBundle =
+            TagBundle.create(Pair(captureBundle.hashCode().toString(), /* stage id */ 1))
+
+        captureNodeIn.requestEdge.accept(request)
+        imageReaderProxy.triggerImageAvailableSync(tagBundle)
+        shadowOf(getMainLooper()).idle()
+
+        // Assert: captureProcessProgress is not invoked.
+        assertThat(takePictureCallback.captureProcessProgressList).isEmpty()
+    }
+
+    // TODO(b/371138487): re-enable this test method once we fix the flaky issue.
+    // @Test
+    fun requestSentNon100Progress_progress100isInvoked() {
+        // Arrange: Configure the CaptureNode and submit fake request.
+        val captureNode = CaptureNode()
+        val imageReaderProxy = FakeImageReaderProxy(2)
+        captureNodeIn =
+            CaptureNode.In.of(
+                Size(10, 10),
+                JPEG,
+                listOf(JPEG),
+                /* isVirtualCamera */ true,
+                { _, _, _, _, _ -> imageReaderProxy }
+            )
+        captureNodeOut = captureNode.transform(captureNodeIn)
+        captureNodeOut.edge.setListener { imagePropagated.add(it.imageProxy) }
+
+        // Create request
+        val captureBundle = createCaptureBundle(intArrayOf(1))
+        val takePictureCallback = FakeTakePictureCallback()
+        val request = FakeProcessingRequest(captureBundle, takePictureCallback)
+        val tagBundle =
+            TagBundle.create(Pair(captureBundle.hashCode().toString(), /* stage id */ 1))
+
+        captureNodeIn.requestEdge.accept(request)
+        // Act: notify onCaptureProcessProgressed that is not 100 after request starts.
+        captureNodeIn.cameraCaptureCallback.onCaptureProcessProgressed(1, 50)
+        captureNodeIn.cameraCaptureCallback.onCaptureProcessProgressed(1, 90)
+        shadowOf(getMainLooper()).idle()
+
+        imageReaderProxy.triggerImageAvailableSync(tagBundle)
+        shadowOf(getMainLooper()).idle()
+
+        // Assert: captureProcessProgress 100 is also invoked.
+        assertThat(takePictureCallback.captureProcessProgressList).containsExactly(50, 90, 100)
+    }
+
+    // TODO(b/371138487): re-enable this test method once we fix the flaky issue.
+    // @Test
+    fun requestSent100Progress_ensureNoDuplicate() {
+        // Arrange: Configure the CaptureNode and submit fake request.
+        val captureNode = CaptureNode()
+        val imageReaderProxy = FakeImageReaderProxy(2)
+        captureNodeIn =
+            CaptureNode.In.of(
+                Size(10, 10),
+                JPEG,
+                listOf(JPEG),
+                /* isVirtualCamera */ true,
+                { _, _, _, _, _ -> imageReaderProxy }
+            )
+        captureNodeOut = captureNode.transform(captureNodeIn)
+        captureNodeOut.edge.setListener { imagePropagated.add(it.imageProxy) }
+
+        // Create request
+        val captureBundle = createCaptureBundle(intArrayOf(1))
+        val takePictureCallback = FakeTakePictureCallback()
+        val request = FakeProcessingRequest(captureBundle, takePictureCallback)
+        val tagBundle =
+            TagBundle.create(Pair(captureBundle.hashCode().toString(), /* stage id */ 1))
+
+        captureNodeIn.requestEdge.accept(request)
+        // Act: notify onCaptureProcessProgressed that is not 100 after request starts.
+        captureNodeIn.cameraCaptureCallback.onCaptureProcessProgressed(1, 100)
+
+        imageReaderProxy.triggerImageAvailableSync(tagBundle)
+        shadowOf(getMainLooper()).idle()
+
+        // Assert: captureProcessProgress 100 is only sent once.
+        assertThat(takePictureCallback.captureProcessProgressList).containsExactly(100)
+    }
+
     private fun FakeImageReaderProxy.triggerImageAvailableSync(
         tagBundle: TagBundle,
     ): FakeImageProxy {
@@ -179,9 +319,16 @@ class CaptureNodeTest {
         // Arrange: set the postviewSize to the CaptureNode.In
         val postviewSize = Size(640, 480)
 
-        val input = CaptureNode.In.of(Size(10, 10), JPEG, JPEG, false, null,
-            postviewSize, YUV_420_888
-        )
+        val input =
+            CaptureNode.In.of(
+                Size(10, 10),
+                JPEG,
+                listOf(JPEG),
+                false,
+                null,
+                postviewSize,
+                YUV_420_888
+            )
 
         // Act: transform.
         val node = CaptureNode()
@@ -199,8 +346,8 @@ class CaptureNodeTest {
         // Arrange: set the postviewSize to the CaptureNode.In
         val postviewSize = Size(640, 480)
 
-        val input = CaptureNode.In.of(Size(10, 10), JPEG, JPEG, false, null,
-            postviewSize, JPEG)
+        val input =
+            CaptureNode.In.of(Size(10, 10), JPEG, listOf(JPEG), false, null, postviewSize, JPEG)
 
         // Act: transform.
         val node = CaptureNode()

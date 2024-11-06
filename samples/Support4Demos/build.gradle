@@ -27,13 +27,9 @@ dependencies {
     implementation(project(":coordinatorlayout:coordinatorlayout"))
     implementation("com.google.android.material:material:1.6.0")
     implementation(project(":appcompat:appcompat"))
-    implementation(libs.multidex)
 }
 
 android {
+    compileSdkVersion 35
     namespace "com.example.android.supportv4"
-
-    defaultConfig {
-        multiDexEnabled true
-    }
 }

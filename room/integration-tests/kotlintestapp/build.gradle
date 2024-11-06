@@ -33,15 +33,6 @@ android {
     buildFeatures {
         buildConfig = true
     }
-    defaultConfig {
-        multiDexEnabled true
-    }
-
-    sourceSets {
-        androidTestWithKapt.assets.srcDirs += files("$projectDir/schemas".toString())
-        androidTestWithKspGenJava.assets.srcDirs += files("$projectDir/schemas-ksp".toString())
-        androidTestWithKspGenKotlin.assets.srcDirs += files("$projectDir/schemas-ksp".toString())
-    }
 
     flavorDimensions "processorConfiguration"
     productFlavors {
@@ -62,22 +53,15 @@ dependencies {
     implementation(project(":room:room-common"))
     implementation(project(":room:room-runtime"))
     implementation(project(":room:room-paging"))
+    implementation(project(":paging:paging-runtime"))
+    implementation(project(":paging:paging-guava"))
     implementation("androidx.arch.core:core-runtime:2.2.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.1")
     implementation(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesAndroid)
-    implementation(libs.multidex)
-    // depend on the shadowed version so that it tests with the shipped artifact
-    // this is a temporary attribute until KSP and AndroidX plugin supports variants.
-    kspAndroidTestWithKspGenJava(
-            project(path: ":room:room-compiler", configuration: "shadowAndImplementation")
-    )
-    kspAndroidTestWithKspGenKotlin(
-            project(path: ":room:room-compiler", configuration: "shadowAndImplementation")
-    )
-    kaptAndroidTestWithKapt(
-            project(path: ":room:room-compiler", configuration: "shadowAndImplementation")
-    )
+    kspAndroidTestWithKspGenJava(project(":room:room-compiler"))
+    kspAndroidTestWithKspGenKotlin(project(":room:room-compiler"))
+    kaptAndroidTestWithKapt(project(":room:room-compiler"))
     androidTestImplementation("androidx.arch.core:core-runtime:2.2.0")
     androidTestImplementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.1")
     androidTestImplementation(libs.testExtJunit)
@@ -104,27 +88,30 @@ dependencies {
     androidTestImplementation(project(":room:room-rxjava3"))
     androidTestImplementation(project(":room:room-ktx"))
     androidTestImplementation(project(":internal-testutils-common"))
+    androidTestImplementation(project(":paging:paging-runtime"))
+    androidTestImplementation(project(":paging:paging-guava"))
+    androidTestImplementation(project(":paging:paging-rxjava2"))
+    androidTestImplementation(project(":paging:paging-rxjava3"))
     androidTestImplementation("androidx.arch.core:core-testing:2.2.0")
-    androidTestImplementation("androidx.paging:paging-runtime:3.1.1")
     androidTestImplementation("androidx.lifecycle:lifecycle-runtime-testing:2.6.1")
     androidTestImplementation(libs.rxjava2)
     androidTestImplementation(libs.kotlinCoroutinesTest)
-    testImplementation(libs.mockitoCore4)
     androidTestImplementation("androidx.collection:collection")
+    androidTestImplementation(project(":sqlite:sqlite-bundled"))
 }
 
 room {
     schemaDirectory(
         "withKapt",
-        provider { layout.projectDirectory.dir("schemas").getAsFile().getAbsolutePath() }
+        layout.projectDirectory.dir("schemas")
     )
     schemaDirectory(
         "withKspGenJava",
-        provider { layout.projectDirectory.dir("schemas-ksp").getAsFile().getAbsolutePath() }
+        layout.projectDirectory.dir("schemas-ksp")
     )
     schemaDirectory(
         "withKspGenKotlin",
-        provider { layout.projectDirectory.dir("schemas-ksp").getAsFile().getAbsolutePath() }
+        layout.projectDirectory.dir("schemas-ksp")
     )
 }
 

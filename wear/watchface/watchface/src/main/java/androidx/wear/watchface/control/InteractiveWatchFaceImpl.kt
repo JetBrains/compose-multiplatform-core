@@ -24,6 +24,7 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.wear.watchface.TapEvent
 import androidx.wear.watchface.WatchFaceService
+import androidx.wear.watchface.complications.data.toApiComplicationData
 import androidx.wear.watchface.control.data.WatchFaceRenderParams
 import androidx.wear.watchface.data.IdAndComplicationDataWireFormat
 import androidx.wear.watchface.data.IdAndComplicationStateWireFormat
@@ -145,8 +146,7 @@ internal class InteractiveWatchFaceImpl(
                 "InteractiveWatchFaceImpl.getPreviewReferenceTimeMillis"
             ) { watchFaceImpl ->
                 watchFaceImpl.previewReferenceInstant.toEpochMilli()
-            }
-                ?: 0
+            } ?: 0
         }
 
     override fun setWatchUiState(watchUiState: WatchUiState): Unit =
@@ -180,7 +180,10 @@ internal class InteractiveWatchFaceImpl(
                 runBlocking {
                     try {
                         withContext(uiThreadCoroutineScope.coroutineContext) {
-                            engine?.let { it.deferredWatchFaceImpl.await() }
+                            engine?.let {
+                                it.watchFaceDetails?.deferredWatchFaceImpl?.await()
+                                it.unpauseAnimation()
+                            }
                             InteractiveInstanceManager.releaseInstance(instanceId)
                         }
                     } catch (e: Exception) {
@@ -222,6 +225,26 @@ internal class InteractiveWatchFaceImpl(
              */
             uiThreadCoroutineScope.runBlockingWithTracing(
                 "InteractiveWatchFaceImpl.updateWatchfaceInstance"
+            ) {
+                if (instanceId != newInstanceId) {
+                    engine?.updateInstance(newInstanceId)
+                    instanceId = newInstanceId
+                }
+                engine?.setUserStyle(userStyle)
+            }
+        }
+
+    override fun updateWatchfaceInstanceSync(
+        newInstanceId: String,
+        userStyle: UserStyleWireFormat
+    ): Unit =
+        aidlMethod(TAG, "updateWatchfaceInstanceSync") {
+            /**
+             * This is blocking to ensure ordering with respect to any subsequent [getInstanceId]
+             * and [getPreviewReferenceTimeMillis] calls.
+             */
+            uiThreadCoroutineScope.runBlockingWithTracing(
+                "InteractiveWatchFaceImpl.updateWatchfaceInstanceSync"
             ) {
                 if (instanceId != newInstanceId) {
                     engine?.updateInstance(newInstanceId)
@@ -277,8 +300,7 @@ internal class InteractiveWatchFaceImpl(
                 "InteractiveWatchFaceImpl.getComplicationIdAt"
             ) {
                 it.complicationSlotsManager.getComplicationSlotAt(xPos, yPos)?.id?.toLong()
-            }
-                ?: Long.MIN_VALUE
+            } ?: Long.MIN_VALUE
         }
 
     override fun getUserStyleFlavors() =
@@ -291,6 +313,27 @@ internal class InteractiveWatchFaceImpl(
                 it.userStyleFlavors.toWireFormat()
             }
         }
+
+    override fun overrideComplicationData(
+        complicationDatumWireFormats: List<IdAndComplicationDataWireFormat>
+    ): Unit =
+        aidlMethod(TAG, "overrideComplicationData") {
+            engine?.overrideComplicationsForEditing(
+                complicationDatumWireFormats.associateBy(
+                    { it.id },
+                    { it.complicationData.toApiComplicationData() }
+                )
+            )
+        }
+
+    override fun clearComplicationDataOverride(): Unit =
+        aidlMethod(TAG, "overrideComplicationData") { engine?.onEditSessionFinished() }
+
+    override fun pauseAnimation(binder: IBinder): Unit =
+        aidlMethod(TAG, "pauseAnimation") { engine?.pauseAnimation(binder) }
+
+    override fun unpauseAnimation(): Unit =
+        aidlMethod(TAG, "unpauseAnimation") { engine?.unpauseAnimation() }
 
     fun onDestroy() {
         // Note this is almost certainly called on the ui thread, from release() above.

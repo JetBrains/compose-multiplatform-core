@@ -20,7 +20,6 @@ import android.content.Context
 import androidx.concurrent.futures.SuspendToFutureAdapter.launchFuture
 import androidx.work.Configuration
 import androidx.work.ListenableWorker
-import androidx.work.Logger
 import androidx.work.WorkerExceptionInfo
 import androidx.work.WorkerParameters
 import androidx.work.impl.awaitWithin
@@ -41,27 +40,29 @@ internal fun executeRemoteWorker(
     val dispatcher = taskExecutor.mainThreadExecutor.asCoroutineDispatcher()
     val future =
         launchFuture<ListenableWorker.Result>(dispatcher + job, launchUndispatched = false) {
-            val worker = try {
-                configuration.workerFactory
-                    .createWorkerWithDefaultFallback(context, workerClassName, workerParameters)
-            } catch (throwable: Throwable) {
-                configuration.workerInitializationExceptionHandler?.let { handler ->
-                    taskExecutor.executeOnTaskThread {
-                        handler.safeAccept(
-                            WorkerExceptionInfo(workerClassName, workerParameters, throwable),
-                            ListenableWorkerImpl.TAG
-                        )
+            val worker =
+                try {
+                    configuration.workerFactory.createWorkerWithDefaultFallback(
+                        context,
+                        workerClassName,
+                        workerParameters
+                    )
+                } catch (throwable: Throwable) {
+                    configuration.workerInitializationExceptionHandler?.let { handler ->
+                        taskExecutor.executeOnTaskThread {
+                            handler.safeAccept(
+                                WorkerExceptionInfo(workerClassName, workerParameters, throwable),
+                                ListenableWorkerImpl.TAG
+                            )
+                        }
                     }
+                    throw throwable
                 }
-                throw throwable
+            when (worker) {
+                is RemoteListenableWorker -> worker.startRemoteWork().awaitWithin(worker)
+                else ->
+                    worker.startWork().awaitWithin(worker) // Just treat it as a delegated worker
             }
-            if (worker !is RemoteListenableWorker) {
-                val message = "$workerClassName does not extend " +
-                    RemoteListenableWorker::class.java.name
-                Logger.get().error(ListenableWorkerImpl.TAG, message)
-                throw IllegalStateException(message)
-            }
-            worker.startRemoteWork().awaitWithin(worker)
         }
     return future
 }

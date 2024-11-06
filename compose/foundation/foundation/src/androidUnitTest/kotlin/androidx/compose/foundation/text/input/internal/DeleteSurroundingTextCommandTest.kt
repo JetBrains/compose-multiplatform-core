@@ -24,217 +24,234 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
-class DeleteSurroundingTextCommandTest {
+internal class DeleteSurroundingTextCommandTest : ImeEditCommandTest() {
 
     @Test
     fun test_delete_after() {
-        val eb = EditingBuffer("ABCDE", TextRange(1))
+        initialize("ABCDE", TextRange(1))
 
-        eb.deleteSurroundingText(0, 1)
+        imeScope.deleteSurroundingText(0, 1)
 
-        assertThat(eb.toString()).isEqualTo("ACDE")
-        assertThat(eb.cursor).isEqualTo(1)
-        assertThat(eb.hasComposition()).isFalse()
+        assertThat(state.text.toString()).isEqualTo("ACDE")
+        assertThat(state.selection.start).isEqualTo(1)
+        assertThat(state.selection.end).isEqualTo(1)
+        assertThat(state.composition).isNull()
     }
 
     @Test
     fun test_delete_before() {
-        val eb = EditingBuffer("ABCDE", TextRange(1))
+        initialize("ABCDE", TextRange(1))
 
-        eb.deleteSurroundingText(1, 0)
+        imeScope.deleteSurroundingText(1, 0)
 
-        assertThat(eb.toString()).isEqualTo("BCDE")
-        assertThat(eb.cursor).isEqualTo(0)
-        assertThat(eb.hasComposition()).isFalse()
+        assertThat(state.text.toString()).isEqualTo("BCDE")
+        assertThat(state.selection.start).isEqualTo(0)
+        assertThat(state.selection.end).isEqualTo(0)
+        assertThat(state.composition).isNull()
     }
 
     @Test
     fun test_delete_both() {
-        val eb = EditingBuffer("ABCDE", TextRange(3))
+        initialize("ABCDE", TextRange(3))
 
-        eb.deleteSurroundingText(1, 1)
+        imeScope.deleteSurroundingText(1, 1)
 
-        assertThat(eb.toString()).isEqualTo("ABE")
-        assertThat(eb.cursor).isEqualTo(2)
-        assertThat(eb.hasComposition()).isFalse()
+        assertThat(state.text.toString()).isEqualTo("ABE")
+        assertThat(state.selection.start).isEqualTo(2)
+        assertThat(state.selection.end).isEqualTo(2)
+        assertThat(state.composition).isNull()
     }
 
     @Test
     fun test_delete_after_multiple() {
-        val eb = EditingBuffer("ABCDE", TextRange(2))
+        initialize("ABCDE", TextRange(2))
 
-        eb.deleteSurroundingText(0, 2)
+        imeScope.deleteSurroundingText(0, 2)
 
-        assertThat(eb.toString()).isEqualTo("ABE")
-        assertThat(eb.cursor).isEqualTo(2)
-        assertThat(eb.hasComposition()).isFalse()
+        assertThat(state.text.toString()).isEqualTo("ABE")
+        assertThat(state.selection.start).isEqualTo(2)
+        assertThat(state.selection.end).isEqualTo(2)
+        assertThat(state.composition).isNull()
     }
 
     @Test
     fun test_delete_before_multiple() {
-        val eb = EditingBuffer("ABCDE", TextRange(3))
+        initialize("ABCDE", TextRange(3))
 
-        eb.deleteSurroundingText(2, 0)
+        imeScope.deleteSurroundingText(2, 0)
 
-        assertThat(eb.toString()).isEqualTo("ADE")
-        assertThat(eb.cursor).isEqualTo(1)
-        assertThat(eb.hasComposition()).isFalse()
+        assertThat(state.text.toString()).isEqualTo("ADE")
+        assertThat(state.selection.start).isEqualTo(1)
+        assertThat(state.selection.end).isEqualTo(1)
+        assertThat(state.composition).isNull()
     }
 
     @Test
     fun test_delete_both_multiple() {
-        val eb = EditingBuffer("ABCDE", TextRange(3))
+        initialize("ABCDE", TextRange(3))
 
-        eb.deleteSurroundingText(2, 2)
+        imeScope.deleteSurroundingText(2, 2)
 
-        assertThat(eb.toString()).isEqualTo("A")
-        assertThat(eb.cursor).isEqualTo(1)
-        assertThat(eb.hasComposition()).isFalse()
+        assertThat(state.text.toString()).isEqualTo("A")
+        assertThat(state.selection.start).isEqualTo(1)
+        assertThat(state.selection.end).isEqualTo(1)
+        assertThat(state.composition).isNull()
     }
 
     @Test
     fun test_delete_selection_preserve() {
-        val eb = EditingBuffer("ABCDE", TextRange(2, 4))
+        initialize("ABCDE", TextRange(2, 4))
 
-        eb.deleteSurroundingText(1, 1)
+        imeScope.deleteSurroundingText(1, 1)
 
-        assertThat(eb.toString()).isEqualTo("ACD")
-        assertThat(eb.selectionStart).isEqualTo(1)
-        assertThat(eb.selectionEnd).isEqualTo(3)
-        assertThat(eb.hasComposition()).isFalse()
+        assertThat(state.text.toString()).isEqualTo("ACD")
+        assertThat(state.selection.start).isEqualTo(1)
+        assertThat(state.selection.end).isEqualTo(3)
+        assertThat(state.composition).isNull()
     }
 
     @Test
     fun test_delete_before_too_many() {
-        val eb = EditingBuffer("ABCDE", TextRange(3))
+        initialize("ABCDE", TextRange(3))
 
-        eb.deleteSurroundingText(1000, 0)
+        imeScope.deleteSurroundingText(1000, 0)
 
-        assertThat(eb.toString()).isEqualTo("DE")
-        assertThat(eb.cursor).isEqualTo(0)
-        assertThat(eb.hasComposition()).isFalse()
+        assertThat(state.text.toString()).isEqualTo("DE")
+        assertThat(state.selection.start).isEqualTo(0)
+        assertThat(state.selection.end).isEqualTo(0)
+        assertThat(state.composition).isNull()
     }
 
     @Test
     fun test_delete_after_too_many() {
-        val eb = EditingBuffer("ABCDE", TextRange(3))
+        initialize("ABCDE", TextRange(3))
 
-        eb.deleteSurroundingText(0, 1000)
+        imeScope.deleteSurroundingText(0, 1000)
 
-        assertThat(eb.toString()).isEqualTo("ABC")
-        assertThat(eb.cursor).isEqualTo(3)
-        assertThat(eb.hasComposition()).isFalse()
+        assertThat(state.text.toString()).isEqualTo("ABC")
+        assertThat(state.selection.start).isEqualTo(3)
+        assertThat(state.selection.end).isEqualTo(3)
+        assertThat(state.composition).isNull()
     }
 
     @Test
     fun test_delete_both_too_many() {
-        val eb = EditingBuffer("ABCDE", TextRange(3))
+        initialize("ABCDE", TextRange(3))
 
-        eb.deleteSurroundingText(1000, 1000)
+        imeScope.deleteSurroundingText(1000, 1000)
 
-        assertThat(eb.toString()).isEqualTo("")
-        assertThat(eb.cursor).isEqualTo(0)
-        assertThat(eb.hasComposition()).isFalse()
+        assertThat(state.text.toString()).isEqualTo("")
+        assertThat(state.selection.start).isEqualTo(0)
+        assertThat(state.selection.end).isEqualTo(0)
+        assertThat(state.composition).isNull()
     }
 
     @Test
     fun test_delete_composition_no_intersection_preceding_composition() {
-        val eb = EditingBuffer("ABCDE", TextRange(3))
+        initialize("ABCDE", TextRange(3))
 
-        eb.setComposition(0, 1)
+        imeScope.setComposingRegion(0, 1)
 
-        eb.deleteSurroundingText(1, 1)
+        imeScope.deleteSurroundingText(1, 1)
 
-        assertThat(eb.toString()).isEqualTo("ABE")
-        assertThat(eb.cursor).isEqualTo(2)
-        assertThat(eb.compositionStart).isEqualTo(0)
-        assertThat(eb.compositionEnd).isEqualTo(1)
+        assertThat(state.text.toString()).isEqualTo("ABE")
+        assertThat(state.selection.start).isEqualTo(2)
+        assertThat(state.selection.end).isEqualTo(2)
+        assertThat(state.composition?.start).isEqualTo(0)
+        assertThat(state.composition?.end).isEqualTo(1)
     }
 
     @Test
     fun test_delete_composition_no_intersection_trailing_composition() {
-        val eb = EditingBuffer("ABCDE", TextRange(3))
+        initialize("ABCDE", TextRange(3))
 
-        eb.setComposition(4, 5)
+        imeScope.setComposingRegion(4, 5)
 
-        eb.deleteSurroundingText(1, 1)
+        imeScope.deleteSurroundingText(1, 1)
 
-        assertThat(eb.toString()).isEqualTo("ABE")
-        assertThat(eb.cursor).isEqualTo(2)
-        assertThat(eb.compositionStart).isEqualTo(2)
-        assertThat(eb.compositionEnd).isEqualTo(3)
+        assertThat(state.text.toString()).isEqualTo("ABE")
+        assertThat(state.selection.start).isEqualTo(2)
+        assertThat(state.selection.end).isEqualTo(2)
+        assertThat(state.composition?.start).isEqualTo(2)
+        assertThat(state.composition?.end).isEqualTo(3)
     }
 
     @Test
     fun test_delete_composition_intersection_preceding_composition() {
-        val eb = EditingBuffer("ABCDE", TextRange(3))
+        initialize("ABCDE", TextRange(3))
 
-        eb.setComposition(0, 3)
+        imeScope.setComposingRegion(0, 3)
 
-        eb.deleteSurroundingText(1, 1)
+        imeScope.deleteSurroundingText(1, 1)
 
-        assertThat(eb.toString()).isEqualTo("ABE")
-        assertThat(eb.cursor).isEqualTo(2)
-        assertThat(eb.compositionStart).isEqualTo(0)
-        assertThat(eb.compositionEnd).isEqualTo(2)
+        assertThat(state.text.toString()).isEqualTo("ABE")
+        assertThat(state.selection.start).isEqualTo(2)
+        assertThat(state.selection.end).isEqualTo(2)
+        assertThat(state.composition?.start).isEqualTo(0)
+        assertThat(state.composition?.end).isEqualTo(2)
     }
 
     @Test
     fun test_delete_composition_intersection_trailing_composition() {
-        val eb = EditingBuffer("ABCDE", TextRange(3))
+        initialize("ABCDE", TextRange(3))
 
-        eb.setComposition(3, 5)
+        imeScope.setComposingRegion(3, 5)
 
-        eb.deleteSurroundingText(1, 1)
+        imeScope.deleteSurroundingText(1, 1)
 
-        assertThat(eb.toString()).isEqualTo("ABE")
-        assertThat(eb.cursor).isEqualTo(2)
-        assertThat(eb.compositionStart).isEqualTo(2)
-        assertThat(eb.compositionEnd).isEqualTo(3)
+        assertThat(state.text.toString()).isEqualTo("ABE")
+        assertThat(state.selection.start).isEqualTo(2)
+        assertThat(state.selection.end).isEqualTo(2)
+        assertThat(state.composition?.start).isEqualTo(2)
+        assertThat(state.composition?.end).isEqualTo(3)
     }
 
     @Test
     fun test_delete_covered_composition() {
-        val eb = EditingBuffer("ABCDE", TextRange(3))
+        initialize("ABCDE", TextRange(3))
 
-        eb.setComposition(2, 3)
+        imeScope.setComposingRegion(2, 3)
 
-        eb.deleteSurroundingText(1, 1)
+        imeScope.deleteSurroundingText(1, 1)
 
-        assertThat(eb.toString()).isEqualTo("ABE")
-        assertThat(eb.cursor).isEqualTo(2)
-        assertThat(eb.hasComposition()).isFalse()
+        assertThat(state.text.toString()).isEqualTo("ABE")
+        assertThat(state.selection.start).isEqualTo(2)
+        assertThat(state.selection.end).isEqualTo(2)
+        assertThat(state.composition).isNull()
     }
 
     @Test
     fun test_delete_composition_covered() {
-        val eb = EditingBuffer("ABCDE", TextRange(3))
+        initialize("ABCDE", TextRange(3))
 
-        eb.setComposition(0, 5)
+        imeScope.setComposingRegion(0, 5)
 
-        eb.deleteSurroundingText(1, 1)
+        imeScope.deleteSurroundingText(1, 1)
 
-        assertThat(eb.toString()).isEqualTo("ABE")
-        assertThat(eb.cursor).isEqualTo(2)
-        assertThat(eb.compositionStart).isEqualTo(0)
-        assertThat(eb.compositionEnd).isEqualTo(3)
+        assertThat(state.text.toString()).isEqualTo("ABE")
+        assertThat(state.selection.start).isEqualTo(2)
+        assertThat(state.selection.end).isEqualTo(2)
+        assertThat(state.composition?.start).isEqualTo(0)
+        assertThat(state.composition?.end).isEqualTo(3)
     }
 
     @Test
     fun throws_whenLengthBeforeInvalid() {
-        val eb = EditingBuffer("", TextRange(0))
-        val error = assertFailsWith<IllegalArgumentException> {
-            eb.deleteSurroundingText(lengthBeforeCursor = -42, lengthAfterCursor = 0)
-        }
+        initialize("", TextRange(0))
+        val error =
+            assertFailsWith<IllegalArgumentException> {
+                imeScope.deleteSurroundingText(lengthBeforeCursor = -42, lengthAfterCursor = 0)
+            }
         assertThat(error).hasMessageThat().contains("-42")
     }
 
     @Test
     fun throws_whenLengthAfterInvalid() {
-        val eb = EditingBuffer("", TextRange(0))
-        val error = assertFailsWith<IllegalArgumentException> {
-            eb.deleteSurroundingText(lengthBeforeCursor = 0, lengthAfterCursor = -42)
-        }
+        initialize("", TextRange(0))
+        val error =
+            assertFailsWith<IllegalArgumentException> {
+                imeScope.deleteSurroundingText(lengthBeforeCursor = 0, lengthAfterCursor = -42)
+            }
         assertThat(error).hasMessageThat().contains("-42")
     }
 
@@ -243,30 +260,26 @@ class DeleteSurroundingTextCommandTest {
         val text = "abcde"
         val textAfterDelete = "abcd"
         val selection = TextRange(textAfterDelete.length)
-        val eb = EditingBuffer(text, selection)
+        initialize(text, selection)
 
-        eb.deleteSurroundingText(
-            lengthBeforeCursor = 0,
-            lengthAfterCursor = Int.MAX_VALUE
-        )
+        imeScope.deleteSurroundingText(lengthBeforeCursor = 0, lengthAfterCursor = Int.MAX_VALUE)
 
-        assertThat(eb.toString()).isEqualTo(textAfterDelete)
-        assertThat(eb.cursor).isEqualTo(textAfterDelete.length)
+        assertThat(state.text.toString()).isEqualTo(textAfterDelete)
+        assertThat(state.selection.start).isEqualTo(textAfterDelete.length)
+        assertThat(state.selection.end).isEqualTo(textAfterDelete.length)
     }
 
     @Test
     fun deletes_whenLengthBeforeCursorOverflows_withMaxValue() {
         val text = "abcde"
         val selection = TextRange(1)
-        val eb = EditingBuffer(text, selection)
+        initialize(text, selection)
 
-        eb.deleteSurroundingText(
-            lengthBeforeCursor = Int.MAX_VALUE,
-            lengthAfterCursor = 0
-        )
+        imeScope.deleteSurroundingText(lengthBeforeCursor = Int.MAX_VALUE, lengthAfterCursor = 0)
 
-        assertThat(eb.toString()).isEqualTo("bcde")
-        assertThat(eb.cursor).isEqualTo(0)
+        assertThat(state.text.toString()).isEqualTo("bcde")
+        assertThat(state.selection.start).isEqualTo(0)
+        assertThat(state.selection.end).isEqualTo(0)
     }
 
     @Test
@@ -274,29 +287,31 @@ class DeleteSurroundingTextCommandTest {
         val text = "abcde"
         val textAfterDelete = "abcd"
         val selection = TextRange(textAfterDelete.length)
-        val eb = EditingBuffer(text, selection)
+        initialize(text, selection)
 
-        eb.deleteSurroundingText(
+        imeScope.deleteSurroundingText(
             lengthBeforeCursor = 0,
             lengthAfterCursor = Int.MAX_VALUE - 1
         )
 
-        assertThat(eb.toString()).isEqualTo(textAfterDelete)
-        assertThat(eb.cursor).isEqualTo(textAfterDelete.length)
+        assertThat(state.text.toString()).isEqualTo(textAfterDelete)
+        assertThat(state.selection.start).isEqualTo(textAfterDelete.length)
+        assertThat(state.selection.end).isEqualTo(textAfterDelete.length)
     }
 
     @Test
     fun deletes_whenLengthBeforeCursorOverflows() {
         val text = "abcde"
         val selection = TextRange(1)
-        val eb = EditingBuffer(text, selection)
+        initialize(text, selection)
 
-        eb.deleteSurroundingText(
+        imeScope.deleteSurroundingText(
             lengthBeforeCursor = Int.MAX_VALUE - 1,
             lengthAfterCursor = 0
         )
 
-        assertThat(eb.toString()).isEqualTo("bcde")
-        assertThat(eb.cursor).isEqualTo(0)
+        assertThat(state.text.toString()).isEqualTo("bcde")
+        assertThat(state.selection.start).isEqualTo(0)
+        assertThat(state.selection.end).isEqualTo(0)
     }
 }

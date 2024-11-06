@@ -22,9 +22,13 @@ import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.view.OrientationEventListener
 import android.widget.Button
+import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.camera2.Camera2Config
+import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.CameraXConfig
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Logger
@@ -32,6 +36,7 @@ import androidx.camera.core.MirrorMode.MIRROR_MODE_ON_FRONT_ONLY
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
+import androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.FileUtil.canDeviceWriteToMediaStore
 import androidx.camera.testing.impl.FileUtil.generateVideoFileOutputOptions
@@ -68,6 +73,11 @@ private const val INTENT_PREVIEW_VIEW_MODE = "preview_view_mode"
 private const val PREVIEW_VIEW_COMPATIBLE_MODE = "compatible"
 private const val PREVIEW_VIEW_PERFORMANCE_MODE = "performance"
 
+// Possible values for this intent key (case-insensitive): "camera2", "camera_pipe".
+private const val INTENT_EXTRA_CAMERA_IMPLEMENTATION = "camera_implementation"
+private const val CAMERA_IMPLEMENTATION_CAMERA2 = "camera2"
+private const val CAMERA_IMPLEMENTATION_CAMERA_PIPE = "camera_pipe"
+
 class StreamSharingActivity : AppCompatActivity() {
 
     private lateinit var previewView: PreviewView
@@ -75,9 +85,11 @@ class StreamSharingActivity : AppCompatActivity() {
     private lateinit var recordButton: Button
     private lateinit var useCases: Array<UseCase>
     private var cameraSelector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+    private var cameraXConfig: CameraXConfig = Camera2Config.defaultConfig()
     private var camera: Camera? = null
     private var previewViewMode: ImplementationMode = ImplementationMode.PERFORMANCE
-    private var previewViewScaleType = PreviewView.ScaleType.FILL_CENTER;
+    private var previewViewScaleType = PreviewView.ScaleType.FILL_CENTER
+
     private var activeRecording: Recording? = null
     private var isUseCasesBound: Boolean = false
     private var deviceOrientation: Int = -1
@@ -98,6 +110,7 @@ class StreamSharingActivity : AppCompatActivity() {
         if (bundle != null) {
             parseScreenOrientationAndSetValueIfNeed(bundle)
             parseCameraSelector(bundle)
+            parseCameraImplementation(bundle)
             parsePreviewViewMode(bundle)
         }
 
@@ -106,14 +119,16 @@ class StreamSharingActivity : AppCompatActivity() {
         previewView.scaleType = previewViewScaleType
         previewView.implementationMode = previewViewMode
         exportButton = findViewById(R.id.export_button)
-        exportButton.setOnClickListener {
-            exportTestInformation()
-        }
+        exportButton.setOnClickListener { exportTestInformation() }
         recordButton = findViewById(R.id.record_button)
         recordButton.setOnClickListener {
             if (activeRecording == null) startRecording() else stopRecording()
         }
 
+        if (!isCameraXConfigured) {
+            isCameraXConfigured = true
+            configureCameraProvider()
+        }
         startCamera()
     }
 
@@ -145,6 +160,15 @@ class StreamSharingActivity : AppCompatActivity() {
         }
     }
 
+    private fun parseCameraImplementation(bundle: Bundle) {
+        val implementation = bundle.getString(INTENT_EXTRA_CAMERA_IMPLEMENTATION)
+        if (CAMERA_IMPLEMENTATION_CAMERA2.equals(implementation, true)) {
+            cameraXConfig = Camera2Config.defaultConfig()
+        } else if (CAMERA_IMPLEMENTATION_CAMERA_PIPE.equals(implementation, true)) {
+            cameraXConfig = CameraPipeConfig.defaultConfig()
+        }
+    }
+
     private fun parsePreviewViewMode(bundle: Bundle) {
         val mode = bundle.getString(INTENT_PREVIEW_VIEW_MODE)
         if (PREVIEW_VIEW_COMPATIBLE_MODE.equals(mode, true)) {
@@ -154,37 +178,44 @@ class StreamSharingActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("NullAnnotationGroup")
+    @OptIn(ExperimentalCameraProviderConfiguration::class)
+    private fun configureCameraProvider() {
+        ProcessCameraProvider.configureInstance(cameraXConfig)
+    }
+
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(applicationContext)
-        cameraProviderFuture.addListener({
-            bindUseCases(cameraProviderFuture.get())
-        }, ContextCompat.getMainExecutor(applicationContext))
+        cameraProviderFuture.addListener(
+            { bindUseCases(cameraProviderFuture.get()) },
+            ContextCompat.getMainExecutor(applicationContext)
+        )
     }
 
     private fun bindUseCases(cameraProvider: ProcessCameraProvider) {
         enableRecording(false)
         isUseCasesBound = false
         cameraProvider.unbindAll()
-        useCases = arrayOf(
-            createPreview(),
-            createImageCapture(),
-            createImageAnalysis(),
-            createVideoCapture()
-        )
-        isUseCasesBound = try {
-            camera = cameraProvider.bindToLifecycle(this, cameraSelector, *useCases)
-            enableRecording(true)
-            true
-        } catch (exception: Exception) {
-            Logger.e(TAG, "Failed to bind use cases.", exception)
-            false
-        }
+        useCases =
+            arrayOf(
+                createPreview(),
+                createImageCapture(),
+                createImageAnalysis(),
+                createVideoCapture()
+            )
+        isUseCasesBound =
+            try {
+                camera = cameraProvider.bindToLifecycle(this, cameraSelector, *useCases)
+                enableRecording(true)
+                true
+            } catch (exception: Exception) {
+                Logger.e(TAG, "Failed to bind use cases.", exception)
+                false
+            }
     }
 
     private fun createPreview(): Preview {
-        return Preview.Builder().build().apply {
-            setSurfaceProvider(previewView.surfaceProvider)
-        }
+        return Preview.Builder().build().apply { setSurfaceProvider(previewView.surfaceProvider) }
     }
 
     private fun createImageCapture(): ImageCapture {
@@ -227,12 +258,12 @@ class StreamSharingActivity : AppCompatActivity() {
     @SuppressLint("MissingPermission")
     private fun startRecording() {
         recordButton.text = getString(R.string.btn_video_stop_recording)
-        activeRecording = getVideoCapture()!!.let {
-            prepareRecording(applicationContext, it.output).withAudioEnabled().start(
-                CameraXExecutors.directExecutor(),
-                generateVideoRecordEventListener()
-            )
-        }
+        activeRecording =
+            getVideoCapture()!!.let {
+                prepareRecording(applicationContext, it.output)
+                    .withAudioEnabled()
+                    .start(CameraXExecutors.directExecutor(), generateVideoRecordEventListener())
+            }
     }
 
     private fun stopRecording() {
@@ -256,8 +287,10 @@ class StreamSharingActivity : AppCompatActivity() {
 
     private fun exportTestInformation() {
         val fileName = generateFileName(PREFIX_INFORMATION)
-        val information = "$KEY_ORIENTATION:$deviceOrientation" +
-            "\n" + "$KEY_STREAM_SHARING_STATE:${isStreamSharingEnabled()}"
+        val information =
+            "$KEY_ORIENTATION:$deviceOrientation" +
+                "\n" +
+                "$KEY_STREAM_SHARING_STATE:${isStreamSharingEnabled()}"
 
         writeTextToExternalFile(information, fileName)
     }
@@ -276,17 +309,16 @@ class StreamSharingActivity : AppCompatActivity() {
                     VideoRecordEvent.Finalize.ERROR_FILE_SIZE_LIMIT_REACHED,
                     VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED,
                     VideoRecordEvent.Finalize.ERROR_INSUFFICIENT_STORAGE,
-                    VideoRecordEvent.Finalize.ERROR_SOURCE_INACTIVE -> Logger.d(
-                        TAG,
-                        "Video saved to: $uri"
-                    )
-
-                    else -> Logger.e(
-                        TAG,
-                        "Failed to save video: uri $uri with code (${event.error})"
-                    )
+                    VideoRecordEvent.Finalize.ERROR_SOURCE_INACTIVE ->
+                        Logger.d(TAG, "Video saved to: $uri")
+                    else ->
+                        Logger.e(TAG, "Failed to save video: uri $uri with code (${event.error})")
                 }
             }
         }
+    }
+
+    companion object {
+        private var isCameraXConfigured: Boolean = false
     }
 }

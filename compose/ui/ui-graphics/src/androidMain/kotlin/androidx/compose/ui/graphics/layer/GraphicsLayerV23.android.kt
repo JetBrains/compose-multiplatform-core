@@ -25,6 +25,7 @@ import android.view.RenderNode
 import android.view.View
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.isUnspecified
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.CanvasHolder
 import androidx.compose.ui.graphics.Color
@@ -38,7 +39,6 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.toPorterDuffMode
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.toSize
@@ -56,6 +56,8 @@ internal class GraphicsLayerV23(
     private var size: IntSize = IntSize.Zero
     private var layerPaint: android.graphics.Paint? = null
     private var matrix: android.graphics.Matrix? = null
+    private var outlineIsProvided = false
+    private var outlineSize = IntSize.Zero
 
     private fun obtainLayerPaint(): android.graphics.Paint =
         layerPaint ?: android.graphics.Paint().also { layerPaint = it }
@@ -66,8 +68,7 @@ internal class GraphicsLayerV23(
             // This is only to force loading the DisplayListCanvas class and causing the
             // MRenderNode to fail with a NoClassDefFoundError during construction instead of
             // later.
-            @Suppress("UNUSED_VARIABLE")
-            val displayListCanvas: DisplayListCanvas? = null
+            @Suppress("UNUSED_VARIABLE") val displayListCanvas: DisplayListCanvas? = null
 
             // Ensure that we can access properties of the RenderNode. We want to force an
             // exception here if there is a problem accessing any of these so that we can
@@ -158,9 +159,9 @@ internal class GraphicsLayerV23(
             field = value
             if (value != null) {
                 applyCompositingStrategy(CompositingStrategy.Offscreen)
-                renderNode.setLayerPaint(obtainLayerPaint().apply {
-                    colorFilter = value.asAndroidColorFilter()
-                })
+                renderNode.setLayerPaint(
+                    obtainLayerPaint().apply { colorFilter = value.asAndroidColorFilter() }
+                )
             } else {
                 updateLayerProperties()
             }
@@ -172,11 +173,20 @@ internal class GraphicsLayerV23(
             renderNode.setAlpha(value)
         }
 
+    private var shouldManuallySetCenterPivot = false
+
     override var pivotOffset: Offset = Offset.Unspecified
         set(value) {
             field = value
-            renderNode.pivotX = value.x
-            renderNode.pivotY = value.y
+            if (value.isUnspecified) {
+                shouldManuallySetCenterPivot = true
+                renderNode.pivotX = size.width / 2f
+                renderNode.pivotY = size.height / 2f
+            } else {
+                shouldManuallySetCenterPivot = false
+                renderNode.pivotX = value.x
+                renderNode.pivotY = value.y
+            }
         }
 
     override var scaleX: Float = 1f
@@ -184,11 +194,13 @@ internal class GraphicsLayerV23(
             field = value
             renderNode.setScaleX(value)
         }
+
     override var scaleY: Float = 1f
         set(value) {
             field = value
             renderNode.setScaleY(value)
         }
+
     override var translationX: Float = 0f
         set(value) {
             field = value
@@ -200,36 +212,47 @@ internal class GraphicsLayerV23(
             field = value
             renderNode.setTranslationY(value)
         }
+
     override var shadowElevation: Float = 0f
         set(value) {
             field = value
             renderNode.setElevation(value)
         }
+
     override var ambientShadowColor: Color = Color.Black
         set(value) {
-            field = value
-            renderNode.setAmbientShadowColor(value.toArgb())
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                field = value
+                RenderNodeVerificationHelper28.setAmbientShadowColor(renderNode, value.toArgb())
+            }
         }
+
     override var spotShadowColor: Color = Color.Black
         set(value) {
-            field = value
-            renderNode.setSpotShadowColor(value.toArgb())
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                field = value
+                RenderNodeVerificationHelper28.setSpotShadowColor(renderNode, value.toArgb())
+            }
         }
+
     override var rotationX: Float = 0f
         set(value) {
             field = value
             renderNode.setRotationX(value)
         }
+
     override var rotationY: Float = 0f
         set(value) {
             field = value
             renderNode.setRotationY(value)
         }
+
     override var rotationZ: Float = 0f
         set(value) {
             field = value
             renderNode.setRotation(value)
         }
+
     override var cameraDistance: Float = DefaultCameraDistance
         set(value) {
             // Camera distance was negated in older API levels. Maintain the same input parameters
@@ -242,7 +265,24 @@ internal class GraphicsLayerV23(
     override var clip: Boolean = false
         set(value) {
             field = value
+            applyClip()
         }
+
+    private var clipToBounds = false
+    private var clipToOutline = false
+
+    private fun applyClip() {
+        val newClipToBounds = clip && !outlineIsProvided
+        val newClipToOutline = clip && outlineIsProvided
+        if (newClipToBounds != clipToBounds) {
+            clipToBounds = newClipToBounds
+            renderNode.setClipToBounds(clipToBounds)
+        }
+        if (newClipToOutline != clipToOutline) {
+            clipToOutline = newClipToOutline
+            renderNode.setClipToOutline(newClipToOutline)
+        }
+    }
 
     // API level 23 does not support RenderEffect so keep the field around for consistency
     // however, it will not be applied to the rendered result. Consumers are encouraged
@@ -251,41 +291,47 @@ internal class GraphicsLayerV23(
     // crash the compose application
     override var renderEffect: RenderEffect? = null
 
-    override fun setPosition(topLeft: IntOffset, size: IntSize) {
-        renderNode.setLeftTopRightBottom(
-            topLeft.x,
-            topLeft.y,
-            topLeft.x + size.width,
-            topLeft.y + size.height
-        )
-        this.size = size
+    override fun setPosition(x: Int, y: Int, size: IntSize) {
+        renderNode.setLeftTopRightBottom(x, y, x + size.width, y + size.height)
+        if (this.size != size) {
+            if (shouldManuallySetCenterPivot) {
+                renderNode.pivotX = size.width / 2f
+                renderNode.pivotY = size.height / 2f
+            }
+            this.size = size
+        }
     }
 
-    override fun setOutline(outline: Outline, clip: Boolean) {
+    override fun setOutline(outline: Outline?, outlineSize: IntSize) {
+        this.outlineSize = outlineSize
         renderNode.setOutline(outline)
-        renderNode.clipToOutline = clip
+        outlineIsProvided = outline != null
+        applyClip()
     }
 
     override var isInvalidated: Boolean = true
 
-    override fun buildLayer(
+    override val hasDisplayList: Boolean
+        get() = renderNode.isValid
+
+    override fun record(
         density: Density,
         layoutDirection: LayoutDirection,
         layer: GraphicsLayer,
         block: DrawScope.() -> Unit
     ) {
-        val recordingCanvas = renderNode.start(size.width, size.height)
-        canvasHolder.drawInto(recordingCanvas) {
-            canvasDrawScope.draw(
-                density,
-                layoutDirection,
-                this,
-                size.toSize(),
-                layer,
-                block
+        val recordingCanvas =
+            renderNode.start(
+                maxOf(size.width, outlineSize.width),
+                maxOf(size.height, outlineSize.height)
             )
+        try {
+            canvasHolder.drawInto(recordingCanvas) {
+                canvasDrawScope.draw(density, layoutDirection, this, size.toSize(), layer, block)
+            }
+        } finally {
+            renderNode.end(recordingCanvas)
         }
-        renderNode.end(recordingCanvas)
         isInvalidated = false
     }
 
@@ -318,7 +364,7 @@ internal class GraphicsLayerV23(
         }
     }
 
-    private fun discardDisplayListInternal() {
+    internal fun discardDisplayListInternal() {
         // See b/216660268. RenderNode#discardDisplayList was originally called
         // destroyDisplayListData on Android M and below. Make sure we gate on the corresponding
         // API level and call the original method name on these API levels, otherwise invoke
@@ -345,22 +391,18 @@ internal class GraphicsLayerV23(
 @RequiresApi(Build.VERSION_CODES.P)
 private object RenderNodeVerificationHelper28 {
 
-    @androidx.annotation.DoNotInline
     fun getAmbientShadowColor(renderNode: RenderNode): Int {
         return renderNode.ambientShadowColor
     }
 
-    @androidx.annotation.DoNotInline
     fun setAmbientShadowColor(renderNode: RenderNode, target: Int) {
         renderNode.ambientShadowColor = target
     }
 
-    @androidx.annotation.DoNotInline
     fun getSpotShadowColor(renderNode: RenderNode): Int {
         return renderNode.spotShadowColor
     }
 
-    @androidx.annotation.DoNotInline
     fun setSpotShadowColor(renderNode: RenderNode, target: Int) {
         renderNode.spotShadowColor = target
     }
@@ -369,7 +411,6 @@ private object RenderNodeVerificationHelper28 {
 @RequiresApi(Build.VERSION_CODES.N)
 private object RenderNodeVerificationHelper24 {
 
-    @androidx.annotation.DoNotInline
     fun discardDisplayList(renderNode: RenderNode) {
         renderNode.discardDisplayList()
     }
@@ -378,7 +419,6 @@ private object RenderNodeVerificationHelper24 {
 @RequiresApi(Build.VERSION_CODES.M)
 private object RenderNodeVerificationHelper23 {
 
-    @androidx.annotation.DoNotInline
     fun destroyDisplayListData(renderNode: RenderNode) {
         renderNode.destroyDisplayListData()
     }

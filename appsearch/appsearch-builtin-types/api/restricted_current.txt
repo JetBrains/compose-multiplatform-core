@@ -17,18 +17,18 @@ package androidx.appsearch.builtintypes {
   @androidx.appsearch.annotation.Document(name="builtin:Alarm") public class Alarm extends androidx.appsearch.builtintypes.Thing {
     method public String? getBlackoutPeriodEndDate();
     method public String? getBlackoutPeriodStartDate();
-    method public int getComputingDevice();
     method public int[]? getDaysOfWeek();
     method @IntRange(from=0, to=23) public int getHour();
     method @IntRange(from=0, to=59) public int getMinute();
     method public androidx.appsearch.builtintypes.AlarmInstance? getNextInstance();
+    method public int getOriginatingDevice();
     method public androidx.appsearch.builtintypes.AlarmInstance? getPreviousInstance();
     method public String? getRingtone();
     method public boolean isEnabled();
     method public boolean shouldVibrate();
-    field public static final int COMPUTING_DEVICE_SMART_PHONE = 1; // 0x1
-    field public static final int COMPUTING_DEVICE_SMART_WATCH = 2; // 0x2
-    field public static final int COMPUTING_DEVICE_UNKNOWN = 0; // 0x0
+    field public static final int ORIGINATING_DEVICE_SMART_PHONE = 1; // 0x1
+    field public static final int ORIGINATING_DEVICE_SMART_WATCH = 2; // 0x2
+    field public static final int ORIGINATING_DEVICE_UNKNOWN = 0; // 0x0
   }
 
   @androidx.appsearch.annotation.Document.BuilderProducer public static final class Alarm.Builder {
@@ -42,7 +42,6 @@ package androidx.appsearch.builtintypes {
     method public androidx.appsearch.builtintypes.Alarm.Builder setAlternateNames(java.util.List<java.lang.String!>?);
     method public androidx.appsearch.builtintypes.Alarm.Builder setBlackoutPeriodEndDate(String?);
     method public androidx.appsearch.builtintypes.Alarm.Builder setBlackoutPeriodStartDate(String?);
-    method public androidx.appsearch.builtintypes.Alarm.Builder setComputingDevice(int);
     method public androidx.appsearch.builtintypes.Alarm.Builder setCreationTimestampMillis(long);
     method public androidx.appsearch.builtintypes.Alarm.Builder setDaysOfWeek(@IntRange(from=java.util.Calendar.SUNDAY, to=java.util.Calendar.SATURDAY) int...?);
     method public androidx.appsearch.builtintypes.Alarm.Builder setDescription(String?);
@@ -54,6 +53,7 @@ package androidx.appsearch.builtintypes {
     method public androidx.appsearch.builtintypes.Alarm.Builder setMinute(@IntRange(from=0, to=59) int);
     method public androidx.appsearch.builtintypes.Alarm.Builder setName(String?);
     method public androidx.appsearch.builtintypes.Alarm.Builder setNextInstance(androidx.appsearch.builtintypes.AlarmInstance?);
+    method public androidx.appsearch.builtintypes.Alarm.Builder setOriginatingDevice(int);
     method public androidx.appsearch.builtintypes.Alarm.Builder setPotentialActions(java.util.List<androidx.appsearch.builtintypes.PotentialAction!>?);
     method public androidx.appsearch.builtintypes.Alarm.Builder setPreviousInstance(androidx.appsearch.builtintypes.AlarmInstance?);
     method public androidx.appsearch.builtintypes.Alarm.Builder setRingtone(String?);
@@ -124,6 +124,7 @@ package androidx.appsearch.builtintypes {
   }
 
   @androidx.appsearch.annotation.Document(name="builtin:ImageObject") public final class ImageObject extends androidx.appsearch.builtintypes.Thing {
+    method public byte[]? getBytes();
     method public java.util.List<androidx.appsearch.builtintypes.properties.Keyword!> getKeywords();
     method public String? getSha256();
     method public String? getThumbnailSha256();
@@ -141,6 +142,7 @@ package androidx.appsearch.builtintypes {
     method public androidx.appsearch.builtintypes.ImageObject.Builder clearAlternateNames();
     method public androidx.appsearch.builtintypes.ImageObject.Builder clearPotentialActions();
     method public androidx.appsearch.builtintypes.ImageObject.Builder setAlternateNames(java.util.List<java.lang.String!>?);
+    method public androidx.appsearch.builtintypes.ImageObject.Builder setBytes(byte[]?);
     method public androidx.appsearch.builtintypes.ImageObject.Builder setCreationTimestampMillis(long);
     method public androidx.appsearch.builtintypes.ImageObject.Builder setDescription(String?);
     method public androidx.appsearch.builtintypes.ImageObject.Builder setDocumentScore(int);
@@ -372,6 +374,31 @@ package androidx.appsearch.builtintypes {
     method public androidx.appsearch.builtintypes.Timer.Builder setStartTimeMillis(long);
     method public androidx.appsearch.builtintypes.Timer.Builder setStatus(int);
     method public androidx.appsearch.builtintypes.Timer.Builder setUrl(String?);
+  }
+
+  @androidx.appsearch.annotation.Document(name=androidx.appsearch.builtintypes.WebPage.SCHEMA_NAME) public final class WebPage extends androidx.appsearch.builtintypes.Thing {
+    method public androidx.appsearch.builtintypes.ImageObject? getFavicon();
+    field public static final String SCHEMA_NAME = "builtin:WebPage";
+  }
+
+  @androidx.appsearch.annotation.Document.BuilderProducer public static final class WebPage.Builder {
+    ctor public WebPage.Builder(androidx.appsearch.builtintypes.WebPage);
+    ctor public WebPage.Builder(String, String);
+    method public androidx.appsearch.builtintypes.WebPage.Builder addAlternateName(String);
+    method public androidx.appsearch.builtintypes.WebPage.Builder addPotentialAction(androidx.appsearch.builtintypes.PotentialAction);
+    method public androidx.appsearch.builtintypes.WebPage build();
+    method public androidx.appsearch.builtintypes.WebPage.Builder clearAlternateNames();
+    method public androidx.appsearch.builtintypes.WebPage.Builder clearPotentialActions();
+    method public androidx.appsearch.builtintypes.WebPage.Builder setAlternateNames(java.util.List<java.lang.String!>?);
+    method public androidx.appsearch.builtintypes.WebPage.Builder setCreationTimestampMillis(long);
+    method public androidx.appsearch.builtintypes.WebPage.Builder setDescription(String?);
+    method public androidx.appsearch.builtintypes.WebPage.Builder setDocumentScore(int);
+    method public androidx.appsearch.builtintypes.WebPage.Builder setDocumentTtlMillis(long);
+    method public androidx.appsearch.builtintypes.WebPage.Builder setFavicon(androidx.appsearch.builtintypes.ImageObject?);
+    method public androidx.appsearch.builtintypes.WebPage.Builder setImage(String?);
+    method public androidx.appsearch.builtintypes.WebPage.Builder setName(String?);
+    method public androidx.appsearch.builtintypes.WebPage.Builder setPotentialActions(java.util.List<androidx.appsearch.builtintypes.PotentialAction!>?);
+    method public androidx.appsearch.builtintypes.WebPage.Builder setUrl(String?);
   }
 
 }

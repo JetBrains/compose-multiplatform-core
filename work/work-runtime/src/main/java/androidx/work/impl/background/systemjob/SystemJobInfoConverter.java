@@ -54,11 +54,14 @@ class SystemJobInfoConverter {
 
     private final ComponentName mWorkServiceComponent;
     private final Clock mClock;
+    private final boolean mMarkImportantWhileForeground;
 
-    SystemJobInfoConverter(@NonNull Context context, Clock clock) {
+    SystemJobInfoConverter(@NonNull Context context,
+            Clock clock, boolean markImportantWhileForeground) {
         mClock = clock;
         Context appContext = context.getApplicationContext();
         mWorkServiceComponent = new ComponentName(appContext, SystemJobService.class);
+        mMarkImportantWhileForeground = markImportantWhileForeground;
     }
 
     /**
@@ -107,7 +110,7 @@ class SystemJobInfoConverter {
             if (offset > 0) {
                 // Only set a minimum latency when applicable.
                 builder.setMinimumLatency(offset);
-            } else if (!workSpec.expedited) {
+            } else if (!workSpec.expedited && mMarkImportantWhileForeground) {
                 // Only set this if the workSpec is not expedited.
                 builder.setImportantWhileForeground(true);
             }
@@ -135,6 +138,13 @@ class SystemJobInfoConverter {
         if (Build.VERSION.SDK_INT >= 31 && workSpec.expedited && !isRetry && !isDelayed) {
             //noinspection NewApi
             builder.setExpedited(true);
+        }
+        if (Build.VERSION.SDK_INT >= 35) {
+            // Add a trace tag that shows the actual worker running.
+            String traceTag = workSpec.getTraceTag();
+            if (traceTag != null) {
+                builder.setTraceTag(traceTag);
+            }
         }
         return builder.build();
     }

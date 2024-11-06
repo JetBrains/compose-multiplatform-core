@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalSafeArgsApi::class)
-
 package androidx.navigation
 
 import android.net.Uri
@@ -36,11 +34,10 @@ class ActivityNavigatorDestinationBuilderTest {
     @Suppress("DEPRECATION")
     @Test
     fun activity() {
-        val graph = navController.createGraph(startDestination = DESTINATION_ID) {
-            activity(DESTINATION_ID) {
-                label = LABEL
+        val graph =
+            navController.createGraph(startDestination = DESTINATION_ID) {
+                activity(DESTINATION_ID) { label = LABEL }
             }
-        }
         assertWithMessage("Destination should be added to the graph")
             .that(DESTINATION_ID in graph)
             .isTrue()
@@ -52,11 +49,10 @@ class ActivityNavigatorDestinationBuilderTest {
     @Suppress("DEPRECATION")
     @Test
     fun activityPackage() {
-        val graph = navController.createGraph(startDestination = DESTINATION_ID) {
-            activity(DESTINATION_ID) {
-                targetPackage = PACKAGE_NAME
+        val graph =
+            navController.createGraph(startDestination = DESTINATION_ID) {
+                activity(DESTINATION_ID) { targetPackage = PACKAGE_NAME }
             }
-        }
         assertWithMessage("Destination should be added to the graph")
             .that(DESTINATION_ID in graph)
             .isTrue()
@@ -68,11 +64,10 @@ class ActivityNavigatorDestinationBuilderTest {
     @Suppress("DEPRECATION")
     @Test
     fun activityClass() {
-        val graph = navController.createGraph(startDestination = DESTINATION_ID) {
-            activity(DESTINATION_ID) {
-                activityClass = TestActivity::class
+        val graph =
+            navController.createGraph(startDestination = DESTINATION_ID) {
+                activity(DESTINATION_ID) { activityClass = TestActivity::class }
             }
-        }
         assertWithMessage("Destination should be added to the graph")
             .that(DESTINATION_ID in graph)
             .isTrue()
@@ -84,11 +79,10 @@ class ActivityNavigatorDestinationBuilderTest {
     @Suppress("DEPRECATION")
     @Test
     fun action() {
-        val graph = navController.createGraph(startDestination = DESTINATION_ID) {
-            activity(DESTINATION_ID) {
-                action = ACTION
+        val graph =
+            navController.createGraph(startDestination = DESTINATION_ID) {
+                activity(DESTINATION_ID) { action = ACTION }
             }
-        }
         assertWithMessage("Destination should be added to the graph")
             .that(DESTINATION_ID in graph)
             .isTrue()
@@ -100,11 +94,10 @@ class ActivityNavigatorDestinationBuilderTest {
     @Suppress("DEPRECATION")
     @Test
     fun data() {
-        val graph = navController.createGraph(startDestination = DESTINATION_ID) {
-            activity(DESTINATION_ID) {
-                data = DATA
+        val graph =
+            navController.createGraph(startDestination = DESTINATION_ID) {
+                activity(DESTINATION_ID) { data = DATA }
             }
-        }
         assertWithMessage("Destination should be added to the graph")
             .that(DESTINATION_ID in graph)
             .isTrue()
@@ -116,11 +109,10 @@ class ActivityNavigatorDestinationBuilderTest {
     @Suppress("DEPRECATION")
     @Test
     fun dataPattern() {
-        val graph = navController.createGraph(startDestination = DESTINATION_ID) {
-            activity(DESTINATION_ID) {
-                dataPattern = DATA_PATTERN
+        val graph =
+            navController.createGraph(startDestination = DESTINATION_ID) {
+                activity(DESTINATION_ID) { dataPattern = DATA_PATTERN }
             }
-        }
         assertWithMessage("Destination should be added to the graph")
             .that(DESTINATION_ID in graph)
             .isTrue()
@@ -131,11 +123,10 @@ class ActivityNavigatorDestinationBuilderTest {
 
     @Test
     fun activityRoute() {
-        val graph = navController.createGraph(startDestination = DESTINATION_ROUTE) {
-            activity(DESTINATION_ROUTE) {
-                label = LABEL
+        val graph =
+            navController.createGraph(startDestination = DESTINATION_ROUTE) {
+                activity(DESTINATION_ROUTE) { label = LABEL }
             }
-        }
         assertWithMessage("Destination should be added to the graph")
             .that(DESTINATION_ROUTE in graph)
             .isTrue()
@@ -146,11 +137,10 @@ class ActivityNavigatorDestinationBuilderTest {
 
     @Test
     fun activityPackageRoute() {
-        val graph = navController.createGraph(startDestination = DESTINATION_ROUTE) {
-            activity(DESTINATION_ROUTE) {
-                targetPackage = PACKAGE_NAME
+        val graph =
+            navController.createGraph(startDestination = DESTINATION_ROUTE) {
+                activity(DESTINATION_ROUTE) { targetPackage = PACKAGE_NAME }
             }
-        }
         assertWithMessage("Destination should be added to the graph")
             .that(DESTINATION_ROUTE in graph)
             .isTrue()
@@ -161,11 +151,10 @@ class ActivityNavigatorDestinationBuilderTest {
 
     @Test
     fun activityClassRoute() {
-        val graph = navController.createGraph(startDestination = DESTINATION_ROUTE) {
-            activity(DESTINATION_ROUTE) {
-                activityClass = TestActivity::class
+        val graph =
+            navController.createGraph(startDestination = DESTINATION_ROUTE) {
+                activity(DESTINATION_ROUTE) { activityClass = TestActivity::class }
             }
-        }
         assertWithMessage("Destination should be added to the graph")
             .that(DESTINATION_ROUTE in graph)
             .isTrue()
@@ -176,11 +165,10 @@ class ActivityNavigatorDestinationBuilderTest {
 
     @Test
     fun actionRoute() {
-        val graph = navController.createGraph(startDestination = DESTINATION_ROUTE) {
-            activity(DESTINATION_ROUTE) {
-                action = ACTION
+        val graph =
+            navController.createGraph(startDestination = DESTINATION_ROUTE) {
+                activity(DESTINATION_ROUTE) { action = ACTION }
             }
-        }
         assertWithMessage("Destination should be added to the graph")
             .that(DESTINATION_ROUTE in graph)
             .isTrue()
@@ -191,11 +179,10 @@ class ActivityNavigatorDestinationBuilderTest {
 
     @Test
     fun dataRoute() {
-        val graph = navController.createGraph(startDestination = DESTINATION_ROUTE) {
-            activity(DESTINATION_ROUTE) {
-                data = DATA
+        val graph =
+            navController.createGraph(startDestination = DESTINATION_ROUTE) {
+                activity(DESTINATION_ROUTE) { data = DATA }
             }
-        }
         assertWithMessage("Destination should be added to the graph")
             .that(DESTINATION_ROUTE in graph)
             .isTrue()
@@ -206,11 +193,10 @@ class ActivityNavigatorDestinationBuilderTest {
 
     @Test
     fun dataPatternRoute() {
-        val graph = navController.createGraph(startDestination = DESTINATION_ROUTE) {
-            activity(DESTINATION_ROUTE) {
-                dataPattern = DATA_PATTERN
+        val graph =
+            navController.createGraph(startDestination = DESTINATION_ROUTE) {
+                activity(DESTINATION_ROUTE) { dataPattern = DATA_PATTERN }
             }
-        }
         assertWithMessage("Destination should be added to the graph")
             .that(DESTINATION_ROUTE in graph)
             .isTrue()
@@ -221,11 +207,10 @@ class ActivityNavigatorDestinationBuilderTest {
 
     @Test
     fun activityKClass() {
-        val graph = navController.createGraph(startDestination = DESTINATION_ROUTE) {
-            activity<TestClass> {
-                label = LABEL
+        val graph =
+            navController.createGraph(startDestination = DESTINATION_ROUTE) {
+                activity<TestClass> { label = LABEL }
             }
-        }
         assertWithMessage("Destination should be added to the graph")
             .that(TestClass::class in graph)
             .isTrue()
@@ -236,11 +221,10 @@ class ActivityNavigatorDestinationBuilderTest {
 
     @Test
     fun activityPackageKClass() {
-        val graph = navController.createGraph(startDestination = DESTINATION_ROUTE) {
-            activity<TestClass> {
-                targetPackage = PACKAGE_NAME
+        val graph =
+            navController.createGraph(startDestination = DESTINATION_ROUTE) {
+                activity<TestClass> { targetPackage = PACKAGE_NAME }
             }
-        }
         assertWithMessage("Destination should be added to the graph")
             .that(TestClass::class in graph)
             .isTrue()
@@ -251,11 +235,10 @@ class ActivityNavigatorDestinationBuilderTest {
 
     @Test
     fun activityClassKClass() {
-        val graph = navController.createGraph(startDestination = DESTINATION_ROUTE) {
-            activity<TestClass> {
-                activityClass = TestActivity::class
+        val graph =
+            navController.createGraph(startDestination = DESTINATION_ROUTE) {
+                activity<TestClass> { activityClass = TestActivity::class }
             }
-        }
         assertWithMessage("Destination should be added to the graph")
             .that(TestClass::class in graph)
             .isTrue()
@@ -266,11 +249,10 @@ class ActivityNavigatorDestinationBuilderTest {
 
     @Test
     fun actionKClass() {
-        val graph = navController.createGraph(startDestination = DESTINATION_ROUTE) {
-            activity<TestClass> {
-                action = ACTION
+        val graph =
+            navController.createGraph(startDestination = DESTINATION_ROUTE) {
+                activity<TestClass> { action = ACTION }
             }
-        }
         assertWithMessage("Destination should be added to the graph")
             .that(TestClass::class in graph)
             .isTrue()
@@ -281,11 +263,10 @@ class ActivityNavigatorDestinationBuilderTest {
 
     @Test
     fun dataKClass() {
-        val graph = navController.createGraph(startDestination = DESTINATION_ROUTE) {
-            activity<TestClass> {
-                data = DATA
+        val graph =
+            navController.createGraph(startDestination = DESTINATION_ROUTE) {
+                activity<TestClass> { data = DATA }
             }
-        }
         assertWithMessage("Destination should be added to the graph")
             .that(TestClass::class in graph)
             .isTrue()
@@ -296,11 +277,10 @@ class ActivityNavigatorDestinationBuilderTest {
 
     @Test
     fun dataPatternKClass() {
-        val graph = navController.createGraph(startDestination = DESTINATION_ROUTE) {
-            activity<TestClass> {
-                dataPattern = DATA_PATTERN
+        val graph =
+            navController.createGraph(startDestination = DESTINATION_ROUTE) {
+                activity<TestClass> { dataPattern = DATA_PATTERN }
             }
-        }
         assertWithMessage("Destination should be added to the graph")
             .that(TestClass::class in graph)
             .isTrue()

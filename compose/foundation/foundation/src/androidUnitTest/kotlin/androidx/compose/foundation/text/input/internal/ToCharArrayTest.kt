@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.text.input.internal
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.text.input.TextFieldCharSequence
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFails
@@ -24,52 +23,40 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-@OptIn(ExperimentalFoundationApi::class)
 @RunWith(JUnit4::class)
 class ToCharArrayTest {
 
-    private val sources = listOf(
-        "hello",
-        TextFieldCharSequence("hello"),
-        CustomCharSequence("hello"),
-    )
+    private val sources =
+        listOf(
+            "hello",
+            TextFieldCharSequence("hello"),
+            CustomCharSequence("hello"),
+        )
 
     private val dest = CharArray(10)
 
     @Test
     fun toCharArray_invalidSourceStartIndex() {
         sources.forEach { source ->
-            assertFails {
-                source.toCharArray(dest, 0, source.length + 1, source.length + 2)
-            }
+            assertFails { source.toCharArray(dest, 0, source.length + 1, source.length + 2) }
         }
     }
 
     @Test
     fun toCharArray_invalidSourceEndIndex() {
         sources.forEach { source ->
-            assertFails {
-                source.toCharArray(dest, 0, 0, source.length + 1)
-            }
+            assertFails { source.toCharArray(dest, 0, 0, source.length + 1) }
         }
     }
 
     @Test
     fun toCharArray_invalidDestStartIndex() {
-        sources.forEach { source ->
-            assertFails {
-                source.toCharArray(dest, dest.size + 1, 0, 1)
-            }
-        }
+        sources.forEach { source -> assertFails { source.toCharArray(dest, dest.size + 1, 0, 1) } }
     }
 
     @Test
     fun toCharArray_invalidDestEndIndex() {
-        sources.forEach { source ->
-            assertFails {
-                source.toCharArray(dest, dest.size, 0, 1)
-            }
-        }
+        sources.forEach { source -> assertFails { source.toCharArray(dest, dest.size, 0, 1) } }
     }
 
     @Test
@@ -77,9 +64,21 @@ class ToCharArrayTest {
         sources.forEach { source ->
             dest.fill(Char(0))
             source.toCharArray(dest, 0, 0, source.length)
-            assertThat(dest).asList().containsExactly(
-                'h', 'e', 'l', 'l', 'o', Char(0), Char(0), Char(0), Char(0), Char(0)
-            ).inOrder()
+            assertThat(dest)
+                .asList()
+                .containsExactly(
+                    'h',
+                    'e',
+                    'l',
+                    'l',
+                    'o',
+                    Char(0),
+                    Char(0),
+                    Char(0),
+                    Char(0),
+                    Char(0)
+                )
+                .inOrder()
         }
     }
 
@@ -88,9 +87,21 @@ class ToCharArrayTest {
         sources.forEach { source ->
             dest.fill(Char(0))
             source.toCharArray(dest, 5, 0, source.length)
-            assertThat(dest).asList().containsExactly(
-                Char(0), Char(0), Char(0), Char(0), Char(0), 'h', 'e', 'l', 'l', 'o'
-            ).inOrder()
+            assertThat(dest)
+                .asList()
+                .containsExactly(
+                    Char(0),
+                    Char(0),
+                    Char(0),
+                    Char(0),
+                    Char(0),
+                    'h',
+                    'e',
+                    'l',
+                    'l',
+                    'o'
+                )
+                .inOrder()
         }
     }
 

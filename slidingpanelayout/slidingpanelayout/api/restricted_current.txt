@@ -72,6 +72,13 @@ package androidx.slidingpanelayout.widget {
   }
 
   public static final class SlidingPaneLayout.Companion {
+    property public static final int LOCK_MODE_LOCKED;
+    property public static final int LOCK_MODE_LOCKED_CLOSED;
+    property public static final int LOCK_MODE_LOCKED_OPEN;
+    property public static final int LOCK_MODE_UNLOCKED;
+    property public static final int SPLIT_DIVIDER_POSITION_AUTO;
+    property public final androidx.slidingpanelayout.widget.SlidingPaneLayout.UserResizeBehavior USER_RESIZE_RELAYOUT_WHEN_COMPLETE;
+    property public final androidx.slidingpanelayout.widget.SlidingPaneLayout.UserResizeBehavior USER_RESIZE_RELAYOUT_WHEN_MOVED;
   }
 
   public static class SlidingPaneLayout.LayoutParams extends android.view.ViewGroup.MarginLayoutParams {
@@ -81,6 +88,7 @@ package androidx.slidingpanelayout.widget {
     ctor public SlidingPaneLayout.LayoutParams(android.view.ViewGroup.MarginLayoutParams source);
     ctor public SlidingPaneLayout.LayoutParams(androidx.slidingpanelayout.widget.SlidingPaneLayout.LayoutParams source);
     ctor public SlidingPaneLayout.LayoutParams(int width, int height);
+    property public final float weight;
     field public float weight;
   }
 

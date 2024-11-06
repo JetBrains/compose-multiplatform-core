@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.gestures
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.ui.MotionDurationScale
 import com.google.common.truth.Truth.assertThat
@@ -32,7 +31,6 @@ class UpdatableAnimationStateTest {
 
     private val frameClock = TestFrameClock()
 
-    @OptIn(ExperimentalFoundationApi::class)
     private val state = UpdatableAnimationState(BringIntoViewSpec.DefaultScrollAnimationSpec)
 
     @Test
@@ -40,10 +38,7 @@ class UpdatableAnimationStateTest {
         state.value = 0f
 
         runBlocking {
-            state.animateToZero(
-                beforeFrame = { fail() },
-                afterFrame = { fail() }
-            )
+            state.animateToZero(beforeFrame = { fail() }, afterFrame = { fail() })
 
             // Should immediately get to here without suspending.
         }
@@ -86,16 +81,14 @@ class UpdatableAnimationStateTest {
     @Test
     fun animateToZero_handlesZeroAnimationScale() {
         val deltas = mutableListOf<Float>()
-        val scale = object : MotionDurationScale {
-            override val scaleFactor: Float = 0f
-        }
+        val scale =
+            object : MotionDurationScale {
+                override val scaleFactor: Float = 0f
+            }
         state.value = 10f
 
         runBlocking(frameClock + scale) {
-            state.animateToZero(
-                beforeFrame = { deltas += it },
-                afterFrame = {}
-            )
+            state.animateToZero(beforeFrame = { deltas += it }, afterFrame = {})
         }
 
         assertThat(state.value).isEqualTo(0f)
@@ -105,16 +98,14 @@ class UpdatableAnimationStateTest {
     @Test
     fun animateToZero_handlesDoubleAnimationScale() {
         val deltas = mutableListOf<Float>()
-        val scale = object : MotionDurationScale {
-            override val scaleFactor: Float = 2f
-        }
+        val scale =
+            object : MotionDurationScale {
+                override val scaleFactor: Float = 2f
+            }
         state.value = 10f
 
         runBlocking(frameClock + scale) {
-            state.animateToZero(
-                beforeFrame = { deltas += it },
-                afterFrame = {}
-            )
+            state.animateToZero(beforeFrame = { deltas += it }, afterFrame = {})
         }
 
         assertThat(state.value).isEqualTo(0f)
@@ -129,9 +120,7 @@ class UpdatableAnimationStateTest {
         runBlocking(frameClock) {
             state.animateToZero(
                 beforeFrame = {},
-                afterFrame = {
-                    valuesToSet.removeFirstOrNull()?.let { state.value = it }
-                },
+                afterFrame = { valuesToSet.removeFirstOrNull()?.let { state.value = it } },
             )
         }
 
@@ -146,9 +135,7 @@ class UpdatableAnimationStateTest {
         runBlocking(frameClock) {
             state.animateToZero(
                 beforeFrame = {},
-                afterFrame = {
-                    valuesToSet.removeFirstOrNull()?.let { state.value = it }
-                },
+                afterFrame = { valuesToSet.removeFirstOrNull()?.let { state.value = it } },
             )
         }
 
@@ -159,8 +146,6 @@ class UpdatableAnimationStateTest {
         private var frame = 0L
 
         override suspend fun <R> withFrameNanos(onFrame: (Long) -> R): R =
-            onFrame(frame).also {
-                frame += 16_000_000L
-            }
+            onFrame(frame).also { frame += 16_000_000L }
     }
 }

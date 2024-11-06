@@ -27,14 +27,11 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.application")
     id("kotlin-android")
-    id("kotlin-kapt")
+    id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
 }
 
 android {
-    defaultConfig {
-        minSdkVersion 21
-    }
     buildFeatures {
         viewBinding true
     }
@@ -61,7 +58,5 @@ dependencies {
     implementation(libs.material)
 
     implementation(libs.hiltAndroid)
-    kapt(libs.hiltCompiler)
-
-    kaptAndroidTest(libs.hiltCompiler)
+    ksp(libs.hiltCompiler)
 }

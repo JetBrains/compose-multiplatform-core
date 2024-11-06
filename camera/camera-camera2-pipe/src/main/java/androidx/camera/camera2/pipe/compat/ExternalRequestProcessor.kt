@@ -20,11 +20,10 @@ package androidx.camera.camera2.pipe.compat
 
 import android.hardware.camera2.CaptureRequest
 import android.view.Surface
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraController
 import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.CameraId
-import androidx.camera.camera2.pipe.CameraStatusMonitor
 import androidx.camera.camera2.pipe.CaptureSequence
 import androidx.camera.camera2.pipe.CaptureSequenceProcessor
 import androidx.camera.camera2.pipe.Metadata
@@ -33,18 +32,20 @@ import androidx.camera.camera2.pipe.RequestMetadata
 import androidx.camera.camera2.pipe.RequestNumber
 import androidx.camera.camera2.pipe.RequestProcessor
 import androidx.camera.camera2.pipe.RequestTemplate
+import androidx.camera.camera2.pipe.StreamGraph
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.graph.GraphListener
 import androidx.camera.camera2.pipe.graph.GraphRequestProcessor
 import kotlin.reflect.KClass
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.runBlocking
 
-@RequiresApi(21)
-class ExternalCameraController(
+public class ExternalCameraController(
+    private val graphId: CameraGraphId,
     private val graphConfig: CameraGraph.Config,
     private val graphListener: GraphListener,
-    private val requestProcessor: RequestProcessor
+    requestProcessor: RequestProcessor
 ) : CameraController {
     private val sequenceProcessor = ExternalCaptureSequenceProcessor(graphConfig, requestProcessor)
     private val graphProcessor: GraphRequestProcessor =
@@ -53,7 +54,11 @@ class ExternalCameraController(
 
     override val cameraId: CameraId
         get() = graphConfig.camera
-    override var isForeground = false
+
+    override val cameraGraphId: CameraGraphId
+        get() = graphId
+
+    override var isForeground: Boolean = true
 
     override fun start() {
         if (started.compareAndSet(expect = false, update = true)) {
@@ -67,22 +72,22 @@ class ExternalCameraController(
         }
     }
 
-    override fun tryRestart(cameraStatus: CameraStatusMonitor.CameraStatus) {
-        // This is intentionally made a no-op for now as CameraPipe external doesn't support
-        // camera status monitoring and camera controller restart.
-    }
-
     override fun close() {
-        graphProcessor.close()
+        // TODO: ExternalRequestProcessor will be deprecated. This is a temporary patch to allow
+        //   graphProcessor to have a suspending shutdown function.
+        runBlocking { graphProcessor.shutdown() }
     }
 
     override fun updateSurfaceMap(surfaceMap: Map<StreamId, Surface>) {
         sequenceProcessor.surfaceMap = surfaceMap
     }
+
+    override fun getOutputLatency(streamId: StreamId?): StreamGraph.OutputLatency? {
+        return null
+    }
 }
 
 @Suppress("DEPRECATION")
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 internal class ExternalCaptureSequenceProcessor(
     private val graphConfig: CameraGraph.Config,
     private val processor: RequestProcessor
@@ -100,9 +105,10 @@ internal class ExternalCaptureSequenceProcessor(
         isRepeating: Boolean,
         requests: List<Request>,
         defaultParameters: Map<*, Any?>,
+        graphParameters: Map<*, Any?>,
         requiredParameters: Map<*, Any?>,
-        listeners: List<Request.Listener>,
-        sequenceListener: CaptureSequence.CaptureSequenceListener
+        sequenceListener: CaptureSequence.CaptureSequenceListener,
+        listeners: List<Request.Listener>
     ): ExternalCaptureSequence? {
         if (closed.value) {
             return null
@@ -114,7 +120,8 @@ internal class ExternalCaptureSequenceProcessor(
         }
         val metadata =
             requests.map { request ->
-                val parameters = defaultParameters + request.parameters + requiredParameters
+                val parameters =
+                    defaultParameters + graphParameters + request.parameters + requiredParameters
 
                 ExternalRequestMetadata(
                     graphConfig.defaultTemplate,
@@ -181,7 +188,7 @@ internal class ExternalCaptureSequenceProcessor(
         processor.stopRepeating()
     }
 
-    override fun close() {
+    override suspend fun shutdown() {
         if (closed.compareAndSet(expect = false, update = true)) {
             processor.close()
         }
@@ -197,8 +204,7 @@ internal class ExternalCaptureSequenceProcessor(
         override val listeners: List<Request.Listener>,
         override val sequenceListener: CaptureSequence.CaptureSequenceListener,
     ) : CaptureSequence<Request> {
-        @Volatile
-        private var _sequenceNumber: Int? = null
+        @Volatile private var _sequenceNumber: Int? = null
         override var sequenceNumber: Int
             get() {
                 if (_sequenceNumber == null) {
@@ -234,7 +240,9 @@ internal class ExternalCaptureSequenceProcessor(
         override val requestNumber: RequestNumber
     ) : RequestMetadata {
         override fun <T> get(key: CaptureRequest.Key<T>): T? = parameters[key] as T?
+
         override fun <T> get(key: Metadata.Key<T>): T? = parameters[key] as T?
+
         override fun <T> getOrDefault(key: CaptureRequest.Key<T>, default: T): T =
             get(key) ?: default
 

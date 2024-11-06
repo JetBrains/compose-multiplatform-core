@@ -24,7 +24,6 @@ import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
-import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
@@ -57,7 +56,6 @@ import java.util.Set;
 /**
  * A class that contains utility methods for stream use case.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class StreamUseCaseUtil {
 
     private static final String TAG = "StreamUseCaseUtil";
@@ -155,14 +153,18 @@ public final class StreamUseCaseUtil {
                     // MeteringRepeating is attached after the StreamUseCase population logic and
                     // therefore won't have the StreamUseCase option. It should always have
                     // SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW
+                    Preconditions.checkState(!sessionConfig.getSurfaces().isEmpty(),
+                            "MeteringRepeating should contain a surface");
                     streamUseCaseMap.put(sessionConfig.getSurfaces().get(0),
                             Long.valueOf(CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW));
 
                 } else if (sessionConfig.getImplementationOptions().containsOption(
                         STREAM_USE_CASE_STREAM_SPEC_OPTION)) {
-                    streamUseCaseMap.put(sessionConfig.getSurfaces().get(0),
-                            sessionConfig.getImplementationOptions().retrieveOption(
-                                    STREAM_USE_CASE_STREAM_SPEC_OPTION));
+                    if (!sessionConfig.getSurfaces().isEmpty()) {
+                        streamUseCaseMap.put(sessionConfig.getSurfaces().get(0),
+                                sessionConfig.getImplementationOptions().retrieveOption(
+                                        STREAM_USE_CASE_STREAM_SPEC_OPTION));
+                    }
                 }
                 position++;
             }

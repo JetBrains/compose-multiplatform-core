@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
@@ -45,8 +44,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class FocusViewInteropTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun getFocusedRect_reportsFocusBounds_whenFocused() {
@@ -57,8 +55,7 @@ class FocusViewInteropTest {
             view = LocalView.current
             CompositionLocalProvider(LocalDensity provides Density(density = 1f)) {
                 Box(
-                    Modifier
-                        .size(90.dp, 100.dp)
+                    Modifier.size(90.dp, 100.dp)
                         .wrapContentSize(align = Alignment.TopStart)
                         .size(10.dp, 20.dp)
                         .offset(30.dp, 40.dp)
@@ -72,9 +69,7 @@ class FocusViewInteropTest {
                 )
             }
         }
-        rule.runOnIdle {
-            focusRequester.requestFocus()
-        }
+        rule.runOnIdle { focusRequester.requestFocus() }
 
         rule.waitUntil { hasFocus }
 
@@ -88,8 +83,7 @@ class FocusViewInteropTest {
             view = LocalView.current
             CompositionLocalProvider(LocalDensity provides Density(density = 1f)) {
                 Box(
-                    Modifier
-                        .size(90.dp, 100.dp)
+                    Modifier.size(90.dp, 100.dp)
                         .wrapContentSize(align = Alignment.TopStart)
                         .size(10.dp, 20.dp)
                         .offset(30.dp, 40.dp)
@@ -98,9 +92,7 @@ class FocusViewInteropTest {
             }
         }
 
-        assertThat(view.getFocusedRect()).isEqualTo(
-            IntRect(0, 0, 90, 100)
-        )
+        assertThat(view.getFocusedRect()).isEqualTo(IntRect(0, 0, 90, 100))
     }
 
     @Test
@@ -109,20 +101,8 @@ class FocusViewInteropTest {
         lateinit var view: View
         rule.setContent {
             view = LocalView.current
-            Box(
-                Modifier
-                    .size(10.dp)
-                    .focusProperties {
-                        @OptIn(ExperimentalComposeUiApi::class)
-                        enter = { FocusRequester.Cancel }
-                    }
-                    .focusGroup()
-            ) {
-                Box(
-                    Modifier
-                        .size(10.dp)
-                        .focusable()
-                )
+            Box(Modifier.size(10.dp).focusProperties { onEnter = { cancelFocus() } }.focusGroup()) {
+                Box(Modifier.size(10.dp).focusable())
             }
         }
 
@@ -133,10 +113,9 @@ class FocusViewInteropTest {
         rule.runOnIdle { assertThat(success).isFalse() }
     }
 
-    private fun View.getFocusedRect() = AndroidRect().run {
-        rule.runOnIdle {
-            getFocusedRect(this)
+    private fun View.getFocusedRect() =
+        AndroidRect().run {
+            rule.runOnIdle { getFocusedRect(this) }
+            IntRect(left, top, right, bottom)
         }
-        IntRect(left, top, right, bottom)
-    }
 }

@@ -50,14 +50,13 @@ import java.util.WeakHashMap;
  */
 class TouchDelegateComposite extends TouchDelegate {
 
-    @NonNull
-    private final WeakHashMap<View, DelegateInfo> mDelegates = new WeakHashMap<>();
+    @NonNull private final WeakHashMap<View, DelegateInfo> mDelegates = new WeakHashMap<>();
 
     /**
      * Constructor
      *
-     * @param delegateView   The view that should receive motion events.
-     * @param actualBounds   The hit rect of the view.
+     * @param delegateView The view that should receive motion events.
+     * @param actualBounds The hit rect of the view.
      * @param extendedBounds The hit rect to be delegated.
      */
     TouchDelegateComposite(
@@ -82,6 +81,10 @@ class TouchDelegateComposite extends TouchDelegate {
 
     void removeDelegate(@NonNull View delegateView) {
         mDelegates.remove(delegateView);
+    }
+
+    boolean isEmpty() {
+        return mDelegates.isEmpty();
     }
 
     @Override
@@ -110,13 +113,11 @@ class TouchDelegateComposite extends TouchDelegate {
             }
             return checkNotNull(mDelegates.get(view)).mTouchDelegate.onTouchEvent(event);
         } else {
-            // For other motion event, forward to ALL the delegate view whose extended bounds
-          // with touch
-            // slop contains the touch point.
+            // For other motion event, forward to ALL the delegate view whose extended bounds with
+            // touch slop contains the touch point.
             for (DelegateInfo delegateInfo : mDelegates.values()) {
-                // set the event location back to the original coordinates, which might get
-              // offset by the
-                // previous TouchDelegate#onTouchEvent call
+                // set the event location back to the original coordinates, which might get offset
+                // by the previous TouchDelegate#onTouchEvent call.
                 event.setLocation(x, y);
                 eventForwarded |= delegateInfo.mTouchDelegate.onTouchEvent(event);
             }
@@ -128,7 +129,7 @@ class TouchDelegateComposite extends TouchDelegate {
     @Override
     @NonNull
     public AccessibilityNodeInfo.TouchDelegateInfo getTouchDelegateInfo() {
-        if (VERSION.SDK_INT >= VERSION_CODES.Q) {
+        if (VERSION.SDK_INT >= VERSION_CODES.Q && !mDelegates.isEmpty()) {
             Map<Region, View> targetMap = new ArrayMap<>(mDelegates.size());
             for (Map.Entry<View, DelegateInfo> entry : mDelegates.entrySet()) {
                 AccessibilityNodeInfo.TouchDelegateInfo info =
@@ -151,15 +152,13 @@ class TouchDelegateComposite extends TouchDelegate {
     }
 
     private static final class DelegateInfo {
-        @NonNull
-        final Rect mActualBounds;
-        @NonNull
-        final Rect mExtendedBounds;
-        @NonNull
-        final TouchDelegate mTouchDelegate;
+        @NonNull final Rect mActualBounds;
+        @NonNull final Rect mExtendedBounds;
+        @NonNull final TouchDelegate mTouchDelegate;
 
         DelegateInfo(
-                @NonNull View delegateView, @NonNull Rect actualBounds,
+                @NonNull View delegateView,
+                @NonNull Rect actualBounds,
                 @NonNull Rect extendedBounds) {
             mActualBounds = actualBounds;
             mExtendedBounds = extendedBounds;

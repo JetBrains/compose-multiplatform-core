@@ -30,7 +30,6 @@ import androidx.annotation.AttrRes
 import androidx.annotation.ColorInt
 import androidx.annotation.ColorRes
 import androidx.annotation.DimenRes
-import androidx.annotation.DoNotInline
 import androidx.annotation.DrawableRes
 import androidx.annotation.IdRes
 import androidx.annotation.LayoutRes
@@ -38,9 +37,7 @@ import androidx.annotation.Px
 import androidx.annotation.RequiresApi
 import androidx.annotation.StringRes
 
-/**
- * Helper for accessing features in [RemoteViews].
- */
+/** Helper for accessing features in [RemoteViews]. */
 public object RemoteViewsCompat {
     /**
      * Creates a simple Adapter for the widgetId and viewId specified. The viewId must point to an
@@ -48,20 +45,20 @@ public object RemoteViewsCompat {
      * [android.widget.StackView], or [android.widget.AdapterViewAnimator].
      *
      * This is a simpler but less flexible approach to populating collection widgets. Its use is
-     * encouraged for most scenarios, as long as the total memory within the list of RemoteViews
-     * is relatively small (ie. doesn't contain large or numerous Bitmaps, see
-     * [RemoteViews.setImageViewBitmap]). In the case of numerous images, the use of API is
-     * still possible by setting image URIs instead of Bitmaps, see [RemoteViews.setImageViewUri].
+     * encouraged for most scenarios, as long as the total memory within the list of RemoteViews is
+     * relatively small (ie. doesn't contain large or numerous Bitmaps, see
+     * [RemoteViews.setImageViewBitmap]). In the case of numerous images, the use of API is still
+     * possible by setting image URIs instead of Bitmaps, see [RemoteViews.setImageViewUri].
      *
-     * If you use this API, you should not call
-     * [AppWidgetManager.notifyAppWidgetViewDataChanged] and should instead update
-     * your app widget, calling this method with the new [RemoteCollectionItems].
+     * If you use this API, you should not call [AppWidgetManager.notifyAppWidgetViewDataChanged]
+     * and should instead update your app widget, calling this method with the new
+     * [RemoteCollectionItems].
      *
-     * @param context     The [Context] of the app providing the widget.
+     * @param context The [Context] of the app providing the widget.
      * @param remoteViews The [RemoteViews] to receive the adapter.
      * @param appWidgetId the id of the widget for which the adapter is being set.
-     * @param viewId      The id of the [android.widget.AdapterView].
-     * @param items       The items to display in the [android.widget.AdapterView].
+     * @param viewId The id of the [android.widget.AdapterView].
+     * @param items The items to display in the [android.widget.AdapterView].
      */
     @JvmStatic
     @Suppress("DEPRECATION")
@@ -88,7 +85,7 @@ public object RemoteViewsCompat {
         AppWidgetManager.getInstance(context).notifyAppWidgetViewDataChanged(appWidgetId, viewId)
     }
 
-    /** Representation of a fixed list of items to be displayed in a RemoteViews collection.  */
+    /** Representation of a fixed list of items to be displayed in a RemoteViews collection. */
     public class RemoteCollectionItems {
         private val mIds: LongArray
         private val mViews: Array<RemoteViews>
@@ -185,8 +182,8 @@ public object RemoteViewsCompat {
             /**
              * Adds a [RemoteViews] to the collection.
              *
-             * @param id   Id to associate with the row. Use [.setHasStableIds] to
-             * indicate that ids are stable across changes to the collection.
+             * @param id Id to associate with the row. Use [.setHasStableIds] to indicate that ids
+             *   are stable across changes to the collection.
              * @param view RemoteViews to display for the row.
              */
             // Covered by getItemId, getItemView, getItemCount.
@@ -212,9 +209,9 @@ public object RemoteViewsCompat {
              * to the maximum number of different layout ids that will be used by RemoteViews in
              * this collection.
              *
-             * If this value is not set, then a value will be inferred from the provided items. As
-             * a result, the adapter may need to be recreated when the list is updated with
-             * previously unseen RemoteViews layouts for new items.
+             * If this value is not set, then a value will be inferred from the provided items. As a
+             * result, the adapter may need to be recreated when the list is updated with previously
+             * unseen RemoteViews layouts for new items.
              *
              * @see android.widget.Adapter.getViewTypeCount
              */
@@ -223,7 +220,7 @@ public object RemoteViewsCompat {
                 return this
             }
 
-            /** Creates the [RemoteCollectionItems] defined by this builder.  */
+            /** Creates the [RemoteCollectionItems] defined by this builder. */
             public fun build(): RemoteCollectionItems {
                 if (mViewTypeCount < 1) {
                     // If a view type count wasn't specified, set it to be the number of distinct
@@ -258,7 +255,6 @@ public object RemoteViewsCompat {
      */
     @RequiresApi(31)
     private object CollectionItemsApi31Impl {
-        @DoNotInline
         fun setRemoteAdapter(remoteViews: RemoteViews, viewId: Int, items: RemoteCollectionItems) {
             remoteViews.setRemoteAdapter(viewId, toPlatformCollectionItems(items))
         }
@@ -266,7 +262,6 @@ public object RemoteViewsCompat {
         /**
          * Returns a [RemoteViews.RemoteCollectionItems] equivalent to this [RemoteCollectionItems].
          */
-        @DoNotInline
         private fun toPlatformCollectionItems(
             items: RemoteCollectionItems
         ): RemoteViews.RemoteCollectionItems {
@@ -286,8 +281,8 @@ public object RemoteViewsCompat {
      * Equivalent to calling [android.widget.Chronometer.setBase].
      *
      * @param viewId The id of the target view
-     * @param base The time at which the timer would have read 0:00. This
-     * time should be based off of [android.os.SystemClock.elapsedRealtime].
+     * @param base The time at which the timer would have read 0:00. This time should be based off
+     *   of [android.os.SystemClock.elapsedRealtime].
      */
     @JvmStatic
     public fun RemoteViews.setChronometerBase(@IdRes viewId: Int, base: Long) {
@@ -360,7 +355,8 @@ public object RemoteViewsCompat {
      * Equivalent to calling [android.widget.CompoundButton.setButtonTintList].
      *
      * @param viewId The id of the target view
-     * @param notNight The tint to apply when the UI is not in night mode, may be null to clear tint.
+     * @param notNight The tint to apply when the UI is not in night mode, may be null to clear
+     *   tint.
      * @param night The tint to apply when the UI is in night mode, may be null to clear tint.
      */
     @RequiresApi(31)
@@ -430,7 +426,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param alignmentMode Either [android.widget.GridLayout.ALIGN_BOUNDS] or
-     * [android.widget.GridLayout.ALIGN_MARGINS].
+     *   [android.widget.GridLayout.ALIGN_MARGINS].
      */
     @RequiresApi(31)
     @JvmStatic
@@ -539,7 +535,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param resId The resource id of a dimension resource for the amount of horizontal space
-     * between items.
+     *   between items.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -555,7 +551,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param resId The resource id of a dimension attribute for the amount of horizontal space
-     * between items.
+     *   between items.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -583,8 +579,9 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param stretchMode Either [android.widget.GridView.NO_STRETCH],
-     * [android.widget.GridView.STRETCH_SPACING], [android.widget.GridView.STRETCH_SPACING_UNIFORM],
-     * or [android.widget.GridView.STRETCH_COLUMN_WIDTH].
+     *   [android.widget.GridView.STRETCH_SPACING],
+     *   [android.widget.GridView.STRETCH_SPACING_UNIFORM], or
+     *   [android.widget.GridView.STRETCH_COLUMN_WIDTH].
      */
     @RequiresApi(31)
     @JvmStatic
@@ -610,7 +607,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param resId The resource id of a dimension resource for the amount of vertical space between
-     * items.
+     *   items.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -626,7 +623,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param resId The resource id of a dimension attribute for the amount of vertical space
-     * between items.
+     *   between items.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -642,7 +639,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param adjustViewBounds Whether to adjust the bounds of this view to preserve the original
-     * aspect ratio of the drawable.
+     *   aspect ratio of the drawable.
      */
     @JvmStatic
     public fun RemoteViews.setImageViewAdjustViewBounds(
@@ -723,7 +720,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param alpha The alpha value that should be applied to the image (between 0 and 255
-     * inclusive, with 0 being transparent and 255 being opaque)
+     *   inclusive, with 0 being transparent and 255 being opaque)
      */
     @JvmStatic
     public fun RemoteViews.setImageViewImageAlpha(@IdRes viewId: Int, alpha: Int) {
@@ -763,7 +760,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param notNightTint The tint to apply when the UI is not in night mode, may be null to clear
-     * tint.
+     *   tint.
      * @param nightTint The tint to apply when the UI is in night mode, may be null to clear tint.
      */
     @RequiresApi(31)
@@ -936,6 +933,7 @@ public object RemoteViewsCompat {
      * Equivalent to calling [android.widget.LinearLayout.setHorizontalGravity].
      *
      * @param viewId The id of the target view
+     * @param horizontalGravity See [android.view.Gravity].
      */
     @JvmStatic
     public fun RemoteViews.setLinearLayoutHorizontalGravity(
@@ -949,6 +947,7 @@ public object RemoteViewsCompat {
      * Equivalent to calling [android.widget.LinearLayout.setVerticalGravity].
      *
      * @param viewId The id of the target view
+     * @param verticalGravity See [android.view.Gravity].
      */
     @JvmStatic
     public fun RemoteViews.setLinearLayoutVerticalGravity(
@@ -963,7 +962,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param enabled True to measure children with a weight using the minimum size of the largest
-     * child, false otherwise.
+     *   child, false otherwise.
      */
     @JvmStatic
     public fun RemoteViews.setLinearLayoutMeasureWithLargestChildEnabled(
@@ -978,7 +977,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param weightSum A number greater than 0.0f, or a number lower than or equals to 0.0f if the
-     * weight sum should be computed from the children's layout_weight
+     *   weight sum should be computed from the children's layout_weight
      */
     @JvmStatic
     public fun RemoteViews.setLinearLayoutWeightSum(@IdRes viewId: Int, weightSum: Float) {
@@ -1031,7 +1030,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param notNightTint The tint to apply when the UI is not in night mode, may be null to clear
-     * tint.
+     *   tint.
      * @param nightTint The tint to apply when the UI is in night mode, may be null to clear tint.
      */
     @RequiresApi(31)
@@ -1150,7 +1149,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param notNightTint The tint to apply when the UI is not in night mode, may be null to clear
-     * tint.
+     *   tint.
      * @param nightTint The tint to apply when the UI is in night mode, may be null to clear tint.
      */
     @RequiresApi(31)
@@ -1228,7 +1227,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param notNightTint The tint to apply when the UI is not in night mode, may be null to clear
-     * tint.
+     *   tint.
      * @param nightTint The tint to apply when the UI is in night mode, may be null to clear tint.
      */
     @RequiresApi(31)
@@ -1326,7 +1325,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param notNightTint The tint to apply when the UI is not in night mode, may be null to clear
-     * tint.
+     *   tint.
      * @param nightTint The tint to apply when the UI is in night mode, may be null to clear tint.
      */
     @RequiresApi(31)
@@ -1380,7 +1379,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param stateDescription The state description, or null to reset to the default ProgressBar
-     * state description.
+     *   state description.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -1397,7 +1396,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param resId The resource id of the state description, or 0 to reset to the default
-     * ProgressBar state description.
+     *   ProgressBar state description.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -1413,7 +1412,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param resId The attribute id of the state description, or 0 to reset to the default
-     * ProgressBar state description.
+     *   ProgressBar state description.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -1439,6 +1438,7 @@ public object RemoteViewsCompat {
      * Equivalent to calling [android.widget.RelativeLayout.setHorizontalGravity].
      *
      * @param viewId The id of the target view
+     * @param horizontalGravity See [android.view.Gravity].
      */
     @JvmStatic
     public fun RemoteViews.setRelativeLayoutHorizontalGravity(
@@ -1453,7 +1453,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param childViewId The id of the child View to be ignored by gravity, or 0 if no View should
-     * be ignored.
+     *   be ignored.
      */
     @JvmStatic
     public fun RemoteViews.setRelativeLayoutIgnoreGravity(
@@ -1467,6 +1467,7 @@ public object RemoteViewsCompat {
      * Equivalent to calling [android.widget.RelativeLayout.setVerticalGravity].
      *
      * @param viewId The id of the target view
+     * @param verticalGravity See [android.view.Gravity].
      */
     @JvmStatic
     public fun RemoteViews.setRelativeLayoutVerticalGravity(
@@ -1594,7 +1595,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param resId The resource id for the text displayed when the button is not in the checked
-     * state.
+     *   state.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -1607,7 +1608,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param resId The attribute id for the text displayed when the button is not in the checked
-     * state.
+     *   state.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -1668,9 +1669,9 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param notNight An Icon holding the desired thumb when the UI is not in night mode, or null
-     * to clear the thumb.
-     * @param notNight An Icon holding the desired thumb when the UI is in night mode, or null to
-     * clear the thumb.
+     *   to clear the thumb.
+     * @param night An Icon holding the desired thumb when the UI is in night mode, or null to clear
+     *   the thumb.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -1724,7 +1725,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param resId The id of a dimension attribute for the horizontal padding for switch thumb
-     * text.
+     *   text.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -1764,7 +1765,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param notNight The tint to apply when the UI is not in night mode, may be null to clear
-     * tint.
+     *   tint.
      * @param night The tint to apply when the UI is in night mode, may be null to clear tint.
      */
     @RequiresApi(31)
@@ -1818,9 +1819,9 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param notNight An Icon holding the desired track when the UI is not in night mode, or null
-     * to clear the track.
-     * @param notNight An Icon holding the desired track when the UI is in night mode, or null to
-     * clear the track.
+     *   to clear the track.
+     * @param night An Icon holding the desired track when the UI is in night mode, or null to clear
+     *   the track.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -1870,7 +1871,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param notNight The tint to apply when the UI is not in night mode, may be null to clear
-     * tint.
+     *   tint.
      * @param night The tint to apply when the UI is in night mode, may be null to clear tint.
      */
     @RequiresApi(31)
@@ -1912,7 +1913,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param format A date/time formatting pattern as described in
-     * [android.text.format.DateFormat].
+     *   [android.text.format.DateFormat].
      */
     @JvmStatic
     public fun RemoteViews.setTextClockFormat12Hour(@IdRes viewId: Int, format: CharSequence?) {
@@ -1925,7 +1926,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param resId A resource id for a date/time formatting pattern as described in
-     * [android.text.format.DateFormat].
+     *   [android.text.format.DateFormat].
      */
     @RequiresApi(31)
     @JvmStatic
@@ -1938,7 +1939,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param resId An attribute id for a date/time formatting pattern as described in
-     * [android.text.format.DateFormat].
+     *   [android.text.format.DateFormat].
      */
     @RequiresApi(31)
     @JvmStatic
@@ -1951,7 +1952,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param format A date/time formatting pattern as described in
-     * [android.text.format.DateFormat].
+     *   [android.text.format.DateFormat].
      */
     @JvmStatic
     public fun RemoteViews.setTextClockFormat24Hour(@IdRes viewId: Int, format: CharSequence?) {
@@ -1964,7 +1965,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param resId A resource id for a date/time formatting pattern as described in
-     * [android.text.format.DateFormat].
+     *   [android.text.format.DateFormat].
      */
     @RequiresApi(31)
     @JvmStatic
@@ -1977,7 +1978,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param resId An attribute id for a date/time formatting pattern as described in
-     * [android.text.format.DateFormat].
+     *   [android.text.format.DateFormat].
      */
     @RequiresApi(31)
     @JvmStatic
@@ -1990,7 +1991,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param timeZone The desired time zone's ID as specified in [java.util.TimeZone] or null to
-     * use the time zone specified by the user (system time zone).
+     *   use the time zone specified by the user (system time zone).
      */
     @JvmStatic
     public fun RemoteViews.setTextClockTimeZone(@IdRes viewId: Int, timeZone: String?) {
@@ -2056,7 +2057,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param resId The id of a dimension resource for the padding between the compound drawables
-     * and the text.
+     *   and the text.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -2072,7 +2073,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param resId The id of a dimension attribute for the padding between the compound drawables
-     * and the text.
+     *   and the text.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -3123,7 +3124,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param clipToOutline Whether the View's Outline should be used to clip the contents of the
-     * View.
+     *   View.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -3240,7 +3241,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param focusable One of [android.view.View.NOT_FOCUSABLE], [android.view.View.FOCUSABLE], or
-     * [android.view.View.FOCUSABLE_AUTO].
+     *   [android.view.View.FOCUSABLE_AUTO].
      */
     @RequiresApi(31)
     @JvmStatic
@@ -3354,8 +3355,8 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param layoutDirection One of [android.view.View.LAYOUT_DIRECTION_LTR],
-     * [android.view.View.LAYOUT_DIRECTION_RTL], [android.view.View.LAYOUT_DIRECTION_INHERIT], or
-     * [android.view.View.LAYOUT_DIRECTION_LOCALE].
+     *   [android.view.View.LAYOUT_DIRECTION_RTL], [android.view.View.LAYOUT_DIRECTION_INHERIT], or
+     *   [android.view.View.LAYOUT_DIRECTION_LOCALE].
      */
     @JvmStatic
     public fun RemoteViews.setViewLayoutDirection(@IdRes viewId: Int, layoutDirection: Int) {
@@ -3546,7 +3547,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param scrollIndicators A bitmask of indicators that should be enabled, or 0 to disable all
-     * indicators.
+     *   indicators.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -3602,7 +3603,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param inflatedId A positive integer used to identify the inflated view or
-     * [android.view.View.NO_ID] if the inflated view should keep its id.
+     *   [android.view.View.NO_ID] if the inflated view should keep its id.
      */
     @JvmStatic
     public fun RemoteViews.setViewStubInflatedId(@IdRes viewId: Int, inflatedId: Int) {
@@ -3645,7 +3646,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param resId The id of a dimension resource for the horizontal position of this view relative
-     * to its left position.
+     *   to its left position.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -3657,8 +3658,8 @@ public object RemoteViewsCompat {
      * Equivalent to calling [android.view.View.setTranslationX].
      *
      * @param viewId The id of the target view
-     * @param resId The id of a dimension attribute for the horizontal position of this view relative
-     * to its left position.
+     * @param resId The id of a dimension attribute for the horizontal position of this view
+     *   relative to its left position.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -3683,8 +3684,8 @@ public object RemoteViewsCompat {
      * Equivalent to calling [android.view.View.setTranslationY].
      *
      * @param viewId The id of the target view
-     * @param resId The id of a dimension resource for the vertical position of this
-     * view relative to its top position.
+     * @param resId The id of a dimension resource for the vertical position of this view relative
+     *   to its top position.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -3697,7 +3698,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param resId The id of a dimension attribute for the vertical position of this view relative
-     * to its top position.
+     *   to its top position.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -3723,7 +3724,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param resId The id of a dimension resource for the depth of this view relative to its
-     * elevation.
+     *   elevation.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -3736,7 +3737,7 @@ public object RemoteViewsCompat {
      *
      * @param viewId The id of the target view
      * @param resId The id of a dimension attribute for the depth of this view relative to its
-     * elevation.
+     *   elevation.
      */
     @RequiresApi(31)
     @JvmStatic
@@ -3759,7 +3760,6 @@ public object RemoteViewsCompat {
 
     @RequiresApi(23)
     private object Api23Impl {
-        @DoNotInline
         @JvmStatic
         fun setIcon(rv: RemoteViews, @IdRes id: Int, method: String, icon: Icon?) {
             rv.setIcon(id, method, icon)
@@ -3768,13 +3768,11 @@ public object RemoteViewsCompat {
 
     @RequiresApi(31)
     private object Api31Impl {
-        @DoNotInline
         @JvmStatic
         fun setBlendMode(rv: RemoteViews, @IdRes id: Int, method: String, mode: BlendMode?) {
             rv.setBlendMode(id, method, mode)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setCharSequence(
             rv: RemoteViews,
@@ -3785,7 +3783,6 @@ public object RemoteViewsCompat {
             rv.setCharSequence(id, method, resId)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setCharSequenceAttr(
             rv: RemoteViews,
@@ -3796,19 +3793,16 @@ public object RemoteViewsCompat {
             rv.setCharSequenceAttr(id, method, resId)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setColor(rv: RemoteViews, @IdRes id: Int, method: String, @ColorRes resId: Int) {
             rv.setColor(id, method, resId)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setColorAttr(rv: RemoteViews, @IdRes id: Int, method: String, @AttrRes resId: Int) {
             rv.setColorAttr(id, method, resId)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setColorInt(
             rv: RemoteViews,
@@ -3820,7 +3814,6 @@ public object RemoteViewsCompat {
             rv.setColorInt(id, method, notNight, night)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setColorStateList(
             rv: RemoteViews,
@@ -3831,7 +3824,6 @@ public object RemoteViewsCompat {
             rv.setColorStateList(id, method, colorStateList)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setColorStateList(
             rv: RemoteViews,
@@ -3843,7 +3835,6 @@ public object RemoteViewsCompat {
             rv.setColorStateList(id, method, notNight, night)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setColorStateList(
             rv: RemoteViews,
@@ -3854,7 +3845,6 @@ public object RemoteViewsCompat {
             rv.setColorStateList(id, method, resId)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setColorStateListAttr(
             rv: RemoteViews,
@@ -3865,7 +3855,6 @@ public object RemoteViewsCompat {
             rv.setColorStateListAttr(id, method, resId)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setIcon(
             rv: RemoteViews,
@@ -3877,25 +3866,21 @@ public object RemoteViewsCompat {
             rv.setIcon(id, method, notNight, night)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setIntDimen(rv: RemoteViews, @IdRes id: Int, method: String, value: Float, unit: Int) {
             rv.setIntDimen(id, method, value, unit)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setIntDimen(rv: RemoteViews, @IdRes id: Int, method: String, @DimenRes resId: Int) {
             rv.setIntDimen(id, method, resId)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setIntDimenAttr(rv: RemoteViews, @IdRes id: Int, method: String, @AttrRes resId: Int) {
             rv.setIntDimenAttr(id, method, resId)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setFloatDimen(
             rv: RemoteViews,
@@ -3907,13 +3892,11 @@ public object RemoteViewsCompat {
             rv.setFloatDimen(id, method, value, unit)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setFloatDimen(rv: RemoteViews, @IdRes id: Int, method: String, @DimenRes resId: Int) {
             rv.setFloatDimen(id, method, resId)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setFloatDimenAttr(
             rv: RemoteViews,

@@ -1,9 +1,5 @@
 // Baseline format: 1.0
-ChangedType: androidx.compose.animation.core.KeyframesSpec.KeyframesSpecConfig#at(T, int):
-    Method androidx.compose.animation.core.KeyframesSpec.KeyframesSpecConfig.at has changed return type from androidx.compose.animation.core.KeyframesSpec.KeyframeEntity to androidx.compose.animation.core.KeyframesSpec.KeyframeEntity<T>
-ChangedType: androidx.compose.animation.core.KeyframesSpec.KeyframesSpecConfig#atFraction(T, float):
-    Method androidx.compose.animation.core.KeyframesSpec.KeyframesSpecConfig.atFraction has changed return type from androidx.compose.animation.core.KeyframesSpec.KeyframeEntity to androidx.compose.animation.core.KeyframesSpec.KeyframeEntity<T>
-
-
-RemovedClass: androidx.compose.animation.core.SpringEstimationKt:
-    Removed class androidx.compose.animation.core.SpringEstimationKt
+RemovedMethod: androidx.compose.animation.core.StartOffset#getOffsetMillis():
+    Removed method androidx.compose.animation.core.StartOffset.getOffsetMillis()
+RemovedMethod: androidx.compose.animation.core.StartOffset#getOffsetType():
+    Removed method androidx.compose.animation.core.StartOffset.getOffsetType()

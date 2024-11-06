@@ -16,14 +16,12 @@
 
 package androidx.compose.foundation.text.input
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.TEST_FONT_FAMILY
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -41,13 +39,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalTestApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class TextFieldOutputTransformationGesturesIntegrationTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private val inputMethodInterceptor = InputMethodInterceptor(rule)
 
@@ -60,11 +56,12 @@ class TextFieldOutputTransformationGesturesIntegrationTest {
             BasicTextField(
                 state = text,
                 modifier = Modifier.testTag(Tag),
-                textStyle = TextStyle(
-                    textAlign = TextAlign.Center,
-                    fontFamily = TEST_FONT_FAMILY,
-                    fontSize = 10.sp
-                ),
+                textStyle =
+                    TextStyle(
+                        textAlign = TextAlign.Center,
+                        fontFamily = TEST_FONT_FAMILY,
+                        fontSize = 10.sp
+                    ),
                 outputTransformation = {
                     replace(1, 2, "bbbb") // "zbbbbz"
                 }
@@ -76,9 +73,7 @@ class TextFieldOutputTransformationGesturesIntegrationTest {
             // Click 1 pixel to the right of center.
             click(center + Offset(1f, 0f))
         }
-        rule.runOnIdle {
-            assertThat(text.selection).isEqualTo(TextRange(2))
-        }
+        rule.runOnIdle { assertThat(text.selection).isEqualTo(TextRange(2)) }
 
         rule.onNodeWithTag(Tag).performTouchInput {
             // Add a delay to avoid triggering double-click.
@@ -86,9 +81,7 @@ class TextFieldOutputTransformationGesturesIntegrationTest {
             // Click 1 pixel to the left of center.
             click(center + Offset(-1f, 0f))
         }
-        rule.runOnIdle {
-            assertThat(text.selection).isEqualTo(TextRange(1))
-        }
+        rule.runOnIdle { assertThat(text.selection).isEqualTo(TextRange(1)) }
     }
 
     @Test
@@ -108,24 +101,19 @@ class TextFieldOutputTransformationGesturesIntegrationTest {
             BasicTextField(
                 state = text,
                 modifier = Modifier.testTag(Tag),
-                textStyle = TextStyle(
-                    textAlign = TextAlign.Left,
-                    fontFamily = TEST_FONT_FAMILY,
-                    fontSize = 10.sp
-                ),
-                outputTransformation = {
-                    replace(indexOfA, indexOfA + 1, replacement)
-                }
+                textStyle =
+                    TextStyle(
+                        textAlign = TextAlign.Left,
+                        fontFamily = TEST_FONT_FAMILY,
+                        fontSize = 10.sp
+                    ),
+                outputTransformation = { replace(indexOfA, indexOfA + 1, replacement) }
             )
         }
         rule.onNodeWithTag(Tag).assertTextEquals("zzzzzzzz${replacement}z")
 
-        rule.onNodeWithTag(Tag).performTouchInput {
-            click(topRight)
-        }
-        rule.runOnIdle {
-            assertThat(text.selection).isEqualTo(TextRange(indexOfA))
-        }
+        rule.onNodeWithTag(Tag).performTouchInput { click(topRight) }
+        rule.runOnIdle { assertThat(text.selection).isEqualTo(TextRange(indexOfA)) }
         assertCursor(indexOfA)
 
         rule.onNodeWithTag(Tag).performTouchInput {
@@ -133,10 +121,7 @@ class TextFieldOutputTransformationGesturesIntegrationTest {
             advanceEventTime(1000)
             click(bottomLeft)
         }
-        rule.runOnIdle {
-            assertThat(text.selection)
-                .isEqualTo(TextRange(indexOfA + 1))
-        }
+        rule.runOnIdle { assertThat(text.selection).isEqualTo(TextRange(indexOfA + 1)) }
         assertCursor(indexOfA + replacement.length)
     }
 
@@ -147,11 +132,12 @@ class TextFieldOutputTransformationGesturesIntegrationTest {
             BasicTextField(
                 state = text,
                 modifier = Modifier.testTag(Tag),
-                textStyle = TextStyle(
-                    textAlign = TextAlign.Center,
-                    fontFamily = TEST_FONT_FAMILY,
-                    fontSize = 10.sp
-                ),
+                textStyle =
+                    TextStyle(
+                        textAlign = TextAlign.Center,
+                        fontFamily = TEST_FONT_FAMILY,
+                        fontSize = 10.sp
+                    ),
                 outputTransformation = {
                     insert(1, "bbbb") // "zbbbbz"
                 }
@@ -163,9 +149,7 @@ class TextFieldOutputTransformationGesturesIntegrationTest {
             // Click 1 pixel to the right of center.
             click(center + Offset(1f, 0f))
         }
-        rule.runOnIdle {
-            assertThat(text.selection).isEqualTo(TextRange(1))
-        }
+        rule.runOnIdle { assertThat(text.selection).isEqualTo(TextRange(1)) }
         assertCursor(5)
 
         rule.onNodeWithTag(Tag).performTouchInput {
@@ -174,9 +158,7 @@ class TextFieldOutputTransformationGesturesIntegrationTest {
             // Click 1 pixel to the left of center.
             click(center + Offset(-1f, 0f))
         }
-        rule.runOnIdle {
-            assertThat(text.selection).isEqualTo(TextRange(1))
-        }
+        rule.runOnIdle { assertThat(text.selection).isEqualTo(TextRange(1)) }
         assertCursor(1)
     }
 

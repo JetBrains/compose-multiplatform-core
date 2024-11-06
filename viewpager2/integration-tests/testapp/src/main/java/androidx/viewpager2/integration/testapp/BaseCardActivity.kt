@@ -42,29 +42,31 @@ abstract class BaseCardActivity : FragmentActivity() {
     private lateinit var scaleCheckBox: CheckBox
     private lateinit var gotoPage: Button
 
-    private val translateX get() = viewPager.orientation == ORIENTATION_VERTICAL &&
-        translateCheckBox.isChecked
-    private val translateY get() = viewPager.orientation == ORIENTATION_HORIZONTAL &&
-        translateCheckBox.isChecked
+    private val translateX
+        get() = viewPager.orientation == ORIENTATION_VERTICAL && translateCheckBox.isChecked
+
+    private val translateY
+        get() = viewPager.orientation == ORIENTATION_HORIZONTAL && translateCheckBox.isChecked
 
     protected open val layoutId: Int = R.layout.activity_no_tablayout
 
-    private val mAnimator = ViewPager2.PageTransformer { page, position ->
-        val absPos = Math.abs(position)
-        page.apply {
-            rotation = if (rotateCheckBox.isChecked) position * 360 else 0f
-            translationY = if (translateY) absPos * 500f else 0f
-            translationX = if (translateX) absPos * 350f else 0f
-            if (scaleCheckBox.isChecked) {
-                val scale = if (absPos > 1) 0F else 1 - absPos
-                scaleX = scale
-                scaleY = scale
-            } else {
-                scaleX = 1f
-                scaleY = 1f
+    private val mAnimator =
+        ViewPager2.PageTransformer { page, position ->
+            val absPos = Math.abs(position)
+            page.apply {
+                rotation = if (rotateCheckBox.isChecked) position * 360 else 0f
+                translationY = if (translateY) absPos * 500f else 0f
+                translationX = if (translateX) absPos * 350f else 0f
+                if (scaleCheckBox.isChecked) {
+                    val scale = if (absPos > 1) 0F else 1 - absPos
+                    scaleX = scale
+                    scaleY = scale
+                } else {
+                    scaleX = 1f
+                    scaleY = 1f
+                }
             }
         }
-    }
 
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,6 +82,7 @@ abstract class BaseCardActivity : FragmentActivity() {
 
         UserInputController(viewPager, findViewById(R.id.disable_user_input_checkbox)).setUp()
         OrientationController(viewPager, findViewById(R.id.orientation_spinner)).setUp()
+        OverScrollModeController(viewPager, findViewById(R.id.overscroll_mode_spinner)).setUp()
         cardSelector.adapter = createCardAdapter()
 
         viewPager.setPageTransformer(mAnimator)

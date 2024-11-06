@@ -87,7 +87,10 @@ internal object AndroidFlingSpline {
      * @param time progress through the fling animation from 0-1
      */
     fun flingPosition(time: Float): FlingResult {
-        val index = (NbSamples * time).toInt()
+        // We clamp the time to prevent crashes from a clock providing playTime values lower than
+        // the start time, which leads to an IOO here. See b/313685022.
+        val clampedTime = time.coerceIn(0f, 1f)
+        val index = (NbSamples * clampedTime).toInt()
         var distanceCoef = 1f
         var velocityCoef = 0f
         if (index < NbSamples) {
@@ -96,36 +99,27 @@ internal object AndroidFlingSpline {
             val dInf = SplinePositions[index]
             val dSup = SplinePositions[index + 1]
             velocityCoef = (dSup - dInf) / (tSup - tInf)
-            distanceCoef = dInf + (time - tInf) * velocityCoef
+            distanceCoef = dInf + (clampedTime - tInf) * velocityCoef
         }
-        return FlingResult(
-            distanceCoefficient = distanceCoef,
-            velocityCoefficient = velocityCoef
-        )
+        return FlingResult(distanceCoefficient = distanceCoef, velocityCoefficient = velocityCoef)
     }
 
-    /**
-     * The rate of deceleration along the spline motion given [velocity] and [friction].
-     */
+    /** The rate of deceleration along the spline motion given [velocity] and [friction]. */
     fun deceleration(velocity: Float, friction: Float): Double =
         ln(Inflection * abs(velocity) / friction.toDouble())
 
-    /**
-     * Result coefficients of a scroll computation
-     */
+    /** Result coefficients of a scroll computation */
     // TODO: pack this into an inline class
     data class FlingResult(
-        /**
-         * Linear distance traveled from 0-1, from source (0) to destination (1)
-         */
+        /** Linear distance traveled from 0-1, from source (0) to destination (1) */
         val distanceCoefficient: Float,
         /**
-         * Instantaneous velocity coefficient at this point in the fling expressed in
-         * total distance per unit time
+         * Instantaneous velocity coefficient at this point in the fling expressed in total distance
+         * per unit time
          */
         val velocityCoefficient: Float
     )
 }
 
-fun <T> splineBasedDecay(density: Density): DecayAnimationSpec<T> =
+public fun <T> splineBasedDecay(density: Density): DecayAnimationSpec<T> =
     SplineBasedFloatDecayAnimationSpec(density).generateDecayAnimationSpec()

@@ -23,7 +23,6 @@ import android.view.Surface;
 
 import androidx.annotation.FloatRange;
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.StringDef;
@@ -44,7 +43,6 @@ import java.util.Set;
  *
  * <p>Applications can retrieve an instance via {@link Camera#getCameraInfo()}.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public interface CameraInfo {
 
     /**
@@ -332,11 +330,13 @@ public interface CameraInfo {
     /**
      * Returns if logical multi camera is supported on the device.
      *
+     * <p>A logical camera is a grouping of two or more of those physical cameras.
+     * See <a href="https://developer.android.com/media/camera/camera2/multi-camera">Multi-camera API</a>
+     *
      * @return true if supported, otherwise false.
      * @see android.hardware.camera2.CameraMetadata
      * #REQUEST_AVAILABLE_CAPABILITIES_LOGICAL_MULTI_CAMERA
      */
-    @RestrictTo(Scope.LIBRARY_GROUP)
     default boolean isLogicalMultiCameraSupported() {
         return false;
     }
@@ -420,9 +420,16 @@ public interface CameraInfo {
     /**
      * Returns a set of physical camera {@link CameraInfo}s.
      *
+     * <p>A logical camera is a grouping of two or more of those physical cameras.
+     * See <a href="https://developer.android.com/media/camera/camera2/multi-camera">Multi-camera API</a>
+     *
+     * <p> Check {@link #isLogicalMultiCameraSupported()} to see if the device is supporting
+     * physical camera or not. If the device doesn't support physical camera, empty set will
+     * be returned.
+     *
      * @return Set of physical camera {@link CameraInfo}s.
+     * @see #isLogicalMultiCameraSupported()
      */
-    @RestrictTo(Scope.LIBRARY_GROUP)
     @NonNull
     default Set<CameraInfo> getPhysicalCameraInfos() {
         return Collections.emptySet();

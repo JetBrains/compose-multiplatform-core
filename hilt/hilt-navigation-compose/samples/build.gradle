@@ -21,6 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+import androidx.build.KotlinTarget
 import androidx.build.LibraryType
 import androidx.build.Publish
 
@@ -35,18 +37,19 @@ dependencies {
     implementation(libs.kotlinStdlib)
 
     compileOnly(project(":annotation:annotation-sampled"))
-    implementation(projectOrArtifact(":hilt:hilt-navigation-compose"))
+    implementation(project(":hilt:hilt-navigation-compose"))
 }
 
 androidx {
     name = "Navigation Compose Hilt Extension Samples"
-    publish = Publish.SNAPSHOT_AND_RELEASE
     type = LibraryType.SAMPLES
     mavenVersion = LibraryVersions.HILT_NAVIGATION_COMPOSE
     inceptionYear = "2021"
     description = "Samples for the Navigation Compose Hilt Integration"
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }
 
 android {
+    compileSdk 35
     namespace "androidx.hilt.navigation.compose.samples"
 }

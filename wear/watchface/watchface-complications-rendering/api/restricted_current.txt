@@ -139,6 +139,10 @@ package androidx.wear.watchface.complications.rendering {
   }
 
   public static final class ComplicationStyle.Companion {
+    property @Px public static final int BORDER_RADIUS_DEFAULT;
+    property public static final int BORDER_STYLE_DASHED;
+    property public static final int BORDER_STYLE_NONE;
+    property public static final int BORDER_STYLE_SOLID;
   }
 
   public final class GlesTextureComplication {

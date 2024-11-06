@@ -56,14 +56,18 @@ android {
 
     defaultConfig {
         minSdkVersion 23
+        compileSdk 35
     }
     namespace "androidx.glance.appwidget.testing"
+    // TODO(b/313699418): need to update compose.runtime version to 1.6.0+ in glance-appwidget
+    experimentalProperties["android.lint.useK2Uast"] = false
 }
 
 androidx {
     name = "androidx.glance:glance-appwidget-testing"
-    type = LibraryType.PUBLISHED_KOTLIN_ONLY_LIBRARY
+    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2023"
     description = "This library provides APIs for developers to use for testing their appWidget specific Glance composables."
-    samples(projectOrArtifact(":glance:glance-appwidget-testing:glance-appwidget-testing-samples"))
+    legacyDisableKotlinStrictApiMode = true
+    samples(project(":glance:glance-appwidget-testing:glance-appwidget-testing-samples"))
 }

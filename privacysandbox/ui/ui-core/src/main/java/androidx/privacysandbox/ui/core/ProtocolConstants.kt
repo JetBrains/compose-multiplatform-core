@@ -26,4 +26,5 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 object ProtocolConstants {
     const val sdkActivityLauncherBinderKey = "sdkActivityLauncherBinderKey"
+    const val delegateKey = "delegate"
 }

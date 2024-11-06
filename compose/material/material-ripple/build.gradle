@@ -21,31 +21,46 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+import androidx.build.KotlinTarget
 import androidx.build.LibraryType
 import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    android()
-    desktop()
+    androidLibrary {
+        namespace = "androidx.compose.material.ripple"
+        withAndroidTestOnDeviceBuilder {
+            it.compilationName = "instrumentedTest"
+            it.defaultSourceSetName = "androidInstrumentedTest"
+            it.sourceSetTreeName = "test"
+        }
+        withAndroidTestOnJvmBuilder {
+            it.defaultSourceSetName = "androidUnitTest"
+        }
+
+        compileSdk = 35
+        aarMetadata.minCompileSdk = 35
+    }
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlibCommon)
-                api("androidx.compose.foundation:foundation:1.6.0")
+                implementation(libs.kotlinStdlib)
+                api("androidx.compose.foundation:foundation:1.7.1")
                 api(project(":compose:runtime:runtime"))
 
-                implementation("androidx.collection:collection:1.4.0")
-                implementation("androidx.compose.animation:animation:1.6.0")
-                implementation("androidx.compose.ui:ui-util:1.6.0")
+                implementation(project(":collection:collection"))
+                implementation("androidx.compose.animation:animation:1.7.1")
+                implementation("androidx.compose.ui:ui-util:1.7.1")
             }
         }
 
@@ -60,33 +75,26 @@ androidXMultiplatform {
             }
         }
 
-        skikoMain {
-            dependsOn(commonMain)
-            dependencies {
-            }
-        }
-
         androidMain {
             dependsOn(jvmMain)
             dependencies {
             }
         }
 
-        desktopMain {
-            dependsOn(skikoMain)
-            dependsOn(jvmMain)
-            dependencies {
-            }
+        commonStubsMain {
+            dependsOn(commonMain)
         }
 
-        jvmTest {
-            dependsOn(commonTest)
-            dependencies {
-            }
+        jvmStubsMain {
+            dependsOn(commonStubsMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
         }
 
         androidInstrumentedTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:test-utils"))
                 implementation(project(":compose:foundation:foundation"))
@@ -98,7 +106,7 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
@@ -106,27 +114,17 @@ androidXMultiplatform {
                 implementation(libs.truth)
             }
         }
-
-        desktopTest {
-            dependsOn(jvmTest)
-            dependencies {
-            }
-        }
     }
 }
 
 androidx {
     name = "Compose Material Ripple"
-    type = LibraryType.PUBLISHED_KOTLIN_ONLY_LIBRARY
+    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     mavenVersion = LibraryVersions.COMPOSE
     inceptionYear = "2020"
     description = "Material ripple used to build interactive components"
-    // Disable strict API mode for MPP builds as it will fail to compile androidAndroidTest
-    // sources, as it doesn't understand that they are tests and thinks they should have explicit
-    // visibility
     legacyDisableKotlinStrictApiMode = true
+    metalavaK2UastEnabled = false
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }
 
-android {
-    namespace "androidx.compose.material.ripple"
-}

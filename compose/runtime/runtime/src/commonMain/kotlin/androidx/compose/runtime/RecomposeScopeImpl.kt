@@ -25,8 +25,8 @@ import androidx.compose.runtime.tooling.CompositionObserverHandle
 import androidx.compose.runtime.tooling.RecomposeScopeObserver
 
 /**
- * Represents a recomposable scope or section of the composition hierarchy. Can be used to
- * manually invalidate the scope to schedule it for recomposition.
+ * Represents a recomposable scope or section of the composition hierarchy. Can be used to manually
+ * invalidate the scope to schedule it for recomposition.
  */
 interface RecomposeScope {
     /**
@@ -51,34 +51,38 @@ internal fun updateChangedFlags(flags: Int): Int {
     val lowBits = flags and changedLowBitMask
     val highBits = flags and changedHighBitMask
     return ((flags and changedMask) or
-        (lowBits or (highBits shr 1)) or ((lowBits shl 1) and highBits))
+        (lowBits or (highBits shr 1)) or
+        ((lowBits shl 1) and highBits))
 }
 
-private const val UsedFlag = 0x01
-private const val DefaultsInScopeFlag = 0x02
-private const val DefaultsInvalidFlag = 0x04
-private const val RequiresRecomposeFlag = 0x08
-private const val SkippedFlag = 0x10
-private const val RereadingFlag = 0x20
-private const val ForcedRecomposeFlag = 0x40
+private const val UsedFlag = 0x001
+private const val DefaultsInScopeFlag = 0x002
+private const val DefaultsInvalidFlag = 0x004
+private const val RequiresRecomposeFlag = 0x008
+private const val SkippedFlag = 0x010
+private const val RereadingFlag = 0x020
+private const val ForcedRecomposeFlag = 0x040
+private const val ForceReusing = 0x080
+private const val Paused = 0x100
+private const val Resuming = 0x200
 
 internal interface RecomposeScopeOwner {
     fun invalidate(scope: RecomposeScopeImpl, instance: Any?): InvalidationResult
+
     fun recomposeScopeReleased(scope: RecomposeScopeImpl)
+
     fun recordReadOf(value: Any)
 }
 
-private val callbackLock = Any()
+private val callbackLock = makeSynchronizedObject()
 
 /**
  * A RecomposeScope is created for a region of the composition that can be recomposed independently
- * of the rest of the composition. The composer will position the slot table to the location
- * stored in [anchor] and call [block] when recomposition is requested. It is created by
+ * of the rest of the composition. The composer will position the slot table to the location stored
+ * in [anchor] and call [block] when recomposition is requested. It is created by
  * [Composer.startRestartGroup] and is used to track how to restart the group.
  */
-internal class RecomposeScopeImpl(
-    owner: RecomposeScopeOwner?
-) : ScopeUpdateScope, RecomposeScope {
+internal class RecomposeScopeImpl(owner: RecomposeScopeOwner?) : ScopeUpdateScope, RecomposeScope {
 
     private var flags: Int = 0
 
@@ -95,9 +99,11 @@ internal class RecomposeScopeImpl(
      * removed from the slot table. For example, if the scope is in the then clause of an if
      * statement that later becomes false.
      */
-    val valid: Boolean get() = owner != null && anchor?.valid ?: false
+    val valid: Boolean
+        get() = owner != null && anchor?.valid ?: false
 
-    val canRecompose: Boolean get() = block != null
+    val canRecompose: Boolean
+        get() = block != null
 
     /**
      * Used is set when the [RecomposeScopeImpl] is used by, for example, [currentRecomposeScope].
@@ -107,18 +113,58 @@ internal class RecomposeScopeImpl(
     var used: Boolean
         get() = flags and UsedFlag != 0
         set(value) {
-            if (value) {
-                flags = flags or UsedFlag
-            } else {
-                flags = flags and UsedFlag.inv()
-            }
+            flags =
+                if (value) {
+                    flags or UsedFlag
+                } else {
+                    flags and UsedFlag.inv()
+                }
         }
 
     /**
-     * Set to true when the there are function default calculations in the scope. These are
-     * treated as a special case to avoid having to create a special scope for them. If these
-     * change the this scope needs to be recomposed but the default values can be skipped if they
-     * where not invalidated.
+     * Used to force a scope to the reusing state when a composition is paused while reusing
+     * content.
+     */
+    var reusing: Boolean
+        get() = flags and ForceReusing != 0
+        set(value) {
+            flags =
+                if (value) {
+                    flags or ForceReusing
+                } else {
+                    flags and ForceReusing.inv()
+                }
+        }
+
+    /** Used to flag a scope as paused for pausable compositions */
+    var paused: Boolean
+        get() = flags and Paused != 0
+        set(value) {
+            flags =
+                if (value) {
+                    flags or Paused
+                } else {
+                    flags and Paused.inv()
+                }
+        }
+
+    /** Used to flag a scope as paused for pausable compositions */
+    var resuming: Boolean
+        get() = flags and Resuming != 0
+        set(value) {
+            flags =
+                if (value) {
+                    flags or Resuming
+                } else {
+                    flags and Resuming.inv()
+                }
+        }
+
+    /**
+     * Set to true when the there are function default calculations in the scope. These are treated
+     * as a special case to avoid having to create a special scope for them. If these change the
+     * this scope needs to be recomposed but the default values can be skipped if they where not
+     * invalidated.
      */
     var defaultsInScope: Boolean
         get() = flags and DefaultsInScopeFlag != 0
@@ -145,8 +191,8 @@ internal class RecomposeScopeImpl(
         }
 
     /**
-     * Tracks whether the scope was invalidated directly but was recomposed because the caller
-     * was recomposed. This ensures that a scope invalidated directly will recompose even if its
+     * Tracks whether the scope was invalidated directly but was recomposed because the caller was
+     * recomposed. This ensures that a scope invalidated directly will recompose even if its
      * parameters are the same as the previous recomposition.
      */
     var requiresRecompose: Boolean
@@ -159,22 +205,17 @@ internal class RecomposeScopeImpl(
             }
         }
 
-    /**
-     * The lambda to call to restart the scopes composition.
-     */
+    /** The lambda to call to restart the scopes composition. */
     private var block: ((Composer, Int) -> Unit)? = null
 
-    /**
-     * The recompose scope observer, if one is registered.
-     */
-    @ExperimentalComposeRuntimeApi
-    private var observer: RecomposeScopeObserver? = null
+    /** The recompose scope observer, if one is registered. */
+    @ExperimentalComposeRuntimeApi private var observer: RecomposeScopeObserver? = null
 
     /**
      * Restart the scope's composition. It is an error if [block] was not updated. The code
-     * generated by the compiler ensures that when the recompose scope is used then [block] will
-     * be set but it might occur if the compiler is out-of-date (or ahead of the runtime) or
-     * incorrect direct calls to [Composer.startRestartGroup] and [Composer.endRestartGroup].
+     * generated by the compiler ensures that when the recompose scope is used then [block] will be
+     * set but it might occur if the compiler is out-of-date (or ahead of the runtime) or incorrect
+     * direct calls to [Composer.startRestartGroup] and [Composer.endRestartGroup].
      */
     @OptIn(ExperimentalComposeRuntimeApi::class)
     fun compose(composer: Composer) {
@@ -194,9 +235,7 @@ internal class RecomposeScopeImpl(
 
     @ExperimentalComposeRuntimeApi
     internal fun observe(observer: RecomposeScopeObserver): CompositionObserverHandle {
-        synchronized(callbackLock) {
-            this.observer = observer
-        }
+        synchronized(callbackLock) { this.observer = observer }
         return object : CompositionObserverHandle {
             override fun dispose() {
                 synchronized(callbackLock) {
@@ -209,8 +248,8 @@ internal class RecomposeScopeImpl(
     }
 
     /**
-     * Invalidate the group which will cause [owner] to request this scope be recomposed,
-     * and an [InvalidationResult] will be returned.
+     * Invalidate the group which will cause [owner] to request this scope be recomposed, and an
+     * [InvalidationResult] will be returned.
      */
     fun invalidateForResult(value: Any?): InvalidationResult =
         owner?.invalidate(this, value) ?: InvalidationResult.IGNORED
@@ -224,8 +263,7 @@ internal class RecomposeScopeImpl(
         owner = null
         trackedInstances = null
         trackedDependencies = null
-        @OptIn(ExperimentalComposeRuntimeApi::class)
-        observer?.onScopeDisposed(this)
+        @OptIn(ExperimentalComposeRuntimeApi::class) observer?.onScopeDisposed(this)
     }
 
     /**
@@ -239,18 +277,20 @@ internal class RecomposeScopeImpl(
     /**
      * Invalidate the group which will cause [owner] to request this scope be recomposed.
      *
-     * Unlike [invalidateForResult], this method is thread safe and calls the thread safe
-     * invalidate on the composer.
+     * Unlike [invalidateForResult], this method is thread safe and calls the thread safe invalidate
+     * on the composer.
      */
     override fun invalidate() {
         owner?.invalidate(this, null)
     }
 
     /**
-     * Update [block]. The scope is returned by [Composer.endRestartGroup] when [used] is true
-     * and implements [ScopeUpdateScope].
+     * Update [block]. The scope is returned by [Composer.endRestartGroup] when [used] is true and
+     * implements [ScopeUpdateScope].
      */
-    override fun updateScope(block: (Composer, Int) -> Unit) { this.block = block }
+    override fun updateScope(block: (Composer, Int) -> Unit) {
+        this.block = block
+    }
 
     private var currentToken = 0
     private var trackedInstances: MutableObjectIntMap<Any>? = null
@@ -266,9 +306,9 @@ internal class RecomposeScopeImpl(
         }
 
     /**
-     * Used to explicitly force recomposition. This is used during live edit to force a
-     * recompose scope that doesn't have a restart callback to recompose as its parent (or
-     * some parent above it) was invalidated and the path to this scope has also been forced.
+     * Used to explicitly force recomposition. This is used during live edit to force a recompose
+     * scope that doesn't have a restart callback to recompose as its parent (or some parent above
+     * it) was invalidated and the path to this scope has also been forced.
      */
     var forcedRecompose: Boolean
         get() = flags and ForcedRecomposeFlag != 0
@@ -280,9 +320,7 @@ internal class RecomposeScopeImpl(
             }
         }
 
-    /**
-     * Indicates whether the scope was skipped (e.g. [scopeSkipped] was called.
-     */
+    /** Indicates whether the scope was skipped (e.g. [scopeSkipped] was called. */
     internal var skipped: Boolean
         get() = flags and SkippedFlag != 0
         private set(value) {
@@ -304,18 +342,21 @@ internal class RecomposeScopeImpl(
     }
 
     fun scopeSkipped() {
-        skipped = true
+        if (!reusing) {
+            skipped = true
+        }
     }
 
     /**
      * Track instances that were read in scope.
+     *
      * @return whether the value was already read in scope during current pass
      */
     fun recordRead(instance: Any): Boolean {
         if (rereading) return false // Re-reading should force composition to update its tracking
 
-        val trackedInstances = trackedInstances
-            ?: MutableObjectIntMap<Any>().also { trackedInstances = it }
+        val trackedInstances =
+            trackedInstances ?: MutableObjectIntMap<Any>().also { trackedInstances = it }
 
         val token = trackedInstances.put(instance, currentToken, default = -1)
         if (token == currentToken) {
@@ -326,8 +367,9 @@ internal class RecomposeScopeImpl(
     }
 
     fun recordDerivedStateValue(instance: DerivedState<*>, value: Any?) {
-        val trackedDependencies = trackedDependencies
-            ?: MutableScatterMap<DerivedState<*>, Any?>().also { trackedDependencies = it }
+        val trackedDependencies =
+            trackedDependencies
+                ?: MutableScatterMap<DerivedState<*>, Any?>().also { trackedDependencies = it }
 
         trackedDependencies[instance] = value
     }
@@ -336,7 +378,8 @@ internal class RecomposeScopeImpl(
      * Returns true if the scope is observing derived state which might make this scope
      * conditionally invalidated.
      */
-    val isConditional: Boolean get() = trackedDependencies != null
+    val isConditional: Boolean
+        get() = trackedDependencies != null
 
     /**
      * Determine if the scope should be considered invalid.
@@ -378,9 +421,7 @@ internal class RecomposeScopeImpl(
             trackedInstances?.let { trackedInstances ->
                 rereading = true
                 try {
-                    trackedInstances.forEach { value, _ ->
-                        owner.recordReadOf(value)
-                    }
+                    trackedInstances.forEach { value, _ -> owner.recordReadOf(value) }
                 } finally {
                     rereading = false
                 }
@@ -389,9 +430,9 @@ internal class RecomposeScopeImpl(
     }
 
     /**
-     * Called when composition is completed for this scope. The [token] is the same token passed
-     * in the previous call to [start]. If [end] returns a non-null value the lambda returned
-     * will be called during [ControlledComposition.applyChanges].
+     * Called when composition is completed for this scope. The [token] is the same token passed in
+     * the previous call to [start]. If [end] returns a non-null value the lambda returned will be
+     * called during [ControlledComposition.applyChanges].
      */
     fun end(token: Int): ((Composition) -> Unit)? {
         return trackedInstances?.let { instances ->
@@ -400,27 +441,27 @@ internal class RecomposeScopeImpl(
             // observations tracked by the composition.
             // [skipped] is true if the scope was skipped. If the scope was skipped we should
             // leave the observations unmodified.
-            if (
-                !skipped && instances.any { _, instanceToken -> instanceToken != token }
-            ) { composition ->
-                if (
-                    currentToken == token &&
-                    instances == trackedInstances &&
-                    composition is CompositionImpl
-                ) {
-                    instances.removeIf { instance, instanceToken ->
-                        val shouldRemove = instanceToken != token
-                        if (shouldRemove) {
-                            composition.removeObservation(instance, this)
-                            if (instance is DerivedState<*>) {
-                                composition.removeDerivedStateObservation(instance)
-                                trackedDependencies?.remove(instance)
+            if (!skipped && instances.any { _, instanceToken -> instanceToken != token })
+                { composition ->
+                    if (
+                        currentToken == token &&
+                            instances == trackedInstances &&
+                            composition is CompositionImpl
+                    ) {
+                        instances.removeIf { instance, instanceToken ->
+                            val shouldRemove = instanceToken != token
+                            if (shouldRemove) {
+                                composition.removeObservation(instance, this)
+                                if (instance is DerivedState<*>) {
+                                    composition.removeDerivedStateObservation(instance)
+                                    trackedDependencies?.remove(instance)
+                                }
                             }
+                            shouldRemove
                         }
-                        shouldRemove
                     }
                 }
-            } else null
+            else null
         }
     }
 
@@ -441,8 +482,10 @@ internal class RecomposeScopeImpl(
         }
 
         internal fun hasAnchoredRecomposeScopes(slots: SlotTable, anchors: List<Anchor>) =
-            anchors.isNotEmpty() && anchors.fastAny {
-                slots.ownsAnchor(it) && slots.slot(slots.anchorIndex(it), 0) is RecomposeScopeImpl
-            }
+            anchors.isNotEmpty() &&
+                anchors.fastAny {
+                    slots.ownsAnchor(it) &&
+                        slots.slot(slots.anchorIndex(it), 0) is RecomposeScopeImpl
+                }
     }
 }

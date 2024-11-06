@@ -14,26 +14,28 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe.integration.compat
 
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.integration.compat.workaround.AutoFlashAEModeDisabler
 import androidx.camera.camera2.pipe.integration.compat.workaround.InactiveSurfaceCloser
+import androidx.camera.camera2.pipe.integration.compat.workaround.Lock3ABehaviorWhenCaptureImage
 import androidx.camera.camera2.pipe.integration.compat.workaround.MeteringRegionCorrection
+import androidx.camera.camera2.pipe.integration.compat.workaround.TemplateParamsOverride
 import androidx.camera.camera2.pipe.integration.compat.workaround.UseFlashModeTorchFor3aUpdate
 import androidx.camera.camera2.pipe.integration.compat.workaround.UseTorchAsFlash
 import dagger.Module
 
 /** Dependency bindings for adding camera compat related classes (e.g. workarounds, quirks etc.) */
 @Module(
-    includes = [
-        AutoFlashAEModeDisabler.Bindings::class,
-        InactiveSurfaceCloser.Bindings::class,
-        MeteringRegionCorrection.Bindings::class,
-        UseFlashModeTorchFor3aUpdate.Bindings::class,
-        UseTorchAsFlash.Bindings::class,
-    ],
+    includes =
+        [
+            AutoFlashAEModeDisabler.Bindings::class,
+            InactiveSurfaceCloser.Bindings::class,
+            MeteringRegionCorrection.Bindings::class,
+            UseFlashModeTorchFor3aUpdate.Bindings::class,
+            UseTorchAsFlash.Bindings::class,
+            TemplateParamsOverride.Bindings::class,
+            Lock3ABehaviorWhenCaptureImage.Bindings::class,
+        ],
 )
-abstract class CameraCompatModule
+public abstract class CameraCompatModule

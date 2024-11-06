@@ -20,7 +20,6 @@ import android.graphics.drawable.Icon
 import android.os.Build
 import android.util.Log
 import android.widget.RemoteViews
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -59,15 +58,11 @@ internal fun RemoteViews.translateEmittableImage(
     val selector = element.getLayoutSelector()
     val viewDef = insertView(translationContext, selector, element.modifier)
     when (val provider = element.provider) {
-        is AndroidResourceImageProvider -> setImageViewResource(
-            viewDef.mainViewId,
-            provider.resId
-        )
+        is AndroidResourceImageProvider -> setImageViewResource(viewDef.mainViewId, provider.resId)
         is BitmapImageProvider -> setImageViewBitmap(viewDef.mainViewId, provider.bitmap)
         is UriImageProvider -> setImageViewUri(viewDef.mainViewId, provider.uri)
         is IconImageProvider -> setImageViewIcon(this, viewDef.mainViewId, provider)
-        else ->
-            throw IllegalArgumentException("An unsupported ImageProvider type was used.")
+        else -> throw IllegalArgumentException("An unsupported ImageProvider type was used.")
     }
     element.colorFilterParams?.let { applyColorFilter(translationContext, this, it, viewDef) }
     applyModifiers(translationContext, this, element.modifier, viewDef)
@@ -76,9 +71,10 @@ internal fun RemoteViews.translateEmittableImage(
     // maintain its aspect ratio. AdjustViewBounds on ImageView tells the view to rescale to
     // maintain its aspect ratio. This only really makes sense if one of the dimensions is set to
     // wrap, that is, should change to match the content.
-    val shouldAdjustViewBounds = element.contentScale == ContentScale.Fit &&
-        (element.modifier.findModifier<WidthModifier>()?.width == Dimension.Wrap ||
-            element.modifier.findModifier<HeightModifier>()?.height == Dimension.Wrap)
+    val shouldAdjustViewBounds =
+        element.contentScale == ContentScale.Fit &&
+            (element.modifier.findModifier<WidthModifier>()?.width == Dimension.Wrap ||
+                element.modifier.findModifier<HeightModifier>()?.height == Dimension.Wrap)
     setImageViewAdjustViewBounds(viewDef.mainViewId, shouldAdjustViewBounds)
 }
 
@@ -87,24 +83,24 @@ private fun EmittableImage.getLayoutSelector(): LayoutType {
     // is null or empty.
     val isDecorative = isDecorative()
     return when (contentScale) {
-        ContentScale.Crop -> if (isDecorative) {
-            LayoutType.ImageCropDecorative
-        } else {
-            LayoutType.ImageCrop
-        }
-
-        ContentScale.Fit -> if (isDecorative) {
-            LayoutType.ImageFitDecorative
-        } else {
-            LayoutType.ImageFit
-        }
-
-        ContentScale.FillBounds -> if (isDecorative) {
-            LayoutType.ImageFillBoundsDecorative
-        } else {
-            LayoutType.ImageFillBounds
-        }
-
+        ContentScale.Crop ->
+            if (isDecorative) {
+                LayoutType.ImageCropDecorative
+            } else {
+                LayoutType.ImageCrop
+            }
+        ContentScale.Fit ->
+            if (isDecorative) {
+                LayoutType.ImageFitDecorative
+            } else {
+                LayoutType.ImageFit
+            }
+        ContentScale.FillBounds ->
+            if (isDecorative) {
+                LayoutType.ImageFillBoundsDecorative
+            } else {
+                LayoutType.ImageFillBounds
+            }
         else -> {
             Log.w(GlanceAppWidgetTag, "Unsupported ContentScale user: $contentScale")
             LayoutType.ImageFit
@@ -130,11 +126,11 @@ private fun applyColorFilter(
                 )
             } else {
                 rv.setImageViewColorFilter(
-                    viewDef.mainViewId, colorProvider.getColor(translationContext.context).toArgb()
+                    viewDef.mainViewId,
+                    colorProvider.getColor(translationContext.context).toArgb()
                 )
             }
         }
-
         is TintAndAlphaColorFilterParams -> {
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
                 val color =
@@ -142,12 +138,14 @@ private fun applyColorFilter(
                 rv.setImageViewColorFilter(viewDef.mainViewId, color)
                 rv.setImageViewImageAlpha(viewDef.mainViewId, android.graphics.Color.alpha(color))
             } else {
-                throw IllegalStateException(
-                    "There is no use case yet to support this colorFilter in S+ versions."
+                val trace = Throwable()
+                Log.e(
+                    GlanceAppWidgetTag,
+                    "There is no use case yet to support this colorFilter in S+ versions.",
+                    trace
                 )
             }
         }
-
         else -> throw IllegalArgumentException("An unsupported ColorFilter was used.")
     }
 }
@@ -161,7 +159,6 @@ private fun setImageViewIcon(rv: RemoteViews, viewId: Int, provider: IconImagePr
 
 @RequiresApi(Build.VERSION_CODES.M)
 private object ImageTranslatorApi23Impl {
-    @DoNotInline
     fun setImageViewIcon(rv: RemoteViews, viewId: Int, icon: Icon) {
         rv.setImageViewIcon(viewId, icon)
     }
@@ -169,7 +166,6 @@ private object ImageTranslatorApi23Impl {
 
 @RequiresApi(Build.VERSION_CODES.S)
 private object ImageTranslatorApi31Impl {
-    @DoNotInline
     fun applyTintColorFilter(
         translationContext: TranslationContext,
         rv: RemoteViews,
@@ -177,21 +173,15 @@ private object ImageTranslatorApi31Impl {
         viewId: Int
     ) {
         when (colorProvider) {
-            is DayNightColorProvider -> rv.setImageViewColorFilter(
-                viewId,
-                colorProvider.day,
-                colorProvider.night
-            )
-
-            is ResourceColorProvider -> rv.setImageViewColorFilterResource(
-                viewId,
-                colorProvider.resId
-            )
-
-            else -> rv.setImageViewColorFilter(
-                viewId,
-                colorProvider.getColor(translationContext.context).toArgb()
-            )
+            is DayNightColorProvider ->
+                rv.setImageViewColorFilter(viewId, colorProvider.day, colorProvider.night)
+            is ResourceColorProvider ->
+                rv.setImageViewColorFilterResource(viewId, colorProvider.resId)
+            else ->
+                rv.setImageViewColorFilter(
+                    viewId,
+                    colorProvider.getColor(translationContext.context).toArgb()
+                )
         }
     }
 }

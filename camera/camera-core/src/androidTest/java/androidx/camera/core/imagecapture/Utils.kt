@@ -18,15 +18,14 @@ package androidx.camera.core.imagecapture
 
 import android.graphics.Matrix
 import android.graphics.Rect
-import android.os.Build
 import android.util.Size
-import androidx.annotation.RequiresApi
 import androidx.camera.core.ImageCapture
-import androidx.camera.testing.impl.fakes.FakeCameraCaptureResult
+import androidx.camera.core.impl.utils.executor.CameraXExecutors
+import androidx.camera.testing.fakes.FakeCameraCaptureResult
 import java.io.File
 import java.util.UUID
+import org.mockito.Mockito.mock
 
-@RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 object Utils {
     const val WIDTH = 640
     const val HEIGHT = 480
@@ -37,19 +36,49 @@ object Utils {
     val SENSOR_TO_BUFFER = Matrix().also { it.setScale(-1F, 1F, 320F, 240F) }
     val SIZE = Size(WIDTH, HEIGHT)
     val CROP_RECT = Rect(0, 240, WIDTH, HEIGHT)
-    internal val TEMP_FILE = File.createTempFile(
-        "unit_test_" + UUID.randomUUID().toString(), ".temp"
-    ).also { it.deleteOnExit() }
-    internal val OUTPUT_FILE_OPTIONS = ImageCapture.OutputFileOptions.Builder(
-        TEMP_FILE
-    ).build()
-    internal val CAMERA_CAPTURE_RESULT = FakeCameraCaptureResult()
-        .also {
-        it.timestamp = TIMESTAMP
+    internal val TEMP_FILE =
+        File.createTempFile("unit_test_" + UUID.randomUUID().toString(), ".temp").also {
+            it.deleteOnExit()
+        }
+    internal val OUTPUT_FILE_OPTIONS = ImageCapture.OutputFileOptions.Builder(TEMP_FILE).build()
+    internal val CAMERA_CAPTURE_RESULT = FakeCameraCaptureResult().also { it.timestamp = TIMESTAMP }
+    val EXIF_GAINMAP_PATTERNS =
+        listOf(
+            "xmlns:hdrgm=\"http://ns.adobe.com/hdr-gain-map/",
+            "hdrgm:Version=",
+            "Item:Semantic=\"GainMap\"",
+        )
+
+    fun createTakePictureRequest(
+        outputFileOptions: ImageCapture.OutputFileOptions?,
+        secondaryFileOption: ImageCapture.OutputFileOptions?,
+        cropRect: Rect,
+        sensorToBufferTransform: Matrix,
+        rotationDegrees: Int,
+        jpegQuality: Int,
+        isSimultaneousCapture: Boolean = false
+    ): TakePictureRequest {
+        var onDiskCallback: ImageCapture.OnImageSavedCallback? = null
+        var onMemoryCallback: ImageCapture.OnImageCapturedCallback? = null
+        if (outputFileOptions == null) {
+            onMemoryCallback = mock(ImageCapture.OnImageCapturedCallback::class.java)
+        } else {
+            onDiskCallback = mock(ImageCapture.OnImageSavedCallback::class.java)
+        }
+
+        return TakePictureRequest.of(
+            CameraXExecutors.mainThreadExecutor(),
+            onMemoryCallback,
+            onDiskCallback,
+            outputFileOptions,
+            secondaryFileOption,
+            cropRect,
+            sensorToBufferTransform,
+            rotationDegrees,
+            jpegQuality,
+            ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY,
+            isSimultaneousCapture,
+            listOf()
+        )
     }
-    val EXIF_GAINMAP_PATTERNS = listOf(
-        "xmlns:hdrgm=\"http://ns.adobe.com/hdr-gain-map/",
-        "hdrgm:Version=",
-        "Item:Semantic=\"GainMap\"",
-    )
 }

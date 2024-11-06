@@ -18,11 +18,11 @@ package androidx.window.demo.embedding
 
 import android.os.Bundle
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.window.demo.R
+import androidx.window.demo.common.EdgeToEdgeActivity
 import androidx.window.embedding.RuleController
 import androidx.window.embedding.SplitAttributes
 import androidx.window.embedding.SplitAttributes.SplitType.Companion.SPLIT_TYPE_EXPAND
@@ -35,7 +35,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-open class SplitAttributesToggleActivityBase : AppCompatActivity() {
+open class SplitAttributesToggleActivityBase : EdgeToEdgeActivity() {
     internal lateinit var splitController: SplitController
     internal lateinit var ruleController: RuleController
 
@@ -50,21 +50,24 @@ open class SplitAttributesToggleActivityBase : AppCompatActivity() {
             // is at least STARTED and is cancelled when the lifecycle is STOPPED.
             // It automatically restarts the block when the lifecycle is STARTED again.
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                splitController.splitInfoList(this@SplitAttributesToggleActivityBase)
+                splitController
+                    .splitInfoList(this@SplitAttributesToggleActivityBase)
                     .map { splitInfoList ->
                         if (splitInfoList.isEmpty()) {
                             EXPAND_ATTRS
                         } else {
                             splitInfoList.last().splitAttributes
                         }
-                    }.collect { attrs -> updateSplitAttributesText(attrs) }
+                    }
+                    .collect { attrs -> updateSplitAttributesText(attrs) }
             }
         }
     }
 
     private suspend fun updateSplitAttributesText(splitAttributes: SplitAttributes) =
         withContext(Dispatchers.Main) {
-            window.decorView.findViewById<TextView>(R.id.activity_pair_split_attributes_text_view)
+            window.decorView
+                .findViewById<TextView>(R.id.activity_pair_split_attributes_text_view)
                 .text = resources.getString(R.string.current_split_attributes) + splitAttributes
         }
 
@@ -81,36 +84,36 @@ open class SplitAttributesToggleActivityBase : AppCompatActivity() {
                             filter.secondaryActivityName == componentName
                     }
                 }
-
                 is SplitPlaceholderRule -> {
                     rule.filters.any { filter -> filter.matchesActivity(this) } ||
                         rule.placeholderIntent.component == componentName
                 }
-
                 else -> false
             }
         } as? T?
 
     companion object {
-        internal val EXPAND_ATTRS = SplitAttributes.Builder()
-            .setSplitType(SPLIT_TYPE_EXPAND)
-            .build()
-        internal val CUSTOMIZED_SPLIT_TYPES_TEXT = arrayOf(
-            "ratio(0.3)",
-            "ratio(0.5)",
-            "ratio(0.7)",
-            "expand",
-        )
-        internal val CUSTOMIZED_SPLIT_TYPES_VALUE = arrayOf(
-            SplitAttributes.SplitType.ratio(0.3f),
-            SplitAttributes.SplitType.SPLIT_TYPE_EQUAL,
-            SplitAttributes.SplitType.ratio(0.7f),
-            SPLIT_TYPE_EXPAND,
-        )
+        internal val EXPAND_ATTRS =
+            SplitAttributes.Builder().setSplitType(SPLIT_TYPE_EXPAND).build()
+        internal val CUSTOMIZED_SPLIT_TYPES_TEXT =
+            arrayOf(
+                "ratio(0.3)",
+                "ratio(0.5)",
+                "ratio(0.7)",
+                "expand",
+            )
+        internal val CUSTOMIZED_SPLIT_TYPES_VALUE =
+            arrayOf(
+                SplitAttributes.SplitType.ratio(0.3f),
+                SplitAttributes.SplitType.SPLIT_TYPE_EQUAL,
+                SplitAttributes.SplitType.ratio(0.7f),
+                SPLIT_TYPE_EXPAND,
+            )
         internal val CUSTOMIZED_LAYOUT_DIRECTIONS_TEXT = arrayOf("locale", "bottom_to_top")
-        internal val CUSTOMIZED_LAYOUT_DIRECTIONS_VALUE = arrayOf(
-            SplitAttributes.LayoutDirection.LOCALE,
-            SplitAttributes.LayoutDirection.BOTTOM_TO_TOP,
-        )
+        internal val CUSTOMIZED_LAYOUT_DIRECTIONS_VALUE =
+            arrayOf(
+                SplitAttributes.LayoutDirection.LOCALE,
+                SplitAttributes.LayoutDirection.BOTTOM_TO_TOP,
+            )
     }
 }

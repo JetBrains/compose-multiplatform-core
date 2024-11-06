@@ -16,7 +16,9 @@
 
 package androidx.fragment.compose
 
+import android.content.Context
 import android.os.Bundle
+import android.view.View
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.currentCompositeKeyHash
@@ -30,6 +32,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.commitNow
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 
 /**
  * Allows for adding a [Fragment] directly into Compose. It creates a fragment of the given class
@@ -39,7 +43,6 @@ import androidx.fragment.app.commitNow
  * added to the fragment manager and invoke the [onUpdate] callback with the new instance.
  *
  * @sample androidx.fragment.compose.samples.BasicAndroidFragment
- *
  * @param modifier the modifier to be applied to the layout
  * @param fragmentState the savedState of the fragment
  * @param arguments args to be passed to the fragment
@@ -50,7 +53,7 @@ inline fun <reified T : Fragment> AndroidFragment(
     modifier: Modifier = Modifier,
     fragmentState: FragmentState = rememberFragmentState(),
     arguments: Bundle = Bundle.EMPTY,
-    noinline onUpdate: (T) -> Unit = { }
+    noinline onUpdate: (T) -> Unit = {}
 ) {
     AndroidFragment(clazz = T::class.java, modifier, fragmentState, arguments, onUpdate)
 }
@@ -63,7 +66,6 @@ inline fun <reified T : Fragment> AndroidFragment(
  * added to the fragment manager and invoke the [onUpdate] callback with the new instance.
  *
  * @sample androidx.fragment.compose.samples.BasicAndroidFragment
- *
  * @param clazz fragment class to be created
  * @param modifier the modifier to be applied to the layout
  * @param fragmentState the savedState of the fragment
@@ -77,47 +79,85 @@ fun <T : Fragment> AndroidFragment(
     modifier: Modifier = Modifier,
     fragmentState: FragmentState = rememberFragmentState(),
     arguments: Bundle = Bundle.EMPTY,
-    onUpdate: (T) -> Unit = { }
+    onUpdate: (T) -> Unit = {}
 ) {
     val updateCallback = rememberUpdatedState(onUpdate)
     val hashKey = currentCompositeKeyHash
     val view = LocalView.current
-    val fragmentManager = remember(view) {
-        FragmentManager.findFragmentManager(view)
-    }
+    val fragmentManager = remember(view) { FragmentManager.findFragmentManager(view) }
     val context = LocalContext.current
-    lateinit var container: FragmentContainerView
-    AndroidView({
-        container = FragmentContainerView(context)
-        container.id = hashKey
-        container
-    }, modifier)
+    val containerFactory = remember { FragmentContainerViewFactory(hashKey) }
+    AndroidView(factory = containerFactory, modifier)
 
-    DisposableEffect(fragmentManager, clazz, fragmentState) {
-        val fragment = fragmentManager.findFragmentById(container.id)
-            ?: fragmentManager.fragmentFactory.instantiate(
-                context.classLoader, clazz.name
-            ).apply {
-                setInitialSavedState(fragmentState.state.value)
-                setArguments(arguments)
-                fragmentManager.beginTransaction()
-                    .setReorderingAllowed(true)
-                    .add(container, this, "$hashKey")
-                    .commitNow()
-            }
-        fragmentManager.onContainerAvailable(container)
-        @Suppress("UNCHECKED_CAST")
-        updateCallback.value(fragment as T)
+    DisposableEffect(fragmentManager, containerFactory, clazz, fragmentState) {
+        var removeEvenIfStateIsSaved = false
+        val fragment =
+            fragmentManager.findFragmentById(containerFactory.container.id)
+                ?: fragmentManager.fragmentFactory
+                    .instantiate(context.classLoader, clazz.name)
+                    .apply {
+                        setInitialSavedState(fragmentState.state.value)
+                        setArguments(arguments)
+                        val transaction =
+                            fragmentManager
+                                .beginTransaction()
+                                .setReorderingAllowed(true)
+                                .add(containerFactory.container, this, "$hashKey")
+                        if (fragmentManager.isStateSaved) {
+                            // If the state is saved when we add the fragment,
+                            // we want to remove the Fragment in onDispose
+                            // if isStateSaved never becomes true for the lifetime
+                            // of this AndroidFragment - we use a LifecycleObserver
+                            // on the Fragment as a proxy for that signal
+                            removeEvenIfStateIsSaved = true
+                            lifecycle.addObserver(
+                                object : DefaultLifecycleObserver {
+                                    override fun onStart(owner: LifecycleOwner) {
+                                        removeEvenIfStateIsSaved = false
+                                        lifecycle.removeObserver(this)
+                                    }
+                                }
+                            )
+                            transaction.commitNowAllowingStateLoss()
+                        } else {
+                            transaction.commitNow()
+                        }
+                    }
+        fragmentManager.onContainerAvailable(containerFactory.container)
+        @Suppress("UNCHECKED_CAST") updateCallback.value(fragment as T)
         onDispose {
             val state = fragmentManager.saveFragmentInstanceState(fragment)
             fragmentState.state.value = state
-            if (!fragmentManager.isStateSaved) {
+            if (removeEvenIfStateIsSaved) {
+                // The Fragment was added when the state was saved and
+                // isStateSaved never became true for the lifetime of this
+                // AndroidFragment, so we unconditionally remove it here
+                fragmentManager.commitNow(allowStateLoss = true) { remove(fragment) }
+            } else if (!fragmentManager.isStateSaved) {
                 // If the state isn't saved, that means that some state change
                 // has removed this Composable from the hierarchy
-                fragmentManager.commitNow {
-                    remove(fragment)
-                }
+                fragmentManager.commitNow { remove(fragment) }
             }
         }
     }
+}
+
+private class FragmentContainerViewFactory(private val containerId: Int) : (Context) -> View {
+
+    // Backing field that stores the last created container
+    // that is assumed to be created always before it is access
+    // via the container property
+    private var lastCreatedContainer: FragmentContainerView? = null
+
+    val container: FragmentContainerView
+        get() =
+            checkNotNull(lastCreatedContainer) {
+                "AndroidView has not created a container for $containerId yet"
+            }
+
+    override operator fun invoke(context: Context) =
+        FragmentContainerView(context).also { container ->
+            container.id = containerId
+            lastCreatedContainer = container
+        }
 }

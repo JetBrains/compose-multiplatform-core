@@ -32,7 +32,7 @@ plugins {
 dependencies {
     implementation("androidx.appcompat:appcompat:1.1.0")
     implementation("androidx.core:core:1.1.0")
-    implementation("androidx.annotation:annotation:1.3.0")
+    implementation("androidx.annotation:annotation:1.8.1")
     implementation(project(":webkit:webkit"))
     implementation(libs.guavaAndroid)
     implementation(libs.espressoIdlingNet)
@@ -42,13 +42,12 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.espressoCore, excludes.espresso)
-    androidTestImplementation(libs.bundles.espressoContrib, excludes.espresso)
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.bundles.espressoContrib)
     androidTestImplementation(libs.espressoIdlingResource)
-    androidTestImplementation(libs.espressoWeb, excludes.espresso)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy)
-    // DexMaker has it"s own MockMaker
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy)
+    androidTestImplementation(libs.espressoWeb)
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
 }
 
 // We want to publish a release apk of this project for webkit team's use
@@ -56,7 +55,6 @@ ApkCopyHelperKt.setupAppApkCopy(project, "release")
 
 android {
     defaultConfig {
-        minSdkVersion 19
     }
     lintOptions {
         disable "UnusedResources"

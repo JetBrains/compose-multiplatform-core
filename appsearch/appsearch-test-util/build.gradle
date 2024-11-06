@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 import androidx.build.LibraryType
-import androidx.build.Publish
 
 plugins {
     id('AndroidXPlugin')
@@ -26,10 +25,9 @@ dependencies {
 
     implementation(project(":appsearch:appsearch"))
     implementation(project(":appsearch:appsearch-local-storage"))
-    implementation('androidx.collection:collection:1.1.0')
+    implementation("androidx.collection:collection:1.4.2")
     implementation(libs.truth)
 
-    androidTestImplementation(libs.multidex)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
@@ -39,15 +37,11 @@ dependencies {
 androidx {
     name = 'AppSearch Test Util'
     type = LibraryType.INTERNAL_TEST_LIBRARY
-    publish = Publish.NONE
     inceptionYear = '2021'
     description = 'Test Utilities to be used by any test module for AppSearch'
 }
 
 android {
+    compileSdk 35
     namespace "androidx.appsearch.testutil"
-
-    defaultConfig {
-        multiDexEnabled true
-    }
 }

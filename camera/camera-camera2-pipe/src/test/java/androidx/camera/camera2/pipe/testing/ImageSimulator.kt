@@ -16,8 +16,6 @@
 
 package androidx.camera.camera2.pipe.testing
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraStream
@@ -26,8 +24,8 @@ import androidx.camera.camera2.pipe.StreamGraph
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.graph.StreamGraphImpl
 import androidx.camera.camera2.pipe.media.ImageSource
+import org.mockito.kotlin.mock
 
-@RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 class ImageSimulator(
     streamConfigs: List<CameraStream.Config>,
     imageStreams: Set<CameraStream.Config>? = null,
@@ -38,17 +36,18 @@ class ImageSimulator(
 
     val cameraMetadata = defaultCameraMetadata ?: FakeCameraMetadata()
     val graphConfig = CameraGraph.Config(camera = cameraMetadata.camera, streams = streamConfigs)
-    val streamGraph = defaultStreamGraph ?: StreamGraphImpl(cameraMetadata, graphConfig)
+    val streamGraph = defaultStreamGraph ?: StreamGraphImpl(cameraMetadata, graphConfig, mock())
 
     private val fakeImageSources = buildMap {
         for (config in graphConfig.streams) {
             if (imageStreams != null && !imageStreams.contains(config)) continue
             val cameraStream = streamGraph[config]!!
-            val fakeImageSource = FakeImageSource(
-                cameraStream.id,
-                config.outputs.first().format,
-                cameraStream.outputs.associate { it.id to it.size }
-            )
+            val fakeImageSource =
+                FakeImageSource(
+                    cameraStream.id,
+                    config.outputs.first().format,
+                    cameraStream.outputs.associate { it.id to it.size }
+                )
             check(this[cameraStream.id] == null)
             this[cameraStream.id] = fakeImageSource
         }
@@ -60,9 +59,8 @@ class ImageSimulator(
         for (config in graphConfig.streams) {
             val cameraStream = streamGraph[config]!!
             this[cameraStream.id] =
-                imageSources[cameraStream.id]?.surface ?: fakeSurfaces.createFakeSurface(
-                    cameraStream.outputs.first().size
-                )
+                imageSources[cameraStream.id]?.surface
+                    ?: fakeSurfaces.createFakeSurface(cameraStream.outputs.first().size)
         }
     }
 

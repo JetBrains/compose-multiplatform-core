@@ -22,39 +22,94 @@
  * modifying its settings.
  */
 import androidx.build.LibraryType
+import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
 }
 
-dependencies {
-    api projectOrArtifact(":lifecycle:lifecycle-runtime-ktx")
-    api("androidx.annotation:annotation-experimental:1.4.0")
-    api("androidx.compose.runtime:runtime:1.0.1")
+androidXMultiplatform {
+    androidLibrary {
+        namespace = "androidx.lifecycle.runtime.compose"
+        withAndroidTestOnDeviceBuilder {
+            it.compilationName = "instrumentedTest"
+            it.defaultSourceSetName = "androidInstrumentedTest"
+            it.sourceSetTreeName = "test"
+        }
+        withAndroidTestOnJvmBuilder {
+            it.defaultSourceSetName = "androidUnitTest"
+        }
 
-    implementation(libs.kotlinStdlib)
+        compileSdk = 35
+        aarMetadata.minCompileSdk = 35
 
-    androidTestImplementation(projectOrArtifact(":lifecycle:lifecycle-runtime-testing"))
-    androidTestImplementation projectOrArtifact(":compose:ui:ui-test-junit4")
-    androidTestImplementation project(":compose:test-utils")
-    androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.truth)
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(
+                new File(project.projectDir, "proguard-rules.pro")
+            )
+        }
+    }
+    jvmStubs()
+    linuxX64Stubs()
+
+    defaultPlatform(PlatformIdentifier.ANDROID)
+
+    sourceSets {
+        commonMain {
+            dependencies {
+                api(project(":lifecycle:lifecycle-runtime"))
+                api("androidx.annotation:annotation:1.8.1")
+                api("androidx.compose.runtime:runtime:1.7.1")
+            }
+        }
+
+        androidMain {
+            dependsOn(commonMain)
+            dependencies {
+                // Although this artifact is empty, it ensures that upgrading
+                // `lifecycle-runtime-compose` also updates `lifecycle-runtime-ktx`
+                // in cases where our constraints fail (e.g., internally in AndroidX
+                // when using project dependencies).
+                api(project(":lifecycle:lifecycle-runtime-ktx"))
+            }
+        }
+
+        androidInstrumentedTest {
+            dependencies {
+                implementation(project(":lifecycle:lifecycle-runtime-testing"))
+                implementation(project(":compose:ui:ui-test"))
+                implementation(project(":compose:test-utils"))
+                implementation(libs.testRules)
+                implementation(libs.testRunner)
+                implementation(libs.kotlinTest)
+                implementation(project(":kruth:kruth"))
+            }
+        }
+
+        nonAndroidMain {
+            dependsOn(commonMain)
+        }
+
+        jvmStubsMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(nonAndroidMain)
+        }
+    }
 }
 
 androidx {
     name = "Lifecycle Runtime Compose"
-    type = LibraryType.PUBLISHED_KOTLIN_ONLY_LIBRARY
+    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2021"
     description = "Compose integration with Lifecycle"
-    metalavaK2UastEnabled = true
-    samples(projectOrArtifact(":lifecycle:lifecycle-runtime-compose:lifecycle-runtime-compose-samples"))
+    legacyDisableKotlinStrictApiMode = true
+    metalavaK2UastEnabled = false
+    samples(project(":lifecycle:lifecycle-runtime-compose:lifecycle-runtime-compose-samples"))
 }
 
-android {
-    namespace "androidx.lifecycle.runtime.compose"
-}

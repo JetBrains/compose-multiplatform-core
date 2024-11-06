@@ -17,10 +17,8 @@
 package androidx.camera.camera2.pipe.testing
 
 import android.graphics.SurfaceTexture
-import android.os.Build
 import android.util.Size
 import android.view.Surface
-import androidx.annotation.RequiresApi
 import kotlinx.atomicfu.atomic
 
 /**
@@ -28,14 +26,12 @@ import kotlinx.atomicfu.atomic
  *
  * Close this object to release all surfaces during tests.
  */
-@RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-class FakeSurfaces : AutoCloseable {
+public class FakeSurfaces : AutoCloseable {
     private val fakeSurfaces = mutableListOf<Surface>()
-    fun createFakeSurface(size: Size = Size(640, 480)): Surface {
+
+    public fun createFakeSurface(size: Size = Size(640, 480)): Surface {
         val surface = create(size)
-        synchronized(fakeSurfaces) {
-            fakeSurfaces.add(surface)
-        }
+        synchronized(fakeSurfaces) { fakeSurfaces.add(surface) }
         return surface
     }
 
@@ -48,10 +44,10 @@ class FakeSurfaces : AutoCloseable {
         }
     }
 
-    companion object {
+    public companion object {
         private val fakeSurfaceTextureNames = atomic(0)
 
-        fun create(size: Size = Size(640, 480)): Surface {
+        public fun create(size: Size = Size(640, 480)): Surface {
             return Surface(
                 SurfaceTexture(fakeSurfaceTextureNames.getAndIncrement()).also {
                     it.setDefaultBufferSize(size.width, size.height)

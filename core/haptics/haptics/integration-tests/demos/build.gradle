@@ -28,10 +28,9 @@ dependencies {
 }
 
 android {
+    compileSdkVersion 35
     defaultConfig {
         applicationId "androidx.core.haptics.demos"
-        minSdkVersion 19
-        multiDexEnabled true
     }
     namespace "androidx.core.haptics.demos"
 }

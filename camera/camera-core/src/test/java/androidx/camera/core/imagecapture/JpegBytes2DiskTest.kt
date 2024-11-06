@@ -24,7 +24,7 @@ import android.os.Build
 import android.util.Size
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
-import androidx.camera.core.imagecapture.JpegBytes2Disk.moveFileToTarget
+import androidx.camera.core.imagecapture.FileUtil.moveFileToTarget
 import androidx.camera.core.imagecapture.Utils.ALTITUDE
 import androidx.camera.core.imagecapture.Utils.CAMERA_CAPTURE_RESULT
 import androidx.camera.core.imagecapture.Utils.EXIF_DESCRIPTION
@@ -63,9 +63,10 @@ class JpegBytes2DiskTest {
         // Arrange: create a file with a string.
         val fileContent = "fileContent"
         TEMP_FILE.writeText(fileContent, Charsets.UTF_8)
-        val destination = File.createTempFile(
-            "unit_test_" + UUID.randomUUID().toString(), ".temp"
-        ).also { it.deleteOnExit() }
+        val destination =
+            File.createTempFile("unit_test_" + UUID.randomUUID().toString(), ".temp").also {
+                it.deleteOnExit()
+            }
         // Act: move the file to the destination.
         moveFileToTarget(TEMP_FILE, OutputFileOptions.Builder(destination).build())
         // Assert: the temp file is deleted and the destination file has the same content.
@@ -126,16 +127,17 @@ class JpegBytes2DiskTest {
         rotation: Int = ROTATION_DEGREES
     ): String {
         val jpegBytes = createJpegBytes(WIDTH, HEIGHT)
-        val inputPacket = Packet.of(
-            jpegBytes,
-            exif,
-            ImageFormat.JPEG,
-            Size(WIDTH, HEIGHT),
-            Rect(0, 0, WIDTH, HEIGHT),
-            rotation,
-            Matrix(),
-            CAMERA_CAPTURE_RESULT
-        )
+        val inputPacket =
+            Packet.of(
+                jpegBytes,
+                exif,
+                ImageFormat.JPEG,
+                Size(WIDTH, HEIGHT),
+                Rect(0, 0, WIDTH, HEIGHT),
+                rotation,
+                Matrix(),
+                CAMERA_CAPTURE_RESULT
+            )
         val options = OutputFileOptions.Builder(TEMP_FILE).setMetadata(metadata).build()
         val input = JpegBytes2Disk.In.of(inputPacket, options)
         return operation.apply(input).savedUri!!.path!!

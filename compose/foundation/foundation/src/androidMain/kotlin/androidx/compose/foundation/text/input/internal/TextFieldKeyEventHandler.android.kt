@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.input.internal
 
+import android.view.InputDevice
 import android.view.InputDevice.SOURCE_DPAD
 import android.view.KeyEvent.KEYCODE_DPAD_CENTER
 import android.view.KeyEvent.KEYCODE_DPAD_DOWN
@@ -35,6 +36,11 @@ import androidx.compose.ui.platform.SoftwareKeyboardController
 internal actual fun createTextFieldKeyEventHandler(): TextFieldKeyEventHandler =
     AndroidTextFieldKeyEventHandler()
 
+internal actual val KeyEvent.isFromSoftKeyboard: Boolean
+    get() =
+        (nativeKeyEvent.flags and android.view.KeyEvent.FLAG_SOFT_KEYBOARD) ==
+            android.view.KeyEvent.FLAG_SOFT_KEYBOARD
+
 internal class AndroidTextFieldKeyEventHandler : TextFieldKeyEventHandler() {
 
     override fun onPreKeyEvent(
@@ -53,7 +59,8 @@ internal class AndroidTextFieldKeyEventHandler : TextFieldKeyEventHandler() {
                 focusManager = focusManager,
                 keyboardController = keyboardController
             )
-        ) return true
+        )
+            return true
 
         val device = event.nativeKeyEvent.device
         return when {
@@ -68,6 +75,9 @@ internal class AndroidTextFieldKeyEventHandler : TextFieldKeyEventHandler() {
             // Ignore key release events
             event.type != KeyDown -> false
 
+            // Ignore events that originate from a source that only identifies as keyboard.
+            // This logic is taken from `android.widget.TextView#doKeyDown()` method.
+            event.nativeKeyEvent.source == InputDevice.SOURCE_KEYBOARD -> false
             event.isKeyCode(KEYCODE_DPAD_UP) -> focusManager.moveFocus(FocusDirection.Up)
             event.isKeyCode(KEYCODE_DPAD_DOWN) -> focusManager.moveFocus(FocusDirection.Down)
             event.isKeyCode(KEYCODE_DPAD_LEFT) -> focusManager.moveFocus(FocusDirection.Left)
@@ -80,7 +90,33 @@ internal class AndroidTextFieldKeyEventHandler : TextFieldKeyEventHandler() {
             else -> false
         }
     }
+
+    override fun onKeyEvent(
+        event: KeyEvent,
+        textFieldState: TransformedTextFieldState,
+        textLayoutState: TextLayoutState,
+        textFieldSelectionState: TextFieldSelectionState,
+        editable: Boolean,
+        singleLine: Boolean,
+        onSubmit: () -> Unit
+    ): Boolean {
+        if (
+            event.type == KeyDown &&
+                event.nativeKeyEvent.isFromSource(InputDevice.SOURCE_KEYBOARD) &&
+                !event.isFromSoftKeyboard
+        ) {
+            textFieldSelectionState.isInTouchMode = false
+        }
+        return super.onKeyEvent(
+            event,
+            textFieldState,
+            textLayoutState,
+            textFieldSelectionState,
+            editable,
+            singleLine,
+            onSubmit
+        )
+    }
 }
 
-private fun KeyEvent.isKeyCode(keyCode: Int): Boolean =
-    this.key.nativeKeyCode == keyCode
+private fun KeyEvent.isKeyCode(keyCode: Int): Boolean = this.key.nativeKeyCode == keyCode

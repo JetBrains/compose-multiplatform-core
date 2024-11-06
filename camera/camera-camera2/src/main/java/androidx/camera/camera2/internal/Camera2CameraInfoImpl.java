@@ -26,6 +26,7 @@ import static android.hardware.camera2.CameraMetadata.SENSOR_INFO_TIMESTAMP_SOUR
 
 import static androidx.camera.camera2.internal.ZslUtil.isCapabilitySupported;
 
+import android.annotation.SuppressLint;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraMetadata;
 import android.os.Build;
@@ -39,7 +40,6 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
-import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.CameraAccessExceptionCompat;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
@@ -96,7 +96,6 @@ import java.util.concurrent.Executor;
  * to the {@link Camera2CameraControlImpl}.
  */
 @OptIn(markerClass = ExperimentalCamera2Interop.class)
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class Camera2CameraInfoImpl implements CameraInfoInternal {
 
     private static final String TAG = "Camera2CameraInfo";
@@ -397,6 +396,7 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
         }
     }
 
+    @SuppressLint("NullAnnotationGroup")
     @OptIn(markerClass = androidx.camera.core.ExperimentalZeroShutterLag.class)
     @Override
     public boolean isZslSupported() {
@@ -645,7 +645,7 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
             mPhysicalCameraInfos = new HashSet<>();
             for (String physicalCameraId : mCameraCharacteristicsCompat.getPhysicalCameraIds()) {
                 try {
-                    CameraInfo physicalCameraInfo = new Camera2CameraInfoImpl(
+                    CameraInfo physicalCameraInfo = new Camera2PhysicalCameraInfoImpl(
                             physicalCameraId,
                             mCameraManager);
                     mPhysicalCameraInfos.add(physicalCameraInfo);

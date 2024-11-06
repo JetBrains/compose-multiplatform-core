@@ -17,9 +17,9 @@
 package androidx.graphics.shapes
 
 import androidx.annotation.FloatRange
+import androidx.collection.FloatFloatPair
 import androidx.collection.FloatList
 import androidx.collection.MutableFloatList
-import kotlin.math.abs
 
 internal class MeasuredPolygon : AbstractList<MeasuredPolygon.MeasuredCubic> {
     private val measurer: Measurer
@@ -46,8 +46,10 @@ internal class MeasuredPolygon : AbstractList<MeasuredPolygon.MeasuredCubic> {
 
         if (DEBUG) {
             debugLog(LOG_TAG) {
-                "CTOR: cubics = " + cubics.joinToString() +
-                    "\nCTOR: op = " + outlineProgress.joinToString()
+                "CTOR: cubics = " +
+                    cubics.joinToString() +
+                    "\nCTOR: op = " +
+                    outlineProgress.joinToString()
             }
         }
         val measuredCubics = mutableListOf<MeasuredCubic>()
@@ -56,11 +58,7 @@ internal class MeasuredPolygon : AbstractList<MeasuredPolygon.MeasuredCubic> {
             // Filter out "empty" cubics
             if ((outlineProgress[index + 1] - outlineProgress[index]) > DistanceEpsilon) {
                 measuredCubics.add(
-                    MeasuredCubic(
-                        cubics[index],
-                        startOutlineProgress,
-                        outlineProgress[index + 1]
-                    )
+                    MeasuredCubic(cubics[index], startOutlineProgress, outlineProgress[index + 1])
                 )
                 // The next measured cubic will start exactly where this one ends.
                 startOutlineProgress = outlineProgress[index + 1]
@@ -110,9 +108,7 @@ internal class MeasuredPolygon : AbstractList<MeasuredPolygon.MeasuredCubic> {
             this.endOutlineProgress = endOutlineProgress
         }
 
-        /**
-         * Cut this MeasuredCubic into two MeasuredCubics at the given outline progress value.
-         */
+        /** Cut this MeasuredCubic into two MeasuredCubics at the given outline progress value. */
         fun cutAtProgress(cutOutlineProgress: Float): Pair<MeasuredCubic, MeasuredCubic> {
             // Floating point errors further up can cause cutOutlineProgress to land just
             // slightly outside of the start/end progress for this cubic, so we limit it
@@ -127,9 +123,7 @@ internal class MeasuredPolygon : AbstractList<MeasuredPolygon.MeasuredCubic> {
             // called.
             val relativeProgress = progressFromStart / outlineProgressSize
             val t = measurer.findCubicCutPoint(cubic, relativeProgress * measuredSize)
-            require(t in 0f..1f) {
-                "Cubic cut point is expected to be between 0 and 1"
-            }
+            require(t in 0f..1f) { "Cubic cut point is expected to be between 0 and 1" }
 
             debugLog(LOG_TAG) {
                 "cutAtProgress: progress = $boundedCutOutlineProgress / " +
@@ -152,39 +146,27 @@ internal class MeasuredPolygon : AbstractList<MeasuredPolygon.MeasuredCubic> {
 
     /**
      * Finds the point in the input list of measured cubics that pass the given outline progress,
-     * and generates a new MeasuredPolygon (equivalent to this), that starts at that
-     * point.
-     * This usually means cutting the cubic that crosses the outline progress (unless the cut is
-     * at one of its ends)
-     * For example, given outline progress 0.4f and measured cubics on these outline progress
-     * ranges:
+     * and generates a new MeasuredPolygon (equivalent to this), that starts at that point. This
+     * usually means cutting the cubic that crosses the outline progress (unless the cut is at one
+     * of its ends) For example, given outline progress 0.4f and measured cubics on these outline
+     * progress ranges:
      *
-     * c1 [0 -> 0.2]
-     * c2 [0.2 -> 0.5]
-     * c3 [0.5 -> 1.0]
+     * c1 [0 -> 0.2] c2 [0.2 -> 0.5] c3 [0.5 -> 1.0]
      *
      * c2 will be cut in two, at the given outline progress, we can name these c2a [0.2 -> 0.4] and
      * c2b [0.4 -> 0.5]
      *
      * The return then will have measured cubics [c2b, c3, c1, c2a], and they will have their
-     * outline progress ranges adjusted so the new list starts at 0.
-     * c2b [0 -> 0.1]
-     * c3 [0.1 -> 0.6]
-     * c1 [0.6 -> 0.8]
-     * c2a [0.8 -> 1.0]
+     * outline progress ranges adjusted so the new list starts at 0. c2b [0 -> 0.1] c3 [0.1 -> 0.6]
+     * c1 [0.6 -> 0.8] c2a [0.8 -> 1.0]
      */
-    fun cutAndShift(
-        cuttingPoint: Float
-    ): MeasuredPolygon {
-        require(cuttingPoint in 0f..1f) {
-            "Cutting point is expected to be between 0 and 1"
-        }
+    fun cutAndShift(cuttingPoint: Float): MeasuredPolygon {
+        require(cuttingPoint in 0f..1f) { "Cutting point is expected to be between 0 and 1" }
         if (cuttingPoint < DistanceEpsilon) return this
 
         // Find the index of cubic we want to cut
-        val targetIndex = cubics.indexOfFirst {
-            cuttingPoint in it.startOutlineProgress..it.endOutlineProgress
-        }
+        val targetIndex =
+            cubics.indexOfFirst { cuttingPoint in it.startOutlineProgress..it.endOutlineProgress }
         val target = cubics[targetIndex]
         if (DEBUG) {
             cubics.forEachIndexed { index, cubic ->
@@ -273,13 +255,15 @@ internal class MeasuredPolygon : AbstractList<MeasuredPolygon.MeasuredCubic> {
             }
             // TODO(performance): Make changes to satisfy the lint warnings for unnecessary
             //  iterators creation.
-            val measures = cubics.scan(0f) { measure, cubic ->
-                measure + measurer.measureCubic(cubic).also {
-                    require(it >= 0f) {
-                        "Measured cubic is expected to be greater or equal to zero"
-                    }
+            val measures =
+                cubics.scan(0f) { measure, cubic ->
+                    measure +
+                        measurer.measureCubic(cubic).also {
+                            require(it >= 0f) {
+                                "Measured cubic is expected to be greater or equal to zero"
+                            }
+                        }
                 }
-            }
             val totalMeasure = measures.last()
 
             // Equivalent to `measures.map { it / totalMeasure }` but without Iterator allocation.
@@ -295,7 +279,7 @@ internal class MeasuredPolygon : AbstractList<MeasuredPolygon.MeasuredCubic> {
                     val ix = featureToCubic[i].second
                     add(
                         ProgressableFeature(
-                            (outlineProgress[ix] + outlineProgress[ix + 1]) / 2,
+                            positiveModulo((outlineProgress[ix] + outlineProgress[ix + 1]) / 2, 1f),
                             featureToCubic[i].first
                         )
                     )
@@ -307,7 +291,6 @@ internal class MeasuredPolygon : AbstractList<MeasuredPolygon.MeasuredCubic> {
     }
 }
 
-// TODO: make this and the measurers public.
 /**
  * Interface for measuring a cubic. Implementations can use whatever algorithm desired to produce
  * these measurement values.
@@ -315,8 +298,8 @@ internal class MeasuredPolygon : AbstractList<MeasuredPolygon.MeasuredCubic> {
 internal interface Measurer {
 
     /**
-     * Returns size of given cubic, according to however the implementation wants to measure
-     * the size (angle, length, etc). It has to be greater or equal to 0.
+     * Returns size of given cubic, according to however the implementation wants to measure the
+     * size (angle, length, etc). It has to be greater or equal to 0.
      */
     fun measureCubic(c: Cubic): Float
 
@@ -329,39 +312,44 @@ internal interface Measurer {
 }
 
 /**
- * This measurer uses the angle of each cubic around the shape. This works well for current
- * Polygon shapes, but there are important assumptions which will break down for more general
- * shapes:
- * 1) Curves along the shape outline proceed in order; there is no reverse or self-intersecting
- * allowed. This guarantees that angle measurements are unique for every curve.
- * 2) There is a given 'center' for a shape. If the geometry is more arbitrary, there may be
- * no concept of a center, or the angles computed for an arbitrary center point might not be
- * consistent enough across the curves to work for general measurement.
+ * Approximates the arc lengths of cubics by splitting the arc into segments and calculating their
+ * sizes. The more segments, the more accurate the result will be to the true arc length. The
+ * default implementation has at least 98.5% accuracy on the case of a circular arc, which is the
+ * worst case for our standard shapes.
  */
-internal class AngleMeasurer(val centerX: Float, val centerY: Float) : Measurer {
+internal class LengthMeasurer() : Measurer {
+    // The minimum number needed to achieve up to 98.5% accuracy from the true arc length
+    // See PolygonMeasureTest.measureCircle
+    private val segments = 3
 
-    /**
-     * The measurement for a given cubic is the difference in angles between the start
-     * and end points (first and last anchors) of the cubic.
-     */
-    override fun measureCubic(c: Cubic) =
-        positiveModulo(
-            angle(c.anchor1X - centerX, c.anchor1Y - centerY) -
-                angle(c.anchor0X - centerX, c.anchor0Y - centerY),
-            TwoPi
-        ).let {
-            // Avoid an empty cubic to measure almost TwoPi
-            if (it > TwoPi - DistanceEpsilon) 0f else it
-        }
+    override fun measureCubic(c: Cubic): Float {
+        return closestProgressTo(c, Float.POSITIVE_INFINITY).second
+    }
 
     override fun findCubicCutPoint(c: Cubic, m: Float): Float {
-        val angle0 = angle(c.anchor0X - centerX, c.anchor0Y - centerY)
-        // TODO: use binary search.
-        return findMinimum(0f, 1f, tolerance = 1e-5f) { t ->
-            val curvePoint = c.pointOnCurve(t)
-            val angle = angle(curvePoint.x - centerX, curvePoint.y - centerY)
-            abs(positiveModulo(angle - angle0, TwoPi) - m)
+        return closestProgressTo(c, m).first
+    }
+
+    private fun closestProgressTo(cubic: Cubic, threshold: Float): FloatFloatPair {
+        var total = 0f
+        var remainder = threshold
+        var prev = Point(cubic.anchor0X, cubic.anchor0Y)
+
+        for (i in 1..segments) {
+            val progress = i.toFloat() / segments
+            val point = cubic.pointOnCurve(progress)
+            val segment = (point - prev).getDistance()
+
+            if (segment >= remainder) {
+                return FloatFloatPair(progress - (1.0f - remainder / segment) / segments, threshold)
+            }
+
+            remainder -= segment
+            total += segment
+            prev = point
         }
+
+        return FloatFloatPair(1.0f, total)
     }
 }
 

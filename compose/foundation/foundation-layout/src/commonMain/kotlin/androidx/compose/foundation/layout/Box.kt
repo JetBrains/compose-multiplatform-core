@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.layout
 
+import androidx.collection.MutableScatterMap
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
@@ -40,23 +41,21 @@ import androidx.compose.ui.util.fastForEachIndexed
 import kotlin.math.max
 
 /**
- * A layout composable with [content].
- * The [Box] will size itself to fit the content, subject to the incoming constraints.
- * When children are smaller than the parent, by default they will be positioned inside
- * the [Box] according to the [contentAlignment]. For individually specifying the alignments
- * of the children layouts, use the [BoxScope.align] modifier.
- * By default, the content will be measured without the [Box]'s incoming min constraints,
- * unless [propagateMinConstraints] is `true`. As an example, setting [propagateMinConstraints] to
- * `true` can be useful when the [Box] has content on which modifiers cannot be specified
- * directly and setting a min size on the content of the [Box] is needed. If
- * [propagateMinConstraints] is set to `true`, the min size set on the [Box] will also be
- * applied to the content, whereas otherwise the min size will only apply to the [Box].
- * When the content has more than one layout child the layout children will be stacked one
- * on top of the other (positioned as explained above) in the composition order.
+ * A layout composable with [content]. The [Box] will size itself to fit the content, subject to the
+ * incoming constraints. When children are smaller than the parent, by default they will be
+ * positioned inside the [Box] according to the [contentAlignment]. For individually specifying the
+ * alignments of the children layouts, use the [BoxScope.align] modifier. By default, the content
+ * will be measured without the [Box]'s incoming min constraints, unless [propagateMinConstraints]
+ * is `true`. As an example, setting [propagateMinConstraints] to `true` can be useful when the
+ * [Box] has content on which modifiers cannot be specified directly and setting a min size on the
+ * content of the [Box] is needed. If [propagateMinConstraints] is set to `true`, the min size set
+ * on the [Box] will also be applied to the content, whereas otherwise the min size will only apply
+ * to the [Box]. When the content has more than one layout child the layout children will be stacked
+ * one on top of the other (positioned as explained above) in the composition order.
  *
  * Example usage:
- * @sample androidx.compose.foundation.layout.samples.SimpleBox
  *
+ * @sample androidx.compose.foundation.layout.samples.SimpleBox
  * @param modifier The modifier to be applied to the layout.
  * @param contentAlignment The default alignment inside the Box.
  * @param propagateMinConstraints Whether the incoming min constraints should be passed to content.
@@ -77,32 +76,28 @@ inline fun Box(
     )
 }
 
-private fun cacheFor(
-    propagateMinConstraints: Boolean
-) = HashMap<Alignment, MeasurePolicy>(9).apply {
-    fun putAlignment(it: Alignment) {
-        put(it, BoxMeasurePolicy(it, propagateMinConstraints))
+private fun cacheFor(propagate: Boolean) =
+    MutableScatterMap<Alignment, MeasurePolicy>(9).apply {
+        this[Alignment.TopStart] = BoxMeasurePolicy(Alignment.TopStart, propagate)
+        this[Alignment.TopCenter] = BoxMeasurePolicy(Alignment.TopCenter, propagate)
+        this[Alignment.TopEnd] = BoxMeasurePolicy(Alignment.TopEnd, propagate)
+        this[Alignment.CenterStart] = BoxMeasurePolicy(Alignment.CenterStart, propagate)
+        this[Alignment.Center] = BoxMeasurePolicy(Alignment.Center, propagate)
+        this[Alignment.CenterEnd] = BoxMeasurePolicy(Alignment.CenterEnd, propagate)
+        this[Alignment.BottomStart] = BoxMeasurePolicy(Alignment.BottomStart, propagate)
+        this[Alignment.BottomCenter] = BoxMeasurePolicy(Alignment.BottomCenter, propagate)
+        this[Alignment.BottomEnd] = BoxMeasurePolicy(Alignment.BottomEnd, propagate)
     }
-    putAlignment(Alignment.TopStart)
-    putAlignment(Alignment.TopCenter)
-    putAlignment(Alignment.TopEnd)
-    putAlignment(Alignment.CenterStart)
-    putAlignment(Alignment.Center)
-    putAlignment(Alignment.CenterEnd)
-    putAlignment(Alignment.BottomStart)
-    putAlignment(Alignment.BottomCenter)
-    putAlignment(Alignment.BottomEnd)
-}
 
-private val cache1 = cacheFor(true)
-private val cache2 = cacheFor(false)
+private val Cache1 = cacheFor(true)
+private val Cache2 = cacheFor(false)
 
 @PublishedApi
 internal fun maybeCachedBoxMeasurePolicy(
     alignment: Alignment,
     propagateMinConstraints: Boolean
 ): MeasurePolicy {
-    val cache = if (propagateMinConstraints) cache1 else cache2
+    val cache = if (propagateMinConstraints) Cache1 else Cache2
     return cache[alignment] ?: BoxMeasurePolicy(alignment, propagateMinConstraints)
 }
 
@@ -111,13 +106,14 @@ internal fun maybeCachedBoxMeasurePolicy(
 internal fun rememberBoxMeasurePolicy(
     alignment: Alignment,
     propagateMinConstraints: Boolean
-): MeasurePolicy = if (alignment == Alignment.TopStart && !propagateMinConstraints) {
-    DefaultBoxMeasurePolicy
-} else {
-    remember(alignment, propagateMinConstraints) {
-        BoxMeasurePolicy(alignment, propagateMinConstraints)
+): MeasurePolicy =
+    if (alignment == Alignment.TopStart && !propagateMinConstraints) {
+        DefaultBoxMeasurePolicy
+    } else {
+        remember(alignment, propagateMinConstraints) {
+            BoxMeasurePolicy(alignment, propagateMinConstraints)
+        }
     }
-}
 
 private val DefaultBoxMeasurePolicy: MeasurePolicy = BoxMeasurePolicy(Alignment.TopStart, false)
 
@@ -130,17 +126,15 @@ private data class BoxMeasurePolicy(
         constraints: Constraints
     ): MeasureResult {
         if (measurables.isEmpty()) {
-            return layout(
-                constraints.minWidth,
-                constraints.minHeight
-            ) {}
+            return layout(constraints.minWidth, constraints.minHeight) {}
         }
 
-        val contentConstraints = if (propagateMinConstraints) {
-            constraints
-        } else {
-            constraints.copy(minWidth = 0, minHeight = 0)
-        }
+        val contentConstraints =
+            if (propagateMinConstraints) {
+                constraints
+            } else {
+                constraints.copyMaxDimensions()
+            }
 
         if (measurables.size == 1) {
             val measurable = measurables[0]
@@ -154,9 +148,10 @@ private data class BoxMeasurePolicy(
             } else {
                 boxWidth = constraints.minWidth
                 boxHeight = constraints.minHeight
-                placeable = measurable.measure(
-                    Constraints.fixed(constraints.minWidth, constraints.minHeight)
-                )
+                placeable =
+                    measurable.measure(
+                        Constraints.fixed(constraints.minWidth, constraints.minHeight)
+                    )
             }
             return layout(boxWidth, boxHeight) {
                 placeInBox(placeable, measurable, layoutDirection, boxWidth, boxHeight, alignment)
@@ -182,12 +177,13 @@ private data class BoxMeasurePolicy(
         // Now measure match parent size children, if any.
         if (hasMatchParentSizeChildren) {
             // The infinity check is needed for default intrinsic measurements.
-            val matchParentSizeConstraints = Constraints(
-                minWidth = if (boxWidth != Constraints.Infinity) boxWidth else 0,
-                minHeight = if (boxHeight != Constraints.Infinity) boxHeight else 0,
-                maxWidth = boxWidth,
-                maxHeight = boxHeight
-            )
+            val matchParentSizeConstraints =
+                Constraints(
+                    minWidth = if (boxWidth != Constraints.Infinity) boxWidth else 0,
+                    minHeight = if (boxHeight != Constraints.Infinity) boxHeight else 0,
+                    maxWidth = boxWidth,
+                    maxHeight = boxHeight
+                )
             measurables.fastForEachIndexed { index, measurable ->
                 if (measurable.matchesParentSize) {
                     placeables[index] = measurable.measure(matchParentSizeConstraints)
@@ -215,22 +211,22 @@ private fun Placeable.PlacementScope.placeInBox(
     alignment: Alignment
 ) {
     val childAlignment = measurable.boxChildDataNode?.alignment ?: alignment
-    val position = childAlignment.align(
-        IntSize(placeable.width, placeable.height),
-        IntSize(boxWidth, boxHeight),
-        layoutDirection
-    )
+    val position =
+        childAlignment.align(
+            IntSize(placeable.width, placeable.height),
+            IntSize(boxWidth, boxHeight),
+            layoutDirection
+        )
     placeable.place(position)
 }
 
 /**
- * A box with no content that can participate in layout, drawing, pointer input
- * due to the [modifier] applied to it.
+ * A box with no content that can participate in layout, drawing, pointer input due to the
+ * [modifier] applied to it.
  *
  * Example usage:
  *
  * @sample androidx.compose.foundation.layout.samples.SimpleBox
- *
  * @param modifier The modifier to be applied to the layout.
  */
 @Composable
@@ -242,66 +238,65 @@ internal val EmptyBoxMeasurePolicy = MeasurePolicy { _, constraints ->
     layout(constraints.minWidth, constraints.minHeight) {}
 }
 
-/**
- * A BoxScope provides a scope for the children of [Box] and [BoxWithConstraints].
- */
+/** A BoxScope provides a scope for the children of [Box] and [BoxWithConstraints]. */
 @LayoutScopeMarker
 @Immutable
 interface BoxScope {
     /**
-     * Pull the content element to a specific [Alignment] within the [Box]. This alignment will
-     * have priority over the [Box]'s `alignment` parameter.
+     * Pull the content element to a specific [Alignment] within the [Box]. This alignment will have
+     * priority over the [Box]'s `alignment` parameter.
      */
-    @Stable
-    fun Modifier.align(alignment: Alignment): Modifier
+    @Stable fun Modifier.align(alignment: Alignment): Modifier
 
     /**
-     * Size the element to match the size of the [Box] after all other content elements have
-     * been measured.
+     * Size the element to match the size of the [Box] after all other content elements have been
+     * measured.
      *
      * The element using this modifier does not take part in defining the size of the [Box].
      * Instead, it matches the size of the [Box] after all other children (not using
-     * matchParentSize() modifier) have been measured to obtain the [Box]'s size.
-     * In contrast, a general-purpose [Modifier.fillMaxSize] modifier, which makes an element
-     * occupy all available space, will take part in defining the size of the [Box]. Consequently,
-     * using it for an element inside a [Box] will make the [Box] itself always fill the
-     * available space.
+     * matchParentSize() modifier) have been measured to obtain the [Box]'s size. In contrast, a
+     * general-purpose [Modifier.fillMaxSize] modifier, which makes an element occupy all available
+     * space, will take part in defining the size of the [Box]. Consequently, using it for an
+     * element inside a [Box] will make the [Box] itself always fill the available space.
      */
-    @Stable
-    fun Modifier.matchParentSize(): Modifier
+    @Stable fun Modifier.matchParentSize(): Modifier
 }
 
 internal object BoxScopeInstance : BoxScope {
     @Stable
-    override fun Modifier.align(alignment: Alignment) = this.then(
-        BoxChildDataElement(
-            alignment = alignment,
-            matchParentSize = false,
-            inspectorInfo = debugInspectorInfo {
-                name = "align"
-                value = alignment
-            }
-        ))
+    override fun Modifier.align(alignment: Alignment) =
+        this.then(
+            BoxChildDataElement(
+                alignment = alignment,
+                matchParentSize = false,
+                inspectorInfo =
+                    debugInspectorInfo {
+                        name = "align"
+                        value = alignment
+                    }
+            )
+        )
 
     @Stable
-    override fun Modifier.matchParentSize() = this.then(
-        BoxChildDataElement(
-            alignment = Alignment.Center,
-            matchParentSize = true,
-            inspectorInfo = debugInspectorInfo {
-                name = "matchParentSize"
-            }
-        ))
+    override fun Modifier.matchParentSize() =
+        this.then(
+            BoxChildDataElement(
+                alignment = Alignment.Center,
+                matchParentSize = true,
+                inspectorInfo = debugInspectorInfo { name = "matchParentSize" }
+            )
+        )
 }
 
-private val Measurable.boxChildDataNode: BoxChildDataNode? get() = parentData as? BoxChildDataNode
-private val Measurable.matchesParentSize: Boolean get() = boxChildDataNode?.matchParentSize ?: false
+private val Measurable.boxChildDataNode: BoxChildDataNode?
+    get() = parentData as? BoxChildDataNode
+private val Measurable.matchesParentSize: Boolean
+    get() = boxChildDataNode?.matchParentSize ?: false
 
 private class BoxChildDataElement(
     val alignment: Alignment,
     val matchParentSize: Boolean,
     val inspectorInfo: InspectorInfo.() -> Unit
-
 ) : ModifierNodeElement<BoxChildDataNode>() {
     override fun create(): BoxChildDataNode {
         return BoxChildDataNode(alignment, matchParentSize)

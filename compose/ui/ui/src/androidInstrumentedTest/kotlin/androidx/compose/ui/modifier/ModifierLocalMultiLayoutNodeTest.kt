@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
@@ -32,12 +31,10 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalComposeUiApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class ModifierLocalMultiLayoutNodeTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private val defaultValue = "Default Value"
 
@@ -101,8 +98,7 @@ class ModifierLocalMultiLayoutNodeTest {
         rule.setContent {
             Box(Modifier.modifierLocalProvider(localString) { providedValue1 }) {
                 Box(
-                    Modifier
-                        .modifierLocalProvider(localString) { providedValue2 }
+                    Modifier.modifierLocalProvider(localString) { providedValue2 }
                         .modifierLocalConsumer { readValue = localString.current }
                 )
             }
@@ -232,11 +228,7 @@ class ModifierLocalMultiLayoutNodeTest {
                     if (useFirstValue) value1 else value2
                 }
             ) {
-                Box(
-                    Modifier.modifierLocalConsumer {
-                        readString = localString.current
-                    }
-                )
+                Box(Modifier.modifierLocalConsumer { readString = localString.current })
             }
         }
 
@@ -294,7 +286,6 @@ class ModifierLocalMultiLayoutNodeTest {
                         Modifier.modifierLocalProvider(localString) { providedValue }
                     }
                 )
-
             ) {
                 Box(Modifier.modifierLocalConsumer { readString = localString.current })
             }

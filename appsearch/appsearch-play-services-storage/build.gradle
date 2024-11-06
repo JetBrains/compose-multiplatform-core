@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -30,11 +30,10 @@ plugins {
 
 dependencies {
     implementation project(":appsearch:appsearch")
-    // TODO(b/278583111) Swap with the core library version in which Function gets added.
-    implementation project(":core:core")
+    implementation("androidx.core:core:1.12.0")
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
-    implementation('androidx.collection:collection:1.2.0')
-    implementation("com.google.android.gms:play-services-appsearch:16.0.0", {
+    implementation("androidx.collection:collection:1.4.2")
+    implementation("com.google.android.gms:play-services-appsearch:16.0.1", {
         exclude group: "androidx.fragment", module: "fragment"
         exclude group: "androidx.core", module: "core"
     })
@@ -47,17 +46,16 @@ dependencies {
 
 androidx {
     name = "AppSearch Play Services Storage"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2023"
     description =
             "An implementation of AppSearchSession and GlobalSearchSession on pre-S devices using " +
                     "play-services-appsearch SDK with Gogle Play Services as storage backend."
-    metalavaK2UastEnabled = true
 }
 
 android {
+    compileSdk 35
     namespace "androidx.appsearch.playservicesstorage"
      defaultConfig {
-        minSdkVersion 19
     }
 }

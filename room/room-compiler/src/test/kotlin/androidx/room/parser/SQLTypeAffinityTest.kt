@@ -20,7 +20,7 @@ import androidx.kruth.assertThat
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.processing.XNullability
 import androidx.room.compiler.processing.XType
-import androidx.room.compiler.processing.util.runProcessorTest
+import androidx.room.runProcessorTestWithK1
 import org.junit.Test
 
 class SQLTypeAffinityTest {
@@ -28,93 +28,89 @@ class SQLTypeAffinityTest {
      * This is more of a visual verification test to see what values are returned.
      *
      * In javac implementation, nullability does not matter and boxed types may be nullable or
-     * platform type (depends if they are created by boxing a primitive)
-     * In ksp implementation, nullability matters.
+     * platform type (depends if they are created by boxing a primitive) In ksp implementation,
+     * nullability matters.
      */
     @Test
     fun affinityTypes() {
-        runProcessorTest(sources = emptyList()) { invocation ->
-            fun XNullability.toSignature() = if (invocation.isKsp) {
-                when (this) {
-                    XNullability.NONNULL -> "!!"
-                    XNullability.NULLABLE -> "?"
-                    XNullability.UNKNOWN -> ""
+        runProcessorTestWithK1(sources = emptyList()) { invocation ->
+            fun XNullability.toSignature() =
+                if (invocation.isKsp) {
+                    when (this) {
+                        XNullability.NONNULL -> "!!"
+                        XNullability.NULLABLE -> "?"
+                        XNullability.UNKNOWN -> ""
+                    }
+                } else {
+                    // in javac, type's nullability does not mean anything for type equality.
+                    ""
                 }
-            } else {
-                // in javac, type's nullability does not mean anything for type equality.
-                ""
-            }
 
             fun XType.toSignature(): String {
                 return "${asTypeName().toString(CodeLanguage.JAVA)}${nullability.toSignature()}"
             }
 
-            val result = SQLTypeAffinity.values().associate {
-                it to it.getTypeMirrors(invocation.processingEnv)?.map(XType::toSignature)
-            }
-            assertThat(result).containsExactlyEntriesIn(
-                if (invocation.isKsp) KSP_MAPPING
-                else JAVAC_MAPPING
-            )
+            val result =
+                SQLTypeAffinity.values().associate {
+                    it to it.getTypeMirrors(invocation.processingEnv)?.map(XType::toSignature)
+                }
+            assertThat(result)
+                .containsExactlyEntriesIn(if (invocation.isKsp) KSP_MAPPING else JAVAC_MAPPING)
         }
     }
 
     companion object {
-        private val KSP_MAPPING = mapOf(
-            SQLTypeAffinity.NULL to null,
-            SQLTypeAffinity.TEXT to listOf(
-                "java.lang.String!!",
-                "java.lang.String?"
-            ),
-            SQLTypeAffinity.BLOB to listOf(
-                "byte[]!!",
-                "byte[]?"
-            ),
-            SQLTypeAffinity.INTEGER to listOf(
-                "int!!",
-                "java.lang.Integer?",
-                "byte!!",
-                "java.lang.Byte?",
-                "char!!",
-                "java.lang.Character?",
-                "long!!",
-                "java.lang.Long?",
-                "short!!",
-                "java.lang.Short?"
-            ),
-            SQLTypeAffinity.REAL to listOf(
-                "double!!",
-                "java.lang.Double?",
-                "float!!",
-                "java.lang.Float?",
+        private val KSP_MAPPING =
+            mapOf(
+                SQLTypeAffinity.NULL to null,
+                SQLTypeAffinity.TEXT to listOf("java.lang.String!!", "java.lang.String?"),
+                SQLTypeAffinity.BLOB to listOf("byte[]!!", "byte[]?"),
+                SQLTypeAffinity.INTEGER to
+                    listOf(
+                        "int!!",
+                        "java.lang.Integer?",
+                        "byte!!",
+                        "java.lang.Byte?",
+                        "char!!",
+                        "java.lang.Character?",
+                        "long!!",
+                        "java.lang.Long?",
+                        "short!!",
+                        "java.lang.Short?"
+                    ),
+                SQLTypeAffinity.REAL to
+                    listOf(
+                        "double!!",
+                        "java.lang.Double?",
+                        "float!!",
+                        "java.lang.Float?",
+                    )
             )
-        )
-        private val JAVAC_MAPPING = mapOf(
-            SQLTypeAffinity.NULL to null,
-            SQLTypeAffinity.TEXT to listOf(
-                "java.lang.String"
-            ),
-            SQLTypeAffinity.BLOB to listOf(
-                "byte[]"
-            ),
-            SQLTypeAffinity.INTEGER to listOf(
-                "int",
-                "java.lang.Integer",
-                "byte",
-                "java.lang.Byte",
-                "char",
-                "java.lang.Character",
-                "long",
-                "java.lang.Long",
-                "short",
-                "java.lang.Short"
-            ),
-            SQLTypeAffinity.REAL to listOf(
-                "double",
-                "java.lang.Double",
-                "float",
-                "java.lang.Float",
+        private val JAVAC_MAPPING =
+            mapOf(
+                SQLTypeAffinity.NULL to null,
+                SQLTypeAffinity.TEXT to listOf("java.lang.String"),
+                SQLTypeAffinity.BLOB to listOf("byte[]"),
+                SQLTypeAffinity.INTEGER to
+                    listOf(
+                        "int",
+                        "java.lang.Integer",
+                        "byte",
+                        "java.lang.Byte",
+                        "char",
+                        "java.lang.Character",
+                        "long",
+                        "java.lang.Long",
+                        "short",
+                        "java.lang.Short"
+                    ),
+                SQLTypeAffinity.REAL to
+                    listOf(
+                        "double",
+                        "java.lang.Double",
+                        "float",
+                        "java.lang.Float",
+                    )
             )
-        )
     }
 }

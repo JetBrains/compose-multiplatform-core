@@ -21,9 +21,9 @@ import android.os.Looper
 import android.view.MotionEvent
 import android.view.View
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.LocalOverscrollConfiguration
+import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -53,6 +53,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.testutils.WithTouchSlop
 import androidx.compose.testutils.expectError
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
@@ -81,7 +82,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(minSdk = 21)
+@Config(minSdk = RobolectricMinSdk)
 @OptIn(ExperimentalTestApi::class)
 class RobolectricComposeTest {
     private var masterTimeout: IdlingPolicy? = null
@@ -99,20 +100,14 @@ class RobolectricComposeTest {
     }
 
     @Composable
-    private fun ClickCounter(
-        clicks: MutableState<Int> = remember { mutableStateOf(0) }
-    ) {
+    private fun ClickCounter(clicks: MutableState<Int> = remember { mutableStateOf(0) }) {
         Column {
-            Button(onClick = { clicks.value++ }) {
-                Text("Click me")
-            }
+            Button(onClick = { clicks.value++ }) { Text("Click me") }
             Text("Click count: ${clicks.value}")
         }
     }
 
-    /**
-     * Check that basic scenarios work: a composition that is recomposed due to a state change.
-     */
+    /** Check that basic scenarios work: a composition that is recomposed due to a state change. */
     @Test
     fun testStateChange() = runComposeUiTest {
         val clicks = mutableStateOf(0)
@@ -143,9 +138,9 @@ class RobolectricComposeTest {
     }
 
     /**
-     * Check that animation scenarios work: a composition with an animation in its initial state
-     * is idle, stays non-idle while the animation animates to a new target and is idle again
-     * after that.
+     * Check that animation scenarios work: a composition with an animation in its initial state is
+     * idle, stays non-idle while the animation animates to a new target and is idle again after
+     * that.
      */
     @Test
     fun testAnimation() = runComposeUiTest {
@@ -153,12 +148,7 @@ class RobolectricComposeTest {
         setContent {
             val offset = animateFloatAsState(target)
             Box(Modifier.fillMaxSize()) {
-                Box(
-                    Modifier
-                        .size(10.dp)
-                        .offset(x = offset.value.dp)
-                        .testTag("box")
-                )
+                Box(Modifier.size(10.dp).offset(x = offset.value.dp).testTag("box"))
             }
         }
         onNodeWithTag("box").assertLeftPositionInRootIsEqualTo(0.dp)
@@ -190,9 +180,7 @@ class RobolectricComposeTest {
                         // woops, we're always changing x during layout!
                         x = if (x == 0) 1 else 0
 
-                        layout(width, height) {
-                            placeables.forEach { it.place(0, 0) }
-                        }
+                        layout(width, height) { placeables.forEach { it.place(0, 0) } }
                     }
                 }
             }
@@ -200,10 +188,9 @@ class RobolectricComposeTest {
     }
 
     /**
-     * Check that scrolling and controlling the clock works: a scrollable receives a swipe while
-     * the clock is paused, when the clock is resumed it performs the fling.
+     * Check that scrolling and controlling the clock works: a scrollable receives a swipe while the
+     * clock is paused, when the clock is resumed it performs the fling.
      */
-    @OptIn(ExperimentalFoundationApi::class)
     @Test
     fun testControlledScrolling() = runComposeUiTest {
         // Define constants used in the test
@@ -216,24 +203,14 @@ class RobolectricComposeTest {
         setContent {
             WithTouchSlop(touchSlop = touchSlop) {
                 // turn off visual overscroll for calculation correctness
-                CompositionLocalProvider(LocalOverscrollConfiguration provides null) {
+                CompositionLocalProvider(LocalOverscrollFactory provides null) {
                     Box(Modifier.fillMaxSize()) {
                         Column(
-                            Modifier
-                                .requiredSize(200.dp)
-                                .verticalScroll(
-                                    scrollState,
-                                    flingBehavior = flingBehavior
-                                )
+                            Modifier.requiredSize(200.dp)
+                                .verticalScroll(scrollState, flingBehavior = flingBehavior)
                                 .testTag("list")
                         ) {
-                            repeat(n) {
-                                Spacer(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .height(30.dp)
-                                )
-                            }
+                            repeat(n) { Spacer(Modifier.fillMaxWidth().height(30.dp)) }
                         }
                     }
                 }
@@ -245,9 +222,7 @@ class RobolectricComposeTest {
         mainClock.autoAdvance = false
         onNodeWithTag("list").performTouchInput {
             down(bottomCenter)
-            repeat(10) {
-                moveTo(bottomCenter - percentOffset(y = (it + 1) / 10f))
-            }
+            repeat(10) { moveTo(bottomCenter - percentOffset(y = (it + 1) / 10f)) }
             up()
         }
         waitForIdle()
@@ -270,16 +245,12 @@ class RobolectricComposeTest {
     fun testTextFieldInteraction() = runComposeUiTest {
         val text = "a"
         var updatedText = ""
-        setContent {
-            TextField(value = text, onValueChange = { updatedText = it })
-        }
+        setContent { TextField(value = text, onValueChange = { updatedText = it }) }
         onNodeWithText(text).assertIsDisplayed()
         // If selection isn't set on initial state, it will be 0.
         onNodeWithText(text).performTextInputSelection(TextRange(1))
         onNodeWithText(text).performTextInput("b")
-        runOnIdle {
-            assertThat(updatedText).isEqualTo("ab")
-        }
+        runOnIdle { assertThat(updatedText).isEqualTo("ab") }
     }
 
     /**
@@ -290,9 +261,7 @@ class RobolectricComposeTest {
 
         override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
             for (delta in deltas) {
-                withFrameNanos {
-                    scrollBy(delta.toFloat())
-                }
+                withFrameNanos { scrollBy(delta.toFloat()) }
             }
             return 0f
         }
@@ -379,34 +348,23 @@ class RobolectricComposeTest {
 
             setContent {
                 Box(
-                    modifier = Modifier
-                        .testTag("mainBox")
-                        .fillMaxSize()
-                        .pointerInput(Unit) {
-                            detectTapGestures(
-                                onPress = {
-                                    ++composableTouchCount
-                                },
-                                onTap = {
-                                    tapLatch.countDown()
-                                    ++composableTapCount
-                                },
-                                onDoubleTap = {
-                                    ++composableDoubleTapCount
-                                },
-                                onLongPress = {
-                                    ++composableLongTapCount
-                                }
-                            )
-                        }
-                        .onGloballyPositioned {
-                            setupLatch.countDown()
-                        }
-                ) {
-                    Box(
-                        modifier = Modifier
+                    modifier =
+                        Modifier.testTag("mainBox")
                             .fillMaxSize()
-                    )
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onPress = { ++composableTouchCount },
+                                    onTap = {
+                                        tapLatch.countDown()
+                                        ++composableTapCount
+                                    },
+                                    onDoubleTap = { ++composableDoubleTapCount },
+                                    onLongPress = { ++composableLongTapCount }
+                                )
+                            }
+                            .onGloballyPositioned { setupLatch.countDown() }
+                ) {
+                    Box(modifier = Modifier.fillMaxSize())
                 }
             }
             assertTrue(setupLatch.await(10, TimeUnit.SECONDS))
@@ -455,34 +413,23 @@ class RobolectricComposeTest {
 
         setContent {
             Box(
-                modifier = Modifier
-                    .testTag("mainBox")
-                    .fillMaxSize()
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onPress = {
-                                ++composableTouchCount
-                            },
-                            onTap = {
-                                ++composableTapCount
-                            },
-                            onDoubleTap = {
-                                doubleTapLatch.countDown()
-                                ++composableDoubleTapCount
-                            },
-                            onLongPress = {
-                                ++composableLongTapCount
-                            }
-                        )
-                    }
-                    .onGloballyPositioned {
-                        setupLatch.countDown()
-                    }
-            ) {
-                Box(
-                    modifier = Modifier
+                modifier =
+                    Modifier.testTag("mainBox")
                         .fillMaxSize()
-                )
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onPress = { ++composableTouchCount },
+                                onTap = { ++composableTapCount },
+                                onDoubleTap = {
+                                    doubleTapLatch.countDown()
+                                    ++composableDoubleTapCount
+                                },
+                                onLongPress = { ++composableLongTapCount }
+                            )
+                        }
+                        .onGloballyPositioned { setupLatch.countDown() }
+            ) {
+                Box(modifier = Modifier.fillMaxSize())
             }
         }
         assertTrue(setupLatch.await(10, TimeUnit.SECONDS))
@@ -538,35 +485,26 @@ class RobolectricComposeTest {
             topLevelContainerView = LocalView.current
 
             Box(
-                modifier = Modifier
-                    .testTag("mainBox")
-                    .fillMaxSize()
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onPress = {
-                                ++composableTouchCount
-                            },
-                            onTap = {
-                                tapLatch.countDown()
-                                ++composableTapCount
-                            },
-                            onDoubleTap = {
-                                ++composableDoubleTapCount
-                            },
-                            onLongPress = {
-                                ++composableLongTapCount
-                            }
-                        )
-                    }
-                    .onGloballyPositioned {
-                        setupLatch.countDown()
-                        bottomBoxInnerCoordinates = it
-                    }
-            ) {
-                Box(
-                    modifier = Modifier
+                modifier =
+                    Modifier.testTag("mainBox")
                         .fillMaxSize()
-                )
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onPress = { ++composableTouchCount },
+                                onTap = {
+                                    tapLatch.countDown()
+                                    ++composableTapCount
+                                },
+                                onDoubleTap = { ++composableDoubleTapCount },
+                                onLongPress = { ++composableLongTapCount }
+                            )
+                        }
+                        .onGloballyPositioned {
+                            setupLatch.countDown()
+                            bottomBoxInnerCoordinates = it
+                        }
+            ) {
+                Box(modifier = Modifier.fillMaxSize())
             }
         }
         assertTrue(setupLatch.await(10, TimeUnit.SECONDS))
@@ -585,19 +523,21 @@ class RobolectricComposeTest {
         coords.x = topBoxOffset.x
         coords.y = topBoxOffset.y
 
-        val motionEventDown = MotionEventBuilder.newBuilder()
-            .setEventTime(0)
-            .setAction(MotionEvent.ACTION_DOWN)
-            .setActionIndex(0)
-            .setPointer(topBoxPointerProperties, coords)
-            .build()
+        val motionEventDown =
+            MotionEventBuilder.newBuilder()
+                .setEventTime(0)
+                .setAction(MotionEvent.ACTION_DOWN)
+                .setActionIndex(0)
+                .setPointer(topBoxPointerProperties, coords)
+                .build()
 
-        val motionEventUp = MotionEventBuilder.newBuilder()
-            .setEventTime(100)
-            .setAction(MotionEvent.ACTION_UP)
-            .setActionIndex(0)
-            .setPointer(topBoxPointerProperties, coords)
-            .build()
+        val motionEventUp =
+            MotionEventBuilder.newBuilder()
+                .setEventTime(100)
+                .setAction(MotionEvent.ACTION_UP)
+                .setActionIndex(0)
+                .setPointer(topBoxPointerProperties, coords)
+                .build()
 
         topLevelContainerView?.dispatchTouchEvent(motionEventDown)
         topLevelContainerView?.dispatchTouchEvent(motionEventUp)
@@ -632,35 +572,26 @@ class RobolectricComposeTest {
             topLevelContainerView = LocalView.current
 
             Box(
-                modifier = Modifier
-                    .testTag("mainBox")
-                    .fillMaxSize()
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onPress = {
-                                ++composableTouchCount
-                            },
-                            onTap = {
-                                ++composableTapCount
-                            },
-                            onDoubleTap = {
-                                doubleTapLatch.countDown()
-                                ++composableDoubleTapCount
-                            },
-                            onLongPress = {
-                                ++composableLongTapCount
-                            }
-                        )
-                    }
-                    .onGloballyPositioned {
-                        setupLatch.countDown()
-                        bottomBoxInnerCoordinates = it
-                    }
-            ) {
-                Box(
-                    modifier = Modifier
+                modifier =
+                    Modifier.testTag("mainBox")
                         .fillMaxSize()
-                )
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onPress = { ++composableTouchCount },
+                                onTap = { ++composableTapCount },
+                                onDoubleTap = {
+                                    doubleTapLatch.countDown()
+                                    ++composableDoubleTapCount
+                                },
+                                onLongPress = { ++composableLongTapCount }
+                            )
+                        }
+                        .onGloballyPositioned {
+                            setupLatch.countDown()
+                            bottomBoxInnerCoordinates = it
+                        }
+            ) {
+                Box(modifier = Modifier.fillMaxSize())
             }
         }
         assertTrue(setupLatch.await(10, TimeUnit.SECONDS))
@@ -677,19 +608,21 @@ class RobolectricComposeTest {
         coords.x = topBoxOffset.x
         coords.y = topBoxOffset.y
 
-        val motionEventDown1 = MotionEventBuilder.newBuilder()
-            .setEventTime(0)
-            .setAction(MotionEvent.ACTION_DOWN)
-            .setActionIndex(0)
-            .setPointer(topBoxPointerProperties, coords)
-            .build()
+        val motionEventDown1 =
+            MotionEventBuilder.newBuilder()
+                .setEventTime(0)
+                .setAction(MotionEvent.ACTION_DOWN)
+                .setActionIndex(0)
+                .setPointer(topBoxPointerProperties, coords)
+                .build()
 
-        val motionEventUp1 = MotionEventBuilder.newBuilder()
-            .setEventTime(50)
-            .setAction(MotionEvent.ACTION_UP)
-            .setActionIndex(0)
-            .setPointer(topBoxPointerProperties, coords)
-            .build()
+        val motionEventUp1 =
+            MotionEventBuilder.newBuilder()
+                .setEventTime(50)
+                .setAction(MotionEvent.ACTION_UP)
+                .setActionIndex(0)
+                .setPointer(topBoxPointerProperties, coords)
+                .build()
 
         topLevelContainerView?.dispatchTouchEvent(motionEventDown1)
         topLevelContainerView?.dispatchTouchEvent(motionEventUp1)
@@ -698,19 +631,21 @@ class RobolectricComposeTest {
         // using detectTapGestures {} as parts of it rely on changes in the clock (double tap, etc.)
         mainClock.advanceTimeBy(100)
 
-        val motionEventDown2 = MotionEventBuilder.newBuilder()
-            .setEventTime(100)
-            .setAction(MotionEvent.ACTION_DOWN)
-            .setActionIndex(0)
-            .setPointer(topBoxPointerProperties, coords)
-            .build()
+        val motionEventDown2 =
+            MotionEventBuilder.newBuilder()
+                .setEventTime(100)
+                .setAction(MotionEvent.ACTION_DOWN)
+                .setActionIndex(0)
+                .setPointer(topBoxPointerProperties, coords)
+                .build()
 
-        val motionEventUp2 = MotionEventBuilder.newBuilder()
-            .setEventTime(150)
-            .setAction(MotionEvent.ACTION_UP)
-            .setActionIndex(0)
-            .setPointer(topBoxPointerProperties, coords)
-            .build()
+        val motionEventUp2 =
+            MotionEventBuilder.newBuilder()
+                .setEventTime(150)
+                .setAction(MotionEvent.ACTION_UP)
+                .setActionIndex(0)
+                .setPointer(topBoxPointerProperties, coords)
+                .build()
 
         topLevelContainerView?.dispatchTouchEvent(motionEventDown2)
         topLevelContainerView?.dispatchTouchEvent(motionEventUp2)
@@ -724,5 +659,27 @@ class RobolectricComposeTest {
         assertThat(composableTapCount).isEqualTo(0)
         assertThat(composableDoubleTapCount).isEqualTo(1)
         assertThat(composableLongTapCount).isEqualTo(0)
+    }
+
+    @Test
+    fun testInputInjectionIntoClippedItemChangingItsSize() = runComposeUiTest {
+        var size by mutableStateOf(0.dp)
+        var clicks = 0
+        setContent {
+            Column {
+                Box(
+                    Modifier.clipToBounds()
+                        .size(size)
+                        .testTag("tag")
+                        .clickable(onClick = { clicks++ })
+                )
+            }
+        }
+
+        runOnIdle { size = 200.dp }
+
+        onNodeWithTag("tag").performClick()
+
+        runOnIdle { assertThat(clicks).isEqualTo(1) }
     }
 }

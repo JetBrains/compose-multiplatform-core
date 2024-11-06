@@ -1,0 +1,17 @@
+// Baseline format: 1.0
+RemovedMethod: androidx.compose.ui.geometry.CornerRadius#getX():
+    Removed method androidx.compose.ui.geometry.CornerRadius.getX()
+RemovedMethod: androidx.compose.ui.geometry.CornerRadius#getY():
+    Removed method androidx.compose.ui.geometry.CornerRadius.getY()
+RemovedMethod: androidx.compose.ui.geometry.Offset#getX():
+    Removed method androidx.compose.ui.geometry.Offset.getX()
+RemovedMethod: androidx.compose.ui.geometry.Offset#getY():
+    Removed method androidx.compose.ui.geometry.Offset.getY()
+RemovedMethod: androidx.compose.ui.geometry.Size#getHeight():
+    Removed method androidx.compose.ui.geometry.Size.getHeight()
+RemovedMethod: androidx.compose.ui.geometry.Size#getMaxDimension():
+    Removed method androidx.compose.ui.geometry.Size.getMaxDimension()
+RemovedMethod: androidx.compose.ui.geometry.Size#getMinDimension():
+    Removed method androidx.compose.ui.geometry.Size.getMinDimension()
+RemovedMethod: androidx.compose.ui.geometry.Size#getWidth():
+    Removed method androidx.compose.ui.geometry.Size.getWidth()

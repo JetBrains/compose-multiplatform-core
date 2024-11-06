@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe.integration.compat.workaround
 
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.integration.compat.quirk.CameraQuirks
 import androidx.camera.camera2.pipe.integration.compat.quirk.UseTorchAsFlashQuirk
 import dagger.Module
@@ -29,27 +26,26 @@ import dagger.Provides
  *
  * @see UseTorchAsFlashQuirk
  */
-interface UseTorchAsFlash {
-    fun shouldUseTorchAsFlash(): Boolean
+public interface UseTorchAsFlash {
+    public fun shouldUseTorchAsFlash(): Boolean
 
     @Module
-    abstract class Bindings {
-        companion object {
+    public abstract class Bindings {
+        public companion object {
             @Provides
-            fun provideUseTorchAsFlash(cameraQuirks: CameraQuirks): UseTorchAsFlash =
+            public fun provideUseTorchAsFlash(cameraQuirks: CameraQuirks): UseTorchAsFlash =
                 if (cameraQuirks.quirks.contains(UseTorchAsFlashQuirk::class.java))
                     UseTorchAsFlashImpl
-                else
-                    NotUseTorchAsFlash
+                else NotUseTorchAsFlash
         }
     }
 }
 
-object UseTorchAsFlashImpl : UseTorchAsFlash {
+public object UseTorchAsFlashImpl : UseTorchAsFlash {
     /** Returns true for torch should be used as flash. */
-    override fun shouldUseTorchAsFlash() = true
+    override fun shouldUseTorchAsFlash(): Boolean = true
 }
 
-object NotUseTorchAsFlash : UseTorchAsFlash {
-    override fun shouldUseTorchAsFlash() = false
+public object NotUseTorchAsFlash : UseTorchAsFlash {
+    override fun shouldUseTorchAsFlash(): Boolean = false
 }

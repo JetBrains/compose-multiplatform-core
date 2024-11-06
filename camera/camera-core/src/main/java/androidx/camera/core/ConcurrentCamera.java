@@ -19,7 +19,6 @@ package androidx.camera.core;
 import android.content.pm.PackageManager;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.lifecycle.LifecycleOwner;
 
 import java.util.List;
@@ -41,7 +40,6 @@ import java.util.List;
  * <a href="https://developer.android.com/reference/android/hardware/camera2/CameraManager#getConcurrentCameraIds()">concurrent camera streaming</a>
  *
  */
-@RequiresApi(21)
 public class ConcurrentCamera {
 
     @NonNull
@@ -79,6 +77,8 @@ public class ConcurrentCamera {
         private LifecycleOwner mLifecycleOwner;
         @NonNull
         private UseCaseGroup mUseCaseGroup;
+        @NonNull
+        private CompositionSettings mCompositionSettings;
 
         /**
          * Constructor of a {@link SingleCameraConfig} for concurrent cameras.
@@ -91,8 +91,25 @@ public class ConcurrentCamera {
                 @NonNull CameraSelector cameraSelector,
                 @NonNull UseCaseGroup useCaseGroup,
                 @NonNull LifecycleOwner lifecycleOwner) {
+            this(cameraSelector, useCaseGroup, CompositionSettings.DEFAULT, lifecycleOwner);
+        }
+
+        /**
+         * Constructor of a {@link SingleCameraConfig} for concurrent cameras.
+         *
+         * @param cameraSelector {@link CameraSelector}.
+         * @param useCaseGroup {@link UseCaseGroup}.
+         * @param compositionSettings {@link CompositionSettings}.
+         * @param lifecycleOwner {@link LifecycleOwner}.
+         */
+        public SingleCameraConfig(
+                @NonNull CameraSelector cameraSelector,
+                @NonNull UseCaseGroup useCaseGroup,
+                @NonNull CompositionSettings compositionSettings,
+                @NonNull LifecycleOwner lifecycleOwner) {
             this.mCameraSelector = cameraSelector;
             this.mUseCaseGroup = useCaseGroup;
+            this.mCompositionSettings = compositionSettings;
             this.mLifecycleOwner = lifecycleOwner;
         }
 
@@ -121,6 +138,15 @@ public class ConcurrentCamera {
         @NonNull
         public UseCaseGroup getUseCaseGroup() {
             return mUseCaseGroup;
+        }
+
+        /**
+         * Returns {@link CompositionSettings}.
+         * @return {@link CompositionSettings} instance.
+         */
+        @NonNull
+        public CompositionSettings getCompositionSettings() {
+            return mCompositionSettings;
         }
     }
 }

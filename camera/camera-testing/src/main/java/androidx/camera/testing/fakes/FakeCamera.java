@@ -22,7 +22,6 @@ import android.view.Surface;
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.CameraState;
 import androidx.camera.core.Logger;
@@ -61,7 +60,6 @@ import java.util.concurrent.TimeoutException;
 /**
  * A fake camera which will not produce any data, but provides a valid Camera implementation.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class FakeCamera implements CameraInternal {
     private static final String TAG = "FakeCamera";
     private static final String DEFAULT_CAMERA_ID = "0";
@@ -80,6 +78,7 @@ public class FakeCamera implements CameraInternal {
     private final List<UseCase> mUseCaseUpdateHistory = new ArrayList<>();
     private final List<UseCase> mUseCaseResetHistory = new ArrayList<>();
     private boolean mHasTransform = true;
+    private boolean mIsPrimary = true;
 
     @Nullable
     private SessionConfig mSessionConfig;
@@ -382,6 +381,17 @@ public class FakeCamera implements CameraInternal {
      */
     public void setHasTransform(boolean hasCameraTransform) {
         mHasTransform = hasCameraTransform;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Override
+    public void setPrimary(boolean isPrimary) {
+        mIsPrimary = isPrimary;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public boolean isPrimary() {
+        return mIsPrimary;
     }
 
     private void checkNotReleased() {

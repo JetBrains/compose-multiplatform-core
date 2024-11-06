@@ -24,7 +24,6 @@ import android.util.SizeF
 import android.view.Gravity
 import android.view.View
 import android.widget.RemoteViews
-import androidx.annotation.DoNotInline
 import androidx.annotation.LayoutRes
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
@@ -71,7 +70,7 @@ internal fun translateComposition(
     rootViewIndex: Int,
     layoutSize: DpSize,
     actionBroadcastReceiver: ComponentName? = null,
-
+    glanceComponents: GlanceComponents = GlanceComponents.getDefault(context),
 ) =
     translateComposition(
         TranslationContext(
@@ -82,21 +81,19 @@ internal fun translateComposition(
             itemPosition = -1,
             layoutSize = layoutSize,
             actionBroadcastReceiver = actionBroadcastReceiver,
+            glanceComponents = glanceComponents,
         ),
         element.children,
         rootViewIndex,
     )
 
-@VisibleForTesting
-internal var forceRtl: Boolean? = null
+@VisibleForTesting internal var forceRtl: Boolean? = null
 
 private val Context.isRtl: Boolean
-    get() = forceRtl
-        ?: (resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL)
+    get() = forceRtl ?: (resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_RTL)
 
 @RequiresApi(Build.VERSION_CODES.S)
 private object Api31Impl {
-    @DoNotInline
     fun createRemoteViews(sizeMap: Map<SizeF, RemoteViews>): RemoteViews = RemoteViews(sizeMap)
 }
 
@@ -111,20 +108,24 @@ internal fun translateComposition(
         // multi-sized RemoteViews (a RemoteViews that contains either landscape & portrait RVs or
         // multiple RVs mapped by size).
         val sizeMode = (children.first() as EmittableSizeBox).sizeMode
-        val views = children.map { child ->
-            val size = (child as EmittableSizeBox).size
-            val remoteViewsInfo = createRootView(translationContext, child.modifier, rootViewIndex)
-            val rv = remoteViewsInfo.remoteViews.apply {
-                translateChild(
-                    translationContext.forRootAndSize(root = remoteViewsInfo, size),
-                    child
-                )
+        val views =
+            children.map { child ->
+                val size = (child as EmittableSizeBox).size
+                val remoteViewsInfo =
+                    createRootView(translationContext, child.modifier, rootViewIndex)
+                val rv =
+                    remoteViewsInfo.remoteViews.apply {
+                        translateChild(
+                            translationContext.forRootAndSize(root = remoteViewsInfo, size),
+                            child
+                        )
+                    }
+                size.toSizeF() to rv
             }
-            size.toSizeF() to rv
-        }
         return when (sizeMode) {
             is SizeMode.Single -> views.single().second
-            is SizeMode.Responsive, SizeMode.Exact -> {
+            is SizeMode.Responsive,
+            SizeMode.Exact -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     Api31Impl.createRemoteViews(views.toMap())
                 } else {
@@ -150,7 +151,7 @@ private fun combineLandscapeAndPortrait(views: List<RemoteViews>): RemoteViews =
         else -> throw IllegalArgumentException("There must be between 1 and 2 views.")
     }
 
-private const val LAST_INVALID_VIEW_ID = 1
+private const val LAST_INVALID_VIEW_ID = -1
 
 internal data class TranslationContext(
     val context: Context,
@@ -167,9 +168,14 @@ internal data class TranslationContext(
     val layoutCollectionItemId: Int = -1,
     val canUseSelectableGroup: Boolean = false,
     val actionTargetId: Int? = null,
-    val actionBroadcastReceiver: ComponentName? = null
+    val actionBroadcastReceiver: ComponentName? = null,
+    val glanceComponents: GlanceComponents,
 ) {
-    fun nextViewId() = lastViewId.incrementAndGet()
+    fun nextViewId() =
+        lastViewId.incrementAndGet().let {
+            check(it < TotalViewCount) { "There are too many views" }
+            FirstViewId + it
+        }
 
     fun forChild(parent: InsertedViewInfo, pos: Int): TranslationContext =
         copy(itemPosition = pos, parentContext = parent)
@@ -239,7 +245,7 @@ internal fun RemoteViews.translateChild(
             translateEmittableLazyVerticalGrid(translationContext, element)
         }
         is EmittableLazyVerticalGridListItem -> {
-          translateEmittableLazyVerticalGridListItem(translationContext, element)
+            translateEmittableLazyVerticalGridListItem(translationContext, element)
         }
         is EmittableRadioButton -> translateEmittableRadioButton(translationContext, element)
         is EmittableSizeBox -> translateEmittableSizeBox(translationContext, element)
@@ -293,64 +299,47 @@ private fun RemoteViews.translateEmittableBox(
     translationContext: TranslationContext,
     element: EmittableBox
 ) {
-    val viewDef = insertContainerView(
-        translationContext,
-        LayoutType.Box,
-        element.children.size,
-        element.modifier,
-        element.contentAlignment.horizontal,
-        element.contentAlignment.vertical,
-    )
-    applyModifiers(
-        translationContext,
-        this,
-        element.modifier,
-        viewDef
-    )
+    val viewDef =
+        insertContainerView(
+            translationContext,
+            LayoutType.Box,
+            element.children.size,
+            element.modifier,
+            element.contentAlignment.horizontal,
+            element.contentAlignment.vertical,
+        )
+    applyModifiers(translationContext, this, element.modifier, viewDef)
     element.children.forEach {
         it.modifier = it.modifier.then(AlignmentModifier(element.contentAlignment))
     }
-    setChildren(
-        translationContext,
-        viewDef,
-        element.children
-    )
+    setChildren(translationContext, viewDef, element.children)
 }
 
 private fun RemoteViews.translateEmittableRow(
     translationContext: TranslationContext,
     element: EmittableRow
 ) {
-    val layoutType = if (
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && element.modifier.isSelectableGroup
-    ) {
-        LayoutType.RadioRow
-    } else {
-        LayoutType.Row
-    }
-    val viewDef = insertContainerView(
-        translationContext,
-        layoutType,
-        element.children.size,
-        element.modifier,
-        horizontalAlignment = null,
-        verticalAlignment = element.verticalAlignment,
-    )
+    val layoutType =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && element.modifier.isSelectableGroup) {
+            LayoutType.RadioRow
+        } else {
+            LayoutType.Row
+        }
+    val viewDef =
+        insertContainerView(
+            translationContext,
+            layoutType,
+            element.children.size,
+            element.modifier,
+            horizontalAlignment = null,
+            verticalAlignment = element.verticalAlignment,
+        )
     setLinearLayoutGravity(
         viewDef.mainViewId,
         Alignment(element.horizontalAlignment, element.verticalAlignment).toGravity()
     )
-    applyModifiers(
-        translationContext.canUseSelectableGroup(),
-        this,
-        element.modifier,
-        viewDef
-    )
-    setChildren(
-        translationContext,
-        viewDef,
-        element.children
-    )
+    applyModifiers(translationContext.canUseSelectableGroup(), this, element.modifier, viewDef)
+    setChildren(translationContext, viewDef, element.children)
     if (element.modifier.isSelectableGroup) checkSelectableGroupChildren(element.children)
 }
 
@@ -358,43 +347,34 @@ private fun RemoteViews.translateEmittableColumn(
     translationContext: TranslationContext,
     element: EmittableColumn
 ) {
-    val layoutType = if (
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && element.modifier.isSelectableGroup
-    ) {
-        LayoutType.RadioColumn
-    } else {
-        LayoutType.Column
-    }
-    val viewDef = insertContainerView(
-        translationContext,
-        layoutType,
-        element.children.size,
-        element.modifier,
-        horizontalAlignment = element.horizontalAlignment,
-        verticalAlignment = null,
-    )
+    val layoutType =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && element.modifier.isSelectableGroup) {
+            LayoutType.RadioColumn
+        } else {
+            LayoutType.Column
+        }
+    val viewDef =
+        insertContainerView(
+            translationContext,
+            layoutType,
+            element.children.size,
+            element.modifier,
+            horizontalAlignment = element.horizontalAlignment,
+            verticalAlignment = null,
+        )
     setLinearLayoutGravity(
         viewDef.mainViewId,
         Alignment(element.horizontalAlignment, element.verticalAlignment).toGravity()
     )
-    applyModifiers(
-        translationContext.canUseSelectableGroup(),
-        this,
-        element.modifier,
-        viewDef
-    )
-    setChildren(
-        translationContext,
-        viewDef,
-        element.children
-    )
+    applyModifiers(translationContext.canUseSelectableGroup(), this, element.modifier, viewDef)
+    setChildren(translationContext, viewDef, element.children)
     if (element.modifier.isSelectableGroup) checkSelectableGroupChildren(element.children)
 }
 
 private fun checkSelectableGroupChildren(children: List<Emittable>) {
     check(children.count { it is EmittableRadioButton && it.checked } <= 1) {
         "When using GlanceModifier.selectableGroup(), no more than one RadioButton " +
-        "may be checked at a time."
+            "may be checked at a time."
     }
 }
 
@@ -402,22 +382,23 @@ private fun RemoteViews.translateEmittableAndroidRemoteViews(
     translationContext: TranslationContext,
     element: EmittableAndroidRemoteViews
 ) {
-    val rv = if (element.children.isEmpty()) {
-        element.remoteViews
-    } else {
-        check(element.containerViewId != View.NO_ID) {
-            "To add children to an `AndroidRemoteViews`, its `containerViewId` must be set."
-        }
-        element.remoteViews.copy().apply {
-            removeAllViews(element.containerViewId)
-            element.children.forEachIndexed { index, child ->
-                val rvInfo = createRootView(translationContext, child.modifier, index)
-                val rv = rvInfo.remoteViews
-                rv.translateChild(translationContext.forRoot(rvInfo), child)
-                addChildView(element.containerViewId, rv, index)
+    val rv =
+        if (element.children.isEmpty()) {
+            element.remoteViews
+        } else {
+            check(element.containerViewId != View.NO_ID) {
+                "To add children to an `AndroidRemoteViews`, its `containerViewId` must be set."
+            }
+            element.remoteViews.copy().apply {
+                removeAllViews(element.containerViewId)
+                element.children.forEachIndexed { index, child ->
+                    val rvInfo = createRootView(translationContext, child.modifier, index)
+                    val rv = rvInfo.remoteViews
+                    rv.translateChild(translationContext.forRoot(rvInfo), child)
+                    addChildView(element.containerViewId, rv, index)
+                }
             }
         }
-    }
     val viewDef = insertView(translationContext, LayoutType.Frame, element.modifier)
     applyModifiers(translationContext, this, element.modifier, viewDef)
     removeAllViews(viewDef.mainViewId)
@@ -442,14 +423,13 @@ private fun RemoteViews.translateEmittableButton(
     )
 
     // Adjust appWidget specific modifiers.
-    element.modifier = element.modifier
-        .enabled(element.enabled)
-        .cornerRadius(16.dp)
+    element.modifier = element.modifier.enabled(element.enabled).cornerRadius(16.dp)
     if (element.modifier.findModifier<PaddingModifier>() == null) {
         element.modifier = element.modifier.padding(horizontal = 16.dp, vertical = 8.dp)
     }
     applyModifiers(translationContext, this, element.modifier, viewDef)
 }
+
 private fun RemoteViews.translateEmittableSpacer(
     translationContext: TranslationContext,
     element: EmittableSpacer
@@ -474,9 +454,7 @@ internal fun RemoteViews.setChildren(
     }
 }
 
-/**
- * Add stable view if on Android S+, otherwise simply add the view.
- */
+/** Add stable view if on Android S+, otherwise simply add the view. */
 internal fun RemoteViews.addChildView(viewId: Int, childView: RemoteViews, stableId: Int) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         RemoteViewsTranslatorApi31Impl.addChildView(this, viewId, childView, stableId)
@@ -485,9 +463,7 @@ internal fun RemoteViews.addChildView(viewId: Int, childView: RemoteViews, stabl
     addView(viewId, childView)
 }
 
-/**
- * Copy a RemoteViews (the exact method depends on the version of Android)
- */
+/** Copy a RemoteViews (the exact method depends on the version of Android) */
 @Suppress("DEPRECATION") // RemoteViews.clone must be used before Android P.
 private fun RemoteViews.copy(): RemoteViews =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -498,13 +474,11 @@ private fun RemoteViews.copy(): RemoteViews =
 
 @RequiresApi(Build.VERSION_CODES.P)
 private object RemoteViewsTranslatorApi28Impl {
-    @DoNotInline
     fun copyRemoteViews(rv: RemoteViews) = RemoteViews(rv)
 }
 
 @RequiresApi(Build.VERSION_CODES.S)
 private object RemoteViewsTranslatorApi31Impl {
-    @DoNotInline
     fun addChildView(rv: RemoteViews, viewId: Int, childView: RemoteViews, stableId: Int) {
         rv.addStableView(viewId, childView, stableId)
     }

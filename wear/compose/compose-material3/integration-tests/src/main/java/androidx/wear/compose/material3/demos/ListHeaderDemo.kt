@@ -16,27 +16,16 @@
 
 package androidx.wear.compose.material3.demos
 
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.wear.compose.integration.demos.common.ScalingLazyColumnWithRSB
 import androidx.wear.compose.material3.samples.ListHeaderSample
-import androidx.wear.compose.material3.samples.ListSubheaderSample
-import androidx.wear.compose.material3.samples.ListSubheaderWithIconSample
+import androidx.wear.compose.material3.samples.ListSubHeaderSample
+import androidx.wear.compose.material3.samples.ListSubHeaderWithIconSample
 
 @Composable
 fun ListHeaderDemo() {
-    ScalingLazyColumnWithRSB(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        item {
-            ListHeaderSample()
-        }
-        item {
-            ListSubheaderSample()
-        }
-        item {
-            ListSubheaderWithIconSample()
-        }
+    ScalingLazyDemo {
+        item { ListHeaderSample() }
+        item { ListSubHeaderSample() }
+        item { ListSubHeaderWithIconSample() }
     }
 }

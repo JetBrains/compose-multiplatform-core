@@ -23,7 +23,6 @@ import android.view.Surface;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.camera2.internal.compat.StreamConfigurationMapCompat;
 import androidx.camera.camera2.internal.compat.workaround.SupportedRepeatingSurfaceSize;
@@ -53,7 +52,6 @@ import java.util.UUID;
  * created in Camera2 layer to make Camera2 have the repeating surface to metering the auto 3A or
  * wait for 3A converged.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 class MeteringRepeatingSession {
     private static final String TAG = "MeteringRepeating";
 
@@ -81,6 +79,8 @@ class MeteringRepeatingSession {
 
     @Nullable
     private final SurfaceResetCallback mSurfaceResetCallback;
+    @Nullable
+    private SessionConfig.CloseableErrorListener mCloseableErrorListener = null;
 
     /** Creates a new instance of a {@link MeteringRepeatingSession}. */
     MeteringRepeatingSession(@NonNull CameraCharacteristicsCompat cameraCharacteristicsCompat,
@@ -127,12 +127,20 @@ class MeteringRepeatingSession {
 
         builder.addSurface(mDeferrableSurface);
 
-        builder.addErrorListener((sessionConfig, error) -> {
-            mSessionConfig = createSessionConfig();
-            if (mSurfaceResetCallback != null) {
-                mSurfaceResetCallback.onSurfaceReset();
-            }
-        });
+        // Closes old error listener
+        if (mCloseableErrorListener != null) {
+            mCloseableErrorListener.close();
+        }
+
+        mCloseableErrorListener = new SessionConfig.CloseableErrorListener(
+                (sessionConfig, error) -> {
+                    mSessionConfig = createSessionConfig();
+                    if (mSurfaceResetCallback != null) {
+                        mSurfaceResetCallback.onSurfaceReset();
+                    }
+                });
+
+        builder.setErrorListener(mCloseableErrorListener);
 
         return builder.build();
     }

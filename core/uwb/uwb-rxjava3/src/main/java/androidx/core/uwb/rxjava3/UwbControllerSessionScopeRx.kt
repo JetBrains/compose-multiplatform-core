@@ -25,16 +25,18 @@ import kotlinx.coroutines.rx3.rxSingle
 
 /**
  * Returns a [Single] that will run in a given block to add a controlee.
+ *
  * @see UwbControllerSessionScope.addControlee
  */
-fun UwbControllerSessionScope.addControleeSingle(address: UwbAddress): Single<Unit> {
+public fun UwbControllerSessionScope.addControleeSingle(address: UwbAddress): Single<Unit> {
     return rxSingle { addControlee(address) }
 }
 
 /**
  * Returns a [Single] that will run in a given block to remove a controlee.
+ *
  * @see UwbControllerSessionScope.removeControlee
  */
-fun UwbControllerSessionScope.removeControleeSingle(address: UwbAddress): Single<Unit> {
+public fun UwbControllerSessionScope.removeControleeSingle(address: UwbAddress): Single<Unit> {
     return rxSingle { removeControlee(address) }
 }

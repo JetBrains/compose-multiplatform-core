@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.pipe.testing
 
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.RequestNumber
 import androidx.camera.camera2.pipe.graph.Result3AStateListener
@@ -25,10 +24,10 @@ import androidx.camera.camera2.pipe.graph.Result3AStateListener
  * Wrapper on Result3AStateListenerImpl to keep track of the number of times the update method is
  * called.
  */
-@RequiresApi(21)
 internal class UpdateCounting3AStateListener(private val listener: Result3AStateListener) :
     Result3AStateListener {
     var updateCount = 0
+
     override fun onRequestSequenceCreated(requestNumber: RequestNumber) {
         listener.onRequestSequenceCreated(requestNumber)
     }
@@ -38,5 +37,9 @@ internal class UpdateCounting3AStateListener(private val listener: Result3AState
         return listener.update(requestNumber, frameMetadata)
     }
 
-    override fun onRequestSequenceStopped() {}
+    override fun onStopRepeating() {}
+
+    override fun onGraphStopped() {}
+
+    override fun onGraphShutdown() {}
 }

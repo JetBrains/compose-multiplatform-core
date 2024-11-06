@@ -16,10 +16,11 @@
 
 package androidx.camera.core;
 
+import static android.graphics.ImageFormat.JPEG;
 import static android.graphics.ImageFormat.JPEG_R;
+import static android.graphics.ImageFormat.RAW_SENSOR;
 
 import static androidx.camera.core.CameraEffect.IMAGE_CAPTURE;
-import static androidx.camera.core.DynamicRange.HDR_UNSPECIFIED_10_BIT;
 import static androidx.camera.core.impl.ImageCaptureConfig.OPTION_BUFFER_FORMAT;
 import static androidx.camera.core.impl.ImageCaptureConfig.OPTION_CAPTURE_CONFIG_UNPACKER;
 import static androidx.camera.core.impl.ImageCaptureConfig.OPTION_DEFAULT_CAPTURE_CONFIG;
@@ -43,10 +44,10 @@ import static androidx.camera.core.impl.ImageCaptureConfig.OPTION_TARGET_CLASS;
 import static androidx.camera.core.impl.ImageCaptureConfig.OPTION_TARGET_NAME;
 import static androidx.camera.core.impl.ImageCaptureConfig.OPTION_TARGET_RESOLUTION;
 import static androidx.camera.core.impl.ImageCaptureConfig.OPTION_TARGET_ROTATION;
-import static androidx.camera.core.impl.ImageCaptureConfig.OPTION_USE_CASE_EVENT_CALLBACK;
 import static androidx.camera.core.impl.ImageCaptureConfig.OPTION_USE_SOFTWARE_JPEG_ENCODER;
 import static androidx.camera.core.impl.ImageInputConfig.OPTION_INPUT_DYNAMIC_RANGE;
 import static androidx.camera.core.impl.ImageInputConfig.OPTION_INPUT_FORMAT;
+import static androidx.camera.core.impl.ImageInputConfig.OPTION_SECONDARY_INPUT_FORMAT;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_CUSTOM_ORDERED_RESOLUTIONS;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_RESOLUTION_SELECTOR;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_CAPTURE_TYPE;
@@ -66,6 +67,7 @@ import android.content.ContentValues;
 import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
+import android.hardware.camera2.CameraCharacteristics;
 import android.location.Location;
 import android.media.Image;
 import android.media.ImageReader;
@@ -87,7 +89,6 @@ import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.UiThread;
@@ -136,8 +137,10 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import java.io.File;
 import java.io.OutputStream;
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -166,7 +169,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * via an {@link ImageCapture.OnImageCapturedCallback}.
  */
 @SuppressWarnings("unused")
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class ImageCapture extends UseCase {
 
     ////////////////////////////////////////////////////////////////////////////////////////////
@@ -292,18 +294,35 @@ public final class ImageCapture extends UseCase {
     public static final int FLASH_TYPE_USE_TORCH_AS_FLASH = 1;
 
     /**
-     * Captures SDR image using the {@link ImageFormat#JPEG} image format.
+     * Captures 8-bit standard dynamic range (SDR) images using the {@link ImageFormat#JPEG}
+     * image format.
      */
-    @RestrictTo(Scope.LIBRARY_GROUP)
+    @ExperimentalImageCaptureOutputFormat
     public static final int OUTPUT_FORMAT_JPEG = 0;
 
     /**
      * Captures Ultra HDR compressed images using the {@link ImageFormat#JPEG_R} image format.
-     * This format is backward compatible with SDR JPEG images and supports HDR rendering of
-     * content.
+     *
+     * <p>This format is backward compatible with SDR JPEG images and supports HDR rendering of
+     * content. This means that on older apps or devices, images appear seamlessly as regular JPEG;
+     * on apps and devices that have been updated to fully support the format, images appear as HDR.
+     *
+     * <p>For more information see
+     * <a href="https://developer.android.com/media/grow/ultra-hdr">Support Ultra HDR</a>.
      */
-    @RestrictTo(Scope.LIBRARY_GROUP)
+    @ExperimentalImageCaptureOutputFormat
     public static final int OUTPUT_FORMAT_JPEG_ULTRA_HDR = 1;
+
+    /**
+     * Captures raw images in the {@link ImageFormat#RAW_SENSOR} image format.
+     */
+    public static final int OUTPUT_FORMAT_RAW = 2;
+
+    /**
+     * Captures raw images in the {@link ImageFormat#RAW_SENSOR} and {@link ImageFormat#JPEG}
+     * image formats.
+     */
+    public static final int OUTPUT_FORMAT_RAW_JPEG = 3;
 
     /**
      * Provides a static configuration with implementation-agnostic options.
@@ -366,6 +385,8 @@ public final class ImageCapture extends UseCase {
     private ImagePipeline mImagePipeline;
     @Nullable
     private TakePictureManager mTakePictureManager;
+    @Nullable
+    private SessionConfig.CloseableErrorListener mCloseableErrorListener;
 
     /**
      * Creates a new image capture use case from the given configuration.
@@ -457,15 +478,20 @@ public final class ImageCapture extends UseCase {
                 null);
         if (bufferFormat != null) {
             Preconditions.checkArgument(!(isSessionProcessorEnabledInCurrentCamera()
-                            && bufferFormat != ImageFormat.JPEG),
+                            && bufferFormat != JPEG),
                     "Cannot set non-JPEG buffer format with Extensions enabled.");
             builder.getMutableConfig().insertOption(OPTION_INPUT_FORMAT,
                     useSoftwareJpeg ? ImageFormat.YUV_420_888 : bufferFormat);
         } else {
-            if (isOutputFormatUltraHdr(builder.getMutableConfig())) {
+            if (isOutputFormatRaw(builder.getMutableConfig())) {
+                builder.getMutableConfig().insertOption(OPTION_INPUT_FORMAT, RAW_SENSOR);
+            } else if (isOutputFormatRawJpeg(builder.getMutableConfig())) {
+                builder.getMutableConfig().insertOption(OPTION_INPUT_FORMAT, RAW_SENSOR);
+                builder.getMutableConfig().insertOption(OPTION_SECONDARY_INPUT_FORMAT, JPEG);
+            } else if (isOutputFormatUltraHdr(builder.getMutableConfig())) {
                 builder.getMutableConfig().insertOption(OPTION_INPUT_FORMAT, JPEG_R);
                 builder.getMutableConfig().insertOption(OPTION_INPUT_DYNAMIC_RANGE,
-                        HDR_UNSPECIFIED_10_BIT);
+                        DynamicRange.UNSPECIFIED);
             } else if (useSoftwareJpeg) {
                 builder.getMutableConfig().insertOption(OPTION_INPUT_FORMAT,
                         ImageFormat.YUV_420_888);
@@ -474,12 +500,12 @@ public final class ImageCapture extends UseCase {
                         builder.getMutableConfig().retrieveOption(OPTION_SUPPORTED_RESOLUTIONS,
                                 null);
                 if (supportedSizes == null) {
-                    builder.getMutableConfig().insertOption(OPTION_INPUT_FORMAT, ImageFormat.JPEG);
+                    builder.getMutableConfig().insertOption(OPTION_INPUT_FORMAT, JPEG);
                 } else {
                     // Use Jpeg first if supported.
-                    if (isImageFormatSupported(supportedSizes, ImageFormat.JPEG)) {
+                    if (isImageFormatSupported(supportedSizes, JPEG)) {
                         builder.getMutableConfig().insertOption(OPTION_INPUT_FORMAT,
-                                ImageFormat.JPEG);
+                                JPEG);
                     } else if (isImageFormatSupported(supportedSizes, ImageFormat.YUV_420_888)) {
                         builder.getMutableConfig().insertOption(OPTION_INPUT_FORMAT,
                                 ImageFormat.YUV_420_888);
@@ -503,9 +529,20 @@ public final class ImageCapture extends UseCase {
         return false;
     }
 
+    @OptIn(markerClass = ExperimentalImageCaptureOutputFormat.class)
     private static boolean isOutputFormatUltraHdr(@NonNull MutableConfig config) {
         return Objects.equals(config.retrieveOption(OPTION_OUTPUT_FORMAT, null),
                 OUTPUT_FORMAT_JPEG_ULTRA_HDR);
+    }
+
+    private static boolean isOutputFormatRaw(@NonNull MutableConfig config) {
+        return Objects.equals(config.retrieveOption(OPTION_OUTPUT_FORMAT, null),
+                OUTPUT_FORMAT_RAW);
+    }
+
+    private static boolean isOutputFormatRawJpeg(@NonNull MutableConfig config) {
+        return Objects.equals(config.retrieveOption(OPTION_OUTPUT_FORMAT, null),
+                OUTPUT_FORMAT_RAW_JPEG);
     }
 
     /**
@@ -514,6 +551,7 @@ public final class ImageCapture extends UseCase {
     @RestrictTo(Scope.LIBRARY_GROUP)
     @Override
     public void onCameraControlReady() {
+        Logger.d(TAG, "onCameraControlReady");
         trySetFlashModeToCameraControl();
         setScreenFlashToCameraControl();
     }
@@ -572,6 +610,8 @@ public final class ImageCapture extends UseCase {
      *                                  without a {@code ScreenFlash} instance or front camera.
      */
     public void setFlashMode(@FlashMode int flashMode) {
+        Logger.d(TAG, "setFlashMode: flashMode = " + flashMode);
+
         if (flashMode != FLASH_MODE_AUTO && flashMode != FLASH_MODE_ON
                 && flashMode != FLASH_MODE_OFF) {
             if (flashMode == FLASH_MODE_SCREEN) {
@@ -849,10 +889,9 @@ public final class ImageCapture extends UseCase {
      *
      * @see ImageCapture.Builder#setOutputFormat(int)
      */
-    @RestrictTo(Scope.LIBRARY_GROUP)
+    @ExperimentalImageCaptureOutputFormat
     @OutputFormat
-    @NonNull
-    public Integer getOutputFormat() {
+    public int getOutputFormat() {
         return checkNotNull(getCurrentConfig().retrieveOption(OPTION_OUTPUT_FORMAT,
                 Defaults.DEFAULT_OUTPUT_FORMAT));
     }
@@ -860,11 +899,15 @@ public final class ImageCapture extends UseCase {
     /**
      * Captures a new still image for in memory access.
      *
-     * <p>The callback will be called only once for every invocation of this method. The listener
-     * is responsible for calling {@link Image#close()} on the returned image.
+     * <p>The listener is responsible for calling {@link Image#close()} on the returned image.
+     *
+     * <p>For simultaneous image capture with {@link #OUTPUT_FORMAT_RAW_JPEG}, the
+     * {@link OnImageCapturedCallback#onCaptureSuccess(ImageProxy)} will be triggered twice, one for
+     * {@link ImageFormat#RAW_SENSOR} and the other for {@link ImageFormat#JPEG}. The order of the
+     * callbacks for which image format is triggered first is not guaranteed.
      *
      * @param executor The executor in which the callback methods will be run.
-     * @param callback Callback to be invoked for the newly captured image
+     * @param callback Callback to be invoked for the newly captured image.
      *
      * @throws IllegalArgumentException If {@link ImageCapture#FLASH_MODE_SCREEN} is used without a
      *                                  non-null {@code ScreenFlash} instance set.
@@ -877,13 +920,11 @@ public final class ImageCapture extends UseCase {
         }
 
         takePictureInternal(executor, callback, /*onDiskCallback=*/null,
-                /*outputFileOptions=*/null);
+                /*outputFileOptions=*/null, /*secondaryOutputFileOptions=*/null);
     }
 
     /**
      * Captures a new still image and saves to a file along with application specified metadata.
-     *
-     * <p> The callback will be called only once for every invocation of this method.
      *
      * <p> If the {@link ImageCapture} is in a {@link UseCaseGroup} where {@link ViewPort} is
      * set, or {@link #setCropAspectRatio} is used, the image may be cropped before saving to
@@ -894,7 +935,8 @@ public final class ImageCapture extends UseCase {
      * @param imageSavedCallback Callback to be called for the newly captured image.
      *
      * @throws IllegalArgumentException If {@link ImageCapture#FLASH_MODE_SCREEN} is used without a
-     *                                  a non-null {@code ScreenFlash} instance set.
+     *                                  a non-null {@code ScreenFlash} instance set. Also if
+     *                                  {@link ImageCapture#OUTPUT_FORMAT_RAW_JPEG} is used.
      * @see ViewPort
      */
     public void takePicture(
@@ -902,12 +944,49 @@ public final class ImageCapture extends UseCase {
             final @NonNull Executor executor,
             final @NonNull OnImageSavedCallback imageSavedCallback) {
         if (Looper.getMainLooper() != Looper.myLooper()) {
+            CameraXExecutors.mainThreadExecutor().execute(() -> takePicture(
+                    outputFileOptions, executor, imageSavedCallback));
+            return;
+        }
+
+        takePictureInternal(executor, /*inMemoryCallback=*/null, imageSavedCallback,
+                outputFileOptions, /*secondaryOutputFileOptions=*/null);
+    }
+
+    /**
+     * Captures two still images simultaneously and saves to a file along with application
+     * specified metadata.
+     *
+     * <p>Currently only {@link #OUTPUT_FORMAT_RAW_JPEG} is supporting simultaneous image capture.
+     * It needs two {@link OutputFileOptions}, the first one is used for
+     * {@link ImageFormat#RAW_SENSOR} image and the second one is for {@link ImageFormat#JPEG}. The
+     * order of the callbacks for which image format is triggered first is not guaranteed. Check
+     * with {@link OutputFileResults#getImageFormat()} in
+     * {@link OnImageSavedCallback#onImageSaved(OutputFileResults)} for the image format.
+     *
+     * @param rawOutputFileOptions  Options to store the newly captured raw image.
+     * @param jpegOutputFileOptions Options to store the newly captured jpeg image.
+     * @param executor           The executor in which the callback methods will be run.
+     * @param imageSavedCallback Callback to be called for the newly captured image.
+     *
+     * @throws IllegalArgumentException If {@link ImageCapture#FLASH_MODE_SCREEN} is used without a
+     *                                  a non-null {@code ScreenFlash} instance set. Also if
+     *                                  non-{@link ImageCapture#OUTPUT_FORMAT_RAW_JPEG} format is
+     *                                  used.
+     */
+    public void takePicture(
+            final @NonNull OutputFileOptions rawOutputFileOptions,
+            final @NonNull OutputFileOptions jpegOutputFileOptions,
+            final @NonNull Executor executor,
+            final @NonNull OnImageSavedCallback imageSavedCallback) {
+        if (Looper.getMainLooper() != Looper.myLooper()) {
             CameraXExecutors.mainThreadExecutor().execute(
-                    () -> takePicture(outputFileOptions, executor, imageSavedCallback));
+                    () -> takePicture(rawOutputFileOptions, jpegOutputFileOptions,
+                            executor, imageSavedCallback));
             return;
         }
         takePictureInternal(executor, /*inMemoryCallback=*/null, imageSavedCallback,
-                outputFileOptions);
+                rawOutputFileOptions, jpegOutputFileOptions);
     }
 
     /**
@@ -966,14 +1045,19 @@ public final class ImageCapture extends UseCase {
             return false;
         }
 
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        @ExperimentalImageCaptureOutputFormat
         @NonNull
         @Override
-        public Set<Integer> getSupportedOutputFormats() {
+        public Set<@OutputFormat Integer> getSupportedOutputFormats() {
             Set<Integer> formats = new HashSet<>();
             formats.add(OUTPUT_FORMAT_JPEG);
             if (isUltraHdrSupported()) {
                 formats.add(OUTPUT_FORMAT_JPEG_ULTRA_HDR);
+            }
+
+            if (isRawSupported()) {
+                formats.add(OUTPUT_FORMAT_RAW);
+                formats.add(OUTPUT_FORMAT_RAW_JPEG);
             }
 
             return formats;
@@ -983,6 +1067,15 @@ public final class ImageCapture extends UseCase {
             if (mCameraInfo instanceof CameraInfoInternal) {
                 CameraInfoInternal cameraInfoInternal = (CameraInfoInternal) mCameraInfo;
                 return cameraInfoInternal.getSupportedOutputFormats().contains(JPEG_R);
+            }
+
+            return false;
+        }
+
+        private boolean isRawSupported() {
+            if (mCameraInfo instanceof CameraInfoInternal) {
+                CameraInfoInternal cameraInfoInternal = (CameraInfoInternal) mCameraInfo;
+                return cameraInfoInternal.getSupportedOutputFormats().contains(RAW_SENSOR);
             }
 
             return false;
@@ -1130,7 +1223,7 @@ public final class ImageCapture extends UseCase {
                 supported = false;
             }
             Integer bufferFormat = mutableConfig.retrieveOption(OPTION_BUFFER_FORMAT, null);
-            if (bufferFormat != null && bufferFormat != ImageFormat.JPEG) {
+            if (bufferFormat != null && bufferFormat != JPEG) {
                 Logger.w(TAG, "Software JPEG cannot be used with non-JPEG output buffer format.");
                 supported = false;
             }
@@ -1184,16 +1277,18 @@ public final class ImageCapture extends UseCase {
     @NonNull
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
-    protected StreamSpec onSuggestedStreamSpecUpdated(@NonNull StreamSpec suggestedStreamSpec) {
+    protected StreamSpec onSuggestedStreamSpecUpdated(
+            @NonNull StreamSpec primaryStreamSpec,
+            @Nullable StreamSpec secondaryStreamSpec) {
         mSessionConfigBuilder = createPipeline(getCameraId(),
-                (ImageCaptureConfig) getCurrentConfig(), suggestedStreamSpec);
+                (ImageCaptureConfig) getCurrentConfig(), primaryStreamSpec);
 
-        updateSessionConfig(mSessionConfigBuilder.build());
+        updateSessionConfig(List.of(mSessionConfigBuilder.build()));
 
         // In order to speed up the take picture process, notifyActive at an early stage to
         // attach the session capture callback to repeating and get capture result all the time.
         notifyActive();
-        return suggestedStreamSpec;
+        return primaryStreamSpec;
     }
 
     /**
@@ -1204,7 +1299,7 @@ public final class ImageCapture extends UseCase {
     @RestrictTo(Scope.LIBRARY_GROUP)
     protected StreamSpec onSuggestedStreamSpecImplementationOptionsUpdated(@NonNull Config config) {
         mSessionConfigBuilder.addImplementationOptions(config);
-        updateSessionConfig(mSessionConfigBuilder.build());
+        updateSessionConfig(List.of(mSessionConfigBuilder.build()));
         return getAttachedStreamSpec().toBuilder().setImplementationOptions(config).build();
     }
 
@@ -1245,8 +1340,7 @@ public final class ImageCapture extends UseCase {
         Log.d(TAG, String.format("createPipeline(cameraId: %s, streamSpec: %s)",
                 cameraId, streamSpec));
         Size resolution = streamSpec.getResolution();
-        boolean isVirtualCamera = !requireNonNull(getCamera()).getHasTransform()
-                || isSessionProcessorEnabledInCurrentCamera();
+        boolean isVirtualCamera = !requireNonNull(getCamera()).getHasTransform();
         if (mImagePipeline != null) {
             checkState(isVirtualCamera);
             // On LEGACY devices, when the app is backgrounded, it will trigger StreamSharing's
@@ -1270,8 +1364,8 @@ public final class ImageCapture extends UseCase {
                 // Prefer YUV because it takes less time to decode to bitmap.
                 List<Size> sizes = map.get(ImageFormat.YUV_420_888);
                 if (sizes == null || sizes.isEmpty()) {
-                    sizes = map.get(ImageFormat.JPEG);
-                    postviewFormat = ImageFormat.JPEG;
+                    sizes = map.get(JPEG);
+                    postviewFormat = JPEG;
                 }
 
                 if (sizes != null && !sizes.isEmpty()) {
@@ -1303,38 +1397,61 @@ public final class ImageCapture extends UseCase {
             }
         }
 
-        mImagePipeline = new ImagePipeline(config, resolution, getEffect(), isVirtualCamera,
+        CameraCharacteristics cameraCharacteristics = null;
+        if (getCamera() != null) {
+            try {
+                Object obj = getCamera().getCameraInfoInternal().getCameraCharacteristics();
+                if (obj instanceof CameraCharacteristics) {
+                    cameraCharacteristics = (CameraCharacteristics) obj;
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "getCameraCharacteristics failed", e);
+            }
+        }
+
+        mImagePipeline = new ImagePipeline(config, resolution,
+                cameraCharacteristics,
+                getEffect(), isVirtualCamera,
                 postViewSize, postviewFormat);
 
         if (mTakePictureManager == null) {
             // mTakePictureManager is reused when the Surface is reset.
-            mTakePictureManager = new TakePictureManager(mImageCaptureControl);
+            mTakePictureManager = getCurrentConfig().getTakePictureManagerProvider().newInstance(
+                    mImageCaptureControl);
         }
         mTakePictureManager.setImagePipeline(mImagePipeline);
 
         SessionConfig.Builder sessionConfigBuilder =
                 mImagePipeline.createSessionConfigBuilder(streamSpec.getResolution());
-        if (Build.VERSION.SDK_INT >= 23 && getCaptureMode() == CAPTURE_MODE_ZERO_SHUTTER_LAG) {
+        if (Build.VERSION.SDK_INT >= 23
+                && getCaptureMode() == CAPTURE_MODE_ZERO_SHUTTER_LAG
+                && !streamSpec.getZslDisabled()) {
             getCameraControl().addZslConfig(sessionConfigBuilder);
         }
         if (streamSpec.getImplementationOptions() != null) {
             sessionConfigBuilder.addImplementationOptions(streamSpec.getImplementationOptions());
         }
-        sessionConfigBuilder.addErrorListener((sessionConfig, error) -> {
-            // TODO(b/143915543): Ensure this never gets called by a camera that is not attached
-            //  to this use case so we don't need to do this check.
-            if (isCurrentCamera(cameraId)) {
-                mTakePictureManager.pause();
-                clearPipeline(/*keepTakePictureManager=*/ true);
-                mSessionConfigBuilder = createPipeline(cameraId, config, streamSpec);
-                updateSessionConfig(mSessionConfigBuilder.build());
-                notifyReset();
-                mTakePictureManager.resume();
-            } else {
-                clearPipeline();
-            }
-        });
+        // Close the old error listener
+        if (mCloseableErrorListener != null) {
+            mCloseableErrorListener.close();
+        }
+        mCloseableErrorListener = new SessionConfig.CloseableErrorListener(
+                (sessionConfig, error) -> {
+                    // Do nothing when the use case has been unbound.
+                    if (getCamera() == null) {
+                        return;
+                    }
 
+                    mTakePictureManager.pause();
+                    clearPipeline(/*keepTakePictureManager=*/ true);
+                    mSessionConfigBuilder = createPipeline(getCameraId(),
+                            (ImageCaptureConfig) getCurrentConfig(),
+                            Preconditions.checkNotNull(getAttachedStreamSpec()));
+                    updateSessionConfig(List.of(mSessionConfigBuilder.build()));
+                    notifyReset();
+                    mTakePictureManager.resume();
+                });
+        sessionConfigBuilder.setErrorListener(mCloseableErrorListener);
         return sessionConfigBuilder;
     }
 
@@ -1347,8 +1464,9 @@ public final class ImageCapture extends UseCase {
     @MainThread
     private void takePictureInternal(@NonNull Executor executor,
             @Nullable OnImageCapturedCallback inMemoryCallback,
-            @Nullable ImageCapture.OnImageSavedCallback onDiskCallback,
-            @Nullable OutputFileOptions outputFileOptions) {
+            @Nullable OnImageSavedCallback onDiskCallback,
+            @Nullable OutputFileOptions outputFileOptions,
+            @Nullable OutputFileOptions secondaryOutputFileOptions) {
         checkMainThread();
         if (getFlashMode() == ImageCapture.FLASH_MODE_SCREEN
                 && mScreenFlashWrapper.getBaseScreenFlash() == null) {
@@ -1360,16 +1478,28 @@ public final class ImageCapture extends UseCase {
             sendInvalidCameraError(executor, inMemoryCallback, onDiskCallback);
             return;
         }
+        boolean isSimultaneousCapture = getCurrentConfig()
+                .getSecondaryInputFormat() != ImageFormat.UNKNOWN;
+        if (isSimultaneousCapture && secondaryOutputFileOptions == null) {
+            throw new IllegalArgumentException(
+                    "Simultaneous capture RAW and JPEG needs two output file options");
+        }
+        if (!isSimultaneousCapture && secondaryOutputFileOptions != null) {
+            throw new IllegalArgumentException(
+                    "Non simultaneous capture cannot have two output file options");
+        }
         requireNonNull(mTakePictureManager).offerRequest(TakePictureRequest.of(
                 executor,
                 inMemoryCallback,
                 onDiskCallback,
                 outputFileOptions,
+                secondaryOutputFileOptions,
                 getTakePictureCropRect(),
                 getSensorToBufferTransformMatrix(),
                 getRelativeRotation(camera),
                 getJpegQualityInternal(),
                 getCaptureMode(),
+                isSimultaneousCapture,
                 mSessionConfigBuilder.getSingleCameraCaptureCallbacks()));
     }
 
@@ -1408,7 +1538,6 @@ public final class ImageCapture extends UseCase {
         return new Rect(0, 0, resolution.getWidth(), resolution.getHeight());
     }
 
-
     /**
      * Clears the pipeline without keeping the {@link TakePictureManager}.
      */
@@ -1424,6 +1553,13 @@ public final class ImageCapture extends UseCase {
     private void clearPipeline(boolean keepTakePictureManager) {
         Log.d(TAG, "clearPipeline");
         checkMainThread();
+
+        // Close the old error listener
+        if (mCloseableErrorListener != null) {
+            mCloseableErrorListener.close();
+            mCloseableErrorListener = null;
+        }
+
         if (mImagePipeline != null) {
             mImagePipeline.close();
             mImagePipeline = null;
@@ -1577,7 +1713,10 @@ public final class ImageCapture extends UseCase {
     /**
      * The output format of the captured image.
      */
-    @IntDef({OUTPUT_FORMAT_JPEG, OUTPUT_FORMAT_JPEG_ULTRA_HDR})
+    @OptIn(markerClass = androidx.camera.core.ExperimentalImageCaptureOutputFormat.class)
+    @Target({ElementType.TYPE_USE})
+    @IntDef({OUTPUT_FORMAT_JPEG, OUTPUT_FORMAT_JPEG_ULTRA_HDR,
+            OUTPUT_FORMAT_RAW, OUTPUT_FORMAT_RAW_JPEG})
     @Retention(RetentionPolicy.SOURCE)
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public @interface OutputFormat {
@@ -1839,6 +1978,7 @@ public final class ImageCapture extends UseCase {
      * <p>These values may be overridden by the implementation. They only provide a minimum set of
      * defaults that are implementation independent.
      */
+    @OptIn(markerClass = androidx.camera.core.ExperimentalImageCaptureOutputFormat.class)
     @RestrictTo(Scope.LIBRARY_GROUP)
     public static final class Defaults
             implements ConfigProvider<ImageCaptureConfig> {
@@ -2076,12 +2216,17 @@ public final class ImageCapture extends UseCase {
         @Nullable
         private final Uri mSavedUri;
 
-        /**
-         *
-         */
+        private final int mImageFormat;
+
         @RestrictTo(Scope.LIBRARY_GROUP)
         public OutputFileResults(@Nullable Uri savedUri) {
+            this(savedUri, JPEG);
+        }
+
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public OutputFileResults(@Nullable Uri savedUri, int imageFormat) {
             mSavedUri = savedUri;
+            mImageFormat = imageFormat;
         }
 
         /**
@@ -2094,6 +2239,13 @@ public final class ImageCapture extends UseCase {
         @Nullable
         public Uri getSavedUri() {
             return mSavedUri;
+        }
+
+        /**
+         * Returns the {@link ImageFormat} of the saved file.
+         */
+        public int getImageFormat() {
+            return mImageFormat;
         }
     }
 
@@ -2298,12 +2450,17 @@ public final class ImageCapture extends UseCase {
             if (bufferFormat != null) {
                 getMutableConfig().insertOption(OPTION_INPUT_FORMAT, bufferFormat);
             } else {
-                if (isOutputFormatUltraHdr(getMutableConfig())) {
+                if (isOutputFormatRaw(getMutableConfig())) {
+                    getMutableConfig().insertOption(OPTION_INPUT_FORMAT, RAW_SENSOR);
+                } else if (isOutputFormatRawJpeg(getMutableConfig())) {
+                    getMutableConfig().insertOption(OPTION_INPUT_FORMAT, RAW_SENSOR);
+                    getMutableConfig().insertOption(OPTION_SECONDARY_INPUT_FORMAT, JPEG);
+                } else if (isOutputFormatUltraHdr(getMutableConfig())) {
                     getMutableConfig().insertOption(OPTION_INPUT_FORMAT, JPEG_R);
                     getMutableConfig().insertOption(OPTION_INPUT_DYNAMIC_RANGE,
-                            HDR_UNSPECIFIED_10_BIT);
+                            DynamicRange.UNSPECIFIED);
                 } else {
-                    getMutableConfig().insertOption(OPTION_INPUT_FORMAT, ImageFormat.JPEG);
+                    getMutableConfig().insertOption(OPTION_INPUT_FORMAT, JPEG);
                 }
             }
 
@@ -2807,17 +2964,14 @@ public final class ImageCapture extends UseCase {
          *
          * <p>If not set, the output format will default to {@link #OUTPUT_FORMAT_JPEG}.
          *
-         * <p>If an Ultra HDR output format is used, a {@link DynamicRange#HDR_UNSPECIFIED_10_BIT}
-         * will be used as the dynamic range of this use case.
-         *
          * @param outputFormat The output image format. Value is {@link #OUTPUT_FORMAT_JPEG} or
-         *                     {@link #OUTPUT_FORMAT_JPEG_ULTRA_HDR}.
+         *                     {@link #OUTPUT_FORMAT_JPEG_ULTRA_HDR} or {@link #OUTPUT_FORMAT_RAW}.
          * @return The current Builder.
          *
          * @see OutputFormat
          * @see ImageCaptureCapabilities#getSupportedOutputFormats()
          */
-        @RestrictTo(Scope.LIBRARY_GROUP)
+        @ExperimentalImageCaptureOutputFormat
         @NonNull
         public Builder setOutputFormat(@OutputFormat int outputFormat) {
             getMutableConfig().insertOption(OPTION_OUTPUT_FORMAT, outputFormat);
@@ -2855,15 +3009,6 @@ public final class ImageCapture extends UseCase {
         @NonNull
         public Builder setSurfaceOccupancyPriority(int priority) {
             getMutableConfig().insertOption(OPTION_SURFACE_OCCUPANCY_PRIORITY, priority);
-            return this;
-        }
-
-        @RestrictTo(Scope.LIBRARY_GROUP)
-        @Override
-        @NonNull
-        public Builder setUseCaseEventCallback(
-                @NonNull UseCase.EventCallback useCaseEventCallback) {
-            getMutableConfig().insertOption(OPTION_USE_CASE_EVENT_CALLBACK, useCaseEventCallback);
             return this;
         }
 

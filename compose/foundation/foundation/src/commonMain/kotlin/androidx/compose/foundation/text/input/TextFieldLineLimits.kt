@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.input
 
+import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.text.input.TextFieldLineLimits.MultiLine
 import androidx.compose.foundation.text.input.TextFieldLineLimits.SingleLine
@@ -23,8 +24,8 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 
 /**
- * Values that specify the text wrapping, scrolling, and height measurement behavior for
- * text fields.
+ * Values that specify the text wrapping, scrolling, and height measurement behavior for text
+ * fields.
  *
  * @see SingleLine
  * @see MultiLine
@@ -54,12 +55,10 @@ sealed interface TextFieldLineLimits {
      * the [heightIn] modifier.
      */
     @Immutable
-    class MultiLine(
-        val minHeightInLines: Int = 1,
-        val maxHeightInLines: Int = Int.MAX_VALUE
-    ) : TextFieldLineLimits {
+    class MultiLine(val minHeightInLines: Int = 1, val maxHeightInLines: Int = Int.MAX_VALUE) :
+        TextFieldLineLimits {
         init {
-            require(minHeightInLines in 1..maxHeightInLines) {
+            requirePrecondition(minHeightInLines in 1..maxHeightInLines) {
                 "Expected 1 ≤ minHeightInLines ≤ maxHeightInLines, were " +
                     "$minHeightInLines, $maxHeightInLines"
             }

@@ -21,9 +21,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.ZoneOffset
 
-/**
- * Captures user's menstruation periods.
- */
+/** Captures user's menstruation periods. */
 class MenstruationPeriodRecord(
     override val startTime: Instant,
     override val startZoneOffset: ZoneOffset?,
@@ -66,6 +64,10 @@ class MenstruationPeriodRecord(
         result = 31 * result + (endZoneOffset?.hashCode() ?: 0)
         result = 31 * result + metadata.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "MenstruationPeriodRecord(startTime=$startTime, startZoneOffset=$startZoneOffset, endTime=$endTime, endZoneOffset=$endZoneOffset, metadata=$metadata)"
     }
 
     private companion object {

@@ -19,11 +19,11 @@ package androidx.compose.ui.text
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
+import androidx.compose.ui.text.internal.requirePrecondition
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.util.fastAny
-import androidx.compose.ui.util.fastFilter
-import androidx.compose.ui.util.fastMap
+import androidx.compose.ui.util.fastFilteredMap
 import androidx.compose.ui.util.fastMaxBy
 
 /**
@@ -31,17 +31,15 @@ import androidx.compose.ui.util.fastMaxBy
  *
  * @param annotatedString the text to be laid out
  * @param style the [TextStyle] to be applied to the whole text
- * @param placeholders a list of [Placeholder]s that specify ranges of text which will be
- * skipped during layout and replaced with [Placeholder]. It's required that the range of each
- * [Placeholder] doesn't cross paragraph boundary, otherwise [IllegalArgumentException] is thrown.
+ * @param placeholders a list of [Placeholder]s that specify ranges of text which will be skipped
+ *   during layout and replaced with [Placeholder]. It's required that the range of each
+ *   [Placeholder] doesn't cross paragraph boundary, otherwise [IllegalArgumentException] is thrown.
  * @param density density of the device
  * @param fontFamilyResolver [Font.ResourceLoader] to be used to load the font given in [SpanStyle]s
-
+ * @throws IllegalArgumentException if [ParagraphStyle.textDirection] is not set, or any of the
+ *   [placeholders] crosses paragraph boundary.
  * @see MultiParagraph
  * @see Placeholder
- *
- * @throws IllegalArgumentException if [ParagraphStyle.textDirection] is not set, or any
- * of the [placeholders] crosses paragraph boundary.
  */
 class MultiParagraphIntrinsics(
     val annotatedString: AnnotatedString,
@@ -52,9 +50,13 @@ class MultiParagraphIntrinsics(
 ) : ParagraphIntrinsics {
 
     @Suppress("DEPRECATION")
-    @Deprecated("Font.ResourceLoader is deprecated, call with fontFamilyResolver",
-        replaceWith = ReplaceWith("MultiParagraphIntrinsics(annotatedString, style, " +
-            "placeholders, density, fontFamilyResolver)")
+    @Deprecated(
+        "Font.ResourceLoader is deprecated, call with fontFamilyResolver",
+        replaceWith =
+            ReplaceWith(
+                "MultiParagraphIntrinsics(annotatedString, style, " +
+                    "placeholders, density, fontFamilyResolver)"
+            )
     )
     constructor(
         annotatedString: AnnotatedString,
@@ -72,45 +74,47 @@ class MultiParagraphIntrinsics(
 
     // NOTE(text-perf-review): why are we using lazy here? Are there cases where these
     // calculations aren't executed?
-    override val minIntrinsicWidth: Float by lazy(LazyThreadSafetyMode.NONE) {
-        infoList.fastMaxBy {
-            it.intrinsics.minIntrinsicWidth
-        }?.intrinsics?.minIntrinsicWidth ?: 0f
-    }
+    override val minIntrinsicWidth: Float by
+        lazy(LazyThreadSafetyMode.NONE) {
+            infoList.fastMaxBy { it.intrinsics.minIntrinsicWidth }?.intrinsics?.minIntrinsicWidth
+                ?: 0f
+        }
 
-    override val maxIntrinsicWidth: Float by lazy(LazyThreadSafetyMode.NONE) {
-        infoList.fastMaxBy {
-            it.intrinsics.maxIntrinsicWidth
-        }?.intrinsics?.maxIntrinsicWidth ?: 0f
-    }
+    override val maxIntrinsicWidth: Float by
+        lazy(LazyThreadSafetyMode.NONE) {
+            infoList.fastMaxBy { it.intrinsics.maxIntrinsicWidth }?.intrinsics?.maxIntrinsicWidth
+                ?: 0f
+        }
 
     /**
-     * [ParagraphIntrinsics] for each paragraph included in the [buildAnnotatedString]. For empty string
-     * there will be a single empty paragraph intrinsics info.
+     * [ParagraphIntrinsics] for each paragraph included in the [buildAnnotatedString]. For empty
+     * string there will be a single empty paragraph intrinsics info.
      */
     internal val infoList: List<ParagraphIntrinsicInfo>
 
     init {
         val paragraphStyle = style.toParagraphStyle()
-        infoList = annotatedString
-            .mapEachParagraphStyle(paragraphStyle) { annotatedString, paragraphStyleItem ->
-                val currentParagraphStyle = resolveTextDirection(
-                    paragraphStyleItem.item,
-                    paragraphStyle
-                )
+        infoList =
+            annotatedString.mapEachParagraphStyle(paragraphStyle) {
+                annotatedString,
+                paragraphStyleItem ->
+                val currentParagraphStyle =
+                    resolveTextDirection(paragraphStyleItem.item, paragraphStyle)
 
                 ParagraphIntrinsicInfo(
-                    intrinsics = ParagraphIntrinsics(
-                        text = annotatedString.text,
-                        style = style.merge(currentParagraphStyle),
-                        spanStyles = annotatedString.spanStyles,
-                        placeholders = placeholders.getLocalPlaceholders(
-                            paragraphStyleItem.start,
-                            paragraphStyleItem.end
+                    intrinsics =
+                        ParagraphIntrinsics(
+                            text = annotatedString.text,
+                            style = style.merge(currentParagraphStyle),
+                            annotations = annotatedString.annotations ?: emptyList(),
+                            placeholders =
+                                placeholders.getLocalPlaceholders(
+                                    paragraphStyleItem.start,
+                                    paragraphStyleItem.end
+                                ),
+                            density = density,
+                            fontFamilyResolver = fontFamilyResolver
                         ),
-                        density = density,
-                        fontFamilyResolver = fontFamilyResolver
-                    ),
                     startIndex = paragraphStyleItem.start,
                     endIndex = paragraphStyleItem.end
                 )
@@ -121,9 +125,9 @@ class MultiParagraphIntrinsics(
         get() = infoList.fastAny { it.intrinsics.hasStaleResolvedFonts }
 
     /**
-     * if the [style] does `not` have [TextDirection] set, it will return a new
-     * [ParagraphStyle] where [TextDirection] is set using the [defaultStyle]. Otherwise
-     * returns the same [style] object.
+     * if the [style] does `not` have [TextDirection] set, it will return a new [ParagraphStyle]
+     * where [TextDirection] is set using the [defaultStyle]. Otherwise returns the same [style]
+     * object.
      *
      * @param style ParagraphStyle to be checked for [TextDirection]
      * @param defaultStyle [ParagraphStyle] passed to [MultiParagraphIntrinsics] as the main style
@@ -132,15 +136,14 @@ class MultiParagraphIntrinsics(
         style: ParagraphStyle,
         defaultStyle: ParagraphStyle
     ): ParagraphStyle {
-        return if (style.textDirection != TextDirection.Unspecified) style else style.copy(
-            textDirection = defaultStyle.textDirection
-        )
+        return if (style.textDirection != TextDirection.Unspecified) style
+        else style.copy(textDirection = defaultStyle.textDirection)
     }
 }
 
 private fun List<AnnotatedString.Range<Placeholder>>.getLocalPlaceholders(start: Int, end: Int) =
-    fastFilter { intersect(start, end, it.start, it.end) }.fastMap {
-        require(start <= it.start && it.end <= end) {
+    fastFilteredMap({ intersect(start, end, it.start, it.end) }) {
+        requirePrecondition(start <= it.start && it.end <= end) {
             "placeholder can not overlap with paragraph."
         }
         AnnotatedString.Range(it.item, it.start - start, it.end - start)

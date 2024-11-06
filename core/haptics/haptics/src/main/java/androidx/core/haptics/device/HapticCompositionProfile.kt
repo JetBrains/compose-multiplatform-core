@@ -30,7 +30,9 @@ import java.util.Objects
  * @property supportedPrimitiveTypes A set of [Int] values defined by
  *   [CompositionSignal.PrimitiveAtom.Type] representing composition primitive types supported.
  */
-class HapticCompositionProfile @JvmOverloads constructor(
+public class HapticCompositionProfile
+@JvmOverloads
+constructor(
 
     /**
      * Hint for the composition primitives that are supported by the vibrator hardware.
@@ -54,11 +56,11 @@ class HapticCompositionProfile @JvmOverloads constructor(
     /**
      * Whether the device reports the estimated duration for supported composition primitives.
      *
-     * If primitive durations are reported then [getPrimitiveDurationMillis] can be
-     * used for supported primitive types to check individual [PrimitiveAtom] durations within a
+     * If primitive durations are reported then [getPrimitiveDurationMillis] can be used for
+     * supported primitive types to check individual [PrimitiveAtom] durations within a
      * [CompositionSignal].
      */
-    val isPrimitiveDurationReported: Boolean
+    public val isPrimitiveDurationReported: Boolean
         get() = _primitiveDurationMillisMap != null
 
     /**
@@ -71,7 +73,7 @@ class HapticCompositionProfile @JvmOverloads constructor(
      * the device reports no supported primitive, or if the required APIs are not available in this
      * SDK level.
      */
-    val supportedPrimitiveTypes: Set<Int>
+    public val supportedPrimitiveTypes: Set<Int>
 
     private val _primitiveDurationMillisMap: Map<Int, Long>?
 
@@ -81,15 +83,11 @@ class HapticCompositionProfile @JvmOverloads constructor(
             supportedPrimitiveTypesHint.filter { availablePrimitives.contains(it) }.toSet()
 
         _primitiveDurationMillisMap =
-            primitiveDurationMillisMapHint?.filter {
-                supportedPrimitiveTypes.contains(it.key)
-            }?.toMap()
+            primitiveDurationMillisMapHint
+                ?.filter { supportedPrimitiveTypes.contains(it.key) }
+                ?.toMap()
 
-        require(
-            _primitiveDurationMillisMap?.let {
-                supportedPrimitiveTypes == it.keys
-            } ?: true
-        ) {
+        require(_primitiveDurationMillisMap?.let { supportedPrimitiveTypes == it.keys } ?: true) {
             "Composition primitive durations should be reported for all supported primitives." +
                 " Device supports primitive types $supportedPrimitiveTypes but got" +
                 " estimated durations for ${_primitiveDurationMillisMap?.keys}."
@@ -107,7 +105,7 @@ class HapticCompositionProfile @JvmOverloads constructor(
      *   in a [CompositionSignal], or null if the primitive type is not supported or the hardware
      *   does not report primitive durations.
      */
-    fun getPrimitiveDurationMillis(@PrimitiveAtom.Type primitiveType: Int): Long =
+    public fun getPrimitiveDurationMillis(@PrimitiveAtom.Type primitiveType: Int): Long =
         _primitiveDurationMillisMap?.get(primitiveType) ?: 0L
 
     override fun equals(other: Any?): Boolean {

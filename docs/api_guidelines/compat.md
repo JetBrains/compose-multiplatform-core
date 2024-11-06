@@ -17,50 +17,6 @@ compare the device's `Build.VERSION.SDK_INT` field to a known-good SDK version;
 for example, the SDK in which a method first appeared or in which a critical bug
 was first fixed.
 
-Non-reflective calls to new APIs gated on `SDK_INT` **must** be made from
-version-specific static inner classes to avoid verification errors that
-negatively affect run-time performance. This is enforced at build time by the
-`ClassVerificationFailure` lint check, which offers auto-fixes in Java sources.
-
-For more information, see Chromium's (deprecated but still accurate) guide to
-[Class Verification Failures](https://chromium.googlesource.com/chromium/src/+/HEAD/build/android/docs/class_verification_failures.md).
-
-NOTE As noted in the Chromium guide, the latest versions of R8 have added
-support for automatically out-of-lining calls to new platform SDK APIs; however,
-this depends on clients using the latest versions of R8. Since Jetpack libraries
-cannot make assertions about versions of tools used by clients, we must continue
-to manually out-of-line such calls.
-
-Methods in implementation-specific classes **must** be paired with the
-`@DoNotInline` annotation to prevent them from being inlined.
-
-```java {.good}
-public static void saveAttributeDataForStyleable(@NonNull View view, ...) {
-  if (Build.VERSION.SDK_INT >= 29) {
-    Api29Impl.saveAttributeDataForStyleable(view, ...);
-  }
-}
-
-@RequiresApi(29)
-private static class Api29Impl {
-  @DoNotInline
-  static void saveAttributeDataForStyleable(@NonNull View view, ...) {
-    view.saveAttributeDataForStyleable(...);
-  }
-}
-```
-
-Alternatively, in Kotlin sources:
-
-```kotlin {.good}
-@RequiresApi(29)
-private object Api29Impl {
-  @JvmStatic
-  @DoNotInline
-  fun saveAttributeDataForStyleable(view: View, ...) { ... }
-}
-```
-
 When developing against pre-release SDKs where the `SDK_INT` has not been
 finalized, SDK checks **must** use `BuildCompat.isAtLeastX()` methods and
 **must** use a tip-of-tree `project` dependency to ensure that the
@@ -102,8 +58,7 @@ below that API level, `A` will be seen as `Object`. An `Object` cannot be used
 as a `B` without an explicit cast. However, adding an explicit cast to `B` won't
 fix this, because the compiler will see the cast as redundant (as it normally
 would be). So, implicit casts between types introduced at different API levels
-should be moved out to version-specific static inner classes, as described
-[above](#compat-sdk).
+should be moved out to version-specific static inner classes.
 
 The `ImplicitCastClassVerificationFailure` lint check detects and provides
 autofixes for instances of invalid implicit casts.
@@ -324,21 +279,46 @@ removed when the bug is resolved.
 
 #### Java 8+ APIs and core library desugaring {#compat-desugar}
 
-While the DEX compiler (D8) supports
+The DEX compiler (D8) supports
 [API desugaring](https://developer.android.com/studio/write/java8-support-table)
-to enable usage of Java 8+ APIs on a broader range of platform API levels, there
-is currently no way for a library to express the toolchain requirements
-necessary for desugaring to work as intended.
-
-As of 2023-05-11, there is still a
-[pending feature request](https://issuetracker.google.com/203113147) to allow
-Android libraries to express these requirements.
-
-Libraries **must not** rely on `coreLibraryDesugaring` to access Java language
-APIs on earlier platform API levels. For example, `java.time.*` may only be used
-in code paths targeting API level 26 and above.
+to enable usage of Java 8+ APIs on a broader range of platform API levels.
+Libraries using AGP 8.2+ can express the toolchain requirements necessary for
+desugaring to work as intended, but these requirements are only enforced for
+**apps** that are also building with AGP 8.2+.
+[While adoption of AGP 8.2+ remains low](https://issuetracker.google.com/172590889#comment12),
+AndroidX libraries **must not** rely on `coreLibraryDesugaring` to access Java
+language APIs on earlier platform API levels. For example, `java.time.*` may
+only be used in code paths targeting API level 26 and above.
 
 ### Delegating to API-specific implementations {#delegating-to-api-specific-implementations}
+
+#### Referencing SDK constants {#sdk-constants}
+
+Generally speaking, platform and Mainline SDK constants should not be inlined.
+
+Constants that can be inlined by the compiler (most primitives and `String`s)
+should be referenced directly from the SDK rather than copying and pasting the
+value. This will raise an `InlinedApi` lint warning, which may be suppressed.
+
+```
+public static class ViewCompat {
+  @Suppress("InlinedApi")
+  public static final int SOME_CONSTANT = View.SOME_CONSTANT
+}
+```
+
+In rare cases, some SDK constants are not defined at compile-time and cannot be
+inlined by the compiler. In these cases, you will need to handle them like any
+other API using out-of-lining and version gating.
+
+```
+public static final int RUNTIME_CONSTANT =
+    if (SDK_INT > 34) { Api34Impl.RUNTIME_CONSTANT } else { -1 }
+```
+
+Developers **must not** inline platform or Mainline SDK constants that are not
+part of a finalized public SDK. **Do not** inline values from `@hide` constants
+or public constants in an unfinalized SDK.
 
 #### SDK-dependent reflection {#sdk-reflection}
 
@@ -355,10 +335,10 @@ will **not** be able to use reflection to access hidden APIs on devices with
 In cases where a hidden API is a constant value, **do not** inline the value.
 Hidden APIs cannot be tested by CTS and carry no stability guarantees.
 
-On earlier devices or in cases where an API is marked with
-`@UnsupportedAppUsage`, reflection on hidden platform APIs is allowed **only**
-when an alternative public platform API exists in a later revision of the
-Android SDK. For example, the following implementation is allowed:
+Per go/platform-parity, on earlier devices or in cases where an API is marked
+with `@UnsupportedAppUsage`, reflection on hidden platform APIs is allowed
+**only** when an alternative public platform API exists in a later revision of
+the Android SDK. For example, the following implementation is allowed:
 
 ```java
 public AccessibilityDelegate getAccessibilityDelegate(View v) {
@@ -406,6 +386,22 @@ if (BuildCompat.isAtLeastQ()) {
    // no-op or best-effort given no information
 }
 ```
+
+#### Shadowing platform classes {#sdk-shadowing}
+
+Generally, libraries should **never** create new classes in the `android.*`
+namespace or re-define any classes that may be present in the boot classpath.
+**Do not** create a library class with the same fully-qualified name as one in
+the platform SDK, a Mainline module, sidecar JAR, or another library. Keep all
+classes within your own package based on your Maven group ID.
+
+The reverse also applies: the platform SDK, Mainline modules, sidecar JARs, and
+other libraries **must not** define classes in the `androidx.*` namespace.
+
+In *extremely limited* cases, the overhead of reflecting on a platform class may
+cause performance issues for apps on a scale that warrants using a compile-only
+stub of the platform class to avoid reflection. Any instances of this **must**
+be approved by Jetpack Working Group before submitting the change.
 
 ### Inter-process communication {#ipc}
 

@@ -35,6 +35,13 @@ package androidx.tracing.perfetto.handshake.protocol {
   }
 
   public final class ResponseResultCodes {
+    property public static final int RESULT_CODE_ALREADY_ENABLED;
+    property public static final int RESULT_CODE_CANCELLED;
+    property public static final int RESULT_CODE_ERROR_BINARY_MISSING;
+    property public static final int RESULT_CODE_ERROR_BINARY_VERIFICATION_ERROR;
+    property public static final int RESULT_CODE_ERROR_BINARY_VERSION_MISMATCH;
+    property public static final int RESULT_CODE_ERROR_OTHER;
+    property public static final int RESULT_CODE_SUCCESS;
     field public static final androidx.tracing.perfetto.handshake.protocol.ResponseResultCodes INSTANCE;
     field public static final int RESULT_CODE_ALREADY_ENABLED = 2; // 0x2
     field public static final int RESULT_CODE_CANCELLED = 0; // 0x0

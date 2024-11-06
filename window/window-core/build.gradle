@@ -26,12 +26,23 @@ import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
 }
 
 androidXMultiplatform {
     jvm()
-    android()
+    androidLibrary {
+        namespace = "androidx.window.core"
+        withAndroidTestOnDeviceBuilder {
+            it.compilationName = "instrumentedTest"
+            it.defaultSourceSetName = "androidInstrumentedTest"
+            it.sourceSetTreeName = "test"
+        }
+    }
+    mac()
+    linux()
+    ios()
+    watchos()
+    tvos()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
@@ -39,7 +50,7 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 api(libs.kotlinStdlib)
-                api("androidx.annotation:annotation:1.7.0")
+                api("androidx.annotation:annotation:1.8.1")
             }
         }
 
@@ -60,10 +71,8 @@ androidXMultiplatform {
             }
         }
     }
-}
 
-android {
-    namespace "androidx.window.core"
+    enableBinaryCompatibilityValidator = false
 }
 
 androidx {
@@ -71,5 +80,6 @@ androidx {
     type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "WindowManager Core Library."
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
+    metalavaK2UastEnabled = false
 }

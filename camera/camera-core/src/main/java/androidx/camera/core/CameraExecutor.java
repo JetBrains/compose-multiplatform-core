@@ -18,7 +18,7 @@ package androidx.camera.core;
 
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
+import androidx.annotation.RestrictTo;
 import androidx.camera.core.impl.CameraFactory;
 import androidx.core.util.Preconditions;
 
@@ -33,8 +33,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * A camera executor class that executes camera operations.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-class CameraExecutor implements Executor {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class CameraExecutor implements Executor {
     private static final String TAG = "CameraExecutor";
     private static final int DEFAULT_CORE_THREADS = 1;
     private static final int DEFAULT_MAX_THREADS = DEFAULT_CORE_THREADS;

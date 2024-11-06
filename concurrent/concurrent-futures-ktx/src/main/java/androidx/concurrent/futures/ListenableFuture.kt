@@ -1,4 +1,5 @@
 /*
+ * Copyright 2016-2024 JetBrains s.r.o and contributors
  * Copyright 2019 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,9 +31,8 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  * This suspend function is cancellable.
  *
  * If the [kotlinx.coroutines.Job] of the current coroutine is cancelled or completed while this
- * suspending function is
- * waiting, this function stops waiting for the future and immediately resumes with
- * [CancellationException][kotlinx.coroutines.CancellationException].
+ * suspending function is waiting, this function stops waiting for the future and immediately
+ * resumes with [CancellationException][kotlinx.coroutines.CancellationException].
  *
  * This method is intended to be used with one-shot Futures, so on coroutine cancellation, the
  * Future is cancelled as well. If cancelling the given future is undesired, use
@@ -51,22 +51,17 @@ public suspend fun <T> ListenableFuture<T>.await(): T {
     }
 
     return suspendCancellableCoroutine { cont: CancellableContinuation<T> ->
-        addListener(
-            ToContinuation(this, cont),
-            DirectExecutor.INSTANCE
-        )
-        cont.invokeOnCancellation {
-            cancel(false)
-        }
+        addListener(ToContinuation(this, cont), DirectExecutor.INSTANCE)
+        cont.invokeOnCancellation { cancel(false) }
     }
 }
 
 /**
  * Propagates the outcome of [futureToObserve] to [continuation] on completion.
  *
- * Cancellation is propagated as cancelling the continuation. If [futureToObserve] completes
- * and fails, the cause of the Future will be propagated without a wrapping
- * [ExecutionException] when thrown.
+ * Cancellation is propagated as cancelling the continuation. If [futureToObserve] completes and
+ * fails, the cause of the Future will be propagated without a wrapping [ExecutionException] when
+ * thrown.
  */
 private class ToContinuation<T>(
     val futureToObserve: ListenableFuture<T>,
@@ -77,9 +72,7 @@ private class ToContinuation<T>(
             continuation.cancel()
         } else {
             try {
-                continuation.resumeWith(
-                    Result.success(getUninterruptibly(futureToObserve))
-                )
+                continuation.resumeWith(Result.success(getUninterruptibly(futureToObserve)))
             } catch (e: ExecutionException) {
                 // ExecutionException is the only kind of exception that can be thrown from a gotten
                 // Future. Anything else showing up here indicates a very fundamental bug in a

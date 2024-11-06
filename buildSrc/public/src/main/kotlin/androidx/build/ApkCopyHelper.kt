@@ -61,7 +61,7 @@ fun setupAppApkCopy(project: Project, buildType: String) {
     project.extensions.findByType(ApplicationAndroidComponentsExtension::class.java)?.apply {
         onVariants(selector().withBuildType(buildType)) { variant ->
             val apkCopy =
-                project.tasks.register("copyAppApk", ApkCopyTask::class.java) { task ->
+                project.tasks.register("copyAppApk-$buildType", ApkCopyTask::class.java) { task ->
                     task.apkFolder.set(variant.artifacts.get(SingleArtifact.APK))
                     task.apkLoader.set(variant.artifacts.getBuiltArtifactsLoader())
                     val file =
@@ -86,10 +86,10 @@ fun setupTestApkCopy(project: Project) {
                     }
                 project.addToBuildOnServer(apkCopy)
             }
-            @Suppress("UnstableApiUsage") // usage of HasDeviceTests
+            @Suppress("UnstableApiUsage") // HasDeviceTests is @Incubating b/372495504
             when {
                 variant is HasDeviceTests -> {
-                    variant.deviceTests.forEach { deviceTest ->
+                    variant.deviceTests.forEach { (_, deviceTest) ->
                         registerAndAddToBuildOnServer(deviceTest.name, deviceTest.artifacts)
                     }
                 }

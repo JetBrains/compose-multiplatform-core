@@ -21,6 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+import androidx.build.BundleInsideHelper
 import androidx.build.LibraryType
 
 plugins {
@@ -28,13 +30,19 @@ plugins {
     id("kotlin")
 }
 
-dependencies {
-    compileOnly(libs.androidLintMinApi)
-    compileOnly(libs.kotlinStdlib)
+BundleInsideHelper.forInsideLintJar(project)
 
-    testImplementation(libs.kotlinStdlib)
-    testImplementation(libs.androidLint)
-    testImplementation(libs.androidLintTests)
+dependencies {
+    compileOnly(libs.kotlinCompiler)
+    compileOnly(libs.kotlinStdlib)
+    compileOnly(libs.androidLintPrevApi)
+    compileOnly(libs.intellijCore)
+    compileOnly(libs.uast)
+
+    bundleInside(project(":navigation:navigation-lint-common"))
+
+    testImplementation(libs.androidLintPrev)
+    testImplementation(libs.androidLintPrevTests)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
 }

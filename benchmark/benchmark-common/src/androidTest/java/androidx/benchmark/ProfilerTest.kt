@@ -21,6 +21,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import java.io.File
+import kotlin.test.assertFalse
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.junit.Assume.assumeFalse
@@ -48,23 +49,26 @@ class ProfilerTest {
         assertSame(ConnectedSampling, Profiler.getByName("ConnectedSampled"))
     }
 
-    private fun verifyProfiler(
-        profiler: Profiler,
-        regex: Regex
-    ) {
+    private fun verifyProfiler(profiler: Profiler, regex: Regex) {
         assumeFalse(
             "Workaround native crash on API 21 in CI, see b/173662168",
             profiler == MethodTracing && Build.VERSION.SDK_INT == Build.VERSION_CODES.LOLLIPOP,
         )
 
-        val outputRelPath = profiler.start("test")!!.outputRelativePath
+        val result = profiler.start("test")!!
+        val outputRelPath = result.outputRelativePath
         profiler.stop()
         val file = File(Outputs.outputDirectory, outputRelPath)
-
         assertTrue(
             actual = regex.matches(outputRelPath),
             message = "expected profiler output path $outputRelPath to match $regex"
         )
+
+        if (result.convertBeforeSync != null) {
+            // profiler doesn't create file until conversion occurs
+            assertFalse(file.exists(), "Profiler should not yet create: ${file.absolutePath}")
+            result.convertBeforeSync?.invoke()
+        }
         assertTrue(file.exists(), "Profiler should create: ${file.absolutePath}")
 
         // we don't delete the file to enable inspecting the file
@@ -72,16 +76,19 @@ class ProfilerTest {
     }
 
     @Test
-    fun methodTracing() = verifyProfiler(
-        profiler = MethodTracing,
-        regex = Regex("test-methodTracing-.+.trace")
-    )
+    fun methodTracing() {
+        verifyProfiler(profiler = MethodTracing, regex = Regex("test-methodTracing-.+.trace"))
+        assertFalse(MethodTracing.requiresExtraRuntime)
+    }
 
     @Test
-    fun stackSamplingLegacy() = verifyProfiler(
-        profiler = StackSamplingLegacy,
-        regex = Regex("test-stackSamplingLegacy-.+.trace")
-    )
+    fun stackSamplingLegacy() {
+        verifyProfiler(
+            profiler = StackSamplingLegacy,
+            regex = Regex("test-stackSamplingLegacy-.+.trace")
+        )
+        assertTrue(StackSamplingLegacy.requiresExtraRuntime)
+    }
 
     @SdkSuppress(minSdkVersion = 29) // simpleperf on system image starting API 29
     @Test
@@ -93,5 +100,6 @@ class ProfilerTest {
             profiler = StackSamplingSimpleperf,
             regex = Regex("test-stackSampling-.+.trace")
         )
+        assertTrue(StackSamplingSimpleperf.requiresExtraRuntime)
     }
 }

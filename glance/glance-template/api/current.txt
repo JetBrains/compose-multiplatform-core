@@ -2,6 +2,7 @@
 package androidx.glance.template {
 
   public final class ActionBlock {
+    ctor public ActionBlock();
     ctor public ActionBlock(optional java.util.List<? extends androidx.glance.template.TemplateButton> actionButtons, optional int type);
     method public java.util.List<androidx.glance.template.TemplateButton> getActionButtons();
     method public int getType();
@@ -85,9 +86,9 @@ package androidx.glance.template {
   public abstract class GlanceTemplateAppWidget extends androidx.glance.appwidget.GlanceAppWidget {
     ctor public GlanceTemplateAppWidget();
     method @androidx.compose.runtime.Composable @androidx.glance.GlanceComposable public abstract void TemplateContent();
-    method public final suspend Object? provideGlance(android.content.Context context, androidx.glance.GlanceId id, kotlin.coroutines.Continuation<?>);
+    method public final suspend Object? provideGlance(android.content.Context context, androidx.glance.GlanceId id, kotlin.coroutines.Continuation<? extends java.lang.Object?>);
     property public androidx.glance.appwidget.SizeMode sizeMode;
-    property public androidx.glance.state.GlanceStateDefinition<?>? stateDefinition;
+    property public androidx.glance.state.GlanceStateDefinition<? extends java.lang.Object?>? stateDefinition;
     field public static final androidx.glance.template.GlanceTemplateAppWidget.Companion Companion;
   }
 
@@ -103,6 +104,7 @@ package androidx.glance.template {
   }
 
   public final class ImageBlock {
+    ctor public ImageBlock();
     ctor public ImageBlock(optional java.util.List<androidx.glance.template.TemplateImageWithDescription> images, optional int aspectRatio, optional int size, optional @IntRange(from=0L) int priority);
     method public int getAspectRatio();
     method public java.util.List<androidx.glance.template.TemplateImageWithDescription> getImages();
@@ -110,7 +112,7 @@ package androidx.glance.template {
     method public int getSize();
     property public final int aspectRatio;
     property public final java.util.List<androidx.glance.template.TemplateImageWithDescription> images;
-    property public final int priority;
+    property @IntRange(from=0L) public final int priority;
     property public final int size;
   }
 
@@ -141,6 +143,7 @@ package androidx.glance.template {
   }
 
   public final class ListTemplateData {
+    ctor public ListTemplateData();
     ctor public ListTemplateData(optional androidx.glance.template.HeaderBlock? headerBlock, optional java.util.List<androidx.glance.template.ListTemplateItem> listContent, optional int listStyle);
     method public androidx.glance.template.HeaderBlock? getHeaderBlock();
     method public java.util.List<androidx.glance.template.ListTemplateItem> getListContent();
@@ -165,6 +168,7 @@ package androidx.glance.template {
   }
 
   public final class SingleEntityTemplateData {
+    ctor public SingleEntityTemplateData();
     ctor public SingleEntityTemplateData(optional androidx.glance.template.HeaderBlock? headerBlock, optional androidx.glance.template.TextBlock? textBlock, optional androidx.glance.template.ImageBlock? imageBlock, optional androidx.glance.template.ActionBlock? actionBlock);
     method public androidx.glance.template.ActionBlock? getActionBlock();
     method public androidx.glance.template.HeaderBlock? getHeaderBlock();
@@ -227,7 +231,7 @@ package androidx.glance.template {
     method public androidx.glance.template.TemplateText getText1();
     method public androidx.glance.template.TemplateText? getText2();
     method public androidx.glance.template.TemplateText? getText3();
-    property public final int priority;
+    property @IntRange(from=0L) public final int priority;
     property public final androidx.glance.template.TemplateText text1;
     property public final androidx.glance.template.TemplateText? text2;
     property public final androidx.glance.template.TemplateText? text3;

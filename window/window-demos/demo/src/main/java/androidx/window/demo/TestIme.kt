@@ -17,13 +17,10 @@
 package androidx.window.demo
 
 import android.inputmethodservice.InputMethodService
-import android.os.Build
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
-import androidx.core.view.WindowInsetsCompat.Type
 import androidx.recyclerview.widget.RecyclerView
-import androidx.window.core.ExperimentalWindowApi
 import androidx.window.demo.common.infolog.InfoLogAdapter
 import androidx.window.layout.WindowMetrics
 import androidx.window.layout.WindowMetricsCalculator
@@ -56,33 +53,31 @@ internal class TestIme : InputMethodService() {
     }
 
     private fun displayCurrentWindowMetrics() {
-        val windowMetrics = WindowMetricsCalculator.getOrCreate()
-            .computeCurrentWindowMetrics(this@TestIme)
+        val windowMetrics =
+            WindowMetricsCalculator.getOrCreate().computeCurrentWindowMetrics(this@TestIme)
         displayWindowMetrics("CurrentWindowMetrics update", windowMetrics)
     }
 
     private fun displayMaximumWindowMetrics() {
-        val windowMetrics = WindowMetricsCalculator.getOrCreate()
-            .computeMaximumWindowMetrics(this@TestIme)
+        val windowMetrics =
+            WindowMetricsCalculator.getOrCreate().computeMaximumWindowMetrics(this@TestIme)
         displayWindowMetrics("MaximumWindowMetrics update", windowMetrics)
     }
 
-    @OptIn(ExperimentalWindowApi::class)
     private fun displayWindowMetrics(title: String, windowMetrics: WindowMetrics) {
 
         val width = windowMetrics.bounds.width()
         val height = windowMetrics.bounds.height()
 
-        val logBuilder = StringBuilder().append("Width: $width, Height: $height\n" +
-            "Top: ${windowMetrics.bounds.top}, Bottom: ${windowMetrics.bounds.bottom}, " +
-            "Left: ${windowMetrics.bounds.left}, Right: ${windowMetrics.bounds.right}")
+        val logBuilder =
+            StringBuilder()
+                .append(
+                    "Width: $width, Height: $height\n" +
+                        "Top: ${windowMetrics.bounds.top}, Bottom: ${windowMetrics.bounds.bottom}, " +
+                        "Left: ${windowMetrics.bounds.left}, Right: ${windowMetrics.bounds.right}\n" +
+                        "Density: ${windowMetrics.density}"
+                )
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val windowInsets = windowMetrics.getWindowInsets()
-            logBuilder.append("\nimeInset: ${windowInsets.getInsets(Type.ime())}")
-            logBuilder.append("\nnavInset: ${windowInsets.getInsets(Type.navigationBars())}")
-            logBuilder.append("\nstatusBarInset: ${windowInsets.getInsets(Type.statusBars())}")
-        }
         adapter.append(title, logBuilder.toString())
         adapter.notifyDataSetChanged()
     }

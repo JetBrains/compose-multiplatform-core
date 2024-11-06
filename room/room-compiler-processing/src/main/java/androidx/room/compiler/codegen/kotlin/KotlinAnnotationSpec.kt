@@ -22,20 +22,16 @@ import androidx.room.compiler.codegen.XCodeBlock
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.javapoet.KAnnotationSpec
 
-internal class KotlinAnnotationSpec(
-    internal val actual: KAnnotationSpec
-) : KotlinLang(), XAnnotationSpec {
+internal class KotlinAnnotationSpec(internal val actual: KAnnotationSpec) :
+    KotlinLang(), XAnnotationSpec {
 
-    internal class Builder(
-        internal val actual: KAnnotationSpecBuilder
-    ) : KotlinLang(), XAnnotationSpec.Builder {
+    internal class Builder(internal val actual: KAnnotationSpecBuilder) :
+        KotlinLang(), XAnnotationSpec.Builder {
         override fun addMember(name: String, code: XCodeBlock) = apply {
             require(code is KotlinCodeBlock)
             actual.addMember(CodeBlock.of("$name = %L", code.actual))
         }
 
-        override fun build(): XAnnotationSpec {
-            return KotlinAnnotationSpec(actual.build())
-        }
+        override fun build() = KotlinAnnotationSpec(actual.build())
     }
 }

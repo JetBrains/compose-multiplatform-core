@@ -1,29 +1,34 @@
-# Project/Module Creator
+# Project creator
 
-This script will create a new project/module using a groupId and artifactId.
+This script will create a new library project and associated Gradle module using
+a `groupId` and `artifactId`.
 
-It will use the groupId and artifactId to best guess which configuration
-is most appropriate for the project/module you are creating.
+It will use the `groupId` and `artifactId` to guess which configuration is most
+appropriate for the project you are creating.
 
-### Using the script
+## Basic usage
 
 ```bash
 ./create_project.py androidx.foo foo-bar
 ```
 
-### Todos **after** project creation
+## Project types
 
-1. [OWNERS] Check that the OWNERS file is in the correct place
-2. [OWNERS] Add your name (and others) to the OWNERS file
-3. [build.grade] Check that the correct library version is assigned
-4. [build.grade] Fill out the project/module name
-5. [package-info.java] Fill out the project/module package-info.java file
+The script leverages
+`buildSrc/public/src/main/kotlin/androidx/build/LibraryType.kt` to create the
+recommended defaults for your project. However, you can override the options to
+best fit your requirements.
 
-### Project/Module Types
+## Additional documentation
 
-The script leverages buildSrc/public/src/main/kotlin/androidx/build/LibraryType.kt
-to create the recommended defaults for your project.  However, you can override
-the options to best fit your requirements.
+See go/androidx-api-guidelines#module-creation (internal-only) or the
+[equivalent page](https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:docs/api_guidelines/modules.md#module-creation)
+on public Android Code Search for advanced usage and solutions to common issues.
+
+## Development
+
+If you make any changes to the script, please update this `README` and make
+corresponding updates at go/androidx-api-guidelines#module-creation.
 
 ### Testing the script
 
@@ -36,21 +41,3 @@ Script test suite
 ```bash
 ./test_project_creator.py
 ```
-
-### Debugging `No module named 'toml' errors
-
-If you see an error message `No module named 'toml'` try the following steps.
-
-*   Install necessary tools if they are not already installed
-    *   (Linux) `sudo apt-get install virtualenv python3-venv`
-    *   (Mac) `pip3 install virtualenv`
-*   Create a virtual environment with `virtualenv androidx_project_creator` (you
-    can choose another name for your virtualenv if you wish).
-*   Install the `toml` library in your virtual env with
-    `androidx_project_creator/bin/pip3 install toml`
-*   Run the project creator script from your virtual env with
-    `androidx_project_creator/bin/python3
-    ./development/project-creator/create_project.py androidx.foo foo-bar`
-*   Delete your virtual env with `rm -rf ./androidx-project_creator`
-    *   virtualenv will automatically .gitignore itself, but you may want to to
-        remove it anyway.

@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.pipe.integration.impl
 
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.core.Log.warn
 import androidx.camera.camera2.pipe.integration.adapter.awaitUntil
@@ -38,97 +37,91 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 internal const val DEFAULT_FLASH_MODE = ImageCapture.FLASH_MODE_OFF
 
-/**
- * Implementation of Flash control exposed by [CameraControlInternal].
- */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
+/** Implementation of Flash control exposed by [CameraControlInternal]. */
 @CameraScope
-class FlashControl @Inject constructor(
+public class FlashControl
+@Inject
+constructor(
     private val cameraProperties: CameraProperties,
     private val state3AControl: State3AControl,
     private val threads: UseCaseThreads,
     private val torchControl: TorchControl,
     private val useFlashModeTorchFor3aUpdate: UseFlashModeTorchFor3aUpdate,
 ) : UseCaseCameraControl {
-    private var _useCaseCamera: UseCaseCamera? = null
-    override var useCaseCamera: UseCaseCamera?
-        get() = _useCaseCamera
+    private var _requestControl: UseCaseCameraRequestControl? = null
+    override var requestControl: UseCaseCameraRequestControl?
+        get() = _requestControl
         set(value) {
-            _useCaseCamera = value
+            _requestControl = value
             setFlashAsync(_flashMode, false)
         }
 
     override fun reset() {
         _flashMode = DEFAULT_FLASH_MODE
         _screenFlash = null
-        threads.sequentialScope.launch {
-            stopRunningTask()
-        }
+        stopRunningTask()
         setFlashAsync(DEFAULT_FLASH_MODE)
     }
 
-    @Volatile
-    @ImageCapture.FlashMode
-    private var _flashMode: Int = DEFAULT_FLASH_MODE
+    @Volatile @ImageCapture.FlashMode private var _flashMode: Int = DEFAULT_FLASH_MODE
 
     @ImageCapture.FlashMode
-    var flashMode: Int = _flashMode
+    public var flashMode: Int = _flashMode
         get() = _flashMode
         private set
 
-    @Volatile
-    private var _screenFlash: ScreenFlash? = null
+    @Volatile private var _screenFlash: ScreenFlash? = null
 
-    var screenFlash: ScreenFlash? = _screenFlash
+    public var screenFlash: ScreenFlash? = _screenFlash
         get() = _screenFlash
         private set
 
     private var _updateSignal: CompletableDeferred<Unit>? = null
 
-    var updateSignal: Deferred<Unit> = CompletableDeferred(Unit)
-        get() = if (_updateSignal != null) {
-            _updateSignal!!
-        } else {
-            CompletableDeferred(Unit)
-        }
+    public var updateSignal: Deferred<Unit> = CompletableDeferred(Unit)
+        get() =
+            if (_updateSignal != null) {
+                _updateSignal!!
+            } else {
+                CompletableDeferred(Unit)
+            }
         private set
 
-    fun setFlashAsync(
+    public fun setFlashAsync(
         @ImageCapture.FlashMode flashMode: Int,
         cancelPreviousTask: Boolean = true
     ): Deferred<Unit> {
+        debug { "setFlashAsync: flashMode = $flashMode, requestControl = $requestControl" }
         val signal = CompletableDeferred<Unit>()
 
-        useCaseCamera?.let {
+        requestControl?.let {
 
             // Update _flashMode immediately so that CameraControlInternal#getFlashMode()
             // returns correct value.
             _flashMode = flashMode
 
-            threads.sequentialScope.launch {
-                if (cancelPreviousTask) {
-                    stopRunningTask()
-                } else {
-                    // Propagate the result to the previous updateSignal
-                    _updateSignal?.let { previousUpdateSignal ->
-                        signal.propagateTo(previousUpdateSignal)
-                    }
+            if (cancelPreviousTask) {
+                stopRunningTask()
+            } else {
+                // Propagate the result to the previous updateSignal
+                _updateSignal?.let { previousUpdateSignal ->
+                    signal.propagateTo(previousUpdateSignal)
                 }
-
-                _updateSignal = signal
-                state3AControl.flashMode = flashMode
-                state3AControl.updateSignal?.propagateTo(signal) ?: run { signal.complete(Unit) }
             }
-        } ?: run {
-            signal.completeExceptionally(
-                CameraControl.OperationCanceledException("Camera is not active.")
-            )
+
+            _updateSignal = signal
+            state3AControl.flashMode = flashMode
+            state3AControl.updateSignal?.propagateTo(signal) ?: run { signal.complete(Unit) }
         }
+            ?: run {
+                signal.completeExceptionally(
+                    CameraControl.OperationCanceledException("Camera is not active.")
+                )
+            }
 
         return signal
     }
@@ -144,11 +137,11 @@ class FlashControl @Inject constructor(
         _updateSignal = null
     }
 
-    fun setScreenFlash(screenFlash: ScreenFlash?) {
+    public fun setScreenFlash(screenFlash: ScreenFlash?) {
         _screenFlash = screenFlash
     }
 
-    suspend fun startScreenFlashCaptureTasks() {
+    public suspend fun startScreenFlashCaptureTasks() {
         val pendingTasks = mutableListOf<Deferred<Unit>>()
 
         // Invoke ScreenFlash#apply and wait later for its listener to be completed
@@ -173,16 +166,11 @@ class FlashControl @Inject constructor(
      */
     private suspend fun applyScreenFlash(timeoutMillis: Long): Deferred<Unit> {
         val onApplyCompletedSignal = CompletableDeferred<Unit>()
-        val screenFlashListener = ScreenFlashListener {
-            onApplyCompletedSignal.complete(Unit)
-        }
+        val screenFlashListener = ScreenFlashListener { onApplyCompletedSignal.complete(Unit) }
 
         withContext(Dispatchers.Main) {
             val expirationTimeMillis = System.currentTimeMillis() + timeoutMillis
-            screenFlash?.apply(
-                expirationTimeMillis,
-                screenFlashListener
-            )
+            screenFlash?.apply(expirationTimeMillis, screenFlashListener)
             debug {
                 "applyScreenFlash: ScreenFlash.apply() invoked" +
                     ", expirationTimeMillis = $expirationTimeMillis"
@@ -198,8 +186,10 @@ class FlashControl @Inject constructor(
             if (onApplyCompletedSignal.awaitUntil(timeoutMillis)) {
                 debug { "applyScreenFlash: ScreenFlashListener completed" }
             } else {
-                warn { "applyScreenFlash: ScreenFlashListener completion timed out" +
-                    " after $timeoutMillis ms" }
+                warn {
+                    "applyScreenFlash: ScreenFlashListener completion timed out" +
+                        " after $timeoutMillis ms"
+                }
             }
         }
     }
@@ -223,9 +213,7 @@ class FlashControl @Inject constructor(
 
         state3AControl.tryExternalFlashAeMode = true
         return state3AControl.updateSignal?.also {
-            debug {
-                "setExternalFlashAeModeAsync: need to wait for state3AControl.updateSignal"
-            }
+            debug { "setExternalFlashAeModeAsync: need to wait for state3AControl.updateSignal" }
             it.invokeOnCompletion {
                 debug { "setExternalFlashAeModeAsync: state3AControl.updateSignal completed" }
             }
@@ -243,25 +231,19 @@ class FlashControl @Inject constructor(
      */
     private fun setTorchForScreenFlash(): Deferred<Unit>? {
         val shouldUseFlashModeTorch = useFlashModeTorchFor3aUpdate.shouldUseFlashModeTorch()
-        debug {
-            "setTorchIfRequired: shouldUseFlashModeTorch = $shouldUseFlashModeTorch"
-        }
+        debug { "setTorchIfRequired: shouldUseFlashModeTorch = $shouldUseFlashModeTorch" }
 
         if (!shouldUseFlashModeTorch) {
             return null
         }
 
         return torchControl.setTorchAsync(torch = true, ignoreFlashUnitAvailability = true).also {
-            debug {
-                "setTorchIfRequired: need to wait for torch control to be completed"
-            }
-            it.invokeOnCompletion {
-                debug { "setTorchIfRequired: torch control completed" }
-            }
+            debug { "setTorchIfRequired: need to wait for torch control to be completed" }
+            it.invokeOnCompletion { debug { "setTorchIfRequired: torch control completed" } }
         }
     }
 
-    suspend fun stopScreenFlashCaptureTasks() {
+    public suspend fun stopScreenFlashCaptureTasks() {
         withContext(Dispatchers.Main) {
             screenFlash?.clear()
             debug { "screenFlashPostCapture: ScreenFlash.clear() invoked" }
@@ -277,10 +259,24 @@ class FlashControl @Inject constructor(
         }
     }
 
+    /**
+     * Awaits for flash mode to be updated (if required) and returns the initial flash mode value
+     * i.e. the value for which the waiting was started.
+     */
+    public suspend fun awaitFlashModeUpdate(): Int {
+        debug { "FlashControl: Waiting for any ongoing update to be completed" }
+        // The flash mode may change while waiting for it to be updated, snapshotting it to ensure
+        // the initial flash mode value (for which waiting started) is returned afterwards.
+        val initialFlashMode = flashMode
+        updateSignal.join()
+        debug { "awaitFlashModeUpdate: initialFlashMode = $initialFlashMode" }
+        return initialFlashMode
+    }
+
     @Module
-    abstract class Bindings {
+    public abstract class Bindings {
         @Binds
         @IntoSet
-        abstract fun provideControls(flashControl: FlashControl): UseCaseCameraControl
+        public abstract fun provideControls(flashControl: FlashControl): UseCaseCameraControl
     }
 }

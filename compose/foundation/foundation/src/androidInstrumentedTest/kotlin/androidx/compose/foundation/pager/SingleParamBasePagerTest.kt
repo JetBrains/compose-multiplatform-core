@@ -17,8 +17,7 @@
 package androidx.compose.foundation.pager
 
 import android.view.View
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.LocalOverscrollConfiguration
+import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.Orientation
@@ -65,11 +64,9 @@ import org.junit.Rule
  * Transition BasePagerTest to be used whilst we adopt [ParameterizedInCompositionRule] in the
  * necessary Pager Tests.
  */
-@OptIn(ExperimentalFoundationApi::class)
 open class SingleParamBasePagerTest {
 
-    @get:Rule
-    val rule = createParameterizedComposeTestRule<SingleParamConfig>()
+    @get:Rule val rule = createParameterizedComposeTestRule<SingleParamConfig>()
 
     lateinit var scope: CoroutineScope
     var pagerSize: Int = 0
@@ -93,7 +90,7 @@ open class SingleParamBasePagerTest {
         userScrollEnabled: Boolean = true,
         snappingPage: PagerSnapDistance = PagerSnapDistance.atMost(1),
         nestedScrollConnection: NestedScrollConnection = object : NestedScrollConnection {},
-        additionalContent: @Composable () -> Unit = { },
+        additionalContent: @Composable () -> Unit = {},
         contentPadding: PaddingValues = PaddingValues(0.dp),
         pageSpacing: Dp = 0.dp,
         reverseLayout: Boolean = false,
@@ -103,41 +100,36 @@ open class SingleParamBasePagerTest {
         flingBehavior: TargetedFlingBehavior? = null,
         layoutDirection: LayoutDirection = LayoutDirection.Ltr,
         pageContent: @Composable PagerScope.(page: Int) -> Unit = { page ->
-            Page(
-                index = page,
-                orientation = orientation
-            )
+            Page(index = page, orientation = orientation)
         }
     ) {
-        val state = rememberPagerState(initialPage, initialPageOffsetFraction, pageCount).also {
-            pagerState = it
-        }
+        val state =
+            rememberPagerState(initialPage, initialPageOffsetFraction, pageCount).also {
+                pagerState = it
+            }
         composeView = LocalView.current
         focusManager = LocalFocusManager.current
 
         CompositionLocalProvider(
             LocalLayoutDirection provides layoutDirection,
-            LocalOverscrollConfiguration provides null
+            LocalOverscrollFactory provides null
         ) {
-            val resolvedFlingBehavior = flingBehavior ?: PagerDefaults.flingBehavior(
-                state = state,
-                pagerSnapDistance = snappingPage,
-                snapPositionalThreshold = snapPositionalThreshold
-            )
+            val resolvedFlingBehavior =
+                flingBehavior
+                    ?: PagerDefaults.flingBehavior(
+                        state = state,
+                        pagerSnapDistance = snappingPage,
+                        snapPositionalThreshold = snapPositionalThreshold
+                    )
 
             scope = rememberCoroutineScope()
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .nestedScroll(nestedScrollConnection)
-            ) {
+            Box(modifier = Modifier.fillMaxSize().nestedScroll(nestedScrollConnection)) {
                 HorizontalOrVerticalPager(
                     state = state,
                     beyondViewportPageCount = beyondViewportPageCount,
                     orientation = orientation,
-                    modifier = modifier
-                        .testTag(PagerTestTag)
-                        .onSizeChanged {
+                    modifier =
+                        modifier.testTag(PagerTestTag).onSizeChanged {
                             pagerSize =
                                 if (orientation == Orientation.Vertical) it.height else it.width
                         },
@@ -158,27 +150,28 @@ open class SingleParamBasePagerTest {
 
     @Composable
     internal fun Page(index: Int, orientation: Orientation, initialFocusedItemIndex: Int = 0) {
-        val focusRequester = FocusRequester().also {
-            if (index == initialFocusedItemIndex) initialFocusedItem = it
-        }
-        Box(modifier = Modifier
-            .focusRequester(focusRequester)
-            .onPlaced {
-                placed.add(index)
-                pageSize =
-                    if (orientation == Orientation.Vertical) it.size.height else it.size.width
-            }
-            .fillMaxSize()
-            .background(Color.Blue)
-            .testTag("$index")
-            .onFocusChanged {
-                if (it.isFocused) {
-                    focused.add(index)
-                } else {
-                    focused.remove(index)
-                }
-            }
-            .focusable(),
+        val focusRequester =
+            FocusRequester().also { if (index == initialFocusedItemIndex) initialFocusedItem = it }
+        Box(
+            modifier =
+                Modifier.focusRequester(focusRequester)
+                    .onPlaced {
+                        placed.add(index)
+                        pageSize =
+                            if (orientation == Orientation.Vertical) it.size.height
+                            else it.size.width
+                    }
+                    .fillMaxSize()
+                    .background(if (index % 2 == 0) Color.Blue else Color.Red)
+                    .testTag("$index")
+                    .onFocusChanged {
+                        if (it.isFocused) {
+                            focused.add(index)
+                        } else {
+                            focused.remove(index)
+                        }
+                    }
+                    .focusable(),
             contentAlignment = Alignment.Center
         ) {
             BasicText(text = index.toString())
@@ -243,24 +236,25 @@ open class SingleParamBasePagerTest {
         pageToVerifyPosition: Int = currentPageIndex,
         pageOffset: Float = 0f,
     ) {
-        val leftContentPadding =
-            mainAxisContentPadding.calculateLeftPadding(layoutDirection)
+        val leftContentPadding = mainAxisContentPadding.calculateLeftPadding(layoutDirection)
         val topContentPadding = mainAxisContentPadding.calculateTopPadding()
 
-        val (left, top) = with(rule.density) {
-            val spacings = pageSpacing.roundToPx()
-            val initialPageOffset = currentPageIndex * (pageSize + spacings)
+        val (left, top) =
+            with(rule.density) {
+                val spacings = pageSpacing.roundToPx()
+                val initialPageOffset = currentPageIndex * (pageSize + spacings)
 
-            val position = pageToVerifyPosition * (pageSize + spacings) - initialPageOffset
-            val positionWithOffset =
-                position + (pageSize + spacings) * pageOffset * scrollForwardSign
-            if (orientation == Orientation.Vertical) {
-                0.dp to positionWithOffset.toDp()
-            } else {
-                positionWithOffset.toDp() to 0.dp
+                val position = pageToVerifyPosition * (pageSize + spacings) - initialPageOffset
+                val positionWithOffset =
+                    position + (pageSize + spacings) * pageOffset * scrollForwardSign
+                if (orientation == Orientation.Vertical) {
+                    0.dp to positionWithOffset.toDp()
+                } else {
+                    positionWithOffset.toDp() to 0.dp
+                }
             }
-        }
-        rule.onNodeWithTag("$pageToVerifyPosition")
+        rule
+            .onNodeWithTag("$pageToVerifyPosition")
             .assertPositionInRootIsEqualTo(left + leftContentPadding, top + topContentPadding)
     }
 
@@ -288,19 +282,17 @@ data class SingleParamConfig(
     val beyondViewportPageCount: Int = 0,
     val snapPosition: Pair<SnapPosition, String> = SnapPosition.Start to "Start",
 ) {
-    fun TouchInjectionScope.swipeWithVelocityAcrossMainAxis(
-        velocity: Float,
-        delta: Float? = null
-    ) {
-        val end = if (delta == null) {
-            layoutEnd
-        } else {
-            if (orientation == Orientation.Vertical) {
-                layoutStart.copy(y = layoutStart.y + delta)
+    fun TouchInjectionScope.swipeWithVelocityAcrossMainAxis(velocity: Float, delta: Float? = null) {
+        val end =
+            if (delta == null) {
+                layoutEnd
             } else {
-                layoutStart.copy(x = layoutStart.x + delta)
+                if (orientation == Orientation.Vertical) {
+                    layoutStart.copy(y = layoutStart.y + delta)
+                } else {
+                    layoutStart.copy(x = layoutStart.x + delta)
+                }
             }
-        }
         swipeWithVelocity(layoutStart, end, velocity)
     }
 
@@ -353,27 +345,28 @@ data class SingleParamConfig(
             }
 
     val scrollForwardSign: Int
-        get() = if (orientation == Orientation.Vertical) {
-            if (reverseLayout && layoutDirection == LayoutDirection.Rtl) {
-                1
-            } else if (!reverseLayout && layoutDirection == LayoutDirection.Rtl) {
-                -1
-            } else if (reverseLayout && layoutDirection == LayoutDirection.Ltr) {
-                1
+        get() =
+            if (orientation == Orientation.Vertical) {
+                if (reverseLayout && layoutDirection == LayoutDirection.Rtl) {
+                    1
+                } else if (!reverseLayout && layoutDirection == LayoutDirection.Rtl) {
+                    -1
+                } else if (reverseLayout && layoutDirection == LayoutDirection.Ltr) {
+                    1
+                } else {
+                    -1
+                }
             } else {
-                -1
+                if (reverseLayout && layoutDirection == LayoutDirection.Rtl) {
+                    -1
+                } else if (!reverseLayout && layoutDirection == LayoutDirection.Rtl) {
+                    1
+                } else if (reverseLayout && layoutDirection == LayoutDirection.Ltr) {
+                    1
+                } else {
+                    -1
+                }
             }
-        } else {
-            if (reverseLayout && layoutDirection == LayoutDirection.Rtl) {
-                -1
-            } else if (!reverseLayout && layoutDirection == LayoutDirection.Rtl) {
-                1
-            } else if (reverseLayout && layoutDirection == LayoutDirection.Ltr) {
-                1
-            } else {
-                -1
-            }
-        }
 
     val vertical: Boolean
         get() = orientation == Orientation.Vertical

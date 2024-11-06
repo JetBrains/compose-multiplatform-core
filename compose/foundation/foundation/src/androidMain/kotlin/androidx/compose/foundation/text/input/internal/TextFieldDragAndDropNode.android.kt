@@ -16,11 +16,10 @@
 
 package androidx.compose.foundation.text.input.internal
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.content.MediaType
 import androidx.compose.ui.draganddrop.DragAndDropEvent
-import androidx.compose.ui.draganddrop.DragAndDropModifierNode
 import androidx.compose.ui.draganddrop.DragAndDropTarget
+import androidx.compose.ui.draganddrop.DragAndDropTargetModifierNode
 import androidx.compose.ui.draganddrop.toAndroidDragEvent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.ClipEntry
@@ -28,7 +27,6 @@ import androidx.compose.ui.platform.ClipMetadata
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.platform.toClipMetadata
 
-@OptIn(ExperimentalFoundationApi::class)
 internal actual fun textFieldDragAndDropNode(
     hintMediaTypes: () -> Set<MediaType>,
     onDrop: (clipEntry: ClipEntry, clipMetadata: ClipMetadata) -> Boolean,
@@ -39,8 +37,8 @@ internal actual fun textFieldDragAndDropNode(
     onChanged: ((event: DragAndDropEvent) -> Unit)?,
     onExited: ((event: DragAndDropEvent) -> Unit)?,
     onEnded: ((event: DragAndDropEvent) -> Unit)?,
-): DragAndDropModifierNode {
-    return DragAndDropModifierNode(
+): DragAndDropTargetModifierNode {
+    return DragAndDropTargetModifierNode(
         shouldStartDragAndDrop = { dragAndDropEvent ->
             // If there's a receiveContent modifier wrapping around this TextField, initially all
             // dragging items should be accepted for drop. This is expected to be met by the caller
@@ -50,33 +48,28 @@ internal actual fun textFieldDragAndDropNode(
                 it == MediaType.All || clipDescription.hasMimeType(it.representation)
             }
         },
-        target = object : DragAndDropTarget {
-            override fun onDrop(event: DragAndDropEvent): Boolean {
-                dragAndDropRequestPermission(event)
-                return onDrop.invoke(
-                    event.toAndroidDragEvent().clipData.toClipEntry(),
-                    event.toAndroidDragEvent().clipDescription.toClipMetadata()
-                )
+        target =
+            object : DragAndDropTarget {
+                override fun onDrop(event: DragAndDropEvent): Boolean {
+                    dragAndDropRequestPermission(event)
+                    return onDrop.invoke(
+                        event.toAndroidDragEvent().clipData.toClipEntry(),
+                        event.toAndroidDragEvent().clipDescription.toClipMetadata()
+                    )
+                }
+
+                override fun onStarted(event: DragAndDropEvent) = onStarted?.invoke(event) ?: Unit
+
+                override fun onEntered(event: DragAndDropEvent) = onEntered?.invoke(event) ?: Unit
+
+                override fun onMoved(event: DragAndDropEvent) =
+                    with(event.toAndroidDragEvent()) { onMoved?.invoke(Offset(x, y)) ?: Unit }
+
+                override fun onExited(event: DragAndDropEvent) = onExited?.invoke(event) ?: Unit
+
+                override fun onChanged(event: DragAndDropEvent) = onChanged?.invoke(event) ?: Unit
+
+                override fun onEnded(event: DragAndDropEvent) = onEnded?.invoke(event) ?: Unit
             }
-
-            override fun onStarted(event: DragAndDropEvent) =
-                onStarted?.invoke(event) ?: Unit
-
-            override fun onEntered(event: DragAndDropEvent) =
-                onEntered?.invoke(event) ?: Unit
-
-            override fun onMoved(event: DragAndDropEvent) = with(event.toAndroidDragEvent()) {
-                onMoved?.invoke(Offset(x, y)) ?: Unit
-            }
-
-            override fun onExited(event: DragAndDropEvent) =
-                onExited?.invoke(event) ?: Unit
-
-            override fun onChanged(event: DragAndDropEvent) =
-                onChanged?.invoke(event) ?: Unit
-
-            override fun onEnded(event: DragAndDropEvent) =
-                onEnded?.invoke(event) ?: Unit
-        }
     )
 }

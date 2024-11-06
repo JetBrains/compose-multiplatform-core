@@ -21,6 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+import androidx.build.KotlinTarget
 import androidx.build.LibraryType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
@@ -32,12 +34,18 @@ plugins {
 }
 
 androidXMultiplatform {
+    ios()
+    js()
     jvm {
         withJava()
     }
-    mac()
     linux()
-    ios()
+    mac()
+    mingwX64()
+    tvos()
+    wasmJs()
+    watchosDeviceArm64()
+    watchos()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
@@ -50,19 +58,26 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 api(libs.kotlinStdlib)
-                api("androidx.annotation:annotation:1.7.0")
+                api("androidx.annotation:annotation:1.9.1")
             }
         }
 
         commonTest {
             dependencies {
-                implementation(libs.kotlinTest)
                 implementation(libs.kotlinTestAnnotationsCommon)
-                implementation(libs.kotlinCoroutinesCore)
+                // For KotlinWasm, versions of toolchain and stdlib need to be the same for tests:
+                // https://youtrack.jetbrains.com/issue/KT-71032
+                // So we force kotlin-test to be on Kotlin 2.
+                // Published artifacts are unaffected by this, they continue to target Kotlin 1.9
+                // TODO(b/375358921) Set to libs.kotlinTest when collection targets Kotlin 2
+                implementation("org.jetbrains.kotlin:kotlin-test:2.0.10")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
             }
         }
 
         jvmTest {
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.kotlinTestJunit)
                 implementation(libs.truth)
@@ -70,30 +85,59 @@ androidXMultiplatform {
             }
         }
 
-        nativeMain {
+        nonJvmMain {
             dependsOn(commonMain)
+        }
+
+        nativeMain {
+            dependsOn(nonJvmMain)
         }
 
         nativeTest {
             dependsOn(commonTest)
         }
 
-        darwinMain {
+        unixMain {
             dependsOn(nativeMain)
+        }
+
+        darwinMain {
+            dependsOn(unixMain)
         }
 
         linuxMain {
+            dependsOn(unixMain)
+        }
+
+        mingwMain {
             dependsOn(nativeMain)
         }
 
-        targets.all { target ->
+        webMain {
+            dependsOn(nonJvmMain)
+        }
+
+        wasmJsMain {
+            dependsOn(webMain)
+        }
+
+        jsMain {
+            dependsOn(webMain)
+        }
+
+        targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet {
                     def konanTargetFamily = target.konanTarget.family
-                    if (konanTargetFamily == Family.OSX || konanTargetFamily == Family.IOS) {
+                    if (konanTargetFamily == Family.OSX ||
+                            konanTargetFamily == Family.IOS ||
+                            konanTargetFamily == Family.WATCHOS ||
+                            konanTargetFamily == Family.TVOS) {
                         dependsOn(darwinMain)
                     } else if (konanTargetFamily == Family.LINUX) {
                         dependsOn(linuxMain)
+                    } else if (konanTargetFamily == Family.MINGW) {
+                        dependsOn(mingwMain)
                     } else {
                         throw new GradleException("unknown native target ${target}")
                     }
@@ -118,7 +162,7 @@ dependencies {
     // collection-ktx transitively, which would lead to duplicate definition since the -ktx
     // extensions were moved into the main artifact.
     constraints {
-        jvmMainImplementation("androidx.collection:collection-ktx:1.3.0")
+        jvmMainImplementation("androidx.collection:collection-ktx:1.4.2")
     }
 }
 
@@ -127,4 +171,6 @@ androidx {
     type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2018"
     description = "Standalone efficient collections."
+    metalavaK2UastEnabled = false
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

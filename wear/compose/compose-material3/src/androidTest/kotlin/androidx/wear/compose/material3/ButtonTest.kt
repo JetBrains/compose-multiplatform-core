@@ -50,20 +50,35 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
+import androidx.wear.compose.material3.samples.FilledTonalCompactButtonSample
+import androidx.wear.compose.material3.samples.SimpleButtonSample
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
 class ButtonTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
+
+    @Test
+    fun simple_button_sample_builds() {
+        rule.setContentWithTheme { SimpleButtonSample() }
+    }
+
+    @Test
+    fun filled_tonal_compact_button_sample_builds() {
+        rule.setContentWithTheme { FilledTonalCompactButtonSample() }
+    }
 
     @Test
     fun supports_testtag() {
@@ -82,11 +97,7 @@ class ButtonTest {
     @Test
     fun has_click_action_when_enabled() {
         rule.setContentWithTheme {
-            Button(
-                onClick = {},
-                enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
-            ) {
+            Button(onClick = {}, enabled = true, modifier = Modifier.testTag(TEST_TAG)) {
                 Text("Test")
             }
         }
@@ -97,11 +108,7 @@ class ButtonTest {
     @Test
     fun has_click_action_when_disabled() {
         rule.setContentWithTheme {
-            Button(
-                onClick = {},
-                enabled = false,
-                modifier = Modifier.testTag(TEST_TAG)
-            ) {
+            Button(onClick = {}, enabled = false, modifier = Modifier.testTag(TEST_TAG)) {
                 Text("Test")
             }
         }
@@ -112,11 +119,7 @@ class ButtonTest {
     @Test
     fun is_correctly_enabled() {
         rule.setContentWithTheme {
-            Button(
-                onClick = {},
-                enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
-            ) {
+            Button(onClick = {}, enabled = true, modifier = Modifier.testTag(TEST_TAG)) {
                 Text("Test")
             }
         }
@@ -127,11 +130,7 @@ class ButtonTest {
     @Test
     fun is_correctly_disabled() {
         rule.setContentWithTheme {
-            Button(
-                onClick = {},
-                enabled = false,
-                modifier = Modifier.testTag(TEST_TAG)
-            ) {
+            Button(onClick = {}, enabled = false, modifier = Modifier.testTag(TEST_TAG)) {
                 Text("Test")
             }
         }
@@ -155,18 +154,49 @@ class ButtonTest {
 
         rule.onNodeWithTag(TEST_TAG).performClick()
 
-        rule.runOnIdle {
-            assertEquals(true, clicked)
+        rule.runOnIdle { assertEquals(true, clicked) }
+    }
+
+    @Test
+    fun responds_to_long_click_when_enabled() {
+        var longClicked = false
+
+        responds_to_long_click(true, { longClicked = true }) { assertEquals(true, longClicked) }
+    }
+
+    @Test
+    fun onLongClickLabel_includedInSemantics() {
+        val testLabel = "Long click action"
+
+        rule.setContentWithTheme {
+            Button(
+                modifier = Modifier.testTag(TEST_TAG),
+                onClick = {},
+                onLongClick = {},
+                onLongClickLabel = testLabel
+            ) {
+                Text("Button")
+            }
         }
+
+        rule.onNodeWithTag(TEST_TAG).assertOnLongClickLabelMatches(testLabel)
     }
 
     @Test
     fun does_not_respond_to_click_when_disabled() {
-        var clicked = false
+        var longClicked = false
+
+        responds_to_long_click(false, { longClicked = true }) { assertEquals(false, longClicked) }
+    }
+
+    @Test
+    fun does_not_respond_to_long_click_when_disabled() {
+        var longClicked = false
 
         rule.setContentWithTheme {
             Button(
-                onClick = { clicked = true },
+                onClick = { /* Do nothing */ },
+                onLongClick = { longClicked = true },
                 enabled = false,
                 modifier = Modifier.testTag(TEST_TAG)
             ) {
@@ -174,31 +204,20 @@ class ButtonTest {
             }
         }
 
-        rule.onNodeWithTag(TEST_TAG).performClick()
+        rule.onNodeWithTag(TEST_TAG).performTouchInput { longClick() }
 
-        rule.runOnIdle {
-            assertEquals(false, clicked)
-        }
+        rule.runOnIdle { assertEquals(false, longClicked) }
     }
 
     @Test
     fun has_role_button() {
         rule.setContentWithTheme {
-            Button(
-                onClick = {},
-                modifier = Modifier.testTag(TEST_TAG)
-            ) {
-                Text("Test")
-            }
+            Button(onClick = {}, modifier = Modifier.testTag(TEST_TAG)) { Text("Test") }
         }
 
-        rule.onNodeWithTag(TEST_TAG)
-            .assert(
-                SemanticsMatcher.expectValue(
-                    SemanticsProperties.Role,
-                    Role.Button
-                )
-            )
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
     }
 
     @Test
@@ -214,13 +233,9 @@ class ButtonTest {
             )
         }
 
-        rule.onNodeWithTag(TEST_TAG)
-            .assert(
-                SemanticsMatcher.expectValue(
-                    SemanticsProperties.Role,
-                    Role.Button
-                )
-            )
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
     }
 
     @Test
@@ -252,12 +267,8 @@ class ButtonTest {
             expectedSecondaryTextStyle = MaterialTheme.typography.labelSmall
             Button(
                 onClick = {},
-                label = {
-                    actualLabelTextStyle = LocalTextStyle.current
-                },
-                secondaryLabel = {
-                    actualSecondaryLabelTextStyle = LocalTextStyle.current
-                }
+                label = { actualLabelTextStyle = LocalTextStyle.current },
+                secondaryLabel = { actualSecondaryLabelTextStyle = LocalTextStyle.current }
             )
         }
         assertEquals(expectedTextStyle, actualLabelTextStyle)
@@ -271,10 +282,7 @@ class ButtonTest {
             expectedShape = RoundedCornerShape(CornerSize(50)),
             colors = { ButtonDefaults.buttonColors() }
         ) { modifier ->
-            Button(
-                onClick = {},
-                modifier = modifier
-            ) {
+            Button(onClick = {}, modifier = modifier) {
                 // omit content to allow us to validate the shape by pixel checking.
             }
         }
@@ -285,15 +293,9 @@ class ButtonTest {
     fun allows_custom_shape_override() {
         val shape = CutCornerShape(4.dp)
 
-        rule.isShape(
-            expectedShape = shape,
-            colors = { ButtonDefaults.buttonColors() }
-        ) { modifier ->
-            Button(
-                onClick = {},
-                modifier = modifier,
-                shape = shape
-            ) {
+        rule.isShape(expectedShape = shape, colors = { ButtonDefaults.buttonColors() }) { modifier
+            ->
+            Button(onClick = {}, modifier = modifier, shape = shape) {
                 // omit content to allow us to validate the shape by pixel checking.
             }
         }
@@ -301,11 +303,8 @@ class ButtonTest {
 
     @Test
     fun gives_base_button_correct_height() {
-        rule.setContentWithThemeForSizeAssertions {
-            Button(
-                onClick = {}
-            ) {}
-        }
+        rule
+            .setContentWithThemeForSizeAssertions { Button(onClick = {}) {} }
             .assertHeightIsEqualTo(ButtonDefaults.Height)
     }
 
@@ -313,25 +312,27 @@ class ButtonTest {
     fun gives_base_button_has_adjustable_height() {
         val minHeight = ButtonDefaults.Height + 1.dp
 
-        rule.setContentWithThemeForSizeAssertions {
-            Button(
-                onClick = {},
-            ) {
-                Text(text = "Button with multiple lines of text to exceed default" +
-                    " minimum height. This should exceed the minimum height for the button.")
+        rule
+            .setContentWithThemeForSizeAssertions {
+                Button(
+                    onClick = {},
+                ) {
+                    Text(
+                        text =
+                            "Button with multiple lines of text to exceed default" +
+                                " minimum height. This should exceed the minimum height for the button."
+                    )
+                }
             }
-        }
             .assertHeightIsAtLeast(minHeight)
     }
 
     @Test
     fun gives_three_slot_button_correct_height() {
-        rule.setContentWithThemeForSizeAssertions {
-            Button(
-                onClick = {},
-                label = { Text("Label") }
-            )
-        }
+        rule
+            .setContentWithThemeForSizeAssertions {
+                Button(onClick = {}, label = { Text("Label") })
+            }
             .assertHeightIsEqualTo(ButtonDefaults.Height)
     }
 
@@ -339,35 +340,39 @@ class ButtonTest {
     fun gives_three_slot_button_has_adjustable_height() {
         val minHeight = ButtonDefaults.Height + 1.dp
 
-        rule.setContentWithThemeForSizeAssertions {
-            Button(
-                onClick = {},
-                label = {
-                    Text(text = "Button with multiple lines of text to exceed default" +
-                        " minimum height. This should exceed the minimum height for the button.")
-                }
-            )
-        }
+        rule
+            .setContentWithThemeForSizeAssertions {
+                Button(
+                    onClick = {},
+                    label = {
+                        Text(
+                            text =
+                                "Button with multiple lines of text to exceed default" +
+                                    " minimum height. This should exceed the minimum height for the button."
+                        )
+                    }
+                )
+            }
             .assertHeightIsAtLeast(minHeight)
     }
 
     @Test
     fun has_icon_in_correct_location_for_three_slot_button_and_label_only() {
         val iconTag = "TestIcon"
-        rule
-            .setContentWithThemeForSizeAssertions(useUnmergedTree = true) {
-                Button(
-                    onClick = {},
-                    label = { Text("Blue green orange") },
-                    icon = { TestImage(iconTag) },
-                    modifier = Modifier.testTag(TEST_TAG)
-                )
-            }
+        rule.setContentWithThemeForSizeAssertions(useUnmergedTree = true) {
+            Button(
+                onClick = {},
+                label = { Text("Blue green orange") },
+                icon = { TestImage(iconTag) },
+                modifier = Modifier.testTag(TEST_TAG)
+            )
+        }
         val itemBounds = rule.onNodeWithTag(TEST_TAG).getUnclippedBoundsInRoot()
-        val iconBounds = rule.onNodeWithTag(iconTag, useUnmergedTree = true)
-            .getUnclippedBoundsInRoot()
+        val iconBounds =
+            rule.onNodeWithTag(iconTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
 
-        rule.onNodeWithContentDescription(iconTag, useUnmergedTree = true)
+        rule
+            .onNodeWithContentDescription(iconTag, useUnmergedTree = true)
             .assertTopPositionInRootIsEqualTo((itemBounds.height - iconBounds.height) / 2)
     }
 
@@ -386,12 +391,12 @@ class ButtonTest {
     fun gives_disabled_base_button_correct_colors() {
         rule.verifyButtonColors(
             status = Status.Disabled,
-            expectedContainerColor = { MaterialTheme.colorScheme.onSurface.copy(
-                alpha = DisabledContainerAlpha
-            ) },
-            expectedContentColor = { MaterialTheme.colorScheme.onSurface.copy(
-                alpha = DisabledContentAlpha
-            ) },
+            expectedContainerColor = {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContainerAlpha)
+            },
+            expectedContentColor = {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
+            },
         )
     }
 
@@ -400,7 +405,7 @@ class ButtonTest {
     fun gives_enabled_filled_tonal_base_button_correct_colors() {
         rule.verifyButtonColors(
             status = Status.Enabled,
-            expectedContainerColor = { MaterialTheme.colorScheme.surface },
+            expectedContainerColor = { MaterialTheme.colorScheme.surfaceContainer },
             expectedContentColor = { MaterialTheme.colorScheme.onSurface },
             content = { FilledTonalButton(Status.Enabled) }
         )
@@ -411,13 +416,39 @@ class ButtonTest {
     fun gives_disabled_filled_tonal_base_button_correct_colors() {
         rule.verifyButtonColors(
             status = Status.Disabled,
-            expectedContainerColor = { MaterialTheme.colorScheme.onSurface.copy(
-                alpha = DisabledContainerAlpha
-            ) },
-            expectedContentColor = { MaterialTheme.colorScheme.onSurface.copy(
-                alpha = DisabledContentAlpha
-            ) },
+            expectedContainerColor = {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContainerAlpha)
+            },
+            expectedContentColor = {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
+            },
             content = { FilledTonalButton(Status.Disabled) }
+        )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    @Test
+    fun gives_enabled_button_correct_filled_variant_colors() {
+        rule.verifyButtonColors(
+            status = Status.Enabled,
+            expectedContainerColor = { MaterialTheme.colorScheme.primaryContainer },
+            expectedContentColor = { MaterialTheme.colorScheme.onPrimaryContainer },
+            content = { FilledVariantButton(Status.Enabled) }
+        )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    @Test
+    fun gives_disabled_button_correct_filled_variant_colors() {
+        rule.verifyButtonColors(
+            status = Status.Disabled,
+            expectedContainerColor = {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContainerAlpha)
+            },
+            expectedContentColor = {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
+            },
+            content = { FilledVariantButton(Status.Disabled) }
         )
     }
 
@@ -438,9 +469,9 @@ class ButtonTest {
         rule.verifyButtonColors(
             status = Status.Disabled,
             expectedContainerColor = { Color.Transparent },
-            expectedContentColor = { MaterialTheme.colorScheme.onSurface.copy(
-                alpha = DisabledContentAlpha
-            ) },
+            expectedContentColor = {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
+            },
             content = { OutlinedButton(Status.Disabled) }
         )
     }
@@ -462,9 +493,9 @@ class ButtonTest {
         rule.verifyButtonColors(
             status = Status.Disabled,
             expectedContainerColor = { Color.Transparent },
-            expectedContentColor = { MaterialTheme.colorScheme.onSurface.copy(
-                alpha = DisabledContentAlpha
-            ) },
+            expectedContentColor = {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
+            },
             content = { ChildButton(Status.Disabled) }
         )
     }
@@ -556,11 +587,7 @@ class ButtonTest {
         rule.verifyButtonBorderColor(
             expectedBorderColor = { MaterialTheme.colorScheme.outline },
             content = { modifier: Modifier ->
-                OutlinedButton(
-                    onClick = {},
-                    modifier = modifier,
-                    enabled = status.enabled()
-                ) {}
+                OutlinedButton(onClick = {}, modifier = modifier, enabled = status.enabled()) {}
             }
         )
     }
@@ -578,9 +605,10 @@ class ButtonTest {
                     onClick = {},
                     modifier = modifier,
                     enabled = status.enabled(),
-                    border = ButtonDefaults.outlinedButtonBorder(
-                        enabled = status.enabled(),
-                    )
+                    border =
+                        ButtonDefaults.outlinedButtonBorder(
+                            enabled = status.enabled(),
+                        )
                 ) {}
             }
         )
@@ -597,11 +625,12 @@ class ButtonTest {
                     onClick = {},
                     modifier = modifier,
                     enabled = status.enabled(),
-                    border = ButtonDefaults.outlinedButtonBorder(
-                        enabled = status.enabled(),
-                        borderColor = Color.Green,
-                        disabledBorderColor = Color.Red
-                    )
+                    border =
+                        ButtonDefaults.outlinedButtonBorder(
+                            enabled = status.enabled(),
+                            borderColor = Color.Green,
+                            disabledBorderColor = Color.Red
+                        )
                 ) {}
             }
         )
@@ -618,11 +647,12 @@ class ButtonTest {
                     onClick = {},
                     modifier = modifier,
                     enabled = status.enabled(),
-                    border = ButtonDefaults.outlinedButtonBorder(
-                        enabled = status.enabled(),
-                        borderColor = Color.Green,
-                        disabledBorderColor = Color.Red
-                    )
+                    border =
+                        ButtonDefaults.outlinedButtonBorder(
+                            enabled = status.enabled(),
+                            borderColor = Color.Green,
+                            disabledBorderColor = Color.Red
+                        )
                 ) {}
             }
         )
@@ -635,12 +665,7 @@ class ButtonTest {
 
         rule.setContentWithTheme {
             expectedTextStyle = MaterialTheme.typography.labelSmall
-            CompactButton(
-                onClick = {},
-                label = {
-                    actualLabelTextStyle = LocalTextStyle.current
-                }
-            )
+            CompactButton(onClick = {}, label = { actualLabelTextStyle = LocalTextStyle.current })
         }
         assertEquals(expectedTextStyle, actualLabelTextStyle)
     }
@@ -648,60 +673,58 @@ class ButtonTest {
     @Test
     fun icon_only_compact_button_has_correct_default_width_and_height() {
         val iconTag = "TestIcon"
-        rule
-            .setContentWithThemeForSizeAssertions(useUnmergedTree = true) {
-                CompactButton(
-                    onClick = {},
-                    modifier = Modifier.testTag(TEST_TAG),
-                    icon = { TestImage(iconTag) }
-                )
-            }
+        rule.setContentWithThemeForSizeAssertions(useUnmergedTree = true) {
+            CompactButton(
+                onClick = {},
+                modifier = Modifier.testTag(TEST_TAG),
+                icon = { TestImage(iconTag) }
+            )
+        }
 
-        rule.onRoot().assertWidthIsEqualTo(ButtonDefaults.IconOnlyCompactButtonWidth)
+        rule
+            .onRoot()
+            .assertWidthIsEqualTo(ButtonDefaults.IconOnlyCompactButtonWidth)
             .assertHeightIsEqualTo(ButtonDefaults.CompactButtonHeight)
     }
 
     @Test
     fun label_only_compact_button_has_correct_default_height() {
-        rule
-            .setContentWithThemeForSizeAssertions(useUnmergedTree = true) {
-                CompactButton(
-                    onClick = {},
-                    modifier = Modifier.testTag(TEST_TAG),
-                    label = { Text("Test") }
-                )
-            }
+        rule.setContentWithThemeForSizeAssertions(useUnmergedTree = true) {
+            CompactButton(
+                onClick = {},
+                modifier = Modifier.testTag(TEST_TAG),
+                label = { Text("Test") }
+            )
+        }
 
         rule.onRoot().assertHeightIsEqualTo(ButtonDefaults.CompactButtonHeight)
     }
 
     @Test
     fun no_content_compact_button_has_correct_default_width_and_height() {
-        rule
-            .setContentWithThemeForSizeAssertions(useUnmergedTree = true) {
-                CompactButton(
-                    onClick = {},
-                    modifier = Modifier.testTag(TEST_TAG),
-                )
-            }
+        rule.setContentWithThemeForSizeAssertions(useUnmergedTree = true) {
+            CompactButton(
+                onClick = {},
+                modifier = Modifier.testTag(TEST_TAG),
+            )
+        }
 
-        rule.onRoot().assertWidthIsEqualTo(ButtonDefaults.IconOnlyCompactButtonWidth)
+        rule
+            .onRoot()
+            .assertWidthIsEqualTo(ButtonDefaults.IconOnlyCompactButtonWidth)
             .assertHeightIsEqualTo(ButtonDefaults.CompactButtonHeight)
     }
 
     @Test
     fun icon_only_compact_button_can_have_width_overridden() {
         val iconTag = "TestIcon"
-        rule
-            .setContentWithThemeForSizeAssertions(useUnmergedTree = true) {
-                CompactButton(
-                    onClick = {},
-                    modifier = Modifier
-                        .testTag(TEST_TAG)
-                        .width(100.dp),
-                    icon = { TestImage(iconTag) }
-                )
-            }
+        rule.setContentWithThemeForSizeAssertions(useUnmergedTree = true) {
+            CompactButton(
+                onClick = {},
+                modifier = Modifier.testTag(TEST_TAG).width(100.dp),
+                icon = { TestImage(iconTag) }
+            )
+        }
 
         rule.onRoot().assertWidthIsEqualTo(100.dp)
     }
@@ -709,20 +732,20 @@ class ButtonTest {
     @Test
     fun has_icon_in_correct_location_in_compact_button() {
         val iconTag = "TestIcon"
-        rule
-            .setContentWithThemeForSizeAssertions(useUnmergedTree = true) {
-                CompactButton(
-                    onClick = {},
-                    label = { Text("Blue green orange") },
-                    icon = { TestImage(iconTag) },
-                    modifier = Modifier.testTag(TEST_TAG)
-                )
-            }
+        rule.setContentWithThemeForSizeAssertions(useUnmergedTree = true) {
+            CompactButton(
+                onClick = {},
+                label = { Text("Blue green orange") },
+                icon = { TestImage(iconTag) },
+                modifier = Modifier.testTag(TEST_TAG)
+            )
+        }
         val itemBounds = rule.onNodeWithTag(TEST_TAG).getUnclippedBoundsInRoot()
-        val iconBounds = rule.onNodeWithTag(iconTag, useUnmergedTree = true)
-            .getUnclippedBoundsInRoot()
+        val iconBounds =
+            rule.onNodeWithTag(iconTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
 
-        rule.onNodeWithContentDescription(iconTag, useUnmergedTree = true)
+        rule
+            .onNodeWithContentDescription(iconTag, useUnmergedTree = true)
             .assertTopPositionInRootIsEqualTo(
                 (itemBounds.height - iconBounds.height) / 2 +
                     ButtonDefaults.CompactButtonTapTargetPadding.calculateTopPadding()
@@ -732,19 +755,19 @@ class ButtonTest {
     @Test
     fun has_icon_in_correct_location_when_icon_only_compact_button() {
         val iconTag = "TestIcon"
-        rule
-            .setContentWithThemeForSizeAssertions(useUnmergedTree = true) {
-                CompactButton(
-                    onClick = {},
-                    icon = { TestImage(iconTag) },
-                    modifier = Modifier.testTag(TEST_TAG)
-                )
-            }
+        rule.setContentWithThemeForSizeAssertions(useUnmergedTree = true) {
+            CompactButton(
+                onClick = {},
+                icon = { TestImage(iconTag) },
+                modifier = Modifier.testTag(TEST_TAG)
+            )
+        }
         val itemBounds = rule.onNodeWithTag(TEST_TAG).getUnclippedBoundsInRoot()
-        val iconBounds = rule.onNodeWithTag(iconTag, useUnmergedTree = true)
-            .getUnclippedBoundsInRoot()
+        val iconBounds =
+            rule.onNodeWithTag(iconTag, useUnmergedTree = true).getUnclippedBoundsInRoot()
 
-        rule.onNodeWithContentDescription(iconTag, useUnmergedTree = true)
+        rule
+            .onNodeWithContentDescription(iconTag, useUnmergedTree = true)
             .assertTopPositionInRootIsEqualTo(
                 (itemBounds.height - iconBounds.height) / 2 +
                     ButtonDefaults.CompactButtonTapTargetPadding.calculateTopPadding()
@@ -822,6 +845,369 @@ class ButtonTest {
             colors = { ButtonDefaults.childButtonColors() }
         )
     }
+
+    @Test
+    fun button_defines_default_overflow() {
+        var labelOverflow: TextOverflow? = null
+        var secondaryLabelOverflow: TextOverflow? = null
+
+        rule.setContentWithTheme {
+            Button(
+                onClick = {},
+                label = { labelOverflow = LocalTextConfiguration.current.overflow },
+                secondaryLabel = {
+                    secondaryLabelOverflow = LocalTextConfiguration.current.overflow
+                },
+            )
+        }
+
+        assertEquals(TextOverflow.Ellipsis, labelOverflow)
+        assertEquals(TextOverflow.Ellipsis, secondaryLabelOverflow)
+    }
+
+    @Test
+    fun button_defines_default_maxlines() {
+        var labelMaxLines: Int? = null
+        var secondaryLabelMaxLines: Int? = null
+
+        rule.setContentWithTheme {
+            Button(
+                onClick = {},
+                label = { labelMaxLines = LocalTextConfiguration.current.maxLines },
+                secondaryLabel = {
+                    secondaryLabelMaxLines = LocalTextConfiguration.current.maxLines
+                },
+            )
+        }
+
+        assertEquals(3, labelMaxLines)
+        assertEquals(2, secondaryLabelMaxLines)
+    }
+
+    @Test
+    fun button_defines_start_alignment() {
+        var labelAlignment: TextAlign? = null
+        var secondaryLabelAlignment: TextAlign? = null
+
+        rule.setContentWithTheme {
+            Button(
+                onClick = {},
+                label = { labelAlignment = LocalTextConfiguration.current.textAlign },
+                secondaryLabel = {
+                    secondaryLabelAlignment = LocalTextConfiguration.current.textAlign
+                },
+            )
+        }
+
+        assertEquals(TextAlign.Start, labelAlignment)
+        assertEquals(TextAlign.Start, secondaryLabelAlignment)
+    }
+
+    @Test
+    fun button_defines_center_alignment_for_label_only() {
+        var labelAlignment: TextAlign? = null
+
+        rule.setContentWithTheme {
+            Button(
+                onClick = {},
+                label = { labelAlignment = LocalTextConfiguration.current.textAlign },
+            )
+        }
+
+        assertEquals(TextAlign.Center, labelAlignment)
+    }
+
+    @Test
+    fun filled_tonal_button_defines_default_overflow() {
+        var labelOverflow: TextOverflow? = null
+        var secondaryLabelOverflow: TextOverflow? = null
+
+        rule.setContentWithTheme {
+            FilledTonalButton(
+                onClick = {},
+                label = { labelOverflow = LocalTextConfiguration.current.overflow },
+                secondaryLabel = {
+                    secondaryLabelOverflow = LocalTextConfiguration.current.overflow
+                },
+            )
+        }
+
+        assertEquals(TextOverflow.Ellipsis, labelOverflow)
+        assertEquals(TextOverflow.Ellipsis, secondaryLabelOverflow)
+    }
+
+    @Test
+    fun filled_tonal_button_defines_default_maxlines() {
+        var labelMaxLines: Int? = null
+        var secondaryLabelMaxLines: Int? = null
+
+        rule.setContentWithTheme {
+            FilledTonalButton(
+                onClick = {},
+                label = { labelMaxLines = LocalTextConfiguration.current.maxLines },
+                secondaryLabel = {
+                    secondaryLabelMaxLines = LocalTextConfiguration.current.maxLines
+                },
+            )
+        }
+
+        assertEquals(3, labelMaxLines)
+        assertEquals(2, secondaryLabelMaxLines)
+    }
+
+    @Test
+    fun filled_tonal_button_defines_start_alignment() {
+        var labelAlignment: TextAlign? = null
+        var secondaryLabelAlignment: TextAlign? = null
+
+        rule.setContentWithTheme {
+            FilledTonalButton(
+                onClick = {},
+                label = { labelAlignment = LocalTextConfiguration.current.textAlign },
+                secondaryLabel = {
+                    secondaryLabelAlignment = LocalTextConfiguration.current.textAlign
+                },
+            )
+        }
+
+        assertEquals(TextAlign.Start, labelAlignment)
+        assertEquals(TextAlign.Start, secondaryLabelAlignment)
+    }
+
+    @Test
+    fun filled_tonal_button_defines_center_alignment_for_label_only() {
+        var labelAlignment: TextAlign? = null
+
+        rule.setContentWithTheme {
+            FilledTonalButton(
+                onClick = {},
+                label = { labelAlignment = LocalTextConfiguration.current.textAlign },
+            )
+        }
+
+        assertEquals(TextAlign.Center, labelAlignment)
+    }
+
+    @Test
+    fun outlined_button_defines_default_overflow() {
+        var labelOverflow: TextOverflow? = null
+        var secondaryLabelOverflow: TextOverflow? = null
+
+        rule.setContentWithTheme {
+            OutlinedButton(
+                onClick = {},
+                label = { labelOverflow = LocalTextConfiguration.current.overflow },
+                secondaryLabel = {
+                    secondaryLabelOverflow = LocalTextConfiguration.current.overflow
+                },
+            )
+        }
+
+        assertEquals(TextOverflow.Ellipsis, labelOverflow)
+        assertEquals(TextOverflow.Ellipsis, secondaryLabelOverflow)
+    }
+
+    @Test
+    fun outlined_button_defines_default_maxlines() {
+        var labelMaxLines: Int? = null
+        var secondaryLabelMaxLines: Int? = null
+
+        rule.setContentWithTheme {
+            OutlinedButton(
+                onClick = {},
+                label = { labelMaxLines = LocalTextConfiguration.current.maxLines },
+                secondaryLabel = {
+                    secondaryLabelMaxLines = LocalTextConfiguration.current.maxLines
+                },
+            )
+        }
+
+        assertEquals(3, labelMaxLines)
+        assertEquals(2, secondaryLabelMaxLines)
+    }
+
+    @Test
+    fun outlined_tonal_button_defines_start_alignment() {
+        var labelAlignment: TextAlign? = null
+        var secondaryLabelAlignment: TextAlign? = null
+
+        rule.setContentWithTheme {
+            OutlinedButton(
+                onClick = {},
+                label = { labelAlignment = LocalTextConfiguration.current.textAlign },
+                secondaryLabel = {
+                    secondaryLabelAlignment = LocalTextConfiguration.current.textAlign
+                },
+            )
+        }
+
+        assertEquals(TextAlign.Start, labelAlignment)
+        assertEquals(TextAlign.Start, secondaryLabelAlignment)
+    }
+
+    @Test
+    fun outlined_button_defines_center_alignment_for_label_only() {
+        var labelAlignment: TextAlign? = null
+
+        rule.setContentWithTheme {
+            OutlinedButton(
+                onClick = {},
+                label = { labelAlignment = LocalTextConfiguration.current.textAlign },
+            )
+        }
+
+        assertEquals(TextAlign.Center, labelAlignment)
+    }
+
+    @Test
+    fun child_button_defines_default_overflow() {
+        var labelOverflow: TextOverflow? = null
+        var secondaryLabelOverflow: TextOverflow? = null
+
+        rule.setContentWithTheme {
+            ChildButton(
+                onClick = {},
+                label = { labelOverflow = LocalTextConfiguration.current.overflow },
+                secondaryLabel = {
+                    secondaryLabelOverflow = LocalTextConfiguration.current.overflow
+                },
+            )
+        }
+
+        assertEquals(TextOverflow.Ellipsis, labelOverflow)
+        assertEquals(TextOverflow.Ellipsis, secondaryLabelOverflow)
+    }
+
+    @Test
+    fun child_button_defines_default_maxlines() {
+        var labelMaxLines: Int? = null
+        var secondaryLabelMaxLines: Int? = null
+
+        rule.setContentWithTheme {
+            ChildButton(
+                onClick = {},
+                label = { labelMaxLines = LocalTextConfiguration.current.maxLines },
+                secondaryLabel = {
+                    secondaryLabelMaxLines = LocalTextConfiguration.current.maxLines
+                },
+            )
+        }
+
+        assertEquals(3, labelMaxLines)
+        assertEquals(2, secondaryLabelMaxLines)
+    }
+
+    @Test
+    fun child_button_defines_start_alignment() {
+        var labelAlignment: TextAlign? = null
+        var secondaryLabelAlignment: TextAlign? = null
+
+        rule.setContentWithTheme {
+            ChildButton(
+                onClick = {},
+                label = { labelAlignment = LocalTextConfiguration.current.textAlign },
+                secondaryLabel = {
+                    secondaryLabelAlignment = LocalTextConfiguration.current.textAlign
+                },
+            )
+        }
+
+        assertEquals(TextAlign.Start, labelAlignment)
+        assertEquals(TextAlign.Start, secondaryLabelAlignment)
+    }
+
+    @Test
+    fun child_button_defines_center_alignment_for_label_only() {
+        var labelAlignment: TextAlign? = null
+
+        rule.setContentWithTheme {
+            ChildButton(
+                onClick = {},
+                label = { labelAlignment = LocalTextConfiguration.current.textAlign },
+            )
+        }
+
+        assertEquals(TextAlign.Center, labelAlignment)
+    }
+
+    @Test
+    fun compact_button_defines_default_overflow() {
+        var labelOverflow: TextOverflow? = null
+
+        rule.setContentWithTheme {
+            CompactButton(
+                onClick = {},
+                label = { labelOverflow = LocalTextConfiguration.current.overflow },
+            )
+        }
+
+        assertEquals(TextOverflow.Ellipsis, labelOverflow)
+    }
+
+    @Test
+    fun compact_button_defines_default_maxlines() {
+        var labelMaxLines: Int? = null
+
+        rule.setContentWithTheme {
+            CompactButton(
+                onClick = {},
+                label = { labelMaxLines = LocalTextConfiguration.current.maxLines },
+            )
+        }
+
+        assertEquals(1, labelMaxLines)
+    }
+
+    @Test
+    fun compact_button_defines_start_alignment() {
+        var labelAlignment: TextAlign? = null
+
+        rule.setContentWithTheme {
+            CompactButton(
+                onClick = {},
+                label = { labelAlignment = LocalTextConfiguration.current.textAlign },
+                icon = {},
+            )
+        }
+
+        assertEquals(TextAlign.Start, labelAlignment)
+    }
+
+    @Test
+    fun compact_button_defines_center_alignment_for_label_only() {
+        var labelAlignment: TextAlign? = null
+
+        rule.setContentWithTheme {
+            CompactButton(
+                onClick = {},
+                label = { labelAlignment = LocalTextConfiguration.current.textAlign },
+            )
+        }
+
+        assertEquals(TextAlign.Center, labelAlignment)
+    }
+
+    private fun responds_to_long_click(
+        enabled: Boolean,
+        onLongClick: () -> Unit,
+        assert: () -> Unit
+    ) {
+
+        rule.setContentWithTheme {
+            Button(
+                onClick = { /* Do nothing */ },
+                onLongClick = onLongClick,
+                enabled = enabled,
+                modifier = Modifier.testTag(TEST_TAG)
+            ) {
+                Text("Test")
+            }
+        }
+
+        rule.onNodeWithTag(TEST_TAG).performTouchInput { longClick() }
+
+        rule.runOnIdle { assert() }
+    }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -836,7 +1222,9 @@ private fun ComposeContentTestRule.verifyButtonColors(
         expectedContainerColor = expectedContainerColor,
         expectedContentColor = expectedContentColor,
         applyAlphaForDisabled = false,
-        content = { return@verifyColors content() }
+        content = {
+            return@verifyColors content()
+        }
     )
 }
 
@@ -871,9 +1259,23 @@ private fun FilledTonalButton(
 }
 
 @Composable
-private fun OutlinedButton(
-    status: Status
+private fun FilledVariantButton(
+    status: Status,
 ): Color {
+    var actualContentColor = Color.Transparent
+    Button(
+        onClick = {},
+        colors = ButtonDefaults.filledVariantButtonColors(),
+        enabled = status.enabled(),
+        modifier = Modifier.testTag(TEST_TAG),
+    ) {
+        actualContentColor = LocalContentColor.current
+    }
+    return actualContentColor
+}
+
+@Composable
+private fun OutlinedButton(status: Status): Color {
     var actualContentColor = Color.Transparent
     OutlinedButton(
         onClick = {},
@@ -886,9 +1288,7 @@ private fun OutlinedButton(
 }
 
 @Composable
-private fun ChildButton(
-    status: Status
-): Color {
+private fun ChildButton(status: Status): Color {
     var actualContentColor = Color.Transparent
     ChildButton(
         onClick = {},
@@ -915,18 +1315,15 @@ private fun ComposeContentTestRule.verifyThreeSlotButtonColors(
 
     setContentWithTheme {
         val buttonColors = expectedColor()
-        containerColor = (
-            (buttonColors.containerPainter(status.enabled()) as ColorPainter).color)
-            .compositeOver(testBackgroundColor)
+        containerColor =
+            ((buttonColors.containerPainter(status.enabled()) as ColorPainter).color).compositeOver(
+                testBackgroundColor
+            )
         labelColor = buttonColors.contentColor(status.enabled())
         secondaryLabelColor = buttonColors.secondaryContentColor(status.enabled())
         iconColor = buttonColors.iconColor(status.enabled())
 
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(testBackgroundColor)
-        ) {
+        Box(Modifier.fillMaxSize().background(testBackgroundColor)) {
             threeSlotButtonColors = content()
         }
     }
@@ -943,9 +1340,7 @@ private fun ComposeContentTestRule.verifyThreeSlotButtonColors(
 }
 
 @Composable
-private fun ThreeSlotFilledButton(
-    status: Status
-): ThreeSlotButtonColors {
+private fun ThreeSlotFilledButton(status: Status): ThreeSlotButtonColors {
     var actualLabelColor: Color = Color.Transparent
     var actualSecondaryLabelColor: Color = Color.Transparent
     var actualIconColor: Color = Color.Transparent
@@ -961,9 +1356,7 @@ private fun ThreeSlotFilledButton(
 }
 
 @Composable
-private fun ThreeSlotFilledTonalButton(
-    status: Status
-): ThreeSlotButtonColors {
+private fun ThreeSlotFilledTonalButton(status: Status): ThreeSlotButtonColors {
     var actualLabelColor: Color = Color.Transparent
     var actualSecondaryLabelColor: Color = Color.Transparent
     var actualIconColor: Color = Color.Transparent
@@ -979,9 +1372,7 @@ private fun ThreeSlotFilledTonalButton(
 }
 
 @Composable
-private fun ThreeSlotOutlinedButton(
-    status: Status
-): ThreeSlotButtonColors {
+private fun ThreeSlotOutlinedButton(status: Status): ThreeSlotButtonColors {
     var actualLabelColor: Color = Color.Transparent
     var actualSecondaryLabelColor: Color = Color.Transparent
     var actualIconColor: Color = Color.Transparent
@@ -997,9 +1388,7 @@ private fun ThreeSlotOutlinedButton(
 }
 
 @Composable
-private fun ThreeSlotChildButton(
-    status: Status
-): ThreeSlotButtonColors {
+private fun ThreeSlotChildButton(status: Status): ThreeSlotButtonColors {
     var actualLabelColor: Color = Color.Transparent
     var actualSecondaryLabelColor: Color = Color.Transparent
     var actualIconColor: Color = Color.Transparent
@@ -1024,18 +1413,12 @@ internal fun ComposeContentTestRule.verifyButtonBorderColor(
 
     setContentWithTheme {
         finalExpectedBorderColor = expectedBorderColor().compositeOver(testBackground)
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(testBackground)
-        ) {
+        Box(Modifier.fillMaxSize().background(testBackground)) {
             content(Modifier.testTag(TEST_TAG))
         }
     }
 
-    onNodeWithTag(TEST_TAG)
-        .captureToImage()
-        .assertContainsColor(finalExpectedBorderColor)
+    onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(finalExpectedBorderColor)
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -1049,17 +1432,13 @@ private fun ComposeContentTestRule.isShape(
     val padding = 0.dp
 
     setContentWithTheme {
-        background = MaterialTheme.colorScheme.surface
+        background = MaterialTheme.colorScheme.surfaceContainer
         Box(Modifier.background(background)) {
             buttonColor = (colors().containerPainter(true) as ColorPainter).color
             if (buttonColor == Color.Transparent) {
                 buttonColor = background
             }
-            content(
-                Modifier
-                    .testTag(TEST_TAG)
-                    .padding(padding)
-            )
+            content(Modifier.testTag(TEST_TAG).padding(padding))
         }
     }
 
@@ -1071,7 +1450,7 @@ private fun ComposeContentTestRule.isShape(
             verticalPadding = 0.dp,
             shapeColor = buttonColor,
             backgroundColor = background,
-            shapeOverlapPixelCount = 2.0f,
+            antiAliasingGap = 2.0f,
             shape = expectedShape,
         )
 }
@@ -1089,16 +1468,14 @@ private fun ComposeContentTestRule.verifyCompactButtonColors(
     var actualIconColor = Color.Transparent
 
     setContentWithTheme {
-        containerColor = ((colors().containerPainter(status.enabled()) as ColorPainter).color)
-            .compositeOver(testBackgroundColor)
+        containerColor =
+            ((colors().containerPainter(status.enabled()) as ColorPainter).color).compositeOver(
+                testBackgroundColor
+            )
         labelColor = colors().contentColor(status.enabled())
         iconColor = colors().iconColor(status.enabled())
 
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(testBackgroundColor)
-        ) {
+        Box(Modifier.fillMaxSize().background(testBackgroundColor)) {
             CompactButton(
                 onClick = {},
                 colors = colors(),

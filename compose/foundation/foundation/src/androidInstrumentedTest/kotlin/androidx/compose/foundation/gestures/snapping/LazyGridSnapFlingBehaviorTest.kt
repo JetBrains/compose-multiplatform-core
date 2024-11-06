@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.gestures.snapping
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
@@ -61,7 +60,6 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@OptIn(ExperimentalFoundationApi::class)
 class LazyGridSnapFlingBehaviorTest(private val orientation: Orientation) :
     BaseLazyGridTestWithOrientation(orientation) {
 
@@ -124,10 +122,7 @@ class LazyGridSnapFlingBehaviorTest(private val orientation: Orientation) :
 
         // act
         onMainList().performTouchInput {
-            swipeMainAxisWithVelocity(
-                stepSize,
-                velocityThreshold / 2
-            )
+            swipeMainAxisWithVelocity(stepSize, velocityThreshold / 2)
         }
 
         // assert
@@ -159,10 +154,7 @@ class LazyGridSnapFlingBehaviorTest(private val orientation: Orientation) :
 
         // act
         onMainList().performTouchInput {
-            swipeMainAxisWithVelocity(
-                stepSize / 2,
-                velocityThreshold * 2
-            )
+            swipeMainAxisWithVelocity(stepSize / 2, velocityThreshold * 2)
         }
 
         // assert
@@ -195,11 +187,7 @@ class LazyGridSnapFlingBehaviorTest(private val orientation: Orientation) :
 
         // act
         onMainList().performTouchInput {
-            swipeMainAxisWithVelocity(
-                stepSize / 2,
-                velocityThreshold * 2,
-                true
-            )
+            swipeMainAxisWithVelocity(stepSize / 2, velocityThreshold * 2, true)
         }
 
         // assert
@@ -231,10 +219,7 @@ class LazyGridSnapFlingBehaviorTest(private val orientation: Orientation) :
 
         // act
         onMainList().performTouchInput {
-            swipeMainAxisWithVelocity(
-                1.5f * stepSize,
-                velocityThreshold * 3
-            )
+            swipeMainAxisWithVelocity(1.5f * stepSize, velocityThreshold * 3)
         }
 
         // assert
@@ -249,39 +234,32 @@ class LazyGridSnapFlingBehaviorTest(private val orientation: Orientation) :
         var stepSize = 0f
         var latestAvailableVelocity = Velocity.Zero
         lateinit var lazyGridState: LazyGridState
-        val inspectingNestedScrollConnection = object : NestedScrollConnection {
-            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
-                latestAvailableVelocity = available
-                return Velocity.Zero
+        val inspectingNestedScrollConnection =
+            object : NestedScrollConnection {
+                override suspend fun onPostFling(
+                    consumed: Velocity,
+                    available: Velocity
+                ): Velocity {
+                    latestAvailableVelocity = available
+                    return Velocity.Zero
+                }
             }
-        }
 
         // arrange
         rule.setContent {
             val density = LocalDensity.current
             lazyGridState = rememberLazyGridState(180) // almost at the end
             stepSize = with(density) { ItemSize.toPx() }
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .nestedScroll(inspectingNestedScrollConnection)
-            ) {
+            Box(modifier = Modifier.fillMaxSize().nestedScroll(inspectingNestedScrollConnection)) {
                 MainLayout(state = lazyGridState)
             }
         }
 
         // act
-        onMainList().performTouchInput {
-            swipeMainAxisWithVelocity(
-                1.5f * stepSize,
-                15000f
-            )
-        }
+        onMainList().performTouchInput { swipeMainAxisWithVelocity(1.5f * stepSize, 15000f) }
 
         // assert
-        rule.runOnIdle {
-            assertNotEquals(latestAvailableVelocity.toAbsoluteFloat(), 0f)
-        }
+        rule.runOnIdle { assertNotEquals(latestAvailableVelocity.toAbsoluteFloat(), 0f) }
 
         // arrange
         rule.runOnIdle {
@@ -293,17 +271,10 @@ class LazyGridSnapFlingBehaviorTest(private val orientation: Orientation) :
         latestAvailableVelocity = Velocity.Zero
 
         // act
-        onMainList().performTouchInput {
-            swipeMainAxisWithVelocity(
-                -1.5f * stepSize,
-                15000f
-            )
-        }
+        onMainList().performTouchInput { swipeMainAxisWithVelocity(-1.5f * stepSize, 15000f) }
 
         // assert
-        rule.runOnIdle {
-            assertNotEquals(latestAvailableVelocity.toAbsoluteFloat(), 0f)
-        }
+        rule.runOnIdle { assertNotEquals(latestAvailableVelocity.toAbsoluteFloat(), 0f) }
     }
 
     @Test
@@ -311,23 +282,23 @@ class LazyGridSnapFlingBehaviorTest(private val orientation: Orientation) :
         var stepSize = 0f
         var latestAvailableVelocity = Velocity.Zero
         lateinit var lazyGridState: LazyGridState
-        val inspectingNestedScrollConnection = object : NestedScrollConnection {
-            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
-                latestAvailableVelocity = available
-                return Velocity.Zero
+        val inspectingNestedScrollConnection =
+            object : NestedScrollConnection {
+                override suspend fun onPostFling(
+                    consumed: Velocity,
+                    available: Velocity
+                ): Velocity {
+                    latestAvailableVelocity = available
+                    return Velocity.Zero
+                }
             }
-        }
 
         // arrange
         rule.setContent {
             val density = LocalDensity.current
             lazyGridState = rememberLazyGridState(100) // middle of the grid
             stepSize = with(density) { ItemSize.toPx() }
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .nestedScroll(inspectingNestedScrollConnection)
-            ) {
+            Box(modifier = Modifier.fillMaxSize().nestedScroll(inspectingNestedScrollConnection)) {
                 MainLayout(state = lazyGridState)
             }
         }
@@ -341,9 +312,7 @@ class LazyGridSnapFlingBehaviorTest(private val orientation: Orientation) :
         }
 
         // assert
-        rule.runOnIdle {
-            assertEquals(latestAvailableVelocity.toAbsoluteFloat(), 0f)
-        }
+        rule.runOnIdle { assertEquals(latestAvailableVelocity.toAbsoluteFloat(), 0f) }
 
         // arrange
         rule.runOnIdle {
@@ -363,9 +332,7 @@ class LazyGridSnapFlingBehaviorTest(private val orientation: Orientation) :
         }
 
         // assert
-        rule.runOnIdle {
-            assertEquals(latestAvailableVelocity.toAbsoluteFloat(), 0f)
-        }
+        rule.runOnIdle { assertEquals(latestAvailableVelocity.toAbsoluteFloat(), 0f) }
     }
 
     @Test
@@ -385,25 +352,18 @@ class LazyGridSnapFlingBehaviorTest(private val orientation: Orientation) :
         rule.mainClock.autoAdvance = false
         // act
         val velocity = velocityThreshold * 3
-        onMainList().performTouchInput {
-            swipeMainAxisWithVelocity(
-                1.5f * stepSize,
-                velocity
-            )
-        }
+        onMainList().performTouchInput { swipeMainAxisWithVelocity(1.5f * stepSize, velocity) }
         rule.mainClock.advanceTimeByFrame()
 
         // act and assert: next calculated offset is the first value emitted by
         // remainingScrollOffset this indicates the last snap step will start
         rule.mainClock.advanceTimeUntil {
-            scrollOffset.last() == snapLayoutInfoProvider.calculateSnappingOffset(10000f)
+            scrollOffset.last() == snapLayoutInfoProvider.calculateSnapOffset(10000f)
         }
         rule.mainClock.autoAdvance = true
 
         // assert: value settles back to zero
-        rule.runOnIdle {
-            Truth.assertThat(scrollOffset.last()).isEqualTo(0f)
-        }
+        rule.runOnIdle { Truth.assertThat(scrollOffset.last()).isEqualTo(0f) }
     }
 
     private fun onMainList() = rule.onNodeWithTag(TestTag)
@@ -413,9 +373,10 @@ class LazyGridSnapFlingBehaviorTest(private val orientation: Orientation) :
         snapLayoutInfoProvider = remember(state) { SnapLayoutInfoProvider(state) }
         val innerFlingBehavior =
             rememberSnapFlingBehavior(snapLayoutInfoProvider = snapLayoutInfoProvider)
-        snapFlingBehavior = remember(innerFlingBehavior) {
-            QuerySnapFlingBehavior(innerFlingBehavior) { scrollOffset.add(it) }
-        }
+        snapFlingBehavior =
+            remember(innerFlingBehavior) {
+                QuerySnapFlingBehavior(innerFlingBehavior) { scrollOffset.add(it) }
+            }
         LazyGrid(
             cells = GridCells.FixedSize(ItemSize),
             state = state,
@@ -423,11 +384,7 @@ class LazyGridSnapFlingBehaviorTest(private val orientation: Orientation) :
             flingBehavior = snapFlingBehavior
         ) {
             items(200) {
-                Box(
-                    modifier = Modifier
-                        .size(ItemSize)
-                        .background(Color.Yellow)
-                ) {
+                Box(modifier = Modifier.size(ItemSize).background(Color.Yellow)) {
                     BasicText(text = it.toString())
                 }
             }
@@ -457,16 +414,17 @@ class LazyGridSnapFlingBehaviorTest(private val orientation: Orientation) :
         var minDistance = Float.POSITIVE_INFINITY
         val layoutInfo = state.layoutInfo
         (state.layoutInfo.visibleItemsInfo).forEach {
-            val distance = calculateDistanceToDesiredSnapPosition(
-                mainAxisViewPortSize = layoutInfo.singleAxisViewportSize,
-                beforeContentPadding = layoutInfo.beforeContentPadding,
-                afterContentPadding = layoutInfo.afterContentPadding,
-                itemSize = it.sizeOnMainAxis(orientation = layoutInfo.orientation),
-                itemOffset = it.offsetOnMainAxis(orientation = layoutInfo.orientation),
-                itemIndex = it.index,
-                snapPosition = Center,
-                itemCount = layoutInfo.totalItemsCount
-            )
+            val distance =
+                calculateDistanceToDesiredSnapPosition(
+                    mainAxisViewPortSize = layoutInfo.singleAxisViewportSize,
+                    beforeContentPadding = layoutInfo.beforeContentPadding,
+                    afterContentPadding = layoutInfo.afterContentPadding,
+                    itemSize = it.sizeOnMainAxis(orientation = layoutInfo.orientation),
+                    itemOffset = it.offsetOnMainAxis(orientation = layoutInfo.orientation),
+                    itemIndex = it.index,
+                    snapPosition = Center,
+                    itemCount = layoutInfo.totalItemsCount
+                )
             if (abs(distance) < minDistance) {
                 minDistance = abs(distance)
                 itemIndex = it.index
@@ -480,16 +438,13 @@ class LazyGridSnapFlingBehaviorTest(private val orientation: Orientation) :
         endVelocity: Float,
         reversed: Boolean = false
     ) {
-        val (start, end) = if (orientation == Orientation.Vertical) {
-            bottomCenter to bottomCenter.copy(y = bottomCenter.y - scrollSize)
-        } else {
-            centerRight to centerRight.copy(x = centerRight.x - scrollSize)
-        }
-        swipeWithVelocity(
-            if (reversed) end else start,
-            if (reversed) start else end,
-            endVelocity
-        )
+        val (start, end) =
+            if (orientation == Orientation.Vertical) {
+                bottomCenter to bottomCenter.copy(y = bottomCenter.y - scrollSize)
+            } else {
+                centerRight to centerRight.copy(x = centerRight.x - scrollSize)
+            }
+        swipeWithVelocity(if (reversed) end else start, if (reversed) start else end, endVelocity)
     }
 
     private fun Velocity.toAbsoluteFloat(): Float {

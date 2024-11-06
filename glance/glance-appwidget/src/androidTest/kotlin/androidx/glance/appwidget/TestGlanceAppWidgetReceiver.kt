@@ -24,6 +24,7 @@ import androidx.glance.GlanceId
 
 class TestGlanceAppWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = TestGlanceAppWidget
+
     companion object {
         var ignoreBroadcasts = false
     }
@@ -46,21 +47,19 @@ object TestGlanceAppWidget : GlanceAppWidget() {
 
     override var sizeMode: SizeMode = SizeMode.Single
 
-    override suspend fun provideGlance(
-        context: Context,
-        id: GlanceId
-    ) {
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
         try {
-            onProvideGlance?.invoke(this)
-                ?: provideContent(uiDefinition)
+            onProvideGlance?.invoke(this) ?: provideContent(uiDefinition)
         } finally {
-          onProvideGlance = null
+            onProvideGlance = null
         }
     }
 
     var onProvideGlance: (suspend TestGlanceAppWidget.() -> Unit)? = null
 
     private var onDeleteBlock: ((GlanceId) -> Unit)? = null
+
+    var onProvidePreview: (@Composable TestGlanceAppWidget.(Int) -> Unit)? = null
 
     fun setOnDeleteBlock(block: (GlanceId) -> Unit) {
         onDeleteBlock = block
@@ -74,7 +73,7 @@ object TestGlanceAppWidget : GlanceAppWidget() {
         onDeleteBlock?.apply { this(glanceId) }
     }
 
-    var uiDefinition: @Composable () -> Unit = { }
+    var uiDefinition: @Composable () -> Unit = {}
 
     inline fun withErrorLayout(layout: Int, block: () -> Unit) {
         val previousErrorLayout = errorUiLayout
@@ -83,6 +82,23 @@ object TestGlanceAppWidget : GlanceAppWidget() {
             block()
         } finally {
             errorUiLayout = previousErrorLayout
+        }
+    }
+
+    override suspend fun providePreview(context: Context, widgetCategory: Int) {
+        provideContent { onProvidePreview?.invoke(this, widgetCategory) }
+    }
+
+    inline fun withProvidePreview(
+        noinline previewBlock: @Composable TestGlanceAppWidget.(Int) -> Unit,
+        withBlock: () -> Unit
+    ) {
+        val previousProvidePreview = onProvidePreview
+        onProvidePreview = previewBlock
+        try {
+            withBlock()
+        } finally {
+            onProvidePreview = previousProvidePreview
         }
     }
 }

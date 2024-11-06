@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe.compat
 
 import android.graphics.SurfaceTexture
@@ -58,9 +56,9 @@ internal data class SessionConfigData(
 
 /**
  * A data class that mirrors the fields in
- * [android.hardware.camera2.params.ExtensionSessionConfiguration] so
- * that a real instance can be constructed when creating a
- * [android.hardware.camera2.CameraExtensionSession] on newer versions of the OS.
+ * [android.hardware.camera2.params.ExtensionSessionConfiguration] so that a real instance can be
+ * constructed when creating a [android.hardware.camera2.CameraExtensionSession] on newer versions
+ * of the OS.
  */
 internal data class ExtensionSessionConfigData(
     val sessionType: Int,

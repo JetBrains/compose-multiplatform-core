@@ -35,7 +35,7 @@ dependencies {
     api(libs.kotlinStdlib)
 
     // Add dependencies here
-    implementation("androidx.annotation:annotation:1.1.0")
+    implementation("androidx.annotation:annotation:1.8.1")
     implementation('androidx.media3:media3-effect:' + media3Version)
     implementation('androidx.media3:media3-common:' + media3Version)
     implementation('androidx.media3:media3-ui:' + media3Version)
@@ -43,7 +43,7 @@ dependencies {
     implementation('androidx.media3:media3-transformer:' + media3Version)
 
     // Force upgrade since 1.2.0 is not compatible with latest lint.
-    implementation("androidx.annotation:annotation-experimental:1.4.0")
+    implementation("androidx.annotation:annotation-experimental:1.4.1")
 
     // Test dependencies
     androidTestImplementation(libs.testExtJunit)
@@ -54,10 +54,6 @@ dependencies {
 }
 
 android {
-    defaultConfig {
-        minSdkVersion 21
-    }
-
     namespace "androidx.graphics.filters"
 }
 
@@ -66,5 +62,5 @@ androidx {
     type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "Apply visual filters to images, video or UI in real time."
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

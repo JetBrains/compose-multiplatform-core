@@ -17,10 +17,13 @@
 package androidx.camera.video.internal.encoder
 
 import android.media.MediaCodecInfo
+import android.os.Build
 import androidx.camera.core.impl.Timebase
+import androidx.camera.testing.impl.AndroidUtil.isEmulator
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import org.junit.Assume.assumeFalse
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -43,14 +46,21 @@ class AudioEncoderInfoImplTest {
 
     @Before
     fun setup() {
-        encoderConfig = AudioEncoderConfig.builder()
-            .setMimeType(MIME_TYPE)
-            .setInputTimebase(TIMEBASE)
-            .setProfile(ENCODER_PROFILE)
-            .setBitrate(BIT_RATE)
-            .setSampleRate(SAMPLE_RATE)
-            .setChannelCount(CHANNEL_COUNT)
-            .build()
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
+
+        encoderConfig =
+            AudioEncoderConfig.builder()
+                .setMimeType(MIME_TYPE)
+                .setInputTimebase(TIMEBASE)
+                .setProfile(ENCODER_PROFILE)
+                .setBitrate(BIT_RATE)
+                .setSampleRate(SAMPLE_RATE)
+                .setChannelCount(CHANNEL_COUNT)
+                .build()
     }
 
     @Test

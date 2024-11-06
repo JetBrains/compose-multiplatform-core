@@ -21,12 +21,21 @@ fi
 SCRIPT_DIR="$(cd $(dirname $0) && pwd)"
 SOURCE_DIR="$(cd $SCRIPT_DIR/../.. && pwd)"
 
+# puts a copy of src at dest (even if dest's parent dir doesn't exist yet)
+function copy() {
+  src="$1"
+  dest="$2"
+
+  mkdir -p "$(dirname $dest)"
+  cp -r "$src" "$dest"
+}
+
 # confirm that no files in the source repo were unexpectedly created (other than known exemptions)
 function checkForGeneratedFilesInSourceRepo() {
 
-  # Paths that are still expected to be generated and that we have to allow
+  # Regexes for paths that are still expected to be generated and that we have to allow
   # If you need add or remove an exemption here, update cleanBuild.sh too
-  EXEMPT_PATHS=".gradle placeholder/.gradle buildSrc/.gradle local.properties reports build"
+  EXEMPT_PATHS=".gradle placeholder/.gradle buildSrc/.gradle local.properties reports build .*.attach_pid.*"
   # put "./" in front of each path to match the output from 'find'
   EXEMPT_PATHS="$(echo " $EXEMPT_PATHS" | sed 's| | ./|g')"
   # build a `find` argument for skipping descending into the exempt paths
@@ -40,13 +49,7 @@ function checkForGeneratedFilesInSourceRepo() {
   for f in $GENERATED_FILES; do
     exempt=false
     for exemption in $EXEMPT_PATHS; do
-      if [ "$f" == "$exemption" ]; then
-        exempt=true
-        break
-      fi
-      if [ "$f" == "$(dirname $exemption)" ]; then
-        # When the exempt directory gets created, its parent dir will be modified
-        # So, we ignore changes to the parent dir too (but not necessarily changes in sibling dirs)
+      if echo "$f" | grep "^${exemption}$" >/dev/null 2>/dev/null; then
         exempt=true
         break
       fi
@@ -67,10 +70,15 @@ Generated files should go in OUT_DIR instead because that is where developers ex
     # copy these new files into DIST_DIR in case anyone wants to inspect them
     COPY_TO=$DIST_DIR/new_files
     for f in $UNEXPECTED_GENERATED_FILES; do
-      dest="$COPY_TO/$f"
-      mkdir -p "$(dirname $dest)"
-      cp "$SOURCE_DIR/$f" "$dest"
+      copy "$SOURCE_DIR/$f" "$COPY_TO/$f"
     done
+
+    # b/331622149 temporarily also copy $OUT_DIR/androidx/room/integration-tests
+    if echo $UNEXPECTED_GENERATED_FILES | grep room.*core >/dev/null; then
+      ALSO_COPY=androidx/room/integration-tests/room-testapp-multiplatform/build
+      copy $OUT_DIR/$ALSO_COPY $COPY_TO/out/$ALSO_COPY
+    fi
+
     echo >&2
     echo Copied these generated files into $COPY_TO >&2
     exit 1

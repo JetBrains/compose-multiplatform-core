@@ -22,12 +22,11 @@ import static androidx.core.util.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import android.graphics.Bitmap;
-import android.os.Build;
 
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.ImageProxy;
@@ -42,8 +41,7 @@ import com.google.common.util.concurrent.ListenableFuture;
  * connection allows us to manipulate the propagation of the callback. For example, failures
  * might be retried before sent to the app.
  */
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-class RequestWithCallback implements TakePictureCallback {
+public class RequestWithCallback implements TakePictureCallback {
 
     private final TakePictureRequest mTakePictureRequest;
     private final TakePictureRequest.RetryControl mRetryControl;
@@ -51,6 +49,7 @@ class RequestWithCallback implements TakePictureCallback {
     private final ListenableFuture<Void> mCompleteFuture;
     private CallbackToFutureAdapter.Completer<Void> mCaptureCompleter;
     private CallbackToFutureAdapter.Completer<Void> mCompleteCompleter;
+
     // Flag tracks if the request has been aborted by the UseCase. Once aborted, this class stops
     // propagating callbacks to the app.
     private boolean mIsAborted = false;
@@ -272,13 +271,25 @@ class RequestWithCallback implements TakePictureCallback {
         return mCompleteFuture;
     }
 
+    @VisibleForTesting
+    @NonNull
+    public TakePictureRequest getTakePictureRequest() {
+        return mTakePictureRequest;
+    }
+
     private void checkOnImageCaptured() {
         checkState(mCaptureFuture.isDone(),
                 "onImageCaptured() must be called before onFinalResult()");
     }
 
     private void markComplete() {
-        checkState(!mCompleteFuture.isDone(), "The callback can only complete once.");
+        if (mTakePictureRequest.isSimultaneousCapture()
+                && !mTakePictureRequest.isFormatProcessedInSimultaneousCapture()) {
+            return;
+        }
+        if (!mTakePictureRequest.isSimultaneousCapture()) {
+            checkState(!mCompleteFuture.isDone(), "The callback can only complete once.");
+        }
         mCompleteCompleter.set(null);
     }
 

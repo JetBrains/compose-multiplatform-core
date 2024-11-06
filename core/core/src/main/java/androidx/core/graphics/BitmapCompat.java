@@ -26,7 +26,6 @@ import android.graphics.Rect;
 import android.hardware.HardwareBuffer;
 import android.os.Build;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -52,7 +51,10 @@ public final class BitmapCompat {
      * @return true if the renderer should attempt to use mipmaps,
      * false otherwise
      * @see Bitmap#hasMipMap()
+     * @deprecated Call {@link Bitmap#hasMipMap()} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "bitmap.hasMipMap()")
     public static boolean hasMipMap(@NonNull Bitmap bitmap) {
         return bitmap.hasMipMap();
     }
@@ -76,7 +78,10 @@ public final class BitmapCompat {
      * @param hasMipMap indicates whether the renderer should attempt
      *                  to use mipmaps
      * @see Bitmap#setHasMipMap(boolean)
+     * @deprecated Call {@link Bitmap#setHasMipMap()} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "bitmap.setHasMipMap(hasMipMap)")
     public static void setHasMipMap(@NonNull Bitmap bitmap, boolean hasMipMap) {
         bitmap.setHasMipMap(hasMipMap);
     }
@@ -87,7 +92,10 @@ public final class BitmapCompat {
      * This value will not change over the lifetime of a Bitmap.
      *
      * @see Bitmap#getAllocationByteCount()
+     * @deprecated Call {@link Bitmap#getAllocationByteCount()} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "bitmap.getAllocationByteCount()")
     public static int getAllocationByteCount(@NonNull Bitmap bitmap) {
         return bitmap.getAllocationByteCount();
     }
@@ -331,7 +339,6 @@ public final class BitmapCompat {
         private Api27Impl() {
         }
 
-        @DoNotInline
         static Bitmap createBitmapWithSourceColorspace(int w, int h, Bitmap src, boolean linear) {
             Bitmap.Config config = src.getConfig();
             ColorSpace colorSpace = src.getColorSpace();
@@ -349,13 +356,11 @@ public final class BitmapCompat {
             return Bitmap.createBitmap(w, h, config, src.hasAlpha(), colorSpace);
         }
 
-        @DoNotInline
         static boolean isAlreadyF16AndLinear(Bitmap b) {
             ColorSpace linearCs = ColorSpace.get(ColorSpace.Named.LINEAR_EXTENDED_SRGB);
             return b.getConfig() == Bitmap.Config.RGBA_F16 && b.getColorSpace().equals(linearCs);
         }
 
-        @DoNotInline
         static Bitmap copyBitmapIfHardware(Bitmap bm) {
             if (bm.getConfig() == Bitmap.Config.HARDWARE) {
                 Bitmap.Config newConfig = Bitmap.Config.ARGB_8888;
@@ -374,7 +379,6 @@ public final class BitmapCompat {
         private Api29Impl() {
         }
 
-        @DoNotInline
         static void setPaintBlendMode(Paint paint) {
             paint.setBlendMode(BlendMode.SRC);
         }
@@ -385,7 +389,6 @@ public final class BitmapCompat {
         private Api31Impl() {
         }
 
-        @DoNotInline
         static Bitmap.Config getHardwareBitmapConfig(Bitmap bm) {
             if (bm.getHardwareBuffer().getFormat() == HardwareBuffer.RGBA_FP16) {
                 return Bitmap.Config.RGBA_F16;

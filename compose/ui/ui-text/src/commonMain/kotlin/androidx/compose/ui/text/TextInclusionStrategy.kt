@@ -19,36 +19,39 @@ package androidx.compose.ui.text
 import androidx.compose.ui.geometry.Rect
 
 /**
- * The text inclusion strategy used by [Paragraph.getRangeForRect], it specifies when a
- * range of text is inside the given rect based on the geometric relation between the text range's
- * bounding box and the given rect.
+ * The text inclusion strategy used by [Paragraph.getRangeForRect], it specifies when a range of
+ * text is inside the given rect based on the geometric relation between the text range's bounding
+ * box and the given rect.
  *
  * @see Paragraph.getRangeForRect
  */
 fun interface TextInclusionStrategy {
     /**
-     * Returns true is this [TextInclusionStrategy] considers the text range's [textBounds] to be
+     * Returns true if this [TextInclusionStrategy] considers the text range's [textBounds] to be
      * inside the given [rect].
+     *
      * @param textBounds the bounding box of a range of the text.
      * @param rect a rectangle area.
      */
-    fun isInside(textBounds: Rect, rect: Rect): Boolean
+    fun isIncluded(textBounds: Rect, rect: Rect): Boolean
+
     companion object {
         /**
-         * The [TextInclusionStrategy] that includes the text range whose bounds has any
-         * overlap with the given rect.
+         * The [TextInclusionStrategy] that includes the text range whose bounds has any overlap
+         * with the given rect.
          */
-        val AnyOverlap = TextInclusionStrategy { textBounds, rect ->
-            textBounds.overlaps(rect)
-        }
+        val AnyOverlap = TextInclusionStrategy { textBounds, rect -> textBounds.overlaps(rect) }
 
         /**
          * The [TextInclusionStrategy] that includes the text range whose bounds is completely
          * contained by the given rect.
          */
         val ContainsAll = TextInclusionStrategy { textBounds, rect ->
-            !rect.isEmpty && textBounds.left >= rect.left && textBounds.right <= rect.right &&
-                textBounds.top >= rect.top && textBounds.bottom <= rect.bottom
+            !rect.isEmpty &&
+                textBounds.left >= rect.left &&
+                textBounds.right <= rect.right &&
+                textBounds.top >= rect.top &&
+                textBounds.bottom <= rect.bottom
         }
 
         /**

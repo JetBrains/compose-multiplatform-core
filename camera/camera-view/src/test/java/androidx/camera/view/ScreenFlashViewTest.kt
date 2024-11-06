@@ -18,6 +18,7 @@ package androidx.camera.view
 
 import android.content.Context
 import android.os.Build
+import android.os.Looper.getMainLooper
 import android.view.Window
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -26,12 +27,14 @@ import androidx.camera.core.ImageCapture.ScreenFlashListener
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadows.ShadowWindow
@@ -62,9 +65,7 @@ class ScreenFlashViewTest {
         }
     }
 
-    private fun getScreenFlashAfterSettingWindow(
-        assumeNoFailure: Boolean
-    ): ScreenFlash? {
+    private fun getScreenFlashAfterSettingWindow(assumeNoFailure: Boolean): ScreenFlash? {
         screenFlashView.setScreenFlashWindow(window)
         val screenFlash = screenFlashView.screenFlash
         if (assumeNoFailure) {
@@ -100,14 +101,29 @@ class ScreenFlashViewTest {
     }
 
     @Test
-    fun isFullyVisible_whenScreenFlashApplyInvoked() {
+    fun isNotVisibleImmediately_whenScreenFlashApplyInvoked() {
         val screenFlash = getScreenFlashAfterSettingWindow(true)
         screenFlash!!.apply(
-            System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(
-                ImageCapture.SCREEN_FLASH_UI_APPLY_TIMEOUT_SECONDS
-            ),
+            System.currentTimeMillis() +
+                TimeUnit.SECONDS.toMillis(ImageCapture.SCREEN_FLASH_UI_APPLY_TIMEOUT_SECONDS),
             noOpListener,
         )
+        assertThat(screenFlashView.alpha).isEqualTo(0f)
+    }
+
+    @Test
+    fun isFullyVisibleAfterAnimationDuration_whenScreenFlashApplyInvoked() = runBlocking {
+        val screenFlash = getScreenFlashAfterSettingWindow(true)
+        screenFlash!!.apply(
+            System.currentTimeMillis() +
+                TimeUnit.SECONDS.toMillis(ImageCapture.SCREEN_FLASH_UI_APPLY_TIMEOUT_SECONDS),
+            noOpListener,
+        )
+        shadowOf(getMainLooper())
+            .idleFor(
+                screenFlashView.visibilityRampUpAnimationDurationMillis + 1,
+                TimeUnit.MILLISECONDS
+            )
         assertThat(screenFlashView.alpha).isEqualTo(1f)
     }
 
@@ -115,9 +131,8 @@ class ScreenFlashViewTest {
     fun windowBrightnessMaximized_whenScreenFlashApplyInvoked() {
         val screenFlash = getScreenFlashAfterSettingWindow(true)
         screenFlash!!.apply(
-            System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(
-                ImageCapture.SCREEN_FLASH_UI_APPLY_TIMEOUT_SECONDS
-            ),
+            System.currentTimeMillis() +
+                TimeUnit.SECONDS.toMillis(ImageCapture.SCREEN_FLASH_UI_APPLY_TIMEOUT_SECONDS),
             noOpListener,
         )
         assertThat(window.attributes.screenBrightness).isEqualTo(1f)
@@ -127,9 +142,8 @@ class ScreenFlashViewTest {
     fun isTransparent_whenScreenFlashUiClearedAfterApply() {
         val screenFlash = getScreenFlashAfterSettingWindow(true)
         screenFlash!!.apply(
-            System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(
-                ImageCapture.SCREEN_FLASH_UI_APPLY_TIMEOUT_SECONDS
-            ),
+            System.currentTimeMillis() +
+                TimeUnit.SECONDS.toMillis(ImageCapture.SCREEN_FLASH_UI_APPLY_TIMEOUT_SECONDS),
             noOpListener,
         )
         screenFlash.clear()
@@ -144,9 +158,8 @@ class ScreenFlashViewTest {
         window.setAttributes(layoutParam)
         val screenFlash = getScreenFlashAfterSettingWindow(true)
         screenFlash!!.apply(
-            System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(
-                ImageCapture.SCREEN_FLASH_UI_APPLY_TIMEOUT_SECONDS
-            ),
+            System.currentTimeMillis() +
+                TimeUnit.SECONDS.toMillis(ImageCapture.SCREEN_FLASH_UI_APPLY_TIMEOUT_SECONDS),
             noOpListener,
         )
         screenFlash.clear()

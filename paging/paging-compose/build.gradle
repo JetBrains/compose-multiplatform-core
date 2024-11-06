@@ -21,8 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
-import androidx.build.RunApiTasks
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -53,16 +52,16 @@ androidXMultiplatform {
 
         commonTest {
             dependencies {
-                implementation projectOrArtifact(":compose:ui:ui-tooling")
+                implementation project(":compose:ui:ui-tooling")
                 implementation(project(":compose:test-utils"))
-                implementation(projectOrArtifact(":internal-testutils-paging"))
+                implementation(project(":internal-testutils-paging"))
             }
         }
 
         jvmTest {
             dependsOn(commonTest)
             dependencies {
-                implementation(projectOrArtifact(":compose:ui:ui-test-junit4"))
+                implementation(project(":compose:ui:ui-test-junit4"))
             }
         }
 
@@ -79,14 +78,17 @@ androidXMultiplatform {
 
 androidx {
     name = "Paging-Compose"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2020"
     description = "Compose integration with Paging"
-    runApiTasks = new RunApiTasks.Yes()
     legacyDisableKotlinStrictApiMode = true
+    metalavaK2UastEnabled = false
     samples(project(":paging:paging-compose:paging-compose-samples"))
 }
 
 android {
+    compileSdk 35
     namespace "androidx.paging.compose"
+    // TODO(b/313699418): need to update compose.runtime version to 1.6.0+
+    experimentalProperties["android.lint.useK2Uast"] = false
 }

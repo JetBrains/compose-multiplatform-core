@@ -34,10 +34,10 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class RadioButtonBenchmark {
 
-    @get:Rule
-    val benchmarkRule = ComposeBenchmarkRule()
+    @get:Rule val benchmarkRule = ComposeBenchmarkRule()
 
     private val radioButtonTestCaseFactory = { RadioButtonTestCase(RadioButtonType.RadioButton) }
+
     private val splitRadioButtonTestCaseFactory = {
         RadioButtonTestCase(RadioButtonType.SplitRadioButton)
     }
@@ -53,9 +53,7 @@ class RadioButtonBenchmark {
     }
 }
 
-internal class RadioButtonTestCase(
-    private val type: RadioButtonType
-) : LayeredComposeTestCase() {
+internal class RadioButtonTestCase(private val type: RadioButtonType) : LayeredComposeTestCase() {
     @Composable
     override fun MeasuredContent() {
         if (type == RadioButtonType.RadioButton) {
@@ -65,8 +63,10 @@ internal class RadioButtonTestCase(
         } else {
             SplitRadioButton(
                 selected = true,
-                onSelect = { /* do something */ },
-                onClick = { /* do something */ }) {
+                onSelectionClick = { /* do something */ },
+                onContainerClick = { /* do something */ },
+                selectionContentDescription = ""
+            ) {
                 Text(text = "SplitRadioButton")
             }
         }
@@ -74,12 +74,11 @@ internal class RadioButtonTestCase(
 
     @Composable
     override fun ContentWrappers(content: @Composable () -> Unit) {
-        MaterialTheme {
-            content()
-        }
+        MaterialTheme { content() }
     }
 }
 
 enum class RadioButtonType {
-    RadioButton, SplitRadioButton
+    RadioButton,
+    SplitRadioButton
 }

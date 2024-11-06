@@ -20,6 +20,7 @@ import androidx.privacysandbox.tools.apicompiler.parser.ApiParser
 import androidx.privacysandbox.tools.core.model.ParsedApi
 import androidx.privacysandbox.tools.testing.CompilationResultSubject
 import androidx.privacysandbox.tools.testing.CompilationTestHelper.assertThat
+import androidx.room.compiler.processing.util.KOTLINC_LANGUAGE_1_9_ARGS
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.compiler.TestCompilationArguments
 import androidx.room.compiler.processing.util.compiler.compile
@@ -31,33 +32,35 @@ import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.google.devtools.ksp.symbol.KSAnnotated
 import java.nio.file.Files
 
-/**
- * Helper to run KSP processing functionality in tests.
- */
+/** Helper to run KSP processing functionality in tests. */
 fun parseSources(vararg sources: Source): ParsedApi {
     val provider = CapturingSymbolProcessor.Provider()
     assertThat(
-        compile(
-            Files.createTempDirectory("test").toFile(),
-            TestCompilationArguments(
-                sources = sources.toList(),
-                symbolProcessorProviders = listOf(provider),
+            compile(
+                Files.createTempDirectory("test").toFile(),
+                TestCompilationArguments(
+                    sources = sources.toList(),
+                    symbolProcessorProviders = listOf(provider),
+                    kotlincArguments = KOTLINC_LANGUAGE_1_9_ARGS
+                )
             )
         )
-    ).succeeds()
+        .succeeds()
     assert(provider.processor.capture != null) { "KSP run didn't produce any output." }
     return provider.processor.capture!!
 }
 
 fun checkSourceFails(vararg sources: Source): CompilationResultSubject {
     val provider = CapturingSymbolProcessor.Provider()
-    val result = compile(
-        Files.createTempDirectory("test").toFile(),
-        TestCompilationArguments(
-            sources = sources.asList(),
-            symbolProcessorProviders = listOf(provider)
+    val result =
+        compile(
+            Files.createTempDirectory("test").toFile(),
+            TestCompilationArguments(
+                sources = sources.asList(),
+                symbolProcessorProviders = listOf(provider),
+                kotlincArguments = KOTLINC_LANGUAGE_1_9_ARGS
+            ),
         )
-    )
     return assertThat(result).also { it.fails() }
 }
 

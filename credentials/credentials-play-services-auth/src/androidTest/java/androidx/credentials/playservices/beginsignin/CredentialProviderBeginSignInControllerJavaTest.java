@@ -16,19 +16,24 @@
 
 package androidx.credentials.playservices.beginsignin;
 
+import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assume.assumeTrue;
+
+import android.content.Context;
 
 import androidx.credentials.GetCredentialRequest;
 import androidx.credentials.GetPasswordOption;
 import androidx.credentials.playservices.TestCredentialsActivity;
-import androidx.credentials.playservices.controllers.BeginSignIn.CredentialProviderBeginSignInController;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 
-import com.google.android.gms.auth.api.identity.BeginSignInRequest;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption;
 
 import org.junit.Test;
@@ -47,8 +52,9 @@ public class CredentialProviderBeginSignInControllerJavaTest {
                 ActivityScenario.launch(TestCredentialsActivity.class);
         activityScenario.onActivity(
                 activity -> {
-                    BeginSignInRequest actualResponse =
-                            CredentialProviderBeginSignInController.getInstance(activity)
+                    assumeTrue(deviceHasGMS(getApplicationContext()));
+                    com.google.android.gms.auth.api.identity.BeginSignInRequest actualResponse =
+                            androidx.credentials.playservices.controllers.BeginSignIn.CredentialProviderBeginSignInController.getInstance(activity)
                                     .convertRequestToPlayServices(
                                             new GetCredentialRequest(
                                                     List.of(new GetPasswordOption())));
@@ -64,8 +70,9 @@ public class CredentialProviderBeginSignInControllerJavaTest {
                 ActivityScenario.launch(TestCredentialsActivity.class);
         activityScenario.onActivity(
                 activity -> {
-                    BeginSignInRequest actualResponse =
-                            CredentialProviderBeginSignInController.getInstance(activity)
+                    assumeTrue(deviceHasGMS(getApplicationContext()));
+                    com.google.android.gms.auth.api.identity.BeginSignInRequest actualResponse =
+                            androidx.credentials.playservices.controllers.BeginSignIn.CredentialProviderBeginSignInController.getInstance(activity)
                                     .convertRequestToPlayServices(
                                             new GetCredentialRequest(
                                                     List.of(
@@ -83,11 +90,12 @@ public class CredentialProviderBeginSignInControllerJavaTest {
                 ActivityScenario.launch(TestCredentialsActivity.class);
         activityScenario.onActivity(
                 activity -> {
+                    assumeTrue(deviceHasGMS(getApplicationContext()));
                     assertThrows(
                             "null get credential request must throw exception",
                             NullPointerException.class,
                             () ->
-                                    CredentialProviderBeginSignInController.getInstance(activity)
+                                    androidx.credentials.playservices.controllers.BeginSignIn.CredentialProviderBeginSignInController.getInstance(activity)
                                             .convertRequestToPlayServices(null));
                 });
     }
@@ -98,11 +106,12 @@ public class CredentialProviderBeginSignInControllerJavaTest {
                 ActivityScenario.launch(TestCredentialsActivity.class);
         activityScenario.onActivity(
                 activity -> {
+                    assumeTrue(deviceHasGMS(getApplicationContext()));
                     assertThrows(
                             "null sign in credential response must throw exception",
                             NullPointerException.class,
                             () ->
-                                    CredentialProviderBeginSignInController.getInstance(activity)
+                                    androidx.credentials.playservices.controllers.BeginSignIn.CredentialProviderBeginSignInController.getInstance(activity)
                                             .convertResponseToCredentialManager(null));
                 });
     }
@@ -124,8 +133,9 @@ public class CredentialProviderBeginSignInControllerJavaTest {
 
         activityScenario.onActivity(
                 activity -> {
-                    BeginSignInRequest actualRequest =
-                            CredentialProviderBeginSignInController.getInstance(activity)
+                    assumeTrue(deviceHasGMS(getApplicationContext()));
+                    com.google.android.gms.auth.api.identity.BeginSignInRequest actualRequest =
+                            androidx.credentials.playservices.controllers.BeginSignIn.CredentialProviderBeginSignInController.getInstance(activity)
                                     .convertRequestToPlayServices(
                                             new GetCredentialRequest(List.of(option)));
 
@@ -133,7 +143,7 @@ public class CredentialProviderBeginSignInControllerJavaTest {
                             .isTrue();
                     assertThat(actualRequest.isAutoSelectEnabled()).isTrue();
 
-                    BeginSignInRequest.GoogleIdTokenRequestOptions actualOption =
+                    com.google.android.gms.auth.api.identity.BeginSignInRequest.GoogleIdTokenRequestOptions actualOption =
                             actualRequest.getGoogleIdTokenRequestOptions();
                     assertThat(actualOption.getServerClientId())
                             .isEqualTo(option.getServerClientId());
@@ -155,11 +165,17 @@ public class CredentialProviderBeginSignInControllerJavaTest {
                 ActivityScenario.launch(TestCredentialsActivity.class);
         activityScenario.onActivity(
                 activity -> {
-                    CredentialProviderBeginSignInController firstInstance =
-                            CredentialProviderBeginSignInController.getInstance(activity);
-                    CredentialProviderBeginSignInController secondInstance =
-                            CredentialProviderBeginSignInController.getInstance(activity);
+                assumeTrue(deviceHasGMS(getApplicationContext()));
+                    androidx.credentials.playservices.controllers.BeginSignIn.CredentialProviderBeginSignInController firstInstance =
+                            androidx.credentials.playservices.controllers.BeginSignIn.CredentialProviderBeginSignInController.getInstance(activity);
+                    androidx.credentials.playservices.controllers.BeginSignIn.CredentialProviderBeginSignInController secondInstance =
+                            androidx.credentials.playservices.controllers.BeginSignIn.CredentialProviderBeginSignInController.getInstance(activity);
                     assertThat(firstInstance).isNotEqualTo(secondInstance);
                 });
+    }
+
+    private boolean deviceHasGMS(Context context) {
+        return GoogleApiAvailability.getInstance()
+                .isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS;
     }
 }

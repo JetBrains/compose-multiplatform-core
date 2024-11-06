@@ -15,30 +15,39 @@
  */
 package androidx.camera.core;
 
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.LOCAL_VARIABLE;
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.ElementType.TYPE_USE;
+
+import android.hardware.camera2.params.SessionConfiguration;
+
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
+import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.CameraInternal;
 import androidx.camera.core.impl.LensFacingCameraFilter;
 import androidx.core.util.Preconditions;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A set of requirements and priorities used to select a camera or return a filtered set of
  * cameras.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class CameraSelector {
 
     /** A camera on the devices that its lens facing is resolved. */
@@ -97,8 +106,34 @@ public final class CameraSelector {
         if (cameraInternalIterator.hasNext()) {
             return cameraInternalIterator.next();
         } else {
-            throw new IllegalArgumentException("No available camera can be found");
+            String errorMessage = String.format(
+                    "No available camera can be found. %s %s", logCameras(cameras), logSelector());
+            throw new IllegalArgumentException(errorMessage);
         }
+    }
+
+    private String logCameras(@NonNull Set<CameraInternal> cameras) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Cams:").append(cameras.size());
+        for (CameraInternal camera : cameras) {
+            CameraInfoInternal info = camera.getCameraInfoInternal();
+            sb.append(String.format(" Id:%s  Lens:%s", info.getCameraId(), info.getLensFacing()));
+        }
+        return sb.toString();
+    }
+
+    private String logSelector() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(
+                String.format("PhyId:%s  Filters:%s", mPhysicalCameraId, mCameraFilterSet.size()));
+        for (CameraFilter filter : mCameraFilterSet) {
+            sb.append(" Id:").append(filter.getIdentifier());
+            if (filter instanceof LensFacingCameraFilter) {
+                sb.append(" LensFilter:").append(
+                        ((LensFacingCameraFilter) filter).getLensFacing());
+            }
+        }
+        return sb.toString();
     }
 
     /**
@@ -213,9 +248,12 @@ public final class CameraSelector {
     /**
      * Returns the physical camera id.
      *
+     * <p>If physical camera id is not set via {@link Builder#setPhysicalCameraId(String)},
+     * it will return null.
+     *
      * @return physical camera id.
+     * @see Builder#setPhysicalCameraId(String)
      */
-    @RestrictTo(Scope.LIBRARY_GROUP)
     @Nullable
     public String getPhysicalCameraId() {
         return mPhysicalCameraId;
@@ -294,10 +332,31 @@ public final class CameraSelector {
         /**
          * Sets the physical camera id.
          *
+         * <p>A logical camera is a grouping of two or more of those physical cameras.
+         * See <a href="https://developer.android.com/media/camera/camera2/multi-camera">Multi-camera API</a>
+         *
+         * <p> If we want to open one physical camera, for example ultra wide, we just need to set
+         * physical camera id in {@link CameraSelector} and bind to lifecycle. All CameraX features
+         * will work normally when only a single physical camera is used.
+         *
+         * <p>If we want to open multiple physical cameras, we need to have multiple
+         * {@link CameraSelector}s and set physical camera id on each, then bind to lifecycle with
+         * the {@link CameraSelector}s. Internally each physical camera id will be set on
+         * {@link UseCase}, for example, {@link Preview} and call
+         * {@link android.hardware.camera2.params.OutputConfiguration#setPhysicalCameraId(String)}.
+         *
+         * <p>Currently only two physical cameras for the same logical camera id are allowed
+         * and the device needs to support physical cameras by checking
+         * {@link CameraInfo#isLogicalMultiCameraSupported()}. In addition, there is no guarantee
+         * or API to query whether the device supports multiple physical camera opening or not.
+         * Internally the library checks
+         * {@link android.hardware.camera2.CameraDevice#isSessionConfigurationSupported(SessionConfiguration)},
+         * if the device does not support the multiple physical camera configuration,
+         * {@link IllegalArgumentException} will be thrown when binding to lifecycle.
+         *
          * @param physicalCameraId physical camera id.
          * @return this builder.
          */
-        @RestrictTo(Scope.LIBRARY_GROUP)
         @NonNull
         public Builder setPhysicalCameraId(@NonNull String physicalCameraId) {
             mPhysicalCameraId = physicalCameraId;
@@ -315,6 +374,7 @@ public final class CameraSelector {
      * The direction the camera faces relative to device screen.
      *
      */
+    @Target({TYPE, TYPE_USE, FIELD, PARAMETER, LOCAL_VARIABLE})
     @OptIn(markerClass = ExperimentalLensFacing.class)
     @IntDef({LENS_FACING_UNKNOWN, LENS_FACING_FRONT, LENS_FACING_BACK, LENS_FACING_EXTERNAL})
     @Retention(RetentionPolicy.SOURCE)

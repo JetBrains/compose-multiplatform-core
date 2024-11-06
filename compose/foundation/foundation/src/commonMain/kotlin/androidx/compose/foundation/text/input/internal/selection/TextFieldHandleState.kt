@@ -19,21 +19,22 @@ package androidx.compose.foundation.text.input.internal.selection
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.style.ResolvedTextDirection
 
-/**
- * Defines how to render a selection or cursor handle on a TextField.
- */
+/** Defines how to render a selection or cursor handle on a TextField. */
 internal data class TextFieldHandleState(
     val visible: Boolean,
     val position: Offset,
+    val lineHeight: Float,
     val direction: ResolvedTextDirection,
     val handlesCrossed: Boolean
 ) {
     companion object {
-        val Hidden = TextFieldHandleState(
-            visible = false,
-            position = Offset.Unspecified,
-            direction = ResolvedTextDirection.Ltr,
-            handlesCrossed = false
-        )
+        val Hidden =
+            TextFieldHandleState(
+                visible = false,
+                position = Offset.Unspecified,
+                lineHeight = 0f,
+                direction = ResolvedTextDirection.Ltr,
+                handlesCrossed = false
+            )
     }
 }

@@ -37,6 +37,8 @@ import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.Timebase
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.internal.CameraUseCaseAdapter
+import androidx.camera.testing.impl.AndroidUtil
+import androidx.camera.testing.impl.AndroidUtil.isEmulator
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraXUtil
@@ -92,22 +94,25 @@ class VideoEncoderTest(
 ) {
 
     @get:Rule
-    val cameraPipeConfigTestRule = CameraPipeConfigTestRule(
-        active = implName == CameraPipeConfig::class.simpleName,
-    )
+    val cameraPipeConfigTestRule =
+        CameraPipeConfigTestRule(
+            active = implName == CameraPipeConfig::class.simpleName,
+        )
 
     @get:Rule
-    val cameraRule = CameraUtil.grantCameraPermissionAndPreTest(
-        CameraUtil.PreTestCameraIdList(cameraConfig)
-    )
+    val cameraRule =
+        CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
+            CameraUtil.PreTestCameraIdList(cameraConfig)
+        )
 
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun data() = listOf(
-            arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-            arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
-        )
+        fun data() =
+            listOf(
+                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+            )
 
         private val INPUT_TIMEBASE = Timebase.UPTIME
     }
@@ -146,6 +151,17 @@ class VideoEncoderTest(
                 " resolutions cannot be used when the provided surface is an encoder surface.",
             DeviceQuirks.get(ExtraSupportedResolutionQuirk::class.java) != null
         )
+        // Skip for b/331618729
+        assumeFalse(
+            "Emulator API 28 crashes running this test.",
+            Build.VERSION.SDK_INT == 28 && AndroidUtil.isEmulator()
+        )
+
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
 
         CameraXUtil.initialize(context, cameraConfig).get()
 
@@ -157,11 +173,7 @@ class VideoEncoderTest(
         // Binding one more preview use case to create a surface texture, this is for testing on
         // Pixel API 26, it needs a surface texture at least.
         preview = Preview.Builder().build()
-        instrumentation.runOnMainSync {
-            preview.setSurfaceProvider(
-                getSurfaceProvider()
-            )
-        }
+        instrumentation.runOnMainSync { preview.setSurfaceProvider(getSurfaceProvider()) }
 
         previewForVideoEncoder = Preview.Builder().build()
         initVideoEncoder()
@@ -289,10 +301,8 @@ class VideoEncoderTest(
         inOrder.verify(videoEncoderCallback, timeout(15000L).atLeast(5)).onEncodedData(any())
 
         val captor = ArgumentCaptor.forClass(EncodedData::class.java)
-        verify(
-            videoEncoderCallback,
-            atLeast(/*start*/5 + /*resume*/5)
-        ).onEncodedData(captor.capture())
+        verify(videoEncoderCallback, atLeast(/*start*/ 5 + /*resume*/ 5))
+            .onEncodedData(captor.capture())
         verifyDataInChronologicalOrder(captor.allValues)
     }
 
@@ -302,10 +312,7 @@ class VideoEncoderTest(
 
         videoEncoder.start()
         val captor = ArgumentCaptor.forClass(EncodedData::class.java)
-        verify(
-            videoEncoderCallback,
-            timeout(5000L).atLeastOnce()
-        ).onEncodedData(captor.capture())
+        verify(videoEncoderCallback, timeout(5000L).atLeastOnce()).onEncodedData(captor.capture())
 
         assertThat(isKeyFrame(captor.allValues.first().bufferInfo)).isTrue()
 
@@ -361,7 +368,8 @@ class VideoEncoderTest(
         videoEncoder.stopSafely()
         verify(videoEncoderCallback, timeout(5000L)).onEncodeStop()
 
-        // If the last data timestamp is null, it means the encoding is probably stopped because of timeout.
+        // If the last data timestamp is null, it means the encoding is probably stopped because of
+        // timeout.
         // Skip null since it could be a device performance issue which is out of the test scope.
         assumeTrue(videoEncoder.mLastDataStopTimestamp != null)
         assertThat(videoEncoder.mLastDataStopTimestamp).isAtLeast(stopTimeUs)
@@ -375,42 +383,39 @@ class VideoEncoderTest(
         assumeTrue(videoProfile != null)
         val resolution = Size(videoProfile!!.width, videoProfile.height)
 
-        videoEncoderConfig = VideoEncoderConfig.builder()
-            .setInputTimebase(INPUT_TIMEBASE)
-            .setBitrate(BIT_RATE)
-            .setColorFormat(MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
-            .setFrameRate(FRAME_RATE)
-            .setIFrameInterval(I_FRAME_INTERVAL)
-            .setMimeType(MIME_TYPE)
-            .setResolution(resolution)
-            .build()
+        videoEncoderConfig =
+            VideoEncoderConfig.builder()
+                .setInputTimebase(INPUT_TIMEBASE)
+                .setBitrate(BIT_RATE)
+                .setColorFormat(MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
+                .setFrameRate(FRAME_RATE)
+                .setIFrameInterval(I_FRAME_INTERVAL)
+                .setMimeType(MIME_TYPE)
+                .setResolution(resolution)
+                .build()
 
         // init video encoder
         videoEncoderCallback = mock(EncoderCallback::class.java)
         doAnswer { args: InvocationOnMock ->
-            val encodedData: EncodedData = args.getArgument(0)
-            encodedData.close()
-            null
-        }.`when`(videoEncoderCallback).onEncodedData(any())
+                val encodedData: EncodedData = args.getArgument(0)
+                encodedData.close()
+                null
+            }
+            .`when`(videoEncoderCallback)
+            .onEncodedData(any())
 
         if (deactivateSurfaceBeforeStop) {
-            doAnswer {
-                encodeStopSemaphore.release()
-            }.`when`(videoEncoderCallback).onEncodeStop()
+            doAnswer { encodeStopSemaphore.release() }.`when`(videoEncoderCallback).onEncodeStop()
         }
 
-        videoEncoder = EncoderImpl(
-            encoderExecutor,
-            videoEncoderConfig
-        )
+        videoEncoder = EncoderImpl(encoderExecutor, videoEncoderConfig)
 
         videoEncoder.setEncoderCallback(videoEncoderCallback, CameraXExecutors.directExecutor())
 
         latestSurfaceReadyToRelease = ResolvableFuture.create<Void>().apply { set(null) }
 
-        (videoEncoder.input as Encoder.SurfaceInput).setOnSurfaceUpdateListener(
-            mainExecutor
-        ) { surface: Surface ->
+        (videoEncoder.input as Encoder.SurfaceInput).setOnSurfaceUpdateListener(mainExecutor) {
+            surface: Surface ->
             latestSurfaceReadyToRelease = ResolvableFuture.create()
             currentSurface = surface
             setVideoPreviewSurfaceProvider(surface)
@@ -419,10 +424,7 @@ class VideoEncoderTest(
 
     private fun setVideoPreviewSurfaceProvider(surface: Surface) {
         previewForVideoEncoder.setSurfaceProvider { request: SurfaceRequest ->
-            request.provideSurface(
-                surface,
-                mainExecutor
-            ) {
+            request.provideSurface(surface, mainExecutor) {
                 if (it.surface != currentSurface) {
                     it.surface.release()
                 } else {
@@ -433,15 +435,20 @@ class VideoEncoderTest(
     }
 
     private fun getSurfaceProvider(): SurfaceProvider {
-        return SurfaceTextureProvider.createSurfaceTextureProvider(object : SurfaceTextureCallback {
-            override fun onSurfaceTextureReady(surfaceTexture: SurfaceTexture, resolution: Size) {
-                // No-op
-            }
+        return SurfaceTextureProvider.createSurfaceTextureProvider(
+            object : SurfaceTextureCallback {
+                override fun onSurfaceTextureReady(
+                    surfaceTexture: SurfaceTexture,
+                    resolution: Size
+                ) {
+                    // No-op
+                }
 
-            override fun onSafeToRelease(surfaceTexture: SurfaceTexture) {
-                surfaceTexture.release()
+                override fun onSafeToRelease(surfaceTexture: SurfaceTexture) {
+                    surfaceTexture.release()
+                }
             }
-        })
+        )
     }
 
     private fun verifyDataInChronologicalOrder(encodedDataList: List<EncodedData>) {
@@ -460,8 +467,8 @@ class VideoEncoderTest(
      * Stops safely and removes the Encoder surface from camera repeating request.
      *
      * <p>As described in b/196039619, when encoder is started and repeating request is running,
-     * stop the encoder will get EGL error on pre-API23 devices. The encoder surface needs to
-     * be removed from repeating request before stopping the codec to avoid this failure.
+     * stop the encoder will get EGL error on pre-API23 devices. The encoder surface needs to be
+     * removed from repeating request before stopping the codec to avoid this failure.
      *
      * @see DeactivateEncoderSurfaceBeforeStopEncoderQuirk
      */
@@ -476,9 +483,7 @@ class VideoEncoderTest(
             // Wait for onEncodeStop before removing the surface to ensure the encoder has received
             // enough data.
             assertThat(encodeStopSemaphore.tryAcquire(5000L, TimeUnit.MILLISECONDS)).isTrue()
-            instrumentation.runOnMainSync {
-                previewForVideoEncoder.setSurfaceProvider(null)
-            }
+            instrumentation.runOnMainSync { previewForVideoEncoder.setSurfaceProvider(null) }
             // Wait for the surface to be actually removed from camera repeating request.
             // TODO: It's unlikely but possible that it takes more thant 2 seconds to remove
             //  the surface. We may check CameraCaptureCallback to be sure when the surface

@@ -30,11 +30,11 @@ plugins {
 
 dependencies {
     annotationProcessor(libs.nullaway)
-    api("androidx.annotation:annotation:1.2.0")
+    api("androidx.annotation:annotation:1.8.1")
     api(project(":wear:protolayout:protolayout-expression"))
 
-    implementation("androidx.annotation:annotation-experimental:1.4.0")
-    implementation(project(path: ":wear:protolayout:protolayout-proto", configuration: "shadow"))
+    implementation("androidx.annotation:annotation-experimental:1.4.1")
+    implementation(project(":wear:protolayout:protolayout-proto"))
 
     lintChecks(project(":wear:protolayout:protolayout-lint"))
     lintPublish(project(":wear:protolayout:protolayout-lint"))
@@ -51,7 +51,7 @@ android {
     defaultConfig {
         minSdkVersion 26
     }
-    buildTypes.all {
+    buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
 }
@@ -61,5 +61,5 @@ androidx {
     type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "Create layouts that can be rendered by a remote host."
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

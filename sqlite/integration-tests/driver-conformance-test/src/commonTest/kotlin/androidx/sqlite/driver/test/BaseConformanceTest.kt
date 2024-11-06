@@ -17,6 +17,11 @@
 package androidx.sqlite.driver.test
 
 import androidx.kruth.assertThat
+import androidx.sqlite.SQLITE_DATA_BLOB
+import androidx.sqlite.SQLITE_DATA_FLOAT
+import androidx.sqlite.SQLITE_DATA_INTEGER
+import androidx.sqlite.SQLITE_DATA_NULL
+import androidx.sqlite.SQLITE_DATA_TEXT
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.SQLiteException
@@ -42,10 +47,11 @@ abstract class BaseConformanceTest {
         val driver = getDriver()
         val connection = driver.open(":memory:")
         try {
-            val version = connection.prepare("PRAGMA user_version").use { statement ->
-                statement.step()
-                statement.getLong(0)
-            }
+            val version =
+                connection.prepare("PRAGMA user_version").use { statement ->
+                    statement.step()
+                    statement.getLong(0)
+                }
             assertThat(version).isEqualTo(0)
         } finally {
             connection.close()
@@ -65,9 +71,12 @@ abstract class BaseConformanceTest {
                 textCol TEXT,
                 blobCol BLOB
             )
-            """.trimIndent()
+            """
+                .trimIndent()
         )
-        connection.prepare("""
+        connection
+            .prepare(
+                """
             INSERT INTO Test (
                 integerCol_long,
                 integerCol_int,
@@ -77,17 +86,19 @@ abstract class BaseConformanceTest {
                 textCol,
                 blobCol
             ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        """.trimIndent()
-        ).use {
-            it.bindLong(1, 3)
-            it.bindInt(2, 22)
-            it.bindBoolean(3, true)
-            it.bindDouble(4, 7.87)
-            it.bindFloat(5, 9.39f)
-            it.bindText(6, "PR")
-            it.bindBlob(7, byteArrayOf(0x0F, 0x12, 0x1B))
-            assertThat(it.step()).isFalse() // SQLITE_DONE
-        }
+        """
+                    .trimIndent()
+            )
+            .use {
+                it.bindLong(1, 3)
+                it.bindInt(2, 22)
+                it.bindBoolean(3, true)
+                it.bindDouble(4, 7.87)
+                it.bindFloat(5, 9.39f)
+                it.bindText(6, "PR")
+                it.bindBlob(7, byteArrayOf(0x0F, 0x12, 0x1B))
+                assertThat(it.step()).isFalse() // SQLITE_DONE
+            }
         connection.prepare("SELECT * FROM Test").use {
             assertThat(it.step()).isTrue() // SQLITE_ROW
             assertThat(it.getColumnCount()).isEqualTo(7)
@@ -98,15 +109,24 @@ abstract class BaseConformanceTest {
             assertThat(it.getColumnName(4)).isEqualTo("realCol_float")
             assertThat(it.getColumnName(5)).isEqualTo("textCol")
             assertThat(it.getColumnName(6)).isEqualTo("blobCol")
-            assertThat(it.getColumnNames()).containsExactly(
-                "integerCol_long",
-                "integerCol_int",
-                "integerCol_boolean",
-                "realCol_double",
-                "realCol_float",
-                "textCol",
-                "blobCol"
-            ).inOrder()
+            assertThat(it.getColumnNames())
+                .containsExactly(
+                    "integerCol_long",
+                    "integerCol_int",
+                    "integerCol_boolean",
+                    "realCol_double",
+                    "realCol_float",
+                    "textCol",
+                    "blobCol"
+                )
+                .inOrder()
+            assertThat(it.getColumnType(0)).isEqualTo(SQLITE_DATA_INTEGER)
+            assertThat(it.getColumnType(1)).isEqualTo(SQLITE_DATA_INTEGER)
+            assertThat(it.getColumnType(2)).isEqualTo(SQLITE_DATA_INTEGER)
+            assertThat(it.getColumnType(3)).isEqualTo(SQLITE_DATA_FLOAT)
+            assertThat(it.getColumnType(4)).isEqualTo(SQLITE_DATA_FLOAT)
+            assertThat(it.getColumnType(5)).isEqualTo(SQLITE_DATA_TEXT)
+            assertThat(it.getColumnType(6)).isEqualTo(SQLITE_DATA_BLOB)
             assertThat(it.getLong(0)).isEqualTo(3)
             assertThat(it.getInt(1)).isEqualTo(22)
             assertThat(it.getBoolean(2)).isTrue()
@@ -139,6 +159,45 @@ abstract class BaseConformanceTest {
     }
 
     @Test
+    fun bindAndReadZeroLengthBlob() = testWithConnection { connection ->
+        connection.execSQL("CREATE TABLE Test (data BLOB)")
+        connection.prepare("INSERT INTO Test (data) VALUES (?)").use {
+            it.bindBlob(1, ByteArray(0))
+            assertThat(it.step()).isFalse() // SQLITE_DONE
+        }
+        connection.prepare("SELECT * FROM Test").use {
+            assertThat(it.step()).isTrue() // SQLITE_ROW
+            assertThat(it.getBlob(0)).isEqualTo(ByteArray(0))
+        }
+    }
+
+    @Test
+    fun bindAndReadEmptyString() = testWithConnection { connection ->
+        connection.execSQL("CREATE TABLE Test (data TEXT)")
+        connection.prepare("INSERT INTO Test (data) VALUES (?)").use {
+            it.bindText(1, "")
+            assertThat(it.step()).isFalse() // SQLITE_DONE
+        }
+        connection.prepare("SELECT * FROM Test").use {
+            assertThat(it.step()).isTrue() // SQLITE_ROW
+            assertThat(it.getText(0)).isEqualTo("")
+        }
+    }
+
+    @Test
+    fun bindTextInExpression() = testWithConnection { connection ->
+        connection.execSQL("CREATE TABLE Test (date TEXT)")
+        connection.prepare("INSERT INTO Test (date) VALUES (?)").use {
+            it.bindText(1, "1991-04-18")
+            assertThat(it.step()).isFalse() // SQLITE_DONE
+        }
+        connection.prepare("SELECT * FROM Test WHERE strftime('%Y', date) = ?").use {
+            it.bindText(1, "1991")
+            assertThat(it.step()).isTrue() // SQLITE_ROW
+        }
+    }
+
+    @Test
     fun bindAndReadNull() = testWithConnection { connection ->
         connection.execSQL("CREATE TABLE Test (col)")
         connection.prepare("INSERT INTO Test (col) VALUES (?)").use {
@@ -147,6 +206,7 @@ abstract class BaseConformanceTest {
         }
         connection.prepare("SELECT * FROM Test").use {
             assertThat(it.step()).isTrue() // SQLITE_ROW
+            assertThat(it.getColumnType(0)).isEqualTo(SQLITE_DATA_NULL)
             assertThat(it.isNull(0)).isTrue()
         }
     }
@@ -242,19 +302,21 @@ abstract class BaseConformanceTest {
     @Test
     fun prepareInvalidReadStatement() = testWithConnection {
         assertThat(
-            assertFailsWith<SQLiteException> {
-                it.prepare("SELECT * FROM Foo").use { it.step() }
-            }.message
-        ).contains("no such table: Foo")
+                assertFailsWith<SQLiteException> {
+                        it.prepare("SELECT * FROM Foo").use { it.step() }
+                    }
+                    .message
+            )
+            .contains("no such table: Foo")
     }
 
     @Test
     fun prepareInvalidWriteStatement() = testWithConnection {
         assertThat(
-            assertFailsWith<SQLiteException> {
-                it.execSQL("INSERT INTO Foo (id) VALUES (1)")
-            }.message
-        ).contains("no such table: Foo")
+                assertFailsWith<SQLiteException> { it.execSQL("INSERT INTO Foo (id) VALUES (1)") }
+                    .message
+            )
+            .contains("no such table: Foo")
     }
 
     @Test
@@ -262,9 +324,7 @@ abstract class BaseConformanceTest {
         val driver = getDriver()
         val connection = driver.open(":memory:")
         connection.close()
-        assertFailsWith<SQLiteException> {
-            connection.prepare("SELECT * FROM Foo")
-        }
+        assertFailsWith<SQLiteException> { connection.prepare("SELECT * FROM Foo") }
     }
 
     @Test
@@ -272,9 +332,7 @@ abstract class BaseConformanceTest {
         it.execSQL("CREATE TABLE Foo (id)")
         val statement = it.prepare("SELECT * FROM Foo")
         statement.close()
-        assertFailsWith<SQLiteException> {
-            statement.step()
-        }
+        assertFailsWith<SQLiteException> { statement.step() }
     }
 
     @Test
@@ -282,16 +340,14 @@ abstract class BaseConformanceTest {
         it.execSQL("CREATE TABLE Foo (id)")
         val statement = it.prepare("INSERT INTO Foo (id) VALUES (1)")
         statement.close()
-        assertFailsWith<SQLiteException> {
-            statement.step()
-        }
+        assertFailsWith<SQLiteException> { statement.step() }
     }
 
     @Test
-    fun clearBindings() = testWithConnection {
-        it.execSQL("CREATE TABLE Foo (id)")
-        it.execSQL("INSERT INTO Foo (id) VALUES (1)")
-        it.prepare("SELECT * FROM Foo WHERE id = ?").use {
+    fun clearBindings() = testWithConnection { connection ->
+        connection.execSQL("CREATE TABLE Foo (id)")
+        connection.execSQL("INSERT INTO Foo (id) VALUES (1)")
+        connection.prepare("SELECT * FROM Foo WHERE id = ?").use {
             it.bindLong(1, 1)
             assertThat(it.step()).isTrue()
             it.reset()
@@ -311,10 +367,11 @@ abstract class BaseConformanceTest {
             it.bindNull(1)
             assertThat(it.step()).isFalse() // SQLITE_DONE
         }
-        val lastRowId = connection.prepare("SELECT last_insert_rowid()").use {
-            it.step()
-            it.getLong(0)
-        }
+        val lastRowId =
+            connection.prepare("SELECT last_insert_rowid()").use {
+                it.step()
+                it.getLong(0)
+            }
         assertThat(lastRowId).isEqualTo(2)
     }
 
@@ -327,11 +384,32 @@ abstract class BaseConformanceTest {
             it.bindNull(3)
             assertThat(it.step()).isFalse() // SQLITE_DONE
         }
-        val changes = connection.prepare("SELECT changes()").use {
-            it.step()
-            it.getLong(0)
-        }
+        val changes =
+            connection.prepare("SELECT changes()").use {
+                it.step()
+                it.getLong(0)
+            }
         assertThat(changes).isEqualTo(3)
+    }
+
+    @Test
+    fun withClause() = testWithConnection { connection ->
+        var seriesSum = 0
+        connection
+            .prepare(
+                """
+                WITH RECURSIVE
+                  cnt(x) AS (VALUES(1) UNION ALL SELECT x + 1 FROM cnt WHERE x < 10)
+                SELECT x FROM cnt;
+            """
+                    .trimIndent()
+            )
+            .use {
+                while (it.step()) {
+                    seriesSum += it.getInt(0)
+                }
+            }
+        assertThat(seriesSum).isEqualTo(55)
     }
 
     private inline fun testWithConnection(block: (SQLiteConnection) -> Unit) {

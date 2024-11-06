@@ -19,6 +19,7 @@
 package androidx.build.lint
 
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest
+import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue
 import org.junit.Test
@@ -29,17 +30,19 @@ import org.junit.runners.JUnit4
 class TestSizeAnnotationEnforcerTest : LintDetectorTest() {
     override fun getDetector(): Detector = TestSizeAnnotationEnforcer()
 
-    override fun getIssues(): List<Issue> = listOf(
-        TestSizeAnnotationEnforcer.MISSING_TEST_SIZE_ANNOTATION,
-        TestSizeAnnotationEnforcer.UNEXPECTED_TEST_SIZE_ANNOTATION,
-        TestSizeAnnotationEnforcer.UNSUPPORTED_TEST_RUNNER
-    )
+    override fun getIssues(): List<Issue> =
+        listOf(
+            TestSizeAnnotationEnforcer.MISSING_TEST_SIZE_ANNOTATION,
+            TestSizeAnnotationEnforcer.UNEXPECTED_TEST_SIZE_ANNOTATION,
+            TestSizeAnnotationEnforcer.UNSUPPORTED_TEST_RUNNER
+        )
 
     @Test
     fun allowJUnit4ForHostSideTests() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                        """
                 package androidx.foo
 
                 import org.junit.runner.RunWith
@@ -51,18 +54,21 @@ class TestSizeAnnotationEnforcerTest : LintDetectorTest() {
                     fun aTest() {}
                 }
             """
-            ).within("src/test"),
-            *StubClasses
-        )
+                    )
+                    .within("src/test"),
+                *StubClasses
+            )
+            .skipTestModes(TestMode.JVM_OVERLOADS)
             .run()
             .expectClean()
     }
 
     @Test
     fun noTestSizeAnnotationsForHostSideTests() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                        """
                 package androidx.foo
 
                 import androidx.test.filters.MediumTest
@@ -83,27 +89,27 @@ class TestSizeAnnotationEnforcerTest : LintDetectorTest() {
                     fun anotherTest() {}
                 }
             """
-            ).within("src/test"),
-            *StubClasses
-        )
+                    )
+                    .within("src/test"),
+                *StubClasses
+            )
             .run()
             .expect(
-                /* ktlint-disable max-line-length */
-"""
+                """
 src/test/androidx/foo/Test.kt:8: Error: Unexpected test size annotation [UnexpectedTestSizeAnnotation]
                 @MediumTest
                 ~~~~~~~~~~~
 1 errors, 0 warnings
 """
-                /* ktlint-enable max-line-length */
             )
     }
 
     @Test
     fun failsForUnsupportedTestRunner() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                        """
                 package androidx.foo
 
                 import org.junit.runner.RunWith
@@ -112,27 +118,27 @@ src/test/androidx/foo/Test.kt:8: Error: Unexpected test size annotation [Unexpec
                 @RunWith(JUnit4::class)
                 class Test
             """
-            ).within("src/androidTest"),
-            *StubClasses
-        )
+                    )
+                    .within("src/androidTest"),
+                *StubClasses
+            )
             .run()
             .expect(
-                /* ktlint-disable max-line-length */
                 """
 src/androidTest/androidx/foo/Test.kt:7: Error: Unsupported test runner. Supported runners are: [androidx.test.ext.junit.runners.AndroidJUnit4, org.junit.runners.Parameterized] [UnsupportedTestRunner]
                 @RunWith(JUnit4::class)
                          ~~~~~~~~~~~~~
 1 errors, 0 warnings
             """
-                /* ktlint-enable max-line-length */
             )
     }
 
     @Test
     fun allowsAndroidJUnit4() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                        """
                 package androidx.foo
 
                 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -146,18 +152,20 @@ src/androidTest/androidx/foo/Test.kt:7: Error: Unsupported test runner. Supporte
                     fun test() {}
                 }
             """
-            ).within("src/androidTest"),
-            *StubClasses
-        )
+                    )
+                    .within("src/androidTest"),
+                *StubClasses
+            )
             .run()
             .expectClean()
     }
 
     @Test
     fun allowsParameterized() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                        """
                 package androidx.foo
 
                 import org.junit.runner.RunWith
@@ -169,18 +177,20 @@ src/androidTest/androidx/foo/Test.kt:7: Error: Unsupported test runner. Supporte
                     fun test() {}
                 }
             """
-            ).within("src/androidTest"),
-            *StubClasses
-        )
+                    )
+                    .within("src/androidTest"),
+                *StubClasses
+            )
             .run()
             .expectClean()
     }
 
     @Test
     fun ignoresMissingRunWith() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                        """
                 package androidx.foo
 
                 class Test {
@@ -188,17 +198,19 @@ src/androidTest/androidx/foo/Test.kt:7: Error: Unsupported test runner. Supporte
                     fun test() {}
                 }
             """
-            ).within("src/androidTest")
-        )
+                    )
+                    .within("src/androidTest")
+            )
             .run()
             .expectClean()
     }
 
     @Test
     fun testSizeAnnotationOnClass() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                        """
                 package androidx.foo
 
                 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -216,18 +228,20 @@ src/androidTest/androidx/foo/Test.kt:7: Error: Unsupported test runner. Supporte
                     fun notATest() {}
                 }
             """
-            ).within("src/androidTest"),
-            *StubClasses
-        )
+                    )
+                    .within("src/androidTest"),
+                *StubClasses
+            )
             .run()
             .expectClean()
     }
 
     @Test
     fun failsForTestMethodMissingAnnotation() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                        """
                 package androidx.foo
 
                 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -247,27 +261,28 @@ src/androidTest/androidx/foo/Test.kt:7: Error: Unsupported test runner. Supporte
                     fun notATest() {}
                 }
             """
-            ).within("src/androidTest"),
-            *StubClasses
-        )
+                    )
+                    .within("src/androidTest"),
+                *StubClasses
+            )
+            .skipTestModes(TestMode.JVM_OVERLOADS)
             .run()
             .expect(
-                /* ktlint-disable max-line-length */
                 """
 src/androidTest/androidx/foo/Test.kt:16: Error: Missing test size annotation [MissingTestSizeAnnotation]
                     fun bar() {}
                         ~~~
 1 errors, 0 warnings
                 """
-                /* ktlint-enable max-line-length */
             )
     }
 
     @Test
     fun failsIfNoAnnotations() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                        """
                 package androidx.foo
 
                 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -285,12 +300,13 @@ src/androidTest/androidx/foo/Test.kt:16: Error: Missing test size annotation [Mi
                     fun notATest() {}
                 }
             """
-            ).within("src/androidTest"),
-            *StubClasses
-        )
+                    )
+                    .within("src/androidTest"),
+                *StubClasses
+            )
+            .skipTestModes(TestMode.JVM_OVERLOADS)
             .run()
             .expect(
-                /* ktlint-disable max-line-length */
                 """
 src/androidTest/androidx/foo/Test.kt:11: Error: Missing test size annotation [MissingTestSizeAnnotation]
                     fun foo() {}
@@ -300,15 +316,15 @@ src/androidTest/androidx/foo/Test.kt:14: Error: Missing test size annotation [Mi
                         ~~~
 2 errors, 0 warnings
                 """
-                /* ktlint-enable max-line-length */
             )
     }
 
     @Test
     fun ignoresSizeAnnotationsForParameterizedTests() {
-        lint().files(
-            kotlin(
-                """
+        lint()
+            .files(
+                kotlin(
+                        """
                 package androidx.foo
 
                 import androidx.test.filters.MediumTest
@@ -330,19 +346,21 @@ src/androidTest/androidx/foo/Test.kt:14: Error: Missing test size annotation [Mi
                     fun anotherTest() {}
                 }
             """
-            ).within("src/androidTest"),
-            *StubClasses
-        )
+                    )
+                    .within("src/androidTest"),
+                *StubClasses
+            )
             .run()
             .expectClean()
     }
 
-    private val StubClasses = arrayOf(
-        Stubs.RunWith,
-        Stubs.JUnit4Runner,
-        Stubs.ParameterizedRunner,
-        Stubs.AndroidJUnit4Runner,
-        Stubs.TestSizeAnnotations,
-        Stubs.TestAnnotation
-    )
+    private val StubClasses =
+        arrayOf(
+            Stubs.RunWith,
+            Stubs.JUnit4Runner,
+            Stubs.ParameterizedRunner,
+            Stubs.AndroidJUnit4Runner,
+            Stubs.TestSizeAnnotations,
+            Stubs.TestAnnotation
+        )
 }

@@ -17,7 +17,6 @@
 package androidx.camera.camera2.pipe.integration.testing
 
 import android.hardware.camera2.params.MeteringRectangle
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.AeMode
 import androidx.camera.camera2.pipe.AfMode
 import androidx.camera.camera2.pipe.AwbMode
@@ -30,7 +29,6 @@ import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.OutputStatus
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.Result3A
-import androidx.camera.camera2.pipe.TorchState
 import androidx.camera.camera2.pipe.integration.testing.FakeCameraGraphSession.RequestStatus.ABORTED
 import androidx.camera.camera2.pipe.integration.testing.FakeCameraGraphSession.RequestStatus.FAILED
 import androidx.camera.camera2.pipe.integration.testing.FakeCameraGraphSession.RequestStatus.TOTAL_CAPTURE_DONE
@@ -44,7 +42,6 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 
-@RequiresApi(21)
 open class FakeCameraGraphSession : CameraGraph.Session {
 
     val repeatingRequests = mutableListOf<Request>()
@@ -83,7 +80,8 @@ open class FakeCameraGraphSession : CameraGraph.Session {
         convergedCondition: ((FrameMetadata) -> Boolean)?,
         lockedCondition: ((FrameMetadata) -> Boolean)?,
         frameLimit: Int,
-        timeLimitNs: Long
+        convergedTimeLimitNs: Long,
+        lockedTimeLimitNs: Long
     ): Deferred<Result3A> {
         throw NotImplementedError("Not used in testing")
     }
@@ -105,7 +103,11 @@ open class FakeCameraGraphSession : CameraGraph.Session {
         throw NotImplementedError("Not used in testing")
     }
 
-    override fun setTorch(torchState: TorchState): Deferred<Result3A> {
+    override fun setTorchOn(): Deferred<Result3A> {
+        throw NotImplementedError("Not used in testing")
+    }
+
+    override fun setTorchOff(aeMode: AeMode?): Deferred<Result3A> {
         throw NotImplementedError("Not used in testing")
     }
 
@@ -190,28 +192,21 @@ open class FakeCameraGraphSession : CameraGraph.Session {
         val requestMetadata = FakeRequestMetadata(request = request)
         last().listeners.forEach { listener ->
             when (status) {
-                TOTAL_CAPTURE_DONE -> listener.onTotalCaptureResult(
-                    requestMetadata, FrameNumber(0), FakeFrameInfo()
-                )
-
-                FAILED -> listener.onFailed(
-                    requestMetadata,
-                    FrameNumber(0),
-                    FakeRequestFailure(
+                TOTAL_CAPTURE_DONE ->
+                    listener.onTotalCaptureResult(requestMetadata, FrameNumber(0), FakeFrameInfo())
+                FAILED ->
+                    listener.onFailed(
                         requestMetadata,
-                        FrameNumber(0)
+                        FrameNumber(0),
+                        FakeRequestFailure(requestMetadata, FrameNumber(0))
                     )
-                )
-
                 ABORTED -> listener.onRequestSequenceAborted(requestMetadata)
             }
         }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private class FakeFrameCapture(
-        override val request: Request
-    ) : FrameCapture {
+    private class FakeFrameCapture(override val request: Request) : FrameCapture {
         private val result = CompletableDeferred<Frame?>()
         private val closed = atomic(false)
         private val listeners = mutableListOf<Frame.Listener>()

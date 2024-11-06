@@ -31,9 +31,9 @@ plugins {
 }
 
 android {
+    compileSdkVersion 35
     defaultConfig {
         applicationId "androidx.core.splashscreen.samples"
-        minSdkVersion 21
     }
     namespace "androidx.core.splashscreen.sample"
 }
@@ -41,7 +41,7 @@ android {
 dependencies {
     implementation(project(":core:core-splashscreen"))
     implementation(project(":core:core-ktx"))
-    implementation(projectOrArtifact(":appcompat:appcompat"))
-    implementation projectOrArtifact(":annotation:annotation")
-    implementation(projectOrArtifact(":interpolator:interpolator"))
+    implementation(project(":appcompat:appcompat"))
+    implementation("androidx.annotation:annotation:1.8.1")
+    implementation(project(":interpolator:interpolator"))
 }

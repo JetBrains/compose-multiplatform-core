@@ -43,17 +43,17 @@ abstract class AdIdManager internal constructor() {
 
     companion object {
         /**
-         *  Creates [AdIdManager].
+         * Creates [AdIdManager].
          *
-         *  @return AdIdManager object. If the device is running an incompatible
-         *  build, the value returned is null.
+         * @return AdIdManager object. If the device is running an incompatible build, the value
+         *   returned is null.
          */
         @JvmStatic
         @SuppressLint("NewApi", "ClassVerificationFailure")
         fun obtain(context: Context): AdIdManager? {
             return if (AdServicesInfo.adServicesVersion() >= 4) {
                 AdIdManagerApi33Ext4Impl(context)
-            } else if (AdServicesInfo.extServicesVersion() >= 9) {
+            } else if (AdServicesInfo.extServicesVersionS() >= 9) {
                 BackCompatManager.getManager(context, "AdIdManager") {
                     AdIdManagerApi31Ext9Impl(context)
                 }

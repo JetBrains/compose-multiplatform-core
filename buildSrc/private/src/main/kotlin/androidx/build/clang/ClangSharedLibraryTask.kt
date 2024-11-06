@@ -20,6 +20,7 @@ import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.CacheableTask
@@ -35,27 +36,25 @@ import org.gradle.workers.WorkParameters
 import org.gradle.workers.WorkerExecutor
 
 @CacheableTask
-abstract class ClangSharedLibraryTask @Inject constructor(
-    private val workerExecutor: WorkerExecutor
-) : DefaultTask() {
+abstract class ClangSharedLibraryTask
+@Inject
+constructor(private val workerExecutor: WorkerExecutor) : DefaultTask() {
     init {
-        description = "Combines multiple object files (.o) into a shared library file" +
-            "(.so / .dylib)."
+        description =
+            "Combines multiple object files (.o) into a shared library file" + "(.so / .dylib)."
         group = "Build"
     }
 
-    @Suppress("UnstableApiUsage") // ServiceReference is incubating since 8.0
+    // ServiceReference is @Incubating since 8.0 https://github.com/gradle/gradle/issues/30858
+    @Suppress("UnstableApiUsage")
     @get:ServiceReference(KonanBuildService.KEY)
     abstract val konanBuildService: Property<KonanBuildService>
 
-    @get:Nested
-    abstract val clangParameters: ClangSharedLibraryParameters
+    @get:Nested abstract val clangParameters: ClangSharedLibraryParameters
 
     @TaskAction
     fun archive() {
-        workerExecutor.noIsolation().submit(
-            ClangSharedLibraryWorker::class.java
-        ) {
+        workerExecutor.noIsolation().submit(ClangSharedLibraryWorker::class.java) {
             it.clangParameters.set(clangParameters)
             it.buildService.set(konanBuildService)
         }
@@ -63,15 +62,10 @@ abstract class ClangSharedLibraryTask @Inject constructor(
 }
 
 abstract class ClangSharedLibraryParameters {
-    /**
-     * The target platform for the shared file.
-     */
-    @get:Input
-    abstract val konanTarget: Property<SerializableKonanTarget>
+    /** The target platform for the shared file. */
+    @get:Input abstract val konanTarget: Property<SerializableKonanTarget>
 
-    /**
-     * List of object files that will be added to the shared file output.
-     */
+    /** List of object files that will be added to the shared file output. */
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
     abstract val objectFiles: ConfigurableFileCollection
@@ -80,8 +74,7 @@ abstract class ClangSharedLibraryParameters {
      * The final output file that will include the shared library containing the given
      * [objectFiles].
      */
-    @get:OutputFile
-    abstract val outputFile: RegularFileProperty
+    @get:OutputFile abstract val outputFile: RegularFileProperty
 
     /**
      * List of additional objects that will be dynamically linked with the output file. At runtime,
@@ -90,6 +83,9 @@ abstract class ClangSharedLibraryParameters {
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
     abstract val linkedObjects: ConfigurableFileCollection
+
+    /** List of arguments that will be passed into linker when creating a shared library. */
+    @get:Input abstract val linkerArgs: ListProperty<String>
 }
 
 private abstract class ClangSharedLibraryWorker : WorkAction<ClangSharedLibraryWorker.Params> {

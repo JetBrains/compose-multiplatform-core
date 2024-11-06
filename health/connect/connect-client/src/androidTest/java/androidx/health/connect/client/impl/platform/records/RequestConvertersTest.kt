@@ -25,6 +25,9 @@ import android.health.connect.datatypes.NutritionRecord as PlatformNutritionReco
 import android.health.connect.datatypes.StepsRecord as PlatformStepsRecord
 import android.health.connect.datatypes.WheelchairPushesRecord as PlatformWheelchairPushesRecord
 import android.os.Build
+import androidx.health.connect.client.impl.platform.request.toAggregationType
+import androidx.health.connect.client.impl.platform.request.toPlatformRequest
+import androidx.health.connect.client.impl.platform.request.toPlatformTimeRangeFilter
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.NutritionRecord
 import androidx.health.connect.client.records.StepsRecord
@@ -206,39 +209,6 @@ class RequestConvertersTest {
                 TimeRangeFilter.between(
                     LocalDateTime.parse("2023-09-19T08:30"),
                     LocalDateTime.parse("2023-09-19T10:30")
-                ),
-                Period.ofDays(1),
-                setOf(DataOrigin("package1"), DataOrigin("package2"), DataOrigin("package3"))
-            )
-
-        with(sdkRequest.toPlatformRequest()) {
-            with(timeRangeFilter as LocalTimeRangeFilter) {
-                assertThat(startTime).isEqualTo(LocalDateTime.parse("2023-09-19T08:30"))
-                assertThat(endTime).isEqualTo(LocalDateTime.parse("2023-09-19T10:30"))
-            }
-            assertThat(aggregationTypes)
-                .containsExactly(
-                    PlatformHeartRateRecord.BPM_MAX,
-                    PlatformHeartRateRecord.BPM_MIN,
-                    PlatformHeartRateRecord.BPM_AVG
-                )
-            assertThat(dataOriginsFilters)
-                .containsExactly(
-                    PlatformDataOrigin.Builder().setPackageName("package1").build(),
-                    PlatformDataOrigin.Builder().setPackageName("package2").build(),
-                    PlatformDataOrigin.Builder().setPackageName("package3").build()
-                )
-        }
-    }
-
-    @Test
-    fun aggregateGroupByPeriodRequest_fromSdkToPlatform_instantTime() {
-        val sdkRequest =
-            AggregateGroupByPeriodRequest(
-                setOf(HeartRateRecord.BPM_MAX, HeartRateRecord.BPM_MIN, HeartRateRecord.BPM_AVG),
-                TimeRangeFilter.between(
-                    LocalDateTime.parse("2023-09-19T08:30").toInstant(ZoneOffset.UTC),
-                    LocalDateTime.parse("2023-09-19T10:30").toInstant(ZoneOffset.UTC)
                 ),
                 Period.ofDays(1),
                 setOf(DataOrigin("package1"), DataOrigin("package2"), DataOrigin("package3"))

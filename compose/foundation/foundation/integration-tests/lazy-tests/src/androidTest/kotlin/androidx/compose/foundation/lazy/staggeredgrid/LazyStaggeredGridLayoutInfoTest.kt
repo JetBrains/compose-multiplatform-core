@@ -22,12 +22,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
@@ -36,17 +39,17 @@ import org.junit.runners.Parameterized
 
 @MediumTest
 @RunWith(Parameterized::class)
-class LazyStaggeredGridLayoutInfoTest(
-    orientation: Orientation
-) : BaseLazyStaggeredGridWithOrientation(orientation) {
+class LazyStaggeredGridLayoutInfoTest(orientation: Orientation) :
+    BaseLazyStaggeredGridWithOrientation(orientation) {
 
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun initParameters(): Array<Any> = arrayOf(
-            Orientation.Vertical,
-            Orientation.Horizontal,
-        )
+        fun initParameters(): Array<Any> =
+            arrayOf(
+                Orientation.Vertical,
+                Orientation.Horizontal,
+            )
     }
 
     private var itemSizeDp: Dp = Dp.Unspecified
@@ -54,26 +57,16 @@ class LazyStaggeredGridLayoutInfoTest(
 
     @Before
     fun setUp() {
-        with(rule.density) {
-            itemSizeDp = itemSizePx.toDp()
-        }
+        with(rule.density) { itemSizeDp = itemSizePx.toDp() }
     }
 
     @Test
     fun contentTypeIsCorrect() {
         val state = LazyStaggeredGridState()
         rule.setContent {
-            LazyStaggeredGrid(
-                lanes = 1,
-                state = state,
-                modifier = Modifier.requiredSize(30.dp)
-            ) {
-                items(2, contentType = { it }) {
-                    Box(Modifier.size(10.dp))
-                }
-                item {
-                    Box(Modifier.size(10.dp))
-                }
+            LazyStaggeredGrid(lanes = 1, state = state, modifier = Modifier.requiredSize(30.dp)) {
+                items(2, contentType = { it }) { Box(Modifier.size(10.dp)) }
+                item { Box(Modifier.size(10.dp)) }
             }
         }
 
@@ -91,13 +84,9 @@ class LazyStaggeredGridLayoutInfoTest(
             LazyStaggeredGrid(
                 lanes = 2,
                 state = state,
-                modifier = Modifier
-                    .mainAxisSize(itemSizeDp * 1.5f)
-                    .crossAxisSize(itemSizeDp * 2)
+                modifier = Modifier.mainAxisSize(itemSizeDp * 1.5f).crossAxisSize(itemSizeDp * 2)
             ) {
-                items(100) {
-                    Spacer(Modifier.mainAxisSize(itemSizeDp))
-                }
+                items(100) { Spacer(Modifier.mainAxisSize(itemSizeDp)) }
             }
         }
 
@@ -106,14 +95,15 @@ class LazyStaggeredGridLayoutInfoTest(
                 state.scrollBy(10f)
                 assertThat(state.firstVisibleItemIndex).isEqualTo(0)
                 assertThat(state.firstVisibleItemScrollOffset).isEqualTo(10)
-                assertThat(state.layoutInfo.itemPairs).isEqualTo(
-                    listOf(
-                        0 to axisIntOffset(mainAxis = -10, crossAxis = 0),
-                        1 to axisIntOffset(mainAxis = -10, crossAxis = itemSizePx),
-                        2 to axisIntOffset(mainAxis = itemSizePx - 10, crossAxis = 0),
-                        3 to axisIntOffset(mainAxis = itemSizePx - 10, crossAxis = itemSizePx)
+                assertThat(state.layoutInfo.itemPairs)
+                    .isEqualTo(
+                        listOf(
+                            0 to axisIntOffset(mainAxis = -10, crossAxis = 0),
+                            1 to axisIntOffset(mainAxis = -10, crossAxis = itemSizePx),
+                            2 to axisIntOffset(mainAxis = itemSizePx - 10, crossAxis = 0),
+                            3 to axisIntOffset(mainAxis = itemSizePx - 10, crossAxis = itemSizePx)
+                        )
                     )
-                )
             }
         }
     }
@@ -123,19 +113,14 @@ class LazyStaggeredGridLayoutInfoTest(
         lateinit var state: LazyStaggeredGridState
         val startOffset = itemSizePx / 2
         rule.setContent {
-            state = rememberLazyStaggeredGridState(
-                initialFirstVisibleItemScrollOffset = startOffset
-            )
+            state =
+                rememberLazyStaggeredGridState(initialFirstVisibleItemScrollOffset = startOffset)
             LazyStaggeredGrid(
                 lanes = 2,
                 state = state,
-                modifier = Modifier
-                    .mainAxisSize(itemSizeDp * 1.5f)
-                    .crossAxisSize(itemSizeDp * 2)
+                modifier = Modifier.mainAxisSize(itemSizeDp * 1.5f).crossAxisSize(itemSizeDp * 2)
             ) {
-                items(100) {
-                    Spacer(Modifier.mainAxisSize(itemSizeDp))
-                }
+                items(100) { Spacer(Modifier.mainAxisSize(itemSizeDp)) }
             }
         }
 
@@ -145,17 +130,23 @@ class LazyStaggeredGridLayoutInfoTest(
                 assertThat(state.firstVisibleItemIndex).isEqualTo(0)
                 val expectedOffset = startOffset - 10
                 assertThat(state.firstVisibleItemScrollOffset).isEqualTo(expectedOffset)
-                assertThat(state.layoutInfo.itemPairs).isEqualTo(
-                    listOf(
-                        0 to axisIntOffset(mainAxis = -expectedOffset, crossAxis = 0),
-                        1 to axisIntOffset(mainAxis = -expectedOffset, crossAxis = itemSizePx),
-                        2 to axisIntOffset(mainAxis = itemSizePx - expectedOffset, crossAxis = 0),
-                        3 to axisIntOffset(
-                            mainAxis = itemSizePx - expectedOffset,
-                            crossAxis = itemSizePx
+                assertThat(state.layoutInfo.itemPairs)
+                    .isEqualTo(
+                        listOf(
+                            0 to axisIntOffset(mainAxis = -expectedOffset, crossAxis = 0),
+                            1 to axisIntOffset(mainAxis = -expectedOffset, crossAxis = itemSizePx),
+                            2 to
+                                axisIntOffset(
+                                    mainAxis = itemSizePx - expectedOffset,
+                                    crossAxis = 0
+                                ),
+                            3 to
+                                axisIntOffset(
+                                    mainAxis = itemSizePx - expectedOffset,
+                                    crossAxis = itemSizePx
+                                )
                         )
                     )
-                )
             }
         }
     }
@@ -168,27 +159,24 @@ class LazyStaggeredGridLayoutInfoTest(
             LazyStaggeredGrid(
                 lanes = 2,
                 state = state,
-                modifier = Modifier
-                    .mainAxisSize(itemSizeDp * 1.5f)
-                    .crossAxisSize(itemSizeDp * 2)
+                modifier = Modifier.mainAxisSize(itemSizeDp * 1.5f).crossAxisSize(itemSizeDp * 2)
             ) {
-                items(100) {
-                    Spacer(Modifier.mainAxisSize(itemSizeDp))
-                }
+                items(100) { Spacer(Modifier.mainAxisSize(itemSizeDp)) }
             }
         }
 
         rule.runOnIdle {
             runBlocking {
                 state.scrollBy(itemSizePx * 3f)
-                assertThat(state.layoutInfo.itemPairs).isEqualTo(
-                    listOf(
-                        6 to axisIntOffset(mainAxis = 0, crossAxis = 0),
-                        7 to axisIntOffset(mainAxis = 0, crossAxis = itemSizePx),
-                        8 to axisIntOffset(mainAxis = itemSizePx, crossAxis = 0),
-                        9 to axisIntOffset(mainAxis = itemSizePx, crossAxis = itemSizePx),
+                assertThat(state.layoutInfo.itemPairs)
+                    .isEqualTo(
+                        listOf(
+                            6 to axisIntOffset(mainAxis = 0, crossAxis = 0),
+                            7 to axisIntOffset(mainAxis = 0, crossAxis = itemSizePx),
+                            8 to axisIntOffset(mainAxis = itemSizePx, crossAxis = 0),
+                            9 to axisIntOffset(mainAxis = itemSizePx, crossAxis = itemSizePx),
+                        )
                     )
-                )
             }
         }
     }
@@ -201,29 +189,49 @@ class LazyStaggeredGridLayoutInfoTest(
             LazyStaggeredGrid(
                 lanes = 2,
                 state = state,
-                modifier = Modifier
-                    .mainAxisSize(itemSizeDp * 1.5f)
-                    .crossAxisSize(itemSizeDp * 2)
+                modifier = Modifier.mainAxisSize(itemSizeDp * 1.5f).crossAxisSize(itemSizeDp * 2)
             ) {
-                items(100) {
-                    Spacer(Modifier.mainAxisSize(itemSizeDp))
-                }
+                items(100) { Spacer(Modifier.mainAxisSize(itemSizeDp)) }
             }
         }
 
         rule.runOnIdle {
             runBlocking {
                 state.scrollBy(-itemSizePx * 3f)
-                assertThat(state.layoutInfo.itemPairs).isEqualTo(
-                    listOf(
-                        0 to axisIntOffset(mainAxis = 0, crossAxis = 0),
-                        1 to axisIntOffset(mainAxis = 0, crossAxis = itemSizePx),
-                        2 to axisIntOffset(mainAxis = itemSizePx, crossAxis = 0),
-                        3 to axisIntOffset(mainAxis = itemSizePx, crossAxis = itemSizePx),
+                assertThat(state.layoutInfo.itemPairs)
+                    .isEqualTo(
+                        listOf(
+                            0 to axisIntOffset(mainAxis = 0, crossAxis = 0),
+                            1 to axisIntOffset(mainAxis = 0, crossAxis = itemSizePx),
+                            2 to axisIntOffset(mainAxis = itemSizePx, crossAxis = 0),
+                            3 to axisIntOffset(mainAxis = itemSizePx, crossAxis = itemSizePx),
+                        )
                     )
-                )
             }
         }
+    }
+
+    @Test
+    fun snapshotFlowIsNotifiedAboutNewOffsetOnSmallScrolls() {
+        var firstItemOffset = 0
+
+        val state = LazyStaggeredGridState()
+        rule.setContent {
+            LazyStaggeredGrid(lanes = 1, modifier = Modifier.size(15.dp), state = state) {
+                items(100) { Box(Modifier.size(10.dp)) }
+            }
+            LaunchedEffect(state) {
+                snapshotFlow { state.layoutInfo }
+                    .collectLatest {
+                        val offset = it.visibleItemsInfo.firstOrNull()?.offset ?: IntOffset.Zero
+                        firstItemOffset = if (vertical) offset.y else offset.x
+                    }
+            }
+        }
+
+        rule.runOnIdle { runBlocking { state.scrollBy(1f) } }
+
+        rule.runOnIdle { assertThat(firstItemOffset).isEqualTo(-1) }
     }
 
     private val LazyStaggeredGridLayoutInfo.itemPairs: List<Pair<Int, IntOffset>>

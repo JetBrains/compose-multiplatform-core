@@ -49,12 +49,11 @@ import java.util.concurrent.Executor;
  * <p>This implementation enable the Extensions-Interface v1.4 features such as postview,
  * onCaptureProcessProgressed callback and realtime capture latency.
  *
- * <p>This class should be implemented by OEM and deployed to the target devices. 3P developers
- * don't need to implement this, unless this is used for related testing usage.
+ * <p>This is only for testing camera-extensions and should not be used as a sample OEM
+ * implementation.
  *
  * @since 1.0
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class NightImageCaptureExtenderImpl implements ImageCaptureExtenderImpl {
     private static final String TAG = "NightICExtender";
     private static final int DEFAULT_STAGE_ID = 0;
@@ -365,17 +364,15 @@ public final class NightImageCaptureExtenderImpl implements ImageCaptureExtender
         private List<Pair<CaptureResult.Key, Object>> getFilteredResults(
                 TotalCaptureResult captureResult) {
             List<Pair<CaptureResult.Key, Object>> list = new ArrayList<>();
-            if (captureResult.get(CaptureResult.JPEG_ORIENTATION) != null) {
-                list.add(new Pair<>(CaptureResult.JPEG_ORIENTATION,
-                        captureResult.get(CaptureResult.JPEG_ORIENTATION)));
-            }
-            if (captureResult.get(CaptureResult.JPEG_QUALITY) != null) {
-                list.add(new Pair<>(CaptureResult.JPEG_QUALITY,
-                        captureResult.get(CaptureResult.JPEG_QUALITY)));
+
+            for (CaptureResult.Key availableCaptureResultKey : getAvailableCaptureResultKeys()) {
+                if (captureResult.get(availableCaptureResultKey) != null) {
+                    list.add(new Pair<>(availableCaptureResultKey,
+                            captureResult.get(availableCaptureResultKey)));
+                }
             }
             return list;
         }
-
 
         @Override
         public void onResolutionUpdate(@NonNull Size size) {
@@ -411,4 +408,11 @@ public final class NightImageCaptureExtenderImpl implements ImageCaptureExtender
             }
         }
     }
+
+    /**
+     * This method is used to check if test lib is running. If OEM implementation exists, invoking
+     * this method will throw {@link NoSuchMethodError}. This can be used to determine if OEM
+     * implementation is used or not.
+     */
+    public static void checkTestlibRunning() {}
 }

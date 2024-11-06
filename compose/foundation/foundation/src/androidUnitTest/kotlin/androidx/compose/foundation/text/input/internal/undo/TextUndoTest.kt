@@ -20,7 +20,12 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.allCaps
+import androidx.compose.foundation.text.input.delete
+import androidx.compose.foundation.text.input.internal.DefaultImeEditCommandScope
+import androidx.compose.foundation.text.input.internal.TransformedTextFieldState
 import androidx.compose.foundation.text.input.internal.commitText
+import androidx.compose.foundation.text.input.internal.finishComposingText
+import androidx.compose.foundation.text.input.setSelectionCoerced
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.intl.Locale
 import com.google.common.truth.Truth.assertThat
@@ -276,11 +281,11 @@ class TextUndoTest {
         // this test also tests for AllCapsTransformation
         state.editAsUser(inputTransformation = allCapsTransformation) {
             commitComposition()
-            commitText("d", 1)
+            append("d")
         } // "abcD|"
         state.editAsUser(inputTransformation = allCapsTransformation) {
             commitComposition()
-            commitText("e", 1)
+            append("e")
         } // "abcDE|"
 
         state.undoState.undo() // "abc|"
@@ -291,7 +296,7 @@ class TextUndoTest {
     }
 
     @Test
-    fun directEditsClearTheUndoHistory() {
+    fun directEdits_clearTheUndoHistory() {
         val state = TextFieldState("abc")
         state.typeAtEnd("d")
         state.typeAtStart("e")
@@ -301,6 +306,35 @@ class TextUndoTest {
 
         assertThat(state.undoState.canUndo).isEqualTo(false)
         assertThat(state.undoState.canRedo).isEqualTo(false)
+    }
+
+    @Test
+    fun directEdit_onlySelectionChange_doesNotClearUndoHistory() {
+        val state = TextFieldState("abc")
+        state.typeAtEnd("d")
+        state.typeAtStart("e")
+        state.typeAtEnd("f")
+
+        state.edit { selection = TextRange(0) }
+
+        assertThat(state.undoState.canUndo).isEqualTo(true)
+    }
+
+    @Test
+    fun directEdit_replaceButNoContentChange_clearsUndoHistory() {
+        val state = TextFieldState("abc")
+        state.typeAtEnd("d")
+        state.typeAtStart("e")
+        state.typeAtEnd("f")
+
+        val before = state.text.toString()
+
+        state.edit { replace(0, 6, "eabcdf") }
+
+        val after = state.text.toString()
+
+        assertThat(before).isEqualTo(after)
+        assertThat(state.undoState.canUndo).isEqualTo(false)
     }
 
     companion object {
@@ -317,22 +351,20 @@ class TextUndoTest {
 
         private fun TextFieldState.typeAt(index: Int, text: String) {
             placeCursorAt(index)
-            editAsUser(inputTransformation = null) {
-                replace(index, index, text)
-            }
+            editAsUser(inputTransformation = null) { replace(index, index, text) }
         }
 
         private fun TextFieldState.type(text: String) {
-            editAsUser(inputTransformation = null) {
-                commitComposition()
+            with(DefaultImeEditCommandScope(TransformedTextFieldState(this))) {
+                beginBatchEdit()
+                finishComposingText()
                 commitText(text, 1)
+                endBatchEdit()
             }
         }
 
         private fun TextFieldState.deleteAt(index: Int) {
-            editAsUser(inputTransformation = null) {
-                delete(index, index + 1)
-            }
+            editAsUser(inputTransformation = null) { delete(index, index + 1) }
         }
 
         private fun TextFieldState.placeCursorAt(index: Int) {
@@ -340,15 +372,11 @@ class TextUndoTest {
         }
 
         private fun TextFieldState.select(start: Int, end: Int) {
-            editAsUser(inputTransformation = null) {
-                setSelection(start, end)
-            }
+            editAsUser(inputTransformation = null) { setSelectionCoerced(start, end) }
         }
 
         private fun TextFieldState.replaceAt(start: Int, end: Int, newText: String) {
-            editAsUser(inputTransformation = null) {
-                replace(start, end, newText)
-            }
+            editAsUser(inputTransformation = null) { replace(start, end, newText) }
         }
     }
 }

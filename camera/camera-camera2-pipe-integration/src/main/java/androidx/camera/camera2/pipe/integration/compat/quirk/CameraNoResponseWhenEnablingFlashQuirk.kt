@@ -19,7 +19,6 @@ import android.annotation.SuppressLint
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraMetadata.LENS_FACING_BACK
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraMetadata
 
 /**
@@ -34,34 +33,34 @@ import androidx.camera.camera2.pipe.CameraMetadata
  * TODO(b/270421716): enable CameraXQuirksClassDetector lint check when kotlin is supported.
  */
 @SuppressLint("CameraXQuirksClassDetector")
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-class CameraNoResponseWhenEnablingFlashQuirk : UseTorchAsFlashQuirk {
+public class CameraNoResponseWhenEnablingFlashQuirk : UseTorchAsFlashQuirk {
 
-    companion object {
-        val AFFECTED_MODELS = listOf(
-            // Enables on all Samsung Galaxy Note 5 devices.
-            "SM-N9200",
-            "SM-N9208",
-            "SAMSUNG-SM-N920A",
-            "SM-N920C",
-            "SM-N920F",
-            "SM-N920G",
-            "SM-N920I",
-            "SM-N920K",
-            "SM-N920L",
-            "SM-N920P",
-            "SM-N920R4",
-            "SM-N920R6",
-            "SM-N920R7",
-            "SM-N920S",
-            "SM-N920T",
-            "SM-N920V",
-            "SM-N920W8",
-            "SM-N920X",
-            "SM-J510FN" // Galaxy J5
-        )
+    public companion object {
+        public val AFFECTED_MODELS: List<String> =
+            listOf(
+                // Enables on all Samsung Galaxy Note 5 devices.
+                "SM-N9200",
+                "SM-N9208",
+                "SAMSUNG-SM-N920A",
+                "SM-N920C",
+                "SM-N920F",
+                "SM-N920G",
+                "SM-N920I",
+                "SM-N920K",
+                "SM-N920L",
+                "SM-N920P",
+                "SM-N920R4",
+                "SM-N920R6",
+                "SM-N920R7",
+                "SM-N920S",
+                "SM-N920T",
+                "SM-N920V",
+                "SM-N920W8",
+                "SM-N920X",
+                "SM-J510FN" // Galaxy J5
+            )
 
-        fun isEnabled(cameraMetadata: CameraMetadata): Boolean {
+        public fun isEnabled(cameraMetadata: CameraMetadata): Boolean {
             return AFFECTED_MODELS.contains(Build.MODEL.uppercase()) &&
                 cameraMetadata[CameraCharacteristics.LENS_FACING] == LENS_FACING_BACK
         }

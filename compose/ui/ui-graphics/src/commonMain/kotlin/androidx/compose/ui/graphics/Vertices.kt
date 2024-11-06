@@ -19,7 +19,7 @@ package androidx.compose.ui.graphics
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.util.fastAny
 
-/**  A set of vertex data used by [Canvas.drawVertices]. */
+/** A set of vertex data used by [Canvas.drawVertices]. */
 class Vertices(
     val vertexMode: VertexMode,
     positions: List<Offset>,
@@ -34,31 +34,23 @@ class Vertices(
     val indices: ShortArray
 
     init {
-        val outOfBounds: (Int) -> Boolean = { it < 0 || it >= positions.size }
         if (textureCoordinates.size != positions.size)
-            throw IllegalArgumentException("positions and textureCoordinates lengths must match.")
+            throwIllegalArgumentException("positions and textureCoordinates lengths must match.")
         if (colors.size != positions.size)
-            throw IllegalArgumentException("positions and colors lengths must match.")
-        if (indices.fastAny(outOfBounds))
-            throw IllegalArgumentException(
-                "indices values must be valid indices " +
-                    "in the positions list."
+            throwIllegalArgumentException("positions and colors lengths must match.")
+        if (indices.fastAny { it < 0 || it >= positions.size })
+            throwIllegalArgumentException(
+                "indices values must be valid indices " + "in the positions list."
             )
 
         this.positions = encodePointList(positions)
         this.textureCoordinates = encodePointList(textureCoordinates)
         this.colors = encodeColorList(colors)
-        this.indices = ShortArray(indices.size) {
-            i ->
-            indices[i].toShort()
-        }
+        this.indices = ShortArray(indices.size) { i -> indices[i].toShort() }
     }
 
     private fun encodeColorList(colors: List<Color>): IntArray {
-        return IntArray(colors.size) {
-            i ->
-            colors[i].toArgb()
-        }
+        return IntArray(colors.size) { i -> colors[i].toArgb() }
     }
 
     private fun encodePointList(points: List<Offset>): FloatArray {

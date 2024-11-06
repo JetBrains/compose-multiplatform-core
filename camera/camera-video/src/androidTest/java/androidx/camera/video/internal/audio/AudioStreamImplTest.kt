@@ -19,8 +19,10 @@ package androidx.camera.video.internal.audio
 import android.Manifest
 import android.media.AudioFormat
 import android.media.MediaRecorder
+import android.os.Build
 import androidx.camera.core.Logger
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.ioExecutor
+import androidx.camera.testing.impl.AndroidUtil.isEmulator
 import androidx.camera.testing.impl.AudioUtil
 import androidx.camera.testing.impl.RequiresDevice
 import androidx.camera.testing.impl.mocks.MockConsumer
@@ -36,6 +38,7 @@ import java.nio.ByteBuffer
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import org.junit.After
+import org.junit.Assume.assumeFalse
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
@@ -59,9 +62,8 @@ class AudioStreamImplTest {
     }
 
     @get:Rule
-    var mAudioPermissionRule: GrantPermissionRule = GrantPermissionRule.grant(
-        Manifest.permission.RECORD_AUDIO
-    )
+    var mAudioPermissionRule: GrantPermissionRule =
+        GrantPermissionRule.grant(Manifest.permission.RECORD_AUDIO)
 
     private val byteBuffer = ByteBuffer.allocateDirect(1024)
     private lateinit var audioStream: AudioStreamImpl
@@ -69,18 +71,25 @@ class AudioStreamImplTest {
 
     @Before
     fun setUp() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator()
+        )
+
         assumeTrue(AudioStreamImpl.isSettingsSupported(SAMPLE_RATE, CHANNEL_COUNT, AUDIO_FORMAT))
         assumeTrue(AudioUtil.canStartAudioRecord(AUDIO_SOURCE))
 
-        audioStream = AudioStreamImpl(
-            AudioSettings.builder()
-                .setAudioSource(AUDIO_SOURCE)
-                .setSampleRate(SAMPLE_RATE)
-                .setChannelCount(CHANNEL_COUNT)
-                .setAudioFormat(AUDIO_FORMAT)
-                .build(),
-            /*attributionContext=*/null
-        )
+        audioStream =
+            AudioStreamImpl(
+                AudioSettings.builder()
+                    .setAudioSource(AUDIO_SOURCE)
+                    .setSampleRate(SAMPLE_RATE)
+                    .setChannelCount(CHANNEL_COUNT)
+                    .setAudioFormat(AUDIO_FORMAT)
+                    .build(),
+                /*attributionContext=*/ null
+            )
         audioStreamCallback = AudioStreamCallback()
         audioStream.setCallback(audioStreamCallback, ioExecutor())
     }
@@ -95,9 +104,7 @@ class AudioStreamImplTest {
     @RequiresDevice // b/264902324
     @Test
     fun readBeforeStart_throwException() {
-        assertThrows(IllegalStateException::class.java) {
-            audioStream.read(byteBuffer)
-        }
+        assertThrows(IllegalStateException::class.java) { audioStream.read(byteBuffer) }
     }
 
     @RequiresDevice // b/264902324
@@ -105,18 +112,14 @@ class AudioStreamImplTest {
     fun readAfterStop_throwException() {
         audioStream.start()
         audioStream.stop()
-        assertThrows(IllegalStateException::class.java) {
-            audioStream.read(byteBuffer)
-        }
+        assertThrows(IllegalStateException::class.java) { audioStream.read(byteBuffer) }
     }
 
     @RequiresDevice // b/264902324
     @Test
     fun startAfterReleased_throwException() {
         audioStream.release()
-        assertThrows(IllegalStateException::class.java) {
-            audioStream.start()
-        }
+        assertThrows(IllegalStateException::class.java) { audioStream.start() }
     }
 
     @RequiresDevice // b/264902324

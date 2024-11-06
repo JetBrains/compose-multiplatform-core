@@ -22,6 +22,7 @@ plugins {
 }
 
 android {
+    compileSdk 35
 
     namespace "androidx.wear.compose.integration.macrobenchmark.target"
     buildTypes {
@@ -35,7 +36,6 @@ android {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation(project(":compose:foundation:foundation-layout"))
     implementation(project(":compose:ui:ui"))
     implementation(project(":compose:foundation:foundation"))
@@ -46,6 +46,7 @@ dependencies {
     implementation(project(":profileinstaller:profileinstaller"))
     implementation project(path: ':wear:compose:compose-foundation')
     implementation project(path: ':wear:compose:compose-material')
+    implementation project(path: ':wear:compose:compose-material3')
     implementation project(path: ':wear:compose:compose-navigation')
     implementation(project(path:':compose:runtime:runtime-tracing'))
     implementation(project(path:':tracing:tracing-perfetto'))

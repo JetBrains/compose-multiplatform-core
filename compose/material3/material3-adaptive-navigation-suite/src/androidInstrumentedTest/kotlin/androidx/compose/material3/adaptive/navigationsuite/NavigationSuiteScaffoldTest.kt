@@ -34,11 +34,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-@OptIn(ExperimentalMaterial3AdaptiveNavigationSuiteApi::class)
 @RunWith(JUnit4::class)
 class NavigationSuiteScaffoldTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun navigationSuiteScaffoldTest_fillMaxSize_withNavBar_succeeds() {
@@ -50,11 +48,17 @@ class NavigationSuiteScaffoldTest {
 
         // Assert that Modifier.fillMaxSize didn't propagate to the nav bar (its height should not
         // fill the screen).
-        rule.onNodeWithTag(NavigationSuiteTag).getUnclippedBoundsInRoot()
-            .height.assertIsNotEqualTo(rule.onRoot().getUnclippedBoundsInRoot().height)
+        rule
+            .onNodeWithTag(NavigationSuiteTag)
+            .getUnclippedBoundsInRoot()
+            .height
+            .assertIsNotEqualTo(rule.onRoot().getUnclippedBoundsInRoot().height)
         // Nav bar width is always the same as screen width.
-        rule.onNodeWithTag(NavigationSuiteTag).getUnclippedBoundsInRoot()
-            .width.assertIsEqualTo(rule.onRoot().getUnclippedBoundsInRoot().width)
+        rule
+            .onNodeWithTag(NavigationSuiteTag)
+            .getUnclippedBoundsInRoot()
+            .width
+            .assertIsEqualTo(rule.onRoot().getUnclippedBoundsInRoot().width)
     }
 
     @Test
@@ -66,12 +70,18 @@ class NavigationSuiteScaffoldTest {
         }
 
         // Nav rail height is always the same as screen height.
-        rule.onNodeWithTag(NavigationSuiteTag).getUnclippedBoundsInRoot()
-            .height.assertIsEqualTo(rule.onRoot().getUnclippedBoundsInRoot().height)
+        rule
+            .onNodeWithTag(NavigationSuiteTag)
+            .getUnclippedBoundsInRoot()
+            .height
+            .assertIsEqualTo(rule.onRoot().getUnclippedBoundsInRoot().height)
         // Assert that Modifier.fillMaxSize didn't propagate to the nav rail (its width should not
         // fill the screen).
-        rule.onNodeWithTag(NavigationSuiteTag).getUnclippedBoundsInRoot()
-            .width.assertIsNotEqualTo(rule.onRoot().getUnclippedBoundsInRoot().width)
+        rule
+            .onNodeWithTag(NavigationSuiteTag)
+            .getUnclippedBoundsInRoot()
+            .width
+            .assertIsNotEqualTo(rule.onRoot().getUnclippedBoundsInRoot().width)
     }
 
     @Test
@@ -83,26 +93,29 @@ class NavigationSuiteScaffoldTest {
         }
 
         // Nav drawer height is always the same as screen height.
-        rule.onNodeWithTag(NavigationSuiteTag).getUnclippedBoundsInRoot()
-            .height.assertIsEqualTo(rule.onRoot().getUnclippedBoundsInRoot().height)
+        rule
+            .onNodeWithTag(NavigationSuiteTag)
+            .getUnclippedBoundsInRoot()
+            .height
+            .assertIsEqualTo(rule.onRoot().getUnclippedBoundsInRoot().height)
         // Assert that Modifier.fillMaxSize didn't propagate to the nav drawer (its width should not
         // fill the screen).
-        rule.onNodeWithTag(NavigationSuiteTag).getUnclippedBoundsInRoot()
-            .width.assertIsNotEqualTo(rule.onRoot().getUnclippedBoundsInRoot().width)
+        rule
+            .onNodeWithTag(NavigationSuiteTag)
+            .getUnclippedBoundsInRoot()
+            .width
+            .assertIsNotEqualTo(rule.onRoot().getUnclippedBoundsInRoot().width)
     }
 }
 
-@OptIn(ExperimentalMaterial3AdaptiveNavigationSuiteApi::class)
 @Composable
-private fun SampleNavigationSuiteScaffoldLayout(
-    layoutType: NavigationSuiteType
-) {
+private fun SampleNavigationSuiteScaffoldLayout(layoutType: NavigationSuiteType) {
     NavigationSuiteScaffoldLayout(
         navigationSuite = {
             NavigationSuite(
                 modifier = Modifier.testTag(NavigationSuiteTag),
                 layoutType = layoutType
-            ) { }
+            ) {}
         }
     )
 }

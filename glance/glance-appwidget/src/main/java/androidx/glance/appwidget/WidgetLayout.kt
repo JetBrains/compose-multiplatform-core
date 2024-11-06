@@ -19,7 +19,6 @@ package androidx.glance.appwidget
 import android.content.Context
 import android.os.Build
 import android.util.Log
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import androidx.datastore.core.CorruptionException
@@ -30,6 +29,7 @@ import androidx.glance.Emittable
 import androidx.glance.EmittableButton
 import androidx.glance.EmittableImage
 import androidx.glance.EmittableWithChildren
+import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.action.ActionModifier
 import androidx.glance.appwidget.lazy.EmittableLazyColumn
@@ -70,7 +70,8 @@ import java.io.IOException
  * [translateComposition] to generate the [android.widget.RemoteViews] corresponding to a given
  * layout.
  */
-internal class LayoutConfiguration private constructor(
+internal class LayoutConfiguration
+private constructor(
     private val context: Context,
     /**
      * Map the known layout configs to a unique layout index. It will contain all the layouts stored
@@ -84,39 +85,34 @@ internal class LayoutConfiguration private constructor(
     /** Set of all layout ids in [layoutConfig]. None of them can be re-used. */
     private val existingLayoutIds: MutableSet<Int> = mutableSetOf(),
 ) {
+
     internal companion object {
 
-        /**
-         * Creates a [LayoutConfiguration] retrieving known layouts from file, if they exist.
-         */
-        internal suspend fun load(
-            context: Context,
-            appWidgetId: Int
-        ): LayoutConfiguration {
-            val config = try {
-                GlanceState.getValue(
-                    context,
-                    LayoutStateDefinition,
-                    layoutDatastoreKey(appWidgetId)
-                )
-            } catch (ex: CorruptionException) {
-                Log.e(
-                    GlanceAppWidgetTag,
-                    "Set of layout structures for App Widget id $appWidgetId is corrupted",
-                    ex
-                )
-                LayoutProto.LayoutConfig.getDefaultInstance()
-            } catch (ex: IOException) {
-                Log.e(
-                    GlanceAppWidgetTag,
-                    "I/O error reading set of layout structures for App Widget id $appWidgetId",
-                    ex
-                )
-                LayoutProto.LayoutConfig.getDefaultInstance()
-            }
-            val layouts = config.layoutList.associate {
-                it.layout to it.layoutIndex
-            }.toMutableMap()
+        /** Creates a [LayoutConfiguration] retrieving known layouts from file, if they exist. */
+        internal suspend fun load(context: Context, appWidgetId: Int): LayoutConfiguration {
+            val config =
+                try {
+                    GlanceState.getValue(
+                        context,
+                        LayoutStateDefinition,
+                        layoutDatastoreKey(appWidgetId)
+                    )
+                } catch (ex: CorruptionException) {
+                    Log.e(
+                        GlanceAppWidgetTag,
+                        "Set of layout structures for App Widget id $appWidgetId is corrupted",
+                        ex
+                    )
+                    LayoutProto.LayoutConfig.getDefaultInstance()
+                } catch (ex: IOException) {
+                    Log.e(
+                        GlanceAppWidgetTag,
+                        "I/O error reading set of layout structures for App Widget id $appWidgetId",
+                        ex
+                    )
+                    LayoutProto.LayoutConfig.getDefaultInstance()
+                }
+            val layouts = config.layoutList.associate { it.layout to it.layoutIndex }.toMutableMap()
             return LayoutConfiguration(
                 context,
                 layouts,
@@ -126,10 +122,8 @@ internal class LayoutConfiguration private constructor(
             )
         }
 
-        /**
-         * Create a new, empty, [LayoutConfiguration].
-         */
-        internal fun create(context: Context, appWidgetId: Int) =
+        /** Create a new, empty, [LayoutConfiguration]. */
+        internal fun create(context: Context, appWidgetId: Int): LayoutConfiguration =
             LayoutConfiguration(
                 context,
                 layoutConfig = mutableMapOf(),
@@ -144,7 +138,7 @@ internal class LayoutConfiguration private constructor(
             appWidgetId: Int,
             nextIndex: Int,
             existingLayoutIds: Collection<Int> = emptyList()
-        ) =
+        ): LayoutConfiguration =
             LayoutConfiguration(
                 context,
                 appWidgetId = appWidgetId,
@@ -152,6 +146,29 @@ internal class LayoutConfiguration private constructor(
                 nextIndex = nextIndex,
                 existingLayoutIds = existingLayoutIds.toMutableSet(),
             )
+
+        /** @return the file after delete() has been called on it. This is for testing. */
+        fun delete(context: Context, id: GlanceId): Boolean {
+
+            if (id is AppWidgetId && id.isRealId) {
+                val key = layoutDatastoreKey(id.appWidgetId)
+                val file = context.dataStoreFile(key)
+                try {
+                    return file.delete()
+                } catch (e: Exception) {
+                    // This is a minor error, File.delete() shouldn't throw an exception and these
+                    // files
+                    // are <1kb.
+                    Log.d(
+                        GlanceAppWidgetTag,
+                        "Could not delete LayoutConfiguration dataStoreFile when cleaning up" +
+                            "old appwidget id $id",
+                        e
+                    )
+                }
+            }
+            return false
+        }
     }
 
     /**
@@ -159,9 +176,9 @@ internal class LayoutConfiguration private constructor(
      *
      * The layout index is retricted to the range 0 - [TopLevelLayoutsCount]-1. Once the layout
      * index reaches [TopLevelLayoutsCount], it cycles back to 0, making sure we are not re-using
-     * any layout index used either for the current or previous set of layouts. The number of
-     * layout indexes we have should be sufficient to mostly avoid collisions, but there is still
-     * a risk if many updates are not rendered, or if all the indexes are used for lazy list items.
+     * any layout index used either for the current or previous set of layouts. The number of layout
+     * indexes we have should be sufficient to mostly avoid collisions, but there is still a risk if
+     * many updates are not rendered, or if all the indexes are used for lazy list items.
      *
      * @return the layout index that should be used to generate it
      */
@@ -187,29 +204,27 @@ internal class LayoutConfiguration private constructor(
         }
     }
 
-    /**
-     * Save the known layouts to file at the end of the layout generation.
-     */
+    /** Save the known layouts to file at the end of the layout generation. */
     suspend fun save() {
-        GlanceState.updateValue(
-            context,
-            LayoutStateDefinition,
-            layoutDatastoreKey(appWidgetId)
-        ) { config ->
-            config.toBuilder().apply {
-                nextIndex = nextIndex
-                clearLayout()
-                layoutConfig.entries.forEach { (node, index) ->
-                    if (index in usedLayoutIds) {
-                        addLayout(
-                            LayoutDefinition.newBuilder().apply {
-                                layout = node
-                                layoutIndex = index
-                            }
-                        )
+        GlanceState.updateValue(context, LayoutStateDefinition, layoutDatastoreKey(appWidgetId)) {
+            config ->
+            config
+                .toBuilder()
+                .apply {
+                    nextIndex = nextIndex
+                    clearLayout()
+                    layoutConfig.entries.forEach { (node, index) ->
+                        if (index in usedLayoutIds) {
+                            addLayout(
+                                LayoutDefinition.newBuilder().apply {
+                                    layout = node
+                                    layoutIndex = index
+                                }
+                            )
+                        }
                     }
                 }
-            }.build()
+                .build()
         }
     }
 }
@@ -225,33 +240,36 @@ internal class LayoutConfiguration private constructor(
  * will anyway invalidate the structure.
  */
 internal fun createNode(context: Context, element: Emittable): LayoutNode =
-    LayoutNode.newBuilder().apply {
-        type = element.getLayoutType()
-        width = element.modifier.widthModifier.toProto(context)
-        height = element.modifier.heightModifier.toProto(context)
-        hasAction = element.modifier.findModifier<ActionModifier>() != null
-        if (element.modifier.findModifier<AppWidgetBackgroundModifier>() != null) {
-            identity = NodeIdentity.BACKGROUND_NODE
+    LayoutNode.newBuilder()
+        .apply {
+            type = element.getLayoutType()
+            width = element.modifier.widthModifier.toProto(context)
+            height = element.modifier.heightModifier.toProto(context)
+            hasAction = element.modifier.findModifier<ActionModifier>() != null
+            if (element.modifier.findModifier<AppWidgetBackgroundModifier>() != null) {
+                identity = NodeIdentity.BACKGROUND_NODE
+            }
+            when (element) {
+                is EmittableImage -> setImageNode(element)
+                is EmittableColumn -> setColumnNode(element)
+                is EmittableRow -> setRowNode(element)
+                is EmittableBox -> setBoxNode(element)
+                is EmittableLazyColumn -> setLazyListColumn(element)
+            }
+            if (element is EmittableWithChildren && element !is EmittableLazyList) {
+                addAllChildren(element.children.map { createNode(context, it) })
+            }
         }
-        when (element) {
-            is EmittableImage -> setImageNode(element)
-            is EmittableColumn -> setColumnNode(element)
-            is EmittableRow -> setRowNode(element)
-            is EmittableBox -> setBoxNode(element)
-            is EmittableLazyColumn -> setLazyListColumn(element)
-        }
-        if (element is EmittableWithChildren && element !is EmittableLazyList) {
-            addAllChildren(element.children.map { createNode(context, it) })
-        }
-    }.build()
+        .build()
 
 private fun LayoutNode.Builder.setImageNode(element: EmittableImage) {
-    imageScale = when (element.contentScale) {
-        androidx.glance.layout.ContentScale.Fit -> LayoutProto.ContentScale.FIT
-        androidx.glance.layout.ContentScale.Crop -> LayoutProto.ContentScale.CROP
-        androidx.glance.layout.ContentScale.FillBounds -> LayoutProto.ContentScale.FILL_BOUNDS
-        else -> error("Unknown content scale ${element.contentScale}")
-    }
+    imageScale =
+        when (element.contentScale) {
+            androidx.glance.layout.ContentScale.Fit -> LayoutProto.ContentScale.FIT
+            androidx.glance.layout.ContentScale.Crop -> LayoutProto.ContentScale.CROP
+            androidx.glance.layout.ContentScale.FillBounds -> LayoutProto.ContentScale.FILL_BOUNDS
+            else -> error("Unknown content scale ${element.contentScale}")
+        }
     hasImageDescription = !element.isDecorative()
     hasImageColorFilter = element.colorFilterParams != null
 }
@@ -279,7 +297,8 @@ private val GlanceModifier.widthModifier: Dimension
 private val GlanceModifier.heightModifier: Dimension
     get() = findModifier<HeightModifier>()?.height ?: Dimension.Wrap
 
-private fun layoutDatastoreKey(appWidgetId: Int) = "appWidgetLayout-$appWidgetId"
+@VisibleForTesting
+internal fun layoutDatastoreKey(appWidgetId: Int): String = "appWidgetLayout-$appWidgetId"
 
 private object LayoutStateDefinition : GlanceStateDefinition<LayoutProto.LayoutConfig> {
     override fun getLocation(context: Context, fileKey: String): File =
@@ -294,19 +313,22 @@ private object LayoutStateDefinition : GlanceStateDefinition<LayoutProto.LayoutC
         }
 }
 
-private fun Alignment.Vertical.toProto() = when (this) {
-    Alignment.Vertical.Top -> LayoutProto.VerticalAlignment.TOP
-    Alignment.Vertical.CenterVertically -> LayoutProto.VerticalAlignment.CENTER_VERTICALLY
-    Alignment.Vertical.Bottom -> LayoutProto.VerticalAlignment.BOTTOM
-    else -> error("unknown vertical alignment $this")
-}
+private fun Alignment.Vertical.toProto() =
+    when (this) {
+        Alignment.Vertical.Top -> LayoutProto.VerticalAlignment.TOP
+        Alignment.Vertical.CenterVertically -> LayoutProto.VerticalAlignment.CENTER_VERTICALLY
+        Alignment.Vertical.Bottom -> LayoutProto.VerticalAlignment.BOTTOM
+        else -> error("unknown vertical alignment $this")
+    }
 
-private fun Alignment.Horizontal.toProto() = when (this) {
-    Alignment.Horizontal.Start -> LayoutProto.HorizontalAlignment.START
-    Alignment.Horizontal.CenterHorizontally -> LayoutProto.HorizontalAlignment.CENTER_HORIZONTALLY
-    Alignment.Horizontal.End -> LayoutProto.HorizontalAlignment.END
-    else -> error("unknown horizontal alignment $this")
-}
+private fun Alignment.Horizontal.toProto() =
+    when (this) {
+        Alignment.Horizontal.Start -> LayoutProto.HorizontalAlignment.START
+        Alignment.Horizontal.CenterHorizontally ->
+            LayoutProto.HorizontalAlignment.CENTER_HORIZONTALLY
+        Alignment.Horizontal.End -> LayoutProto.HorizontalAlignment.END
+        else -> error("unknown horizontal alignment $this")
+    }
 
 private fun Emittable.getLayoutType(): LayoutProto.LayoutType =
     when (this) {
@@ -360,7 +382,6 @@ private fun Dimension.toProto(context: Context): LayoutProto.DimensionType {
 
 @RequiresApi(Build.VERSION_CODES.S)
 private object WidgetLayoutImpl31 {
-    @DoNotInline
     fun toProto(dimension: Dimension) =
         if (dimension is Dimension.Expand) {
             LayoutProto.DimensionType.EXPAND

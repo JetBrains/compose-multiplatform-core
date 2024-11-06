@@ -20,7 +20,6 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.demos.text2.ScrollableType2.EditTextsInScrollView
 import androidx.compose.foundation.demos.text2.ScrollableType2.LazyColumn
 import androidx.compose.foundation.demos.text2.ScrollableType2.ScrollableColumn
@@ -96,23 +95,15 @@ fun BasicTextFieldInScrollableDemo() {
 @Preview(showBackground = true)
 @Composable
 private fun TextFieldInScrollableColumn() {
-    Column(
-        Modifier.verticalScroll(rememberScrollState())
-    ) {
-        repeat(50) { index ->
-            DemoTextField(index)
-        }
+    Column(Modifier.verticalScroll(rememberScrollState())) {
+        repeat(50) { index -> DemoTextField(index) }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun TextFieldInLazyColumn() {
-    LazyColumn {
-        items(50) { index ->
-            DemoTextField(index)
-        }
-    }
+    LazyColumn { items(50) { index -> DemoTextField(index) } }
 }
 
 @Preview(showBackground = true)
@@ -121,7 +112,6 @@ private fun EditTextsInScrollView() {
     AndroidView(::EditTextsInScrollableView, modifier = Modifier.fillMaxSize())
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun DemoTextField(index: Int) {
     val state = rememberTextFieldState()
@@ -140,7 +130,8 @@ private class EditTextsInScrollableView(context: Context) : ScrollView(context) 
         val column = LinearLayout(context)
         column.orientation = LinearLayout.VERTICAL
         addView(
-            column, ViewGroup.LayoutParams(
+            column,
+            ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             )
@@ -148,12 +139,14 @@ private class EditTextsInScrollableView(context: Context) : ScrollView(context) 
 
         repeat(30) {
             val text = EditText(context)
-            column.addView(text, LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            ).also {
-                it.setMargins(20)
-            })
+            column.addView(
+                text,
+                LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    )
+                    .also { it.setMargins(20) }
+            )
         }
     }
 }

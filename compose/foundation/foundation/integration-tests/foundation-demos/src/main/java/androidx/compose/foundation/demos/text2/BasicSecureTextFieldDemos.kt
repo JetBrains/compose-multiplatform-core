@@ -27,9 +27,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicSecureTextField
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.TextObfuscationMode
+import androidx.compose.foundation.text.input.insert
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.Text
@@ -45,17 +48,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.substring
 import androidx.compose.ui.unit.dp
 import androidx.core.text.isDigitsOnly
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BasicSecureTextFieldDemos() {
-    Column(
-        Modifier
-            .imePadding()
-            .verticalScroll(rememberScrollState())
-    ) {
+    Column(Modifier.imePadding().verticalScroll(rememberScrollState())) {
         val clipboardManager = LocalClipboardManager.current
         Button(onClick = { clipboardManager.setText(AnnotatedString("\uD801\uDC37")) }) {
             Text("Copy surrogate pair \"\uD801\uDC37\"")
@@ -69,6 +69,9 @@ fun BasicSecureTextFieldDemos() {
 
         TagLine(tag = "Hidden")
         BasicSecureTextFieldDemo(TextObfuscationMode.Hidden)
+
+        TagLine(tag = "Changing Mask")
+        ChangingMaskDemo(TextObfuscationMode.RevealLastTyped)
 
         TagLine(tag = "Number Password")
         NumberPasswordDemo()
@@ -91,6 +94,44 @@ fun BasicSecureTextFieldDemo(textObfuscationMode: TextObfuscationMode) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
+fun ChangingMaskDemo(textObfuscationMode: TextObfuscationMode) {
+    val maskState = rememberTextFieldState("\u2022")
+    val passwordState = rememberTextFieldState("hunter2")
+    Column {
+        // single character TextField
+        BasicTextField(
+            state = maskState,
+            modifier = demoTextFieldModifiers,
+            inputTransformation = {
+                // only handle single character insertion, reject everything else
+                val isSingleCharacterInsertion =
+                    changes.changeCount == 1 &&
+                        changes.getRange(0).length == 1 &&
+                        changes.getOriginalRange(0).length == 0
+
+                if (!isSingleCharacterInsertion) {
+                    revertAllChanges()
+                } else {
+                    replace(
+                        start = 0,
+                        end = length,
+                        text = asCharSequence().substring(changes.getRange(0))
+                    )
+                }
+            },
+            outputTransformation = { insert(0, "Enter mask character: ") }
+        )
+    }
+    BasicSecureTextField(
+        state = passwordState,
+        textObfuscationMode = textObfuscationMode,
+        textObfuscationCharacter = maskState.text[0],
+        modifier = demoTextFieldModifiers
+    )
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
 fun NumberPasswordDemo() {
     val state = remember { TextFieldState() }
     BasicSecureTextField(
@@ -100,10 +141,8 @@ fun NumberPasswordDemo() {
                 revertAllChanges()
             }
         },
-        keyboardOptions = KeyboardOptions(
-            autoCorrectEnabled = false,
-            keyboardType = KeyboardType.NumberPassword
-        ),
+        keyboardOptions =
+            KeyboardOptions(autoCorrectEnabled = false, keyboardType = KeyboardType.NumberPassword),
         modifier = demoTextFieldModifiers
     )
 }
@@ -116,25 +155,22 @@ fun PasswordToggleVisibilityDemo() {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         BasicSecureTextField(
             state = state,
-            textObfuscationMode = if (visible) {
-                TextObfuscationMode.Visible
-            } else {
-                TextObfuscationMode.RevealLastTyped
-            },
-            modifier = Modifier
-                .weight(1f)
-                .padding(6.dp)
-                .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
-                .padding(6.dp)
+            textObfuscationMode =
+                if (visible) {
+                    TextObfuscationMode.Visible
+                } else {
+                    TextObfuscationMode.RevealLastTyped
+                },
+            modifier =
+                Modifier.weight(1f)
+                    .padding(6.dp)
+                    .border(1.dp, Color.LightGray, RoundedCornerShape(6.dp))
+                    .padding(6.dp)
         )
         if (visible) {
-            TextButton(onClick = { visible = false }) {
-                Text("Hide")
-            }
+            TextButton(onClick = { visible = false }) { Text("Hide") }
         } else {
-            TextButton(onClick = { visible = true }) {
-                Text("Show")
-            }
+            TextButton(onClick = { visible = true }) { Text("Show") }
         }
     }
 }

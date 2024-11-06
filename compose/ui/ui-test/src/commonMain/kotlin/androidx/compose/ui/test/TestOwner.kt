@@ -25,11 +25,8 @@ import androidx.compose.ui.semantics.getAllSemanticsNodes
  *
  * This is typically implemented by entities like test rule.
  */
-@InternalTestApi
-interface TestOwner {
-    /**
-     * Clock that drives frames and recompositions in compose tests.
-     */
+internal interface TestOwner {
+    /** Clock that drives frames and recompositions in compose tests. */
     val mainClock: MainTestClock
 
     /**
@@ -45,45 +42,30 @@ interface TestOwner {
      *
      * This is a blocking call. Returns only after compose is idle.
      *
-     * Can crash in case it hits time out. This is not supposed to be handled as it
-     * surfaces only in incorrect tests.
+     * Can crash in case it hits time out. This is not supposed to be handled as it surfaces only in
+     * incorrect tests.
      *
      * @param atLeastOneRootExpected Whether the caller expects that at least one compose root is
-     * present in the tested app. This affects synchronization efforts / timeouts of this API.
+     *   present in the tested app. This affects synchronization efforts / timeouts of this API.
      */
     fun getRoots(atLeastOneRootExpected: Boolean): Set<RootForTest>
 }
 
-@InternalTestApi
-fun createTestContext(owner: TestOwner): TestContext {
-    return TestContext(owner)
-}
-
-@OptIn(InternalTestApi::class)
-class TestContext internal constructor(internal val testOwner: TestOwner) {
-
-    /**
-     * Stores the [InputDispatcherState] of each [RootForTest]. The state will be restored in an
-     * [InputDispatcher] when it is created for an owner that has a state stored. To avoid leaking
-     * the [RootForTest], the [identityHashCode] of the root is used as the key instead of the
-     * actual object.
-     */
-    internal val states = mutableMapOf<Int, InputDispatcherState>()
-
-    /**
-     * Collects all [SemanticsNode]s from all compose hierarchies.
-     *
-     * This is a blocking call. Returns only after compose is idle.
-     *
-     * Can crash in case it hits time out. This is not supposed to be handled as it
-     * surfaces only in incorrect tests.
-     */
-    internal fun getAllSemanticsNodes(
-        atLeastOneRootRequired: Boolean,
-        useUnmergedTree: Boolean,
-        skipDeactivatedNodes: Boolean = true
-    ): Iterable<SemanticsNode> {
-        val roots = testOwner.getRoots(atLeastOneRootRequired).also {
+/**
+ * Collects all [SemanticsNode]s from all compose hierarchies.
+ *
+ * This is a blocking call. Returns only after compose is idle.
+ *
+ * Can crash in case it hits time out. This is not supposed to be handled as it surfaces only in
+ * incorrect tests.
+ */
+internal fun TestOwner.getAllSemanticsNodes(
+    atLeastOneRootRequired: Boolean,
+    useUnmergedTree: Boolean,
+    skipDeactivatedNodes: Boolean = true
+): Iterable<SemanticsNode> {
+    val roots =
+        getRoots(atLeastOneRootRequired).also {
             check(!atLeastOneRootRequired || it.isNotEmpty()) {
                 "No compose hierarchies found in the app. Possible reasons include: " +
                     "(1) the Activity that calls setContent did not launch; " +
@@ -94,13 +76,12 @@ class TestContext internal constructor(internal val testOwner: TestOwner) {
             }
         }
 
-        return testOwner.runOnUiThread {
-            roots.flatMap {
-                it.semanticsOwner.getAllSemanticsNodes(
-                    mergingEnabled = !useUnmergedTree,
-                    skipDeactivatedNodes = skipDeactivatedNodes
-                )
-            }
+    return runOnUiThread {
+        roots.flatMap {
+            it.semanticsOwner.getAllSemanticsNodes(
+                mergingEnabled = !useUnmergedTree,
+                skipDeactivatedNodes = skipDeactivatedNodes
+            )
         }
     }
 }

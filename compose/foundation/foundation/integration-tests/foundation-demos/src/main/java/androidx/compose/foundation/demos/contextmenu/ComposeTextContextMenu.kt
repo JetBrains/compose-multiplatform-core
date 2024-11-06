@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
+@file:OptIn(ExperimentalMaterialApi::class)
 
 package androidx.compose.foundation.demos.contextmenu
 
 import android.widget.EditText
 import android.widget.TextView
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement.spacedBy
@@ -58,15 +57,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 
 @Composable
 internal fun TextContextMenusDemo() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-    ) {
+    Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(start = 32.dp, end = 32.dp, bottom = 32.dp),
+            modifier = Modifier.fillMaxSize().padding(start = 32.dp, end = 32.dp, bottom = 32.dp),
             verticalArrangement = spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -77,9 +70,7 @@ internal fun TextContextMenusDemo() {
             }
 
             LabeledItem("Selectable Text - Single") {
-                SelectionContainer {
-                    MyText("This single text is selectable.")
-                }
+                SelectionContainer { MyText("This single text is selectable.") }
             }
 
             LabeledItem("Selectable Text - Multiple") {
@@ -129,8 +120,8 @@ internal fun TextContextMenusDemo() {
                 val interactionSource = remember { MutableInteractionSource() }
                 BasicSecureTextField(
                     state = tfs,
-                    textStyle = MaterialTheme.typography.body1
-                        .copy(color = LocalContentColor.current),
+                    textStyle =
+                        MaterialTheme.typography.body1.copy(color = LocalContentColor.current),
                     interactionSource = interactionSource,
                     decorator = { innerTextField ->
                         TextFieldDefaults.OutlinedTextFieldDecorationBox(
@@ -209,9 +200,8 @@ private fun MyTextFieldOne(
         modifier = modifier,
         enabled = enabled,
         readOnly = readOnly,
-        textStyle = MaterialTheme.typography.body1
-            .copy(color = LocalContentColor.current)
-            .merge(textStyle),
+        textStyle =
+            MaterialTheme.typography.body1.copy(color = LocalContentColor.current).merge(textStyle),
         visualTransformation = visualTransformation,
         interactionSource = interactionSource,
         decorationBox = { innerTextField ->
@@ -242,9 +232,8 @@ private fun MyTextFieldTwo(
         modifier = modifier,
         enabled = enabled,
         readOnly = readOnly,
-        textStyle = MaterialTheme.typography.body1
-            .copy(color = LocalContentColor.current)
-            .merge(textStyle),
+        textStyle =
+            MaterialTheme.typography.body1.copy(color = LocalContentColor.current).merge(textStyle),
         interactionSource = interactionSource,
         decorator = { innerTextField ->
             TextFieldDefaults.OutlinedTextFieldDecorationBox(
@@ -267,6 +256,5 @@ private fun LabeledItem(label: String, content: @Composable () -> Unit) {
     }
 }
 
-private fun Modifier.outline(color: Color = Color.LightGray): Modifier = this
-    .border(1.dp, color, RoundedCornerShape(4.dp))
-    .padding(2.dp)
+private fun Modifier.outline(color: Color = Color.LightGray): Modifier =
+    this.border(1.dp, color, RoundedCornerShape(4.dp)).padding(2.dp)

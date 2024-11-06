@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.text.input.internal
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.text.input.TextFieldCharSequence
 import androidx.compose.ui.text.TextRange
 import com.google.common.truth.Truth.assertThat
@@ -26,23 +25,22 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-@OptIn(ExperimentalFoundationApi::class)
 @RunWith(JUnit4::class)
 class CodepointTransformationTest {
 
     @Test
     fun toVisualText_codepointIndices() {
-        val source =
-            TextFieldCharSequence("a${SurrogateCodepointString}c$SurrogateCodepointString")
+        val source = TextFieldCharSequence("a${SurrogateCodepointString}c$SurrogateCodepointString")
         val offsetMapping = OffsetMappingCalculator()
         val codepointTransformation = CodepointTransformation { i, codepoint ->
-            val expectedCodePoint = when (i) {
-                0 -> 'a'.code
-                1 -> SurrogateCodepoint
-                2 -> 'c'.code
-                3 -> SurrogateCodepoint
-                else -> fail("Invalid codepoint index: $i")
-            }
+            val expectedCodePoint =
+                when (i) {
+                    0 -> 'a'.code
+                    1 -> SurrogateCodepoint
+                    2 -> 'c'.code
+                    3 -> SurrogateCodepoint
+                    else -> fail("Invalid codepoint index: $i")
+                }
             assertThat(codepoint).isEqualTo(expectedCodePoint)
             codepoint
         }
@@ -56,13 +54,15 @@ class CodepointTransformationTest {
         val offsetMapping = OffsetMappingCalculator()
         val codepointTransformation = CodepointTransformation { i, codepoint ->
             when (codepoint) {
-                'a'.code, 'c'.code -> SurrogateCodepoint
+                'a'.code,
+                'c'.code -> SurrogateCodepoint
                 SurrogateCodepoint -> 'b'.code
-                else -> fail(
-                    "codepointIndex=$i, codepoint=\"${
+                else ->
+                    fail(
+                        "codepointIndex=$i, codepoint=\"${
                         String(intArrayOf(codepoint), 0, 1)
                     }\""
-                )
+                    )
             }
         }
         val visual = source.toVisualText(codepointTransformation, offsetMapping)
@@ -71,15 +71,17 @@ class CodepointTransformationTest {
             .isEqualTo("${SurrogateCodepointString}b$SurrogateCodepointString")
 
         listOf(
-            0 to TextRange(0),
-            1 to TextRange(2),
-            2 to TextRange(2, 3),
-            3 to TextRange(3),
-            4 to TextRange(5),
-        ).forEach { (source, dest) ->
-            assertWithMessage("Mapping from untransformed offset $source")
-                .that(offsetMapping.mapFromSource(source)).isEqualTo(dest)
-        }
+                0 to TextRange(0),
+                1 to TextRange(2),
+                2 to TextRange(2, 3),
+                3 to TextRange(3),
+                4 to TextRange(5),
+            )
+            .forEach { (source, dest) ->
+                assertWithMessage("Mapping from untransformed offset $source")
+                    .that(offsetMapping.mapFromSource(source))
+                    .isEqualTo(dest)
+            }
     }
 
     @Test
@@ -88,13 +90,15 @@ class CodepointTransformationTest {
         val offsetMapping = OffsetMappingCalculator()
         val codepointTransformation = CodepointTransformation { i, codepoint ->
             when (codepoint) {
-                'a'.code, 'c'.code -> SurrogateCodepoint
+                'a'.code,
+                'c'.code -> SurrogateCodepoint
                 SurrogateCodepoint -> 'b'.code
-                else -> fail(
-                    "codepointIndex=$i, codepoint=\"${
+                else ->
+                    fail(
+                        "codepointIndex=$i, codepoint=\"${
                         String(intArrayOf(codepoint), 0, 1)
                     }\""
-                )
+                    )
             }
         }
         val visual = source.toVisualText(codepointTransformation, offsetMapping)
@@ -103,16 +107,18 @@ class CodepointTransformationTest {
             .isEqualTo("${SurrogateCodepointString}b$SurrogateCodepointString")
 
         listOf(
-            0 to TextRange(0),
-            1 to TextRange(0, 1),
-            2 to TextRange(1),
-            3 to TextRange(3),
-            4 to TextRange(3, 4),
-            5 to TextRange(4),
-        ).forEach { (dest, source) ->
-            assertWithMessage("Mapping from transformed offset $dest")
-                .that(offsetMapping.mapFromDest(dest)).isEqualTo(source)
-        }
+                0 to TextRange(0),
+                1 to TextRange(0, 1),
+                2 to TextRange(1),
+                3 to TextRange(3),
+                4 to TextRange(3, 4),
+                5 to TextRange(4),
+            )
+            .forEach { (dest, source) ->
+                assertWithMessage("Mapping from transformed offset $dest")
+                    .that(offsetMapping.mapFromDest(dest))
+                    .isEqualTo(source)
+            }
     }
 
     private companion object {

@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.input.rotary
 
+import android.view.MotionEvent
 import android.view.MotionEvent.ACTION_SCROLL
 import android.view.View
 import android.view.ViewConfiguration
@@ -38,6 +39,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performRotaryScrollInput
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.InputDeviceCompat.SOURCE_ROTARY_ENCODER
 import androidx.core.view.ViewConfigurationCompat.getScaledHorizontalScrollFactor
 import androidx.core.view.ViewConfigurationCompat.getScaledVerticalScrollFactor
@@ -53,8 +55,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class RotaryScrollEventTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private val initialFocus = FocusRequester()
     private lateinit var rootView: View
@@ -71,12 +72,12 @@ class RotaryScrollEventTest {
         // Arrange.
         ContentWithInitialFocus {
             Box(
-                modifier = Modifier
-                    .onRotaryScrollEvent {
-                        receivedEvent = it
-                        true
-                    }
-                    .focusable(initiallyFocused = true)
+                modifier =
+                    Modifier.onRotaryScrollEvent {
+                            receivedEvent = it
+                            true
+                        }
+                        .focusable(initiallyFocused = true)
             )
         }
 
@@ -91,9 +92,7 @@ class RotaryScrollEventTest {
         }
 
         // Assert.
-        rule.runOnIdle {
-            assertThat(receivedEvent).isNotNull()
-        }
+        rule.runOnIdle { assertThat(receivedEvent).isNotNull() }
     }
 
     // tests bad data
@@ -102,12 +101,12 @@ class RotaryScrollEventTest {
         // Arrange.
         ContentWithInitialFocus {
             Box(
-                modifier = Modifier
-                    .onRotaryScrollEvent {
-                        receivedEvent = it
-                        true
-                    }
-                    .focusable(initiallyFocused = true)
+                modifier =
+                    Modifier.onRotaryScrollEvent {
+                            receivedEvent = it
+                            true
+                        }
+                        .focusable(initiallyFocused = true)
             )
         }
 
@@ -123,31 +122,30 @@ class RotaryScrollEventTest {
         }
 
         // Assert.
-        rule.runOnIdle {
-            assertThat(receivedEvent).isNull()
-        }
+        rule.runOnIdle { assertThat(receivedEvent).isNull() }
     }
 
     @Test
     fun delegated_androidWearCrownRotation_triggersRotaryEvent() {
-        val node = object : DelegatingNode() {
-            val rse = delegate(object : RotaryInputModifierNode, Modifier.Node() {
-                override fun onRotaryScrollEvent(event: RotaryScrollEvent): Boolean {
-                    receivedEvent = event
-                    return true
-                }
-                override fun onPreRotaryScrollEvent(event: RotaryScrollEvent): Boolean {
-                    return false
-                }
-            })
-        }
+        val node =
+            object : DelegatingNode() {
+                val rse =
+                    delegate(
+                        object : RotaryInputModifierNode, Modifier.Node() {
+                            override fun onRotaryScrollEvent(event: RotaryScrollEvent): Boolean {
+                                receivedEvent = event
+                                return true
+                            }
+
+                            override fun onPreRotaryScrollEvent(event: RotaryScrollEvent): Boolean {
+                                return false
+                            }
+                        }
+                    )
+            }
         // Arrange.
         ContentWithInitialFocus {
-            Box(
-                modifier = Modifier
-                    .elementFor(node)
-                    .focusable(initiallyFocused = true)
-            )
+            Box(modifier = Modifier.elementFor(node).focusable(initiallyFocused = true))
         }
 
         // Act.
@@ -161,42 +159,45 @@ class RotaryScrollEventTest {
         }
 
         // Assert.
-        rule.runOnIdle {
-            assertThat(receivedEvent).isNotNull()
-        }
+        rule.runOnIdle { assertThat(receivedEvent).isNotNull() }
     }
 
     @Test
     fun delegated_multiple_androidWearCrownRotation_triggersRotaryEvent() {
         var event1: RotaryScrollEvent? = null
         var event2: RotaryScrollEvent? = null
-        val node = object : DelegatingNode() {
-            val a = delegate(object : RotaryInputModifierNode, Modifier.Node() {
-                override fun onRotaryScrollEvent(event: RotaryScrollEvent): Boolean {
-                    event1 = event
-                    return false
-                }
-                override fun onPreRotaryScrollEvent(event: RotaryScrollEvent): Boolean {
-                    return false
-                }
-            })
-            val b = delegate(object : RotaryInputModifierNode, Modifier.Node() {
-                override fun onRotaryScrollEvent(event: RotaryScrollEvent): Boolean {
-                    event2 = event
-                    return false
-                }
-                override fun onPreRotaryScrollEvent(event: RotaryScrollEvent): Boolean {
-                    return false
-                }
-            })
-        }
+        val node =
+            object : DelegatingNode() {
+                val a =
+                    delegate(
+                        object : RotaryInputModifierNode, Modifier.Node() {
+                            override fun onRotaryScrollEvent(event: RotaryScrollEvent): Boolean {
+                                event1 = event
+                                return false
+                            }
+
+                            override fun onPreRotaryScrollEvent(event: RotaryScrollEvent): Boolean {
+                                return false
+                            }
+                        }
+                    )
+                val b =
+                    delegate(
+                        object : RotaryInputModifierNode, Modifier.Node() {
+                            override fun onRotaryScrollEvent(event: RotaryScrollEvent): Boolean {
+                                event2 = event
+                                return false
+                            }
+
+                            override fun onPreRotaryScrollEvent(event: RotaryScrollEvent): Boolean {
+                                return false
+                            }
+                        }
+                    )
+            }
         // Arrange.
         ContentWithInitialFocus {
-            Box(
-                modifier = Modifier
-                    .elementFor(node)
-                    .focusable(initiallyFocused = true)
-            )
+            Box(modifier = Modifier.elementFor(node).focusable(initiallyFocused = true))
         }
 
         // Act.
@@ -221,26 +222,25 @@ class RotaryScrollEventTest {
         // Arrange.
         ContentWithInitialFocus {
             Box(
-                modifier = Modifier
-                    .onRotaryScrollEvent {
-                        receivedEvent = it
-                        true
-                    }
-                    .focusable(initiallyFocused = true)
+                modifier =
+                    Modifier.onRotaryScrollEvent {
+                            receivedEvent = it
+                            true
+                        }
+                        .focusable(initiallyFocused = true)
             )
         }
 
         // Act.
         @OptIn(ExperimentalTestApi::class)
-        rule.onRoot().performRotaryScrollInput {
-            rotateToScrollHorizontally(3.0f)
-        }
+        rule.onRoot().performRotaryScrollInput { rotateToScrollHorizontally(3.0f) }
 
         // Assert.
         rule.runOnIdle {
             with(checkNotNull(receivedEvent)) {
                 assertThat(verticalScrollPixels)
-                    .isWithin(tolerance).of(3.0f * verticalScrollFactor / horizontalScrollFactor)
+                    .isWithin(tolerance)
+                    .of(3.0f * verticalScrollFactor / horizontalScrollFactor)
                 assertThat(horizontalScrollPixels).isWithin(tolerance).of(3.0f)
             }
         }
@@ -251,27 +251,26 @@ class RotaryScrollEventTest {
         // Arrange.
         ContentWithInitialFocus {
             Box(
-                modifier = Modifier
-                    .onRotaryScrollEvent {
-                        receivedEvent = it
-                        true
-                    }
-                    .focusable(initiallyFocused = true)
+                modifier =
+                    Modifier.onRotaryScrollEvent {
+                            receivedEvent = it
+                            true
+                        }
+                        .focusable(initiallyFocused = true)
             )
         }
 
         // Act.
         @OptIn(ExperimentalTestApi::class)
-        rule.onRoot().performRotaryScrollInput {
-            rotateToScrollVertically(3.0f)
-        }
+        rule.onRoot().performRotaryScrollInput { rotateToScrollVertically(3.0f) }
 
         // Assert.
         rule.runOnIdle {
             with(checkNotNull(receivedEvent)) {
                 assertThat(verticalScrollPixels).isWithin(tolerance).of(3.0f)
                 assertThat(horizontalScrollPixels)
-                    .isWithin(tolerance).of(3.0f * horizontalScrollFactor / verticalScrollFactor)
+                    .isWithin(tolerance)
+                    .of(3.0f * horizontalScrollFactor / verticalScrollFactor)
             }
         }
     }
@@ -283,12 +282,12 @@ class RotaryScrollEventTest {
         // Arrange.
         ContentWithInitialFocus {
             Box(
-                modifier = Modifier
-                    .onRotaryScrollEvent {
-                        receivedEvent = it
-                        true
-                    }
-                    .focusable(initiallyFocused = true)
+                modifier =
+                    Modifier.onRotaryScrollEvent {
+                            receivedEvent = it
+                            true
+                        }
+                        .focusable(initiallyFocused = true)
             )
         }
 
@@ -305,9 +304,7 @@ class RotaryScrollEventTest {
 
         // Assert.
         rule.runOnIdle {
-            with(checkNotNull(receivedEvent)) {
-                assertThat(uptimeMillis).isEqualTo(TIME)
-            }
+            with(checkNotNull(receivedEvent)) { assertThat(uptimeMillis).isEqualTo(TIME) }
         }
     }
 
@@ -318,12 +315,12 @@ class RotaryScrollEventTest {
         // Arrange.
         ContentWithInitialFocus {
             Box(
-                modifier = Modifier
-                    .onRotaryScrollEvent {
-                        receivedEvent = it
-                        true
-                    }
-                    .focusable(initiallyFocused = true)
+                modifier =
+                    Modifier.onRotaryScrollEvent {
+                            receivedEvent = it
+                            true
+                        }
+                        .focusable(initiallyFocused = true)
             )
         }
 
@@ -340,9 +337,7 @@ class RotaryScrollEventTest {
 
         // Assert.
         rule.runOnIdle {
-            with(checkNotNull(receivedEvent)) {
-                assertThat(inputDeviceId).isEqualTo(DEVICE_ID)
-            }
+            with(checkNotNull(receivedEvent)) { assertThat(inputDeviceId).isEqualTo(DEVICE_ID) }
         }
     }
 
@@ -354,12 +349,12 @@ class RotaryScrollEventTest {
         // Arrange.
         ContentWithInitialFocus {
             Box(
-                modifier = Modifier
-                    .onRotaryScrollEvent {
-                        receivedEvents.add(it)
-                        true
-                    }
-                    .focusable(initiallyFocused = true)
+                modifier =
+                    Modifier.onRotaryScrollEvent {
+                            receivedEvents.add(it)
+                            true
+                        }
+                        .focusable(initiallyFocused = true)
             )
         }
 
@@ -385,18 +380,19 @@ class RotaryScrollEventTest {
         val focusRequester = FocusRequester()
         var keyEventFromOnKeyEvent1: RotaryScrollEvent? = null
         var keyEventFromOnKeyEvent2: RotaryScrollEvent? = null
-        var onRotaryScrollEvent: (event: RotaryScrollEvent) -> Boolean by mutableStateOf(
-            value = {
-                keyEventFromOnKeyEvent1 = it
-                true
-            }
-        )
+        var onRotaryScrollEvent: (event: RotaryScrollEvent) -> Boolean by
+            mutableStateOf(
+                value = {
+                    keyEventFromOnKeyEvent1 = it
+                    true
+                }
+            )
         rule.setFocusableContent {
             Box(
-                modifier = Modifier
-                    .focusRequester(focusRequester)
-                    .onRotaryScrollEvent(onRotaryScrollEvent)
-                    .focusTarget()
+                modifier =
+                    Modifier.focusRequester(focusRequester)
+                        .onRotaryScrollEvent(onRotaryScrollEvent)
+                        .focusTarget()
             )
         }
         rule.runOnIdle { focusRequester.requestFocus() }
@@ -424,18 +420,19 @@ class RotaryScrollEventTest {
         val focusRequester = FocusRequester()
         var keyEventFromOnPreRotaryScrollEvent1: RotaryScrollEvent? = null
         var keyEventFromOnPreRotaryScrollEvent2: RotaryScrollEvent? = null
-        var onPreRotaryScrollEvent: (event: RotaryScrollEvent) -> Boolean by mutableStateOf(
-            value = {
-                keyEventFromOnPreRotaryScrollEvent1 = it
-                true
-            }
-        )
+        var onPreRotaryScrollEvent: (event: RotaryScrollEvent) -> Boolean by
+            mutableStateOf(
+                value = {
+                    keyEventFromOnPreRotaryScrollEvent1 = it
+                    true
+                }
+            )
         rule.setFocusableContent {
             Box(
-                modifier = Modifier
-                    .focusRequester(focusRequester)
-                    .onPreRotaryScrollEvent(onPreRotaryScrollEvent)
-                    .focusTarget()
+                modifier =
+                    Modifier.focusRequester(focusRequester)
+                        .onPreRotaryScrollEvent(onPreRotaryScrollEvent)
+                        .focusTarget()
             )
         }
         rule.runOnIdle { focusRequester.requestFocus() }
@@ -457,9 +454,44 @@ class RotaryScrollEventTest {
         }
     }
 
-    private fun Modifier.focusable(initiallyFocused: Boolean = false) = this
-        .then(if (initiallyFocused) Modifier.focusRequester(initialFocus) else Modifier)
-        .focusTarget()
+    @Test
+    fun onRotary_views_Interop() {
+        // Arrange
+        var eventFromOnView: MotionEvent? = null
+        lateinit var buttonView: View
+
+        rule.setFocusableContent {
+            AndroidView(
+                factory = { context ->
+                    android.widget.Button(context).apply {
+                        isFocusable = true
+                        isFocusableInTouchMode = true
+                        text = "Text"
+                        setOnGenericMotionListener { view, event ->
+                            if (view == this) {
+                                eventFromOnView = event
+                            }
+                            false
+                        }
+
+                        buttonView = this
+                    }
+                }
+            )
+        }
+        rule.runOnIdle { buttonView.requestFocus() }
+
+        // Act.
+        @OptIn(ExperimentalTestApi::class)
+        rule.onRoot().performRotaryScrollInput { rotateToScrollVertically(3.0f) }
+
+        // Assert.
+        rule.runOnIdle { assertThat(eventFromOnView).isNotNull() }
+    }
+
+    private fun Modifier.focusable(initiallyFocused: Boolean = false) =
+        this.then(if (initiallyFocused) Modifier.focusRequester(initialFocus) else Modifier)
+            .focusTarget()
 
     private fun ContentWithInitialFocus(content: @Composable () -> Unit) {
         rule.setContent {
@@ -470,14 +502,13 @@ class RotaryScrollEventTest {
     }
 
     private val horizontalScrollFactor: Float
-        get() = getScaledHorizontalScrollFactor(
-            ViewConfiguration.get(rootView.context),
-            rootView.context
-        )
+        get() =
+            getScaledHorizontalScrollFactor(
+                ViewConfiguration.get(rootView.context),
+                rootView.context
+            )
 
     private val verticalScrollFactor: Float
-        get() = getScaledVerticalScrollFactor(
-            ViewConfiguration.get(rootView.context),
-            rootView.context
-        )
+        get() =
+            getScaledVerticalScrollFactor(ViewConfiguration.get(rootView.context), rootView.context)
 }

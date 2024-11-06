@@ -18,14 +18,16 @@ package androidx.wear.compose.material3.demos
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.integration.demos.common.ScalingLazyColumnWithRSB
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.FilledIconButton
 import androidx.wear.compose.material3.FilledTonalIconButton
@@ -36,89 +38,111 @@ import androidx.wear.compose.material3.OutlinedIconButton
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.samples.FilledIconButtonSample
 import androidx.wear.compose.material3.samples.FilledTonalIconButtonSample
+import androidx.wear.compose.material3.samples.FilledVariantIconButtonSample
 import androidx.wear.compose.material3.samples.IconButtonSample
+import androidx.wear.compose.material3.samples.IconButtonWithCornerAnimationSample
+import androidx.wear.compose.material3.samples.IconButtonWithImageSample
+import androidx.wear.compose.material3.samples.IconButtonWithOnLongClickSample
 import androidx.wear.compose.material3.samples.OutlinedIconButtonSample
+import androidx.wear.compose.material3.samples.icons.FavoriteIcon
 import androidx.wear.compose.material3.touchTargetAwareSize
 
 @Composable
 fun IconButtonDemo() {
-    ScalingLazyColumnWithRSB(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        item {
-            ListHeader {
-                Text("Icon button")
-            }
-        }
+    val context = LocalContext.current
+    ScalingLazyDemo {
+        item { ListHeader { Text("Icon button") } }
         item {
             Row {
                 IconButtonSample()
                 Spacer(modifier = Modifier.width(5.dp))
-                IconButton(
-                    onClick = { },
-                    enabled = false
-                ) {
-                    StandardIcon(ButtonDefaults.IconSize)
-                }
+                IconButton(onClick = {}, enabled = false) { FavoriteIcon(ButtonDefaults.IconSize) }
             }
         }
-        item {
-            ListHeader {
-                Text("Filled Tonal")
-            }
-        }
+        item { ListHeader { Text("Filled Tonal") } }
         item {
             Row {
                 FilledTonalIconButtonSample()
                 Spacer(modifier = Modifier.width(5.dp))
-                FilledTonalIconButton(
-                    onClick = { },
-                    enabled = false
-                ) {
-                    StandardIcon(ButtonDefaults.IconSize)
+                FilledTonalIconButton(onClick = {}, enabled = false) {
+                    FavoriteIcon(ButtonDefaults.IconSize)
                 }
             }
         }
-        item {
-            ListHeader {
-                Text("Filled")
-            }
-        }
+        item { ListHeader { Text("Filled") } }
         item {
             Row {
                 FilledIconButtonSample()
                 Spacer(modifier = Modifier.width(5.dp))
-                FilledIconButton(
-                    onClick = { },
-                    enabled = false
-                ) {
-                    StandardIcon(ButtonDefaults.IconSize)
+                FilledIconButton(onClick = {}, enabled = false) {
+                    FavoriteIcon(ButtonDefaults.IconSize)
                 }
             }
         }
+        item { ListHeader { Text("Filled Variant") } }
         item {
-            ListHeader {
-                Text("Outlined")
+            Row {
+                FilledVariantIconButtonSample()
+                Spacer(modifier = Modifier.width(5.dp))
+                FilledIconButton(
+                    onClick = {},
+                    enabled = false,
+                    colors = IconButtonDefaults.filledVariantIconButtonColors()
+                ) {
+                    FavoriteIcon(ButtonDefaults.IconSize)
+                }
             }
         }
+        item { ListHeader { Text("Outlined") } }
         item {
             Row {
                 OutlinedIconButtonSample()
                 Spacer(modifier = Modifier.width(5.dp))
-                OutlinedIconButton(
-                    onClick = { },
-                    enabled = false
-                ) {
-                    StandardIcon(ButtonDefaults.IconSize)
+                OutlinedIconButton(onClick = {}, enabled = false) {
+                    FavoriteIcon(ButtonDefaults.IconSize)
                 }
             }
         }
+        item { ListHeader { Text("With onLongClick") } }
+        item { IconButtonWithOnLongClickSample { showOnLongClickToast(context) } }
+        item { ListHeader { Text("Corner Animation") } }
         item {
-            ListHeader {
-                Text("Sizes")
+            Row {
+                IconButtonWithCornerAnimationSample()
+                Spacer(modifier = Modifier.width(5.dp))
+                IconButtonWithCornerAnimationSample(
+                    colors = IconButtonDefaults.filledVariantIconButtonColors()
+                )
             }
         }
+        item { ListHeader { Text("Morphed Animation") } }
+        item {
+            Row {
+                FilledIconButton(
+                    onClick = {},
+                    shapes =
+                        IconButtonDefaults.animatedShapes(
+                            shape = CutCornerShape(5.dp),
+                            pressedShape = RoundedCornerShape(5.dp)
+                        ),
+                ) {
+                    FavoriteIcon(ButtonDefaults.IconSize)
+                }
+                Spacer(modifier = Modifier.width(5.dp))
+                FilledIconButton(
+                    onClick = {},
+                    colors = IconButtonDefaults.filledVariantIconButtonColors(),
+                    shapes =
+                        IconButtonDefaults.animatedShapes(
+                            shape = CutCornerShape(5.dp),
+                            pressedShape = RoundedCornerShape(5.dp)
+                        ),
+                ) {
+                    FavoriteIcon(ButtonDefaults.IconSize)
+                }
+            }
+        }
+        item { ListHeader { Text("Sizes") } }
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("${IconButtonDefaults.LargeButtonSize.value.toInt()}dp")
@@ -151,10 +175,46 @@ fun IconButtonDemo() {
 }
 
 @Composable
+fun ImageButtonDemo() {
+    ScalingLazyDemo {
+        item { ListHeader { Text("Image Button") } }
+        item {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButtonWithImageSample(
+                    painterResource(R.drawable.card_background),
+                    enabled = true,
+                )
+                Spacer(modifier = Modifier.width(5.dp))
+                IconButtonWithImageSample(
+                    painterResource(R.drawable.card_background),
+                    enabled = false
+                )
+            }
+        }
+        item { ListHeader { Text("Animated Shape") } }
+        item {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButtonWithImageSample(
+                    painterResource(R.drawable.card_background),
+                    enabled = true,
+                    shapes = IconButtonDefaults.animatedShapes()
+                )
+                Spacer(modifier = Modifier.width(5.dp))
+                IconButtonWithImageSample(
+                    painterResource(R.drawable.card_background),
+                    enabled = false,
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun IconButtonWithSize(size: Dp) {
     FilledTonalIconButton(
         modifier = Modifier.touchTargetAwareSize(size),
-        onClick = { /* Do something */ }) {
-        StandardIcon(IconButtonDefaults.iconSizeFor(size))
+        onClick = { /* Do something */ }
+    ) {
+        FavoriteIcon(IconButtonDefaults.iconSizeFor(size))
     }
 }

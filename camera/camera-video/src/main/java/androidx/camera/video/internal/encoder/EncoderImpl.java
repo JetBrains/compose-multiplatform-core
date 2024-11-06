@@ -41,7 +41,6 @@ import android.os.SystemClock;
 import android.util.Range;
 import android.view.Surface;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -58,6 +57,7 @@ import androidx.camera.video.internal.compat.quirk.CameraUseInconsistentTimebase
 import androidx.camera.video.internal.compat.quirk.CodecStuckOnFlushQuirk;
 import androidx.camera.video.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.video.internal.compat.quirk.EncoderNotUsePersistentInputSurfaceQuirk;
+import androidx.camera.video.internal.compat.quirk.PrematureEndOfStreamVideoQuirk;
 import androidx.camera.video.internal.compat.quirk.SignalEosOutputBufferNotComeQuirk;
 import androidx.camera.video.internal.compat.quirk.StopCodecAfterSurfaceRemovalCrashMediaServerQuirk;
 import androidx.camera.video.internal.compat.quirk.VideoEncoderSuspendDoesNotIncludeSuspendTimeQuirk;
@@ -90,7 +90,6 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * <p>An encoder could be either a video encoder or an audio encoder.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class EncoderImpl implements Encoder {
 
     enum InternalState {
@@ -1051,7 +1050,6 @@ public class EncoderImpl implements Encoder {
     }
 
     @SuppressWarnings("WeakerAccess") // synthetic accessor
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     class MediaCodecCallback extends MediaCodec.Callback {
         @Nullable
         private final VideoTimebaseConverter mVideoTimestampConverter;
@@ -1074,6 +1072,7 @@ public class EncoderImpl implements Encoder {
         private boolean mIsOutputBufferInPauseState = false;
         private boolean mIsKeyFrameRequired = false;
         private boolean mStopped = false;
+        private boolean mIsFirstVideoOutput = mIsVideoEncoder;
 
         MediaCodecCallback() {
             if (mIsVideoEncoder) {
@@ -1190,6 +1189,11 @@ public class EncoderImpl implements Encoder {
                         // Handle end of stream
                         if (!mHasEndData && isEndOfStream(bufferInfo)) {
                             reachEndData();
+                        }
+
+                        // Clear fist video output flag.
+                        if (mIsFirstVideoOutput) {
+                            mIsFirstVideoOutput = false;
                         }
                         break;
                     case CONFIGURED:
@@ -1370,8 +1374,16 @@ public class EncoderImpl implements Encoder {
 
         @ExecutedBy("mEncoderExecutor")
         private boolean isEndOfStream(@NonNull BufferInfo bufferInfo) {
-            return hasEndOfStreamFlag(bufferInfo)
+            return (hasEndOfStreamFlag(bufferInfo) && !shouldSkipPrematureEos())
                     || (mReachStopTimeAsEos && isEosSignalledAndStopTimeReached(bufferInfo));
+        }
+
+        @ExecutedBy("mEncoderExecutor")
+        private boolean shouldSkipPrematureEos() {
+            // This check handles a quirk where some devices incorrectly send an EOS signal
+            // at the beginning of the second recording session.
+            return mIsFirstVideoOutput
+                    && DeviceQuirks.get(PrematureEndOfStreamVideoQuirk.class) != null;
         }
 
         @ExecutedBy("mEncoderExecutor")
@@ -1512,7 +1524,6 @@ public class EncoderImpl implements Encoder {
     }
 
     @SuppressWarnings("WeakerAccess") // synthetic accessor
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     class SurfaceInput implements Encoder.SurfaceInput {
 
         private final Object mLock = new Object();
@@ -1723,13 +1734,11 @@ public class EncoderImpl implements Encoder {
         private Api23Impl() {
         }
 
-        @DoNotInline
         @NonNull
         static Surface createPersistentInputSurface() {
             return MediaCodec.createPersistentInputSurface();
         }
 
-        @DoNotInline
         static void setInputSurface(@NonNull MediaCodec mediaCodec, @NonNull Surface surface) {
             mediaCodec.setInputSurface(surface);
         }

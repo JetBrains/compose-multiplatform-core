@@ -16,7 +16,9 @@ if [ -n "$OUT_DIR" ] ; then
     OUT_DIR="$(cd $OUT_DIR && pwd -P)"
     export GRADLE_USER_HOME="$OUT_DIR/.gradle"
     export TMPDIR="$OUT_DIR/tmp"
-    mkdir -p "$TMPDIR"
+elif [[ $SCRIPT_PATH == /google/cog/* ]] ; then
+    export OUT_DIR="$HOME/androidxout"
+    export GRADLE_USER_HOME=~/.gradle
 else
     CHECKOUT_ROOT="$(cd $SCRIPT_PATH/../.. && pwd -P)"
     export OUT_DIR="$CHECKOUT_ROOT/out"
@@ -34,9 +36,6 @@ if [ -n "$DIST_DIR" ]; then
     # We don't set a default DIST_DIR in an else clause here because Studio doesn't use gradlew
     # and doesn't set DIST_DIR and we want gradlew and Studio to match
 fi
-
-# Loading the AIDL lexer requires disabling Lint's bytecode verification
-export ANDROID_LINT_SKIP_BYTECODE_VERIFIER=true
 
 # unset ANDROID_BUILD_TOP so that Lint doesn't think we're building the platform itself
 unset ANDROID_BUILD_TOP
@@ -230,9 +229,6 @@ HOME_SYSTEM_PROPERTY_ARGUMENT=""
 if [ "$GRADLE_USER_HOME" != "" ]; then
     HOME_SYSTEM_PROPERTY_ARGUMENT="-Duser.home=$GRADLE_USER_HOME"
 fi
-if [ "$TMPDIR" != "" ]; then
-  TMPDIR_ARG="-Djava.io.tmpdir=$TMPDIR"
-fi
 
 if [[ " ${@} " =~ " --clean " ]]; then
   cleanCaches=true
@@ -264,7 +260,7 @@ for compact in "--ci" "--strict" "--clean" "--no-ci"; do
   if [ "$compact" == "--strict" ]; then
     expanded="-Pandroidx.validateNoUnrecognizedMessages\
      -Pandroidx.verifyUpToDate"
-    if [ "$USE_ANDROIDX_REMOTE_BUILD_CACHE" == "" ]; then
+    if [ "$USE_ANDROIDX_REMOTE_BUILD_CACHE" == "" -o "$USE_ANDROIDX_REMOTE_BUILD_CACHE" == "false" ]; then
       expanded="$expanded --offline"
     fi
   fi
@@ -407,6 +403,11 @@ function rotateBuildScans() {
 }
 
 function runGradle() {
+  if [ "$TMPDIR" != "" ]; then
+    mkdir -p "$TMPDIR"
+    TMPDIR_ARG="-Djava.io.tmpdir=$TMPDIR"
+  fi
+
   processOutput=false
   if [[ " ${@} " =~ " -Pandroidx.validateNoUnrecognizedMessages " ]]; then
     processOutput=true
@@ -425,9 +426,6 @@ function runGradle() {
 
   RETURN_VALUE=0
   set -- "$@" -Dorg.gradle.projectcachedir="$OUT_DIR/gradle-project-cache"
-  KOTLIN_PROJECT_PERSISTENT_DIR="$OUT_DIR/kotlin-project-persistent-dir"
-  mkdir -p "$KOTLIN_PROJECT_PERSISTENT_DIR"
-  set -- "$@" -Pkotlin.project.persistent.dir="$KOTLIN_PROJECT_PERSISTENT_DIR"
   # Disabled in Studio until these errors become shown (b/268380971) or computed more quickly (https://github.com/gradle/gradle/issues/23272)
   if [[ " ${@} " =~ " --dependency-verification=" ]]; then
     VERIFICATION_ARGUMENT="" # already specified by caller

@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.LibraryType
 
 plugins {
     id('AndroidXPlugin')
@@ -37,7 +37,6 @@ dependencies {
     androidTestImplementation project(':appsearch:appsearch')
     androidTestImplementation project(':appsearch:appsearch-local-storage')
     androidTestImplementation project(':appsearch:appsearch-test-util')
-    androidTestImplementation(libs.multidex)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
@@ -45,16 +44,12 @@ dependencies {
 
 androidx {
     name = "AppSearch - Kotlin Extensions"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = '2021'
     description = 'AndroidX AppSearch - Kotlin Extensions'
-    metalavaK2UastEnabled = true
 }
 
 android {
+    compileSdk 35
     namespace "androidx.appsearch.ktx"
-
-    defaultConfig {
-        multiDexEnabled true
-    }
 }

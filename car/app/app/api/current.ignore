@@ -1,0 +1,3 @@
+// Baseline format: 1.0
+AddedMethod: androidx.car.app.notification.CarAppExtender#extend(android.app.Notification.Builder):
+    Added method androidx.car.app.notification.CarAppExtender.extend(android.app.Notification.Builder)

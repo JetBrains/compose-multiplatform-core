@@ -31,7 +31,7 @@ import androidx.privacysandbox.ads.adservices.internal.AdServicesInfo
  * @param renderUri a URI pointing to the ad's rendering assets
  * @param metadata buyer ad metadata represented as a JSON string
  * @param adCounterKeys the set of keys used in counting events
- * @param adFilters all [AdFilters] associated with the ad
+ * @param adFilters all [AdFilters] associated with the ad, it's optional and can be null as well
  * @param adRenderId ad render id for server auctions
  */
 @OptIn(ExperimentalFeatures.Ext8OptIn::class, ExperimentalFeatures.Ext10OptIn::class)
@@ -102,10 +102,13 @@ public constructor(
     @SuppressLint("NewApi")
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     internal fun convertToAdServices(): android.adservices.common.AdData {
-        if (AdServicesInfo.adServicesVersion() >= 10 || AdServicesInfo.extServicesVersion() >= 10) {
+        if (
+            AdServicesInfo.adServicesVersion() >= 10 || AdServicesInfo.extServicesVersionS() >= 10
+        ) {
             return Ext10Impl.convertAdData(this)
-        } else if (AdServicesInfo.adServicesVersion() >= 8 ||
-                AdServicesInfo.extServicesVersion() >= 9) {
+        } else if (
+            AdServicesInfo.adServicesVersion() >= 8 || AdServicesInfo.extServicesVersionS() >= 9
+        ) {
             return Ext8Impl.convertAdData(this)
         }
         return Ext4Impl.convertAdData(this)
@@ -132,9 +135,12 @@ public constructor(
     private class Ext8Impl private constructor() {
         companion object {
             fun convertAdData(adData: AdData): android.adservices.common.AdData {
-                adData.adRenderId?.let { Log.w("AdData",
-                    "adRenderId is ignored. Min version to use adRenderId is " +
-                        "API 31 ext 10") }
+                adData.adRenderId?.let {
+                    Log.w(
+                        "AdData",
+                        "adRenderId is ignored. Min version to use adRenderId is " + "API 31 ext 10"
+                    )
+                }
                 return android.adservices.common.AdData.Builder()
                     .setMetadata(adData.metadata)
                     .setRenderUri(adData.renderUri)
@@ -150,15 +156,26 @@ public constructor(
     private class Ext4Impl private constructor() {
         companion object {
             fun convertAdData(adData: AdData): android.adservices.common.AdData {
-                if (adData.adCounterKeys.isNotEmpty()) { Log.w("AdData",
-                    "adCounterKeys is ignored. Min version to use adCounterKeys is " +
-                        "API 33 ext 8 or API 31/32 ext 9") }
-                adData.adFilters?.let { Log.w("AdData",
-                    "adFilters is ignored. Min version to use adFilters is " +
-                        "API 33 ext 8 or API 31/32 ext 9") }
-                adData.adRenderId?.let { Log.w("AdData",
-                    "adRenderId is ignored. Min version to use adRenderId is " +
-                        "API 31 ext 10") }
+                if (adData.adCounterKeys.isNotEmpty()) {
+                    Log.w(
+                        "AdData",
+                        "adCounterKeys is ignored. Min version to use adCounterKeys is " +
+                            "API 33 ext 8 or API 31/32 ext 9"
+                    )
+                }
+                adData.adFilters?.let {
+                    Log.w(
+                        "AdData",
+                        "adFilters is ignored. Min version to use adFilters is " +
+                            "API 33 ext 8 or API 31/32 ext 9"
+                    )
+                }
+                adData.adRenderId?.let {
+                    Log.w(
+                        "AdData",
+                        "adRenderId is ignored. Min version to use adRenderId is " + "API 31 ext 10"
+                    )
+                }
                 return android.adservices.common.AdData.Builder()
                     .setMetadata(adData.metadata)
                     .setRenderUri(adData.renderUri)

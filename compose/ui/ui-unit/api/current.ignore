@@ -1,3 +1,47 @@
 // Baseline format: 1.0
-RemovedClass: androidx.compose.ui.unit.FontScalingKt:
-    Removed class androidx.compose.ui.unit.FontScalingKt
+RemovedMethod: androidx.compose.ui.unit.Constraints#getHasBoundedHeight():
+    Removed method androidx.compose.ui.unit.Constraints.getHasBoundedHeight()
+RemovedMethod: androidx.compose.ui.unit.Constraints#getHasBoundedWidth():
+    Removed method androidx.compose.ui.unit.Constraints.getHasBoundedWidth()
+RemovedMethod: androidx.compose.ui.unit.Constraints#getHasFixedHeight():
+    Removed method androidx.compose.ui.unit.Constraints.getHasFixedHeight()
+RemovedMethod: androidx.compose.ui.unit.Constraints#getHasFixedWidth():
+    Removed method androidx.compose.ui.unit.Constraints.getHasFixedWidth()
+RemovedMethod: androidx.compose.ui.unit.Constraints#getMaxHeight():
+    Removed method androidx.compose.ui.unit.Constraints.getMaxHeight()
+RemovedMethod: androidx.compose.ui.unit.Constraints#getMaxWidth():
+    Removed method androidx.compose.ui.unit.Constraints.getMaxWidth()
+RemovedMethod: androidx.compose.ui.unit.Constraints#getMinHeight():
+    Removed method androidx.compose.ui.unit.Constraints.getMinHeight()
+RemovedMethod: androidx.compose.ui.unit.Constraints#getMinWidth():
+    Removed method androidx.compose.ui.unit.Constraints.getMinWidth()
+RemovedMethod: androidx.compose.ui.unit.Constraints#isZero():
+    Removed method androidx.compose.ui.unit.Constraints.isZero()
+RemovedMethod: androidx.compose.ui.unit.DpOffset#getX():
+    Removed method androidx.compose.ui.unit.DpOffset.getX()
+RemovedMethod: androidx.compose.ui.unit.DpOffset#getY():
+    Removed method androidx.compose.ui.unit.DpOffset.getY()
+RemovedMethod: androidx.compose.ui.unit.DpSize#getHeight():
+    Removed method androidx.compose.ui.unit.DpSize.getHeight()
+RemovedMethod: androidx.compose.ui.unit.DpSize#getWidth():
+    Removed method androidx.compose.ui.unit.DpSize.getWidth()
+RemovedMethod: androidx.compose.ui.unit.IntOffset#getX():
+    Removed method androidx.compose.ui.unit.IntOffset.getX()
+RemovedMethod: androidx.compose.ui.unit.IntOffset#getY():
+    Removed method androidx.compose.ui.unit.IntOffset.getY()
+RemovedMethod: androidx.compose.ui.unit.IntSize#getHeight():
+    Removed method androidx.compose.ui.unit.IntSize.getHeight()
+RemovedMethod: androidx.compose.ui.unit.IntSize#getWidth():
+    Removed method androidx.compose.ui.unit.IntSize.getWidth()
+RemovedMethod: androidx.compose.ui.unit.TextUnit#getType():
+    Removed method androidx.compose.ui.unit.TextUnit.getType()
+RemovedMethod: androidx.compose.ui.unit.TextUnit#getValue():
+    Removed method androidx.compose.ui.unit.TextUnit.getValue()
+RemovedMethod: androidx.compose.ui.unit.TextUnit#isEm():
+    Removed method androidx.compose.ui.unit.TextUnit.isEm()
+RemovedMethod: androidx.compose.ui.unit.TextUnit#isSp():
+    Removed method androidx.compose.ui.unit.TextUnit.isSp()
+RemovedMethod: androidx.compose.ui.unit.Velocity#getX():
+    Removed method androidx.compose.ui.unit.Velocity.getX()
+RemovedMethod: androidx.compose.ui.unit.Velocity#getY():
+    Removed method androidx.compose.ui.unit.Velocity.getY()

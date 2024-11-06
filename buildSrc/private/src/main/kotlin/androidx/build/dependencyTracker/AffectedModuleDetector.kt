@@ -110,9 +110,8 @@ abstract class AffectedModuleDetector(protected val logger: Logger?) {
             val instance = AffectedModuleDetectorWrapper()
             rootProject.extensions.add(ROOT_PROP_NAME, instance)
 
-            val enabled =
-                rootProject.hasProperty(ENABLE_ARG) &&
-                    rootProject.findProperty(ENABLE_ARG) != "false"
+            val enabledProvider = rootProject.providers.gradleProperty(ENABLE_ARG)
+            val enabled = enabledProvider.isPresent() && enabledProvider.get() != "false"
 
             val distDir = rootProject.getDistributionDirectory()
             val outputFile = distDir.resolve(LOG_FILE_NAME)
@@ -134,18 +133,15 @@ abstract class AffectedModuleDetector(protected val logger: Logger?) {
                 instance.wrapped = provider
                 return
             }
-            val baseCommitOverride: String? = rootProject.findProperty(BASE_COMMIT_ARG) as String?
-            if (baseCommitOverride != null) {
-                logger.info("using base commit override $baseCommitOverride")
-            }
+            val baseCommitOverride: Provider<String> =
+                rootProject.providers.gradleProperty(BASE_COMMIT_ARG)
+
             gradle.taskGraph.whenReady {
                 logger.lifecycle("projects evaluated")
                 val projectGraph = ProjectGraph(rootProject)
                 val dependencyTracker = DependencyTracker(rootProject, logger.toLogger())
                 val provider =
-                    setupWithParams(
-                        rootProject
-                    ) { spec ->
+                    setupWithParams(rootProject) { spec ->
                         val params = spec.parameters
                         params.rootDir = rootProject.projectDir
                         params.checkoutRoot = rootProject.getCheckoutRoot()
@@ -153,9 +149,8 @@ abstract class AffectedModuleDetector(protected val logger: Logger?) {
                         params.dependencyTracker = dependencyTracker
                         params.log = logger
                         params.baseCommitOverride = baseCommitOverride
-                        params.gitChangedFilesProvider = rootProject.getChangedFilesProvider(
-                            baseCommitOverride
-                        )
+                        params.gitChangedFilesProvider =
+                            rootProject.getChangedFilesProvider(baseCommitOverride)
                     }
                 logger.info("using real detector")
                 instance.wrapped = provider
@@ -257,7 +252,7 @@ abstract class AffectedModuleDetectorLoader :
         var cobuiltTestPaths: Set<Set<String>>?
         var alwaysBuildIfExists: Set<String>?
         var ignoredPaths: Set<String>?
-        var baseCommitOverride: String?
+        var baseCommitOverride: Provider<String>?
         var gitChangedFilesProvider: Provider<List<String>>
     }
 
@@ -266,10 +261,6 @@ abstract class AffectedModuleDetectorLoader :
         if (parameters.acceptAll) {
             AcceptAll(null)
         } else {
-            if (parameters.baseCommitOverride != null) {
-                logger.info("using base commit override ${parameters.baseCommitOverride}")
-            }
-
             AffectedModuleDetectorImpl(
                 projectGraph = parameters.projectGraph,
                 dependencyTracker = parameters.dependencyTracker,
@@ -533,12 +524,10 @@ class AffectedModuleDetectorImpl(
                     ":benchmark:benchmark-macro",
                     ":benchmark:integration-tests:macrobenchmark-target"
                 ), // link benchmark-macro's correctness test and its target
-                // Changing generator code changes the output for generated icons, which are tested
-                // in material-icons-extended.
                 setOf(
-                    ":compose:material:material:icons:generator",
-                    ":compose:material:material-icons-extended"
-                ),
+                    ":benchmark:benchmark-macro-junit4",
+                    ":benchmark:integration-tests:macrobenchmark-target"
+                ), // link benchmark-macro-junit4's correctness test and its target
                 setOf(
                     ":profileinstaller:integration-tests:profile-verification",
                     ":profileinstaller:integration-tests:profile-verification-sample",

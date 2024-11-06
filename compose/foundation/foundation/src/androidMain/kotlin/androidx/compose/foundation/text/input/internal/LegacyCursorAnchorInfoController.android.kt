@@ -72,20 +72,21 @@ internal class LegacyCursorAnchorInfoController(
         includeCharacterBounds: Boolean,
         includeEditorBounds: Boolean,
         includeLineBounds: Boolean
-    ) = synchronized(lock) {
-        this.includeInsertionMarker = includeInsertionMarker
-        this.includeCharacterBounds = includeCharacterBounds
-        this.includeEditorBounds = includeEditorBounds
-        this.includeLineBounds = includeLineBounds
+    ) =
+        synchronized(lock) {
+            this.includeInsertionMarker = includeInsertionMarker
+            this.includeCharacterBounds = includeCharacterBounds
+            this.includeEditorBounds = includeEditorBounds
+            this.includeLineBounds = includeLineBounds
 
-        if (immediate) {
-            hasPendingImmediateRequest = true
-            if (textFieldValue != null) {
-                updateCursorAnchorInfo()
+            if (immediate) {
+                hasPendingImmediateRequest = true
+                if (textFieldValue != null) {
+                    updateCursorAnchorInfo()
+                }
             }
+            monitorEnabled = monitor
         }
-        monitorEnabled = monitor
-    }
 
     /**
      * Notify the controller of layout and position changes.
@@ -93,10 +94,10 @@ internal class LegacyCursorAnchorInfoController(
      * @param textFieldValue the text field's [TextFieldValue]
      * @param offsetMapping the offset mapping for the visual transformation
      * @param textLayoutResult the text field's [TextLayoutResult]
-     * @param innerTextFieldBounds visible bounds of the text field in local coordinates, or an
+     * @param innerTextFieldBounds visible bounds of the text field in text layout coordinates, an
      *   empty rectangle if the text field is not visible
-     * @param decorationBoxBounds visible bounds of the decoration box in local coordinates, or an
-     *   empty rectangle if the decoration box is not visible
+     * @param decorationBoxBounds visible bounds of the decoration box in text layout coordinates,
+     *   or an empty rectangle if the decoration box is not visible
      */
     fun updateTextLayoutResult(
         textFieldValue: TextFieldValue,
@@ -104,17 +105,18 @@ internal class LegacyCursorAnchorInfoController(
         textLayoutResult: TextLayoutResult,
         innerTextFieldBounds: Rect,
         decorationBoxBounds: Rect
-    ) = synchronized(lock) {
-        this.textFieldValue = textFieldValue
-        this.offsetMapping = offsetMapping
-        this.textLayoutResult = textLayoutResult
-        this.innerTextFieldBounds = innerTextFieldBounds
-        this.decorationBoxBounds = decorationBoxBounds
+    ) =
+        synchronized(lock) {
+            this.textFieldValue = textFieldValue
+            this.offsetMapping = offsetMapping
+            this.textLayoutResult = textLayoutResult
+            this.innerTextFieldBounds = innerTextFieldBounds
+            this.decorationBoxBounds = decorationBoxBounds
 
-        if (hasPendingImmediateRequest || monitorEnabled) {
-            updateCursorAnchorInfo()
+            if (hasPendingImmediateRequest || monitorEnabled) {
+                updateCursorAnchorInfo()
+            }
         }
-    }
 
     /**
      * Invalidate the last received layout and position data.
@@ -123,20 +125,31 @@ internal class LegacyCursorAnchorInfoController(
      * position data is no longer valid. [CursorAnchorInfo] updates will not be sent until new
      * layout and position data is received.
      */
-    fun invalidate() = synchronized(lock) {
-        textFieldValue = null
-        offsetMapping = null
-        textLayoutResult = null
-        innerTextFieldBounds = null
-        decorationBoxBounds = null
-    }
+    fun invalidate() =
+        synchronized(lock) {
+            textFieldValue = null
+            offsetMapping = null
+            textLayoutResult = null
+            innerTextFieldBounds = null
+            decorationBoxBounds = null
+        }
 
     private fun updateCursorAnchorInfo() {
-        if (!inputMethodManager.isActive()) return
+        if (
+            !inputMethodManager.isActive() ||
+                textFieldValue == null ||
+                offsetMapping == null ||
+                textLayoutResult == null ||
+                innerTextFieldBounds == null ||
+                decorationBoxBounds == null
+        )
+            return
 
         matrix.reset()
-        // Updates matrix to transform text field local coordinates to screen coordinates.
+        // Updates matrix to transform decoration box coordinates to screen coordinates.
         localToScreen(matrix)
+        // Updates matrix to transform text layout coordinates to screen coordinates.
+        matrix.translate(-decorationBoxBounds!!.left, -decorationBoxBounds!!.top, 0f)
         androidMatrix.setFrom(matrix)
 
         inputMethodManager.updateCursorAnchorInfo(

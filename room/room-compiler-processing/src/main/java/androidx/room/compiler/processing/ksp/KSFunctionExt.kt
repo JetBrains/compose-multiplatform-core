@@ -21,10 +21,14 @@ import androidx.room.compiler.processing.util.ISSUE_TRACKER_LINK
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.Nullability
+import com.google.devtools.ksp.symbol.Origin
 
-internal fun KSFunctionDeclaration.hasOverloads() = this.annotations.any {
-    it.annotationType.resolve().declaration.qualifiedName?.asString() == "kotlin.jvm.JvmOverloads"
-}
+internal fun KSFunctionDeclaration.hasOverloads() =
+    this.annotations.any {
+        it.annotationType.resolve().declaration.qualifiedName?.asString() ==
+            "kotlin.jvm.JvmOverloads"
+    }
 
 /**
  * A custom ReturnType that return an [XType] while also resolving boxing if necessary (might happen
@@ -34,22 +38,23 @@ internal fun KSFunctionDeclaration.returnKspType(
     env: KspProcessingEnv,
     containing: KspType?
 ): KspType {
-    return if (containing?.typeElement?.isAnnotationClass() == true) {
-        // Calling #getOriginatingReference() or #returnTypeAsMemberOf() currently fails for
-        // annotation classes due to https://github.com/google/ksp/issues/1004. Thus, we avoid
-        // calling those methods and just return the return type directly. This should be safe for
-        // annotation classes since they can't extend other types or use generics.
-        val returnTypeReference = checkNotNull(returnType)
-        env.wrap(
-            originatingReference = returnTypeReference,
-            ksType = returnTypeReference.resolve()
-        )
-    } else {
-        env.wrap(
-            originatingReference = checkNotNull(getOriginatingReference()),
-            ksType = returnTypeAsMemberOf(ksType = containing?.ksType)
-        )
+    val returnTypeReference = returnType
+    returnTypeReference?.resolve()?.let { type ->
+        if (type == env.resolver.builtIns.unitType) {
+            val isKotlin =
+                returnTypeReference.origin == Origin.KOTLIN ||
+                    returnTypeReference.origin == Origin.KOTLIN_LIB
+            // It's Nullability.PLATFORM if using `kotlin.Unit` directly in Java.
+            val isVoid = type.nullability == Nullability.NOT_NULL
+            if (isKotlin || isVoid) {
+                return env.voidType
+            }
+        }
     }
+    return env.wrap(
+        originatingReference = checkNotNull(getOriginatingReference()),
+        ksType = returnTypeAsMemberOf(ksType = containing?.ksType)
+    )
 }
 
 private fun KSFunctionDeclaration.getOriginatingReference(): KSTypeReference? {
@@ -65,11 +70,13 @@ private fun KSFunctionDeclaration.getOriginatingReference(): KSTypeReference? {
             overridee.type
         }
         null -> null
-        else -> error(
-            """
+        else ->
+            error(
+                """
             Unexpected overridee type for $this ($overridee).
             Please file a bug at $ISSUE_TRACKER_LINK.
-            """.trimIndent()
-        )
+            """
+                    .trimIndent()
+            )
     } ?: returnType
 }

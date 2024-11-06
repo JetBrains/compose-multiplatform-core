@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -50,8 +51,7 @@ import org.junit.runners.Parameterized
 @LargeTest
 @RunWith(Parameterized::class)
 class ExposedDropdownMenuBenchmark(private val expanded: Boolean) {
-    @get:Rule
-    val benchmarkRule = ComposeBenchmarkRule()
+    @get:Rule val benchmarkRule = ComposeBenchmarkRule()
 
     @Test
     fun edm_firstPixel() {
@@ -96,9 +96,8 @@ class ExposedDropdownMenuBenchmark(private val expanded: Boolean) {
     }
 }
 
-internal class ExposedDropdownMenuTestCase(
-    private val expanded: Boolean
-) : LayeredComposeTestCase(), ToggleableTestCase {
+internal class ExposedDropdownMenuTestCase(private val expanded: Boolean) :
+    LayeredComposeTestCase(), ToggleableTestCase {
     private lateinit var state: MutableState<Dp>
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -114,18 +113,18 @@ internal class ExposedDropdownMenuTestCase(
                 expanded = expanded,
                 onExpandedChange = {},
             ) {
-                Spacer(modifier = Modifier.size(100.dp).menuAnchor())
-                // Can't test ExposedDropdownMenu directly because
-                // Popup can't be benchmarked
+                Spacer(
+                    Modifier.size(100.dp)
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                )
+                // Can't test ExposedDropdownMenu directly because Popup can't be benchmarked
             }
         }
     }
 
     @Composable
     override fun ContentWrappers(content: @Composable () -> Unit) {
-        MaterialTheme {
-            content()
-        }
+        MaterialTheme { content() }
     }
 
     override fun toggleState() {

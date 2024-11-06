@@ -30,10 +30,16 @@ import android.view.SurfaceView
 import android.view.View
 import android.window.SurfaceSyncGroup
 import androidx.annotation.RequiresApi
+import androidx.privacysandbox.ui.client.RemoteCallManager.addBinderDeathListener
+import androidx.privacysandbox.ui.client.RemoteCallManager.closeRemoteSession
+import androidx.privacysandbox.ui.client.RemoteCallManager.tryToCallRemoteObject
+import androidx.privacysandbox.ui.core.IDelegatingSandboxedUiAdapter
 import androidx.privacysandbox.ui.core.IRemoteSessionClient
 import androidx.privacysandbox.ui.core.IRemoteSessionController
 import androidx.privacysandbox.ui.core.ISandboxedUiAdapter
+import androidx.privacysandbox.ui.core.ProtocolConstants
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
+import androidx.privacysandbox.ui.core.SessionObserverFactory
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
@@ -52,25 +58,42 @@ object SandboxedUiAdapterFactory {
 
     /**
      * @throws IllegalArgumentException if {@code coreLibInfo} does not contain a Binder with the
-     * key UI_ADAPTER_BINDER
+     *   key UI_ADAPTER_BINDER
      */
     fun createFromCoreLibInfo(coreLibInfo: Bundle): SandboxedUiAdapter {
-        val uiAdapterBinder = requireNotNull(coreLibInfo.getBinder(UI_ADAPTER_BINDER)) {
-            "Invalid bundle, missing $UI_ADAPTER_BINDER."
+        val uiAdapterBinder =
+            requireNotNull(coreLibInfo.getBinder(UI_ADAPTER_BINDER)) {
+                "Invalid bundle, missing $UI_ADAPTER_BINDER."
+            }
+        val adapterInterface = ISandboxedUiAdapter.Stub.asInterface(uiAdapterBinder)
+        // the following check for DelegatingAdapter check must happen before the checks for
+        // remote/local binder as the checks below have fallback to a RemoteAdapter if it's not
+        // local.
+        if (
+            uiAdapterBinder.interfaceDescriptor?.equals(
+                "androidx.privacysandbox.ui.core.IDelegatingSandboxedUiAdapter"
+            ) == true
+        ) {
+            val delegate =
+                coreLibInfo.getBundle(ProtocolConstants.delegateKey)
+                    ?: throw UnsupportedOperationException(
+                        "DelegatingAdapter must have a non null delegate"
+                    )
+            return ClientDelegatingAdapter(
+                IDelegatingSandboxedUiAdapter.Stub.asInterface(uiAdapterBinder),
+                createFromCoreLibInfo(delegate)
+            )
         }
-        val adapterInterface = ISandboxedUiAdapter.Stub.asInterface(
-            uiAdapterBinder
-        )
-
         val forceUseRemoteAdapter = coreLibInfo.getBoolean(TEST_ONLY_USE_REMOTE_ADAPTER)
-        val isLocalBinder = uiAdapterBinder.queryLocalInterface(
-                ISandboxedUiAdapter.DESCRIPTOR) != null
+        val isLocalBinder =
+            uiAdapterBinder.queryLocalInterface(ISandboxedUiAdapter.DESCRIPTOR) != null
         val useLocalAdapter = !forceUseRemoteAdapter && isLocalBinder
         Log.d(TAG, "useLocalAdapter=$useLocalAdapter")
 
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
-            !useLocalAdapter) {
-                RemoteAdapter(adapterInterface)
+        return if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && !useLocalAdapter
+        ) {
+            RemoteAdapter(adapterInterface)
         } else {
             LocalAdapter(adapterInterface)
         }
@@ -80,27 +103,37 @@ object SandboxedUiAdapterFactory {
      * [LocalAdapter] fetches UI from a provider living on same process as the client but on a
      * different class loader.
      */
-    private class LocalAdapter(adapterInterface: ISandboxedUiAdapter) :
-        SandboxedUiAdapter {
+    @SuppressLint("BanUncheckedReflection") // using reflection on library classes
+    private class LocalAdapter(adapterInterface: ISandboxedUiAdapter) : SandboxedUiAdapter {
         private val uiProviderBinder = adapterInterface.asBinder()
 
-        private val targetSessionClientClass = Class.forName(
-            SandboxedUiAdapter.SessionClient::class.java.name,
-            /* initialize = */ false,
-            uiProviderBinder.javaClass.classLoader
-        )
+        private val targetSessionClientClass =
+            Class.forName(
+                SandboxedUiAdapter.SessionClient::class.java.name,
+                /* initialize = */ false,
+                uiProviderBinder.javaClass.classLoader
+            )
 
         // The adapterInterface provided must have a openSession method on its class.
         // Since the object itself has been instantiated on a different classloader, we
         // need reflection to get hold of it.
-        private val openSessionMethod: Method = Class.forName(
-            SandboxedUiAdapter::class.java.name,
-            /*initialize=*/ false,
-            uiProviderBinder.javaClass.classLoader
-        ).getMethod("openSession", Context::class.java, IBinder::class.java, Int::class.java,
-            Int::class.java, Boolean::class.java, Executor::class.java, targetSessionClientClass)
+        private val openSessionMethod: Method =
+            Class.forName(
+                    SandboxedUiAdapter::class.java.name,
+                    /*initialize=*/ false,
+                    uiProviderBinder.javaClass.classLoader
+                )
+                .getMethod(
+                    "openSession",
+                    Context::class.java,
+                    IBinder::class.java,
+                    Int::class.java,
+                    Int::class.java,
+                    Boolean::class.java,
+                    Executor::class.java,
+                    targetSessionClientClass
+                )
 
-        @SuppressLint("BanUncheckedReflection") // using reflection on library classes
         override fun openSession(
             context: Context,
             windowInputToken: IBinder,
@@ -113,23 +146,35 @@ object SandboxedUiAdapterFactory {
             try {
                 // We can't pass the client object as-is since it's been created on a different
                 // classloader.
-                val sessionClientProxy = Proxy.newProxyInstance(
-                    uiProviderBinder.javaClass.classLoader,
-                    arrayOf(targetSessionClientClass),
-                    SessionClientProxyHandler(client)
+                val sessionClientProxy =
+                    Proxy.newProxyInstance(
+                        uiProviderBinder.javaClass.classLoader,
+                        arrayOf(targetSessionClientClass),
+                        SessionClientProxyHandler(client)
+                    )
+                openSessionMethod.invoke(
+                    uiProviderBinder,
+                    context,
+                    windowInputToken,
+                    initialWidth,
+                    initialHeight,
+                    isZOrderOnTop,
+                    clientExecutor,
+                    sessionClientProxy
                 )
-                openSessionMethod.invoke(uiProviderBinder, context, windowInputToken, initialWidth,
-                        initialHeight, isZOrderOnTop, clientExecutor, sessionClientProxy)
             } catch (exception: Throwable) {
                 client.onSessionError(exception)
             }
         }
 
+        override fun addObserverFactory(sessionObserverFactory: SessionObserverFactory) {}
+
+        override fun removeObserverFactory(sessionObserverFactory: SessionObserverFactory) {}
+
         private class SessionClientProxyHandler(
             private val origClient: SandboxedUiAdapter.SessionClient,
         ) : InvocationHandler {
 
-            @SuppressLint("BanUncheckedReflection") // using reflection on library classes
             override fun invoke(proxy: Any, method: Method, args: Array<Any>?): Any {
                 return when (method.name) {
                     "onSessionOpened" -> {
@@ -162,60 +207,68 @@ object SandboxedUiAdapterFactory {
             }
         }
 
-        /**
-         * Create [SandboxedUiAdapter.Session] that proxies to [origSession]
-         */
+        /** Create [SandboxedUiAdapter.Session] that proxies to [origSession] */
         private class SessionProxy(
             private val origSession: Any,
         ) : SandboxedUiAdapter.Session {
 
-            private val targetClass = Class.forName(
-                SandboxedUiAdapter.Session::class.java.name,
-                /* initialize = */ false,
-                origSession.javaClass.classLoader
-            ).also {
-                it.cast(origSession)
-            }
+            private val targetClass =
+                Class.forName(
+                        SandboxedUiAdapter.Session::class.java.name,
+                        /* initialize = */ false,
+                        origSession.javaClass.classLoader
+                    )
+                    .also { it.cast(origSession) }
 
             private val getViewMethod = targetClass.getMethod("getView")
-            private val notifyResizedMethod = targetClass.getMethod(
-                "notifyResized", Int::class.java, Int::class.java)
+            private val notifyResizedMethod =
+                targetClass.getMethod("notifyResized", Int::class.java, Int::class.java)
+            private val getSignalOptionsMethod = targetClass.getMethod("getSignalOptions")
             private val notifyZOrderChangedMethod =
                 targetClass.getMethod("notifyZOrderChanged", Boolean::class.java)
-            private val notifyConfigurationChangedMethod = targetClass.getMethod(
-                "notifyConfigurationChanged", Configuration::class.java)
+            private val notifyConfigurationChangedMethod =
+                targetClass.getMethod("notifyConfigurationChanged", Configuration::class.java)
+            private val notifyUiChangedMethod =
+                targetClass.getMethod("notifyUiChanged", Bundle::class.java)
             private val closeMethod = targetClass.getMethod("close")
 
             override val view: View
-                @SuppressLint("BanUncheckedReflection") // using reflection on library classes
                 get() = getViewMethod.invoke(origSession) as View
 
-            @SuppressLint("BanUncheckedReflection") // using reflection on library classes
+            override val signalOptions: Set<String>
+                @Suppress("UNCHECKED_CAST") // using reflection on library classes
+                get() = getSignalOptionsMethod.invoke(origSession) as Set<String>
+
             override fun notifyResized(width: Int, height: Int) {
-                view.layout(0, 0, width, height)
+                val parentView = view.parent as View
+                view.layout(
+                    parentView.paddingLeft,
+                    parentView.paddingTop,
+                    parentView.paddingLeft + width,
+                    parentView.paddingTop + height
+                )
                 notifyResizedMethod.invoke(origSession, width, height)
             }
 
-            @SuppressLint("BanUncheckedReflection") // using reflection on library classes
             override fun notifyZOrderChanged(isZOrderOnTop: Boolean) {
                 notifyZOrderChangedMethod.invoke(origSession, isZOrderOnTop)
             }
 
-            @SuppressLint("BanUncheckedReflection") // using reflection on library classes
             override fun notifyConfigurationChanged(configuration: Configuration) {
                 notifyConfigurationChangedMethod.invoke(origSession, configuration)
             }
 
-            @SuppressLint("BanUncheckedReflection") // using reflection on library classes
+            override fun notifyUiChanged(uiContainerInfo: Bundle) {
+                notifyUiChangedMethod.invoke(origSession, uiContainerInfo)
+            }
+
             override fun close() {
                 closeMethod.invoke(origSession)
             }
         }
     }
 
-    /**
-     * [RemoteAdapter] fetches content from a provider living on a different process.
-     */
+    /** [RemoteAdapter] fetches content from a provider living on a different process. */
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     private class RemoteAdapter(private val adapterInterface: ISandboxedUiAdapter) :
         SandboxedUiAdapter {
@@ -233,15 +286,21 @@ object SandboxedUiAdapterFactory {
                 context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
             val displayId = mDisplayManager.getDisplay(Display.DEFAULT_DISPLAY).displayId
 
-            adapterInterface.openRemoteSession(
-                windowInputToken,
-                displayId,
-                initialWidth,
-                initialHeight,
-                isZOrderOnTop,
-                RemoteSessionClient(context, client, clientExecutor)
-            )
+            tryToCallRemoteObject(adapterInterface) {
+                this.openRemoteSession(
+                    windowInputToken,
+                    displayId,
+                    initialWidth,
+                    initialHeight,
+                    isZOrderOnTop,
+                    RemoteSessionClient(context, client, clientExecutor)
+                )
+            }
         }
+
+        override fun addObserverFactory(sessionObserverFactory: SessionObserverFactory) {}
+
+        override fun removeObserverFactory(sessionObserverFactory: SessionObserverFactory) {}
 
         class RemoteSessionClient(
             val context: Context,
@@ -249,60 +308,107 @@ object SandboxedUiAdapterFactory {
             val clientExecutor: Executor
         ) : IRemoteSessionClient.Stub() {
 
+            lateinit var surfaceView: SurfaceView
+
             override fun onRemoteSessionOpened(
                 surfacePackage: SurfaceControlViewHost.SurfacePackage,
                 remoteSessionController: IRemoteSessionController,
-                isZOrderOnTop: Boolean
+                isZOrderOnTop: Boolean,
+                hasObservers: Boolean
             ) {
-                val surfaceView = SurfaceView(context)
+                surfaceView = SurfaceView(context)
                 surfaceView.setChildSurfacePackage(surfacePackage)
                 surfaceView.setZOrderOnTop(isZOrderOnTop)
+                surfaceView.addOnAttachStateChangeListener(
+                    object : View.OnAttachStateChangeListener {
+
+                        private var hasViewBeenPreviouslyAttached = false
+
+                        override fun onViewAttachedToWindow(v: View) {
+                            if (hasViewBeenPreviouslyAttached) {
+                                tryToCallRemoteObject(remoteSessionController) {
+                                    this.notifyFetchUiForSession()
+                                }
+                            } else {
+                                hasViewBeenPreviouslyAttached = true
+                            }
+                        }
+
+                        override fun onViewDetachedFromWindow(v: View) {}
+                    }
+                )
 
                 clientExecutor.execute {
-                    client
-                        .onSessionOpened(SessionImpl(surfaceView,
-                            remoteSessionController, surfacePackage))
+                    client.onSessionOpened(
+                        SessionImpl(
+                            surfaceView,
+                            remoteSessionController,
+                            surfacePackage,
+                            hasObservers
+                        )
+                    )
+                }
+                addBinderDeathListener(remoteSessionController) {
+                    onRemoteSessionError("Remote process died")
                 }
             }
 
             override fun onRemoteSessionError(errorString: String) {
-                clientExecutor.execute {
-                    client.onSessionError(Throwable(errorString))
-                }
+                clientExecutor.execute { client.onSessionError(Throwable(errorString)) }
             }
 
             override fun onResizeRequested(width: Int, height: Int) {
-                clientExecutor.execute {
-                    client.onResizeRequested(width, height)
-                }
+                clientExecutor.execute { client.onResizeRequested(width, height) }
+            }
+
+            override fun onSessionUiFetched(surfacePackage: SurfaceControlViewHost.SurfacePackage) {
+                surfaceView.setChildSurfacePackage(surfacePackage)
             }
         }
 
         private class SessionImpl(
             val surfaceView: SurfaceView,
             val remoteSessionController: IRemoteSessionController,
-            val surfacePackage: SurfaceControlViewHost.SurfacePackage
+            val surfacePackage: SurfaceControlViewHost.SurfacePackage,
+            hasObservers: Boolean
         ) : SandboxedUiAdapter.Session {
 
             override val view: View = surfaceView
 
+            // While there are no more refined signal options, just use hasObservers as a signal
+            // for whether to start measurement.
+            // TODO(b/341895747): Add structured signal options.
+            override val signalOptions =
+                if (hasObservers) {
+                    setOf("someOptions")
+                } else {
+                    setOf()
+                }
+
             override fun notifyConfigurationChanged(configuration: Configuration) {
-                remoteSessionController.notifyConfigurationChanged(configuration)
+                tryToCallRemoteObject(remoteSessionController) {
+                    this.notifyConfigurationChanged(configuration)
+                }
             }
 
             @SuppressLint("ClassVerificationFailure")
             override fun notifyResized(width: Int, height: Int) {
 
+                val parentView = surfaceView.parent as View
+
                 val clientResizeRunnable = Runnable {
                     surfaceView.layout(
-                        /* left = */ 0,
-                        /* top = */ 0,
-                        /* right = */ width,
-                        /* bottom = */ height)
+                        /* left = */ parentView.paddingLeft,
+                        /* top = */ parentView.paddingTop,
+                        /* right = */ parentView.paddingLeft + width,
+                        /* bottom = */ parentView.paddingTop + height
+                    )
                 }
 
                 val providerResizeRunnable = Runnable {
-                    remoteSessionController.notifyResized(width, height)
+                    tryToCallRemoteObject(remoteSessionController) {
+                        this.notifyResized(width, height)
+                    }
                 }
 
                 val syncGroup = SurfaceSyncGroup("AppAndSdkViewsSurfaceSync")
@@ -314,11 +420,19 @@ object SandboxedUiAdapterFactory {
 
             override fun notifyZOrderChanged(isZOrderOnTop: Boolean) {
                 surfaceView.setZOrderOnTop(isZOrderOnTop)
-                remoteSessionController.notifyZOrderChanged(isZOrderOnTop)
+                tryToCallRemoteObject(remoteSessionController) {
+                    this.notifyZOrderChanged(isZOrderOnTop)
+                }
+            }
+
+            override fun notifyUiChanged(uiContainerInfo: Bundle) {
+                tryToCallRemoteObject(remoteSessionController) {
+                    this.notifyUiChanged(uiContainerInfo)
+                }
             }
 
             override fun close() {
-                remoteSessionController.close()
+                closeRemoteSession(remoteSessionController)
             }
         }
     }

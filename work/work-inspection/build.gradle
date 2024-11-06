@@ -31,7 +31,7 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
     api(libs.kotlinStdlib)
     compileOnly("androidx.inspection:inspection:1.0.0")
     compileOnly(project(":lifecycle:lifecycle-runtime"))
@@ -53,9 +53,11 @@ androidx {
     type = LibraryType.IDE_PLUGIN
     inceptionYear = "2020"
     description = "The implementation of WorkManager Inspector."
+    legacyDisableKotlinStrictApiMode = true
 }
 
 android {
+    compileSdk 35
     defaultConfig {
         // studio pipeline works only starting with Android O
         minSdkVersion 26

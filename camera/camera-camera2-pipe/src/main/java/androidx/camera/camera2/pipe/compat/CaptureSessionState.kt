@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe.compat
 
 import android.hardware.camera2.CameraCaptureSession
+import android.hardware.camera2.CameraExtensionSession
+import android.os.Build
 import android.view.Surface
 import androidx.annotation.GuardedBy
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraph.Flags.FinalizeSessionOnCloseBehavior
 import androidx.camera.camera2.pipe.CameraSurfaceManager
@@ -59,7 +58,6 @@ internal val captureSessionDebugIds = atomic(0)
  *
  * This class is thread safe.
  */
-@RequiresApi(21)
 internal class CaptureSessionState(
     private val graphListener: GraphListener,
     private val captureSessionFactory: CaptureSessionFactory,
@@ -76,8 +74,7 @@ internal class CaptureSessionState(
     private val activeSurfaceMap = synchronizedMap(HashMap<StreamId, Surface>())
     private var sessionCreatingTimestamp: TimestampNs? = null
 
-    @GuardedBy("lock")
-    private var _cameraDevice: CameraDeviceWrapper? = null
+    @GuardedBy("lock") private var _cameraDevice: CameraDeviceWrapper? = null
     var cameraDevice: CameraDeviceWrapper?
         get() = synchronized(lock) { _cameraDevice }
         set(value) =
@@ -92,17 +89,14 @@ internal class CaptureSessionState(
                 }
             }
 
-    @GuardedBy("lock")
-    private var cameraCaptureSession: ConfiguredCameraCaptureSession? = null
+    @GuardedBy("lock") private var cameraCaptureSession: ConfiguredCameraCaptureSession? = null
 
     @GuardedBy("lock")
     private var pendingOutputMap: Map<StreamId, OutputConfigurationWrapper>? = null
 
-    @GuardedBy("lock")
-    private var pendingSurfaceMap: Map<StreamId, Surface>? = null
+    @GuardedBy("lock") private var pendingSurfaceMap: Map<StreamId, Surface>? = null
 
-    @GuardedBy("lock")
-    private var state = State.PENDING
+    @GuardedBy("lock") private var state = State.PENDING
 
     private enum class State {
         PENDING,
@@ -112,14 +106,13 @@ internal class CaptureSessionState(
         CLOSED
     }
 
-    @GuardedBy("lock")
-    private var hasAttemptedCaptureSession = false
+    @GuardedBy("lock") private var hasAttemptedCaptureSession = false
 
-    @GuardedBy("lock")
-    private var _surfaceMap: Map<StreamId, Surface>? = null
+    @GuardedBy("lock") private var _surfaceMap: Map<StreamId, Surface>? = null
 
     @GuardedBy("lock")
     private val _surfaceTokenMap: MutableMap<Surface, AutoCloseable> = mutableMapOf()
+
     fun configureSurfaceMap(surfaces: Map<StreamId, Surface>) {
         synchronized(lock) {
             if (state == State.CLOSING || state == State.CLOSED) {
@@ -145,6 +138,14 @@ internal class CaptureSessionState(
             }
             scope.launch { tryCreateCaptureSession() }
         }
+    }
+
+    fun getRealtimeCaptureLatency(): CameraExtensionSession.StillCaptureLatency? {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val extensionSession = cameraCaptureSession?.session as? AndroidCameraExtensionSession
+            return extensionSession?.getRealTimeCaptureLatency()
+        }
+        return null
     }
 
     override fun onActive(session: CameraCaptureSessionWrapper) {
@@ -205,13 +206,23 @@ internal class CaptureSessionState(
             }
 
             if (cameraCaptureSession == null && session != null) {
-                captureSession =
-                    ConfiguredCameraCaptureSession(
-                        session,
-                        GraphRequestProcessor.from(
-                            captureSequenceProcessorFactory.create(session, activeSurfaceMap)
+                val captureSequenceProcessor =
+                    captureSequenceProcessorFactory.create(session, activeSurfaceMap)
+                if (captureSequenceProcessor is Camera2CaptureSequenceProcessor) {
+                    captureSession =
+                        ConfiguredCameraCaptureSession(
+                            session,
+                            GraphRequestProcessor.from(captureSequenceProcessor),
+                            captureSequenceProcessor
                         )
-                    )
+                } else {
+                    captureSession =
+                        ConfiguredCameraCaptureSession(
+                            session,
+                            GraphRequestProcessor.from(captureSequenceProcessor),
+                            null
+                        )
+                }
                 cameraCaptureSession = captureSession
             } else {
                 captureSession = cameraCaptureSession
@@ -267,9 +278,9 @@ internal class CaptureSessionState(
             configuredCaptureSession = cameraCaptureSession
             cameraCaptureSession = null
         }
-
-        val graphProcessor = configuredCaptureSession?.processor
-        if (graphProcessor != null) {
+        val captureSession = configuredCaptureSession
+        if (captureSession != null) {
+            val graphProcessor = captureSession.processor
             // WARNING:
             // This normally does NOT call close on the captureSession to avoid potentially slow
             // reconfiguration during mode switch and shutdown. This avoids unintentional restarts
@@ -295,6 +306,13 @@ internal class CaptureSessionState(
                 Debug.traceStop()
             }
 
+            // Explicitly release ImageWriter resources for the edge case when two capture sessions
+            // share the same input surface.
+            // b/369203626
+            Debug.traceStart { "$this#disconnect" }
+            captureSession.captureSequenceProcessor?.disconnect()
+            Debug.traceStop()
+
             // There are rare, extraordinary circumstances where we might need to close the capture
             // session. It is possible the app might explicitly wait for the captures to be
             // completely stopped through signals from CameraSurfaceManager, and in which case
@@ -304,12 +322,10 @@ internal class CaptureSessionState(
             //
             // [1] b/277310425
             // [2] b/277675483
-            if (cameraGraphFlags.quirkCloseCaptureSessionOnDisconnect) {
-                val captureSession = configuredCaptureSession?.session
-                checkNotNull(captureSession)
+            if (cameraGraphFlags.closeCaptureSessionOnDisconnect) {
                 Debug.trace("$this CameraCaptureSessionWrapper#close") {
                     Log.debug { "Closing capture session for $this" }
-                    captureSession.close()
+                    captureSession.session.close()
                 }
             }
             Debug.traceStop()
@@ -331,11 +347,10 @@ internal class CaptureSessionState(
                 if (_cameraDevice == null || !hasAttemptedCaptureSession) {
                     shouldFinalizeSession = true
                 } else {
-                    when (cameraGraphFlags.quirkFinalizeSessionOnCloseBehavior) {
+                    when (cameraGraphFlags.finalizeSessionOnCloseBehavior) {
                         FinalizeSessionOnCloseBehavior.IMMEDIATE -> {
                             shouldFinalizeSession = true
                         }
-
                         FinalizeSessionOnCloseBehavior.TIMEOUT -> {
                             shouldFinalizeSession = true
                             finalizeSessionDelayMs = 2000L
@@ -352,7 +367,7 @@ internal class CaptureSessionState(
         }
     }
 
-    private fun finalizeSession(delayMs: Long = 0L) {
+    internal fun finalizeSession(delayMs: Long = 0L) {
         if (delayMs != 0L) {
             scope.launch {
                 Log.debug { "Finalizing $this in $delayMs ms" }
@@ -465,8 +480,9 @@ internal class CaptureSessionState(
 
                 val availableDeferredSurfaces = _surfaceMap?.filter { deferred.containsKey(it.key) }
 
-                if (availableDeferredSurfaces != null &&
-                    availableDeferredSurfaces.size == deferred.size
+                if (
+                    availableDeferredSurfaces != null &&
+                        availableDeferredSurfaces.size == deferred.size
                 ) {
                     pendingSurfaceMap = availableDeferredSurfaces
                 }
@@ -506,6 +522,7 @@ internal class CaptureSessionState(
 
     private data class ConfiguredCameraCaptureSession(
         val session: CameraCaptureSessionWrapper,
-        val processor: GraphRequestProcessor
+        val processor: GraphRequestProcessor,
+        val captureSequenceProcessor: Camera2CaptureSequenceProcessor?
     )
 }

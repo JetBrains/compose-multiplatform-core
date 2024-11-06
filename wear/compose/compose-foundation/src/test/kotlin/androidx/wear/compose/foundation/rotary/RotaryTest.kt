@@ -22,38 +22,47 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
-class ThresholdBehaviorTest {
+class ThresholdHandlerTest {
 
     @Test
     fun testMinVelocityThreshold() {
         val itemHeight = 100f
-        val thresholdBehavior = ThresholdBehavior(
-            2.0f,
-            averageItemSize = { itemHeight })
+        val minThresholdDivider = 1f
+        val maxThresholdDivider = 2f
+        val thresholdHandler =
+            ThresholdHandler(
+                minThresholdDivider = minThresholdDivider,
+                maxThresholdDivider = maxThresholdDivider,
+                averageItemSize = { itemHeight },
+            )
 
-        thresholdBehavior.startThresholdTracking(0L)
+        thresholdHandler.startThresholdTracking(0L)
         // Simulate very slow scroll
-        thresholdBehavior.updateTracking(100L, 1f)
-        val result = thresholdBehavior.calculateSnapThreshold()
+        thresholdHandler.updateTracking(100L, 1f)
+        val result = thresholdHandler.calculateSnapThreshold()
 
-        // Threshold should be equal to the height of an item
-        assertEquals(itemHeight, result, 0.01f)
+        // Threshold should be equal to the height of an item divided by minThresholdDivider
+        assertEquals(itemHeight / minThresholdDivider, result, 0.01f)
     }
 
     @Test
     fun testMaxVelocityThreshold() {
         val itemHeight = 100f
-        val thresholdDivider = 2.0f
-        val thresholdBehavior = ThresholdBehavior(
-            thresholdDivider,
-            averageItemSize = { itemHeight })
+        val minThresholdDivider = 1f
+        val maxThresholdDivider = 2f
+        val thresholdHandler =
+            ThresholdHandler(
+                minThresholdDivider = minThresholdDivider,
+                maxThresholdDivider = maxThresholdDivider,
+                averageItemSize = { itemHeight },
+            )
 
-        thresholdBehavior.startThresholdTracking(0L)
+        thresholdHandler.startThresholdTracking(0L)
         // Simulate very fast scroll
-        thresholdBehavior.updateTracking(1L, 100f)
-        val result = thresholdBehavior.calculateSnapThreshold()
+        thresholdHandler.updateTracking(1L, 100f)
+        val result = thresholdHandler.calculateSnapThreshold()
 
-        // Threshold should be equal to the height of an item divided by threshold
-        assertEquals(itemHeight / thresholdDivider, result, 0.01f)
+        // Threshold should be equal to the height of an item divided by maxThresholdDivider
+        assertEquals(itemHeight / maxThresholdDivider, result, 0.01f)
     }
 }

@@ -22,18 +22,39 @@
  * modifying its settings.
  */
 
+
+import androidx.build.KotlinTarget
 import androidx.build.LibraryType
 import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    android()
-    desktop()
+    androidLibrary {
+        namespace = "androidx.compose.animation.core"
+        withAndroidTestOnDeviceBuilder {
+            it.compilationName = "instrumentedTest"
+            it.defaultSourceSetName = "androidInstrumentedTest"
+            it.sourceSetTreeName = "test"
+        }
+        withAndroidTestOnJvmBuilder {
+            it.defaultSourceSetName = "androidUnitTest"
+        }
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(
+                    new File(project.projectDir, "proguard-rules.pro")
+            )
+        }
+
+        compileSdk = 35
+        aarMetadata.minCompileSdk = 35
+    }
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -41,51 +62,51 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 implementation(project(":compose:runtime:runtime"))
-                implementation("androidx.compose.ui:ui:1.6.0")
-                implementation("androidx.compose.ui:ui-unit:1.6.0")
+                implementation(project(":compose:ui:ui"))
+                implementation(project(":compose:ui:ui-unit"))
                 implementation(project(":compose:ui:ui-graphics"))
                 implementation(project(":compose:ui:ui-util"))
-                implementation("androidx.collection:collection:1.4.0")
-                implementation(libs.kotlinStdlibCommon)
+                implementation(project(":collection:collection"))
+                implementation(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
             }
         }
 
         commonTest {
             dependencies {
+                implementation(kotlin("test"))
+                implementation(libs.kotlinCoroutinesTest)
+                implementation(project(":kruth:kruth"))
             }
         }
 
         jvmMain {
             dependsOn(commonMain)
             dependencies {
-                implementation(libs.kotlinStdlib)
-                api(libs.kotlinCoroutinesCore)
             }
         }
-
 
         androidMain {
             dependsOn(jvmMain)
             dependencies {
-                api("androidx.annotation:annotation:1.1.0")
-                implementation(libs.kotlinStdlib)
+                api("androidx.annotation:annotation:1.8.1")
             }
         }
 
-        desktopMain {
-            dependsOn(jvmMain)
-            dependencies {
-            }
+        commonStubsMain {
+            dependsOn(commonMain)
         }
 
-        jvmTest {
-            dependencies {
-            }
+        jvmStubsMain {
+            dependsOn(commonStubsMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
         }
 
         androidInstrumentedTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
@@ -93,13 +114,17 @@ androidXMultiplatform {
                 implementation(libs.junit)
                 implementation(libs.truth)
                 implementation(project(":compose:animation:animation"))
+                implementation(project(":compose:foundation:foundation"))
                 implementation("androidx.compose.ui:ui-test-junit4:1.2.1")
                 implementation(project(":compose:test-utils"))
+                implementation("androidx.compose.material3:material3:1.2.1")
+                implementation(libs.leakcanary)
+                implementation(libs.leakcanaryInstrumentation)
             }
         }
 
         androidUnitTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
@@ -107,10 +132,6 @@ androidXMultiplatform {
                 implementation(libs.truth)
                 implementation(libs.kotlinCoroutinesCore)
             }
-        }
-
-        desktopTest {
-            dependsOn(jvmTest)
         }
     }
 }
@@ -121,12 +142,11 @@ dependencies {
 
 androidx {
     name = "Compose Animation Core"
-    type = LibraryType.PUBLISHED_KOTLIN_ONLY_LIBRARY
+    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2019"
     description = "Animation engine and animation primitives that are the building blocks of the Compose animation library"
-    legacyDisableKotlinStrictApiMode = true
+    metalavaK2UastEnabled = false
+    samples(project(":compose:animation:animation-core:animation-core-samples"))
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }
 
-android {
-    namespace "androidx.compose.animation.core"
-}

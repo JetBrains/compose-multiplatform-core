@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThrows;
 
-import androidx.car.app.navigation.model.MapTemplate;
+import androidx.car.app.navigation.model.MapWithContentTemplate;
 import androidx.car.app.navigation.model.NavigationTemplate;
 
 import org.junit.Test;
@@ -44,7 +44,9 @@ public class TabContentsTest {
     public void createInstance_invalidTemplate_Throws() {
         assertThrows(
                 IllegalStateException.class,
-                () -> new TabContents.Builder(new MapTemplate.Builder().build()).build());
+                () -> new TabContents.Builder(new MapWithContentTemplate.Builder()
+                        .setContentTemplate(new ListTemplate.Builder().build())
+                        .build()).build());
     }
 
     @Test
@@ -81,6 +83,30 @@ public class TabContentsTest {
                         new Action.Builder().setTitle("test").build()).build()).build();
 
         TabContents tabContents = new TabContents.Builder(template).build();
+
+        assertEquals(template, tabContents.getTemplate());
+    }
+
+    @Test
+    public void createInstance_sectionedItemTemplate_Throws() {
+        SectionedItemTemplate template =
+                new SectionedItemTemplate.Builder().setHeader(
+                        new Header.Builder().setTitle("title").build()
+                ).build();
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new TabContents.Builder(template).build());
+    }
+
+    @Test
+    public void createInstance_api8_sectionedItemTemplate() {
+        SectionedItemTemplate template =
+                new SectionedItemTemplate.Builder().setHeader(
+                        new Header.Builder().setTitle("title").build()
+                ).build();
+
+        TabContents tabContents = new TabContents.Builder(template, /* enableApi8= */ true).build();
 
         assertEquals(template, tabContents.getTemplate());
     }

@@ -27,19 +27,16 @@ dependencies {
 
     compileOnly project(":annotation:annotation-sampled")
     implementation project(":graphics:graphics-core")
-    implementation "androidx.annotation:annotation:1.7.0"
+    implementation "androidx.annotation:annotation:1.8.1"
 }
 
 android {
+    compileSdk 35
     namespace "androidx.graphics.core.samples"
-    defaultConfig {
-        minSdkVersion 21
-    }
 }
 
 androidx {
     name = "Graphics-Core Samples"
-    publish = Publish.SNAPSHOT_AND_RELEASE
     type = LibraryType.SAMPLES
     inceptionYear = "2023"
     description = "Contains samples of APIs included in the graphics-core Androidx library"

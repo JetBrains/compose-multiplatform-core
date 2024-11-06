@@ -16,6 +16,8 @@
 
 package androidx.camera.camera2.internal;
 
+import android.annotation.SuppressLint;
+import android.graphics.ImageFormat;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCaptureSession.CaptureCallback;
@@ -23,6 +25,8 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.DynamicRangeProfiles;
+import android.hardware.camera2.params.MultiResolutionStreamInfo;
+import android.hardware.camera2.params.OutputConfiguration;
 import android.os.Build;
 import android.view.Surface;
 
@@ -40,36 +44,43 @@ import androidx.camera.camera2.internal.compat.params.SessionConfigurationCompat
 import androidx.camera.camera2.internal.compat.quirk.CaptureNoResponseQuirk;
 import androidx.camera.camera2.internal.compat.workaround.RequestMonitor;
 import androidx.camera.camera2.internal.compat.workaround.StillCaptureFlow;
+import androidx.camera.camera2.internal.compat.workaround.TemplateParamsOverride;
 import androidx.camera.camera2.internal.compat.workaround.TorchStateReset;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.Logger;
+import androidx.camera.core.MirrorMode;
 import androidx.camera.core.impl.CameraCaptureCallback;
 import androidx.camera.core.impl.CaptureConfig;
 import androidx.camera.core.impl.DeferrableSurface;
 import androidx.camera.core.impl.Quirks;
 import androidx.camera.core.impl.SessionConfig;
+import androidx.camera.core.impl.utils.SurfaceUtil;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.impl.utils.futures.FutureCallback;
 import androidx.camera.core.impl.utils.futures.FutureChain;
 import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.util.Preconditions;
+import androidx.tracing.Trace;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CancellationException;
 
 /**
  * A basic implementation of {@link CaptureSessionInterface} for capturing images from the camera
  * which is tied to a specific {@link CameraDevice}.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 final class CaptureSession implements CaptureSessionInterface {
     private static final String TAG = "CaptureSession";
 
@@ -105,6 +116,9 @@ final class CaptureSession implements CaptureSessionInterface {
     /** The list of DeferrableSurface used to notify surface detach events */
     @GuardedBy("mSessionLock")
     List<DeferrableSurface> mConfiguredDeferrableSurfaces = Collections.emptyList();
+    /** Maximum state this session achieved (for debugging) */
+    @GuardedBy("mSessionLock")
+    State mHighestState = State.UNINITIALIZED;
     /** Tracks the current state of the session. */
     @GuardedBy("mSessionLock")
     State mState = State.UNINITIALIZED;
@@ -121,24 +135,44 @@ final class CaptureSession implements CaptureSessionInterface {
     private final TorchStateReset mTorchStateReset = new TorchStateReset();
     private final RequestMonitor mRequestMonitor;
     private final DynamicRangesCompat mDynamicRangesCompat;
+    private final TemplateParamsOverride mTemplateParamsOverride;
+    private final boolean mCanUseMultiResolutionImageReader;
 
     /**
      * Constructor for CaptureSession without CameraQuirk.
      */
     CaptureSession(@NonNull DynamicRangesCompat dynamicRangesCompat) {
-        this(dynamicRangesCompat, null);
+        this(dynamicRangesCompat, false);
+    }
+
+    /**
+     * Constructor for CaptureSession without CameraQuirk.
+     */
+    CaptureSession(@NonNull DynamicRangesCompat dynamicRangesCompat,
+            boolean canUseMultiResolutionImageReader) {
+        this(dynamicRangesCompat, new Quirks(Collections.emptyList()),
+                canUseMultiResolutionImageReader);
+    }
+
+    /**
+     * Constructor for CaptureSession with CameraQuirk.
+     */
+    CaptureSession(@NonNull DynamicRangesCompat dynamicRangesCompat,
+            @NonNull Quirks cameraQuirks) {
+        this(dynamicRangesCompat, cameraQuirks, false);
     }
 
     /**
      * Constructor for CaptureSession.
      */
     CaptureSession(@NonNull DynamicRangesCompat dynamicRangesCompat,
-            @Nullable Quirks cameraQuirks) {
-        mState = State.INITIALIZED;
+            @NonNull Quirks cameraQuirks, boolean canUseMultiResolutionImageReader) {
+        setState(State.INITIALIZED);
         mDynamicRangesCompat = dynamicRangesCompat;
         mCaptureSessionStateCallback = new StateCallback();
-        mRequestMonitor = new RequestMonitor(
-                cameraQuirks != null && cameraQuirks.contains(CaptureNoResponseQuirk.class));
+        mRequestMonitor = new RequestMonitor(cameraQuirks.contains(CaptureNoResponseQuirk.class));
+        mTemplateParamsOverride = new TemplateParamsOverride(cameraQuirks);
+        mCanUseMultiResolutionImageReader = canUseMultiResolutionImageReader;
     }
 
     @Override
@@ -209,7 +243,7 @@ final class CaptureSession implements CaptureSessionInterface {
         synchronized (mSessionLock) {
             switch (mState) {
                 case INITIALIZED:
-                    mState = State.GET_SURFACE;
+                    setState(State.GET_SURFACE);
                     mConfiguredDeferrableSurfaces = new ArrayList<>(sessionConfig.getSurfaces());
                     mSessionOpener = opener;
                     ListenableFuture<Void> openFuture = FutureChain.from(
@@ -281,7 +315,7 @@ final class CaptureSession implements CaptureSessionInterface {
                                 configuredSurfaces.get(i));
                     }
 
-                    mState = State.OPENING;
+                    setState(State.OPENING);
                     Logger.d(TAG, "Opening capture session.");
                     SynchronizedCaptureSession.StateCallback callbacks =
                             SynchronizedCaptureSessionStateCallbacks.createComboCallback(
@@ -298,19 +332,41 @@ final class CaptureSession implements CaptureSessionInterface {
                     CaptureConfig.Builder sessionParameterConfigBuilder =
                             CaptureConfig.Builder.from(sessionConfig.getRepeatingCaptureConfig());
 
+                    Map<SessionConfig.OutputConfig, OutputConfigurationCompat>
+                            mrirOutputConfigurationCompatMap = new HashMap<>();
+                    if (mCanUseMultiResolutionImageReader && Build.VERSION.SDK_INT >= 35) {
+                        Map<Integer, List<SessionConfig.OutputConfig>> groupIdToOutputConfigsMap =
+                                groupMrirOutputConfigs(sessionConfig.getOutputConfigs());
+                        mrirOutputConfigurationCompatMap =
+                                createMultiResolutionOutputConfigurationCompats(
+                                        groupIdToOutputConfigsMap, mConfiguredSurfaceMap);
+                    }
+
                     List<OutputConfigurationCompat> outputConfigList = new ArrayList<>();
                     String physicalCameraIdForAllStreams =
                             camera2Config.getPhysicalCameraId(null);
                     for (SessionConfig.OutputConfig outputConfig :
                             sessionConfig.getOutputConfigs()) {
-                        OutputConfigurationCompat outputConfiguration =
-                                getOutputConfigurationCompat(
-                                        outputConfig,
-                                        mConfiguredSurfaceMap,
-                                        physicalCameraIdForAllStreams);
-                        if (mStreamUseCaseMap.containsKey(outputConfig.getSurface())) {
-                            outputConfiguration.setStreamUseCase(
-                                    mStreamUseCaseMap.get(outputConfig.getSurface()));
+                        OutputConfigurationCompat outputConfiguration = null;
+
+                        // If an OutputConfiguration has been created via the MRIR approach,
+                        // retrieves it from the map
+                        if (mCanUseMultiResolutionImageReader && Build.VERSION.SDK_INT >= 35) {
+                            outputConfiguration = mrirOutputConfigurationCompatMap.get(
+                                    outputConfig);
+                        }
+
+                        // Otherwise, uses the original approach to create the
+                        // OutputConfigurationCompat.
+                        if (outputConfiguration == null) {
+                            outputConfiguration = getOutputConfigurationCompat(
+                                    outputConfig,
+                                    mConfiguredSurfaceMap,
+                                    physicalCameraIdForAllStreams);
+                            if (mStreamUseCaseMap.containsKey(outputConfig.getSurface())) {
+                                outputConfiguration.setStreamUseCase(
+                                        mStreamUseCaseMap.get(outputConfig.getSurface()));
+                            }
                         }
                         outputConfigList.add(outputConfiguration);
                     }
@@ -336,7 +392,8 @@ final class CaptureSession implements CaptureSessionInterface {
                     try {
                         CaptureRequest captureRequest =
                                 Camera2CaptureRequestBuilder.buildWithoutTarget(
-                                        sessionParameterConfigBuilder.build(), cameraDevice);
+                                        sessionParameterConfigBuilder.build(), cameraDevice,
+                                        mTemplateParamsOverride);
                         if (captureRequest != null) {
                             sessionConfigCompat.setSessionParameters(captureRequest);
                         }
@@ -391,6 +448,14 @@ final class CaptureSession implements CaptureSessionInterface {
                     outputConfig.getPhysicalCameraId());
         }
 
+        // No need to map MIRROR_MODE_ON_FRONT_ONLY to MIRROR_MODE_AUTO
+        // since its default value in framework
+        if (outputConfig.getMirrorMode() == MirrorMode.MIRROR_MODE_OFF) {
+            outputConfiguration.setMirrorMode(OutputConfiguration.MIRROR_MODE_NONE);
+        } else if (outputConfig.getMirrorMode() == MirrorMode.MIRROR_MODE_ON) {
+            outputConfiguration.setMirrorMode(OutputConfiguration.MIRROR_MODE_H);
+        }
+
         if (!outputConfig.getSharedSurfaces().isEmpty()) {
             outputConfiguration.enableSurfaceSharing();
             for (DeferrableSurface sharedDeferSurface : outputConfig.getSharedSurfaces()) {
@@ -440,7 +505,7 @@ final class CaptureSession implements CaptureSessionInterface {
                     mSessionOpener.stop();
                     // Fall through
                 case INITIALIZED:
-                    mState = State.RELEASED;
+                    setState(State.RELEASED);
                     break;
                 case OPENED:
                     // Not break close flow. Fall through
@@ -448,7 +513,7 @@ final class CaptureSession implements CaptureSessionInterface {
                     Preconditions.checkNotNull(mSessionOpener,
                             "The Opener shouldn't null in state:" + mState);
                     mSessionOpener.stop();
-                    mState = State.CLOSED;
+                    setState(State.CLOSED);
                     mRequestMonitor.stop();
                     mSessionConfig = null;
 
@@ -489,7 +554,7 @@ final class CaptureSession implements CaptureSessionInterface {
                     }
                     // Fall through
                 case OPENING:
-                    mState = State.RELEASING;
+                    setState(State.RELEASING);
                     mRequestMonitor.stop();
                     Preconditions.checkNotNull(mSessionOpener,
                             "The Opener shouldn't null in state:" + mState);
@@ -520,7 +585,7 @@ final class CaptureSession implements CaptureSessionInterface {
                     mSessionOpener.stop();
                     // Fall through
                 case INITIALIZED:
-                    mState = State.RELEASED;
+                    setState(State.RELEASED);
                     // Fall through
                 case RELEASED:
                     break;
@@ -578,6 +643,13 @@ final class CaptureSession implements CaptureSessionInterface {
         }
     }
 
+    @Override
+    public boolean isInOpenState() {
+        synchronized (mSessionLock) {
+            return mState == State.OPENED || mState == State.OPENING;
+        }
+    }
+
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     @GuardedBy("mSessionLock")
     void finishClose() {
@@ -586,7 +658,7 @@ final class CaptureSession implements CaptureSessionInterface {
             return;
         }
 
-        mState = State.RELEASED;
+        setState(State.RELEASED);
         mSynchronizedCaptureSession = null;
 
         if (mReleaseCompleter != null) {
@@ -632,7 +704,7 @@ final class CaptureSession implements CaptureSessionInterface {
                 Logger.d(TAG, "Issuing request for session.");
                 CaptureRequest captureRequest = Camera2CaptureRequestBuilder.build(
                         captureConfig, mSynchronizedCaptureSession.getDevice(),
-                        mConfiguredSurfaceMap, true);
+                        mConfiguredSurfaceMap, true, mTemplateParamsOverride);
                 if (captureRequest == null) {
                     Logger.d(TAG, "Skipping issuing empty request for session.");
                     return -1;
@@ -742,7 +814,7 @@ final class CaptureSession implements CaptureSessionInterface {
 
                     CaptureRequest captureRequest = Camera2CaptureRequestBuilder.build(
                             captureConfigBuilder.build(), mSynchronizedCaptureSession.getDevice(),
-                            mConfiguredSurfaceMap, false);
+                            mConfiguredSurfaceMap, false, mTemplateParamsOverride);
                     if (captureRequest == null) {
                         Logger.d(TAG, "Skipping issuing request without surface.");
                         return -1;
@@ -869,6 +941,22 @@ final class CaptureSession implements CaptureSessionInterface {
     }
 
     @GuardedBy("mSessionLock")
+    private void setState(@NonNull State state) {
+        if (state.ordinal() > mHighestState.ordinal()) {
+            mHighestState = state;
+        }
+        mState = state;
+        // Some sessions are created and immediately destroyed, so only trace those sessions
+        // that are actually used, which we distinguish by capture sessions that have gone to
+        // at least a GET_SURFACE state.
+        if (Trace.isEnabled() && mHighestState.ordinal() >= State.GET_SURFACE.ordinal()) {
+            String counterName = "CX:C2State[" + String.format("CaptureSession@%x", hashCode())
+                    + "]";
+            Trace.setCounter(counterName, state.ordinal());
+        }
+    }
+
+    @GuardedBy("mSessionLock")
     private CameraCaptureSession.CaptureCallback createCamera2CaptureCallback(
             List<CameraCaptureCallback> cameraCaptureCallbacks,
             CameraCaptureSession.CaptureCallback... additionalCallbacks) {
@@ -881,9 +969,121 @@ final class CaptureSession implements CaptureSessionInterface {
         return Camera2CaptureCallbacks.createComboCallback(camera2Callbacks);
     }
 
+    /**
+     * Returns the map which contains the data by mapping surface group id to OutputConfig list.
+     */
+    @NonNull
+    private static Map<Integer, List<SessionConfig.OutputConfig>> groupMrirOutputConfigs(
+            @NonNull Collection<SessionConfig.OutputConfig> outputConfigs) {
+        Map<Integer, List<SessionConfig.OutputConfig>> groupResult = new HashMap<>();
+
+        for (SessionConfig.OutputConfig outputConfig : outputConfigs) {
+            // When shared surfaces is not empty, surface sharing will be enabled on the
+            // OutputConfiguration. In that case, MultiResolutionImageReader shouldn't be used.
+            if (outputConfig.getSurfaceGroupId() <= 0
+                    || !outputConfig.getSharedSurfaces().isEmpty()) {
+                continue;
+            }
+            List<SessionConfig.OutputConfig> groupedOutputConfigs = groupResult.get(
+                    outputConfig.getSurfaceGroupId());
+            if (groupedOutputConfigs == null) {
+                groupedOutputConfigs = new ArrayList<>();
+                groupResult.put(outputConfig.getSurfaceGroupId(), groupedOutputConfigs);
+            }
+            groupedOutputConfigs.add(outputConfig);
+        }
+
+        // Double-check that the list size of each group is at least 2. It is the necessary
+        // condition to create a MRIR.
+        Map<Integer, List<SessionConfig.OutputConfig>> mrirGroupResult = new HashMap<>();
+        for (int groupId : groupResult.keySet()) {
+            if (groupResult.get(groupId).size() >= 2) {
+                mrirGroupResult.put(groupId, groupResult.get(groupId));
+            }
+        }
+
+        return mrirGroupResult;
+    }
+
+    @NonNull
+    @RequiresApi(35)
+    private static Map<SessionConfig.OutputConfig, OutputConfigurationCompat>
+            createMultiResolutionOutputConfigurationCompats(
+            @NonNull Map<Integer, List<SessionConfig.OutputConfig>> groupIdToOutputConfigsMap,
+            @NonNull Map<DeferrableSurface, Surface> configuredSurfaceMap) {
+        Map<SessionConfig.OutputConfig, OutputConfigurationCompat>
+                outputConfigToOutputConfigurationCompatMap = new HashMap<>();
+
+        for (int groupId : groupIdToOutputConfigsMap.keySet()) {
+            List<MultiResolutionStreamInfo> streamInfos = new ArrayList<>();
+            int imageFormat = ImageFormat.UNKNOWN;
+            for (SessionConfig.OutputConfig outputConfig : groupIdToOutputConfigsMap.get(groupId)) {
+                Surface surface = configuredSurfaceMap.get(outputConfig.getSurface());
+                SurfaceUtil.SurfaceInfo surfaceInfo = SurfaceUtil.getSurfaceInfo(surface);
+                if (imageFormat == ImageFormat.UNKNOWN) {
+                    imageFormat = surfaceInfo.format;
+                }
+                streamInfos.add(new MultiResolutionStreamInfo(surfaceInfo.width, surfaceInfo.height,
+                        Objects.requireNonNull(outputConfig.getPhysicalCameraId())));
+            }
+            if (imageFormat == ImageFormat.UNKNOWN || streamInfos.isEmpty()) {
+                Logger.e(TAG, "Skips to create instances for multi-resolution output. imageFormat: "
+                        + imageFormat + ", streamInfos size: " + streamInfos.size());
+                continue;
+            }
+            List<OutputConfiguration> outputConfigurations =
+                    createInstancesForMultiResolutionOutput(streamInfos, imageFormat);
+            if (outputConfigurations != null) {
+                for (SessionConfig.OutputConfig outputConfig : groupIdToOutputConfigsMap.get(
+                        groupId)) {
+                    OutputConfiguration outputConfiguration = outputConfigurations.remove(0);
+                    Surface surface = configuredSurfaceMap.get(outputConfig.getSurface());
+                    outputConfiguration.addSurface(surface);
+                    outputConfigToOutputConfigurationCompatMap.put(outputConfig,
+                            new OutputConfigurationCompat(outputConfiguration));
+                }
+            }
+        }
+        return outputConfigToOutputConfigurationCompatMap;
+    }
+
+    /**
+     * Use java reflection to access the API so that we don't need to upgrade compileSdk as 35 in
+     * the release branch. When this method is invoked, the API has become public on the device. It
+     * won't cause the problem about accessing the non-SDK API.
+     */
+    /** @noinspection unchecked */
+    @SuppressLint("BanUncheckedReflection")
+    @SuppressWarnings("unchecked")
+    @RequiresApi(35)
+    @Nullable
+    private static List<OutputConfiguration> createInstancesForMultiResolutionOutput(
+            @NonNull List<MultiResolutionStreamInfo> streamInfos, int format) {
+        // TODO(b/376185185): Invoke the API directly after the androidx code base upgrades to
+        //  compile by API 35 SDK.
+        try {
+            Method createInstanceMethod = OutputConfiguration.class.getMethod(
+                    "createInstancesForMultiResolutionOutput", Collection.class, int.class);
+            return (List<OutputConfiguration>) createInstanceMethod.invoke(null, streamInfos,
+                    format);
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            Logger.e(TAG,
+                    "Failed to create instances for multi-resolution output, " + e.getMessage());
+            return null;
+        }
+    }
+
+    // Debugging note: these states are kept in ordinal order. Any additions or changes should try
+    // to maintain the same order such that the highest ordinal is the state of largest resource
+    // utilization.
     enum State {
         /** The default state of the session before construction. */
         UNINITIALIZED,
+        /**
+         * Terminal state where the session has been cleaned up. At this point the session should
+         * not be used as nothing will happen in this state.
+         */
+        RELEASED,
         /**
          * Stable state once the session has been constructed, but prior to the {@link
          * CameraCaptureSession} being opened.
@@ -894,6 +1094,15 @@ final class CaptureSession implements CaptureSessionInterface {
          * surfaces is ready, we can create the {@link CameraCaptureSession}.
          */
         GET_SURFACE,
+        /** Transitional state where the resources are being cleaned up. */
+        RELEASING,
+        /**
+         * Stable state where the session has been closed. However the {@link CameraCaptureSession}
+         * is still valid. It will remain valid until a new instance is opened at which point {@link
+         * CameraCaptureSession.StateCallback#onClosed(CameraCaptureSession)} will be called to do
+         * final cleanup.
+         */
+        CLOSED,
         /**
          * Transitional state when the {@link CameraCaptureSession} is in the process of being
          * opened.
@@ -904,21 +1113,7 @@ final class CaptureSession implements CaptureSessionInterface {
          * this state if a valid {@link SessionConfig} has been set then the {@link
          * CaptureRequest} will be issued.
          */
-        OPENED,
-        /**
-         * Stable state where the session has been closed. However the {@link CameraCaptureSession}
-         * is still valid. It will remain valid until a new instance is opened at which point {@link
-         * CameraCaptureSession.StateCallback#onClosed(CameraCaptureSession)} will be called to do
-         * final cleanup.
-         */
-        CLOSED,
-        /** Transitional state where the resources are being cleaned up. */
-        RELEASING,
-        /**
-         * Terminal state where the session has been cleaned up. At this point the session should
-         * not be used as nothing will happen in this state.
-         */
-        RELEASED
+        OPENED
     }
 
     /**
@@ -946,7 +1141,7 @@ final class CaptureSession implements CaptureSessionInterface {
                         throw new IllegalStateException(
                                 "onConfigured() should not be possible in state: " + mState);
                     case OPENING:
-                        mState = State.OPENED;
+                        setState(State.OPENED);
                         mSynchronizedCaptureSession = session;
                         Logger.d(TAG, "Attempting to send capture request onConfigured");
                         issueRepeatingCaptureRequests(mSessionConfig);

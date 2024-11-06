@@ -21,7 +21,9 @@ import android.content.Context
 import android.os.Build
 import androidx.annotation.UiContext
 import androidx.window.core.Bounds
+import androidx.window.extensions.layout.DisplayFoldFeature
 import androidx.window.extensions.layout.FoldingFeature as OEMFoldingFeature
+import androidx.window.extensions.layout.SupportedWindowFeatures
 import androidx.window.extensions.layout.WindowLayoutInfo as OEMWindowLayoutInfo
 import androidx.window.layout.FoldingFeature
 import androidx.window.layout.FoldingFeature.State.Companion.FLAT
@@ -29,9 +31,10 @@ import androidx.window.layout.FoldingFeature.State.Companion.HALF_OPENED
 import androidx.window.layout.HardwareFoldingFeature
 import androidx.window.layout.HardwareFoldingFeature.Type.Companion.FOLD
 import androidx.window.layout.HardwareFoldingFeature.Type.Companion.HINGE
+import androidx.window.layout.SupportedPosture
 import androidx.window.layout.WindowLayoutInfo
 import androidx.window.layout.WindowMetrics
-import androidx.window.layout.WindowMetricsCalculatorCompat.computeCurrentWindowMetrics
+import androidx.window.layout.WindowMetricsCalculatorCompat
 
 internal object ExtensionsWindowLayoutInfoAdapter {
 
@@ -39,16 +42,18 @@ internal object ExtensionsWindowLayoutInfoAdapter {
         windowMetrics: WindowMetrics,
         oemFeature: OEMFoldingFeature,
     ): FoldingFeature? {
-        val type = when (oemFeature.type) {
-            OEMFoldingFeature.TYPE_FOLD -> FOLD
-            OEMFoldingFeature.TYPE_HINGE -> HINGE
-            else -> return null
-        }
-        val state = when (oemFeature.state) {
-            OEMFoldingFeature.STATE_FLAT -> FLAT
-            OEMFoldingFeature.STATE_HALF_OPENED -> HALF_OPENED
-            else -> return null
-        }
+        val type =
+            when (oemFeature.type) {
+                OEMFoldingFeature.TYPE_FOLD -> FOLD
+                OEMFoldingFeature.TYPE_HINGE -> HINGE
+                else -> return null
+            }
+        val state =
+            when (oemFeature.state) {
+                OEMFoldingFeature.STATE_FLAT -> FLAT
+                OEMFoldingFeature.STATE_HALF_OPENED -> HALF_OPENED
+                else -> return null
+            }
         val bounds = Bounds(oemFeature.bounds)
         return if (validBounds(windowMetrics, bounds)) {
             HardwareFoldingFeature(Bounds(oemFeature.bounds), type, state)
@@ -61,10 +66,11 @@ internal object ExtensionsWindowLayoutInfoAdapter {
         @UiContext context: Context,
         info: OEMWindowLayoutInfo,
     ): WindowLayoutInfo {
+        val calculator = WindowMetricsCalculatorCompat()
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            translate(computeCurrentWindowMetrics(context), info)
+            translate(calculator.computeCurrentWindowMetrics(context), info)
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && (context is Activity)) {
-            translate(computeCurrentWindowMetrics(context), info)
+            translate(calculator.computeCurrentWindowMetrics(context), info)
         } else {
             throw UnsupportedOperationException(
                 "Display Features are only supported after Q. Display features for non-Activity " +
@@ -77,21 +83,35 @@ internal object ExtensionsWindowLayoutInfoAdapter {
         windowMetrics: WindowMetrics,
         info: OEMWindowLayoutInfo
     ): WindowLayoutInfo {
-        val features = info.displayFeatures.mapNotNull { feature ->
-            when (feature) {
-                is OEMFoldingFeature -> translate(windowMetrics, feature)
-                else -> null
+        val features =
+            info.displayFeatures.mapNotNull { feature ->
+                when (feature) {
+                    is OEMFoldingFeature -> translate(windowMetrics, feature)
+                    else -> null
+                }
             }
-        }
         return WindowLayoutInfo(features)
+    }
+
+    internal fun translate(features: SupportedWindowFeatures): List<SupportedPosture> {
+        val isTableTopSupported =
+            features.displayFoldFeatures.any { feature ->
+                feature.hasProperties(DisplayFoldFeature.FOLD_PROPERTY_SUPPORTS_HALF_OPENED)
+            }
+        return if (isTableTopSupported) {
+            listOf(SupportedPosture.TABLETOP)
+        } else {
+            emptyList()
+        }
     }
 
     /**
      * Checks the bounds for a [FoldingFeature] within a given [WindowMetrics]. Validates the
      * following:
-     *  - [Bounds] are not `0`
-     *  - [Bounds] are either full width or full height
-     *  - [Bounds] do not take up the entire [windowMetrics]
+     * - [Bounds] are not `0`
+     * - [Bounds] are either full width or full height
+     * - [Bounds] do not take up the entire [windowMetrics]
+     *
      * @param windowMetrics Extracted from a [UiContext] housing the [FoldingFeature].
      * @param bounds the bounds of a [FoldingFeature]
      * @return true if the bounds are valid for the [WindowMetrics], false otherwise.

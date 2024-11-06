@@ -16,6 +16,9 @@
 
 package androidx.camera.core.imagecapture;
 
+import static android.graphics.ImageFormat.JPEG;
+import static android.graphics.ImageFormat.RAW_SENSOR;
+
 import static androidx.camera.core.impl.utils.Threads.checkMainThread;
 import static androidx.core.util.Preconditions.checkArgument;
 
@@ -24,17 +27,16 @@ import static java.util.Objects.requireNonNull;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.Rect;
-import android.os.Build;
 
 import androidx.annotation.IntRange;
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.ImageProxy;
+import androidx.camera.core.Logger;
 import androidx.camera.core.impl.CameraCaptureCallback;
 import androidx.camera.core.impl.ImageCaptureConfig;
 import androidx.camera.core.impl.ImageOutputConfig;
@@ -43,7 +45,9 @@ import androidx.camera.core.internal.compat.workaround.CaptureFailedRetryEnabler
 
 import com.google.auto.value.AutoValue;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 /**
@@ -51,10 +55,11 @@ import java.util.concurrent.Executor;
  *
  * <p> It contains app provided data and a snapshot of {@link ImageCapture} properties.
  */
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 @SuppressWarnings("AutoValueImmutableFields")
 @AutoValue
 public abstract class TakePictureRequest {
+
+    private static final String TAG = "TakePictureRequest";
 
     /**
      * By default, ImageCapture does not retry requests. For some problematic devices, the
@@ -62,6 +67,17 @@ public abstract class TakePictureRequest {
      * provided by the {@link CaptureFailedRetryEnabler}.
      */
     private int mRemainingRetires = new CaptureFailedRetryEnabler().getRetryCount();
+
+    /**
+     * Map to track image capture status for simultaneous capture.
+     *
+     * <p>For RAW + JPEG, we will only have two formats
+     * {@link android.graphics.ImageFormat#RAW_SENSOR} and {@link android.graphics.ImageFormat#JPEG}
+     * but it could extend to other formats in the future.
+     *
+     * It is not thread-safe.
+     */
+    private final Map<Integer, Boolean> mFormatCaptureStatus = new HashMap<>();
 
     /**
      * Gets the callback {@link Executor} provided by the app.
@@ -73,26 +89,32 @@ public abstract class TakePictureRequest {
      * Gets the app provided callback for in-memory capture.
      */
     @Nullable
-    abstract ImageCapture.OnImageCapturedCallback getInMemoryCallback();
+    public abstract ImageCapture.OnImageCapturedCallback getInMemoryCallback();
 
     /**
      * Gets the app provided callback for on-disk capture.
      */
     @Nullable
-    abstract ImageCapture.OnImageSavedCallback getOnDiskCallback();
+    public abstract ImageCapture.OnImageSavedCallback getOnDiskCallback();
 
     /**
      * Gets the app provided options for on-disk capture.
      */
     @Nullable
-    abstract ImageCapture.OutputFileOptions getOutputFileOptions();
+    public abstract ImageCapture.OutputFileOptions getOutputFileOptions();
+
+    /**
+     * Gets the app provided options for secondary on-disk capture.
+     */
+    @Nullable
+    public abstract ImageCapture.OutputFileOptions getSecondaryOutputFileOptions();
 
     /**
      * A snapshot of {@link ImageCapture#getViewPortCropRect()} when
      * {@link ImageCapture#takePicture} is called.
      */
     @NonNull
-    abstract Rect getCropRect();
+    public abstract Rect getCropRect();
 
     /**
      * A snapshot of {@link ImageCapture#getSensorToBufferTransformMatrix()} when
@@ -105,14 +127,14 @@ public abstract class TakePictureRequest {
      * A snapshot of rotation degrees when {@link ImageCapture#takePicture} is called.
      */
     @ImageOutputConfig.RotationValue
-    abstract int getRotationDegrees();
+    public abstract int getRotationDegrees();
 
     /**
      * A snapshot of {@link ImageCaptureConfig#getJpegQuality()} when
      * {@link ImageCapture#takePicture} is called.
      */
     @IntRange(from = 1, to = 100)
-    abstract int getJpegQuality();
+    public abstract int getJpegQuality();
 
     /**
      * Gets the capture mode of the request.
@@ -123,6 +145,11 @@ public abstract class TakePictureRequest {
      */
     @ImageCapture.CaptureMode
     abstract int getCaptureMode();
+
+    /**
+     * Checks if the request is for simultaneous capture. Currently only RAW + JPEG are supported.
+     */
+    abstract boolean isSimultaneousCapture();
 
     /**
      * Gets the {@link CameraCaptureCallback}s set on the {@link SessionConfig}.
@@ -167,6 +194,36 @@ public abstract class TakePictureRequest {
     int getRemainingRetries() {
         checkMainThread();
         return mRemainingRetires;
+    }
+
+    void initFormatProcessStatusInSimultaneousCapture() {
+        mFormatCaptureStatus.put(RAW_SENSOR, false);
+        mFormatCaptureStatus.put(JPEG, false);
+    }
+
+    /**
+     * Marks the format as processed in simultaneous capture.
+     */
+    void markFormatProcessStatusInSimultaneousCapture(int format, boolean isProcessed) {
+        if (!mFormatCaptureStatus.containsKey(format)) {
+            Logger.e(TAG, "The format is not supported in simultaneous capture");
+            return;
+        }
+        mFormatCaptureStatus.put(format, isProcessed);
+    }
+
+    /**
+     * Checks if all the formats are processed in simultaneous capture.
+     */
+    boolean isFormatProcessedInSimultaneousCapture() {
+        boolean isProcessed = true;
+        for (Map.Entry<Integer, Boolean> entry : mFormatCaptureStatus.entrySet()) {
+            if (!entry.getValue()) {
+                isProcessed = false;
+                break;
+            }
+        }
+        return isProcessed;
     }
 
     /**
@@ -233,19 +290,27 @@ public abstract class TakePictureRequest {
             @Nullable ImageCapture.OnImageCapturedCallback inMemoryCallback,
             @Nullable ImageCapture.OnImageSavedCallback onDiskCallback,
             @Nullable ImageCapture.OutputFileOptions outputFileOptions,
+            @Nullable ImageCapture.OutputFileOptions secondaryOutputFileOptions,
             @NonNull Rect cropRect,
             @NonNull Matrix sensorToBufferTransform,
             int rotationDegrees,
             int jpegQuality,
             @ImageCapture.CaptureMode int captureMode,
+            boolean isSimultaneousCapture,
             @NonNull List<CameraCaptureCallback> sessionConfigCameraCaptureCallbacks) {
         checkArgument((onDiskCallback == null) == (outputFileOptions == null),
                 "onDiskCallback and outputFileOptions should be both null or both non-null.");
         checkArgument((onDiskCallback == null) ^ (inMemoryCallback == null),
                 "One and only one on-disk or in-memory callback should be present.");
-        return new AutoValue_TakePictureRequest(appExecutor, inMemoryCallback,
-                onDiskCallback, outputFileOptions, cropRect, sensorToBufferTransform,
-                rotationDegrees, jpegQuality, captureMode, sessionConfigCameraCaptureCallbacks);
+        TakePictureRequest request = new AutoValue_TakePictureRequest(appExecutor, inMemoryCallback,
+                onDiskCallback, outputFileOptions, secondaryOutputFileOptions, cropRect,
+                sensorToBufferTransform, rotationDegrees, jpegQuality, captureMode,
+                isSimultaneousCapture,
+                sessionConfigCameraCaptureCallbacks);
+        if (isSimultaneousCapture) {
+            request.initFormatProcessStatusInSimultaneousCapture();
+        }
+        return request;
     }
 
     /**

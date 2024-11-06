@@ -32,8 +32,8 @@ import kotlinx.coroutines.sync.withLock
  *
  * @param serializer The serializer that can write [T] to and from a byte array.
  * @param coordinatorProducer The producer to provide [InterProcessCoordinator] that coordinates IO
- * operations across processes if needed. By default it provides single process coordinator, which
- * doesn't support cross process use cases.
+ *   operations across processes if needed. By default it provides single process coordinator, which
+ *   doesn't support cross process use cases.
  * @param produceFile The file producer that returns the file that will be read and written.
  */
 class FileStorage<T>(
@@ -59,21 +59,18 @@ class FileStorage<T>(
         }
 
         return FileStorageConnection(file, serializer, coordinatorProducer(file)) {
-            synchronized(activeFilesLock) {
-                activeFiles.remove(file.absolutePath)
-            }
+            synchronized(activeFilesLock) { activeFiles.remove(file.absolutePath) }
         }
     }
 
     internal companion object {
         /**
          * Active files should contain the absolute path for which there are currently active
-         * DataStores. A DataStore is active until the scope it was created with has been
-         * cancelled. Files aren't added to this list until the first read/write because the file
-         * path is computed asynchronously.
+         * DataStores. A DataStore is active until the scope it was created with has been cancelled.
+         * Files aren't added to this list until the first read/write because the file path is
+         * computed asynchronously.
          */
-        @GuardedBy("activeFilesLock")
-        internal val activeFiles = mutableSetOf<String>()
+        @GuardedBy("activeFilesLock") internal val activeFiles = mutableSetOf<String>()
 
         internal val activeFilesLock = Any()
     }
@@ -90,16 +87,12 @@ internal class FileStorageConnection<T>(
     // TODO:(b/233402915) support multiple readers
     private val transactionMutex = Mutex()
 
-    override suspend fun <R> readScope(
-        block: suspend ReadScope<T>.(locked: Boolean) -> R
-    ): R {
+    override suspend fun <R> readScope(block: suspend ReadScope<T>.(locked: Boolean) -> R): R {
         checkNotClosed()
 
         val lock = transactionMutex.tryLock()
         try {
-            return FileReadScope(file, serializer).use {
-                block(it, lock)
-            }
+            return FileReadScope(file, serializer).use { block(it, lock) }
         } finally {
             if (lock) {
                 transactionMutex.unlock()
@@ -114,15 +107,13 @@ internal class FileStorageConnection<T>(
         transactionMutex.withLock {
             val scratchFile = File(file.absolutePath + ".tmp")
             try {
-                FileWriteScope(scratchFile, serializer).use {
-                    block(it)
-                }
+                FileWriteScope(scratchFile, serializer).use { block(it) }
                 if (scratchFile.exists() && !scratchFile.atomicMoveTo(file)) {
                     throw IOException(
                         "Unable to rename $scratchFile to $file. " +
-                        "This likely means that there are multiple instances of DataStore " +
-                        "for this file. Ensure that you are only creating a single instance of " +
-                        "datastore for this file."
+                            "This likely means that there are multiple instances of DataStore " +
+                            "for this file. Ensure that you are only creating a single instance of " +
+                            "datastore for this file."
                     )
                 }
             } catch (ex: IOException) {
@@ -164,27 +155,26 @@ internal open class FileReadScope<T>(
 
     override suspend fun readData(): T {
         checkNotClosed()
-        return try {
-            FileInputStream(file).use { stream ->
-                serializer.readFrom(stream)
-            }
-        } catch (ex: FileNotFoundException) {
-            if (file.exists()) {
-                // Re-read to prevent throwing from a race condition where the file is created by
-                // another process after the initial read attempt but before `file.exists()` is
-                // called. Otherwise file exists but we can't read it; throw FileNotFoundException
-                // because something is wrong.
-                return FileInputStream(file).use { stream ->
-                    serializer.readFrom(stream)
+        return runFileDiagnosticsIfNotCorruption(file) {
+            try {
+                FileInputStream(file).use { stream -> serializer.readFrom(stream) }
+            } catch (ex: FileNotFoundException) {
+                if (file.exists()) {
+                    // Re-read to prevent throwing from a race condition where the file is created
+                    // by another process after the initial read attempt but before `file.exists()`
+                    // is called. Otherwise file exists but we can't read it; throw
+                    // FileNotFoundException because something is wrong.
+                    FileInputStream(file).use { stream -> serializer.readFrom(stream) }
                 }
+                serializer.defaultValue
             }
-            return serializer.defaultValue
         }
     }
 
     override fun close() {
         closed.set(true)
     }
+
     protected fun checkNotClosed() {
         check(!closed.get()) { "This scope has already been closed." }
     }
@@ -195,12 +185,25 @@ internal class FileWriteScope<T>(file: File, serializer: Serializer<T>) :
 
     override suspend fun writeData(value: T) {
         checkNotClosed()
-        val fos = FileOutputStream(file)
-        fos.use { stream ->
-            serializer.writeTo(value, UncloseableOutputStream(stream))
-            stream.fd.sync()
-            // TODO(b/151635324): fsync the directory, otherwise a badly timed crash could
-            //  result in reverting to a previous state.
+        runFileDiagnosticsIfNotCorruption(file) {
+            val fos = FileOutputStream(file)
+            fos.use { stream ->
+                serializer.writeTo(value, UncloseableOutputStream(stream))
+                stream.fd.sync()
+                // TODO(b/151635324): fsync the directory, otherwise a badly timed crash could
+                //  result in reverting to a previous state.
+            }
         }
+    }
+}
+
+private suspend fun <T> runFileDiagnosticsIfNotCorruption(file: File, block: suspend () -> T): T {
+    try {
+        return block()
+    } catch (ex: IOException) {
+        if (ex is CorruptionException) {
+            throw ex
+        }
+        throw FileDiagnostics.attachFileDebugInfo(file, ex)
     }
 }

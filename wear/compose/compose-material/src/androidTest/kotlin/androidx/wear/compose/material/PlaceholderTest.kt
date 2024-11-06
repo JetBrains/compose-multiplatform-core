@@ -34,14 +34,15 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Dp
+import androidx.wear.compose.materialcore.screenHeightDp
+import androidx.wear.compose.materialcore.screenWidthDp
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.max
 import org.junit.Rule
 import org.junit.Test
 
 class PlaceholderTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @RequiresApi(Build.VERSION_CODES.O)
     @OptIn(ExperimentalWearMaterialApi::class)
@@ -51,9 +52,7 @@ class PlaceholderTest {
         lateinit var placeholderState: PlaceholderState
         rule.setContentWithTheme {
             contentReady = remember { mutableStateOf(true) }
-            placeholderState = rememberPlaceholderState {
-                contentReady.value
-            }
+            placeholderState = rememberPlaceholderState { contentReady.value }
         }
 
         // For testing we need to manually manage the frame clock for the placeholder animation
@@ -74,9 +73,7 @@ class PlaceholderTest {
         lateinit var placeholderState: PlaceholderState
         rule.setContentWithTheme {
             contentReady = remember { mutableStateOf(false) }
-            placeholderState = rememberPlaceholderState {
-                contentReady.value
-            }
+            placeholderState = rememberPlaceholderState { contentReady.value }
         }
 
         // For testing we need to manually manage the frame clock for the placeholder animation
@@ -91,10 +88,7 @@ class PlaceholderTest {
 
         // Change contentReady and confirm that state is now WipeOff
         contentReady.value = true
-        placeholderState.advanceFrameMillisAndCheckState(
-            1L,
-            PlaceholderStage.WipeOff
-        )
+        placeholderState.advanceFrameMillisAndCheckState(1L, PlaceholderStage.WipeOff)
 
         // Advance the clock by one cycle and check we have moved to ShowContent
         placeholderState.advanceFrameMillisAndCheckState(
@@ -111,9 +105,7 @@ class PlaceholderTest {
         lateinit var placeholderState: PlaceholderState
         rule.setContentWithTheme {
             contentReady = remember { mutableStateOf(true) }
-            placeholderState = rememberPlaceholderState {
-                contentReady.value
-            }
+            placeholderState = rememberPlaceholderState { contentReady.value }
             Chip(
                 modifier = Modifier.fillMaxWidth(),
                 content = {},
@@ -162,25 +154,24 @@ class PlaceholderTest {
         lateinit var placeholderState: PlaceholderState
         rule.setContentWithTheme {
             contentReady = remember { mutableStateOf(false) }
-            placeholderState = rememberPlaceholderState {
-                contentReady.value
-            }
+            placeholderState = rememberPlaceholderState { contentReady.value }
             expectedPlaceholderColor =
                 placeholderColor
-                    ?: MaterialTheme.colors.onSurface.copy(alpha = 0.1f)
+                    ?: MaterialTheme.colors.onSurface
+                        .copy(alpha = 0.1f)
                         .compositeOver(MaterialTheme.colors.surface)
             expectedBackgroundColor = MaterialTheme.colors.primary
             Chip(
-                modifier = Modifier
-                    .testTag("test-item")
-                    .then(
-                        if (placeholderColor != null)
-                            Modifier.placeholder(
-                                placeholderState = placeholderState,
-                                color = placeholderColor
-                            )
-                        else Modifier.placeholder(placeholderState = placeholderState)
-                    ),
+                modifier =
+                    Modifier.testTag("test-item")
+                        .then(
+                            if (placeholderColor != null)
+                                Modifier.placeholder(
+                                    placeholderState = placeholderState,
+                                    color = placeholderColor
+                                )
+                            else Modifier.placeholder(placeholderState = placeholderState)
+                        ),
                 content = {},
                 onClick = {},
                 colors = ChipDefaults.primaryChipColors(),
@@ -191,18 +182,14 @@ class PlaceholderTest {
         // For testing we need to manually manage the frame clock for the placeholder animation
         placeholderState.initializeTestFrameMillis()
 
-        rule.onNodeWithTag("test-item")
+        rule
+            .onNodeWithTag("test-item")
             .captureToImage()
-            .assertContainsColor(
-                expectedPlaceholderColor
-            )
+            .assertContainsColor(expectedPlaceholderColor)
 
         // Change contentReady and confirm that state is now WipeOff
         contentReady.value = true
-        placeholderState.advanceFrameMillisAndCheckState(
-            1L,
-            PlaceholderStage.WipeOff
-        )
+        placeholderState.advanceFrameMillisAndCheckState(1L, PlaceholderStage.WipeOff)
 
         // Advance the clock by one cycle and check we have moved to ShowContent
         placeholderState.advanceFrameMillisAndCheckState(
@@ -210,11 +197,10 @@ class PlaceholderTest {
             PlaceholderStage.ShowContent
         )
 
-        rule.onNodeWithTag("test-item")
+        rule
+            .onNodeWithTag("test-item")
             .captureToImage()
-            .assertContainsColor(
-                expectedBackgroundColor
-            )
+            .assertContainsColor(expectedBackgroundColor)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -226,16 +212,14 @@ class PlaceholderTest {
         lateinit var placeholderState: PlaceholderState
         rule.setContentWithTheme {
             contentReady = remember { mutableStateOf(false) }
-            placeholderState = rememberPlaceholderState {
-                contentReady.value
-            }
+            placeholderState = rememberPlaceholderState { contentReady.value }
             expectedBackgroundColor = MaterialTheme.colors.surface
 
             Chip(
-                modifier = Modifier
-                    .testTag("test-item")
-                    .fillMaxWidth()
-                    .placeholderShimmer(placeholderState = placeholderState),
+                modifier =
+                    Modifier.testTag("test-item")
+                        .fillMaxWidth()
+                        .placeholderShimmer(placeholderState = placeholderState),
                 content = {},
                 onClick = {},
                 colors = ChipDefaults.secondaryChipColors(),
@@ -246,11 +230,10 @@ class PlaceholderTest {
         placeholderState.initializeTestFrameMillis()
 
         // Check the background color is correct
-        rule.onNodeWithTag("test-item")
+        rule
+            .onNodeWithTag("test-item")
             .captureToImage()
-            .assertContainsColor(
-                expectedBackgroundColor, 80f
-            )
+            .assertContainsColor(expectedBackgroundColor, 80f)
 
         placeholderState.moveToStartOfNextAnimationLoop(PlaceholderStage.ShowPlaceholder)
 
@@ -263,23 +246,20 @@ class PlaceholderTest {
 
         // The placeholder shimmer effect is faint and largely transparent gradiant, but it should
         // reduce the amount of the normal color.
-        rule.onNodeWithTag("test-item")
+        rule
+            .onNodeWithTag("test-item")
             .captureToImage()
             .assertDoesNotContainColor(expectedBackgroundColor)
 
         // Change contentReady and confirm that state is now WipeOff
         contentReady.value = true
-        placeholderState.advanceFrameMillisAndCheckState(
-            1L,
-            PlaceholderStage.WipeOff
-        )
+        placeholderState.advanceFrameMillisAndCheckState(1L, PlaceholderStage.WipeOff)
 
         // Check the background color is correct
-        rule.onNodeWithTag("test-item")
+        rule
+            .onNodeWithTag("test-item")
             .captureToImage()
-            .assertContainsColor(
-                expectedBackgroundColor, 80f
-            )
+            .assertContainsColor(expectedBackgroundColor, 80f)
 
         // Advance the clock by one cycle and check we have moved to ShowContent
         placeholderState.advanceFrameMillisAndCheckState(
@@ -288,11 +268,10 @@ class PlaceholderTest {
         )
 
         // Check that the shimmer is no longer visible
-        rule.onNodeWithTag("test-item")
+        rule
+            .onNodeWithTag("test-item")
             .captureToImage()
-            .assertContainsColor(
-                expectedBackgroundColor, 80f
-            )
+            .assertContainsColor(expectedBackgroundColor, 80f)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -305,12 +284,11 @@ class PlaceholderTest {
         var expectedBackgroundPlaceholderColor: Color = Color.Transparent
         rule.setContentWithTheme {
             contentReady = remember { mutableStateOf(false) }
-            placeholderState = rememberPlaceholderState {
-                contentReady.value
-            }
-            val maxScreenDimensionPx = with(LocalDensity.current) {
-                Dp(max(screenHeightDp(), screenWidthDp()).toFloat()).toPx()
-            }
+            placeholderState = rememberPlaceholderState { contentReady.value }
+            val maxScreenDimensionPx =
+                with(LocalDensity.current) {
+                    Dp(max(screenHeightDp(), screenWidthDp()).toFloat()).toPx()
+                }
             // Set the offset to be 50% of the screen
             placeholderState.backgroundOffset =
                 Offset(maxScreenDimensionPx / 2f, maxScreenDimensionPx / 2f)
@@ -318,15 +296,14 @@ class PlaceholderTest {
             expectedBackgroundPlaceholderColor = MaterialTheme.colors.surface
 
             Chip(
-                modifier = Modifier
-                    .testTag("test-item")
-                    .fillMaxWidth(),
+                modifier = Modifier.testTag("test-item").fillMaxWidth(),
                 content = {},
                 onClick = {},
-                colors = PlaceholderDefaults.placeholderChipColors(
-                    originalChipColors = ChipDefaults.primaryChipColors(),
-                    placeholderState = placeholderState,
-                ),
+                colors =
+                    PlaceholderDefaults.placeholderChipColors(
+                        originalChipColors = ChipDefaults.primaryChipColors(),
+                        placeholderState = placeholderState,
+                    ),
                 border = ChipDefaults.chipBorder()
             )
         }
@@ -334,25 +311,23 @@ class PlaceholderTest {
         placeholderState.initializeTestFrameMillis()
 
         // Check the background color is correct
-        rule.onNodeWithTag("test-item")
+        rule
+            .onNodeWithTag("test-item")
             .captureToImage()
             .assertContainsColor(expectedBackgroundPlaceholderColor, 80f)
         // Check that there is primary color showing
-        rule.onNodeWithTag("test-item")
+        rule
+            .onNodeWithTag("test-item")
             .captureToImage()
-            .assertDoesNotContainColor(
-                expectedBackgroundColor
-            )
+            .assertDoesNotContainColor(expectedBackgroundColor)
 
         // Change contentReady and confirm that state is now WipeOff
         contentReady.value = true
-        placeholderState.advanceFrameMillisAndCheckState(
-            1L,
-            PlaceholderStage.WipeOff
-        )
+        placeholderState.advanceFrameMillisAndCheckState(1L, PlaceholderStage.WipeOff)
 
         // Check that placeholder background is still visible
-        rule.onNodeWithTag("test-item")
+        rule
+            .onNodeWithTag("test-item")
             .captureToImage()
             .assertContainsColor(expectedBackgroundPlaceholderColor, 80f)
 
@@ -364,7 +339,8 @@ class PlaceholderTest {
         )
 
         // Check that placeholder background is still visible
-        rule.onNodeWithTag("test-item")
+        rule
+            .onNodeWithTag("test-item")
             .captureToImage()
             .assertContainsColor(expectedBackgroundPlaceholderColor, 80f)
 
@@ -375,7 +351,8 @@ class PlaceholderTest {
         )
 
         // Check that normal chip background is now visible
-        rule.onNodeWithTag("test-item")
+        rule
+            .onNodeWithTag("test-item")
             .captureToImage()
             .assertContainsColor(expectedBackgroundColor, 80f)
     }
@@ -383,24 +360,20 @@ class PlaceholderTest {
     @OptIn(ExperimentalWearMaterialApi::class)
     @Composable
     fun TestPlaceholderChip(contents: String?, currentState: StableRef<PlaceholderState?>) {
-        val placeholderState = rememberPlaceholderState {
-            contents != null
-        }.also { currentState.value = it }
+        val placeholderState =
+            rememberPlaceholderState { contents != null }.also { currentState.value = it }
         Chip(
-            modifier = Modifier
-                .testTag("test-item")
-                .placeholderShimmer(placeholderState),
+            modifier = Modifier.testTag("test-item").placeholderShimmer(placeholderState),
             content = {},
             onClick = {},
-            colors = PlaceholderDefaults.placeholderChipColors(
-                originalChipColors = ChipDefaults.primaryChipColors(),
-                placeholderState = placeholderState,
-            ),
+            colors =
+                PlaceholderDefaults.placeholderChipColors(
+                    originalChipColors = ChipDefaults.primaryChipColors(),
+                    placeholderState = placeholderState,
+                ),
             border = ChipDefaults.chipBorder(),
         )
-        LaunchedEffect(placeholderState) {
-            placeholderState.startPlaceholderAnimation()
-        }
+        LaunchedEffect(placeholderState) { placeholderState.startPlaceholderAnimation() }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -426,12 +399,11 @@ class PlaceholderTest {
         contentsHolder.value.value = "Test"
 
         // Trigger move to WipeOff stage
-        placeholderState.value?.advanceFrameMillisAndCheckState(
-            1, PlaceholderStage.WipeOff
-        )
+        placeholderState.value?.advanceFrameMillisAndCheckState(1, PlaceholderStage.WipeOff)
 
         placeholderState.value?.advanceFrameMillisAndCheckState(
-            PLACEHOLDER_WIPE_OFF_PROGRESSION_DURATION_MS, PlaceholderStage.ShowContent
+            PLACEHOLDER_WIPE_OFF_PROGRESSION_DURATION_MS,
+            PlaceholderStage.ShowContent
         )
     }
 
@@ -445,42 +417,36 @@ class PlaceholderTest {
         lateinit var placeholderState: PlaceholderState
         rule.setContentWithTheme {
             contentReady = remember { mutableStateOf(false) }
-            placeholderState = rememberPlaceholderState {
-                contentReady.value
-            }
+            placeholderState = rememberPlaceholderState { contentReady.value }
             expectedPlaceholderBackgroundColor = MaterialTheme.colors.surface
             expectedBackgroundColor = MaterialTheme.colors.primary
             Chip(
-                modifier = Modifier
-                    .testTag("test-item")
-                    .fillMaxWidth()
-                    .placeholderShimmer(placeholderState),
+                modifier =
+                    Modifier.testTag("test-item")
+                        .fillMaxWidth()
+                        .placeholderShimmer(placeholderState),
                 content = {},
                 onClick = {},
-                colors = PlaceholderDefaults.placeholderChipColors(
-                    originalChipColors = ChipDefaults.primaryChipColors(),
-                    placeholderState = placeholderState,
-                ),
+                colors =
+                    PlaceholderDefaults.placeholderChipColors(
+                        originalChipColors = ChipDefaults.primaryChipColors(),
+                        placeholderState = placeholderState,
+                    ),
                 border = ChipDefaults.chipBorder(),
             )
-            LaunchedEffect(placeholderState) {
-                placeholderState.startPlaceholderAnimation()
-            }
+            LaunchedEffect(placeholderState) { placeholderState.startPlaceholderAnimation() }
         }
 
         placeholderState.initializeTestFrameMillis()
 
-        rule.onNodeWithTag("test-item")
+        rule
+            .onNodeWithTag("test-item")
             .captureToImage()
-            .assertContainsColor(
-                expectedPlaceholderBackgroundColor
-            )
+            .assertContainsColor(expectedPlaceholderBackgroundColor)
 
         // Change contentReady and confirm that state is now WipeOff
         contentReady.value = true
-        placeholderState.advanceFrameMillisAndCheckState(
-            1L, PlaceholderStage.WipeOff
-        )
+        placeholderState.advanceFrameMillisAndCheckState(1L, PlaceholderStage.WipeOff)
 
         placeholderState.advanceFrameMillisAndCheckState(
             PLACEHOLDER_WIPE_OFF_PROGRESSION_DURATION_MS,
@@ -488,11 +454,10 @@ class PlaceholderTest {
         )
 
         // Check the placeholder background has gone and that we can see the chips background
-        rule.onNodeWithTag("test-item")
+        rule
+            .onNodeWithTag("test-item")
             .captureToImage()
-            .assertContainsColor(
-                expectedBackgroundColor
-            )
+            .assertContainsColor(expectedBackgroundColor)
     }
 
     @OptIn(ExperimentalWearMaterialApi::class)

@@ -19,11 +19,10 @@ package androidx.room.writer
 import androidx.room.DatabaseProcessingStep
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
-import androidx.room.compiler.processing.util.runKspTest
 import androidx.room.processor.Context
+import androidx.room.runKspTestWithK1
 import java.io.File
 import loadTestSource
-import org.jetbrains.kotlin.config.JvmDefaultMode
 import writeTestSource
 
 abstract class BaseDaoKotlinCodeGenTest {
@@ -35,26 +34,24 @@ abstract class BaseDaoKotlinCodeGenTest {
         sources: List<Source>,
         expectedFilePath: String,
         compiledFiles: List<File> = emptyList(),
-        jvmDefaultMode: JvmDefaultMode = JvmDefaultMode.DEFAULT,
-        handler: (XTestInvocation) -> Unit = { }
+        jvmDefaultMode: String = "disable",
+        handler: (XTestInvocation) -> Unit = {}
     ) {
-        runKspTest(
+        runKspTestWithK1(
             sources = sources,
             classpath = compiledFiles,
             options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "true"),
-            kotlincArguments = listOf("-Xjvm-default=${jvmDefaultMode.description}")
+            kotlincArguments = listOf("-Xjvm-default=${jvmDefaultMode}")
         ) {
             val databaseFqn = "androidx.room.Database"
-            DatabaseProcessingStep().process(
-                it.processingEnv,
-                mapOf(databaseFqn to it.roundEnv.getElementsAnnotatedWith(databaseFqn)),
-                it.roundEnv.isProcessingOver
-            )
-            it.assertCompilationResult {
-                val expectedSrc = loadTestSource(
-                    expectedFilePath,
-                    "MyDao_Impl"
+            DatabaseProcessingStep()
+                .process(
+                    it.processingEnv,
+                    mapOf(databaseFqn to it.roundEnv.getElementsAnnotatedWith(databaseFqn)),
+                    it.roundEnv.isProcessingOver
                 )
+            it.assertCompilationResult {
+                val expectedSrc = loadTestSource(expectedFilePath, "MyDao_Impl")
                 // Set ROOM_TEST_WRITE_SRCS env variable to make tests write expected sources,
                 // handy for big sweeping code gen changes. ;)
                 if (System.getenv("ROOM_TEST_WRITE_SRCS") != null) {

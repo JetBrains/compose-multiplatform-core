@@ -32,13 +32,13 @@ plugins {
 
 dependencies {
     api(libs.kotlinStdlib)
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
     api("androidx.core:core-ktx:1.2.0")
     api(libs.kotlinCoroutinesAndroid)
     implementation(libs.guavaAndroid)
     implementation('com.google.android.gms:play-services-base:18.0.1')
     implementation(libs.kotlinCoroutinesPlayServices)
-    implementation('com.google.android.gms:play-services-nearby:19.1.0', {
+    implementation('com.google.android.gms:play-services-nearby:19.2.0', {
         exclude group: "androidx.core"
     })
 
@@ -49,7 +49,6 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.espressoCore)
-    androidTestImplementation(libs.multidex)
 }
 
 androidx {
@@ -57,7 +56,6 @@ androidx {
     type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "Public API surface for apps to use UWB (ultra-wideband) on supported devices."
-    metalavaK2UastEnabled = true
 }
 
 android {
@@ -65,13 +63,12 @@ android {
     buildFeatures {
         aidl = true
     }
-    buildTypes.all {
+    buildTypes.configureEach {
         stableAidl {
             version 1
         }
     }
     defaultConfig {
         minSdkVersion 23
-        multiDexEnabled = true
     }
 }

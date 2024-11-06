@@ -27,7 +27,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.Animation
 import androidx.activity.BackEventCompat
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.collection.ArrayMap
 import androidx.core.view.OneShotPreDrawListener
@@ -40,27 +39,28 @@ import androidx.fragment.app.FragmentTransition.setViewVisibility
 import androidx.fragment.app.SpecialEffectsController.Operation.State.Companion.asOperationState
 
 /**
- * A SpecialEffectsController that hooks into the existing Fragment APIs to run
- * animations and transitions.
+ * A SpecialEffectsController that hooks into the existing Fragment APIs to run animations and
+ * transitions.
  */
-internal class DefaultSpecialEffectsController(
-    container: ViewGroup
-) : SpecialEffectsController(container) {
+internal class DefaultSpecialEffectsController(container: ViewGroup) :
+    SpecialEffectsController(container) {
     override fun collectEffects(operations: List<Operation>, isPop: Boolean) {
         // Shared element transitions are done between the first fragment leaving and
         // the last fragment coming in. Finding these operations is the first priority
-        val firstOut = operations.firstOrNull { operation ->
-            val currentState = operation.fragment.mView.asOperationState()
-            // The firstOut Operation is the first Operation moving from VISIBLE
-            currentState == Operation.State.VISIBLE &&
-                operation.finalState != Operation.State.VISIBLE
-        }
-        val lastIn = operations.lastOrNull { operation ->
-            val currentState = operation.fragment.mView.asOperationState()
-            // The last Operation that moves to VISIBLE is the lastIn Operation
-            currentState != Operation.State.VISIBLE &&
-                operation.finalState == Operation.State.VISIBLE
-        }
+        val firstOut =
+            operations.firstOrNull { operation ->
+                val currentState = operation.fragment.mView.asOperationState()
+                // The firstOut Operation is the first Operation moving from VISIBLE
+                currentState == Operation.State.VISIBLE &&
+                    operation.finalState != Operation.State.VISIBLE
+            }
+        val lastIn =
+            operations.lastOrNull { operation ->
+                val currentState = operation.fragment.mView.asOperationState()
+                // The last Operation that moves to VISIBLE is the lastIn Operation
+                currentState != Operation.State.VISIBLE &&
+                    operation.finalState == Operation.State.VISIBLE
+            }
         if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
             Log.v(FragmentManager.TAG, "Executing operations from $firstOut to $lastIn")
         }
@@ -77,14 +77,17 @@ internal class DefaultSpecialEffectsController(
             animations.add(AnimationInfo(operation, isPop))
 
             // Add the transition special effect
-            transitions.add(TransitionInfo(operation, isPop,
-                    if (isPop) operation === firstOut else operation === lastIn))
+            transitions.add(
+                TransitionInfo(
+                    operation,
+                    isPop,
+                    if (isPop) operation === firstOut else operation === lastIn
+                )
+            )
 
             // Ensure that if the Operation is synchronously complete, we still
             // apply the container changes before the Operation completes
-            operation.addCompletionListener {
-                applyContainerChangesToOperation(operation)
-            }
+            operation.addCompletionListener { applyContainerChangesToOperation(operation) }
         }
 
         // Start transition special effects
@@ -94,9 +97,7 @@ internal class DefaultSpecialEffectsController(
         collectAnimEffects(animations)
     }
 
-    /**
-     * Syncs the animations of all other operations with the animations of the last operation.
-     */
+    /** Syncs the animations of all other operations with the animations of the last operation. */
     private fun syncAnimations(operations: List<Operation>) {
         // get the last operation's fragment
         val lastOpFragment = operations.last().fragment
@@ -114,9 +115,7 @@ internal class DefaultSpecialEffectsController(
     @SuppressLint("NewApi", "PrereleaseSdkCoreDependency")
     private fun collectAnimEffects(animationInfos: List<AnimationInfo>) {
         val animationsToRun = mutableListOf<AnimationInfo>()
-        val startedAnyTransition = animationInfos.flatMap {
-            it.operation.effects
-        }.isNotEmpty()
+        val startedAnyTransition = animationInfos.flatMap { it.operation.effects }.isNotEmpty()
         var startedAnyAnimator = false
         // Find all Animators and add the effect to the operation
         for (animatorInfo: AnimationInfo in animationInfos) {
@@ -139,9 +138,11 @@ internal class DefaultSpecialEffectsController(
             val startedTransition = operation.effects.isNotEmpty()
             if (startedTransition) {
                 if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                    Log.v(FragmentManager.TAG,
+                    Log.v(
+                        FragmentManager.TAG,
                         "Ignoring Animator set on $fragment as this Fragment was involved " +
-                            "in a Transition.")
+                            "in a Transition."
+                    )
                 }
                 continue
             }
@@ -162,18 +163,22 @@ internal class DefaultSpecialEffectsController(
             val fragment = operation.fragment
             if (startedAnyTransition) {
                 if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                    Log.v(FragmentManager.TAG,
+                    Log.v(
+                        FragmentManager.TAG,
                         "Ignoring Animation set on $fragment as Animations cannot " +
-                            "run alongside Transitions.")
+                            "run alongside Transitions."
+                    )
                 }
                 continue
             }
             // Then make sure we haven't already started any Animator
             if (startedAnyAnimator) {
                 if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                    Log.v(FragmentManager.TAG,
+                    Log.v(
+                        FragmentManager.TAG,
                         "Ignoring Animation set on $fragment as Animations cannot " +
-                            "run alongside Animators.")
+                            "run alongside Animators."
+                    )
                 }
                 continue
             }
@@ -187,26 +192,27 @@ internal class DefaultSpecialEffectsController(
         firstOut: Operation?,
         lastIn: Operation?
     ) {
-        val filteredInfos = transitionInfos.filterNot { transitionInfo ->
-            // If there is no change in visibility, we can skip the TransitionInfo
-            transitionInfo.isVisibilityUnchanged
-        }.filter { transitionInfo ->
-            transitionInfo.handlingImpl != null
-        }
+        val filteredInfos =
+            transitionInfos
+                .filterNot { transitionInfo ->
+                    // If there is no change in visibility, we can skip the TransitionInfo
+                    transitionInfo.isVisibilityUnchanged
+                }
+                .filter { transitionInfo -> transitionInfo.handlingImpl != null }
         // First verify that we can run all transitions together
-        val transitionImpl = filteredInfos.fold(
-            null as FragmentTransitionImpl?
-        ) { chosenImpl, transitionInfo ->
-            val handlingImpl = transitionInfo.handlingImpl
-            require(chosenImpl == null || handlingImpl === chosenImpl) {
-                "Mixing framework transitions and AndroidX transitions is not allowed. Fragment " +
-                    "${transitionInfo.operation.fragment} returned Transition " +
-                    "${transitionInfo.transition} which uses a different Transition " +
-                    "type than other Fragments."
+        val transitionImpl =
+            filteredInfos.fold(null as FragmentTransitionImpl?) { chosenImpl, transitionInfo ->
+                val handlingImpl = transitionInfo.handlingImpl
+                require(chosenImpl == null || handlingImpl === chosenImpl) {
+                    "Mixing framework transitions and AndroidX transitions is not allowed. Fragment " +
+                        "${transitionInfo.operation.fragment} returned Transition " +
+                        "${transitionInfo.transition} which uses a different Transition " +
+                        "type than other Fragments."
+                }
+                handlingImpl
             }
-            handlingImpl
-        } ?: // Early return if there were no transitions at all
-            return
+                ?: // Early return if there were no transitions at all
+                return
 
         // Now find the shared element transition if it exists
         var sharedElementTransition: Any? = null
@@ -222,8 +228,10 @@ internal class DefaultSpecialEffectsController(
             // Compute the shared element transition between the firstOut and lastIn Fragments
             if (hasSharedElementTransition && (firstOut != null) && (lastIn != null)) {
                 // swapSharedElementTargets requires wrapping this in a TransitionSet
-                sharedElementTransition = transitionImpl.wrapTransitionInSet(
-                    transitionImpl.cloneTransition(transitionInfo.sharedElementTransition))
+                sharedElementTransition =
+                    transitionImpl.wrapTransitionInSet(
+                        transitionImpl.cloneTransition(transitionInfo.sharedElementTransition)
+                    )
                 // The exiting shared elements default to the source names from the
                 // last in fragment
                 exitingNames = lastIn.fragment.sharedElementSourceNames
@@ -242,17 +250,18 @@ internal class DefaultSpecialEffectsController(
                     }
                 }
                 enteringNames = lastIn.fragment.sharedElementTargetNames
-                val (exitingCallback, enteringCallback) = if (!isPop) {
-                    // Forward transitions have firstOut fragment exiting and the
-                    // lastIn fragment entering
-                    firstOut.fragment.exitTransitionCallback to
-                        lastIn.fragment.enterTransitionCallback
-                } else {
-                    // A pop is the reverse: the firstOut fragment is entering and the
-                    // lastIn fragment is exiting
-                    firstOut.fragment.enterTransitionCallback to
-                        lastIn.fragment.exitTransitionCallback
-                }
+                val (exitingCallback, enteringCallback) =
+                    if (!isPop) {
+                        // Forward transitions have firstOut fragment exiting and the
+                        // lastIn fragment entering
+                        firstOut.fragment.exitTransitionCallback to
+                            lastIn.fragment.enterTransitionCallback
+                    } else {
+                        // A pop is the reverse: the firstOut fragment is entering and the
+                        // lastIn fragment is exiting
+                        firstOut.fragment.enterTransitionCallback to
+                            lastIn.fragment.exitTransitionCallback
+                    }
                 val numSharedElements = exitingNames.size
                 for (i in 0 until numSharedElements) {
                     val exitingName = exitingNames[i]
@@ -276,8 +285,10 @@ internal class DefaultSpecialEffectsController(
                 firstOutViews.retainAll(exitingNames)
                 if (exitingCallback != null) {
                     if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                        Log.v(FragmentManager.TAG,
-                            "Executing exit callback for operation $firstOut")
+                        Log.v(
+                            FragmentManager.TAG,
+                            "Executing exit callback for operation $firstOut"
+                        )
                     }
                     // Give the SharedElementCallback a chance to override the default mapping
                     exitingCallback.onMapSharedElements(exitingNames, firstOutViews)
@@ -304,8 +315,7 @@ internal class DefaultSpecialEffectsController(
                 lastInViews.retainAll(sharedElementNameMapping.values)
                 if (enteringCallback != null) {
                     if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                        Log.v(FragmentManager.TAG,
-                            "Executing enter callback for operation $lastIn")
+                        Log.v(FragmentManager.TAG, "Executing enter callback for operation $lastIn")
                     }
                     // Give the SharedElementCallback a chance to override the default mapping
                     enteringCallback.onMapSharedElements(enteringNames, lastInViews)
@@ -320,8 +330,7 @@ internal class DefaultSpecialEffectsController(
                         } else if (name != ViewCompat.getTransitionName(view)) {
                             val key = sharedElementNameMapping.findKeyForValue(name)
                             if (key != null) {
-                                sharedElementNameMapping[key] =
-                                    ViewCompat.getTransitionName(view)
+                                sharedElementNameMapping[key] = ViewCompat.getTransitionName(view)
                             }
                         }
                     }
@@ -338,6 +347,14 @@ internal class DefaultSpecialEffectsController(
                 if (sharedElementNameMapping.isEmpty()) {
                     // We couldn't find any valid shared element mappings, so clear out
                     // the shared element transition information entirely
+                    Log.i(
+                        FragmentManager.TAG,
+                        "Ignoring shared elements transition $sharedElementTransition between " +
+                            "$firstOut and $lastIn as there are no matching elements " +
+                            "in both the entering and exiting fragment. In order to run a " +
+                            "SharedElementTransition, both fragments involved must have the " +
+                            "element."
+                    )
                     sharedElementTransition = null
                     sharedElementFirstOutViews.clear()
                     sharedElementLastInViews.clear()
@@ -350,29 +367,36 @@ internal class DefaultSpecialEffectsController(
             return
         }
 
-        val transitionEffect = TransitionEffect(
-            filteredInfos, firstOut, lastIn, transitionImpl, sharedElementTransition,
-            sharedElementFirstOutViews, sharedElementLastInViews, sharedElementNameMapping,
-            enteringNames, exitingNames, firstOutViews, lastInViews, isPop
-        )
+        val transitionEffect =
+            TransitionEffect(
+                filteredInfos,
+                firstOut,
+                lastIn,
+                transitionImpl,
+                sharedElementTransition,
+                sharedElementFirstOutViews,
+                sharedElementLastInViews,
+                sharedElementNameMapping,
+                enteringNames,
+                exitingNames,
+                firstOutViews,
+                lastInViews,
+                isPop
+            )
 
         filteredInfos.forEach { transitionInfo ->
             transitionInfo.operation.addEffect(transitionEffect)
         }
     }
 
-    /**
-     * Retain only the views that have a transition name that is in the set of [names].
-     */
+    /** Retain only the views that have a transition name that is in the set of [names]. */
     private fun ArrayMap<String, View>.retainMatchingViews(names: Collection<String>) {
-        entries.retainAll { entry ->
-            names.contains(ViewCompat.getTransitionName(entry.value))
-        }
+        entries.retainAll { entry -> names.contains(ViewCompat.getTransitionName(entry.value)) }
     }
 
     /**
-     * Finds all views that have transition names in the hierarchy under the given view and
-     * stores them in [namedViews] map with the name as the key.
+     * Finds all views that have transition names in the hierarchy under the given view and stores
+     * them in [namedViews] map with the name as the key.
      */
     private fun findNamedViews(namedViews: MutableMap<String, View>, view: View) {
         val transitionName = ViewCompat.getTransitionName(view)
@@ -390,41 +414,38 @@ internal class DefaultSpecialEffectsController(
         }
     }
 
-    internal open class SpecialEffectsInfo(
-        val operation: Operation
-    ) {
+    internal open class SpecialEffectsInfo(val operation: Operation) {
 
         val isVisibilityUnchanged: Boolean
             get() {
                 val currentState = operation.fragment.mView?.asOperationState()
                 val finalState = operation.finalState
-                return currentState === finalState || (currentState !== Operation.State.VISIBLE &&
-                    finalState !== Operation.State.VISIBLE)
+                return currentState === finalState ||
+                    (currentState !== Operation.State.VISIBLE &&
+                        finalState !== Operation.State.VISIBLE)
             }
     }
 
-    private class AnimationInfo(
-        operation: Operation,
-        private val isPop: Boolean
-    ) : SpecialEffectsInfo(operation) {
+    private class AnimationInfo(operation: Operation, private val isPop: Boolean) :
+        SpecialEffectsInfo(operation) {
         private var isAnimLoaded = false
         private var animation: FragmentAnim.AnimationOrAnimator? = null
 
-        fun getAnimation(
-            context: Context
-        ): FragmentAnim.AnimationOrAnimator? = if (isAnimLoaded) {
-            animation
-        } else {
-            FragmentAnim.loadAnimation(
-                context,
-                operation.fragment,
-                operation.finalState === Operation.State.VISIBLE,
-                isPop
-            ).also {
-                animation = it
-                isAnimLoaded = true
+        fun getAnimation(context: Context): FragmentAnim.AnimationOrAnimator? =
+            if (isAnimLoaded) {
+                animation
+            } else {
+                FragmentAnim.loadAnimation(
+                        context,
+                        operation.fragment,
+                        operation.finalState === Operation.State.VISIBLE,
+                        isPop
+                    )
+                    .also {
+                        animation = it
+                        isAnimLoaded = true
+                    }
             }
-        }
     }
 
     private class TransitionInfo(
@@ -433,34 +454,39 @@ internal class DefaultSpecialEffectsController(
         providesSharedElementTransition: Boolean
     ) : SpecialEffectsInfo(operation) {
 
-        val transition: Any? = if (operation.finalState === Operation.State.VISIBLE) {
-            if (isPop) operation.fragment.reenterTransition else operation.fragment.enterTransition
-        } else {
-            if (isPop) operation.fragment.returnTransition else operation.fragment.exitTransition
-        }
-
-        val isOverlapAllowed = if (operation.finalState === Operation.State.VISIBLE) {
-            // Entering transitions can choose to run after all exit
-            // transitions complete, rather than overlapping with them
-            if (isPop) {
-                operation.fragment.allowReturnTransitionOverlap
+        val transition: Any? =
+            if (operation.finalState === Operation.State.VISIBLE) {
+                if (isPop) operation.fragment.reenterTransition
+                else operation.fragment.enterTransition
             } else {
-                operation.fragment.allowEnterTransitionOverlap
+                if (isPop) operation.fragment.returnTransition
+                else operation.fragment.exitTransition
             }
-        } else {
-            // Removing Fragments always overlap other transitions
-            true
-        }
 
-        val sharedElementTransition: Any? = if (providesSharedElementTransition) {
-            if (isPop) {
-                operation.fragment.sharedElementReturnTransition
+        val isOverlapAllowed =
+            if (operation.finalState === Operation.State.VISIBLE) {
+                // Entering transitions can choose to run after all exit
+                // transitions complete, rather than overlapping with them
+                if (isPop) {
+                    operation.fragment.allowReturnTransitionOverlap
+                } else {
+                    operation.fragment.allowEnterTransitionOverlap
+                }
             } else {
-                operation.fragment.sharedElementEnterTransition
+                // Removing Fragments always overlap other transitions
+                true
             }
-        } else {
-            null
-        }
+
+        val sharedElementTransition: Any? =
+            if (providesSharedElementTransition) {
+                if (isPop) {
+                    operation.fragment.sharedElementReturnTransition
+                } else {
+                    operation.fragment.sharedElementEnterTransition
+                }
+            } else {
+                null
+            }
 
         fun hasSharedElementTransition(): Boolean {
             return sharedElementTransition != null
@@ -470,8 +496,10 @@ internal class DefaultSpecialEffectsController(
             get() {
                 val transitionImpl = getHandlingImpl(transition)
                 val sharedElementTransitionImpl = getHandlingImpl(sharedElementTransition)
-                require(transitionImpl == null || sharedElementTransitionImpl == null ||
-                    transitionImpl === sharedElementTransitionImpl
+                require(
+                    transitionImpl == null ||
+                        sharedElementTransitionImpl == null ||
+                        transitionImpl === sharedElementTransitionImpl
                 ) {
                     "Mixing framework transitions and AndroidX transitions is not allowed. " +
                         "Fragment ${operation.fragment} returned Transition $transition " +
@@ -485,12 +513,14 @@ internal class DefaultSpecialEffectsController(
             if (transition == null) {
                 return null
             }
-            if ((FragmentTransition.PLATFORM_IMPL != null &&
+            if (
+                (FragmentTransition.PLATFORM_IMPL != null &&
                     FragmentTransition.PLATFORM_IMPL.canHandle(transition))
             ) {
                 return FragmentTransition.PLATFORM_IMPL
             }
-            if ((FragmentTransition.SUPPORT_IMPL != null &&
+            if (
+                (FragmentTransition.SUPPORT_IMPL != null &&
                     FragmentTransition.SUPPORT_IMPL.canHandle(transition))
             ) {
                 return FragmentTransition.SUPPORT_IMPL
@@ -527,37 +557,42 @@ internal class DefaultSpecialEffectsController(
                 animationInfo.operation.completeEffect(this)
             } else {
                 container.startViewTransition(viewToAnimate)
-                val animation: Animation = FragmentAnim.EndViewTransitionAnimation(anim,
-                    container, viewToAnimate)
-                animation.setAnimationListener(object : Animation.AnimationListener {
-                    override fun onAnimationStart(animation: Animation) {
-                        if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                            Log.v(FragmentManager.TAG,
-                                "Animation from operation $operation has reached " +
-                                    "onAnimationStart.")
+                val animation: Animation =
+                    FragmentAnim.EndViewTransitionAnimation(anim, container, viewToAnimate)
+                animation.setAnimationListener(
+                    object : Animation.AnimationListener {
+                        override fun onAnimationStart(animation: Animation) {
+                            if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
+                                Log.v(
+                                    FragmentManager.TAG,
+                                    "Animation from operation $operation has reached " +
+                                        "onAnimationStart."
+                                )
+                            }
                         }
-                    }
 
-                    override fun onAnimationEnd(animation: Animation) {
-                        // onAnimationEnd() comes during draw(), so there can still be some
-                        // draw events happening after this call. We don't want to complete the
-                        // animation until after the onAnimationEnd()
-                        container.post {
-                            container.endViewTransition(viewToAnimate)
-                            animationInfo.operation.completeEffect(this@AnimationEffect)
+                        override fun onAnimationEnd(animation: Animation) {
+                            // onAnimationEnd() comes during draw(), so there can still be some
+                            // draw events happening after this call. We don't want to complete the
+                            // animation until after the onAnimationEnd()
+                            container.post {
+                                container.endViewTransition(viewToAnimate)
+                                animationInfo.operation.completeEffect(this@AnimationEffect)
+                            }
+                            if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
+                                Log.v(
+                                    FragmentManager.TAG,
+                                    "Animation from operation $operation has ended."
+                                )
+                            }
                         }
-                        if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                            Log.v(FragmentManager.TAG,
-                                "Animation from operation $operation has ended.")
-                        }
-                    }
 
-                    override fun onAnimationRepeat(animation: Animation) {}
-                })
+                        override fun onAnimationRepeat(animation: Animation) {}
+                    }
+                )
                 viewToAnimate.startAnimation(animation)
                 if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                    Log.v(FragmentManager.TAG,
-                        "Animation from operation $operation has started.")
+                    Log.v(FragmentManager.TAG, "Animation from operation $operation has started.")
                 }
             }
         }
@@ -571,8 +606,10 @@ internal class DefaultSpecialEffectsController(
             container.endViewTransition(viewToAnimate)
             animationInfo.operation.completeEffect(this)
             if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                Log.v(FragmentManager.TAG,
-                    "Animation from operation $operation has been cancelled.")
+                Log.v(
+                    FragmentManager.TAG,
+                    "Animation from operation $operation has been cancelled."
+                )
             }
         }
     }
@@ -580,7 +617,9 @@ internal class DefaultSpecialEffectsController(
     private class AnimatorEffect(val animatorInfo: AnimationInfo) : Effect() {
         override val isSeekingSupported: Boolean
             get() = true
+
         var animator: AnimatorSet? = null
+
         override fun onStart(container: ViewGroup) {
             if (animatorInfo.isVisibilityUnchanged) {
                 // No change in visibility, so we can avoid starting the animator
@@ -595,21 +634,25 @@ internal class DefaultSpecialEffectsController(
             val isHideOperation = operation.finalState === Operation.State.GONE
             val viewToAnimate = fragment.mView
             container.startViewTransition(viewToAnimate)
-            animator?.addListener(object : AnimatorListenerAdapter() {
-                override fun onAnimationEnd(anim: Animator) {
-                    container.endViewTransition(viewToAnimate)
-                    if (isHideOperation) {
-                        // Specifically for hide operations with Animator, we can't
-                        // applyState until the Animator finishes
-                        operation.finalState.applyState(viewToAnimate, container)
-                    }
-                    animatorInfo.operation.completeEffect(this@AnimatorEffect)
-                    if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                        Log.v(FragmentManager.TAG,
-                            "Animator from operation $operation has ended.")
+            animator?.addListener(
+                object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(anim: Animator) {
+                        container.endViewTransition(viewToAnimate)
+                        if (isHideOperation) {
+                            // Specifically for hide operations with Animator, we can't
+                            // applyState until the Animator finishes
+                            operation.finalState.applyState(viewToAnimate, container)
+                        }
+                        animatorInfo.operation.completeEffect(this@AnimatorEffect)
+                        if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
+                            Log.v(
+                                FragmentManager.TAG,
+                                "Animator from operation $operation has ended."
+                            )
+                        }
                     }
                 }
-            })
+            )
             animator?.setTarget(viewToAnimate)
         }
 
@@ -660,8 +703,7 @@ internal class DefaultSpecialEffectsController(
             }
             animatorSet.start()
             if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                Log.v(FragmentManager.TAG,
-                    "Animator from operation $operation has started.")
+                Log.v(FragmentManager.TAG, "Animator from operation $operation has started.")
             }
         }
 
@@ -705,23 +747,23 @@ internal class DefaultSpecialEffectsController(
         val lastInViews: ArrayMap<String, View>,
         val isPop: Boolean
     ) : Effect() {
-        @Suppress("DEPRECATION")
-        val transitionSignal = androidx.core.os.CancellationSignal()
+        @Suppress("DEPRECATION") val transitionSignal = androidx.core.os.CancellationSignal()
 
         var controller: Any? = null
 
         override val isSeekingSupported: Boolean
-            get() = transitionImpl.isSeekingSupported &&
-                transitionInfos.all {
-                    Build.VERSION.SDK_INT >= 34 &&
-                        it.transition != null &&
-                        transitionImpl.isSeekingSupported(it.transition)
-                }
+            get() =
+                transitionImpl.isSeekingSupported &&
+                    transitionInfos.all {
+                        Build.VERSION.SDK_INT >= 34 &&
+                            it.transition != null &&
+                            transitionImpl.isSeekingSupported(it.transition)
+                    } &&
+                    (sharedElementTransition == null ||
+                        transitionImpl.isSeekingSupported(sharedElementTransition))
 
         val transitioning: Boolean
-            get() = transitionInfos.all {
-                it.operation.fragment.mTransitioning
-            }
+            get() = transitionInfos.all { it.operation.fragment.mTransitioning }
 
         override fun onStart(container: ViewGroup) {
             // If the container has never been laid out, transitions will not start so
@@ -730,12 +772,25 @@ internal class DefaultSpecialEffectsController(
                 transitionInfos.forEach { transitionInfo: TransitionInfo ->
                     val operation: Operation = transitionInfo.operation
                     if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                        Log.v(FragmentManager.TAG,
+                        Log.v(
+                            FragmentManager.TAG,
                             "SpecialEffectsController: Container $container has not been " +
-                                "laid out. Skipping onStart for operation $operation")
+                                "laid out. Skipping onStart for operation $operation"
+                        )
                     }
                 }
                 return
+            }
+            if (transitioning && sharedElementTransition != null && !isSeekingSupported) {
+                Log.i(
+                    FragmentManager.TAG,
+                    "Ignoring shared elements transition $sharedElementTransition between " +
+                        "$firstOut and $lastIn as neither fragment has set a Transition. In " +
+                        "order to run a SharedElementTransition, you must also set either an " +
+                        "enter or exit transition on a fragment involved in the transaction. The " +
+                        "sharedElementTransition will run after the back gesture has been " +
+                        "committed."
+                )
             }
             if (isSeekingSupported && transitioning) {
                 // We need to set the listener before we create the controller, but we need the
@@ -746,23 +801,26 @@ internal class DefaultSpecialEffectsController(
                 // Now set up our completion signal on the completely merged transition set
                 val (enteringViews, mergedTransition) =
                     createMergedTransition(container, lastIn, firstOut)
-                transitionInfos.map { it.operation }.forEach { operation ->
-                    val cancelRunnable = Runnable { seekCancelLambda?.invoke() }
-                    transitionImpl.setListenerForTransitionEnd(
-                        operation.fragment,
-                        mergedTransition,
-                        transitionSignal,
-                        cancelRunnable,
-                        Runnable {
-                            if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                                Log.v(
-                                    FragmentManager.TAG,
-                                    "Transition for operation $operation has completed"
-                                )
+                transitionInfos
+                    .map { it.operation }
+                    .forEach { operation ->
+                        val cancelRunnable = Runnable { seekCancelLambda?.invoke() }
+                        transitionImpl.setListenerForTransitionEnd(
+                            operation.fragment,
+                            mergedTransition,
+                            transitionSignal,
+                            cancelRunnable,
+                            Runnable {
+                                if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
+                                    Log.v(
+                                        FragmentManager.TAG,
+                                        "Transition for operation $operation has completed"
+                                    )
+                                }
+                                operation.completeEffect(this)
                             }
-                            operation.completeEffect(this)
-                        })
-                }
+                        )
+                    }
 
                 runTransition(enteringViews, container) {
                     controller =
@@ -773,22 +831,46 @@ internal class DefaultSpecialEffectsController(
                         "Unable to start transition $mergedTransition for container $container."
                     }
                     seekCancelLambda = {
-                        if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                            Log.v(FragmentManager.TAG, "Animating to start")
-                        }
-                        transitionImpl.animateToStart(controller!!) {
-                            transitionInfos.forEach { transitionInfo ->
-                                val operation = transitionInfo.operation
-                                val view = operation.fragment.view
-                                if (view != null) {
-                                    operation.finalState.applyState(view, container)
+                        if (transitionInfos.all { it.operation.isSeeking }) {
+                            if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
+                                Log.v(FragmentManager.TAG, "Animating to start")
+                            }
+                            transitionImpl.animateToStart(controller!!) {
+                                transitionInfos.forEach { transitionInfo ->
+                                    val operation = transitionInfo.operation
+                                    val view = operation.fragment.view
+                                    if (view != null) {
+                                        operation.finalState.applyState(view, container)
+                                    }
                                 }
                             }
+                        } else {
+                            if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
+                                Log.v(FragmentManager.TAG, "Completing animating immediately")
+                            }
+                            @Suppress("DEPRECATION")
+                            val cancelSignal = androidx.core.os.CancellationSignal()
+                            transitionImpl.setListenerForTransitionEnd(
+                                transitionInfos[0].operation.fragment,
+                                mergedTransition,
+                                cancelSignal
+                            ) {
+                                if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
+                                    Log.v(
+                                        FragmentManager.TAG,
+                                        "Transition for all operations has completed"
+                                    )
+                                }
+                                transitionInfos.forEach { it.operation.completeEffect(this) }
+                            }
+                            cancelSignal.cancel()
                         }
                     }
                     if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                        Log.v(FragmentManager.TAG,
-                            "Started executing operations from $firstOut to $lastIn")
+                        Log.v(
+                            FragmentManager.TAG,
+                            "Started executing operations from $firstOut to $lastIn"
+                        )
                     }
                 }
             }
@@ -805,9 +887,11 @@ internal class DefaultSpecialEffectsController(
                 transitionInfos.forEach { transitionInfo: TransitionInfo ->
                     val operation: Operation = transitionInfo.operation
                     if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                        Log.v(FragmentManager.TAG,
+                        Log.v(
+                            FragmentManager.TAG,
                             "SpecialEffectsController: Container $container has not been " +
-                                "laid out. Completing operation $operation")
+                                "laid out. Completing operation $operation"
+                        )
                     }
                     transitionInfo.operation.completeEffect(this)
                 }
@@ -816,32 +900,41 @@ internal class DefaultSpecialEffectsController(
             if (controller != null) {
                 transitionImpl.animateToEnd(controller!!)
                 if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                    Log.v(FragmentManager.TAG,
-                        "Ending execution of operations from $firstOut to $lastIn")
+                    Log.v(
+                        FragmentManager.TAG,
+                        "Ending execution of operations from $firstOut to $lastIn"
+                    )
                 }
             } else {
                 val (enteringViews, mergedTransition) =
                     createMergedTransition(container, lastIn, firstOut)
                 // Now set up our completion signal on the completely merged transition set
-                transitionInfos.map { it.operation }.forEach { operation ->
-                    transitionImpl.setListenerForTransitionEnd(
-                        operation.fragment,
-                        mergedTransition,
-                        transitionSignal,
-                        Runnable {
-                            if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                                Log.v(FragmentManager.TAG,
-                                    "Transition for operation $operation has completed")
+                transitionInfos
+                    .map { it.operation }
+                    .forEach { operation ->
+                        transitionImpl.setListenerForTransitionEnd(
+                            operation.fragment,
+                            mergedTransition,
+                            transitionSignal,
+                            Runnable {
+                                if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
+                                    Log.v(
+                                        FragmentManager.TAG,
+                                        "Transition for operation $operation has completed"
+                                    )
+                                }
+                                operation.completeEffect(this)
                             }
-                            operation.completeEffect(this)
-                        })
-                }
+                        )
+                    }
                 runTransition(enteringViews, container) {
                     transitionImpl.beginDelayedTransition(container, mergedTransition)
                 }
                 if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
-                    Log.v(FragmentManager.TAG,
-                        "Completed executing operations from $firstOut to $lastIn")
+                    Log.v(
+                        FragmentManager.TAG,
+                        "Completed executing operations from $firstOut to $lastIn"
+                    )
                 }
             }
         }
@@ -865,13 +958,23 @@ internal class DefaultSpecialEffectsController(
                     if (sharedElementNameMapping.isNotEmpty() && sharedElementTransition != null) {
                         // Call through to onSharedElementStart() before capturing the
                         // starting values for the shared element transition
-                        callSharedElementStartEnd(lastIn.fragment, firstOut.fragment, isPop,
-                            firstOutViews, true)
+                        callSharedElementStartEnd(
+                            lastIn.fragment,
+                            firstOut.fragment,
+                            isPop,
+                            firstOutViews,
+                            true
+                        )
                         // Trigger the onSharedElementEnd callback in the next frame after
                         // the starting values are captured and before capturing the end states
                         OneShotPreDrawListener.add(container) {
-                            callSharedElementStartEnd(lastIn.fragment, firstOut.fragment, isPop,
-                                lastInViews, false)
+                            callSharedElementStartEnd(
+                                lastIn.fragment,
+                                firstOut.fragment,
+                                isPop,
+                                lastInViews,
+                                false
+                            )
                         }
                         sharedElementFirstOutViews.addAll(firstOutViews.values)
 
@@ -880,7 +983,8 @@ internal class DefaultSpecialEffectsController(
                             val epicenterViewName = exitingNames[0]
                             firstOutEpicenterView = firstOutViews[epicenterViewName]
                             transitionImpl.setEpicenter(
-                                sharedElementTransition, firstOutEpicenterView
+                                sharedElementTransition,
+                                firstOutEpicenterView
                             )
                         }
                         sharedElementLastInViews.addAll(lastInViews.values)
@@ -904,13 +1008,23 @@ internal class DefaultSpecialEffectsController(
                         // Now set the transition's targets to only the firstOut Fragment's views
                         // It'll be swapped to the lastIn Fragment's views after the
                         // transition is started
-                        transitionImpl.setSharedElementTargets(sharedElementTransition,
-                            nonExistentView, sharedElementFirstOutViews)
+                        transitionImpl.setSharedElementTargets(
+                            sharedElementTransition,
+                            nonExistentView,
+                            sharedElementFirstOutViews
+                        )
                         // After the swap to the lastIn Fragment's view (done below), we
                         // need to clean up those targets. We schedule this here so that it
                         // runs directly after the swap
-                        transitionImpl.scheduleRemoveTargets(sharedElementTransition, null, null,
-                            null, null, sharedElementTransition, sharedElementLastInViews)
+                        transitionImpl.scheduleRemoveTargets(
+                            sharedElementTransition,
+                            null,
+                            null,
+                            null,
+                            null,
+                            sharedElementTransition,
+                            sharedElementLastInViews
+                        )
                     }
                 }
             }
@@ -927,8 +1041,9 @@ internal class DefaultSpecialEffectsController(
                     // Target the Transition to *only* the set of transitioning views
                     val transitioningViews = ArrayList<View>()
                     captureTransitioningViews(transitioningViews, operation.fragment.mView)
-                    val involvedInSharedElementTransition = (sharedElementTransition != null &&
-                        (operation === firstOut || operation === lastIn))
+                    val involvedInSharedElementTransition =
+                        (sharedElementTransition != null &&
+                            (operation === firstOut || operation === lastIn))
                     if (involvedInSharedElementTransition) {
                         // Remove all of the shared element views from the transition
                         if (operation === firstOut) {
@@ -942,8 +1057,13 @@ internal class DefaultSpecialEffectsController(
                     } else {
                         transitionImpl.addTargets(transition, transitioningViews)
                         transitionImpl.scheduleRemoveTargets(
-                            transition, transition,
-                            transitioningViews, null, null, null, null
+                            transition,
+                            transition,
+                            transitioningViews,
+                            null,
+                            null,
+                            null,
+                            null
                         )
                         if (operation.finalState === Operation.State.GONE) {
                             // We're hiding the Fragment. This requires a bit of extra work
@@ -956,7 +1076,8 @@ internal class DefaultSpecialEffectsController(
                             transitioningViewsToHide.remove(operation.fragment.mView)
                             transitionImpl.scheduleHideFragmentView(
                                 transition,
-                                operation.fragment.mView, transitioningViewsToHide
+                                operation.fragment.mView,
+                                transitioningViewsToHide
                             )
                             // This OneShotPreDrawListener gets fired before the delayed start of
                             // the Transition and changes the visibility of any exiting child views
@@ -994,22 +1115,32 @@ internal class DefaultSpecialEffectsController(
                     // Now determine how this transition should be merged together
                     if (transitionInfo.isOverlapAllowed) {
                         // Overlap is allowed, so add them to the mergeTransition set
-                        mergedTransition = transitionImpl.mergeTransitionsTogether(
-                            mergedTransition, transition, null
-                        )
+                        mergedTransition =
+                            transitionImpl.mergeTransitionsTogether(
+                                mergedTransition,
+                                transition,
+                                null
+                            )
                     } else {
                         // Overlap is not allowed, add them to the mergedNonOverlappingTransition
-                        mergedNonOverlappingTransition = transitionImpl.mergeTransitionsTogether(
-                            mergedNonOverlappingTransition, transition, null
-                        )
+                        mergedNonOverlappingTransition =
+                            transitionImpl.mergeTransitionsTogether(
+                                mergedNonOverlappingTransition,
+                                transition,
+                                null
+                            )
                     }
                 }
             }
 
             // Make sure that the mergedNonOverlappingTransition set
             // runs after the mergedTransition set is complete
-            mergedTransition = transitionImpl.mergeTransitionsInSequence(mergedTransition,
-                mergedNonOverlappingTransition, sharedElementTransition)
+            mergedTransition =
+                transitionImpl.mergeTransitionsInSequence(
+                    mergedTransition,
+                    mergedNonOverlappingTransition,
+                    sharedElementTransition
+                )
 
             if (FragmentManager.isLoggingEnabled(Log.VERBOSE)) {
                 Log.v(FragmentManager.TAG, "Final merged transition: $mergedTransition")
@@ -1031,24 +1162,36 @@ internal class DefaultSpecialEffectsController(
                 Log.v(FragmentManager.TAG, ">>>>> Beginning transition <<<<<")
                 Log.v(FragmentManager.TAG, ">>>>> SharedElementFirstOutViews <<<<<")
                 for (view: View in sharedElementFirstOutViews) {
-                    Log.v(FragmentManager.TAG,
-                        "View: $view Name: ${ViewCompat.getTransitionName(view)}")
+                    Log.v(
+                        FragmentManager.TAG,
+                        "View: $view Name: ${ViewCompat.getTransitionName(view)}"
+                    )
                 }
                 Log.v(FragmentManager.TAG, ">>>>> SharedElementLastInViews <<<<<")
                 for (view: View in sharedElementLastInViews) {
-                    Log.v(FragmentManager.TAG,
-                        "View: $view Name: ${ViewCompat.getTransitionName(view)}")
+                    Log.v(
+                        FragmentManager.TAG,
+                        "View: $view Name: ${ViewCompat.getTransitionName(view)}"
+                    )
                 }
             }
             // Now actually start the transition
             executeTransition.invoke()
-            transitionImpl.setNameOverridesReordered(container, sharedElementFirstOutViews,
-                sharedElementLastInViews, inNames, sharedElementNameMapping)
+            transitionImpl.setNameOverridesReordered(
+                container,
+                sharedElementFirstOutViews,
+                sharedElementLastInViews,
+                inNames,
+                sharedElementNameMapping
+            )
             // Then, show all of the entering views, putting them into
             // the correct final state
             setViewVisibility(enteringViews, View.VISIBLE)
-            transitionImpl.swapSharedElementTargets(sharedElementTransition,
-                sharedElementFirstOutViews, sharedElementLastInViews)
+            transitionImpl.swapSharedElementTargets(
+                sharedElementTransition,
+                sharedElementFirstOutViews,
+                sharedElementLastInViews
+            )
         }
 
         override fun onCancel(container: ViewGroup) {
@@ -1059,8 +1202,8 @@ internal class DefaultSpecialEffectsController(
          * Gets the Views in the hierarchy affected by entering and exiting transitions.
          *
          * @param transitioningViews This View will be added to transitioningViews if it has a
-         * transition name, is VISIBLE and a normal View, or a ViewGroup with
-         * [android.view.ViewGroup.isTransitionGroup] true.
+         *   transition name, is VISIBLE and a normal View, or a ViewGroup with
+         *   [android.view.ViewGroup.isTransitionGroup] true.
          * @param view The base of the view hierarchy to look in.
          */
         private fun captureTransitioningViews(transitioningViews: ArrayList<View>, view: View) {
@@ -1088,7 +1231,6 @@ internal class DefaultSpecialEffectsController(
 
     @RequiresApi(24)
     internal object Api24Impl {
-        @DoNotInline
         fun totalDuration(animatorSet: AnimatorSet): Long {
             return animatorSet.totalDuration
         }
@@ -1096,12 +1238,10 @@ internal class DefaultSpecialEffectsController(
 
     @RequiresApi(26)
     internal object Api26Impl {
-        @DoNotInline
         fun reverse(animatorSet: AnimatorSet) {
             animatorSet.reverse()
         }
 
-        @DoNotInline
         fun setCurrentPlayTime(animatorSet: AnimatorSet, time: Long) {
             animatorSet.currentPlayTime = time
         }

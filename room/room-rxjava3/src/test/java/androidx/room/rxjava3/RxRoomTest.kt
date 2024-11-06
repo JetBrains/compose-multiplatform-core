@@ -23,6 +23,7 @@ import androidx.room.RoomDatabase
 import io.reactivex.rxjava3.functions.Consumer
 import io.reactivex.rxjava3.observers.TestObserver
 import io.reactivex.rxjava3.subscribers.TestSubscriber
+import java.util.concurrent.Callable
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import org.junit.Before
@@ -41,8 +42,7 @@ import org.mockito.kotlin.whenever
 
 @RunWith(JUnit4::class)
 class RxRoomTest {
-    @get:Rule
-    var mExecutor = CountingTaskExecutorRule()
+    @get:Rule var mExecutor = CountingTaskExecutorRule()
     private lateinit var mDatabase: RoomDatabase
     private lateinit var mInvalidationTracker: InvalidationTracker
     private val mAddedObservers: MutableList<InvalidationTracker.Observer> = ArrayList()
@@ -54,34 +54,25 @@ class RxRoomTest {
         whenever(mDatabase.invalidationTracker).thenReturn(mInvalidationTracker)
         whenever(mDatabase.queryExecutor).thenReturn(ArchTaskExecutor.getIOThreadExecutor())
         doAnswer { invocation: InvocationOnMock ->
-            mAddedObservers.add(invocation.arguments[0] as InvalidationTracker.Observer)
-            null
-        }.whenever(mInvalidationTracker).addObserver(
-            any()
-        )
+                mAddedObservers.add(invocation.arguments[0] as InvalidationTracker.Observer)
+                null
+            }
+            .whenever(mInvalidationTracker)
+            .addObserver(any())
     }
 
     @Test
     fun basicAddRemove_Flowable() {
-        val flowable = RxRoom.createFlowable(
-            mDatabase, "a", "b"
-        )
-        verify(mInvalidationTracker, never()).addObserver(
-            any()
-        )
+        val flowable = createFlowable(mDatabase, "a", "b")
+        verify(mInvalidationTracker, never()).addObserver(any())
         var disposable = flowable.subscribe()
-        verify(mInvalidationTracker).addObserver(
-            any()
-        )
+        verify(mInvalidationTracker).addObserver(any())
         assertThat(mAddedObservers.size).isEqualTo(1)
         val observer = mAddedObservers[0]
         disposable.dispose()
         verify(mInvalidationTracker).removeObserver(observer)
         disposable = flowable.subscribe()
-        verify(mInvalidationTracker, times(2))
-            .addObserver(
-                any()
-            )
+        verify(mInvalidationTracker, times(2)).addObserver(any())
         assertThat(mAddedObservers.size).isEqualTo(2)
         assertThat(mAddedObservers[1]).isNotSameInstanceAs(observer)
 
@@ -92,25 +83,16 @@ class RxRoomTest {
 
     @Test
     fun basicAddRemove_Observable() {
-        val observable = RxRoom.createObservable(
-            mDatabase, "a", "b"
-        )
-        verify(mInvalidationTracker, never()).addObserver(
-            any()
-        )
+        val observable = createObservable(mDatabase, "a", "b")
+        verify(mInvalidationTracker, never()).addObserver(any())
         var disposable = observable.subscribe()
-        verify(mInvalidationTracker).addObserver(
-            any()
-        )
+        verify(mInvalidationTracker).addObserver(any())
         assertThat(mAddedObservers.size).isEqualTo(1)
         val observer = mAddedObservers[0]
         disposable.dispose()
         verify(mInvalidationTracker).removeObserver(observer)
         disposable = observable.subscribe()
-        verify(mInvalidationTracker, times(2))
-            .addObserver(
-                any()
-            )
+        verify(mInvalidationTracker, times(2)).addObserver(any())
         assertThat(mAddedObservers.size).isEqualTo(2)
         assertThat(mAddedObservers[1]).isNotSameInstanceAs(observer)
 
@@ -123,9 +105,7 @@ class RxRoomTest {
     fun basicNotify_Flowable() {
         val tables = arrayOf("a", "b")
         val tableSet: Set<String> = HashSet(listOf(*tables))
-        val flowable = RxRoom.createFlowable(
-            mDatabase, *tables
-        )
+        val flowable = createFlowable(mDatabase, *tables)
         val consumer = CountingConsumer()
         val disposable = flowable.subscribe(consumer)
         assertThat(mAddedObservers.size).isEqualTo(1)
@@ -144,9 +124,7 @@ class RxRoomTest {
     fun basicNotify_Observable() {
         val tables = arrayOf("a", "b")
         val tableSet: Set<String> = HashSet(listOf(*tables))
-        val observable = RxRoom.createObservable(
-            mDatabase, *tables
-        )
+        val observable = createObservable(mDatabase, *tables)
         val consumer = CountingConsumer()
         val disposable = observable.subscribe(consumer)
         assertThat(mAddedObservers.size).isEqualTo(1)
@@ -162,14 +140,12 @@ class RxRoomTest {
     }
 
     @Test
-    @Throws(Exception::class)
+    @Suppress("DEPRECATION")
     fun internalCallable_Flowable() {
         val value = AtomicReference<Any>(null)
         val tables = arrayOf("a", "b")
         val tableSet: Set<String> = HashSet(listOf(*tables))
-        val flowable = RxRoom.createFlowable(
-            mDatabase, false, tables
-        ) { value.get() }
+        val flowable = createFlowable(mDatabase, false, tables, Callable { value.get() })
         val consumer = CountingConsumer()
         val disposable = flowable.subscribe(consumer)
         drain()
@@ -194,14 +170,12 @@ class RxRoomTest {
     }
 
     @Test
-    @Throws(Exception::class)
+    @Suppress("DEPRECATION")
     fun internalCallable_Observable() {
         val value = AtomicReference<Any>(null)
         val tables = arrayOf("a", "b")
         val tableSet: Set<String> = HashSet(listOf(*tables))
-        val flowable = RxRoom.createObservable(
-            mDatabase, false, tables
-        ) { value.get() }
+        val flowable = createObservable(mDatabase, false, tables, Callable { value.get() })
         val consumer = CountingConsumer()
         val disposable = flowable.subscribe(consumer)
         drain()
@@ -226,12 +200,15 @@ class RxRoomTest {
     }
 
     @Test
-    @Throws(Exception::class)
+    @Suppress("DEPRECATION")
     fun exception_Flowable() {
-        val flowable = RxRoom.createFlowable<String>(
-            mDatabase,
-            false, arrayOf("a")
-        ) { throw Exception("i want exception") }
+        val flowable =
+            createFlowable<String>(
+                mDatabase,
+                false,
+                arrayOf("a"),
+                Callable { throw Exception("i want exception") }
+            )
         val subscriber = TestSubscriber<String>()
         flowable.subscribe(subscriber)
         drain()
@@ -239,12 +216,15 @@ class RxRoomTest {
     }
 
     @Test
-    @Throws(Exception::class)
+    @Suppress("DEPRECATION")
     fun exception_Observable() {
-        val flowable = RxRoom.createObservable<String>(
-            mDatabase,
-            false, arrayOf("a")
-        ) { throw Exception("i want exception") }
+        val flowable =
+            createObservable<String>(
+                mDatabase,
+                false,
+                arrayOf("a"),
+                Callable { throw Exception("i want exception") }
+            )
         val observer = TestObserver<String>()
         flowable.subscribe(observer)
         drain()
@@ -258,6 +238,7 @@ class RxRoomTest {
 
     private class CountingConsumer : Consumer<Any> {
         var mCount = 0
+
         override fun accept(o: Any) {
             mCount++
         }

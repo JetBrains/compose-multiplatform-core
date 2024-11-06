@@ -22,11 +22,10 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 
-/**
- * Defines [Shape] for all TV [Interaction] states of a Clickable Surface.
- */
+/** Defines [Shape] for all TV [Interaction] states of a Clickable Surface. */
 @Immutable
-class ClickableSurfaceShape internal constructor(
+class ClickableSurfaceShape
+internal constructor(
     internal val shape: Shape,
     internal val focusedShape: Shape,
     internal val pressedShape: Shape,
@@ -65,11 +64,10 @@ class ClickableSurfaceShape internal constructor(
     }
 }
 
-/**
- * Defines [Shape] for all TV [Interaction] states of a toggleable Surface.
- */
+/** Defines [Shape] for all TV [Interaction] states of a selectable Surface. */
 @Immutable
-class ToggleableSurfaceShape internal constructor(
+class SelectableSurfaceShape
+internal constructor(
     internal val shape: Shape,
     internal val focusedShape: Shape,
     internal val pressedShape: Shape,
@@ -85,7 +83,7 @@ class ToggleableSurfaceShape internal constructor(
         if (this === other) return true
         if (other == null || this::class != other::class) return false
 
-        other as ToggleableSurfaceShape
+        other as SelectableSurfaceShape
 
         if (shape != other.shape) return false
         if (focusedShape != other.focusedShape) return false
@@ -117,7 +115,7 @@ class ToggleableSurfaceShape internal constructor(
     }
 
     override fun toString(): String {
-        return "ToggleableSurfaceShape(shape=$shape, focusedShape=$focusedShape," +
+        return "SelectableSurfaceShape(shape=$shape, focusedShape=$focusedShape," +
             "pressedShape=$pressedShape, selectedShape=$selectedShape," +
             "disabledShape=$disabledShape, focusedSelectedShape=$focusedSelectedShape, " +
             "focusedDisabledShape=$focusedDisabledShape," +
@@ -127,11 +125,10 @@ class ToggleableSurfaceShape internal constructor(
     }
 }
 
-/**
- * Defines [Color] for all TV [Interaction] states of a Clickable Surface.
- */
+/** Defines [Color] for all TV [Interaction] states of a Clickable Surface. */
 @Immutable
-class ClickableSurfaceColors internal constructor(
+class ClickableSurfaceColors
+internal constructor(
     internal val containerColor: Color,
     internal val contentColor: Color,
     internal val focusedContainerColor: Color,
@@ -184,11 +181,10 @@ class ClickableSurfaceColors internal constructor(
     }
 }
 
-/**
- * Defines [Color] for all TV [Interaction] states of a toggleable Surface.
- */
+/** Defines [Color] for all TV [Interaction] states of a selectable Surface. */
 @Immutable
-class ToggleableSurfaceColors internal constructor(
+class SelectableSurfaceColors
+internal constructor(
     internal val containerColor: Color,
     internal val contentColor: Color,
     internal val focusedContainerColor: Color,
@@ -208,7 +204,7 @@ class ToggleableSurfaceColors internal constructor(
         if (this === other) return true
         if (other == null || this::class != other::class) return false
 
-        other as ToggleableSurfaceColors
+        other as SelectableSurfaceColors
 
         if (containerColor != other.containerColor) return false
         if (contentColor != other.contentColor) return false
@@ -247,7 +243,7 @@ class ToggleableSurfaceColors internal constructor(
     }
 
     override fun toString(): String {
-        return "ToggleableSurfaceColors(" +
+        return "SelectableSurfaceColors(" +
             "containerColor=$containerColor, " +
             "contentColor=$contentColor, " +
             "focusedContainerColor=$focusedContainerColor, " +
@@ -266,11 +262,12 @@ class ToggleableSurfaceColors internal constructor(
 }
 
 /**
- * Defines the scale for all TV indication states of Surface. Note: This scale must be
- * a non-negative float.
+ * Defines the scale for all TV indication states of Surface. Note: This scale must be a
+ * non-negative float.
  */
 @Immutable
-class ClickableSurfaceScale internal constructor(
+class ClickableSurfaceScale
+internal constructor(
     @FloatRange(from = 0.0) internal val scale: Float,
     @FloatRange(from = 0.0) internal val focusedScale: Float,
     @FloatRange(from = 0.0) internal val pressedScale: Float,
@@ -310,25 +307,27 @@ class ClickableSurfaceScale internal constructor(
 
     companion object {
         /**
-         * Signifies the absence of a scale in TV Components. Use this if you do not want to
-         * display a [ScaleIndication] in any of the Leanback TV Components.
+         * Signifies the absence of a scale in TV Components. Use this if you do not want to display
+         * a [ScaleIndication] in any of the Leanback TV Components.
          */
-        val None = ClickableSurfaceScale(
-            scale = 1f,
-            focusedScale = 1f,
-            pressedScale = 1f,
-            disabledScale = 1f,
-            focusedDisabledScale = 1f
-        )
+        val None =
+            ClickableSurfaceScale(
+                scale = 1f,
+                focusedScale = 1f,
+                pressedScale = 1f,
+                disabledScale = 1f,
+                focusedDisabledScale = 1f
+            )
     }
 }
 
 /**
- * Defines the scale for all TV [Interaction] states of toggleable Surface. Note: This
- * scale must be a non-negative float.
+ * Defines the scale for all TV [Interaction] states of selectable Surface. Note: This scale must be
+ * a non-negative float.
  */
 @Immutable
-class ToggleableSurfaceScale internal constructor(
+class SelectableSurfaceScale
+internal constructor(
     @FloatRange(from = 0.0) internal val scale: Float,
     @FloatRange(from = 0.0) internal val focusedScale: Float,
     @FloatRange(from = 0.0) internal val pressedScale: Float,
@@ -344,7 +343,7 @@ class ToggleableSurfaceScale internal constructor(
         if (this === other) return true
         if (other == null || this::class != other::class) return false
 
-        other as ToggleableSurfaceScale
+        other as SelectableSurfaceScale
 
         if (scale != other.scale) return false
         if (focusedScale != other.focusedScale) return false
@@ -376,7 +375,7 @@ class ToggleableSurfaceScale internal constructor(
     }
 
     override fun toString(): String {
-        return "ToggleableSurfaceScale(scale=$scale, focusedScale=$focusedScale," +
+        return "SelectableSurfaceScale(scale=$scale, focusedScale=$focusedScale," +
             "pressedScale=$pressedScale, selectedScale=$selectedScale," +
             "disabledScale=$disabledScale, focusedSelectedScale=$focusedSelectedScale, " +
             "focusedDisabledScale=$focusedDisabledScale," +
@@ -386,29 +385,27 @@ class ToggleableSurfaceScale internal constructor(
     }
 
     companion object {
-        /**
-         * Signifies the absence of a [ScaleIndication] in toggleable surface.
-         */
-        val None = ToggleableSurfaceScale(
-            scale = 1f,
-            focusedScale = 1f,
-            pressedScale = 1f,
-            selectedScale = 1f,
-            disabledScale = 1f,
-            focusedSelectedScale = 1f,
-            focusedDisabledScale = 1f,
-            pressedSelectedScale = 1f,
-            selectedDisabledScale = 1f,
-            focusedSelectedDisabledScale = 1f
-        )
+        /** Signifies the absence of a [ScaleIndication] in selectable surface. */
+        val None =
+            SelectableSurfaceScale(
+                scale = 1f,
+                focusedScale = 1f,
+                pressedScale = 1f,
+                selectedScale = 1f,
+                disabledScale = 1f,
+                focusedSelectedScale = 1f,
+                focusedDisabledScale = 1f,
+                pressedSelectedScale = 1f,
+                selectedDisabledScale = 1f,
+                focusedSelectedDisabledScale = 1f
+            )
     }
 }
 
-/**
- * Defines [Border] for all TV states of [Surface].
- */
+/** Defines [Border] for all TV states of [Surface]. */
 @Immutable
-class ClickableSurfaceBorder internal constructor(
+class ClickableSurfaceBorder
+internal constructor(
     internal val border: Border,
     internal val focusedBorder: Border,
     internal val pressedBorder: Border,
@@ -449,11 +446,10 @@ class ClickableSurfaceBorder internal constructor(
     }
 }
 
-/**
- * Defines [Border] for all TV states of a toggleable Surface.
- */
+/** Defines [Border] for all TV states of a selectable Surface. */
 @Immutable
-class ToggleableSurfaceBorder internal constructor(
+class SelectableSurfaceBorder
+internal constructor(
     internal val border: Border,
     internal val focusedBorder: Border,
     internal val pressedBorder: Border,
@@ -469,7 +465,7 @@ class ToggleableSurfaceBorder internal constructor(
         if (this === other) return true
         if (other == null || this::class != other::class) return false
 
-        other as ToggleableSurfaceBorder
+        other as SelectableSurfaceBorder
 
         if (border != other.border) return false
         if (focusedBorder != other.focusedBorder) return false
@@ -501,7 +497,7 @@ class ToggleableSurfaceBorder internal constructor(
     }
 
     override fun toString(): String {
-        return "ToggleableSurfaceBorder(border=$border, focusedBorder=$focusedBorder," +
+        return "SelectableSurfaceBorder(border=$border, focusedBorder=$focusedBorder," +
             "pressedBorder=$pressedBorder, selectedBorder=$selectedBorder," +
             "disabledBorder=$disabledBorder, focusedSelectedBorder=$focusedSelectedBorder, " +
             "focusedDisabledBorder=$focusedDisabledBorder," +
@@ -511,11 +507,10 @@ class ToggleableSurfaceBorder internal constructor(
     }
 }
 
-/**
- * Defines [Glow] for all TV [Interaction] states of [Surface].
- */
+/** Defines [Glow] for all TV [Interaction] states of [Surface]. */
 @Immutable
-class ClickableSurfaceGlow internal constructor(
+class ClickableSurfaceGlow
+internal constructor(
     internal val glow: Glow,
     internal val focusedGlow: Glow,
     internal val pressedGlow: Glow
@@ -547,11 +542,10 @@ class ClickableSurfaceGlow internal constructor(
     }
 }
 
-/**
- * Defines [Glow] for all TV [Interaction] states of a toggleable Surface.
- */
+/** Defines [Glow] for all TV [Interaction] states of a selectable Surface. */
 @Immutable
-class ToggleableSurfaceGlow internal constructor(
+class SelectableSurfaceGlow
+internal constructor(
     internal val glow: Glow,
     internal val focusedGlow: Glow,
     internal val pressedGlow: Glow,
@@ -563,7 +557,7 @@ class ToggleableSurfaceGlow internal constructor(
         if (this === other) return true
         if (other == null || this::class != other::class) return false
 
-        other as ToggleableSurfaceGlow
+        other as SelectableSurfaceGlow
 
         if (glow != other.glow) return false
         if (focusedGlow != other.focusedGlow) return false
@@ -587,25 +581,21 @@ class ToggleableSurfaceGlow internal constructor(
     }
 
     override fun toString(): String {
-        return "ToggleableSurfaceGlow(glow=$glow, focusedGlow=$focusedGlow," +
+        return "SelectableSurfaceGlow(glow=$glow, focusedGlow=$focusedGlow," +
             "pressedGlow=$pressedGlow, selectedGlow=$selectedGlow," +
             "focusedSelectedGlow=$focusedSelectedGlow, pressedSelectedGlow=$pressedSelectedGlow)"
     }
 }
 
-/**
- * Defines the container & content color [Color] for a non interactive surface.
- */
+/** Defines the container & content color [Color] for a non interactive surface. */
 @Immutable
-class NonInteractiveSurfaceColors internal constructor(
-    internal val containerColor: Color,
-    internal val contentColor: Color
-) {
+class SurfaceColors
+internal constructor(internal val containerColor: Color, internal val contentColor: Color) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || this::class != other::class) return false
 
-        other as NonInteractiveSurfaceColors
+        other as SurfaceColors
 
         if (containerColor != other.containerColor) return false
         if (contentColor != other.contentColor) return false
@@ -620,7 +610,6 @@ class NonInteractiveSurfaceColors internal constructor(
     }
 
     override fun toString(): String {
-        return "NonInteractiveSurfaceColors(containerColor=$containerColor, " +
-            "contentColor=$contentColor)"
+        return "SurfaceColors(containerColor=$containerColor, " + "contentColor=$contentColor)"
     }
 }

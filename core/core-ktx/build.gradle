@@ -20,7 +20,7 @@ dependencies {
     }
 
     api(libs.kotlinStdlib)
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
     api(project(":core:core"))
 
     androidTestImplementation(libs.junit)
@@ -34,13 +34,14 @@ dependencies {
 
 androidx {
     name = "Core Kotlin Extensions"
-    type = LibraryType.PUBLISHED_KOTLIN_ONLY_LIBRARY
+    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     mavenVersion = LibraryVersions.CORE
     inceptionYear = "2018"
     description = "Kotlin extensions for 'core' artifact"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }
 
 android {
+    compileSdk 35
     namespace "androidx.core.ktx"
 }

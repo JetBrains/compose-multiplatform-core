@@ -14,38 +14,48 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(31) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe
 
+import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraExtensionCharacteristics
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.util.Size
-import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 
 /**
  * [CameraExtensionMetadata] is a compatibility wrapper around [CameraExtensionCharacteristics].
  *
- * Applications should, in most situations, prefer using this interface to unwrapping and
- * using the underlying [CameraExtensionCharacteristics] object directly. Implementation(s) of this
- * interface provide compatibility guarantees and performance improvements over using
+ * Applications should, in most situations, prefer using this interface to unwrapping and using the
+ * underlying [CameraExtensionCharacteristics] object directly. Implementation(s) of this interface
+ * provide compatibility guarantees and performance improvements over using
  * [CameraExtensionCharacteristics] directly. This allows code to get reasonable behavior for all
  * properties across all OS levels and makes behavior that depends on [CameraExtensionMetadata]
  * easier to test and reason about.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-interface CameraExtensionMetadata : Metadata, UnsafeWrapper {
-    val camera: CameraId
-    val isRedacted: Boolean
-    val cameraExtension: Int
-    val isPostviewSupported: Boolean
+public interface CameraExtensionMetadata : Metadata, UnsafeWrapper {
+    public operator fun <T> get(key: CameraCharacteristics.Key<T>): T?
 
-    val requestKeys: Set<CaptureRequest.Key<*>>
-    val resultKeys: Set<CaptureResult.Key<*>>
+    public fun <T> getOrDefault(key: CameraCharacteristics.Key<T>, default: T): T
 
-    fun getOutputSizes(imageFormat: Int): Set<Size>
-    fun getOutputSizes(klass: Class<*>): Set<Size>
-    fun getPostviewSizes(captureSize: Size, format: Int): Set<Size>
+    public val camera: CameraId
+    public val cameraExtension: Int
+
+    public val isRedacted: Boolean
+    public val isPostviewSupported: Boolean
+    public val isCaptureProgressSupported: Boolean
+
+    public val keys: Set<CameraCharacteristics.Key<*>>
+    public val requestKeys: Set<CaptureRequest.Key<*>>
+    public val resultKeys: Set<CaptureResult.Key<*>>
+
+    /** Get output sizes that can be used for high-quality capture requests. */
+    public fun getOutputSizes(imageFormat: Int): Set<Size>
+
+    /** Get output sizes that can be used for repeating preview requests. */
+    public fun getOutputSizes(klass: Class<*>): Set<Size>
+
+    /** Get sizes that may be used for the postview stream. */
+    public fun getPostviewSizes(captureSize: Size, format: Int): Set<Size>
 }

@@ -28,7 +28,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -82,7 +81,6 @@ import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.viewinterop.AndroidView
 
 @Preview
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FocusedBoundsDemo() {
     // This demo demonstrates multiple observers with two separate observers:
@@ -124,20 +122,14 @@ fun FocusedBoundsDemo() {
 private fun FocusableDemoContent() {
     Column(verticalArrangement = spacedBy(4.dp)) {
         val focusManager = LocalFocusManager.current
-        Button(onClick = { focusManager.clearFocus() }) {
-            Text("Clear focus")
-        }
+        Button(onClick = { focusManager.clearFocus() }) { Text("Clear focus") }
         TextField("", {}, Modifier.fillMaxWidth())
         Text("Lazy row:")
         LazyRow(
-            modifier = Modifier
-                .padding(horizontal = 32.dp)
-                .border(2.dp, Color.Black),
+            modifier = Modifier.padding(horizontal = 32.dp).border(2.dp, Color.Black),
             horizontalArrangement = spacedBy(8.dp)
         ) {
-            items(50) { index ->
-                TextField(index.toString(), {}, Modifier.width(64.dp))
-            }
+            items(50) { index -> TextField(index.toString(), {}, Modifier.width(64.dp)) }
         }
     }
 }
@@ -147,17 +139,14 @@ private class FocusableAndroidViewDemo(context: Context) : LinearLayout(context)
 
     init {
         orientation = VERTICAL
-        val fields = LinearLayout(context).apply {
-            orientation = HORIZONTAL
-            repeat(50) { index ->
-                addView(EditText(context).apply {
-                    setText(index.toString())
-                })
+        val fields =
+            LinearLayout(context).apply {
+                orientation = HORIZONTAL
+                repeat(50) { index ->
+                    addView(EditText(context).apply { setText(index.toString()) })
+                }
             }
-        }
-        val fieldRow = HorizontalScrollView(context).apply {
-            addView(fields)
-        }
+        val fieldRow = HorizontalScrollView(context).apply { addView(fields) }
         addView(fieldRow)
         addView(composeView)
     }
@@ -167,7 +156,6 @@ private class FocusableAndroidViewDemo(context: Context) : LinearLayout(context)
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FocusedBoundsObserver(modifier: Modifier, content: @Composable () -> Unit) {
     var coordinates: LayoutCoordinates? by remember { mutableStateOf(null) }
@@ -203,17 +191,13 @@ private fun FocusedBoundsObserver(modifier: Modifier, content: @Composable () ->
     ) {
         Row(
             horizontalArrangement = Arrangement.Center,
-            modifier = Modifier
-                .padding(8.dp)
-                .fillMaxWidth()
+            modifier = Modifier.padding(8.dp).fillMaxWidth()
         ) {
             Eyeball(focalPoint, myBounds)
             Spacer(Modifier.width(36.dp))
             Eyeball(focalPoint, myBounds)
         }
-        Box(propagateMinConstraints = true) {
-            content()
-        }
+        Box(propagateMinConstraints = true) { content() }
     }
 }
 
@@ -221,28 +205,24 @@ private fun FocusedBoundsObserver(modifier: Modifier, content: @Composable () ->
 private fun Eyeball(focalPoint: Offset, parentBounds: Rect) {
     var myCenter by remember { mutableStateOf(Offset.Unspecified) }
     var mySize by remember { mutableStateOf(Size.Unspecified) }
-    val targetPoint = if (focalPoint.isSpecified && myCenter.isSpecified && mySize.isSpecified) {
-        val foo = focalPoint.minus(myCenter)
-        val maxDistanceX = maxOf(
-            myCenter.x - parentBounds.left,
-            parentBounds.width - myCenter.x
-        )
-        val maxDistanceY = maxOf(
-            myCenter.y - parentBounds.top,
-            parentBounds.height - myCenter.y
-        )
-        val maxDistance = maxOf(maxDistanceX, maxDistanceY)
-        val scaleFactor = (mySize.minDimension / 2) / maxDistance
-        foo.times(scaleFactor)
-    } else {
-        Offset.Zero
-    }
+    val targetPoint =
+        if (focalPoint.isSpecified && myCenter.isSpecified && mySize.isSpecified) {
+            val foo = focalPoint.minus(myCenter)
+            val maxDistanceX =
+                maxOf(myCenter.x - parentBounds.left, parentBounds.width - myCenter.x)
+            val maxDistanceY =
+                maxOf(myCenter.y - parentBounds.top, parentBounds.height - myCenter.y)
+            val maxDistance = maxOf(maxDistanceX, maxDistanceY)
+            val scaleFactor = (mySize.minDimension / 2) / maxDistance
+            foo.times(scaleFactor)
+        } else {
+            Offset.Zero
+        }
     val animatedTargetPoint by animateOffsetAsState(targetPoint)
     val focusRequester = remember { FocusRequester() }
 
     Canvas(
-        Modifier
-            .size(24.dp)
+        Modifier.size(24.dp)
             .onGloballyPositioned {
                 myCenter = it.boundsInRoot().center
                 mySize = it.size.toSize()
@@ -258,11 +238,7 @@ private fun Eyeball(focalPoint: Offset, parentBounds: Rect) {
 
         val pupilCenter = center + animatedTargetPoint
         val pupilRadius = size.minDimension / 4f
-        drawCircle(
-            Color.Black,
-            center = pupilCenter,
-            radius = pupilRadius
-        )
+        drawCircle(Color.Black, center = pupilCenter, radius = pupilRadius)
         drawCircle(
             Color.White,
             center = pupilCenter - (Offset(pupilRadius / 2, pupilRadius / 2)),
@@ -271,7 +247,6 @@ private fun Eyeball(focalPoint: Offset, parentBounds: Rect) {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 private fun Modifier.highlightFocusedBounds() = composed {
     var coordinates: LayoutCoordinates? by remember { mutableStateOf(null) }
     var focusedChild: LayoutCoordinates? by remember { mutableStateOf(null) }
@@ -281,16 +256,16 @@ private fun Modifier.highlightFocusedBounds() = composed {
 
     fun update() {
         with(density) {
-            focusedBounds = calculateHighlightBounds(focusedChild, coordinates, clipBounds = false)
-                .inflate(1.dp.toPx())
+            focusedBounds =
+                calculateHighlightBounds(focusedChild, coordinates, clipBounds = false)
+                    .inflate(1.dp.toPx())
             focusedBoundsClipped =
                 calculateHighlightBounds(focusedChild, coordinates, clipBounds = true)
                     .inflate(1.dp.toPx())
         }
     }
 
-    Modifier
-        .onGloballyPositioned {
+    Modifier.onGloballyPositioned {
             coordinates = it
             update()
         }
@@ -301,7 +276,6 @@ private fun Modifier.highlightFocusedBounds() = composed {
         .drawAnimatedFocusHighlight(focusedBoundsClipped, focusedBounds)
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 private fun calculateHighlightBounds(
     child: LayoutCoordinates?,
     coordinates: LayoutCoordinates?,
@@ -319,14 +293,15 @@ private fun Modifier.drawAnimatedFocusHighlight(
     val animatedPrimaryBounds by animateRectAsState(primaryBounds)
     val animatedSecondaryBounds by animateRectAsState(secondaryBounds)
     val strokeDashes = remember { floatArrayOf(10f, 10f) }
-    val strokeDashPhase by rememberInfiniteTransition()
-        .animateFloat(0f, 20f, infiniteRepeatable(tween(500, easing = LinearEasing)))
+    val strokeDashPhase by
+        rememberInfiniteTransition()
+            .animateFloat(0f, 20f, infiniteRepeatable(tween(500, easing = LinearEasing)))
 
     drawWithContent {
         drawContent()
 
-        if (animatedSecondaryBounds != Rect.Zero &&
-            animatedSecondaryBounds != animatedPrimaryBounds
+        if (
+            animatedSecondaryBounds != Rect.Zero && animatedSecondaryBounds != animatedPrimaryBounds
         ) {
             drawRoundRect(
                 color = Color.LightGray,
@@ -334,10 +309,11 @@ private fun Modifier.drawAnimatedFocusHighlight(
                 topLeft = animatedSecondaryBounds.topLeft,
                 size = animatedSecondaryBounds.size,
                 cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx()),
-                style = Stroke(
-                    width = 3.dp.toPx(),
-                    pathEffect = dashPathEffect(strokeDashes, strokeDashPhase)
-                )
+                style =
+                    Stroke(
+                        width = 3.dp.toPx(),
+                        pathEffect = dashPathEffect(strokeDashes, strokeDashPhase)
+                    )
             )
         }
 
@@ -349,10 +325,11 @@ private fun Modifier.drawAnimatedFocusHighlight(
                 topLeft = animatedPrimaryBounds.topLeft,
                 size = animatedPrimaryBounds.size,
                 cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx()),
-                style = Stroke(
-                    width = 3.dp.toPx(),
-                    pathEffect = dashPathEffect(strokeDashes, strokeDashPhase)
-                )
+                style =
+                    Stroke(
+                        width = 3.dp.toPx(),
+                        pathEffect = dashPathEffect(strokeDashes, strokeDashPhase)
+                    )
             )
         }
     }

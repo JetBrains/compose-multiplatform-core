@@ -24,14 +24,17 @@ class TextStringSimpleNodeInvalidationTest : NodeInvalidationTestParent() {
 
     override fun Any.updateAll(params: Params): Pair<Boolean, Boolean> {
         this as TextStringSimpleNode
-        return updateText(params.text) to updateLayoutRelatedArgs(
-            style = params.style,
-            minLines = params.minLines,
-            maxLines = params.maxLines,
-            softWrap = params.softWrap,
-            fontFamilyResolver = params.fontFamilyResolver,
-            overflow = params.overflow
-        )
+        return updateText(params.text) to
+            updateLayoutRelatedArgs(
+                style = params.style,
+                minLines = params.minLines,
+                maxLines = params.maxLines,
+                softWrap = params.softWrap,
+                fontFamilyResolver = params.fontFamilyResolver,
+                overflow = params.overflow,
+                // TODO(b/364657660): Give this a non-null value when AutoSize becomes public
+                autoSize = null
+            )
     }
 
     override fun Any.invalidateAll() {

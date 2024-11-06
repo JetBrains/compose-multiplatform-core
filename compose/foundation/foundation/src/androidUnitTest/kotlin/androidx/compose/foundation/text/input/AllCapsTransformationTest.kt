@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.text.input
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.intl.Locale
 import com.google.common.truth.Truth.assertThat
@@ -24,7 +23,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-@OptIn(ExperimentalFoundationApi::class)
 @RunWith(JUnit4::class)
 class AllCapsTransformationTest {
 
@@ -40,9 +38,7 @@ class AllCapsTransformationTest {
         val transformation = InputTransformation.allCaps(Locale("en-US"))
 
         val originalValue = TextFieldCharSequence("")
-        val buffer = TextFieldBuffer(originalValue).apply {
-            append("hello")
-        }
+        val buffer = TextFieldBuffer(originalValue).apply { append("hello") }
 
         with(transformation) { buffer.transformInput() }
 
@@ -54,9 +50,7 @@ class AllCapsTransformationTest {
         val transformation = InputTransformation.allCaps(Locale("en-US"))
 
         val originalValue = TextFieldCharSequence("hello")
-        val buffer = TextFieldBuffer(originalValue).apply {
-            append(" world")
-        }
+        val buffer = TextFieldBuffer(originalValue).apply { append(" world") }
 
         with(transformation) { buffer.transformInput() }
 
@@ -68,9 +62,7 @@ class AllCapsTransformationTest {
         val transformation = InputTransformation.allCaps(Locale("tr"))
 
         val originalValue = TextFieldCharSequence("")
-        val buffer = TextFieldBuffer(originalValue).apply {
-            append("i")
-        }
+        val buffer = TextFieldBuffer(originalValue).apply { append("i") }
 
         with(transformation) { buffer.transformInput() }
 

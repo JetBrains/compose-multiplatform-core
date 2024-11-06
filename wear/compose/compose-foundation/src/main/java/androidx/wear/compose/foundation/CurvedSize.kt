@@ -31,79 +31,72 @@ import androidx.compose.ui.unit.dp
  * @param maxThickness the maximum thickness (radial size) for the content.
  */
 public fun CurvedModifier.sizeIn(
-    @FloatRange(from = 0.0, to = 360.0)
-    minSweepDegrees: Float = 0f,
-    @FloatRange(from = 0.0, to = 360.0)
-    maxSweepDegrees: Float = 360f,
+    @FloatRange(from = 0.0, to = 360.0) minSweepDegrees: Float = 0f,
+    @FloatRange(from = 0.0, to = 360.0) maxSweepDegrees: Float = 360f,
     minThickness: Dp = 0.dp,
     maxThickness: Dp = Dp.Infinity,
-) = this.then { child ->
-    SweepSizeWrapper(
-        child,
-        minSweepDegrees = minSweepDegrees,
-        maxSweepDegrees = maxSweepDegrees,
-        minThickness = minThickness,
-        maxThickness = maxThickness
-    )
-}
+) =
+    this.then { child ->
+        SweepSizeWrapper(
+            child,
+            minSweepDegrees = minSweepDegrees,
+            maxSweepDegrees = maxSweepDegrees,
+            minThickness = minThickness,
+            maxThickness = maxThickness
+        )
+    }
 
 /**
  * Specify the dimensions (sweep and thickness) for the content.
  *
  * @sample androidx.wear.compose.foundation.samples.CurvedFixedSize
- *
  * @param sweepDegrees Indicates the sweep (angular size) of the content.
  * @param thickness Indicates the thickness (radial size) of the content.
  */
 public fun CurvedModifier.size(
-    @FloatRange(from = 0.0, to = 360.0)
-    sweepDegrees: Float,
+    @FloatRange(from = 0.0, to = 360.0) sweepDegrees: Float,
     thickness: Dp
-) = sizeIn(
-    minSweepDegrees = sweepDegrees,
-    maxSweepDegrees = sweepDegrees,
-    minThickness = thickness,
-    maxThickness = thickness
-)
+) =
+    sizeIn(
+        minSweepDegrees = sweepDegrees,
+        maxSweepDegrees = sweepDegrees,
+        minThickness = thickness,
+        maxThickness = thickness
+    )
 
 /**
- * Specify the sweep (arc length) for the content in Dp. The arc length will be measured
- * at the center of the item, except for [basicCurvedText], where it will be
- * measured at the text baseline.
+ * Specify the sweep (arc length) for the content in Dp. The arc length will be measured at the
+ * center of the item, except for [basicCurvedText], where it will be measured at the text baseline.
  *
  * @sample androidx.wear.compose.foundation.samples.CurvedFixedSize
- *
  * @param angularWidth Indicates the arc length of the content in Dp.
  */
-public fun CurvedModifier.angularSizeDp(angularWidth: Dp) = this.then { child ->
-    AngularWidthSizeWrapper(
-        child,
-        minAngularWidth = angularWidth,
-        maxAngularWidth = angularWidth,
-        minThickness = 0.dp,
-        maxThickness = Dp.Infinity
-    )
-}
+public fun CurvedModifier.angularSizeDp(angularWidth: Dp) =
+    this.then { child ->
+        AngularWidthSizeWrapper(
+            child,
+            minAngularWidth = angularWidth,
+            maxAngularWidth = angularWidth,
+            minThickness = 0.dp,
+            maxThickness = Dp.Infinity
+        )
+    }
 
 /**
  * Specify the sweep (angular size) for the content.
  *
  * @param sweepDegrees Indicates the sweep (angular size) of the content.
  */
-public fun CurvedModifier.angularSize(sweepDegrees: Float) = sizeIn(
-    minSweepDegrees = sweepDegrees,
-    maxSweepDegrees = sweepDegrees
-)
+public fun CurvedModifier.angularSize(sweepDegrees: Float) =
+    sizeIn(minSweepDegrees = sweepDegrees, maxSweepDegrees = sweepDegrees)
 
 /**
  * Specify the radialSize (thickness) for the content.
  *
  * @param thickness Indicates the thickness of the content.
  */
-public fun CurvedModifier.radialSize(thickness: Dp) = sizeIn(
-    minThickness = thickness,
-    maxThickness = thickness
-)
+public fun CurvedModifier.radialSize(thickness: Dp) =
+    sizeIn(minThickness = thickness, maxThickness = thickness)
 
 internal class SweepSizeWrapper(
     child: CurvedChild,
@@ -112,17 +105,12 @@ internal class SweepSizeWrapper(
     minThickness: Dp,
     maxThickness: Dp,
 ) : BaseSizeWrapper(child, minThickness, maxThickness) {
-    override fun CurvedMeasureScope.initializeMeasure(
-        measurables: Iterator<Measurable>
-    ) {
+    override fun CurvedMeasureScope.initializeMeasure(measurables: Iterator<Measurable>) {
         baseInitializeMeasure(measurables)
     }
 
-    override fun calculateSweepRadians(partialLayoutInfo: PartialLayoutInfo): Float =
-        partialLayoutInfo.sweepRadians.coerceIn(
-            minSweepDegrees.toRadians(),
-            maxSweepDegrees.toRadians()
-        )
+    override fun calculateSweepRadians(sweepRadians: Float, measureRadius: Float): Float =
+        sweepRadians.coerceIn(minSweepDegrees.toRadians(), maxSweepDegrees.toRadians())
 }
 
 internal class AngularWidthSizeWrapper(
@@ -135,20 +123,16 @@ internal class AngularWidthSizeWrapper(
 
     private var minAngularWidthPx = 0f
     private var maxAngularWidthPx = 0f
-    override fun CurvedMeasureScope.initializeMeasure(
-        measurables: Iterator<Measurable>
-    ) {
+
+    override fun CurvedMeasureScope.initializeMeasure(measurables: Iterator<Measurable>) {
         minAngularWidthPx = minAngularWidth.toPx()
         maxAngularWidthPx = maxAngularWidth.toPx()
 
         baseInitializeMeasure(measurables)
     }
 
-    override fun calculateSweepRadians(partialLayoutInfo: PartialLayoutInfo): Float =
-        partialLayoutInfo.sweepRadians.coerceIn(
-            minAngularWidthPx / partialLayoutInfo.measureRadius,
-            maxAngularWidthPx / partialLayoutInfo.measureRadius
-        )
+    override fun calculateSweepRadians(sweepRadians: Float, measureRadius: Float) =
+        sweepRadians.coerceIn(minAngularWidthPx / measureRadius, maxAngularWidthPx / measureRadius)
 }
 
 internal abstract class BaseSizeWrapper(
@@ -159,9 +143,7 @@ internal abstract class BaseSizeWrapper(
     private var minThicknessPx = 0f
     private var maxThicknessPx = 0f
 
-    protected fun CurvedMeasureScope.baseInitializeMeasure(
-        measurables: Iterator<Measurable>
-    ) {
+    protected fun CurvedMeasureScope.baseInitializeMeasure(measurables: Iterator<Measurable>) {
         minThicknessPx = minThickness.toPx()
         maxThicknessPx = maxThickness.toPx()
         with(wrapped) {
@@ -173,7 +155,8 @@ internal abstract class BaseSizeWrapper(
     override fun doEstimateThickness(maxRadius: Float) =
         wrapped.estimateThickness(maxRadius).coerceIn(minThicknessPx, maxThicknessPx)
 
-    protected abstract fun calculateSweepRadians(partialLayoutInfo: PartialLayoutInfo): Float
+    protected abstract fun calculateSweepRadians(sweepRadians: Float, measureRadius: Float): Float
+
     override fun doAngularPosition(
         parentStartAngleRadians: Float,
         parentSweepRadians: Float,
@@ -181,7 +164,7 @@ internal abstract class BaseSizeWrapper(
     ): Float {
         wrapped.angularPosition(
             parentStartAngleRadians,
-            parentSweepRadians = sweepRadians,
+            parentSweepRadians = calculateSweepRadians(parentSweepRadians, measureRadius),
             centerOffset
         )
         return parentStartAngleRadians
@@ -191,16 +174,13 @@ internal abstract class BaseSizeWrapper(
         parentOuterRadius: Float,
         parentThickness: Float
     ): PartialLayoutInfo {
-        val partialLayoutInfo = wrapped.radialPosition(
-            parentOuterRadius,
-            estimatedThickness
-        )
+        val partialLayoutInfo = wrapped.radialPosition(parentOuterRadius, estimatedThickness)
         return PartialLayoutInfo(
-            calculateSweepRadians(partialLayoutInfo),
+            calculateSweepRadians(partialLayoutInfo.sweepRadians, partialLayoutInfo.measureRadius),
             parentOuterRadius,
             thickness = estimatedThickness,
-            measureRadius = partialLayoutInfo.measureRadius +
-                partialLayoutInfo.outerRadius - parentOuterRadius
+            measureRadius =
+                partialLayoutInfo.measureRadius + partialLayoutInfo.outerRadius - parentOuterRadius
         )
     }
 }

@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.demos.snapping
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.rememberScrollableState
@@ -42,10 +41,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 
-/**
- * A provider that doesn't use the concept of items for snapping.
- */
-@OptIn(ExperimentalFoundationApi::class)
+/** A provider that doesn't use the concept of items for snapping. */
 class NonItemBasedSnappingLayoutInfoProvider(
     private val currentOffset: Int,
     layoutSize: Int,
@@ -56,50 +52,49 @@ class NonItemBasedSnappingLayoutInfoProvider(
     private val offsetList = listOf(0, layoutSize / 2 - thumbSize / 2, (layoutSize - thumbSize))
 
     // do not approach, our snapping positions are discrete.
-    override fun calculateApproachOffset(initialVelocity: Float): Float = 0f
+    override fun calculateApproachOffset(velocity: Float, decayOffset: Float): Float = 0.0f
 
-    override fun calculateSnappingOffset(currentVelocity: Float): Float {
-        val targetOffset = if (currentVelocity == 0.0f) {
-            // snap to closest offset
-            var closestOffset = 0
-            var prevMinAbs = Int.MAX_VALUE
-            offsetList.forEach {
-                val absDistance = abs(currentOffset - it)
-                if (absDistance < prevMinAbs) {
-                    prevMinAbs = absDistance
-                    closestOffset = it
+    override fun calculateSnapOffset(velocity: Float): Float {
+        val targetOffset =
+            if (velocity == 0.0f) {
+                // snap to closest offset
+                var closestOffset = 0
+                var prevMinAbs = Int.MAX_VALUE
+                offsetList.forEach {
+                    val absDistance = abs(currentOffset - it)
+                    if (absDistance < prevMinAbs) {
+                        prevMinAbs = absDistance
+                        closestOffset = it
+                    }
                 }
+                (closestOffset).toFloat()
+            } else if (velocity > 0) {
+                // snap to the next offset
+                val offset = offsetList.firstOrNull { it > currentOffset }
+                (offset ?: 0).toFloat() // if offset is found, move there, if not, don't move
+            } else {
+                // snap to the previous offset
+                val offset = offsetList.reversed().firstOrNull { it < currentOffset }
+                (offset ?: 0).toFloat() // if offset is found, move there, if not, don't move
             }
-            (closestOffset).toFloat()
-        } else if (currentVelocity > 0) {
-            // snap to the next offset
-            val offset = offsetList.firstOrNull { it > currentOffset }
-            (offset ?: 0).toFloat() // if offset is found, move there, if not, don't move
-        } else {
-            // snap to the previous offset
-            val offset = offsetList.reversed().firstOrNull { it < currentOffset }
-            (offset ?: 0).toFloat() // if offset is found, move there, if not, don't move
-        }
         return targetOffset - currentOffset // distance that needs to be consumed to reach target
     }
 }
 
 private val ThumbSize = 60.dp
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun NonItemBasedLayout() {
     var thumbOffset by remember { mutableStateOf(IntOffset.Zero) }
     var layoutSize by remember { mutableIntStateOf(0) }
 
     val thumbSize = with(LocalDensity.current) { ThumbSize.roundToPx() }
-    val maxPosition = with(LocalDensity.current) {
-        layoutSize - ThumbSize.roundToPx()
-    }
+    val maxPosition = with(LocalDensity.current) { layoutSize - ThumbSize.roundToPx() }
 
-    val snapLayoutInfoProvider = remember(thumbOffset, layoutSize, thumbSize) {
-        NonItemBasedSnappingLayoutInfoProvider(thumbOffset.x, layoutSize, thumbSize)
-    }
+    val snapLayoutInfoProvider =
+        remember(thumbOffset, layoutSize, thumbSize) {
+            NonItemBasedSnappingLayoutInfoProvider(thumbOffset.x, layoutSize, thumbSize)
+        }
 
     val fling = rememberSnapFlingBehavior(snapLayoutInfoProvider = snapLayoutInfoProvider)
     val scrollableState = rememberScrollableState {
@@ -109,22 +104,19 @@ fun NonItemBasedLayout() {
         it // need to return correct consumption
     }
     Box(
-        modifier = Modifier
-            .requiredHeight(ThumbSize)
-            .fillMaxWidth()
-            .background(Color.LightGray)
-            .scrollable(
-                scrollableState,
-                orientation = Orientation.Horizontal,
-                flingBehavior = fling
-            )
-            .onSizeChanged {
-                layoutSize = it.width
-            }
+        modifier =
+            Modifier.requiredHeight(ThumbSize)
+                .fillMaxWidth()
+                .background(Color.LightGray)
+                .scrollable(
+                    scrollableState,
+                    orientation = Orientation.Horizontal,
+                    flingBehavior = fling
+                )
+                .onSizeChanged { layoutSize = it.width }
     ) {
-        Box(modifier = Modifier
-            .offset { thumbOffset }
-            .requiredSize(ThumbSize)
-            .background(Color.Red))
+        Box(
+            modifier = Modifier.offset { thumbOffset }.requiredSize(ThumbSize).background(Color.Red)
+        )
     }
 }

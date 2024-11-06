@@ -23,10 +23,10 @@ import android.content.res.TypedArray;
 import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 
 import androidx.annotation.DrawableRes;
-import androidx.annotation.NonNull;
 import androidx.car.app.CarContext;
 import androidx.car.app.Screen;
 import androidx.car.app.constraints.ConstraintManager;
@@ -45,6 +45,8 @@ import androidx.car.app.model.Row;
 import androidx.car.app.sample.showcase.common.R;
 import androidx.car.app.versioning.CarAppApiLevels;
 import androidx.core.graphics.drawable.IconCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,8 +73,7 @@ public class SamplePlaces {
     }
 
     /** Create an instance of {@link SamplePlaces}. */
-    @NonNull
-    public static SamplePlaces create(@NonNull Screen demoScreen) {
+    public static @NonNull SamplePlaces create(@NonNull Screen demoScreen) {
         return new SamplePlaces(demoScreen);
     }
 
@@ -245,8 +246,7 @@ public class SamplePlaces {
     }
 
     /** Return the {@link ItemList} of the sample places. */
-    @NonNull
-    public ItemList getPlaceList(boolean randomOrder) {
+    public @NonNull ItemList getPlaceList(boolean randomOrder) {
         ItemList.Builder listBuilder = new ItemList.Builder();
 
         int listLimit = 6;
@@ -266,26 +266,25 @@ public class SamplePlaces {
 
             // Build a description string that includes the required distance span.
             int distanceKm = getDistanceFromCurrentLocation(place.location) / 1000;
-            SpannableString description = new SpannableString("   \u00b7 " + place.description);
-            description.setSpan(
+            SpannableStringBuilder descriptionBuilder = new SpannableStringBuilder();
+
+            descriptionBuilder.append(
+                    " ",
                     DistanceSpan.create(Distance.create(distanceKm, Distance.UNIT_KILOMETERS)),
-                    0,
-                    1,
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            description.setSpan(
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            );
+            descriptionBuilder.setSpan(
                     ForegroundCarColorSpan.create(CarColor.BLUE),
                     0,
                     1,
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            );
+            descriptionBuilder.append(" · ");
+            descriptionBuilder.append(place.description);
             if (index == 4) {
-                description.setSpan(
-                        CarIconSpan.create(
-                                createCarIconWithBitmap(carContext, R.drawable.ic_hi),
-                                CarIconSpan.ALIGN_CENTER
-                        ),
-                        5,
-                        6,
-                        Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
+                descriptionBuilder.append(" ",
+                        CarIconSpan.create(createCarIconWithBitmap(carContext, R.drawable.ic_hi)),
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
 
             boolean isBrowsable = index > mPlaces.size() / 2;
@@ -294,7 +293,7 @@ public class SamplePlaces {
             listBuilder.addItem(
                     new Row.Builder()
                             .setTitle(place.title)
-                            .addText(description)
+                            .addText(descriptionBuilder)
                             .setOnClickListener(() -> onClickPlace(place))
                             .setBrowsable(isBrowsable)
                             .setMetadata(

@@ -23,10 +23,10 @@ import androidx.lifecycle.livedata.core.lint.stubs.STUBS
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.checks.infrastructure.TestFile
 import com.android.tools.lint.checks.infrastructure.TestLintResult
+import com.android.tools.lint.checks.infrastructure.TestLintTask.OptionSetter
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -38,16 +38,26 @@ class NonNullableMutableLiveDataDetectorTest : LintDetectorTest() {
     override fun getIssues(): MutableList<Issue> =
         mutableListOf(NonNullableMutableLiveDataDetector.ISSUE)
 
-    private fun check(vararg files: TestFile): TestLintResult {
-        return lint().files(*files, *STUBS).testModes(TestMode.DEFAULT)
+    private fun check(
+        vararg files: TestFile,
+        optionSetter: OptionSetter? = null,
+    ): TestLintResult {
+        return lint()
+            .apply {
+                if (optionSetter != null) {
+                    this.configureOptions(optionSetter)
+                }
+            }
+            .files(*files, *STUBS)
+            .testModes(TestMode.DEFAULT)
             .run()
     }
 
     @Test
     fun pass() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -65,9 +75,10 @@ class NonNullableMutableLiveDataDetectorTest : LintDetectorTest() {
                     return x > 0
                 }
             """
-            ).indented(),
-            kotlin(
-                """
+                    )
+                    .indented(),
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -76,15 +87,17 @@ class NonNullableMutableLiveDataDetectorTest : LintDetectorTest() {
                 open class MyLiveData2 : GenericLiveData<Boolean>()
                 open class GenericLiveData<T> : MutableLiveData<T>()
             """
-            ).indented()
-        ).expectClean()
+                    )
+                    .indented()
+            )
+            .expectClean()
     }
 
     @Test
     fun mutableListAssignmentPass() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -98,15 +111,17 @@ class NonNullableMutableLiveDataDetectorTest : LintDetectorTest() {
                     lists.value = map.values.toMutableList()
                 }
             """
-            ).indented()
-        ).expectClean()
+                    )
+                    .indented()
+            )
+            .expectClean()
     }
 
     @Test
     fun helperMethodFails() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -121,22 +136,24 @@ class NonNullableMutableLiveDataDetectorTest : LintDetectorTest() {
                     return null
                 }
             """
-            ).indented()
-        ).expect(
-            """
+                    )
+                    .indented()
+            )
+            .expect(
+                """
 src/com/example/test.kt:7: Error: Expected non-nullable value [NullSafeMutableLiveData]
     liveData.value = bar(5)
                      ~~~~~~
 1 errors, 0 warnings
         """
-        )
+            )
     }
 
     @Test
     fun variableAssignmentFails() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -147,16 +164,19 @@ src/com/example/test.kt:7: Error: Expected non-nullable value [NullSafeMutableLi
                     liveData.value = bar
                 }
             """
-            ).indented()
-        ).expect(
-            """
+                    )
+                    .indented()
+            )
+            .expect(
+                """
 src/com/example/test.kt:8: Error: Expected non-nullable value [NullSafeMutableLiveData]
     liveData.value = bar
                      ~~~
 1 errors, 0 warnings
         """
-        ).expectFixDiffs(
-            """
+            )
+            .expectFixDiffs(
+                """
 Fix for src/com/example/test.kt line 8: Change `LiveData` type to nullable:
 @@ -6 +6
 -     val liveData = MutableLiveData<Boolean>()
@@ -166,14 +186,14 @@ Fix for src/com/example/test.kt line 8: Add non-null asserted (!!) call:
 -     liveData.value = bar
 +     liveData.value = bar!!
         """
-        )
+            )
     }
 
     @Test
     fun nullLiteralFailField() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -184,22 +204,24 @@ Fix for src/com/example/test.kt line 8: Add non-null asserted (!!) call:
                     liveDataField.value = null
                 }
             """
-            ).indented()
-        ).expect(
-            """
+                    )
+                    .indented()
+            )
+            .expect(
+                """
 src/com/example/test.kt:8: Error: Cannot set non-nullable LiveData value to null [NullSafeMutableLiveData]
     liveDataField.value = null
                           ~~~~
 1 errors, 0 warnings
         """
-        )
+            )
     }
 
     @Test
     fun nullLiteralFailMultipleFields() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -214,9 +236,11 @@ src/com/example/test.kt:8: Error: Cannot set non-nullable LiveData value to null
                     thirdLiveDataField.value = null
                 }
             """
-            ).indented()
-        ).expect(
-            """
+                    )
+                    .indented()
+            )
+            .expect(
+                """
 src/com/example/test.kt:10: Error: Cannot set non-nullable LiveData value to null [NullSafeMutableLiveData]
     liveDataField.value = null
                           ~~~~
@@ -228,14 +252,14 @@ src/com/example/test.kt:12: Error: Cannot set non-nullable LiveData value to nul
                                ~~~~
 3 errors, 0 warnings
         """
-        )
+            )
     }
 
     @Test
     fun nullLiteralFailMultipleFieldsDifferentNullability() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -248,15 +272,17 @@ src/com/example/test.kt:12: Error: Cannot set non-nullable LiveData value to nul
                     secondLiveDataField.value = null
                 }
             """
-            ).indented()
-        ).expectClean()
+                    )
+                    .indented()
+            )
+            .expectClean()
     }
 
     @Test
     fun nullLiteralFailMultipleAssignment() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -268,22 +294,24 @@ src/com/example/test.kt:12: Error: Cannot set non-nullable LiveData value to nul
                     liveDataField.value = null
                 }
             """
-            ).indented()
-        ).expect(
-            """
+                    )
+                    .indented()
+            )
+            .expect(
+                """
 src/com/example/test.kt:9: Error: Cannot set non-nullable LiveData value to null [NullSafeMutableLiveData]
     liveDataField.value = null
                           ~~~~
 1 errors, 0 warnings
         """
-        )
+            )
     }
 
     @Test
     fun nullLiteralFailFieldAndIgnore() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -296,22 +324,24 @@ src/com/example/test.kt:9: Error: Cannot set non-nullable LiveData value to null
                     ignoreThisField[0] = null
                 }
             """
-            ).indented()
-        ).expect(
-            """
+                    )
+                    .indented()
+            )
+            .expect(
+                """
 src/com/example/test.kt:9: Error: Cannot set non-nullable LiveData value to null [NullSafeMutableLiveData]
     liveDataField.value = null
                           ~~~~
 1 errors, 0 warnings
         """
-        )
+            )
     }
 
     @Test
     fun nullLiteralFieldApply() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -324,15 +354,17 @@ src/com/example/test.kt:9: Error: Cannot set non-nullable LiveData value to null
                     }
                 }
             """
-            ).indented()
-        ).expectClean()
+                    )
+                    .indented()
+            )
+            .expectClean()
     }
 
     @Test
     fun companionObjectCheck() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -347,15 +379,17 @@ src/com/example/test.kt:9: Error: Cannot set non-nullable LiveData value to null
                     }
                 }
             """
-            ).indented()
-        ).expectClean()
+                    )
+                    .indented()
+            )
+            .expectClean()
     }
 
     @Test
     fun nullLiteralFailFieldAndLocalVariable() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -368,9 +402,11 @@ src/com/example/test.kt:9: Error: Cannot set non-nullable LiveData value to null
                     liveDataVariable.value = null
                 }
             """
-            ).indented()
-        ).expect(
-            """
+                    )
+                    .indented()
+            )
+            .expect(
+                """
 src/com/example/test.kt:8: Error: Cannot set non-nullable LiveData value to null [NullSafeMutableLiveData]
     liveDataField.value = null
                           ~~~~
@@ -379,14 +415,14 @@ src/com/example/test.kt:10: Error: Cannot set non-nullable LiveData value to nul
                              ~~~~
 2 errors, 0 warnings
         """
-        )
+            )
     }
 
     @Test
     fun nullLiteralQuickFix() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -396,22 +432,24 @@ src/com/example/test.kt:10: Error: Cannot set non-nullable LiveData value to nul
                     liveData.value = null
                 }
             """
-            ).indented()
-        ).expectFixDiffs(
-            """
+                    )
+                    .indented()
+            )
+            .expectFixDiffs(
+                """
 Fix for src/com/example/test.kt line 7: Change `LiveData` type to nullable:
 @@ -6 +6
 -     val liveData = MutableLiveData<Boolean>()
 +     val liveData = MutableLiveData<Boolean?>()
         """
-        )
+            )
     }
 
     @Test
     fun classHierarchyTest() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 fun foo() {
@@ -420,9 +458,10 @@ Fix for src/com/example/test.kt line 7: Change `LiveData` type to nullable:
                     liveData.value = bar
                 }
             """
-            ).indented(),
-            kotlin(
-                """
+                    )
+                    .indented(),
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -431,29 +470,32 @@ Fix for src/com/example/test.kt line 7: Change `LiveData` type to nullable:
                 open class MyLiveData2 : GenericLiveData<Boolean>()
                 open class GenericLiveData<T> : MutableLiveData<T>()
             """
-            ).indented()
-        ).expect(
-            """
+                    )
+                    .indented()
+            )
+            .expect(
+                """
 src/com/example/test.kt:6: Error: Expected non-nullable value [NullSafeMutableLiveData]
     liveData.value = bar
                      ~~~
 1 errors, 0 warnings
         """
-        ).expectFixDiffs(
-            """
+            )
+            .expectFixDiffs(
+                """
 Fix for src/com/example/test.kt line 6: Add non-null asserted (!!) call:
 @@ -6 +6
 -     liveData.value = bar
 +     liveData.value = bar!!
         """
-        )
+            )
     }
 
     @Test
     fun differentClassSameFieldTestFirstNull() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -466,9 +508,10 @@ Fix for src/com/example/test.kt line 6: Add non-null asserted (!!) call:
                     }
                 }
             """
-            ).indented(),
-            kotlin(
-                """
+                    )
+                    .indented(),
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -481,29 +524,32 @@ Fix for src/com/example/test.kt line 6: Add non-null asserted (!!) call:
                     }
                 }
             """
-            ).indented()
-        ).expect(
-            """
+                    )
+                    .indented()
+            )
+            .expect(
+                """
 src/com/example/MyClass1.kt:9: Error: Cannot set non-nullable LiveData value to null [NullSafeMutableLiveData]
         liveDataField.value = null
                               ~~~~
 1 errors, 0 warnings
         """
-        ).expectFixDiffs(
-            """
+            )
+            .expectFixDiffs(
+                """
 Fix for src/com/example/MyClass1.kt line 9: Change `LiveData` type to nullable:
 @@ -6 +6
 -     val liveDataField = MutableLiveData<Boolean>()
 +     val liveDataField = MutableLiveData<Boolean?>()
         """
-        )
+            )
     }
 
     @Test
     fun differentClassSameFieldTestSecondNull() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -516,9 +562,10 @@ Fix for src/com/example/MyClass1.kt line 9: Change `LiveData` type to nullable:
                     }
                 }
             """
-            ).indented(),
-            kotlin(
-                """
+                    )
+                    .indented(),
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -531,29 +578,32 @@ Fix for src/com/example/MyClass1.kt line 9: Change `LiveData` type to nullable:
                     }
                 }
             """
-            ).indented()
-        ).expect(
-            """
+                    )
+                    .indented()
+            )
+            .expect(
+                """
 src/com/example/MyClass2.kt:9: Error: Cannot set non-nullable LiveData value to null [NullSafeMutableLiveData]
         liveDataField.value = null
                               ~~~~
 1 errors, 0 warnings
         """
-        ).expectFixDiffs(
-            """
+            )
+            .expectFixDiffs(
+                """
 Fix for src/com/example/MyClass2.kt line 9: Change `LiveData` type to nullable:
 @@ -6 +6
 -     val liveDataField = MutableLiveData<Boolean>()
 +     val liveDataField = MutableLiveData<Boolean?>()
         """
-        )
+            )
     }
 
     @Test
     fun nestedClassSameFieldTest() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -574,29 +624,32 @@ Fix for src/com/example/MyClass2.kt line 9: Change `LiveData` type to nullable:
                     }
                 }
             """
-            ).indented()
-        ).expect(
-            """
+                    )
+                    .indented()
+            )
+            .expect(
+                """
 src/com/example/MyClass1.kt:16: Error: Cannot set non-nullable LiveData value to null [NullSafeMutableLiveData]
             liveDataField.value = null
                                   ~~~~
 1 errors, 0 warnings
         """
-        ).expectFixDiffs(
-            """
+            )
+            .expectFixDiffs(
+                """
 Fix for src/com/example/MyClass1.kt line 16: Change `LiveData` type to nullable:
 @@ -13 +13
 -         val liveDataField = MutableLiveData<Boolean>()
 +         val liveDataField = MutableLiveData<Boolean?>()
         """
-        )
+            )
     }
 
     @Test
     fun modifiersFieldTest() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.LiveData
@@ -614,29 +667,32 @@ Fix for src/com/example/MyClass1.kt line 16: Change `LiveData` type to nullable:
                     }
                 }
             """
-            ).indented()
-        ).expect(
-            """
+                    )
+                    .indented()
+            )
+            .expect(
+                """
 src/com/example/MyClass1.kt:12: Error: Cannot set non-nullable LiveData value to null [NullSafeMutableLiveData]
         firstLiveDataField.value = null
                                    ~~~~
 1 errors, 0 warnings
         """
-        ).expectFixDiffs(
-            """
+            )
+            .expectFixDiffs(
+                """
 Fix for src/com/example/MyClass1.kt line 12: Change `LiveData` type to nullable:
 @@ -7 +7
 -     internal val firstLiveDataField = MutableLiveData<Boolean>()
 +     internal val firstLiveDataField = MutableLiveData<Boolean?>()
         """
-        )
+            )
     }
 
     @Test
     fun implementationClassTest() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.LiveData
@@ -671,29 +727,32 @@ Fix for src/com/example/MyClass1.kt line 12: Change `LiveData` type to nullable:
                     }
                 }
             """
-            ).indented()
-        ).expect(
-            """
+                    )
+                    .indented()
+            )
+            .expect(
+                """
 src/com/example/MyClass2.kt:23: Error: Cannot set non-nullable LiveData value to null [NullSafeMutableLiveData]
         firstLiveDataField.value = null
                                    ~~~~
 1 errors, 0 warnings
         """
-        ).expectFixDiffs(
-            """
+            )
+            .expectFixDiffs(
+                """
 Fix for src/com/example/MyClass2.kt line 23: Change `LiveData` type to nullable:
 @@ -15 +15
 -     override val firstLiveDataField = MutableLiveData<Boolean>()
 +     override val firstLiveDataField = MutableLiveData<Boolean?>()
         """
-        )
+            )
     }
 
     @Test
     fun extendClassTest() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.LiveData
@@ -728,9 +787,11 @@ Fix for src/com/example/MyClass2.kt line 23: Change `LiveData` type to nullable:
                     }
                 }
             """
-            ).indented()
-        ).expect(
-            """
+                    )
+                    .indented()
+            )
+            .expect(
+                """
 src/com/example/MyClass2.kt:23: Error: Cannot set non-nullable LiveData value to null [NullSafeMutableLiveData]
         firstLiveDataField.value = null
                                    ~~~~
@@ -739,8 +800,9 @@ src/com/example/MyClass2.kt:30: Error: Cannot set non-nullable LiveData value to
                                   ~~~~
 2 errors, 0 warnings
         """
-        ).expectFixDiffs(
-            """
+            )
+            .expectFixDiffs(
+                """
 Fix for src/com/example/MyClass2.kt line 23: Change `LiveData` type to nullable:
 @@ -15 +15
 -     override val firstLiveDataField = MutableLiveData<Boolean>()
@@ -750,14 +812,14 @@ Fix for src/com/example/MyClass2.kt line 30: Change `LiveData` type to nullable:
 -     override val fiveLiveDataField = MutableLiveData<List<Boolean>>()
 +     override val fiveLiveDataField = MutableLiveData<List<Boolean>?>()
         """
-        )
+            )
     }
 
     @Test
     fun objectLiveData() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.LiveData
@@ -768,29 +830,32 @@ Fix for src/com/example/MyClass2.kt line 30: Change `LiveData` type to nullable:
                     }
                 }
             """
-            ).indented()
-        ).expectClean()
+                    )
+                    .indented()
+            )
+            .expectClean()
     }
 
     @Test
     fun justKotlinObject() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 object Foo
             """
-            ).indented()
-        ).expectClean()
+                    )
+                    .indented()
+            )
+            .expectClean()
     }
 
-    @Ignore("b/187536061")
     @Test
     fun genericParameterDefinition() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -804,13 +869,17 @@ Fix for src/com/example/MyClass2.kt line 30: Change `LiveData` type to nullable:
                     }
                 }
             """
-            ).indented()
-        ).expectClean()
+                    )
+                    .indented()
+            )
+            .expectClean()
     }
 
     @Test
     fun suspendFunction() {
-        check(kotlin("""
+        check(
+                kotlin(
+                        """
             package com.example
 
             import androidx.lifecycle.MutableLiveData
@@ -825,12 +894,18 @@ Fix for src/com/example/MyClass2.kt line 30: Change `LiveData` type to nullable:
 
                 suspend fun nonNullable() = true
             }
-        """).indented()).expectClean()
+        """
+                    )
+                    .indented()
+            )
+            .expectClean()
     }
 
     @Test
     fun nullableSuspendFunction() {
-        check(kotlin("""
+        check(
+                kotlin(
+                        """
             package com.example
 
             import androidx.lifecycle.MutableLiveData
@@ -845,19 +920,110 @@ Fix for src/com/example/MyClass2.kt line 30: Change `LiveData` type to nullable:
 
                 suspend fun nullable(): String? = null
             }
-        """).indented()).expect("""
+        """
+                    )
+                    .indented()
+            )
+            .expect(
+                """
 src/com/example/Foo.kt:10: Error: Expected non-nullable value [NullSafeMutableLiveData]
         target.value = nullable()
                        ~~~~~~~~~~
 1 errors, 0 warnings
-        """)
+        """
+            )
+    }
+
+    @Test
+    fun smartcastToNonNull_platformType() {
+        check(
+                java(
+                    """
+                        package com.example;
+
+                        public class Util {
+                            public static String getPrefix() {
+                                return "prefix";
+                            }
+                        }
+                    """
+                ),
+                kotlin(
+                        """
+            package com.example
+
+            import androidx.lifecycle.MutableLiveData
+
+            class Foo(
+                var target: MutableLiveData<String>
+            ) {
+                fun bar() {
+                    val prefix = Util.getPrefix()
+                    if (!prefix.isNullOrEmpty()) {
+                        target.value = prefix
+                    }
+                }
+            }
+                """
+                    )
+                    .indented()
+            )
+            .expectClean()
+    }
+
+    @Test
+    fun smartcastToNonNull() {
+        check(
+                kotlin(
+                        """
+            package com.example
+
+            import androidx.lifecycle.MutableLiveData
+
+            class Foo(
+                var target: MutableLiveData<String>
+            ) {
+                fun foo(v: String?) {
+                    if (v != null) {
+                        target.value = v
+                    }
+                }
+            }
+                """
+                    )
+                    .indented()
+            ) { flags ->
+                // smart-cast info is more accurate in AA FIR
+                flags.setUseK2Uast(true)
+            }
+            .expectClean()
+    }
+
+    @Test
+    fun typeParameter() {
+        check(
+                kotlin(
+                        """
+            package com.example
+
+            class EntityHolder<T> {
+                private val mutableLiveData = MutableLiveData<T>()
+                fun postValue(value: T) {
+                    mutableLiveData.postValue(value)
+                }
+            }
+                """
+                    )
+                    .indented()
+            )
+            .expectClean()
     }
 
     @Test
     fun dataClassFromBinary_nonNull() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -874,16 +1040,18 @@ src/com/example/Foo.kt:10: Error: Expected non-nullable value [NullSafeMutableLi
                     return SomeData(extras = x)
                 }
             """
-            ).indented(),
-            DATA_LIB,
-        ).expectClean()
+                    )
+                    .indented(),
+                DATA_LIB,
+            )
+            .expectClean()
     }
 
     @Test
     fun dataClassFromBinary_nullable() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.MutableLiveData
@@ -895,17 +1063,20 @@ src/com/example/Foo.kt:10: Error: Expected non-nullable value [NullSafeMutableLi
                     liveData.value = bar
                 }
             """
-            ).indented(),
-            DATA_LIB,
-        ).expect(
-            """
+                    )
+                    .indented(),
+                DATA_LIB,
+            )
+            .expect(
+                """
 src/com/example/test.kt:9: Error: Expected non-nullable value [NullSafeMutableLiveData]
     liveData.value = bar
                      ~~~
 1 errors, 0 warnings
         """
-        ).expectFixDiffs(
-            """
+            )
+            .expectFixDiffs(
+                """
 Fix for src/com/example/test.kt line 9: Change `LiveData` type to nullable:
 @@ -7 +7
 -     val liveData = MutableLiveData<SomeData>()
@@ -915,14 +1086,14 @@ Fix for src/com/example/test.kt line 9: Add non-null asserted (!!) call:
 -     liveData.value = bar
 +     liveData.value = bar!!
         """
-        )
+            )
     }
 
     @Test
     fun typeArgumentFromJava() {
         check(
-            kotlin(
-                """
+                kotlin(
+                        """
                 package com.example
 
                 import androidx.lifecycle.LiveData
@@ -938,10 +1109,11 @@ Fix for src/com/example/test.kt line 9: Add non-null asserted (!!) call:
                   }
                 }
                 """
-            ).indented(),
-            DATA_LIB,
-            java(
-                """
+                    )
+                    .indented(),
+                DATA_LIB,
+                java(
+                        """
                 package com.example;
 
                 import androidx.lifecycle.MutableLiveData;
@@ -950,8 +1122,58 @@ Fix for src/com/example/test.kt line 9: Add non-null asserted (!!) call:
                   public RemoteRefreshCounter() {}
                 }
                 """
-            ).indented(),
-        ).expectClean()
+                    )
+                    .indented(),
+            )
+            .expectClean()
+    }
+
+    @Test
+    fun lambdaParameterFromMediatorLiveData() {
+        // Regression test from b/341316048
+        // https://youtrack.jetbrains.com/issue/KTIJ-30464
+        check(
+                kotlin(
+                        """
+                    package androidx.lifecycle
+
+                    fun interface Observer<T> {
+                      fun onChanged(value: T)
+                    }
+                """
+                    )
+                    .indented(),
+                java(
+                        """
+                    package androidx.lifecycle;
+
+                    public class MediatorLiveData<T> extends MutableLiveData<T> {
+                        public <S> void addSource(LiveData<S> source, Observer<? super S> onChanged) {
+                        }
+                    }
+                """
+                    )
+                    .indented(),
+                kotlin(
+                        """
+                    import androidx.lifecycle.MediatorLiveData
+
+                    class Test {
+                        val myData = MediatorLiveData<List<Boolean>>()
+
+                        init {
+                          myData.addSource(getSources()) { data ->
+                            myData.value = data
+                          }
+                        }
+
+                        private fun getSources(): MediatorLiveData<List<Boolean>> = TODO()
+                    }
+                """
+                    )
+                    .indented()
+            )
+            .expectClean()
     }
 
     private companion object {
@@ -959,14 +1181,15 @@ Fix for src/com/example/test.kt line 9: Add non-null asserted (!!) call:
             bytecode(
                 "libs/data.jar",
                 kotlin(
-                    """
+                        """
                     package some.other.pkg
 
                     data class SomeData
                     @JvmOverloads
                     constructor(val items: List<Boolean> = listOf(), val extras: Int = 42)
                 """
-                ).indented(),
+                    )
+                    .indented(),
                 0x9ae81803,
                 """
                 META-INF/main.kotlin_module:

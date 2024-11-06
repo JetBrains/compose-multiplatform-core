@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -30,14 +30,11 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.6.0")
+    api("androidx.annotation:annotation:1.8.1")
     api(libs.kotlinStdlib)
 }
 
 android {
-    defaultConfig {
-        minSdkVersion 21
-    }
     namespace "androidx.wear.tooling.preview"
 }
 
@@ -45,7 +42,7 @@ androidx {
     name = "Android Wear Preview Tools"
     inceptionYear = "2023"
     description = "Tools for Wear UI Previews"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.WEAR_TOOLING_PREVIEW
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

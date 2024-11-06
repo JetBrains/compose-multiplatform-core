@@ -18,10 +18,8 @@ package androidx.collection
 
 import androidx.collection.internal.binarySearch
 import androidx.collection.internal.idealLongArraySize
+import androidx.collection.internal.requirePrecondition
 import kotlin.DeprecationLevel.HIDDEN
-import kotlin.jvm.JvmField
-import kotlin.jvm.JvmOverloads
-import kotlin.jvm.JvmSynthetic
 
 private val DELETED = Any()
 
@@ -49,26 +47,14 @@ private val DELETED = Any()
  * order, or the values corresponding to the keys in ascending order in the case of [valueAt].
  *
  * @constructor Creates a new [LongSparseArray] containing no mappings that will not require any
- * additional memory allocation to store the specified number of mappings. If you supply an initial
- * capacity of 0, the sparse array will be initialized with a light-weight representation not
- * requiring any additional array allocations.
+ *   additional memory allocation to store the specified number of mappings. If you supply an
+ *   initial capacity of 0, the sparse array will be initialized with a light-weight representation
+ *   not requiring any additional array allocations.
  */
-public expect open class LongSparseArray<E>
-@JvmOverloads public constructor(initialCapacity: Int = 10) {
-    @JvmSynthetic // Hide from Java callers.
-    @JvmField
+public expect open class LongSparseArray<E> public constructor(initialCapacity: Int = 10) {
     internal var garbage: Boolean
-
-    @JvmSynthetic // Hide from Java callers.
-    @JvmField
     internal var keys: LongArray
-
-    @JvmSynthetic // Hide from Java callers.
-    @JvmField
     internal var values: Array<Any?>
-
-    @JvmSynthetic // Hide from Java callers.
-    @JvmField
     internal var size: Int
 
     /**
@@ -83,15 +69,11 @@ public expect open class LongSparseArray<E>
     @Suppress("KotlinOperator") // Avoid confusion with matrix access syntax.
     public open fun get(key: Long, defaultValue: E): E
 
-    /**
-     * Removes the mapping from the specified [key], if there was any.
-     */
+    /** Removes the mapping from the specified [key], if there was any. */
     @Deprecated("Alias for `remove(key)`.", ReplaceWith("remove(key)"))
     public open fun delete(key: Long): Unit
 
-    /**
-     * Removes the mapping from the specified [key], if there was any.
-     */
+    /** Removes the mapping from the specified [key], if there was any. */
     public open fun remove(key: Long): Unit
 
     /**
@@ -103,9 +85,7 @@ public expect open class LongSparseArray<E>
      */
     public open fun remove(key: Long, value: E): Boolean
 
-    /**
-     * Removes the mapping at the specified [index].
-     */
+    /** Removes the mapping at the specified [index]. */
     public open fun removeAt(index: Int): Unit
 
     /**
@@ -146,13 +126,11 @@ public expect open class LongSparseArray<E>
      * @param key The key under which to store the value.
      * @param value The value to store for the given key.
      * @return Returns the value that was stored for the given key, or `null` if there was no such
-     * key.
+     *   key.
      */
     public open fun putIfAbsent(key: Long, value: E): E?
 
-    /**
-     * Returns the number of key-value mappings that this [LongSparseArray] currently stores.
-     */
+    /** Returns the number of key-value mappings that this [LongSparseArray] currently stores. */
     public open fun size(): Int
 
     /**
@@ -195,9 +173,8 @@ public expect open class LongSparseArray<E>
     public open fun setValueAt(index: Int, value: E): Unit
 
     /**
-     * Returns the index for which [keyAt] would return the
-     * specified key, or a negative number if the specified
-     * key is not mapped.
+     * Returns the index for which [keyAt] would return the specified key, or a negative number if
+     * the specified key is not mapped.
      */
     public open fun indexOfKey(key: Long): Int
 
@@ -216,9 +193,7 @@ public expect open class LongSparseArray<E>
     /** Returns `true` if the specified [value] is mapped from any key. */
     public open fun containsValue(value: E): Boolean
 
-    /**
-     * Removes all key-value mappings from this [LongSparseArray].
-     */
+    /** Removes all key-value mappings from this [LongSparseArray]. */
     public open fun clear(): Unit
 
     /**
@@ -240,25 +215,22 @@ public expect open class LongSparseArray<E>
 
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun <E> LongSparseArray<E>.commonGet(key: Long): E? {
-    return commonGetInternal(key, null)
+    @Suppress("UNCHECKED_CAST") return commonGetInternal(key, null) as E?
 }
 
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun <E> LongSparseArray<E>.commonGet(key: Long, defaultValue: E): E {
-    return commonGetInternal(key, defaultValue)
+    @Suppress("UNCHECKED_CAST") return commonGetInternal(key, defaultValue) as E
 }
 
+// TODO(b/375562182) revert the type change done in aosp/375562182 after collection targets K2
 @Suppress("NOTHING_TO_INLINE")
-internal inline fun <T : E?, E> LongSparseArray<E>.commonGetInternal(
-    key: Long,
-    defaultValue: T
-): T {
+internal inline fun LongSparseArray<*>.commonGetInternal(key: Long, defaultValue: Any?): Any? {
     val i = binarySearch(keys, size, key)
     return if (i < 0 || values[i] === DELETED) {
         defaultValue
     } else {
-        @Suppress("UNCHECKED_CAST")
-        values[i] as T
+        values[i]
     }
 }
 
@@ -298,8 +270,7 @@ internal inline fun <E> LongSparseArray<E>.commonRemoveAt(index: Int) {
 internal inline fun <E> LongSparseArray<E>.commonReplace(key: Long, value: E): E? {
     val index = indexOfKey(key)
     if (index >= 0) {
-        @Suppress("UNCHECKED_CAST")
-        val oldValue = values[index] as E?
+        @Suppress("UNCHECKED_CAST") val oldValue = values[index] as E?
         values[index] = value
         return oldValue
     }
@@ -368,12 +339,7 @@ internal inline fun <E> LongSparseArray<E>.commonPut(key: Long, value: E) {
             values = values.copyOf(newSize)
         }
         if (size - index != 0) {
-            keys.copyInto(
-                keys,
-                destinationOffset = index + 1,
-                startIndex = index,
-                endIndex = size
-            )
+            keys.copyInto(keys, destinationOffset = index + 1, startIndex = index, endIndex = size)
             values.copyInto(
                 values,
                 destinationOffset = index + 1,
@@ -390,9 +356,7 @@ internal inline fun <E> LongSparseArray<E>.commonPut(key: Long, value: E) {
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun <E> LongSparseArray<E>.commonPutAll(other: LongSparseArray<out E>) {
     val size = other.size()
-    repeat(size) { i ->
-        put(other.keyAt(i), other.valueAt(i))
-    }
+    repeat(size) { i -> put(other.keyAt(i), other.valueAt(i)) }
 }
 
 @Suppress("NOTHING_TO_INLINE")
@@ -417,7 +381,7 @@ internal inline fun <E> LongSparseArray<E>.commonIsEmpty(): Boolean = size() == 
 
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun <E> LongSparseArray<E>.commonKeyAt(index: Int): Long {
-    require(index in 0 until size) {
+    requirePrecondition(index in 0 until size) {
         "Expected index to be within 0..size()-1, but was $index"
     }
 
@@ -429,7 +393,7 @@ internal inline fun <E> LongSparseArray<E>.commonKeyAt(index: Int): Long {
 
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun <E> LongSparseArray<E>.commonValueAt(index: Int): E {
-    require(index in 0 until size) {
+    requirePrecondition(index in 0 until size) {
         "Expected index to be within 0..size()-1, but was $index"
     }
 
@@ -437,13 +401,12 @@ internal inline fun <E> LongSparseArray<E>.commonValueAt(index: Int): E {
         commonGc()
     }
 
-    @Suppress("UNCHECKED_CAST")
-    return values[index] as E
+    @Suppress("UNCHECKED_CAST") return values[index] as E
 }
 
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun <E> LongSparseArray<E>.commonSetValueAt(index: Int, value: E) {
-    require(index in 0 until size) {
+    requirePrecondition(index in 0 until size) {
         "Expected index to be within 0..size()-1, but was $index"
     }
 
@@ -542,7 +505,8 @@ internal inline fun <E> LongSparseArray<E>.commonToString(): String {
 
 /** Returns the number of key/value pairs in the collection. */
 @Suppress("NOTHING_TO_INLINE")
-public inline val <T> LongSparseArray<T>.size: Int get() = size()
+public inline val <T> LongSparseArray<T>.size: Int
+    get() = size()
 
 /** Returns true if the collection contains [key]. */
 @Suppress("NOTHING_TO_INLINE")
@@ -576,10 +540,7 @@ public inline fun <T> LongSparseArray<T>.isNotEmpty(): Boolean = !isEmpty()
 
 /** Removes the entry for [key] only if it is mapped to [value]. */
 @Suppress("EXTENSION_SHADOWED_BY_MEMBER") // Binary API compatibility.
-@Deprecated(
-    message = "Replaced with member function. Remove extension import!",
-    level = HIDDEN
-)
+@Deprecated(message = "Replaced with member function. Remove extension import!", level = HIDDEN)
 public fun <T> LongSparseArray<T>.remove(key: Long, value: T): Boolean = remove(key, value)
 
 /** Performs the given [action] for each key/value entry. */
@@ -591,15 +552,21 @@ public inline fun <T> LongSparseArray<T>.forEach(action: (key: Long, value: T) -
 }
 
 /** Return an iterator over the collection's keys. */
-public fun <T> LongSparseArray<T>.keyIterator(): LongIterator = object : LongIterator() {
-    var index = 0
-    override fun hasNext() = index < size()
-    override fun nextLong() = keyAt(index++)
-}
+public fun <T> LongSparseArray<T>.keyIterator(): LongIterator =
+    object : LongIterator() {
+        var index = 0
+
+        override fun hasNext() = index < size()
+
+        override fun nextLong() = keyAt(index++)
+    }
 
 /** Return an iterator over the collection's values. */
-public fun <T> LongSparseArray<T>.valueIterator(): Iterator<T> = object : Iterator<T> {
-    var index = 0
-    override fun hasNext() = index < size()
-    override fun next() = valueAt(index++)
-}
+public fun <T> LongSparseArray<T>.valueIterator(): Iterator<T> =
+    object : Iterator<T> {
+        var index = 0
+
+        override fun hasNext() = index < size()
+
+        override fun next() = valueAt(index++)
+    }

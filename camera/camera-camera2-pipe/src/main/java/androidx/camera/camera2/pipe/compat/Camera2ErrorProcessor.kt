@@ -17,7 +17,6 @@
 package androidx.camera.camera2.pipe.compat
 
 import androidx.annotation.GuardedBy
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraError
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.GraphState
@@ -27,12 +26,11 @@ import javax.inject.Singleton
 
 /**
  * A class responsible for reporting camera errors with a particular [CameraId]. When
- * [androidx.camera.camera2.pipe.compat.VirtualCameraManager] processes a camera open request, it
+ * [androidx.camera.camera2.pipe.compat.Camera2DeviceManager] processes a camera open request, it
  * should update CameraErrorProcessor with the [VirtualCameraState] that came with the open request.
  */
 @Singleton
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-class Camera2ErrorProcessor @Inject constructor() : CameraErrorListener {
+public class Camera2ErrorProcessor @Inject constructor() : CameraErrorListener {
     private val lock = Any()
 
     @GuardedBy("lock")
@@ -43,14 +41,9 @@ class Camera2ErrorProcessor @Inject constructor() : CameraErrorListener {
         cameraError: CameraError,
         willAttemptRetry: Boolean
     ) {
-        val virtualCameraState = synchronized(lock) {
-            virtualCameraStateMap[cameraId]
-        } ?: return
+        val virtualCameraState = synchronized(lock) { virtualCameraStateMap[cameraId] } ?: return
         virtualCameraState.graphListener.onGraphError(
-            GraphState.GraphStateError(
-                cameraError,
-                willAttemptRetry
-            )
+            GraphState.GraphStateError(cameraError, willAttemptRetry)
         )
     }
 
@@ -62,7 +55,5 @@ class Camera2ErrorProcessor @Inject constructor() : CameraErrorListener {
     internal fun setActiveVirtualCamera(
         cameraId: CameraId,
         virtualCameraState: VirtualCameraState
-    ) = synchronized(lock) {
-        virtualCameraStateMap[cameraId] = virtualCameraState
-    }
+    ) = synchronized(lock) { virtualCameraStateMap[cameraId] = virtualCameraState }
 }

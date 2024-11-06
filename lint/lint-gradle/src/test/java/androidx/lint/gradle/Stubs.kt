@@ -29,13 +29,14 @@ internal val STUBS =
                 package org.gradle.api.tasks
 
                 import groovy.lang.Closure
+                import java.lang.Class
                 import org.gradle.api.DomainObjectCollection
                 import org.gradle.api.NamedDomainObjectCollection
                 import org.gradle.api.provider.Provider
                 import org.gradle.api.Task
                 import org.gradle.api.tasks.TaskProvider
 
-                class TaskContainer : DomainObjectCollection<Task>, TaskCollection<Task>, NamedDomainObjectCollection<Task> {
+                class TaskContainer : DomainObjectCollection<Task>, TaskCollection<Task>, NamedDomainObjectCollection<Task>, NamedDomainObjectSet<Task> {
                     fun create(name: String) = Unit
                     fun register(name: String): TaskProvider<Task> = TODO()
                     fun getByName(name: String) = Unit
@@ -59,7 +60,8 @@ internal val STUBS =
                     val value: String = ""
                 )
 
-            """.trimIndent()
+            """
+                .trimIndent()
         ),
         kotlin(
             """
@@ -67,7 +69,11 @@ internal val STUBS =
                 interface Provider<T> {
                     fun get() : T
                 }
-            """.trimIndent()
+                interface Property<T> : Provider<T> {
+                    fun set(value: T)
+                }
+            """
+                .trimIndent()
         ),
         kotlin(
             """
@@ -75,9 +81,11 @@ internal val STUBS =
 
                 import groovy.lang.Closure
                 import org.gradle.api.tasks.TaskContainer
+                import java.lang.Class
 
                 class Project {
                     val tasks: TaskContainer
+                    fun findProperty(propertyName: String): Object? = null
                 }
 
                 interface NamedDomainObjectCollection<T> : Collection<T>, DomainObjectCollection<T>, Iterable<T> {
@@ -89,28 +97,30 @@ internal val STUBS =
                     fun all(action: Action<in T>)
                     fun configureEach(action: Action<in T>)
                     fun whenObjectAdded(action: Action<in T>)
-                    fun withType(cls: Class)
-                    fun withType(cls: Class, action: Action)
+                    fun withType(type: Class<S>)
                 }
 
                 interface Action<T>
 
                 interface Task
-            """.trimIndent()
+            """
+                .trimIndent()
         ),
         kotlin(
             """
                 package groovy.lang
 
                 class Closure
-            """.trimIndent()
+            """
+                .trimIndent()
         ),
         kotlin(
             """
                 package org.gradle.api.component
 
                 interface SoftwareComponent
-            """.trimIndent()
+            """
+                .trimIndent()
         ),
         kotlin(
             """
@@ -123,13 +133,15 @@ internal val STUBS =
                 }
 
                 interface UsageContext
-            """.trimIndent()
+            """
+                .trimIndent()
         ),
         kotlin(
             """
                 package com.android.build.gradle.internal.lint
                 abstract class VariantInputs
-            """.trimIndent()
+            """
+                .trimIndent()
         ),
         kotlin(
             """
@@ -143,6 +155,7 @@ internal val STUBS =
                     fun withPluginClasspath(): GradleRunner = this
                     fun build(): org.gradle.testkit.runner.BuildResult = TODO()
                 }
-            """.trimIndent()
+            """
+                .trimIndent()
         )
     )

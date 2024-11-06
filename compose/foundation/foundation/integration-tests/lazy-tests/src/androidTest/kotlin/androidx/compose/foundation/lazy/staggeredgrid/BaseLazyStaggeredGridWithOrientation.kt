@@ -19,11 +19,12 @@ package androidx.compose.foundation.lazy.staggeredgrid
 import androidx.compose.animation.core.snap
 import androidx.compose.foundation.AutoTestFrameClock
 import androidx.compose.foundation.BaseLazyLayoutTestWithOrientation
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
@@ -33,10 +34,8 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 
-@OptIn(ExperimentalFoundationApi::class)
-open class BaseLazyStaggeredGridWithOrientation(
-    private val orientation: Orientation
-) : BaseLazyLayoutTestWithOrientation(orientation) {
+open class BaseLazyStaggeredGridWithOrientation(private val orientation: Orientation) :
+    BaseLazyLayoutTestWithOrientation(orientation) {
 
     internal fun LazyStaggeredGridState.scrollBy(offset: Dp) {
         runBlocking(Dispatchers.Main + AutoTestFrameClock()) {
@@ -45,9 +44,7 @@ open class BaseLazyStaggeredGridWithOrientation(
     }
 
     internal fun LazyStaggeredGridState.scrollTo(index: Int) {
-        runBlocking(Dispatchers.Main + AutoTestFrameClock()) {
-            scrollToItem(index)
-        }
+        runBlocking(Dispatchers.Main + AutoTestFrameClock()) { scrollToItem(index) }
     }
 
     @Composable
@@ -59,6 +56,7 @@ open class BaseLazyStaggeredGridWithOrientation(
         reverseLayout: Boolean = false,
         mainAxisSpacing: Dp = 0.dp,
         crossAxisArrangement: Arrangement.HorizontalOrVertical = Arrangement.spacedBy(0.dp),
+        overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
         content: LazyStaggeredGridScope.() -> Unit,
     ) {
         LazyStaggeredGrid(
@@ -69,6 +67,7 @@ open class BaseLazyStaggeredGridWithOrientation(
             mainAxisSpacing,
             crossAxisArrangement,
             reverseLayout,
+            overscrollEffect,
             content
         )
     }
@@ -94,6 +93,7 @@ open class BaseLazyStaggeredGridWithOrientation(
         mainAxisSpacing: Dp = 0.dp,
         crossAxisArrangement: Arrangement.HorizontalOrVertical = Arrangement.spacedBy(0.dp),
         reverseLayout: Boolean = false,
+        overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
         content: LazyStaggeredGridScope.() -> Unit,
     ) {
         if (orientation == Orientation.Vertical) {
@@ -105,6 +105,7 @@ open class BaseLazyStaggeredGridWithOrientation(
                 horizontalArrangement = crossAxisArrangement,
                 state = state,
                 reverseLayout = reverseLayout,
+                overscrollEffect = overscrollEffect,
                 content = content
             )
         } else {
@@ -116,6 +117,7 @@ open class BaseLazyStaggeredGridWithOrientation(
                 horizontalItemSpacing = mainAxisSpacing,
                 state = state,
                 reverseLayout = reverseLayout,
+                overscrollEffect = overscrollEffect,
                 content = content
             )
         }

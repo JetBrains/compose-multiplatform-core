@@ -73,6 +73,7 @@ dependencies {
 android {
     defaultConfig {
         minSdkVersion 26
+        compileSdk 35
     }
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
@@ -93,9 +94,11 @@ android {
 
 androidx {
     name = "Glance for Wear Tiles"
-    type = LibraryType.PUBLISHED_KOTLIN_ONLY_LIBRARY
+    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     mavenVersion = LibraryVersions.GLANCE_WEAR_TILES
     inceptionYear = "2021"
     description = "Glance allows developers to build layouts for Wear Tiles using a Jetpack " +
             "Compose-style API."
+    legacyDisableKotlinStrictApiMode = true
+    metalavaK2UastEnabled = false
 }

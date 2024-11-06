@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe.integration.compat.workaround
 
 import android.annotation.SuppressLint
 import android.hardware.camera2.CaptureRequest
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks
 import androidx.camera.camera2.pipe.integration.compat.quirk.ImageCapturePixelHDRPlusQuirk
 import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
@@ -28,15 +25,15 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.impl.ImageCaptureConfig
 
 /**
- * Turns on or turns off HDR+ on Pixel devices depending on the image capture use case's
- * capture mode. When the mode is [ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY], HDR+ is
- * turned off by disabling ZSL. When the mode is
- * [ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY], HDR+ is turned on by enabling ZSL.
+ * Turns on or turns off HDR+ on Pixel devices depending on the image capture use case's capture
+ * mode. When the mode is [ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY], HDR+ is turned off by
+ * disabling ZSL. When the mode is [ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY], HDR+ is turned on
+ * by enabling ZSL.
  *
  * @see ImageCapturePixelHDRPlusQuirk
  */
 @SuppressLint("NewApi")
-fun Camera2ImplConfig.Builder.toggleHDRPlus(imageCaptureConfig: ImageCaptureConfig) {
+public fun Camera2ImplConfig.Builder.toggleHDRPlus(imageCaptureConfig: ImageCaptureConfig) {
 
     DeviceQuirks[ImageCapturePixelHDRPlusQuirk::class.java] ?: return
     if (!imageCaptureConfig.hasCaptureMode()) return

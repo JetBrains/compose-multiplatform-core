@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalComposeUiApi::class)
-
 package androidx.compose.animation.demos.lookahead
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.animateBounds
 import androidx.compose.animation.demos.gesture.pastelColors
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -43,12 +43,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.unit.dp
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Suppress("UnusedBoxWithConstraintsScope")
 @Composable
 fun LookaheadWithBoxWithConstraints() {
@@ -56,28 +56,20 @@ fun LookaheadWithBoxWithConstraints() {
         LookaheadScope {
             Column {
                 var halfSize by remember { mutableStateOf(false) }
-                Button(
-                    onClick = { halfSize = !halfSize },
-                    Modifier
-                        .padding(20.dp)
-                        .fillMaxWidth()
-                ) {
-                    Text(
-                        if (halfSize) "Full Size" else "Half Size"
-                    )
+                Button(onClick = { halfSize = !halfSize }, Modifier.padding(20.dp).fillMaxWidth()) {
+                    Text(if (halfSize) "Full Size" else "Half Size")
                 }
                 Column(
-                    Modifier
-                        .fillMaxHeight()
+                    Modifier.fillMaxHeight()
                         .animateBounds(
+                            this@LookaheadScope,
                             if (halfSize) Modifier.fillMaxSize(0.5f) else Modifier.fillMaxWidth()
                         )
                         .background(pastelColors[2]),
                     verticalArrangement = Arrangement.SpaceEvenly
                 ) {
                     Column(
-                        Modifier
-                            .border(1.dp, Color.Black, RoundedCornerShape(5.dp))
+                        Modifier.border(1.dp, Color.Black, RoundedCornerShape(5.dp))
                             .padding(top = 20.dp, bottom = 20.dp)
                     ) {
                         Text("Regular Row: ")
@@ -91,7 +83,8 @@ fun LookaheadWithBoxWithConstraints() {
                     }
                     Column {
                         var animate by remember { mutableStateOf(false) }
-                        Row(verticalAlignment = Alignment.CenterVertically,
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.clickable { animate = true }
                         ) {
                             RadioButton(selected = animate, onClick = { animate = true })
@@ -107,14 +100,17 @@ fun LookaheadWithBoxWithConstraints() {
                         BoxWithConstraints {
                             Column(
                                 if (animate) {
-                                    Modifier.animateBounds(Modifier.fillMaxWidth())
-                                } else {
-                                    Modifier.fillMaxWidth()
-                                }.then(
-                                    Modifier
-                                        .border(1.dp, Color.Black, RoundedCornerShape(5.dp))
-                                        .padding(top = 20.dp, bottom = 20.dp)
-                                ),
+                                        Modifier.animateBounds(
+                                            lookaheadScope = this@LookaheadScope,
+                                            Modifier.fillMaxWidth()
+                                        )
+                                    } else {
+                                        Modifier.fillMaxWidth()
+                                    }
+                                    .then(
+                                        Modifier.border(1.dp, Color.Black, RoundedCornerShape(5.dp))
+                                            .padding(top = 20.dp, bottom = 20.dp)
+                                    ),
                             ) {
                                 Text("SubcomposeLayout: ")
                                 Row(
@@ -153,11 +149,11 @@ fun LookaheadWithBoxWithConstraints() {
 @Composable
 fun RowScope.MyButton() {
     Box(
-        modifier = Modifier
-            .weight(1f)
-            .padding(5.dp)
-            .height(40.dp)
-            .background(pastelColors[0], RoundedCornerShape(50)),
+        modifier =
+            Modifier.weight(1f)
+                .padding(5.dp)
+                .height(40.dp)
+                .background(pastelColors[0], RoundedCornerShape(50)),
         contentAlignment = Alignment.Center
     ) {
         Text("Button")
@@ -167,11 +163,11 @@ fun RowScope.MyButton() {
 @Composable
 fun MyButton() {
     Box(
-        modifier = Modifier
-            .fillMaxWidth(0.5f)
-            .padding(5.dp)
-            .height(40.dp)
-            .background(pastelColors[0], RoundedCornerShape(50)),
+        modifier =
+            Modifier.fillMaxWidth(0.5f)
+                .padding(5.dp)
+                .height(40.dp)
+                .background(pastelColors[0], RoundedCornerShape(50)),
         contentAlignment = Alignment.Center
     ) {
         Text("Button")

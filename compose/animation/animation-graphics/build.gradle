@@ -21,6 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+import androidx.build.KotlinTarget
 import androidx.build.LibraryType
 import androidx.build.PlatformIdentifier
 
@@ -32,28 +34,29 @@ plugins {
 
 androidXMultiplatform {
     android()
-    desktop()
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlibCommon)
+                implementation(libs.kotlinStdlib)
 
                 api(project(":compose:animation:animation"))
-                api("androidx.compose.foundation:foundation-layout:1.6.0")
+                api(project(":compose:foundation:foundation-layout"))
                 api(project(":compose:runtime:runtime"))
-                api("androidx.compose.ui:ui:1.6.0")
-                api("androidx.compose.ui:ui-geometry:1.6.0")
+                api(project(":compose:ui:ui"))
+                api(project(":compose:ui:ui-geometry"))
 
                 implementation(project(":compose:ui:ui-util"))
-                implementation("androidx.collection:collection:1.4.0")
+                implementation(project(":collection:collection"))
             }
         }
         androidMain.dependencies {
-            api("androidx.annotation:annotation:1.1.0")
-            api("androidx.annotation:annotation-experimental:1.4.0")
+            api("androidx.annotation:annotation:1.8.1")
+            api("androidx.annotation:annotation-experimental:1.4.1")
             implementation("androidx.core:core-ktx:1.5.0")
         }
 
@@ -74,21 +77,20 @@ androidXMultiplatform {
             }
         }
 
-        desktopMain {
-            dependsOn(jvmMain)
-            dependencies {
-                implementation(libs.kotlinStdlib)
-            }
+        commonStubsMain {
+            dependsOn(commonMain)
         }
 
-        jvmTest {
-            dependsOn(commonTest)
-            dependencies {
-            }
+        jvmStubsMain {
+            dependsOn(commonStubsMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
         }
 
         androidInstrumentedTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
@@ -101,17 +103,11 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
                 implementation(libs.junit)
-            }
-        }
-
-        desktopTest {
-            dependsOn(jvmTest)
-            dependencies {
             }
         }
     }
@@ -119,11 +115,15 @@ androidXMultiplatform {
 
 androidx {
     name = "Compose Animation Graphics"
-    type = LibraryType.PUBLISHED_KOTLIN_ONLY_LIBRARY
+    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2021"
     description = "Compose Animation Graphics Library for using animated-vector resources in Compose"
+    metalavaK2UastEnabled = false
+    samples(project(":compose:animation:animation-graphics:animation-graphics-samples"))
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }
 
 android {
+    compileSdk 35
     namespace "androidx.compose.animation.graphics"
 }

@@ -19,47 +19,40 @@ package androidx.camera.camera2.pipe.integration.compat.quirk
 import android.annotation.SuppressLint
 import android.hardware.camera2.CameraCharacteristics
 import android.util.Range
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraMetadata
-import androidx.camera.core.impl.Quirk
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelLegacy
+import androidx.camera.core.impl.StreamSpec
+import androidx.camera.core.internal.compat.quirk.AeFpsRangeQuirk
 
 /**
- *
  * QuirkSummary
  * - Bug Id: b/167425305
- * - Description: Quirk required to maintain good exposure on legacy devices by specifying a
- *                proper [android.hardware.camera2.CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE].
- *                Legacy devices set the AE target FPS range to [30, 30]. This can potentially
- *                cause underexposure issues.
- *                [androidx.camera.camera2.internal.compat.workaround.AeFpsRange]
- *                contains a workaround that is used on legacy devices to set a AE FPS range
- *                whose upper bound is 30, which guarantees a smooth frame rate, and whose lower
- *                bound is as small as possible to properly expose frames in low light
- *                conditions. The default behavior on non legacy devices does not add the AE
- *                FPS range option.
+ * - Description: Quirk required to maintain good exposure on legacy devices by specifying a proper
+ *   [android.hardware.camera2.CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE]. Legacy devices set the
+ *   AE target FPS range to [30, 30] by default. This can potentially cause underexposure issues. On
+ *   legacy devices, to set a AE FPS range whose upper bound is 30, which guarantees a smooth frame
+ *   rate, and whose lower bound is as small as possible to properly expose frames in low light
+ *   conditions. The default behavior on non legacy devices does not add the AE FPS range option.
  * - Device(s): All legacy devices
  *
  * TODO(b/270421716): enable CameraXQuirksClassDetector lint check when kotlin is supported.
  */
 @SuppressLint("CameraXQuirksClassDetector")
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-class AeFpsRangeLegacyQuirk(cameraMetadata: CameraMetadata) : Quirk {
+public class AeFpsRangeLegacyQuirk(cameraMetadata: CameraMetadata) : AeFpsRangeQuirk {
     /**
-     * Returns the fps range whose upper is 30 and whose lower is the smallest, or null if no
-     * range has an upper equal to 30.  The rationale is:
+     * Returns the fps range whose upper is 30 and whose lower is the smallest, or null if no range
+     * has an upper equal to 30. The rationale is:
      * - Range upper is always 30 so that a smooth frame rate is guaranteed.
-     * - Range lower contains the smallest supported value so that it can adapt as much as
-     * possible to low light conditions.
+     * - Range lower contains the smallest supported value so that it can adapt as much as possible
+     *   to low light conditions.
      */
-    val range: Range<Int>? by lazy {
+    private val range: Range<Int>? by lazy {
         val availableFpsRanges: Array<out Range<Int>>? =
             cameraMetadata[CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES]
         pickSuitableFpsRange(availableFpsRanges)
     }
 
-    private fun pickSuitableFpsRange(
-        availableFpsRanges: Array<out Range<Int>>?
-    ): Range<Int>? {
+    private fun pickSuitableFpsRange(availableFpsRanges: Array<out Range<Int>>?): Range<Int>? {
         if (availableFpsRanges.isNullOrEmpty()) {
             return null
         }
@@ -81,9 +74,9 @@ class AeFpsRangeLegacyQuirk(cameraMetadata: CameraMetadata) : Quirk {
     }
 
     /**
-     * On android 5.0/5.1, [CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES]
-     * returns wrong ranges whose values were multiplied by 1000. So we need to convert them to the
-     * correct values.
+     * On android 5.0/5.1, [CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES] returns
+     * wrong ranges whose values were multiplied by 1000. So we need to convert them to the correct
+     * values.
      */
     private fun getCorrectedFpsRange(fpsRange: Range<Int>): Range<Int> {
         var newUpper = fpsRange.upper
@@ -97,10 +90,11 @@ class AeFpsRangeLegacyQuirk(cameraMetadata: CameraMetadata) : Quirk {
         return Range(newLower, newUpper)
     }
 
-    companion object {
-        fun isEnabled(cameraMetadata: CameraMetadata): Boolean {
-            val level = cameraMetadata[CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL]
-            return level == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
-        }
+    override fun getTargetAeFpsRange(): Range<Int> =
+        range ?: StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
+
+    public companion object {
+        public fun isEnabled(cameraMetadata: CameraMetadata): Boolean =
+            cameraMetadata.isHardwareLevelLegacy
     }
 }

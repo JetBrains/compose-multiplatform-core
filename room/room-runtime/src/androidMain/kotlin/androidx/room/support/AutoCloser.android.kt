@@ -15,79 +15,75 @@
  */
 package androidx.room.support
 
-import android.os.Handler
-import android.os.Looper
 import android.os.SystemClock
 import androidx.annotation.GuardedBy
+import androidx.room.support.AutoCloser.Watch
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
-import java.io.IOException
-import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
- * AutoCloser is responsible for automatically opening (using
- * delegateOpenHelper) and closing (on a timer started when there are no remaining references) a
- * SupportSqliteDatabase.
+ * AutoCloser is responsible for automatically opening (using `delegateOpenHelper`) and closing (on
+ * a timer started when there are no remaining references) a [SupportSQLiteDatabase].
  *
- * It is important to ensure that the ref count is incremented when using a returned database.
+ * It is important to ensure that the reference count is incremented when using a returned database.
  *
- * @param autoCloseTimeoutAmount time for auto close timer
- * @param autoCloseTimeUnit      time unit for autoCloseTimeoutAmount
- * @param autoCloseExecutor      the executor on which the auto close operation will happen
+ * @param timeoutAmount time for auto close timer
+ * @param timeUnit time unit for `timeoutAmount`
+ * @param watch A [Watch] implementation to get an increasing timestamp.
  */
 internal class AutoCloser(
-    autoCloseTimeoutAmount: Long,
-    autoCloseTimeUnit: TimeUnit,
-    autoCloseExecutor: Executor
+    timeoutAmount: Long,
+    timeUnit: TimeUnit,
+    private val watch: Watch = Watch { SystemClock.uptimeMillis() }
 ) {
-    lateinit var delegateOpenHelper: SupportSQLiteOpenHelper
-    private val handler = Handler(Looper.getMainLooper())
+    // The unwrapped SupportSQLiteOpenHelper (i.e. not AutoClosingRoomOpenHelper)
+    private lateinit var delegateOpenHelper: SupportSQLiteOpenHelper
 
-    internal var onAutoCloseCallback: Runnable? = null
+    private lateinit var coroutineScope: CoroutineScope
+
+    private var onAutoCloseCallback: (() -> Unit)? = null
 
     private val lock = Any()
 
-    private var autoCloseTimeoutInMs: Long = autoCloseTimeUnit.toMillis(autoCloseTimeoutAmount)
+    private val autoCloseTimeoutInMs = timeUnit.toMillis(timeoutAmount)
 
-    private val executor: Executor = autoCloseExecutor
+    private val referenceCount = AtomicInteger(0)
 
-    @GuardedBy("lock")
-    internal var refCount = 0
+    private var lastDecrementRefCountTimeStamp = AtomicLong(watch.getMillis())
 
-    @GuardedBy("lock")
-    internal var lastDecrementRefCountTimeStamp = SystemClock.uptimeMillis()
-
-    // The unwrapped SupportSqliteDatabase
-    @GuardedBy("lock")
-    internal var delegateDatabase: SupportSQLiteDatabase? = null
+    // The unwrapped SupportSqliteDatabase (i.e. not AutoCloseSupportSQLiteDatabase)
+    @GuardedBy("lock") internal var delegateDatabase: SupportSQLiteDatabase? = null
 
     private var manuallyClosed = false
 
-    private val executeAutoCloser = Runnable { executor.execute(autoCloser) }
+    private var autoCloseJob: Job? = null
 
-    private val autoCloser = Runnable {
+    private fun autoCloseDatabase(): Unit =
         synchronized(lock) {
-            if (SystemClock.uptimeMillis() - lastDecrementRefCountTimeStamp
-                < autoCloseTimeoutInMs
-            ) {
+            if (watch.getMillis() - lastDecrementRefCountTimeStamp.get() < autoCloseTimeoutInMs) {
                 // An increment + decrement beat us to closing the db. We
                 // will not close the database, and there should be at least
                 // one more auto-close scheduled.
-                return@Runnable
+                return
             }
-            if (refCount != 0) {
+            if (referenceCount.get() != 0) {
                 // An increment beat us to closing the db. We don't close the
                 // db, and another closer will be scheduled once the ref
                 // count is decremented.
-                return@Runnable
+                return
             }
-            onAutoCloseCallback?.run() ?: error(
-                "onAutoCloseCallback is null but it should" +
-                    " have been set before use. Please file a bug " +
-                    "against Room at: $autoCloseBug"
-            )
-
+            onAutoCloseCallback?.invoke()
+                ?: error(
+                    "onAutoCloseCallback is null but it should  have been set before use. " +
+                        "Please file a bug against Room at: $BUG_LINK"
+                )
             delegateDatabase?.let {
                 if (it.isOpen) {
                     it.close()
@@ -95,17 +91,26 @@ internal class AutoCloser(
             }
             delegateDatabase = null
         }
+
+    /**
+     * Since we need to construct the AutoCloser in the [androidx.room.RoomDatabase.Builder], we
+     * need to set the `delegateOpenHelper` after construction.
+     *
+     * @param delegateOpenHelper the open helper that is used to create new [SupportSQLiteDatabase].
+     */
+    fun initOpenHelper(delegateOpenHelper: SupportSQLiteOpenHelper) {
+        require(delegateOpenHelper !is AutoClosingRoomOpenHelper)
+        this.delegateOpenHelper = delegateOpenHelper
     }
 
     /**
-     * Since we need to construct the AutoCloser in the RoomDatabase.Builder, we need to set the
-     * delegateOpenHelper after construction.
+     * Since we need to construct the AutoCloser in the [androidx.room.RoomDatabase.Builder], we
+     * need to set the `coroutineScope` after construction.
      *
-     * @param delegateOpenHelper the open helper that is used to create
-     * new SupportSqliteDatabases
+     * @param coroutineScope where the auto close will execute.
      */
-    fun init(delegateOpenHelper: SupportSQLiteOpenHelper) {
-        this.delegateOpenHelper = delegateOpenHelper
+    fun initCoroutineScope(coroutineScope: CoroutineScope) {
+        this.coroutineScope = coroutineScope
     }
 
     /**
@@ -122,25 +127,23 @@ internal class AutoCloser(
         }
 
     /**
-     * Confirms that autoCloser is no longer running and confirms that delegateDatabase is set
-     * and open. delegateDatabase will not be auto closed until
-     * decrementRefCountAndScheduleClose is called. decrementRefCountAndScheduleClose must be
-     * called once for each call to incrementCountAndEnsureDbIsOpen.
+     * Confirms that auto-close function is no longer running and confirms that `delegateDatabase`
+     * is set and open. `delegateDatabase` will not be auto closed until
+     * [decrementCountAndScheduleClose] is called. [decrementCountAndScheduleClose] must be called
+     * once for each call to [incrementCountAndEnsureDbIsOpen].
      *
-     * If this throws an exception, decrementCountAndScheduleClose must still be called!
+     * If this throws an exception, [decrementCountAndScheduleClose] must still be called!
      *
      * @return the *unwrapped* SupportSQLiteDatabase.
      */
     fun incrementCountAndEnsureDbIsOpen(): SupportSQLiteDatabase {
-        // TODO(rohitsat): avoid synchronized(lock) when possible. We should be able to avoid it
-        // when refCount is not hitting zero or if there is no auto close scheduled if we use
-        // Atomics.
-        synchronized(lock) {
+        // If there is a scheduled auto close operation, cancel it.
+        autoCloseJob?.cancel()
+        autoCloseJob = null
 
-            // If there is a scheduled autoclose operation, we should remove it from the handler.
-            handler.removeCallbacks(executeAutoCloser)
-            refCount++
-            check(!manuallyClosed) { "Attempting to open already closed database." }
+        referenceCount.incrementAndGet()
+        check(!manuallyClosed) { "Attempting to open already closed database." }
+        synchronized(lock) {
             delegateDatabase?.let {
                 if (it.isOpen) {
                     return it
@@ -152,46 +155,35 @@ internal class AutoCloser(
 
     /**
      * Decrements the ref count and schedules a close if there are no other references to the db.
-     * This must only be called after a corresponding incrementCountAndEnsureDbIsOpen call.
+     * This must only be called after a corresponding [incrementCountAndEnsureDbIsOpen] call.
      */
     fun decrementCountAndScheduleClose() {
-        // TODO(rohitsat): avoid synchronized(lock) when possible
-        synchronized(lock) {
-            check(refCount > 0) {
-                "ref count is 0 or lower but we're supposed to decrement"
-            }
-            // decrement refCount
-            refCount--
-
-            // if refcount is zero, schedule close operation
-            if (refCount == 0) {
-                if (delegateDatabase == null) {
-                    // No db to close, this can happen due to exceptions when creating db...
-                    return
+        val newCount = referenceCount.decrementAndGet()
+        check(newCount >= 0) { "Unbalanced reference count." }
+        lastDecrementRefCountTimeStamp.set(watch.getMillis())
+        if (newCount == 0) {
+            autoCloseJob =
+                coroutineScope.launch {
+                    delay(autoCloseTimeoutInMs)
+                    autoCloseDatabase()
                 }
-                handler.postDelayed(executeAutoCloser, autoCloseTimeoutInMs)
-            }
         }
     }
 
-    /**
-     * Close the database if it is still active.
-     *
-     * @throws IOException if an exception is encountered when closing the underlying db.
-     */
-    @Throws(IOException::class)
+    /** Close the database if it is still active. */
     fun closeDatabaseIfOpen() {
         synchronized(lock) {
             manuallyClosed = true
+            autoCloseJob?.cancel()
+            autoCloseJob = null
             delegateDatabase?.close()
             delegateDatabase = null
         }
     }
 
     /**
-     * The auto closer is still active if the database has not been closed. This means that
-     * whether or not the underlying database is closed, when active we will re-open it on the
-     * next access.
+     * The auto closer is still active if the database has not been closed. This means that whether
+     * or not the underlying database is closed, when active we will re-open it on the next access.
      *
      * @return a boolean indicating whether the auto closer is still active
      */
@@ -199,27 +191,30 @@ internal class AutoCloser(
         get() = !manuallyClosed
 
     /**
-     * Returns the current ref count for this auto closer. This is only visible for testing.
-     *
-     * @return current ref count
-     */
-    internal val refCountForTest: Int
-        get() {
-            synchronized(lock) { return refCount }
-        }
-
-    /**
-     * Sets a callback that will be run every time the database is auto-closed. This callback
-     * needs to be lightweight since it is run while holding a lock.
+     * Sets a callback that will be run every time the database is auto-closed. This callback needs
+     * to be lightweight since it is run while holding a lock.
      *
      * @param onAutoClose the callback to run
      */
-    fun setAutoCloseCallback(onAutoClose: Runnable) {
+    fun setAutoCloseCallback(onAutoClose: () -> Unit) {
         onAutoCloseCallback = onAutoClose
     }
 
+    /** Returns the current auto close callback. This is only visible for testing. */
+    internal val autoCloseCallbackForTest
+        get() = onAutoCloseCallback
+
+    /** Returns the current ref count for this auto closer. This is only visible for testing. */
+    internal val refCountForTest: Int
+        get() = referenceCount.get()
+
+    /** Represents a counting time tracker function. */
+    fun interface Watch {
+        fun getMillis(): Long
+    }
+
     companion object {
-        const val autoCloseBug = "https://issuetracker.google.com/issues/new?component=" +
-            "413107&template=1096568"
+        const val BUG_LINK =
+            "https://issuetracker.google.com/issues/new?component=413107&template=1096568"
     }
 }

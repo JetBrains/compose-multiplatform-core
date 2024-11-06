@@ -31,7 +31,7 @@ plugins {
 
 dependencies {
     api(libs.kotlinStdlib)
-    api("androidx.annotation:annotation:1.6.0")
+    api("androidx.annotation:annotation:1.8.1")
 
     implementation("androidx.core:core:1.12.0")
     implementation("androidx.core:core-ktx:1.12.0")
@@ -45,8 +45,8 @@ dependencies {
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.junit)
 
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy) // DexMaker has it"s own MockMaker
-    androidTestImplementation(libs.dexmakerMockitoInline, excludes.bytebuddy) // DexMaker has it"s own MockMaker
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockitoInline)
 }
 
 android {
@@ -56,7 +56,8 @@ android {
     }
 
     namespace "androidx.privacysandbox.sdkruntime.core"
-    compileSdkVersion = "android-34-ext10"
+    compileSdk = 34
+    compileSdkExtension = 10
 }
 
 androidx {
@@ -64,5 +65,5 @@ androidx {
     type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "Provides shared components for SdkRuntime libraries"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

@@ -23,9 +23,8 @@ import androidx.room.ext.CommonTypeNames
 import androidx.room.parser.SQLTypeAffinity.TEXT
 import androidx.room.solver.CodeGenScope
 
-class StringColumnTypeAdapter private constructor(
-    out: XType
-) : ColumnTypeAdapter(out = out, typeAffinity = TEXT) {
+class StringColumnTypeAdapter private constructor(out: XType) :
+    ColumnTypeAdapter(out = out, typeAffinity = TEXT) {
     override fun readFromCursor(
         outVarName: String,
         cursorVarName: String,
@@ -73,13 +72,11 @@ class StringColumnTypeAdapter private constructor(
             val stringType = env.requireType(CommonTypeNames.STRING)
             return if (env.backend == XProcessingEnv.Backend.KSP) {
                 listOf(
-                    StringColumnTypeAdapter(stringType.makeNonNullable()),
                     StringColumnTypeAdapter(stringType.makeNullable()),
+                    StringColumnTypeAdapter(stringType.makeNonNullable()),
                 )
             } else {
-                listOf(
-                    StringColumnTypeAdapter(stringType.makeNullable())
-                )
+                listOf(StringColumnTypeAdapter(stringType.makeNullable()))
             }
         }
     }

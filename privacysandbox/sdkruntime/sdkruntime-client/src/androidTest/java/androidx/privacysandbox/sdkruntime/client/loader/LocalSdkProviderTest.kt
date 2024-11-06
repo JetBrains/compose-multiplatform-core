@@ -69,21 +69,20 @@ internal class LocalSdkProviderTest(
 
         controller = TestStubController()
 
-        val overrideVersionHandshake = if (originalSdkVersion != forcedSdkVersion) {
-            VersionHandshake(forcedSdkVersion)
-        } else {
-            null
-        }
+        val overrideVersionHandshake =
+            if (originalSdkVersion != forcedSdkVersion) {
+                VersionHandshake(forcedSdkVersion)
+            } else {
+                null
+            }
         loadedSdk = loadTestSdkFromAssets(sdkConfig, controller, overrideVersionHandshake)
-        assertThat(loadedSdk.extractApiVersion())
-            .isEqualTo(originalSdkVersion)
+        assertThat(loadedSdk.extractApiVersion()).isEqualTo(originalSdkVersion)
     }
 
     @Test
     fun loadSdk_attachCorrectContext() {
         val sdkContext = loadedSdk.extractSdkContext()
-        assertThat(sdkContext.javaClass.name)
-            .isEqualTo(SandboxedSdkContextCompat::class.java.name)
+        assertThat(sdkContext.javaClass.name).isEqualTo(SandboxedSdkContextCompat::class.java.name)
     }
 
     @Test
@@ -92,14 +91,16 @@ internal class LocalSdkProviderTest(
 
         val sandboxedSdkCompat = loadedSdk.onLoadSdk(params)
 
-        val expectedBinder = loadedSdk.extractSdkProviderFieldValue<Binder>(
-            fieldName = "onLoadSdkBinder",
-        )
+        val expectedBinder =
+            loadedSdk.extractSdkProviderFieldValue<Binder>(
+                fieldName = "onLoadSdkBinder",
+            )
         assertThat(sandboxedSdkCompat.getInterface()).isEqualTo(expectedBinder)
 
-        val lastParams = loadedSdk.extractSdkProviderFieldValue<Bundle>(
-            fieldName = "lastOnLoadSdkParams",
-        )
+        val lastParams =
+            loadedSdk.extractSdkProviderFieldValue<Bundle>(
+                fieldName = "lastOnLoadSdkParams",
+            )
         assertThat(lastParams).isEqualTo(params)
     }
 
@@ -108,9 +109,7 @@ internal class LocalSdkProviderTest(
         val params = Bundle()
         params.putBoolean("needFail", true)
 
-        val ex = assertThrows(LoadSdkCompatException::class.java) {
-            loadedSdk.onLoadSdk(params)
-        }
+        val ex = assertThrows(LoadSdkCompatException::class.java) { loadedSdk.onLoadSdk(params) }
 
         assertThat(ex.extraInformation).isEqualTo(params)
     }
@@ -119,27 +118,20 @@ internal class LocalSdkProviderTest(
     fun beforeUnloadSdk_callBeforeUnloadSdk() {
         loadedSdk.beforeUnloadSdk()
 
-        val isBeforeUnloadSdkCalled = loadedSdk.extractSdkProviderFieldValue<Boolean>(
-            fieldName = "isBeforeUnloadSdkCalled"
-        )
+        val isBeforeUnloadSdkCalled =
+            loadedSdk.extractSdkProviderFieldValue<Boolean>(fieldName = "isBeforeUnloadSdkCalled")
 
         assertThat(isBeforeUnloadSdkCalled).isTrue()
     }
 
     @Test
     fun getSandboxedSdks_delegateToSdkController() {
-        assumeFeatureAvailable(ClientFeature.SDK_SANDBOX_CONTROLLER)
-
-        val expectedResult = SandboxedSdkCompat(
-            sdkInterface = Binder(),
-            sdkInfo = SandboxedSdkInfo(
-                name = "sdkName",
-                version = 42
+        val expectedResult =
+            SandboxedSdkCompat(
+                sdkInterface = Binder(),
+                sdkInfo = SandboxedSdkInfo(name = "sdkName", version = 42)
             )
-        )
-        controller.sandboxedSdksResult = listOf(
-            expectedResult
-        )
+        controller.sandboxedSdksResult = listOf(expectedResult)
 
         val testSdk = loadedSdk.loadTestSdk()
         val sandboxedSdks = testSdk.getSandboxedSdks()
@@ -155,14 +147,13 @@ internal class LocalSdkProviderTest(
     fun getAppOwnedSdkSandboxInterfaces_delegateToSdkController() {
         assumeFeatureAvailable(ClientFeature.APP_OWNED_INTERFACES)
 
-        val expectedResult = AppOwnedSdkSandboxInterfaceCompat(
-            name = "TestAppOwnedSdk",
-            version = 42,
-            binder = Binder(),
-        )
-        controller.appOwnedSdksResult = listOf(
-            expectedResult
-        )
+        val expectedResult =
+            AppOwnedSdkSandboxInterfaceCompat(
+                name = "TestAppOwnedSdk",
+                version = 42,
+                binder = Binder(),
+            )
+        controller.appOwnedSdksResult = listOf(expectedResult)
 
         val testSdk = loadedSdk.loadTestSdk()
         val appOwnedSdks = testSdk.getAppOwnedSdkSandboxInterfaces()
@@ -258,17 +249,19 @@ internal class LocalSdkProviderTest(
     fun loadSdk_rethrowsExceptionFromSdkController() {
         assumeFeatureAvailable(ClientFeature.LOAD_SDK)
 
-        val expectedError = LoadSdkCompatException(
-            LoadSdkCompatException.LOAD_SDK_INTERNAL_ERROR,
-            "message",
-            RuntimeException(),
-            Bundle()
-        )
+        val expectedError =
+            LoadSdkCompatException(
+                LoadSdkCompatException.LOAD_SDK_INTERNAL_ERROR,
+                "message",
+                RuntimeException(),
+                Bundle()
+            )
         controller.loadSdkError = expectedError
 
-        val result = assertThrows(LoadSdkCompatException::class.java) {
-            loadedSdk.loadTestSdk().loadSdk("SDK", Bundle())
-        }
+        val result =
+            assertThrows(LoadSdkCompatException::class.java) {
+                loadedSdk.loadTestSdk().loadSdk("SDK", Bundle())
+            }
 
         assertThat(result.loadSdkErrorCode).isEqualTo(expectedError.loadSdkErrorCode)
         assertThat(result.message).isEqualTo(expectedError.message)
@@ -276,9 +269,20 @@ internal class LocalSdkProviderTest(
         assertThat(result.extraInformation).isSameInstanceAs(expectedError.extraInformation)
     }
 
-    internal class TestClassLoaderFactory(
-        private val testStorage: TestLocalSdkStorage
-    ) : SdkLoader.ClassLoaderFactory {
+    @Test
+    fun getClientPackageName_returnsResultFromSdkController() {
+        assumeFeatureAvailable(ClientFeature.GET_CLIENT_PACKAGE_NAME)
+
+        val clientPackageName = "client.package.name"
+        controller.clientPackageNameResult = clientPackageName
+
+        val result = loadedSdk.loadTestSdk().getClientPackageName()
+
+        assertThat(result).isEqualTo(clientPackageName)
+    }
+
+    internal class TestClassLoaderFactory(private val testStorage: TestLocalSdkStorage) :
+        SdkLoader.ClassLoaderFactory {
         override fun createClassLoaderFor(
             sdkConfig: LocalSdkConfig,
             parent: ClassLoader
@@ -309,10 +313,10 @@ internal class LocalSdkProviderTest(
     companion object {
 
         /**
-         * Create test params for each supported [ClientApiVersion] + current and future.
-         * Each released version must have test-sdk named as "vX" (where X is version to test).
-         * These TestSDKs should be registered in RuntimeEnabledSdkTable.xml and be compatible with
-         * [TestSdkWrapper].
+         * Create test params for each supported [ClientApiVersion] + current and future. Each
+         * released version must have test-sdk named as "vX" (where X is version to test). These
+         * TestSDKs should be registered in RuntimeEnabledSdkTable.xml and be compatible with
+         * [SdkControllerWrapper].
          */
         @Parameterized.Parameters(name = "{0}")
         @JvmStatic
@@ -356,17 +360,16 @@ internal class LocalSdkProviderTest(
             overrideVersionHandshake: VersionHandshake?
         ): LocalSdkProvider {
             val context = ApplicationProvider.getApplicationContext<Context>()
-            val testStorage = TestLocalSdkStorage(
-                context,
-                rootFolder = File(context.cacheDir, "LocalSdkTest")
-            )
-            val sdkLoader = SdkLoader(
-                TestClassLoaderFactory(testStorage),
-                context,
-                object : SdkLoader.ControllerFactory {
-                    override fun createControllerFor(sdkConfig: LocalSdkConfig) = controller
-                }
-            )
+            val testStorage =
+                TestLocalSdkStorage(context, rootFolder = File(context.cacheDir, "LocalSdkTest"))
+            val sdkLoader =
+                SdkLoader(
+                    TestClassLoaderFactory(testStorage),
+                    context,
+                    object : SdkLoader.ControllerFactory {
+                        override fun createControllerFor(sdkConfig: LocalSdkConfig) = controller
+                    }
+                )
             return sdkLoader.loadSdk(sdkConfig, overrideVersionHandshake)
         }
     }
@@ -382,6 +385,7 @@ internal class LocalSdkProviderTest(
         var lastLoadSdkParams: Bundle? = null
         var loadSdkResult: SandboxedSdkCompat? = null
         var loadSdkError: LoadSdkCompatException? = null
+        var clientPackageNameResult: String? = null
 
         override fun loadSdk(
             sdkName: String,
@@ -393,9 +397,7 @@ internal class LocalSdkProviderTest(
             lastLoadSdkParams = params
 
             if (loadSdkResult != null) {
-                executor.execute {
-                    callback.onResult(loadSdkResult!!)
-                }
+                executor.execute { callback.onResult(loadSdkResult!!) }
             } else {
                 executor.execute {
                     callback.onError(
@@ -430,8 +432,6 @@ internal class LocalSdkProviderTest(
             sdkActivityHandlers.values.remove(handlerCompat)
         }
 
-        override fun getClientPackageName(): String {
-            throw UnsupportedOperationException("Not supported yet")
-        }
+        override fun getClientPackageName(): String = clientPackageNameResult!!
     }
 }

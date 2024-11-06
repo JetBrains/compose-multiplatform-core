@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.node
 
+import androidx.collection.MutableObjectIntMap
+import androidx.collection.mutableObjectIntMapOf
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.MutableRect
@@ -23,6 +25,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.isFinite
+import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.geometry.toRect
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.DefaultCameraDistance
@@ -32,6 +35,8 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.ReusableGraphicsLayerScope
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.layer.GraphicsLayer
+import androidx.compose.ui.input.pointer.MatrixPositionCalculator
+import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.internal.checkPreconditionNotNull
 import androidx.compose.ui.internal.requirePrecondition
@@ -43,6 +48,7 @@ import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -51,17 +57,12 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.minus
 import androidx.compose.ui.unit.plus
 import androidx.compose.ui.unit.toSize
+import androidx.compose.ui.util.fastIsFinite
 
-/**
- * Measurable and Placeable type that has a position.
- */
+/** Measurable and Placeable type that has a position. */
 internal abstract class NodeCoordinator(
     override val layoutNode: LayoutNode,
-) :
-    LookaheadCapablePlaceable(),
-    Measurable,
-    LayoutCoordinates,
-    OwnerScope {
+) : LookaheadCapablePlaceable(), Measurable, LayoutCoordinates, OwnerScope {
 
     internal var forcePlaceWithLookaheadOffset: Boolean = false
     internal var forceMeasureWithLookaheadConstraints: Boolean = false
@@ -84,6 +85,9 @@ internal abstract class NodeCoordinator(
 
     override val coordinates: LayoutCoordinates
         get() = this
+
+    override val introducesMotionFrameOfReference: Boolean
+        get() = isPlacedUnderMotionFrameOfReference
 
     private var released = false
 
@@ -109,9 +113,7 @@ internal abstract class NodeCoordinator(
     }
 
     inline fun <reified T> visitNodes(type: NodeKind<T>, block: (T) -> Unit) {
-        visitNodes(type.mask, type.includeSelfInTraversal) {
-            it.dispatchForKind(type, block)
-        }
+        visitNodes(type.mask, type.includeSelfInTraversal) { it.dispatchForKind(type, block) }
     }
 
     private fun hasNode(type: NodeKind<*>): Boolean {
@@ -119,21 +121,26 @@ internal abstract class NodeCoordinator(
     }
 
     fun head(type: NodeKind<*>): Modifier.Node? {
-        visitNodes(type.mask, type.includeSelfInTraversal) { return it }
+        visitNodes(type.mask, type.includeSelfInTraversal) {
+            return it
+        }
         return null
     }
 
     // Size exposed to LayoutCoordinates.
-    final override val size: IntSize get() = measuredSize
+    final override val size: IntSize
+        get() = measuredSize
 
     private var isClipping: Boolean = false
 
     protected var layerBlock: (GraphicsLayerScope.() -> Unit)? = null
         private set
+
     private var layerDensity: Density = layoutNode.density
     private var layerLayoutDirection: LayoutDirection = layoutNode.layoutDirection
 
     private var lastLayerAlpha: Float = 0.8f
+
     fun isTransparent(): Boolean {
         if (layer != null && lastLayerAlpha <= 0f) return true
         return this.wrappedBy?.isTransparent() ?: return false
@@ -172,16 +179,21 @@ internal abstract class NodeCoordinator(
                 }
                 // We do not simply compare against old.alignmentLines in case this is a
                 // MutableStateMap and the same instance might be passed.
-                if ((!oldAlignmentLines.isNullOrEmpty() || value.alignmentLines.isNotEmpty()) &&
-                    value.alignmentLines != oldAlignmentLines
+                if (
+                    ((oldAlignmentLines != null && oldAlignmentLines!!.isNotEmpty()) ||
+                        value.alignmentLines.isNotEmpty()) &&
+                        !compareEquals(oldAlignmentLines, value.alignmentLines)
                 ) {
                     alignmentLinesOwner.alignmentLines.onAlignmentsChanged()
 
                     @Suppress("PrimitiveInCollection")
-                    val oldLines = oldAlignmentLines
-                        ?: (mutableMapOf<AlignmentLine, Int>().also { oldAlignmentLines = it })
+                    val oldLines =
+                        oldAlignmentLines
+                            ?: (mutableObjectIntMapOf<AlignmentLine>().also {
+                                oldAlignmentLines = it
+                            })
                     oldLines.clear()
-                    oldLines.putAll(value.alignmentLines)
+                    value.alignmentLines.forEach { entry -> oldLines[entry.key] = entry.value }
                 }
             }
         }
@@ -189,7 +201,7 @@ internal abstract class NodeCoordinator(
     abstract var lookaheadDelegate: LookaheadDelegate?
         protected set
 
-    private var oldAlignmentLines: MutableMap<AlignmentLine, Int>? = null
+    private var oldAlignmentLines: MutableObjectIntMap<AlignmentLine>? = null
 
     abstract fun ensureLookaheadDelegateCreated()
 
@@ -211,23 +223,24 @@ internal abstract class NodeCoordinator(
         }
 
     /**
-     * Called when the width or height of [measureResult] change. The object instance pointed to
-     * by [measureResult] may or may not have changed.
+     * Called when the width or height of [measureResult] change. The object instance pointed to by
+     * [measureResult] may or may not have changed.
      */
     protected open fun onMeasureResultChanged(width: Int, height: Int) {
         val layer = layer
         if (layer != null) {
             layer.resize(IntSize(width, height))
         } else {
-            wrappedBy?.invalidateLayer()
+            // if the node is not placed then this change will not be visible
+            if (layoutNode.isPlaced) {
+                wrappedBy?.invalidateLayer()
+            }
         }
         measuredSize = IntSize(width, height)
         if (layerBlock != null) {
             updateLayerParameters(invokeOnLayoutChange = false)
         }
-        visitNodes(Nodes.Draw) {
-            it.onMeasureResultChanged()
-        }
+        visitNodes(Nodes.Draw) { it.onMeasureResultChanged() }
         layoutNode.owner?.onLayoutChange(layoutNode)
     }
 
@@ -280,18 +293,16 @@ internal abstract class NodeCoordinator(
 
     private var _rectCache: MutableRect? = null
     protected val rectCache: MutableRect
-        get() = _rectCache ?: MutableRect(0f, 0f, 0f, 0f).also {
-            _rectCache = it
-        }
+        get() = _rectCache ?: MutableRect(0f, 0f, 0f, 0f).also { _rectCache = it }
 
-    private val snapshotObserver get() = layoutNode.requireOwner().snapshotObserver
+    private val snapshotObserver
+        get() = layoutNode.requireOwner().snapshotObserver
 
-    /**
-     * The current layer's positional attributes.
-     */
+    /** The current layer's positional attributes. */
     private var layerPositionalProperties: LayerPositionalProperties? = null
 
-    internal val lastMeasurementConstraints: Constraints get() = measurementConstraints
+    internal val lastMeasurementConstraints: Constraints
+        get() = measurementConstraints
 
     protected inline fun performingMeasure(
         constraints: Constraints,
@@ -304,16 +315,12 @@ internal abstract class NodeCoordinator(
     fun onMeasured() {
         if (hasNode(Nodes.LayoutAware)) {
             Snapshot.withoutReadObservation {
-                visitNodes(Nodes.LayoutAware) {
-                    it.onRemeasured(measuredSize)
-                }
+                visitNodes(Nodes.LayoutAware) { it.onRemeasured(measuredSize) }
             }
         }
     }
 
-    /**
-     * Places the modified child.
-     */
+    /** Places the modified child. */
     /*@CallSuper*/
     override fun placeAt(
         position: IntOffset,
@@ -327,11 +334,7 @@ internal abstract class NodeCoordinator(
         }
     }
 
-    override fun placeAt(
-        position: IntOffset,
-        zIndex: Float,
-        layer: GraphicsLayer
-    ) {
+    override fun placeAt(position: IntOffset, zIndex: Float, layer: GraphicsLayer) {
         if (forcePlaceWithLookaheadOffset) {
             placeSelf(lookaheadDelegate!!.position, zIndex, null, layer)
         } else {
@@ -356,19 +359,25 @@ internal abstract class NodeCoordinator(
                 this.explicitLayer = explicitLayer
             }
             if (layer == null) {
-                layer = layoutNode.requireOwner().createLayer(
-                    drawBlock,
-                    invalidateParentLayer,
-                    explicitLayer
-                ).apply {
-                    resize(measuredSize)
-                    move(position)
-                }
+                layer =
+                    layoutNode
+                        .requireOwner()
+                        .createLayer(drawBlock, invalidateParentLayer, explicitLayer)
+                        .apply {
+                            resize(measuredSize)
+                            move(position)
+                        }
                 layoutNode.innerLayerCoordinatorIsDirty = true
                 invalidateParentLayer()
             }
         } else {
-            releaseExplicitLayer()
+            if (this.explicitLayer != null) {
+                this.explicitLayer = null
+                // we need to first release the OwnedLayer created for explicitLayer
+                // as we don't support updating the same OwnedLayer object from using
+                // explicit layer to implicit one.
+                updateLayerBlock(null)
+            }
             updateLayerBlock(layerBlock)
         }
         if (this.position != position) {
@@ -390,10 +399,17 @@ internal abstract class NodeCoordinator(
         }
     }
 
-    fun releaseExplicitLayer() {
-        if (explicitLayer != null) {
-            explicitLayer = null
+    fun releaseLayer() {
+        if (layer != null) {
+            if (explicitLayer != null) {
+                explicitLayer = null
+            }
             updateLayerBlock(null)
+
+            // as we removed the layer the node was placed with, we have to request relayout in
+            // case the node will be reused in future. during the relayout the layer will be
+            // recreated again if needed.
+            layoutNode.requestRelayout()
         }
     }
 
@@ -406,9 +422,7 @@ internal abstract class NodeCoordinator(
         placeSelf(position + apparentToRealOffset, zIndex, layerBlock, layer)
     }
 
-    /**
-     * Draws the content of the LayoutNode
-     */
+    /** Draws the content of the LayoutNode */
     fun draw(canvas: Canvas, graphicsLayer: GraphicsLayer?) {
         val layer = layer
         if (layer != null) {
@@ -437,26 +451,44 @@ internal abstract class NodeCoordinator(
     }
 
     fun onPlaced() {
-        visitNodes(Nodes.LayoutAware) {
-            it.onPlaced(this)
-        }
+        visitNodes(Nodes.LayoutAware) { it.onPlaced(this) }
     }
 
+    private var drawBlockParentLayer: GraphicsLayer? = null
+    private var drawBlockCanvas: Canvas? = null
+
+    private var _drawBlock: ((Canvas, GraphicsLayer?) -> Unit)? = null
+
     // implementation of draw block passed to the OwnedLayer
-    @Suppress("LiftReturnOrAssignment")
-    private val drawBlock: (Canvas) -> Unit = { canvas ->
-        if (layoutNode.isPlaced) {
-            snapshotObserver.observeReads(this, onCommitAffectingLayer) {
-                drawContainedDrawModifiers(canvas, explicitLayer)
+    private val drawBlock: (Canvas, GraphicsLayer?) -> Unit
+        get() {
+            var block = _drawBlock
+            if (block == null) {
+                val drawBlockCallToDrawModifiers = {
+                    drawContainedDrawModifiers(drawBlockCanvas!!, drawBlockParentLayer)
+                }
+                block = { canvas, parentLayer ->
+                    if (layoutNode.isPlaced) {
+                        this.drawBlockCanvas = canvas
+                        this.drawBlockParentLayer = parentLayer
+                        snapshotObserver.observeReads(
+                            this,
+                            onCommitAffectingLayer,
+                            drawBlockCallToDrawModifiers
+                        )
+                        lastLayerDrawingWasSkipped = false
+                    } else {
+                        // The invalidation is requested even for nodes which are not placed. As we
+                        // are not going to display them we skip the drawing. It is safe to just
+                        // draw nothing as the layer will be invalidated again when the node will be
+                        // finally placed.
+                        lastLayerDrawingWasSkipped = true
+                    }
+                }
+                _drawBlock = block
             }
-            lastLayerDrawingWasSkipped = false
-        } else {
-            // The invalidation is requested even for nodes which are not placed. As we are not
-            // going to display them we skip the drawing. It is safe to just draw nothing as the
-            // layer will be invalidated again when the node will be finally placed.
-            lastLayerDrawingWasSkipped = true
+            return block
         }
-    }
 
     fun updateLayerBlock(
         layerBlock: (GraphicsLayerScope.() -> Unit)?,
@@ -466,26 +498,40 @@ internal abstract class NodeCoordinator(
             "layerBlock can't be provided when explicitLayer is provided"
         }
         val layoutNode = layoutNode
-        val updateParameters = forceUpdateLayerParameters || this.layerBlock !== layerBlock ||
-            layerDensity != layoutNode.density || layerLayoutDirection != layoutNode.layoutDirection
+        val updateParameters =
+            forceUpdateLayerParameters ||
+                this.layerBlock !== layerBlock ||
+                layerDensity != layoutNode.density ||
+                layerLayoutDirection != layoutNode.layoutDirection
         this.layerDensity = layoutNode.density
         this.layerLayoutDirection = layoutNode.layoutDirection
 
         if (layoutNode.isAttached && layerBlock != null) {
             this.layerBlock = layerBlock
             if (layer == null) {
-                layer = layoutNode.requireOwner().createLayer(
-                    drawBlock,
-                    invalidateParentLayer
-                ).apply {
-                    resize(measuredSize)
-                    move(position)
-                }
+                layer =
+                    layoutNode
+                        .requireOwner()
+                        .createLayer(
+                            drawBlock,
+                            invalidateParentLayer,
+                            forceUseOldLayers = layoutNode.forceUseOldLayers
+                        )
+                        .apply {
+                            resize(measuredSize)
+                            move(position)
+                        }
                 updateLayerParameters()
                 layoutNode.innerLayerCoordinatorIsDirty = true
                 invalidateParentLayer()
             } else if (updateParameters) {
-                updateLayerParameters()
+                val positionalPropertiesChanged = updateLayerParameters()
+                if (positionalPropertiesChanged) {
+                    layoutNode
+                        .requireOwner()
+                        .rectManager
+                        .onLayoutLayerPositionalPropertiesChanged(layoutNode)
+                }
             }
         } else {
             this.layerBlock = null
@@ -493,7 +539,7 @@ internal abstract class NodeCoordinator(
                 it.destroy()
                 layoutNode.innerLayerCoordinatorIsDirty = true
                 invalidateParentLayer()
-                if (isAttached) {
+                if (isAttached && layoutNode.isPlaced) {
                     layoutNode.owner?.onLayoutChange(layoutNode)
                 }
             }
@@ -502,43 +548,50 @@ internal abstract class NodeCoordinator(
         }
     }
 
-    private fun updateLayerParameters(invokeOnLayoutChange: Boolean = true) {
+    /** returns true if some of the positional properties did change. */
+    private fun updateLayerParameters(invokeOnLayoutChange: Boolean = true): Boolean {
         if (explicitLayer != null) {
             // the parameters of the explicit layers are configured differently.
-            return
+            return false
         }
         val layer = layer
         if (layer != null) {
-            val layerBlock = checkPreconditionNotNull(layerBlock) {
-                "updateLayerParameters requires a non-null layerBlock"
-            }
+            val layerBlock =
+                checkPreconditionNotNull(layerBlock) {
+                    "updateLayerParameters requires a non-null layerBlock"
+                }
             graphicsLayerScope.reset()
             graphicsLayerScope.graphicsDensity = layoutNode.density
+            graphicsLayerScope.layoutDirection = layoutNode.layoutDirection
             graphicsLayerScope.size = size.toSize()
             snapshotObserver.observeReads(this, onCommitAffectingLayerParams) {
                 layerBlock.invoke(graphicsLayerScope)
+                graphicsLayerScope.updateOutline()
             }
-            val layerPositionalProperties = layerPositionalProperties
-                ?: LayerPositionalProperties().also { layerPositionalProperties = it }
+            val layerPositionalProperties =
+                layerPositionalProperties
+                    ?: LayerPositionalProperties().also { layerPositionalProperties = it }
+            tmpLayerPositionalProperties.copyFrom(layerPositionalProperties)
             layerPositionalProperties.copyFrom(graphicsLayerScope)
-            layer.updateLayerProperties(
-                graphicsLayerScope,
-                layoutNode.layoutDirection,
-                layoutNode.density,
-            )
+            layer.updateLayerProperties(graphicsLayerScope)
+            val wasClipping = isClipping
             isClipping = graphicsLayerScope.clip
             lastLayerAlpha = graphicsLayerScope.alpha
-            if (invokeOnLayoutChange) {
+            val positionalPropertiesChanged =
+                !tmpLayerPositionalProperties.hasSameValuesAs(layerPositionalProperties)
+            if (
+                invokeOnLayoutChange && (positionalPropertiesChanged || wasClipping != isClipping)
+            ) {
                 layoutNode.owner?.onLayoutChange(layoutNode)
             }
+            return positionalPropertiesChanged
         } else {
             checkPrecondition(layerBlock == null) { "null layer with a non-null layerBlock" }
+            return false
         }
     }
 
-    private val invalidateParentLayer: () -> Unit = {
-        wrappedBy?.invalidateLayer()
-    }
+    private val invalidateParentLayer: () -> Unit = { wrappedBy?.invalidateLayer() }
 
     /**
      * True when the last drawing of this layer didn't draw the real content as the LayoutNode
@@ -558,179 +611,174 @@ internal abstract class NodeCoordinator(
     val minimumTouchTargetSize: Size
         get() = with(layerDensity) { layoutNode.viewConfiguration.minimumTouchTargetSize.toSize() }
 
+    fun onAttach() {
+        if (layer == null && layerBlock != null) {
+            // This has been detached and is now being reattached. It previously had a layer, so
+            // reconstitute one.
+            layer =
+                layoutNode
+                    .requireOwner()
+                    .createLayer(drawBlock, invalidateParentLayer, explicitLayer)
+                    .apply {
+                        resize(measuredSize)
+                        move(position)
+                        invalidate()
+                    }
+        }
+    }
+
+    fun onDetach() {
+        layer?.destroy()
+        layer = null
+    }
+
     /**
      * Executes a hit test for this [NodeCoordinator].
      *
      * @param hitTestSource The hit test specifics for pointer input or semantics
-     * @param pointerPosition The tested pointer position, which is relative to
-     * the [NodeCoordinator].
+     * @param pointerPosition The tested pointer position, which is relative to the
+     *   [NodeCoordinator].
      * @param hitTestResult The parent [HitTestResult] that any hit should be added to.
-     * @param isTouchEvent `true` if this is from a touch source. Touch sources allow for
-     * minimum touch target. Semantics hit tests always treat hits as needing minimum touch target.
+     * @param pointerType The [PointerType] of the source input. Touch sources allow for minimum
+     *   touch target. Semantics hit tests always treat hits as needing minimum touch target.
      * @param isInLayer `true` if the touch event is in the layer of this and all parents or `false`
-     * if it is outside the layer, but within the minimum touch target of the edge of the layer.
-     * This can only be `false` when [isTouchEvent] is `true` or else a layer miss means the event
-     * will be clipped out.
+     *   if it is outside the layer, but within the minimum touch target of the edge of the layer.
+     *   This can only be `false` when [pointerType] is [PointerType.Touch] or else a layer miss
+     *   means the event will be clipped out.
      */
     fun hitTest(
         hitTestSource: HitTestSource,
         pointerPosition: Offset,
         hitTestResult: HitTestResult,
-        isTouchEvent: Boolean,
+        pointerType: PointerType,
         isInLayer: Boolean
     ) {
         val head = head(hitTestSource.entityType())
         if (!withinLayerBounds(pointerPosition)) {
             // This missed the clip, but if this layout is too small and this is within the
             // minimum touch target, we still consider it a hit.
-            if (isTouchEvent) {
+            if (pointerType == PointerType.Touch) {
                 val distanceFromEdge =
                     distanceInMinimumTouchTarget(pointerPosition, minimumTouchTargetSize)
-                if (distanceFromEdge.isFinite() &&
-                    hitTestResult.isHitInMinimumTouchTargetBetter(distanceFromEdge, false)
+                if (
+                    distanceFromEdge.fastIsFinite() &&
+                        hitTestResult.isHitInMinimumTouchTargetBetter(distanceFromEdge, false)
                 ) {
                     head.hitNear(
                         hitTestSource,
                         pointerPosition,
                         hitTestResult,
-                        isTouchEvent,
+                        pointerType,
                         false,
                         distanceFromEdge
                     )
                 } // else it is a complete miss.
             }
         } else if (head == null) {
-            hitTestChild(hitTestSource, pointerPosition, hitTestResult, isTouchEvent, isInLayer)
+            hitTestChild(hitTestSource, pointerPosition, hitTestResult, pointerType, isInLayer)
         } else if (isPointerInBounds(pointerPosition)) {
             // A real hit
-            head.hit(
+            head.hit(hitTestSource, pointerPosition, hitTestResult, pointerType, isInLayer)
+        } else {
+            val distanceFromEdge =
+                if (pointerType != PointerType.Touch) Float.POSITIVE_INFINITY
+                else {
+                    distanceInMinimumTouchTarget(pointerPosition, minimumTouchTargetSize)
+                }
+            val isHitInMinimumTouchTargetBetter =
+                distanceFromEdge.fastIsFinite() &&
+                    hitTestResult.isHitInMinimumTouchTargetBetter(distanceFromEdge, isInLayer)
+
+            head.outOfBoundsHit(
                 hitTestSource,
                 pointerPosition,
                 hitTestResult,
-                isTouchEvent,
-                isInLayer
+                pointerType,
+                isInLayer,
+                distanceFromEdge,
+                isHitInMinimumTouchTargetBetter
             )
-        } else {
-            val distanceFromEdge = if (!isTouchEvent) Float.POSITIVE_INFINITY else {
-                distanceInMinimumTouchTarget(pointerPosition, minimumTouchTargetSize)
-            }
-
-            if (distanceFromEdge.isFinite() &&
-                hitTestResult.isHitInMinimumTouchTargetBetter(distanceFromEdge, isInLayer)
-            ) {
-                // Hit closer than existing handlers, so just record it
-                head.hitNear(
-                    hitTestSource,
-                    pointerPosition,
-                    hitTestResult,
-                    isTouchEvent,
-                    isInLayer,
-                    distanceFromEdge
-                )
-            } else {
-                head.speculativeHit(
-                    hitTestSource,
-                    pointerPosition,
-                    hitTestResult,
-                    isTouchEvent,
-                    isInLayer,
-                    distanceFromEdge
-                )
-            }
         }
     }
 
     /**
-     * The [NodeCoordinator] had a hit in bounds and can record any children in the
-     * [hitTestResult].
+     * The [NodeCoordinator] had a hit in bounds and can record any children in the [hitTestResult].
      */
     private fun Modifier.Node?.hit(
         hitTestSource: HitTestSource,
         pointerPosition: Offset,
         hitTestResult: HitTestResult,
-        isTouchEvent: Boolean,
+        pointerType: PointerType,
         isInLayer: Boolean
     ) {
         if (this == null) {
-            hitTestChild(hitTestSource, pointerPosition, hitTestResult, isTouchEvent, isInLayer)
+            hitTestChild(hitTestSource, pointerPosition, hitTestResult, pointerType, isInLayer)
         } else {
             hitTestResult.hit(this, isInLayer) {
                 nextUntil(hitTestSource.entityType(), Nodes.Layout)
-                    .hit(hitTestSource, pointerPosition, hitTestResult, isTouchEvent, isInLayer)
+                    .hit(hitTestSource, pointerPosition, hitTestResult, pointerType, isInLayer)
             }
         }
     }
 
     /**
-     * The [NodeCoordinator] had a hit [distanceFromEdge] from the bounds and it is within
-     * the minimum touch target distance, so it should be recorded as such in the [hitTestResult].
+     * The pointer lands outside the node's bounds. There are three cases we have to handle:
+     * 1. hitNear: if the nodes is smaller than the minimumTouchTargetSize, it's touch bounds will
+     *    be expanded to the minimal touch target size.
+     * 2. hitExpandedTouchBounds: if the nodes has a expanded touch bounds.
+     * 3. speculativeHit: if the hit misses this node, but its child can still get the pointer
+     *    event.
+     *
+     * The complication is when touch bounds overlaps, there are 3 possibilities:
+     * 1. hit in this node's expanded touch bounds or minimum touch target bounds overlaps with a
+     *    direct hit in the other node. The node with direct hit will get the event.
+     * 2. hit in this node's expanded touch bounds overlaps with other node's expanded touch bounds.
+     *    Both nodes will get the event.
+     * 3. hit in this node's expanded touch bounds overlaps with the other node's minimum touch
+     *    touch bounds. The node with expanded touch bounds will get the event.
+     *
+     * The logic to handle the hit priority is implemented in [HitTestResult.speculativeHit] and
+     * [HitTestResult.hitExpandedTouchBounds].
      */
-    private fun Modifier.Node?.hitNear(
+    private fun Modifier.Node?.outOfBoundsHit(
         hitTestSource: HitTestSource,
         pointerPosition: Offset,
         hitTestResult: HitTestResult,
-        isTouchEvent: Boolean,
+        pointerType: PointerType,
         isInLayer: Boolean,
-        distanceFromEdge: Float
+        distanceFromEdge: Float,
+        isHitInMinimumTouchTargetBetter: Boolean
     ) {
         if (this == null) {
-            hitTestChild(hitTestSource, pointerPosition, hitTestResult, isTouchEvent, isInLayer)
-        } else {
-            // Hit closer than existing handlers, so just record it
-            hitTestResult.hitInMinimumTouchTarget(
-                this,
-                distanceFromEdge,
-                isInLayer
-            ) {
-                nextUntil(hitTestSource.entityType(), Nodes.Layout).hitNear(
-                    hitTestSource,
-                    pointerPosition,
-                    hitTestResult,
-                    isTouchEvent,
-                    isInLayer,
-                    distanceFromEdge
-                )
+            hitTestChild(hitTestSource, pointerPosition, hitTestResult, pointerType, isInLayer)
+        } else if (isInExpandedTouchBounds(pointerPosition, pointerType)) {
+            hitTestResult.hitExpandedTouchBounds(this, isInLayer) {
+                nextUntil(hitTestSource.entityType(), Nodes.Layout)
+                    .outOfBoundsHit(
+                        hitTestSource,
+                        pointerPosition,
+                        hitTestResult,
+                        pointerType,
+                        isInLayer,
+                        distanceFromEdge,
+                        isHitInMinimumTouchTargetBetter
+                    )
             }
-        }
-    }
-
-    /**
-     * The [NodeCoordinator] had a miss, but it hasn't been clipped out. The child must be
-     * checked to see if it hit.
-     */
-    private fun Modifier.Node?.speculativeHit(
-        hitTestSource: HitTestSource,
-        pointerPosition: Offset,
-        hitTestResult: HitTestResult,
-        isTouchEvent: Boolean,
-        isInLayer: Boolean,
-        distanceFromEdge: Float
-    ) {
-        if (this == null) {
-            hitTestChild(hitTestSource, pointerPosition, hitTestResult, isTouchEvent, isInLayer)
-        } else if (hitTestSource.interceptOutOfBoundsChildEvents(this)) {
-            // We only want to replace the existing touch target if there are better
-            // hits in the children
-            hitTestResult.speculativeHit(
-                this,
-                distanceFromEdge,
-                isInLayer
-            ) {
-                nextUntil(hitTestSource.entityType(), Nodes.Layout).speculativeHit(
-                    hitTestSource,
-                    pointerPosition,
-                    hitTestResult,
-                    isTouchEvent,
-                    isInLayer,
-                    distanceFromEdge
-                )
-            }
-        } else {
-            nextUntil(hitTestSource.entityType(), Nodes.Layout).speculativeHit(
+        } else if (isHitInMinimumTouchTargetBetter) {
+            hitNear(
                 hitTestSource,
                 pointerPosition,
                 hitTestResult,
-                isTouchEvent,
+                pointerType,
+                isInLayer,
+                distanceFromEdge
+            )
+        } else {
+            speculativeHit(
+                hitTestSource,
+                pointerPosition,
+                hitTestResult,
+                pointerType,
                 isInLayer,
                 distanceFromEdge
             )
@@ -738,13 +786,112 @@ internal abstract class NodeCoordinator(
     }
 
     /**
-     * Do a [hitTest] on the children of this [NodeCoordinator].
+     * The [NodeCoordinator] had a hit [distanceFromEdge] from the bounds and it is within the
+     * minimum touch target distance, so it should be recorded as such in the [hitTestResult].
      */
+    private fun Modifier.Node?.hitNear(
+        hitTestSource: HitTestSource,
+        pointerPosition: Offset,
+        hitTestResult: HitTestResult,
+        pointerType: PointerType,
+        isInLayer: Boolean,
+        distanceFromEdge: Float
+    ) {
+        if (this == null) {
+            hitTestChild(hitTestSource, pointerPosition, hitTestResult, pointerType, isInLayer)
+        } else {
+            // Hit closer than existing handlers, so just record it
+            hitTestResult.hitInMinimumTouchTarget(this, distanceFromEdge, isInLayer) {
+                nextUntil(hitTestSource.entityType(), Nodes.Layout)
+                    .outOfBoundsHit(
+                        hitTestSource,
+                        pointerPosition,
+                        hitTestResult,
+                        pointerType,
+                        isInLayer,
+                        distanceFromEdge,
+                        isHitInMinimumTouchTargetBetter = true
+                    )
+            }
+        }
+    }
+
+    /**
+     * The [NodeCoordinator] had a miss, but it hasn't been clipped out. The child must be checked
+     * to see if it hit.
+     */
+    private fun Modifier.Node?.speculativeHit(
+        hitTestSource: HitTestSource,
+        pointerPosition: Offset,
+        hitTestResult: HitTestResult,
+        pointerType: PointerType,
+        isInLayer: Boolean,
+        distanceFromEdge: Float
+    ) {
+        if (this == null) {
+            hitTestChild(hitTestSource, pointerPosition, hitTestResult, pointerType, isInLayer)
+        } else if (hitTestSource.interceptOutOfBoundsChildEvents(this)) {
+            // We only want to replace the existing touch target if there are better
+            // hits in the children
+            hitTestResult.speculativeHit(this, distanceFromEdge, isInLayer) {
+                nextUntil(hitTestSource.entityType(), Nodes.Layout)
+                    .outOfBoundsHit(
+                        hitTestSource,
+                        pointerPosition,
+                        hitTestResult,
+                        pointerType,
+                        isInLayer,
+                        distanceFromEdge,
+                        isHitInMinimumTouchTargetBetter = false
+                    )
+            }
+        } else {
+            nextUntil(hitTestSource.entityType(), Nodes.Layout)
+                .outOfBoundsHit(
+                    hitTestSource,
+                    pointerPosition,
+                    hitTestResult,
+                    pointerType,
+                    isInLayer,
+                    distanceFromEdge,
+                    isHitInMinimumTouchTargetBetter = false
+                )
+        }
+    }
+
+    /**
+     * Helper method to check if the pointer is inside the node's expanded touch bounds. This only
+     * applies to pointer input modifier nodes whose [PointerInputModifierNode.touchBoundsExpansion]
+     * is not null.
+     */
+    private fun Modifier.Node?.isInExpandedTouchBounds(
+        pointerPosition: Offset,
+        pointerType: PointerType
+    ): Boolean {
+        if (this == null) {
+            return false
+        }
+        // The expanded touch bounds only works for stylus at this moment.
+        if (pointerType != PointerType.Stylus && pointerType != PointerType.Eraser) {
+            return false
+        }
+        dispatchForKind(Nodes.PointerInput) {
+            // We only check for the node itself or the first delegate PointerInputModifierNode.
+            val expansion = it.touchBoundsExpansion
+            return pointerPosition.x >= -expansion.computeLeft(layoutDirection) &&
+                pointerPosition.x < measuredWidth + expansion.computeRight(layoutDirection) &&
+                pointerPosition.y >= -expansion.top &&
+                pointerPosition.y < measuredHeight + expansion.bottom
+        }
+        return false
+    }
+
+    /** Do a [hitTest] on the children of this [NodeCoordinator]. */
     open fun hitTestChild(
         hitTestSource: HitTestSource,
         pointerPosition: Offset,
         hitTestResult: HitTestResult,
-        isTouchEvent: Boolean,
+        pointerType: PointerType,
         isInLayer: Boolean
     ) {
         // Also, keep looking to see if we also might hit any children.
@@ -752,19 +899,11 @@ internal abstract class NodeCoordinator(
         val wrapped = wrapped
         if (wrapped != null) {
             val positionInWrapped = wrapped.fromParentPosition(pointerPosition)
-            wrapped.hitTest(
-                hitTestSource,
-                positionInWrapped,
-                hitTestResult,
-                isTouchEvent,
-                isInLayer
-            )
+            wrapped.hitTest(hitTestSource, positionInWrapped, hitTestResult, pointerType, isInLayer)
         }
     }
 
-    /**
-     * Returns the bounds of this [NodeCoordinator], including the minimum touch target.
-     */
+    /** Returns the bounds of this [NodeCoordinator], including the minimum touch target. */
     fun touchBoundsInRoot(): Rect {
         if (!isAttached) {
             return Rect.Zero
@@ -813,8 +952,9 @@ internal abstract class NodeCoordinator(
     override fun windowToLocal(relativeToWindow: Offset): Offset {
         checkPrecondition(isAttached) { ExpectAttachedLayoutCoordinates }
         val root = findRootCoordinates()
-        val positionInRoot = layoutNode.requireOwner()
-            .calculateLocalPosition(relativeToWindow) - root.positionInRoot()
+        val positionInRoot =
+            layoutNode.requireOwner().calculateLocalPosition(relativeToWindow) -
+                root.positionInRoot()
         return localPositionOf(root, positionInRoot)
     }
 
@@ -830,9 +970,25 @@ internal abstract class NodeCoordinator(
     override fun localPositionOf(
         sourceCoordinates: LayoutCoordinates,
         relativeToSource: Offset
+    ): Offset =
+        localPositionOf(
+            sourceCoordinates = sourceCoordinates,
+            relativeToSource = relativeToSource,
+            includeMotionFrameOfReference = true
+        )
+
+    override fun localPositionOf(
+        sourceCoordinates: LayoutCoordinates,
+        relativeToSource: Offset,
+        includeMotionFrameOfReference: Boolean
     ): Offset {
         if (sourceCoordinates is LookaheadLayoutCoordinates) {
-            return -sourceCoordinates.localPositionOf(this, -relativeToSource)
+            sourceCoordinates.coordinator.onCoordinatesUsed()
+            return -sourceCoordinates.localPositionOf(
+                sourceCoordinates = this,
+                relativeToSource = -relativeToSource,
+                includeMotionFrameOfReference = includeMotionFrameOfReference
+            )
         }
 
         val nodeCoordinator = sourceCoordinates.toCoordinator()
@@ -842,11 +998,11 @@ internal abstract class NodeCoordinator(
         var position = relativeToSource
         var coordinator = nodeCoordinator
         while (coordinator !== commonAncestor) {
-            position = coordinator.toParentPosition(position)
+            position = coordinator.toParentPosition(position, includeMotionFrameOfReference)
             coordinator = coordinator.wrappedBy!!
         }
 
-        return ancestorToLocal(commonAncestor, position)
+        return ancestorToLocal(commonAncestor, position, includeMotionFrameOfReference)
     }
 
     override fun transformFrom(sourceCoordinates: LayoutCoordinates, matrix: Matrix) {
@@ -865,7 +1021,17 @@ internal abstract class NodeCoordinator(
         val owner = layoutNode.requireOwner()
         val rootCoordinator = findRootCoordinates().toCoordinator()
         transformToAncestor(rootCoordinator, matrix)
-        owner.localToScreen(matrix)
+        if (owner is MatrixPositionCalculator) {
+            // Only Android owner supports direct matrix manipulations,
+            // This API had to be Android-only in the first place.
+            owner.localToScreen(matrix)
+        } else {
+            // Fallback: try to extract just position
+            val screenPosition = rootCoordinator.positionOnScreen()
+            if (screenPosition.isSpecified) {
+                matrix.translate(screenPosition.x, screenPosition.y, 0f)
+            }
+        }
     }
 
     private fun transformToAncestor(ancestor: NodeCoordinator, matrix: Matrix) {
@@ -926,22 +1092,25 @@ internal abstract class NodeCoordinator(
         return bounds.toRect()
     }
 
-    private fun ancestorToLocal(ancestor: NodeCoordinator, offset: Offset): Offset {
+    private fun ancestorToLocal(
+        ancestor: NodeCoordinator,
+        offset: Offset,
+        includeMotionFrameOfReference: Boolean,
+    ): Offset {
         if (ancestor === this) {
             return offset
         }
         val wrappedBy = wrappedBy
         if (wrappedBy == null || ancestor == wrappedBy) {
-            return fromParentPosition(offset)
+            return fromParentPosition(offset, includeMotionFrameOfReference)
         }
-        return fromParentPosition(wrappedBy.ancestorToLocal(ancestor, offset))
+        return fromParentPosition(
+            position = wrappedBy.ancestorToLocal(ancestor, offset, includeMotionFrameOfReference),
+            includeMotionFrameOfReference = includeMotionFrameOfReference
+        )
     }
 
-    private fun ancestorToLocal(
-        ancestor: NodeCoordinator,
-        rect: MutableRect,
-        clipBounds: Boolean
-    ) {
+    private fun ancestorToLocal(ancestor: NodeCoordinator, rect: MutableRect, clipBounds: Boolean) {
         if (ancestor === this) {
             return
         }
@@ -973,36 +1142,50 @@ internal abstract class NodeCoordinator(
      * Converts [position] in the local coordinate system to a [Offset] in the
      * [parentLayoutCoordinates] coordinate system.
      */
-    open fun toParentPosition(position: Offset): Offset {
+    open fun toParentPosition(
+        position: Offset,
+        includeMotionFrameOfReference: Boolean = true
+    ): Offset {
         val layer = layer
         val targetPosition = layer?.mapOffset(position, inverse = false) ?: position
-        return targetPosition + this.position
+        return if (!includeMotionFrameOfReference && isPlacedUnderMotionFrameOfReference) {
+            targetPosition
+        } else {
+            targetPosition + this.position
+        }
     }
 
     /**
      * Converts [position] in the [parentLayoutCoordinates] coordinate system to a [Offset] in the
      * local coordinate system.
      */
-    open fun fromParentPosition(position: Offset): Offset {
-        val relativeToPosition = position - this.position
+    open fun fromParentPosition(
+        position: Offset,
+        includeMotionFrameOfReference: Boolean = true
+    ): Offset {
+        val relativeToPosition =
+            if (!includeMotionFrameOfReference && this.isPlacedUnderMotionFrameOfReference) {
+                position
+            } else {
+                position - this.position
+            }
         val layer = layer
-        return layer?.mapOffset(relativeToPosition, inverse = true)
-            ?: relativeToPosition
+        return layer?.mapOffset(relativeToPosition, inverse = true) ?: relativeToPosition
     }
 
     protected fun drawBorder(canvas: Canvas, paint: Paint) {
-        val rect = Rect(
+        canvas.drawRect(
             left = 0.5f,
             top = 0.5f,
             right = measuredSize.width.toFloat() - 0.5f,
-            bottom = measuredSize.height.toFloat() - 0.5f
+            bottom = measuredSize.height.toFloat() - 0.5f,
+            paint = paint
         )
-        canvas.drawRect(rect, paint)
     }
 
     /**
-     * This will be called when the [LayoutNode] associated with this [NodeCoordinator] is
-     * attached to the [Owner].
+     * This will be called when the [LayoutNode] associated with this [NodeCoordinator] is attached
+     * to the [Owner].
      */
     fun onLayoutNodeAttach() {
         // this call will update the parameters of the layer (alpha, scale, etc)
@@ -1012,11 +1195,10 @@ internal abstract class NodeCoordinator(
     }
 
     /**
-     * This will be called when the [LayoutNode] associated with this [NodeCoordinator] is
-     * released or when the [NodeCoordinator] is released (will not be used anymore).
+     * This will be called when the [LayoutNode] associated with this [NodeCoordinator] is released
+     * or when the [NodeCoordinator] is released (will not be used anymore).
      */
     fun onRelease() {
-        releaseExplicitLayer()
         released = true
         // It is important to call invalidateParentLayer() here, even though updateLayerBlock() may
         // call it. The reason is because we end up calling this from the bottom up, which means
@@ -1025,15 +1207,13 @@ internal abstract class NodeCoordinator(
         // no layers invalidated. By always calling this, we ensure that after all nodes are
         // removed at least one layer is invalidated.
         invalidateParentLayer()
-        if (layer != null) {
-            updateLayerBlock(null)
-        }
+        releaseLayer()
     }
 
     /**
-     * Modifies bounds to be in the parent NodeCoordinator's coordinates, including clipping,
-     * if [clipBounds] is true. If [clipToMinimumTouchTargetSize] is true and the layer clips,
-     * then the clip bounds are extended to allow minimum touch target extended area.
+     * Modifies bounds to be in the parent NodeCoordinator's coordinates, including clipping, if
+     * [clipBounds] is true. If [clipToMinimumTouchTargetSize] is true and the layer clips, then the
+     * clip bounds are extended to allow minimum touch target extended area.
      */
     internal fun rectInParent(
         bounds: MutableRect,
@@ -1048,7 +1228,10 @@ internal abstract class NodeCoordinator(
                     val horz = minTouch.width / 2f
                     val vert = minTouch.height / 2f
                     bounds.intersect(
-                        -horz, -vert, size.width.toFloat() + horz, size.height.toFloat() + vert
+                        -horz,
+                        -vert,
+                        size.width.toFloat() + horz,
+                        size.height.toFloat() + vert
                     )
                 } else if (clipBounds) {
                     bounds.intersect(0f, 0f, size.width.toFloat(), size.height.toFloat())
@@ -1070,8 +1253,8 @@ internal abstract class NodeCoordinator(
     }
 
     /**
-     * Modifies bounds in the parent's coordinates to be in this NodeCoordinator's
-     * coordinates, including clipping, if [clipBounds] is true.
+     * Modifies bounds in the parent's coordinates to be in this NodeCoordinator's coordinates,
+     * including clipping, if [clipBounds] is true.
      */
     private fun fromParentRect(bounds: MutableRect, clipBounds: Boolean) {
         val x = position.x
@@ -1112,9 +1295,7 @@ internal abstract class NodeCoordinator(
         return x >= 0f && y >= 0f && x < measuredWidth && y < measuredHeight
     }
 
-    /**
-     * Invalidates the layer that this coordinator will draw into.
-     */
+    /** Invalidates the layer that this coordinator will draw into. */
     open fun invalidateLayer() {
         val layer = layer
         if (layer != null) {
@@ -1138,9 +1319,7 @@ internal abstract class NodeCoordinator(
         if (ancestor1 === ancestor2) {
             val otherNode = other.tail
             // They are on the same node, but we don't know which is the deeper of the two
-            tail.visitLocalAncestors(Nodes.Layout.mask) {
-                if (it === otherNode) return other
-            }
+            tail.visitLocalAncestors(Nodes.Layout.mask) { if (it === otherNode) return other }
             return this
         }
 
@@ -1173,7 +1352,10 @@ internal abstract class NodeCoordinator(
         val start = headNode(Nodes.PointerInput.includeSelfInTraversal) ?: return false
 
         if (start.isAttached) {
-            start.visitLocalDescendants(Nodes.PointerInput) {
+            // We have to check both the self and local descendants, because the `start` can also
+            // be a `PointerInputModifierNode` (when the first modifier node on the LayoutNode is
+            // a `PointerInputModifierNode`).
+            start.visitSelfAndLocalDescendants(Nodes.PointerInput) {
                 if (it.sharePointerInputWithSiblings()) return true
             }
         }
@@ -1191,9 +1373,9 @@ internal abstract class NodeCoordinator(
     }
 
     /**
-     * Returns the additional amount on the horizontal and vertical dimensions that
-     * this extends beyond [width] and [height] on all sides. This takes into account
-     * [minimumTouchTargetSize] and [measuredSize] vs. [width] and [height].
+     * Returns the additional amount on the horizontal and vertical dimensions that this extends
+     * beyond [width] and [height] on all sides. This takes into account [minimumTouchTargetSize]
+     * and [measuredSize] vs. [width] and [height].
      */
     protected fun calculateMinimumTouchTargetPadding(minimumTouchTargetSize: Size): Size {
         val widthDiff = minimumTouchTargetSize.width - measuredWidth.toFloat()
@@ -1202,16 +1384,17 @@ internal abstract class NodeCoordinator(
     }
 
     /**
-     * The distance within the [minimumTouchTargetSize] of [pointerPosition] to the layout
-     * size. If [pointerPosition] isn't within [minimumTouchTargetSize], then
-     * [Float.POSITIVE_INFINITY] is returned.
+     * The distance within the [minimumTouchTargetSize] of [pointerPosition] to the layout size. If
+     * [pointerPosition] isn't within [minimumTouchTargetSize], then [Float.POSITIVE_INFINITY] is
+     * returned.
      */
     protected fun distanceInMinimumTouchTarget(
         pointerPosition: Offset,
         minimumTouchTargetSize: Size
     ): Float {
-        if (measuredWidth >= minimumTouchTargetSize.width &&
-            measuredHeight >= minimumTouchTargetSize.height
+        if (
+            measuredWidth >= minimumTouchTargetSize.width &&
+                measuredHeight >= minimumTouchTargetSize.height
         ) {
             // this layout is big enough that it doesn't qualify for minimum touch targets
             return Float.POSITIVE_INFINITY
@@ -1220,8 +1403,8 @@ internal abstract class NodeCoordinator(
         val (width, height) = calculateMinimumTouchTargetPadding(minimumTouchTargetSize)
         val offsetFromEdge = offsetFromEdge(pointerPosition)
 
-        return if ((width > 0f || height > 0f) &&
-            offsetFromEdge.x <= width && offsetFromEdge.y <= height
+        return if (
+            (width > 0f || height > 0f) && offsetFromEdge.x <= width && offsetFromEdge.y <= height
         ) {
             offsetFromEdge.getDistanceSquared()
         } else {
@@ -1230,68 +1413,61 @@ internal abstract class NodeCoordinator(
     }
 
     /**
-     * [LayoutNode.hitTest] and [LayoutNode.hitTestSemantics] are very similar, but the data
-     * used in their implementations are different. This extracts the differences between the
-     * two methods into a single interface.
+     * [LayoutNode.hitTest] and [LayoutNode.hitTestSemantics] are very similar, but the data used in
+     * their implementations are different. This extracts the differences between the two methods
+     * into a single interface.
      */
     internal interface HitTestSource {
-        /**
-         * Returns the [NodeKind] for the hit test target.
-         */
+        /** Returns the [NodeKind] for the hit test target. */
         fun entityType(): NodeKind<*>
 
         /**
-         * Pointer input hit tests can intercept child hits when enabled. This returns `true`
-         * if the modifier has requested intercepting.
+         * Pointer input hit tests can intercept child hits when enabled. This returns `true` if the
+         * modifier has requested intercepting.
          */
         fun interceptOutOfBoundsChildEvents(node: Modifier.Node): Boolean
 
         /**
-         * Returns false if the parent layout node has a state that suppresses
-         * hit testing of its children.
+         * Returns false if the parent layout node has a state that suppresses hit testing of its
+         * children.
          */
         fun shouldHitTestChildren(parentLayoutNode: LayoutNode): Boolean
 
-        /**
-         * Calls a hit test on [layoutNode].
-         */
+        /** Calls a hit test on [layoutNode]. */
         fun childHitTest(
             layoutNode: LayoutNode,
             pointerPosition: Offset,
             hitTestResult: HitTestResult,
-            isTouchEvent: Boolean,
+            pointerType: PointerType,
             isInLayer: Boolean
         )
     }
 
     internal companion object {
-        const val ExpectAttachedLayoutCoordinates = "LayoutCoordinate operations are only valid " +
-            "when isAttached is true"
+        const val ExpectAttachedLayoutCoordinates =
+            "LayoutCoordinate operations are only valid " + "when isAttached is true"
         const val UnmeasuredError = "Asking for measurement result of unmeasured layout modifier"
         private val onCommitAffectingLayerParams: (NodeCoordinator) -> Unit = { coordinator ->
             if (coordinator.isValidOwnerScope) {
                 // coordinator.layerPositionalProperties should always be non-null here, but
                 // we'll just be careful with a null check.
-                // todo how this will be communicated to us in the new impl?
-                val layerPositionalProperties = coordinator.layerPositionalProperties
-                if (layerPositionalProperties == null) {
-                    coordinator.updateLayerParameters()
-                } else {
-                    tmpLayerPositionalProperties.copyFrom(layerPositionalProperties)
-                    coordinator.updateLayerParameters()
-                    if (!tmpLayerPositionalProperties.hasSameValuesAs(layerPositionalProperties)) {
-                        val layoutNode = coordinator.layoutNode
-                        val layoutDelegate = layoutNode.layoutDelegate
-                        if (layoutDelegate.childrenAccessingCoordinatesDuringPlacement > 0) {
-                            if (layoutDelegate.coordinatesAccessedDuringModifierPlacement ||
-                                layoutDelegate.coordinatesAccessedDuringPlacement) {
-                                layoutNode.requestRelayout()
-                            }
-                            layoutDelegate.measurePassDelegate
-                                .notifyChildrenUsingCoordinatesWhilePlacing()
+                val positionalPropertiesChanged = coordinator.updateLayerParameters()
+                if (positionalPropertiesChanged) {
+                    val layoutNode = coordinator.layoutNode
+                    val layoutDelegate = layoutNode.layoutDelegate
+                    if (layoutDelegate.childrenAccessingCoordinatesDuringPlacement > 0) {
+                        if (
+                            layoutDelegate.coordinatesAccessedDuringModifierPlacement ||
+                                layoutDelegate.coordinatesAccessedDuringPlacement
+                        ) {
+                            layoutNode.requestRelayout()
                         }
-                        layoutNode.owner?.requestOnPositionedCallback(layoutNode)
+                        layoutDelegate.measurePassDelegate
+                            .notifyChildrenUsingCoordinatesWhilePlacing()
                     }
+                    val owner = layoutNode.requireOwner()
+                    owner.rectManager.onLayoutLayerPositionalPropertiesChanged(layoutNode)
+                    owner.requestOnPositionedCallback(layoutNode)
                 }
             }
         }
@@ -1305,9 +1481,7 @@ internal abstract class NodeCoordinator(
         // reentrancy.
         private val tmpMatrix = Matrix()
 
-        /**
-         * Hit testing specifics for pointer input.
-         */
+        /** Hit testing specifics for pointer input. */
         val PointerInputSource =
             object : HitTestSource {
                 override fun entityType() = Nodes.PointerInput
@@ -1325,14 +1499,12 @@ internal abstract class NodeCoordinator(
                     layoutNode: LayoutNode,
                     pointerPosition: Offset,
                     hitTestResult: HitTestResult,
-                    isTouchEvent: Boolean,
+                    pointerType: PointerType,
                     isInLayer: Boolean
-                ) = layoutNode.hitTest(pointerPosition, hitTestResult, isTouchEvent, isInLayer)
+                ) = layoutNode.hitTest(pointerPosition, hitTestResult, pointerType, isInLayer)
             }
 
-        /**
-         * Hit testing specifics for semantics.
-         */
+        /** Hit testing specifics for semantics. */
         val SemanticsSource =
             object : HitTestSource {
                 override fun entityType() = Nodes.Semantics
@@ -1340,27 +1512,41 @@ internal abstract class NodeCoordinator(
                 override fun interceptOutOfBoundsChildEvents(node: Modifier.Node) = false
 
                 override fun shouldHitTestChildren(parentLayoutNode: LayoutNode) =
-                    parentLayoutNode.collapsedSemantics?.isClearingSemantics != true
+                    parentLayoutNode.semanticsConfiguration?.isClearingSemantics != true
 
                 override fun childHitTest(
                     layoutNode: LayoutNode,
                     pointerPosition: Offset,
                     hitTestResult: HitTestResult,
-                    isTouchEvent: Boolean,
+                    pointerType: PointerType,
                     isInLayer: Boolean
-                ) = layoutNode.hitTestSemantics(
-                    pointerPosition,
-                    hitTestResult,
-                    isTouchEvent,
-                    isInLayer
-                )
+                ) =
+                    layoutNode.hitTestSemantics(
+                        pointerPosition,
+                        hitTestResult,
+                        pointerType,
+                        isInLayer
+                    )
             }
     }
 }
 
+@Suppress("PrimitiveInCollection")
+private fun compareEquals(
+    a: MutableObjectIntMap<AlignmentLine>?,
+    b: Map<out AlignmentLine, Int>
+): Boolean {
+    if (a == null) return false
+    if (a.size != b.size) return false
+
+    a.forEach { k, v -> if (b[k] != v) return false }
+
+    return true
+}
+
 /**
- * These are the components of a layer that changes the position and may lead
- * to an OnGloballyPositionedCallback.
+ * These are the components of a layer that changes the position and may lead to an
+ * OnGloballyPositionedCallback.
  */
 private class LayerPositionalProperties {
     private var scaleX: Float = 1f
@@ -1410,10 +1596,7 @@ private class LayerPositionalProperties {
     }
 }
 
-private fun DelegatableNode.nextUntil(
-    type: NodeKind<*>,
-    stopType: NodeKind<*>
-): Modifier.Node? {
+private fun DelegatableNode.nextUntil(type: NodeKind<*>, stopType: NodeKind<*>): Modifier.Node? {
     val child = node.child ?: return null
     if (child.aggregateChildKindSet and type.mask == 0) return null
     var next: Modifier.Node? = child

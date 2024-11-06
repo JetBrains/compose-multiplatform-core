@@ -22,23 +22,19 @@ import android.graphics.ColorMatrixColorFilter as AndroidColorMatrixColorFilter
 import android.graphics.LightingColorFilter as AndroidLightingColorFilter
 import android.graphics.PorterDuffColorFilter as AndroidPorterDuffColorFilter
 import android.os.Build
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import java.lang.IllegalArgumentException
 
 internal actual typealias NativeColorFilter = android.graphics.ColorFilter
 
-/**
- * Obtain a [android.graphics.ColorFilter] instance from this [ColorFilter]
- */
+/** Obtain a [android.graphics.ColorFilter] instance from this [ColorFilter] */
 fun ColorFilter.asAndroidColorFilter(): android.graphics.ColorFilter = nativeColorFilter
 
-/**
- * Create a [ColorFilter] from the given [android.graphics.ColorFilter] instance
- */
+/** Create a [ColorFilter] from the given [android.graphics.ColorFilter] instance */
 fun android.graphics.ColorFilter.asComposeColorFilter(): ColorFilter {
-    return if (Build.VERSION_CODES.Q <= Build.VERSION.SDK_INT &&
-        this is AndroidBlendModeColorFilter) {
+    return if (
+        Build.VERSION_CODES.Q <= Build.VERSION.SDK_INT && this is AndroidBlendModeColorFilter
+    ) {
         BlendModeColorFilterHelper.createBlendModeColorFilter(this)
     } else if (this is AndroidLightingColorFilter && supportsLightingColorFilterQuery()) {
         LightingColorFilter(Color(this.colorMultiply), Color(this.colorAdd), this)
@@ -58,11 +54,12 @@ fun android.graphics.ColorFilter.asComposeColorFilter(): ColorFilter {
 }
 
 internal actual fun actualTintColorFilter(color: Color, blendMode: BlendMode): NativeColorFilter {
-    val androidColorFilter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        BlendModeColorFilterHelper.BlendModeColorFilter(color, blendMode)
-    } else {
-        AndroidPorterDuffColorFilter(color.toArgb(), blendMode.toPorterDuffMode())
-    }
+    val androidColorFilter =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            BlendModeColorFilterHelper.BlendModeColorFilter(color, blendMode)
+        } else {
+            AndroidPorterDuffColorFilter(color.toArgb(), blendMode.toPorterDuffMode())
+        }
     return androidColorFilter
 }
 
@@ -74,12 +71,10 @@ internal actual fun actualLightingColorFilter(multiply: Color, add: Color): Nati
 
 @RequiresApi(Build.VERSION_CODES.Q)
 private object BlendModeColorFilterHelper {
-    @DoNotInline
     fun BlendModeColorFilter(color: Color, blendMode: BlendMode): AndroidBlendModeColorFilter {
         return AndroidBlendModeColorFilter(color.toArgb(), blendMode.toAndroidBlendMode())
     }
 
-    @DoNotInline
     fun createBlendModeColorFilter(
         androidBlendModeColorFilter: AndroidBlendModeColorFilter
     ): BlendModeColorFilter {
@@ -97,14 +92,16 @@ internal actual fun actualColorMatrixFromFilter(filter: NativeColorFilter): Colo
     } else {
         // This method should not be invoked on API levels that do not support querying
         // the underlying ColorMatrix from the ColorMatrixColorFilter
-        throw IllegalArgumentException("Unable to obtain ColorMatrix from Android " +
-            "ColorMatrixColorFilter. This method was invoked on an unsupported Android version")
+        throw IllegalArgumentException(
+            "Unable to obtain ColorMatrix from Android " +
+                "ColorMatrixColorFilter. This method was invoked on an unsupported Android version"
+        )
     }
 }
 
 /**
- * Helper method to determine when the [AndroidColorMatrixColorFilter.getColorMatrix] was
- * available in the platform
+ * Helper method to determine when the [AndroidColorMatrixColorFilter.getColorMatrix] was available
+ * in the platform
  */
 internal fun supportsColorMatrixQuery() = Build.VERSION_CODES.O <= Build.VERSION.SDK_INT
 
@@ -117,7 +114,6 @@ internal fun supportsLightingColorFilterQuery() = Build.VERSION_CODES.O <= Build
 @RequiresApi(Build.VERSION_CODES.O)
 private object ColorMatrixFilterHelper {
 
-    @DoNotInline
     fun getColorMatrix(colorFilter: AndroidColorMatrixColorFilter): ColorMatrix {
         val androidColorMatrix = AndroidColorMatrix()
         colorFilter.getColorMatrix(androidColorMatrix)

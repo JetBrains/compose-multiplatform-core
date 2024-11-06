@@ -64,8 +64,7 @@ import kotlinx.coroutines.launch
 fun ModifierUsageSample() {
     Text(
         "Hello, World!",
-        Modifier
-            .padding(16.dp) // Outer padding; outside background
+        Modifier.padding(16.dp) // Outer padding; outside background
             .background(color = Color.Green) // Solid element background color
             .padding(16.dp) // Inner padding; inside background, around text
     )
@@ -78,10 +77,7 @@ fun ModifierFactorySample() {
 
     fun Modifier.fancy(level: Float) = this.then(FancyModifier(level))
 
-    Row(
-        Modifier
-            .fancy(1f)
-            .padding(10.dp)) {
+    Row(Modifier.fancy(1f).padding(10.dp)) {
         // content
     }
 }
@@ -108,17 +104,12 @@ fun SubcomponentModifierSample() {
         buttonModifier: Modifier = Modifier
     ) {
         Row(modifier) {
-            Button(onCancel, buttonModifier) {
-                Text("Cancel")
-            }
-            Button(onOk, buttonModifier) {
-                Text("Ok")
-            }
+            Button(onCancel, buttonModifier) { Text("Cancel") }
+            Button(onOk, buttonModifier) { Text("Ok") }
         }
     }
 }
 
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun DelegatedNodeSampleExplicit() {
@@ -139,7 +130,9 @@ fun DelegatedNodeSampleExplicit() {
         PointerInputModifierNode, SemanticsModifierNode, DelegatingNode() {
         var onTap: () -> Unit
             get() = gesture.onTap
-            set(value) { gesture.onTap = value }
+            set(value) {
+                gesture.onTap = value
+            }
 
         val gesture = delegate(TapGestureNode(onTap))
 
@@ -164,7 +157,6 @@ fun DelegatedNodeSampleExplicit() {
     }
 }
 
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun DelegatedNodeSampleImplicit() {
@@ -203,17 +195,17 @@ fun DelegatedNodeSampleImplicit() {
     }
 }
 
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun LazyDelegationExample() {
     class ExpensivePositionHandlingOnPointerEvents : PointerInputModifierNode, DelegatingNode() {
 
-        val globalAwareNode = object : GlobalPositionAwareModifierNode, Modifier.Node() {
-            override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
-                // ...
+        val globalAwareNode =
+            object : GlobalPositionAwareModifierNode, Modifier.Node() {
+                override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
+                    // ...
+                }
             }
-        }
 
         override fun onPointerEvent(
             pointerEvent: PointerEvent,
@@ -271,13 +263,13 @@ fun LazyDelegationExample() {
 @Sampled
 fun ConditionalDelegationExample() {
     class MyModifierNode(global: Boolean) : DelegatingNode() {
-        val globalAwareNode = object : GlobalPositionAwareModifierNode, Modifier.Node() {
-            override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
-                // ...
-            }
-        }.also {
-            if (global) delegate(it)
-        }
+        val globalAwareNode =
+            object : GlobalPositionAwareModifierNode, Modifier.Node() {
+                    override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
+                        // ...
+                    }
+                }
+                .also { if (global) delegate(it) }
         var global: Boolean = global
             set(value) {
                 if (global && !value) {
@@ -293,11 +285,13 @@ fun ConditionalDelegationExample() {
 @Sampled
 fun DelegateInAttachSample() {
     class MyModifierNode : DelegatingNode() {
-        val globalAwareNode = object : GlobalPositionAwareModifierNode, Modifier.Node() {
-            override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
-                // ...
+        val globalAwareNode =
+            object : GlobalPositionAwareModifierNode, Modifier.Node() {
+                override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
+                    // ...
+                }
             }
-        }
+
         override fun onAttach() {
             // one can conditionally delegate in attach, for instance if certain conditions are met
             if (requireLayoutDirection() == LayoutDirection.Rtl) {
@@ -307,7 +301,6 @@ fun DelegateInAttachSample() {
     }
 }
 
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun ModifierNodeElementSample() {
@@ -316,13 +309,13 @@ fun ModifierNodeElementSample() {
             drawCircle(color)
         }
     }
-    data class CircleElement(
-        val color: Color
-    ) : ModifierNodeElement<Circle>() {
+    data class CircleElement(val color: Color) : ModifierNodeElement<Circle>() {
         override fun create() = Circle(color)
+
         override fun update(node: Circle) {
             node.color = color
         }
+
         override fun InspectorInfo.inspectableProperties() {
             name = "circle"
             properties["color"] = color
@@ -332,7 +325,6 @@ fun ModifierNodeElementSample() {
 }
 
 @Suppress("LocalVariableName")
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun SemanticsModifierNodeSample() {
@@ -342,20 +334,22 @@ fun SemanticsModifierNodeSample() {
         }
     }
 
-    val HeadingElement = object : ModifierNodeElement<HeadingNode>() {
-        override fun create() = HeadingNode()
+    val HeadingElement =
+        object : ModifierNodeElement<HeadingNode>() {
+            override fun create() = HeadingNode()
 
-        override fun update(node: HeadingNode) {
-            // Nothing to update.
+            override fun update(node: HeadingNode) {
+                // Nothing to update.
+            }
+
+            override fun InspectorInfo.inspectableProperties() {
+                name = "heading"
+            }
+
+            override fun hashCode(): Int = "heading".hashCode()
+
+            override fun equals(other: Any?) = (other === this)
         }
-
-        override fun InspectorInfo.inspectableProperties() {
-            name = "heading"
-        }
-
-        override fun hashCode(): Int = "heading".hashCode()
-        override fun equals(other: Any?) = (other === this)
-    }
 
     fun Modifier.heading() = this then HeadingElement
 }
@@ -381,10 +375,10 @@ fun PointerInputModifierNodeSample() {
         }
     }
 
-    data class PointerInputElement(
-        val callback: (PointerEvent) -> Unit
-    ) : ModifierNodeElement<OnPointerEventNode>() {
+    data class PointerInputElement(val callback: (PointerEvent) -> Unit) :
+        ModifierNodeElement<OnPointerEventNode>() {
         override fun create() = OnPointerEventNode(callback)
+
         override fun update(node: OnPointerEventNode) {
             node.callback = callback
         }
@@ -399,7 +393,6 @@ fun PointerInputModifierNodeSample() {
         this then PointerInputElement(callback)
 }
 
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun LayoutAwareModifierNodeSample() {
@@ -411,9 +404,11 @@ fun LayoutAwareModifierNodeSample() {
 
     data class LogSizeElement(val id: String) : ModifierNodeElement<SizeLoggerNode>() {
         override fun create(): SizeLoggerNode = SizeLoggerNode(id)
+
         override fun update(node: SizeLoggerNode) {
             node.id = id
         }
+
         override fun InspectorInfo.inspectableProperties() {
             name = "logSize"
             properties["id"] = id
@@ -423,7 +418,6 @@ fun LayoutAwareModifierNodeSample() {
     fun Modifier.logSize(id: String) = this then LogSizeElement(id)
 }
 
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun GlobalPositionAwareModifierNodeSample() {
@@ -444,9 +438,11 @@ fun GlobalPositionAwareModifierNodeSample() {
 
     data class PositionLoggerElement(val id: String) : ModifierNodeElement<PositionLoggerNode>() {
         override fun create() = PositionLoggerNode(id)
+
         override fun update(node: PositionLoggerNode) {
             node.id = id
         }
+
         override fun InspectorInfo.inspectableProperties() {
             name = "logPosition"
             properties["id"] = id
@@ -456,11 +452,14 @@ fun GlobalPositionAwareModifierNodeSample() {
     fun Modifier.logPosition(id: String) = this then PositionLoggerElement(id)
 }
 
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun JustReadingOrProvidingModifierLocalNodeSample() {
-    class Logger { fun log(string: String) { println(string) } }
+    class Logger {
+        fun log(string: String) {
+            println(string)
+        }
+    }
 
     val loggerLocal = modifierLocalOf { Logger() }
 
@@ -468,34 +467,33 @@ fun JustReadingOrProvidingModifierLocalNodeSample() {
         override val providedValues = modifierLocalMapOf(loggerLocal to logger)
     }
 
-    data class ProvideLoggerElement(
-        val logger: Logger
-    ) : ModifierNodeElement<ProvideLoggerNode>() {
+    data class ProvideLoggerElement(val logger: Logger) : ModifierNodeElement<ProvideLoggerNode>() {
         override fun create() = ProvideLoggerNode(logger)
+
         override fun update(node: ProvideLoggerNode) {
             node.provide(loggerLocal, logger)
         }
+
         override fun InspectorInfo.inspectableProperties() {
             name = "provideLogger"
             properties["logger"] = logger
         }
     }
 
-    class SizeLoggerNode(
-        var id: String
-    ) : ModifierLocalModifierNode, LayoutAwareModifierNode, Modifier.Node() {
+    class SizeLoggerNode(var id: String) :
+        ModifierLocalModifierNode, LayoutAwareModifierNode, Modifier.Node() {
         override fun onRemeasured(size: IntSize) {
             loggerLocal.current.log("The size of $id was $size")
         }
     }
 
-    data class SizeLoggerElement(
-        val id: String
-    ) : ModifierNodeElement<SizeLoggerNode>() {
+    data class SizeLoggerElement(val id: String) : ModifierNodeElement<SizeLoggerNode>() {
         override fun create() = SizeLoggerNode(id)
+
         override fun update(node: SizeLoggerNode) {
             node.id = id
         }
+
         override fun InspectorInfo.inspectableProperties() {
             name = "logSize"
             properties["id"] = id
@@ -529,9 +527,7 @@ fun ModifierNodeCoroutineScopeSample() {
         val animatable = Animatable(0f)
 
         override fun onAttach() {
-            coroutineScope.launch {
-                animatable.animateTo(1f)
-            }
+            coroutineScope.launch { animatable.animateTo(1f) }
         }
     }
 }

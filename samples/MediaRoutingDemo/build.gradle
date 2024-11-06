@@ -18,7 +18,6 @@ dependencies {
     implementation(project(":swiperefreshlayout:swiperefreshlayout"))
 
     implementation(libs.material)
-    implementation(libs.multidex)
     implementation(libs.guava)
 }
 
@@ -29,9 +28,9 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
         }
     }
+    compileSdk 35
     defaultConfig {
         vectorDrawables.useSupportLibrary = true
-        multiDexEnabled true
     }
     lint {
         baseline = file("lint-baseline.xml")

@@ -21,6 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+import androidx.build.KotlinTarget
 import androidx.build.LibraryType
 import androidx.build.PlatformIdentifier
 
@@ -32,26 +34,26 @@ plugins {
 
 androidXMultiplatform {
     android()
-    desktop()
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlibCommon)
-                api("androidx.compose.animation:animation-core:1.6.0")
-                api(project(":compose:foundation:foundation"))
-                api(project(":compose:material:material-icons-core"))
+                implementation(libs.kotlinStdlib)
+                api("androidx.compose.animation:animation-core:1.7.4")
+                api("androidx.compose.foundation:foundation:1.7.4")
+                api("androidx.compose.ui:ui-text:1.7.4")
                 api(project(":compose:material:material-ripple"))
                 api(project(":compose:runtime:runtime"))
-                api("androidx.compose.ui:ui:1.6.0")
-                api("androidx.compose.ui:ui-text:1.6.0")
+                api("androidx.compose.ui:ui:1.7.4")
 
-                implementation(project(":compose:animation:animation-core"))
-                implementation("androidx.compose.animation:animation:1.6.0")
-                implementation("androidx.compose.foundation:foundation-layout:1.6.0")
-                implementation("androidx.compose.ui:ui-util:1.6.0")
+                implementation("androidx.compose.animation:animation-core:1.7.4")
+                implementation("androidx.compose.animation:animation:1.7.4")
+                implementation("androidx.compose.foundation:foundation-layout:1.7.4")
+                implementation("androidx.compose.ui:ui-util:1.7.4")
             }
         }
 
@@ -66,17 +68,11 @@ androidXMultiplatform {
             }
         }
 
-        skikoMain {
-            dependsOn(commonMain)
-            dependencies {
-            }
-        }
-
         androidMain {
             dependsOn(jvmMain)
             dependencies {
-                api("androidx.annotation:annotation:1.1.0")
-                api("androidx.annotation:annotation-experimental:1.4.0")
+                api("androidx.annotation:annotation:1.8.1")
+                api("androidx.annotation:annotation-experimental:1.4.1")
 
                 // TODO: remove next 3 dependencies when b/202810604 is fixed
                 implementation("androidx.savedstate:savedstate:1.2.1")
@@ -85,23 +81,22 @@ androidXMultiplatform {
             }
         }
 
-        desktopMain {
-            dependsOn(skikoMain)
-            dependsOn(jvmMain)
-            dependencies {
-                implementation(libs.kotlinStdlib)
-            }
+        commonStubsMain {
+            dependsOn(commonMain)
         }
 
-        jvmTest {
-            dependsOn(commonTest)
-            dependencies {
-            }
+        jvmStubsMain {
+            dependsOn(commonStubsMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
         }
 
         androidInstrumentedTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
+                implementation(project(":compose:foundation:foundation"))
                 implementation(project(":compose:material:material:material-samples"))
                 implementation(project(":compose:test-utils"))
                 implementation("androidx.compose.ui:ui-test:1.6.0")
@@ -120,22 +115,12 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
                 implementation(libs.junit)
                 implementation(libs.truth)
-            }
-        }
-
-        desktopTest {
-            dependsOn(jvmTest)
-            dependencies {
-                implementation(project(":compose:ui:ui-test-junit4"))
-                implementation(libs.truth)
-                implementation(libs.junit)
-                implementation(libs.skikoCurrentOs)
             }
         }
     }
@@ -148,15 +133,19 @@ dependencies {
 
 androidx {
     name = "Compose Material Components"
-    type = LibraryType.PUBLISHED_KOTLIN_ONLY_LIBRARY
+    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     mavenVersion = LibraryVersions.COMPOSE
     inceptionYear = "2018"
     description = "Compose Material Design Components library"
     legacyDisableKotlinStrictApiMode = true
+    metalavaK2UastEnabled = false
+    samples(project(":compose:material:material:material-samples"))
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }
 
 // Screenshot tests related setup
 android {
+    compileSdk 35
     sourceSets.androidTest.assets.srcDirs +=
             project.rootDir.absolutePath + "/../../golden/compose/material/material"
     namespace "androidx.compose.material"

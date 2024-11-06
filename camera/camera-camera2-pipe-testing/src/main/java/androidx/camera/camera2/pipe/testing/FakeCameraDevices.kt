@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.pipe.testing
 
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraBackend
 import androidx.camera.camera2.pipe.CameraBackendId
 import androidx.camera.camera2.pipe.CameraDevices
@@ -27,8 +26,7 @@ import kotlinx.coroutines.Deferred
 /**
  * This provides a fake implementation of [CameraDevices] for tests with a fixed list of Cameras.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-class FakeCameraDevices(
+public class FakeCameraDevices(
     private val defaultCameraBackendId: CameraBackendId,
     private val concurrentCameraBackendIds: Set<Set<CameraBackendId>>,
     private val cameraMetadataMap: Map<CameraBackendId, List<CameraMetadata>>
@@ -40,9 +38,10 @@ class FakeCameraDevices(
             "FakeCameraDevices must include $defaultCameraBackendId"
         }
 
-        cameraBackends = cameraMetadataMap.mapValues { entry ->
-            FakeCameraBackend(entry.value.associateBy { it.camera })
-        }
+        cameraBackends =
+            cameraMetadataMap.mapValues { entry ->
+                FakeCameraBackend(entry.value.associateBy { it.camera })
+            }
     }
 
     override suspend fun getCameraIds(cameraBackendId: CameraBackendId?): List<CameraId>? =
@@ -58,11 +57,13 @@ class FakeCameraDevices(
     ): Set<Set<CameraId>> = awaitConcurrentCameraIds(cameraBackendId)
 
     override fun awaitConcurrentCameraIds(cameraBackendId: CameraBackendId?): Set<Set<CameraId>> {
-        return concurrentCameraBackendIds.map { concurrentCameraIds ->
-            concurrentCameraIds.map { cameraId ->
-                CameraId.fromCamera2Id(cameraId.value)
-            }.toSet()
-        }.toSet()
+        return concurrentCameraBackendIds
+            .map { concurrentCameraIds ->
+                concurrentCameraIds
+                    .map { cameraId -> CameraId.fromCamera2Id(cameraId.value) }
+                    .toSet()
+            }
+            .toSet()
     }
 
     override suspend fun getCameraMetadata(

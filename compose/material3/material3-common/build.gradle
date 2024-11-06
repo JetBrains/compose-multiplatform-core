@@ -21,6 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+import androidx.build.KotlinTarget
 import androidx.build.LibraryType
 import androidx.build.PlatformIdentifier
 import androidx.build.Publish
@@ -29,28 +31,39 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("com.android.library")
 }
 
 androidXMultiplatform {
-    android()
-    desktop()
+    androidLibrary {
+        namespace = "androidx.compose.material3.common"
+        withAndroidTestOnDeviceBuilder {
+            it.compilationName = "instrumentedTest"
+            it.defaultSourceSetName = "androidInstrumentedTest"
+            it.sourceSetTreeName = "test"
+        }
+        withAndroidTestOnJvmBuilder {
+            it.defaultSourceSetName = "androidUnitTest"
+        }
+
+        compileSdk = 35
+        aarMetadata.minCompileSdk = 35
+    }
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlibCommon)
-                implementation(project(":compose:ui:ui-util"))
-                api("androidx.compose.foundation:foundation:1.6.0")
-                api("androidx.compose.foundation:foundation-layout:1.6.0")
+                implementation(libs.kotlinStdlib)
+                implementation("androidx.compose.ui:ui-util:1.7.1")
+                api("androidx.compose.foundation:foundation:1.7.1")
+                api("androidx.compose.foundation:foundation-layout:1.7.1")
                 api(project(":compose:runtime:runtime"))
-                api("androidx.compose.ui:ui-graphics:1.6.0")
-                api("androidx.compose.ui:ui-text:1.6.0")
+                api("androidx.compose.ui:ui-graphics:1.7.1")
+                api("androidx.compose.ui:ui-text:1.7.1")
             }
-        }
-        androidMain.dependencies {
         }
 
         commonTest {
@@ -61,60 +74,54 @@ androidXMultiplatform {
         jvmMain {
             dependsOn(commonMain)
             dependencies {
-                implementation(libs.kotlinStdlib)
             }
         }
 
         androidMain {
             dependsOn(jvmMain)
             dependencies {
-                api("androidx.annotation:annotation:1.1.0")
+                api("androidx.annotation:annotation:1.8.1")
             }
         }
 
-        desktopMain {
-            dependsOn(jvmMain)
-            dependencies {
-            }
+        commonStubsMain {
+            dependsOn(commonMain)
         }
 
-        jvmTest {
-            dependsOn(commonTest)
-            dependencies {
-            }
+        jvmStubsMain {
+            dependsOn(commonStubsMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
         }
 
         androidInstrumentedTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:material3:material3"))
                 implementation(project(":compose:material3:material3-common"))
+                implementation("androidx.compose.material:material-icons-core:1.6.8")
                 implementation(project(":compose:test-utils"))
                 implementation(libs.testRules)
                 implementation(libs.junit)
                 implementation(libs.truth)
             }
         }
-
-        desktopTest {
-            dependsOn(jvmTest)
-            dependencies {
-            }
-        }
     }
 }
 
-android {
-    namespace "androidx.compose.material3.common"
-}
 
 androidx {
     name = "Compose Material 3 Common"
     mavenVersion = LibraryVersions.COMPOSE_MATERIAL3_COMMON
-    type = LibraryType.PUBLISHED_KOTLIN_ONLY_LIBRARY
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2023"
     description = "Compose Material 3 Common Library. This library contains foundational, themeless " +
             "components that can be shared between different Material libraries or used by app" +
             " developers. It builds upon the Jetpack Compose libraries."
+    legacyDisableKotlinStrictApiMode = true
+    metalavaK2UastEnabled = false
+    samples(project(":compose:material3:material3-common:material3-common-samples"))
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

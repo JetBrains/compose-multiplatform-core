@@ -31,6 +31,7 @@ import androidx.navigation.testing.TestNavHostController
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.serialization.Serializable
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,8 +39,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 internal class NavGraphBuilderTest {
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
     @Test
     fun testCurrentBackStackEntryNavigate() {
@@ -51,8 +51,8 @@ internal class NavGraphBuilderTest {
             navController.navigatorProvider += createBottomSheetNavigator()
 
             NavHost(navController, startDestination = firstRoute) {
-                bottomSheet(firstRoute) { }
-                bottomSheet("$secondRoute/{$key}") { }
+                bottomSheet(firstRoute) {}
+                bottomSheet("$secondRoute/{$key}") {}
             }
         }
 
@@ -60,6 +60,26 @@ internal class NavGraphBuilderTest {
             navController.navigate("$secondRoute/$arg")
             assertThat(navController.currentBackStackEntry!!.arguments!!.getString(key))
                 .isEqualTo(arg)
+        }
+    }
+
+    @Test
+    fun testCurrentBackStackEntryNavigateKClass() {
+        lateinit var navController: TestNavHostController
+        composeTestRule.setContent {
+            navController = TestNavHostController(LocalContext.current)
+            navController.navigatorProvider += createBottomSheetNavigator()
+
+            NavHost(navController, startDestination = firstRoute) {
+                bottomSheet(firstRoute) {}
+                bottomSheet<TestClassArg> {}
+            }
+        }
+
+        composeTestRule.runOnUiThread {
+            navController.navigate(TestClassArg(15))
+            assertThat(navController.currentBackStackEntry!!.arguments!!.getInt("arg"))
+                .isEqualTo(15)
         }
     }
 
@@ -73,11 +93,11 @@ internal class NavGraphBuilderTest {
             navController.navigatorProvider += createBottomSheetNavigator()
 
             NavHost(navController, startDestination = firstRoute) {
-                bottomSheet(firstRoute) { }
+                bottomSheet(firstRoute) {}
                 bottomSheet(
                     secondRoute,
                     arguments = listOf(navArgument(key) { defaultValue = defaultArg })
-                ) { }
+                ) {}
             }
         }
 
@@ -85,6 +105,25 @@ internal class NavGraphBuilderTest {
             navController.navigate(secondRoute)
             assertThat(navController.currentBackStackEntry!!.arguments!!.getString(key))
                 .isEqualTo(defaultArg)
+        }
+    }
+
+    @Test
+    fun testDefaultArgumentsKClass() {
+        lateinit var navController: TestNavHostController
+        composeTestRule.setContent {
+            navController = TestNavHostController(LocalContext.current)
+            navController.navigatorProvider += createBottomSheetNavigator()
+
+            NavHost(navController, startDestination = firstRoute) {
+                bottomSheet(firstRoute) {}
+                bottomSheet<TestClassArg> {}
+            }
+        }
+
+        composeTestRule.runOnUiThread {
+            navController.navigate(TestClassArg())
+            assertThat(navController.currentBackStackEntry!!.arguments!!.getInt("arg")).isEqualTo(1)
         }
     }
 
@@ -98,11 +137,11 @@ internal class NavGraphBuilderTest {
             navController.navigatorProvider += createBottomSheetNavigator()
 
             NavHost(navController, startDestination = firstRoute) {
-                bottomSheet(firstRoute) { }
+                bottomSheet(firstRoute) {}
                 bottomSheet(
                     secondRoute,
                     deepLinks = listOf(navDeepLink { uriPattern = uriString })
-                ) { }
+                ) {}
             }
         }
 
@@ -113,10 +152,40 @@ internal class NavGraphBuilderTest {
         }
     }
 
+    @Test
+    fun testDeepLinkKClass() {
+        lateinit var navController: TestNavHostController
+        val uriString = "https://www.example.com"
+        val deeplink = NavDeepLinkRequest.Builder.fromUri(Uri.parse(uriString)).build()
+        composeTestRule.setContent {
+            navController = TestNavHostController(LocalContext.current)
+            navController.navigatorProvider += createBottomSheetNavigator()
+
+            NavHost(navController, startDestination = firstRoute) {
+                bottomSheet(firstRoute) {}
+                bottomSheet<TestClass>(
+                    deepLinks = listOf(navDeepLink<TestClass>(basePath = "www.example.com"))
+                ) {}
+            }
+        }
+
+        composeTestRule.runOnUiThread {
+            navController.navigate(TestClass())
+            assertThat(navController.currentBackStackEntry!!.destination.hasDeepLink(deeplink))
+                .isTrue()
+        }
+    }
+
     private fun createBottomSheetNavigator() =
-        BottomSheetNavigator(sheetState =
-        ModalBottomSheetState(ModalBottomSheetValue.Hidden, composeTestRule.density))
+        BottomSheetNavigator(
+            sheetState =
+                ModalBottomSheetState(ModalBottomSheetValue.Hidden, composeTestRule.density)
+        )
 }
 
 private const val firstRoute = "first"
 private const val secondRoute = "second"
+
+@Serializable private class TestClass
+
+@Serializable private class TestClassArg(val arg: Int = 1)

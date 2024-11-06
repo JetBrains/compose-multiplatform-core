@@ -17,25 +17,23 @@ package androidx.sqlite.db
 
 /**
  * A query with typed bindings. It is better to use this API instead of
- * [android.database.sqlite.SQLiteDatabase.rawQuery] because it allows
- * binding type safe parameters.
+ * [android.database.sqlite.SQLiteDatabase.rawQuery] because it allows binding type safe parameters.
  */
-interface SupportSQLiteQuery {
-    /**
-     * The SQL query. This query can have placeholders(?) for bind arguments.
-     */
-    val sql: String
+@Suppress("AcronymName") // SQL is a known term and should remain capitalized
+public interface SupportSQLiteQuery {
+    /** The SQL query. This query can have placeholders(?) for bind arguments. */
+    public val sql: String
 
     /**
      * Callback to bind the query parameters to the compiled statement.
      *
      * @param statement The compiled statement
      */
-    fun bindTo(statement: SupportSQLiteProgram)
+    public fun bindTo(statement: SupportSQLiteProgram)
 
     /**
-     * Is the number of arguments in this query. This is equal to the number of placeholders
-     * in the query string. See: https://www.sqlite.org/c3ref/bind_blob.html for details.
+     * Is the number of arguments in this query. This is equal to the number of placeholders in the
+     * query string. See: https://www.sqlite.org/c3ref/bind_blob.html for details.
      */
-    val argCount: Int
+    public val argCount: Int
 }

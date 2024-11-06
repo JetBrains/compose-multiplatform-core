@@ -44,34 +44,37 @@ internal class SingleTextSelectionGesturesRtlTest : TextSelectionGesturesTest() 
 
     private val testTag = "testTag"
 
-    override val word = "בבבבב"
-    override val textContent = mutableStateOf("בבבבב\nבבבבב בבבבב בבבבב\nבבבבב")
+    override val word = RtlChar.repeat(5)
+    override val textContent = mutableStateOf("$word\n$word $word $word\n$word")
     override var textDirection: ResolvedTextDirection = ResolvedTextDirection.Rtl
 
     override lateinit var asserter: TextSelectionAsserter
 
     @Before
     fun setupAsserter() {
-        asserter = object : TextSelectionAsserter(
-            textContent = textContent.value,
-            rule = rule,
-            textToolbar = textToolbar,
-            hapticFeedback = hapticFeedback,
-            getActual = { selection.value },
-        ) {
-            override fun subAssert() {
-                Truth.assertAbout(SelectionSubject.withContent(textContent))
-                    .that(getActual())
-                    .hasSelection(
-                        expected = selection,
-                        startTextDirection = startLayoutDirection,
-                        endTextDirection = endLayoutDirection,
-                    )
-            }
-        }.apply {
-            startLayoutDirection = ResolvedTextDirection.Rtl
-            endLayoutDirection = ResolvedTextDirection.Rtl
-        }
+        asserter =
+            object :
+                    TextSelectionAsserter(
+                        textContent = textContent.value,
+                        rule = rule,
+                        textToolbar = textToolbar,
+                        hapticFeedback = hapticFeedback,
+                        getActual = { selection.value },
+                    ) {
+                    override fun subAssert() {
+                        Truth.assertAbout(SelectionSubject.withContent(textContent))
+                            .that(getActual())
+                            .hasSelection(
+                                expected = selection,
+                                startTextDirection = startLayoutDirection,
+                                endTextDirection = endLayoutDirection,
+                            )
+                    }
+                }
+                .apply {
+                    startLayoutDirection = ResolvedTextDirection.Rtl
+                    endLayoutDirection = ResolvedTextDirection.Rtl
+                }
     }
 
     @Composable
@@ -79,13 +82,12 @@ internal class SingleTextSelectionGesturesRtlTest : TextSelectionGesturesTest() 
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             BasicText(
                 text = textContent.value,
-                style = TextStyle(
-                    fontFamily = fontFamily,
-                    fontSize = fontSize,
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag(testTag),
+                style =
+                    TextStyle(
+                        fontFamily = fontFamily,
+                        fontSize = fontSize,
+                    ),
+                modifier = Modifier.fillMaxWidth().testTag(testTag),
             )
         }
     }

@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -29,14 +29,12 @@ plugins {
 }
 
 android {
-    defaultConfig {
-        multiDexEnabled true
-    }
+    compileSdk = 35
 }
 
 dependencies {
     // Public API dependencies
-    api("androidx.annotation:annotation:1.6.0")
+    api("androidx.annotation:annotation:1.8.1")
     api("androidx.core:core:1.3.2")
     api("androidx.fragment:fragment:1.2.5")
 
@@ -59,10 +57,9 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testUiautomator)
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy)
+    androidTestImplementation(libs.dexmakerMockito)
+    androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.multidex)
     androidTestImplementation("androidx.fragment:fragment-testing:1.4.1")
 }
 
@@ -71,17 +68,17 @@ android {
         noCompress "ttf"
     }
 
-    buildTypes.all {
+    buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
     testOptions.unitTests.includeAndroidResources = true
     namespace "androidx.biometric"
+    compileSdk = 35
 }
 
 androidx {
     name = "Biometric"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2018"
     description = "The Biometric library is a static library that you can add to your Android application. It invokes BiometricPrompt on devices running P and greater, and on older devices will show a compat dialog. Compatible on devices running API 14 or later."
-    metalavaK2UastEnabled = true
 }

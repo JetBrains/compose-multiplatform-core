@@ -112,6 +112,7 @@ internal class TestExampleCanvasAnalogWatchFaceService(
     private var surfaceHolderOverride: SurfaceHolder
 ) : ExampleCanvasAnalogWatchFaceService() {
     internal lateinit var watchFace: WatchFace
+    lateinit var lastWatchState: WatchState
 
     init {
         attachBaseContext(testContext)
@@ -125,6 +126,7 @@ internal class TestExampleCanvasAnalogWatchFaceService(
         complicationSlotsManager: ComplicationSlotsManager,
         currentUserStyleRepository: CurrentUserStyleRepository
     ): WatchFace {
+        lastWatchState = watchState
         watchFace =
             super.createWatchFace(
                 surfaceHolder,
@@ -314,11 +316,7 @@ internal class TestWatchFaceRuntimeService(
                     CanvasType.HARDWARE,
                     16
                 ) {
-                override fun render(
-                    canvas: Canvas,
-                    bounds: Rect,
-                    zonedDateTime: ZonedDateTime
-                ) {
+                override fun render(canvas: Canvas, bounds: Rect, zonedDateTime: ZonedDateTime) {
                     // Actually rendering something isn't required.
                 }
 
@@ -403,11 +401,7 @@ internal class TestStatefulWatchFaceRuntimeService(
                     CanvasType.HARDWARE,
                     16
                 ) {
-                override fun render(
-                    canvas: Canvas,
-                    bounds: Rect,
-                    zonedDateTime: ZonedDateTime
-                ) {
+                override fun render(canvas: Canvas, bounds: Rect, zonedDateTime: ZonedDateTime) {
                     // Actually rendering something isn't required.
                 }
 
@@ -526,6 +520,7 @@ internal class TestComplicationProviderDefaultsWatchFaceService(
     testContext: Context,
     private var surfaceHolderOverride: SurfaceHolder
 ) : WatchFaceService() {
+    var lastComplicationType: ComplicationType? = null
 
     init {
         attachBaseContext(testContext)
@@ -605,7 +600,10 @@ internal class TestComplicationProviderDefaultsWatchFaceService(
                     CanvasType.HARDWARE,
                     16
                 ) {
-                override fun render(canvas: Canvas, bounds: Rect, zonedDateTime: ZonedDateTime) {}
+                override fun render(canvas: Canvas, bounds: Rect, zonedDateTime: ZonedDateTime) {
+                    lastComplicationType =
+                        complicationSlotsManager[123]!!.complicationData.value.type
+                }
 
                 override fun renderHighlightLayer(
                     canvas: Canvas,

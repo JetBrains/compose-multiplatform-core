@@ -19,20 +19,20 @@ import android.content.Context
 import androidx.core.i18n.messageformat_icu.simple.MessageFormat
 import java.util.Locale
 
-class MessageFormat private constructor() {
-    companion object {
+public class MessageFormat private constructor() {
+    public companion object {
         /**
          * Formats a message pattern string with a variable number of name/value pair arguments.
-         * Creates an ICU MessageFormat for the locale and pattern,
-         * and formats with the arguments.
+         * Creates an ICU MessageFormat for the locale and pattern, and formats with the arguments.
          *
          * @param context Android context object. Used to retrieve user preferences.
          * @param locale Locale for number formatting and plural selection etc.
          * @param msg an ICU-MessageFormat-syntax string
          * @param namedArguments map of argument name to argument value
          */
-        @JvmStatic @JvmOverloads
-        fun format(
+        @JvmStatic
+        @JvmOverloads
+        public fun format(
             context: Context,
             locale: Locale = Locale.getDefault(),
             msg: String,
@@ -40,25 +40,26 @@ class MessageFormat private constructor() {
         ): String {
             val result: StringBuffer = StringBuffer()
             return MessageFormat(context, msg, locale)
-                .format(namedArguments, result, null).toString()
+                .format(namedArguments, result, null)
+                .toString()
         }
 
         /**
-         * Formats a message pattern from Android resource for the default locale with a variable number
-         * of name/value pair arguments.
-         * Creates an ICU MessageFormat for Locale.getDefault() and pattern,
-         * and formats with the arguments.
+         * Formats a message pattern from Android resource for the default locale with a variable
+         * number of name/value pair arguments. Creates an ICU MessageFormat for Locale.getDefault()
+         * and pattern, and formats with the arguments.
          *
          * @param context Android context object
          * @param id Android string resource ID representing ICU-MessageFormat-syntax string
          * @param namedArguments map of argument name to argument value
          */
         @JvmStatic
-        fun format(context: Context, id: Int, namedArguments: Map<String, Any>): String {
+        public fun format(context: Context, id: Int, namedArguments: Map<String, Any>): String {
             return format(
                 context,
                 Locale.getDefault(),
-                context.resources.getString(id), namedArguments
+                context.resources.getString(id),
+                namedArguments
             )
         }
     }

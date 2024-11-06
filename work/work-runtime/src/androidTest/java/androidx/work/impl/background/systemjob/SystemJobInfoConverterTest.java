@@ -73,7 +73,7 @@ public class SystemJobInfoConverterTest extends WorkManagerTest {
     @Before
     public void setUp() {
         mConverter = new SystemJobInfoConverter(
-                ApplicationProvider.getApplicationContext(), new SystemClock());
+                ApplicationProvider.getApplicationContext(), new SystemClock(), true);
     }
 
     @Test
@@ -241,6 +241,18 @@ public class SystemJobInfoConverterTest extends WorkManagerTest {
     @Test
     @SmallTest
     @SdkSuppress(minSdkVersion = 29)
+    public void testConvert_setImportantWhileForeground_respectFlag() {
+        mConverter = new SystemJobInfoConverter(
+                ApplicationProvider.getApplicationContext(), new SystemClock(), false);
+        WorkSpec workSpec = getTestWorkSpecWithConstraints(new Constraints.Builder().build());
+        workSpec.lastEnqueueTime = System.currentTimeMillis();
+        JobInfo jobInfo = mConverter.convert(workSpec, JOB_ID);
+        assertThat(jobInfo.isImportantWhileForeground(), is(false));
+    }
+
+    @Test
+    @SmallTest
+    @SdkSuppress(minSdkVersion = 29)
     public void testConvert_setImportantWhileForeground_withTimingConstraints() {
         WorkSpec workSpec = new WorkSpec("id", TestWorker.class.getName());
         workSpec.setPeriodic(TEST_INTERVAL_DURATION, TEST_FLEX_DURATION);
@@ -387,6 +399,20 @@ public class SystemJobInfoConverterTest extends WorkManagerTest {
         } else {
             assertEquals(jobInfo.getNetworkType(), JobInfo.NETWORK_TYPE_METERED);
         }
+    }
+
+    @Test
+    @SmallTest
+    public void testEnsureTraceTags() {
+        if (Build.VERSION.SDK_INT < 35) {
+            return;
+        }
+
+        final String id = "id";
+        WorkSpec workSpec = new WorkSpec(id, TestWorker.class.getName());
+        workSpec.setTraceTag(TestWorker.class.getSimpleName());
+        JobInfo jobInfo = mConverter.convert(workSpec, JOB_ID);
+        assertEquals(jobInfo.getTraceTag(), TestWorker.class.getSimpleName());
     }
 
     private WorkSpec getTestWorkSpecWithConstraints(Constraints constraints) {

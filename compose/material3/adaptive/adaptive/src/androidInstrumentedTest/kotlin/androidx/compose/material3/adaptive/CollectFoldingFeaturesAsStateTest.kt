@@ -33,15 +33,14 @@ import org.junit.rules.RuleChain
 import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class CollectFoldingFeaturesAsStateTest {
     private val composeRule = createComposeRule()
     private val publisherRule = WindowLayoutInfoPublisherRule()
 
-    @get:Rule
-    val testRule: TestRule
+    @get:Rule val testRule: TestRule
+
     init {
         testRule = RuleChain.outerRule(publisherRule).around(composeRule)
     }
@@ -50,27 +49,19 @@ class CollectFoldingFeaturesAsStateTest {
     fun test_collectFoldingFeatureAsState_returnEmptyListInitially() {
         lateinit var actualFoldingFeatures: State<List<FoldingFeature>>
 
-        composeRule.setContent {
-            actualFoldingFeatures = collectFoldingFeaturesAsState()
-        }
+        composeRule.setContent { actualFoldingFeatures = collectFoldingFeaturesAsState() }
 
-        composeRule.runOnIdle {
-            assertThat(actualFoldingFeatures.value).isEmpty()
-        }
+        composeRule.runOnIdle { assertThat(actualFoldingFeatures.value).isEmpty() }
     }
 
     @Test
     fun test_collectFoldingFeatureAsState_returnCurrentFoldingFeatures() {
         lateinit var actualFoldingFeatures: State<List<FoldingFeature>>
 
-        composeRule.setContent {
-            actualFoldingFeatures = collectFoldingFeaturesAsState()
-        }
+        composeRule.setContent { actualFoldingFeatures = collectFoldingFeaturesAsState() }
 
         publisherRule.overrideWindowLayoutInfo(
-            WindowLayoutInfo(
-                listOf(MockFoldingFeature1, MockFoldingFeature2, MockDisplayFeature)
-            )
+            WindowLayoutInfo(listOf(MockFoldingFeature1, MockFoldingFeature2, MockDisplayFeature))
         )
 
         composeRule.runOnIdle {
@@ -81,16 +72,11 @@ class CollectFoldingFeaturesAsStateTest {
     }
 
     companion object {
-        val MockFoldingFeature1 = FoldingFeature(
-            windowBounds = Rect(0, 0, 1024, 800),
-            size = 1
-        )
-        val MockFoldingFeature2 = FoldingFeature(
-            windowBounds = Rect(0, 0, 1024, 800),
-            size = 0
-        )
-        val MockDisplayFeature = object : DisplayFeature {
-            override val bounds = Rect(10, 10, 12, 12)
-        }
+        val MockFoldingFeature1 = FoldingFeature(windowBounds = Rect(0, 0, 1024, 800), size = 1)
+        val MockFoldingFeature2 = FoldingFeature(windowBounds = Rect(0, 0, 1024, 800), size = 0)
+        val MockDisplayFeature =
+            object : DisplayFeature {
+                override val bounds = Rect(10, 10, 12, 12)
+            }
     }
 }

@@ -34,7 +34,6 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performMouseInput
@@ -48,106 +47,110 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @MediumTest
-@OptIn(ExperimentalTestApi::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
 @RunWith(AndroidJUnit4::class)
 class CoreTextFieldHoverTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun whenDefaultIcon_inBoxWithDefaultIcon_textIconIsUsed() =
+        runTest(
+            boxIconModifier = Modifier,
+            expectedBoxIcon = TYPE_DEFAULT,
+            textFieldIconModifier = Modifier,
+            expectedTextIcon = TYPE_TEXT
+        )
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun whenSetIcon_inBoxWithDefaultIcon_textIconIsUsed() =
+        runTest(
+            boxIconModifier = Modifier,
+            expectedBoxIcon = TYPE_DEFAULT,
+            textFieldIconModifier = Modifier.pointerHoverIcon(PointerIcon.Crosshair),
+            expectedTextIcon = TYPE_TEXT
+        )
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun whenSetIcon_withOverride_inBoxWithDefaultIcon_setIconIsUsed() =
+        runTest(
+            boxIconModifier = Modifier,
+            expectedBoxIcon = TYPE_DEFAULT,
+            textFieldIconModifier =
+                Modifier.pointerHoverIcon(icon = PointerIcon.Crosshair, overrideDescendants = true),
+            expectedTextIcon = TYPE_CROSSHAIR
+        )
 
     @Test
-    fun whenDefaultIcon_inBoxWithDefaultIcon_textIconIsUsed() = runTest(
-        boxIconModifier = Modifier,
-        expectedBoxIcon = TYPE_DEFAULT,
-        textFieldIconModifier = Modifier,
-        expectedTextIcon = TYPE_TEXT
-    )
+    fun whenDefaultIcon_inBoxWithSetIcon_textIconIsUsed() =
+        runTest(
+            boxIconModifier = Modifier.pointerHoverIcon(PointerIcon.Hand),
+            expectedBoxIcon = TYPE_HAND,
+            textFieldIconModifier = Modifier,
+            expectedTextIcon = TYPE_TEXT
+        )
 
     @Test
-    fun whenSetIcon_inBoxWithDefaultIcon_textIconIsUsed() = runTest(
-        boxIconModifier = Modifier,
-        expectedBoxIcon = TYPE_DEFAULT,
-        textFieldIconModifier = Modifier.pointerHoverIcon(PointerIcon.Crosshair),
-        expectedTextIcon = TYPE_TEXT
-    )
+    fun whenSetIcon_inBoxWithSetIcon_textIconIsUsed() =
+        runTest(
+            boxIconModifier = Modifier.pointerHoverIcon(PointerIcon.Hand),
+            expectedBoxIcon = TYPE_HAND,
+            textFieldIconModifier = Modifier.pointerHoverIcon(PointerIcon.Crosshair),
+            expectedTextIcon = TYPE_TEXT
+        )
 
     @Test
-    fun whenSetIcon_withOverride_inBoxWithDefaultIcon_setIconIsUsed() = runTest(
-        boxIconModifier = Modifier,
-        expectedBoxIcon = TYPE_DEFAULT,
-        textFieldIconModifier = Modifier.pointerHoverIcon(
-            icon = PointerIcon.Crosshair,
-            overrideDescendants = true
-        ),
-        expectedTextIcon = TYPE_CROSSHAIR
-    )
-
-    @Test
-    fun whenDefaultIcon_inBoxWithSetIcon_textIconIsUsed() = runTest(
-        boxIconModifier = Modifier.pointerHoverIcon(PointerIcon.Hand),
-        expectedBoxIcon = TYPE_HAND,
-        textFieldIconModifier = Modifier,
-        expectedTextIcon = TYPE_TEXT
-    )
-
-    @Test
-    fun whenSetIcon_inBoxWithSetIcon_textIconIsUsed() = runTest(
-        boxIconModifier = Modifier.pointerHoverIcon(PointerIcon.Hand),
-        expectedBoxIcon = TYPE_HAND,
-        textFieldIconModifier = Modifier.pointerHoverIcon(PointerIcon.Crosshair),
-        expectedTextIcon = TYPE_TEXT
-    )
-
-    @Test
-    fun whenSetIcon_withOverride_inBoxWithSetIcon_setIconIsUsed() = runTest(
-        boxIconModifier = Modifier.pointerHoverIcon(PointerIcon.Hand),
-        expectedBoxIcon = TYPE_HAND,
-        textFieldIconModifier = Modifier.pointerHoverIcon(
-            icon = PointerIcon.Crosshair,
-            overrideDescendants = true
-        ),
-        expectedTextIcon = TYPE_CROSSHAIR
-    )
+    fun whenSetIcon_withOverride_inBoxWithSetIcon_setIconIsUsed() =
+        runTest(
+            boxIconModifier = Modifier.pointerHoverIcon(PointerIcon.Hand),
+            expectedBoxIcon = TYPE_HAND,
+            textFieldIconModifier =
+                Modifier.pointerHoverIcon(icon = PointerIcon.Crosshair, overrideDescendants = true),
+            expectedTextIcon = TYPE_CROSSHAIR
+        )
 
     private fun runTest(
         boxIconModifier: Modifier,
         expectedBoxIcon: Int,
         textFieldIconModifier: Modifier,
         expectedTextIcon: Int,
-    ) = with(PointerIconTestScope(rule)) {
-        val boxTag = "myParentIcon"
-        val textFieldTag = "myCoreTextField"
+    ) =
+        with(PointerIconTestScope(rule)) {
+            val boxTag = "myParentIcon"
+            val textFieldTag = "myCoreTextField"
 
-        var value by mutableStateOf(TextFieldValue("initial text"))
-        setContent {
-            Box(
-                modifier = Modifier
-                    .requiredSize(200.dp)
-                    .then(boxIconModifier)
-                    .border(BorderStroke(2.dp, SolidColor(Color.Red)))
-                    .testTag(boxTag)
-            ) {
-                CoreTextField(
-                    value = value,
-                    onValueChange = { value = it },
-                    modifier = Modifier
-                        .requiredSize(50.dp)
-                        .then(textFieldIconModifier)
-                        .testTag(textFieldTag)
-                )
+            var value by mutableStateOf(TextFieldValue("initial text"))
+            setContent {
+                Box(
+                    modifier =
+                        Modifier.requiredSize(200.dp)
+                            .then(boxIconModifier)
+                            .border(BorderStroke(2.dp, SolidColor(Color.Red)))
+                            .testTag(boxTag)
+                ) {
+                    CoreTextField(
+                        value = value,
+                        onValueChange = { value = it },
+                        modifier =
+                            Modifier.requiredSize(50.dp)
+                                .then(textFieldIconModifier)
+                                .testTag(textFieldTag)
+                    )
+                }
             }
+
+            // Hover over CoreTextField
+            rule.onNodeWithTag(textFieldTag).performMouseInput { enter(bottomRight) }
+            assertIcon(expectedTextIcon)
+
+            // Move cursor to hover over portion of the parent box not covered by any descendants
+            rule.onNodeWithTag(boxTag).performMouseInput { moveTo(bottomRight) }
+            assertIcon(expectedBoxIcon)
+
+            // Exit hovering over element
+            rule.onNodeWithTag(boxTag).performMouseInput { exit() }
+            @Suppress("DEPRECATION") assertIcon(TYPE_DEFAULT)
         }
-
-        // Hover over CoreTextField
-        rule.onNodeWithTag(textFieldTag).performMouseInput { enter(bottomRight) }
-        assertIcon(expectedTextIcon)
-
-        // Move cursor to hover over portion of the parent box not covered by any descendants
-        rule.onNodeWithTag(boxTag).performMouseInput { moveTo(bottomRight) }
-        assertIcon(expectedBoxIcon)
-
-        // Exit hovering over element
-        rule.onNodeWithTag(boxTag).performMouseInput { exit() }
-        assertIcon(TYPE_DEFAULT)
-    }
 }

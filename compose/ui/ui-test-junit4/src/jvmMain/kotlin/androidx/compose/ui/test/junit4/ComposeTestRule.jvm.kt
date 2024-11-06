@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.test.junit4
 
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.IdlingResource
@@ -25,136 +26,140 @@ import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.unit.Density
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlinx.coroutines.test.TestCoroutineScheduler
+import kotlinx.coroutines.test.TestDispatcher
 import org.junit.rules.TestRule
 
 /**
- * A [TestRule] that allows you to test and control composables and applications using Compose.
- * Most of the functionality in this interface provides some form of test synchronization: the
- * test will block until the app or composable is idle, to ensure the tests are deterministic.
+ * A [TestRule] that allows you to test and control composables, either in isolation or in
+ * applications. Most of the functionality in this interface provides some form of test
+ * synchronization: the test will block until the app or composable is idle, to ensure the tests are
+ * deterministic.
  *
- * For example, if you would perform a click on the center of the screen while a button is
- * animation from left to right over the screen, without synchronization the test would sometimes
- * click when the button is in the middle of the screen (button is clicked), and sometimes when
- * the button is past the middle of the screen (button is not clicked). With synchronization, the
- * app would not be idle until the animation is over, so the test will always click when the
- * button is past the middle of the screen (and not click it). If you actually do want to click
- * the button when it's in the middle of the animation, you can do so by controlling the
- * [clock][mainClock]. You'll have to disable [automatic advancing][MainTestClock.autoAdvance],
- * and manually advance the clock by the time necessary to position the button in the middle of
- * the screen.
+ * For example, if you would perform a click on the center of the screen while a button is animating
+ * from left to right over the screen, without synchronization the test would sometimes click when
+ * the button is in the middle of the screen (button is clicked), and sometimes when the button is
+ * past the middle of the screen (button is not clicked). With synchronization, the app would not be
+ * idle until the animation is over, so the test will always click when the button is past the
+ * middle of the screen (and not click it). If you actually do want to click the button when it's in
+ * the middle of the animation, you can do so by controlling the [clock][mainClock]. You'll have to
+ * disable [automatic advancing][MainTestClock.autoAdvance], and manually advance the clock by the
+ * time necessary to position the button in the middle of the screen.
  *
- * An instance of [ComposeTestRule] can be created with [createComposeRule], which will also
- * create a host for the compose content for you (see [ComposeContentTestRule]). If you need to
- * specify which particular Activity is started on Android, you can use [createAndroidComposeRule].
+ * An instance of [ComposeTestRule] can be created with [createComposeRule], which will also create
+ * a host for the compose content for you (see [ComposeContentTestRule]). If you need to specify
+ * which particular Activity is started on Android, you can use [createAndroidComposeRule].
  *
- * If you don't want any Activity to be started automatically by the test rule on Android, you
- * can use [createEmptyComposeRule]. In such a case, you will have to set content using one of
- * Compose UI's setters (like [ComponentActivity.setContent][androidx.compose.ui.platform
- * .setContent]).
+ * If you don't want any Activity to be started automatically by the test rule on Android, you can
+ * use [createEmptyComposeRule]. In such a case, you will have to set content using one of Compose
+ * UI's setters (like [ComponentActivity.setContent][androidx.compose.ui.platform .setContent]).
  */
 @JvmDefaultWithCompatibility
 interface ComposeTestRule : TestRule, SemanticsNodeInteractionsProvider {
     /**
-     * Current device screen's density.
+     * Current device screen's density. Note that it is technically possible for a Compose hierarchy
+     * to define a different density for a certain subtree.
      */
     val density: Density
 
-    /**
-     * Clock that drives frames and recompositions in compose tests.
-     */
+    /** Clock that drives frames and recompositions in compose tests. */
     val mainClock: MainTestClock
 
     /**
-     * Runs the given action on the UI thread.
+     * Runs the given [action] on the UI thread.
      *
      * This method is blocking until the action is complete.
      */
     fun <T> runOnUiThread(action: () -> T): T
 
     /**
-     * Executes the given action in the same way as [runOnUiThread] but also makes sure Compose
-     * is idle before executing it. This is great place for doing your assertions on shared
-     * variables.
+     * Executes the given [action] in the same way as [runOnUiThread] but [waits][waitForIdle] until
+     * the app is idle before executing the action. This is the recommended way of doing your
+     * assertions on shared variables.
      *
-     * This method is blocking until the action is complete.
-     *
-     * In case the main clock auto advancement is enabled (by default is) this will also keep
-     * advancing the clock until it is idle (meaning there are no recompositions, animations, etc.
-     * pending). If not, this will wait only for other idling resources.
+     * This method blocks until the action is complete.
      */
     fun <T> runOnIdle(action: () -> T): T
 
     /**
-     * Waits for compose to be idle.
+     * Waits for the UI to become idle. Quiescence is reached when there are no more pending changes
+     * (e.g. pending recompositions or a pending draw call) and all [IdlingResource]s are idle.
      *
-     * This is a blocking call. Returns only after compose is idle.
+     * If [auto advancement][MainTestClock.autoAdvance] is enabled on the [mainClock], this method
+     * will advance the clock to process any pending composition, invalidation and animation. If
+     * auto advancement is not enabled, the clock will not be advanced which means that the Compose
+     * UI appears to be frozen. This is ideal for testing animations in a deterministic way. This
+     * method will always wait for all [IdlingResource]s to become idle.
      *
-     * In case the main clock auto advancement is enabled (by default is) this will also keep
-     * advancing the clock until it is idle (meaning there are no recompositions, animations, etc.
-     * pending). If not, this will wait only for other idling resources.
-     *
-     * Can crash in case there is a time out. This is not supposed to be handled as it
-     * surfaces only in incorrect tests.
+     * Note that some processes are driven by the host operating system and will therefore still
+     * execute when auto advancement is disabled. For example, Android's measure, layout and draw
+     * passes can still happen if required by the View system.
      */
     fun waitForIdle()
 
     /**
-     * Suspends until compose is idle. Compose is idle if there are no pending compositions, no
-     * pending changes that could lead to another composition, and no pending draw calls.
+     * Suspends until the UI is idle. Quiescence is reached when there are no more pending changes
+     * (e.g. pending recompositions or a pending draw call) and all [IdlingResource]s are idle.
      *
-     * In case the main clock auto advancement is enabled (by default is) this will also keep
-     * advancing the clock until it is idle (meaning there are no recompositions, animations, etc.
-     * pending). If not, this will wait only for other idling resources.
+     * If [auto advancement][MainTestClock.autoAdvance] is enabled on the [mainClock], this method
+     * will advance the clock to process any pending composition, invalidation and animation. If
+     * auto advancement is not enabled, the clock will not be advanced which means that the Compose
+     * UI appears to be frozen. This is ideal for testing animations in a deterministic way. This
+     * method will always wait for all [IdlingResource]s to become idle.
+     *
+     * Note that some processes are driven by the host operating system and will therefore still
+     * execute when auto advancement is disabled. For example, Android's measure, layout and draw
+     * passes can still happen if required by the View system.
      */
     suspend fun awaitIdle()
 
     /**
-     * Blocks until the given condition is satisfied.
+     * Blocks until the given [condition] is satisfied.
      *
-     * In case the main clock auto advancement is enabled (by default is), this will also keep
-     * advancing the clock on a frame by frame basis and yield for other async work at the end of
-     * each frame. If the advancement of the main clock is not enabled this will work as a
-     * countdown latch without any other advancements.
+     * If [auto advancement][MainTestClock.autoAdvance] is enabled on the [mainClock], this method
+     * will actively advance the clock to process any pending composition, invalidation and
+     * animation. If auto advancement is not enabled, the clock will not be advanced actively which
+     * means that the Compose UI appears to be frozen. It is still valid to use this method in this
+     * way, if the condition will be satisfied by something not driven by our clock.
      *
-     * There is also [MainTestClock.advanceTimeUntil] which is faster as it does not yield back
-     * the UI thread.
-     *
-     * This method should be used in cases where [MainTestClock.advanceTimeUntil]
-     * is not enough.
+     * Compared to [MainTestClock.advanceTimeUntil], [waitUntil] sleeps after every iteration to
+     * yield to other processes. This gives [waitUntil] a better integration with the host, but it
+     * is less preferred from a performance viewpoint. Therefore, we recommend that you try using
+     * [MainTestClock.advanceTimeUntil] before resorting to [waitUntil].
      *
      * @param timeoutMillis The time after which this method throws an exception if the given
-     * condition is not satisfied. This is the wall clock time not the main clock one.
+     *   condition is not satisfied. This observes wall clock time, not
+     *   [test clock time][mainClock].
      * @param condition Condition that must be satisfied in order for this method to successfully
-     * finish.
-     *
+     *   finish.
      * @throws androidx.compose.ui.test.ComposeTimeoutException If the condition is not satisfied
-     * after [timeoutMillis].
+     *   after [timeoutMillis] (in wall clock time).
      */
     fun waitUntil(timeoutMillis: Long = 1_000, condition: () -> Boolean)
 
     /**
-     * Blocks until the given condition is satisfied.
+     * Blocks until the given [condition] is satisfied.
      *
-     * In case the main clock auto advancement is enabled (by default is), this will also keep
-     * advancing the clock on a frame by frame basis and yield for other async work at the end of
-     * each frame. If the advancement of the main clock is not enabled this will work as a
-     * countdown latch without any other advancements.
+     * If [auto advancement][MainTestClock.autoAdvance] is enabled on the [mainClock], this method
+     * will actively advance the clock to process any pending composition, invalidation and
+     * animation. If auto advancement is not enabled, the clock will not be advanced actively which
+     * means that the Compose UI appears to be frozen. It is still valid to use this method in this
+     * way, if the condition will be satisfied by something not driven by our clock.
      *
-     * There is also [MainTestClock.advanceTimeUntil] which is faster as it does not yield back
-     * the UI thread.
+     * Compared to [MainTestClock.advanceTimeUntil], [waitUntil] sleeps after every iteration to
+     * yield to other processes. This gives [waitUntil] a better integration with the host, but it
+     * is less preferred from a performance viewpoint. Therefore, we recommend that you try using
+     * [MainTestClock.advanceTimeUntil] before resorting to [waitUntil].
      *
-     * This method should be used in cases where [MainTestClock.advanceTimeUntil]
-     * is not enough.
-     *
+     * @param conditionDescription An optional human-readable description of [condition] that will
+     *   be included in the timeout exception if thrown.
      * @param timeoutMillis The time after which this method throws an exception if the given
-     * condition is not satisfied. This is the wall clock time not the main clock one.
-     * @param conditionDescription A human-readable description of [condition] that will be included
-     * in the timeout exception if thrown.
+     *   condition is not satisfied. This observes wall clock time, not
+     *   [test clock time][mainClock].
      * @param condition Condition that must be satisfied in order for this method to successfully
-     * finish.
-     *
+     *   finish.
      * @throws androidx.compose.ui.test.ComposeTimeoutException If the condition is not satisfied
-     * after [timeoutMillis].
+     *   after [timeoutMillis] (in wall clock time).
      */
     fun waitUntil(
         conditionDescription: String,
@@ -167,15 +172,14 @@ interface ComposeTestRule : TestRule, SemanticsNodeInteractionsProvider {
     /**
      * Blocks until the number of nodes matching the given [matcher] is equal to the given [count].
      *
-     * @see ComposeTestRule.waitUntil
-     *
      * @param matcher The matcher that will be used to filter nodes.
      * @param count The number of nodes that are expected to
      * @param timeoutMillis The time after which this method throws an exception if the number of
-     * nodes that match the [matcher] is not [count]. This observes wall clock time, not frame time.
-     *
+     *   nodes that match the [matcher] is not [count]. This observes wall clock time, not frame
+     *   time.
      * @throws androidx.compose.ui.test.ComposeTimeoutException If the number of nodes that match
-     * the [matcher] is not [count] after [timeoutMillis] (in wall clock time).
+     *   the [matcher] is not [count] after [timeoutMillis] (in wall clock time).
+     * @see ComposeTestRule.waitUntil
      */
     @ExperimentalTestApi
     fun waitUntilNodeCount(matcher: SemanticsMatcher, count: Int, timeoutMillis: Long = 1_000L)
@@ -183,14 +187,12 @@ interface ComposeTestRule : TestRule, SemanticsNodeInteractionsProvider {
     /**
      * Blocks until at least one node matches the given [matcher].
      *
-     * @see ComposeTestRule.waitUntil
-     *
      * @param matcher The matcher that will be used to filter nodes.
      * @param timeoutMillis The time after which this method throws an exception if no nodes match
-     * the given [matcher]. This observes wall clock time, not frame time.
-     *
+     *   the given [matcher]. This observes wall clock time, not frame time.
      * @throws androidx.compose.ui.test.ComposeTimeoutException If no nodes match the given
-     * [matcher] after [timeoutMillis] (in wall clock time).
+     *   [matcher] after [timeoutMillis] (in wall clock time).
+     * @see ComposeTestRule.waitUntil
      */
     @ExperimentalTestApi
     fun waitUntilAtLeastOneExists(matcher: SemanticsMatcher, timeoutMillis: Long = 1_000L)
@@ -198,14 +200,12 @@ interface ComposeTestRule : TestRule, SemanticsNodeInteractionsProvider {
     /**
      * Blocks until exactly one node matches the given [matcher].
      *
-     * @see ComposeTestRule.waitUntil
-     *
      * @param matcher The matcher that will be used to filter nodes.
      * @param timeoutMillis The time after which this method throws an exception if exactly one node
-     * does not match the given [matcher]. This observes wall clock time, not frame time.
-     *
+     *   does not match the given [matcher]. This observes wall clock time, not frame time.
      * @throws androidx.compose.ui.test.ComposeTimeoutException If exactly one node does not match
-     * the given [matcher] after [timeoutMillis] (in wall clock time).
+     *   the given [matcher] after [timeoutMillis] (in wall clock time).
+     * @see ComposeTestRule.waitUntil
      */
     @ExperimentalTestApi
     fun waitUntilExactlyOneExists(matcher: SemanticsMatcher, timeoutMillis: Long = 1_000L)
@@ -213,27 +213,49 @@ interface ComposeTestRule : TestRule, SemanticsNodeInteractionsProvider {
     /**
      * Blocks until no nodes match the given [matcher].
      *
-     * @see ComposeTestRule.waitUntil
-     *
      * @param matcher The matcher that will be used to filter nodes.
      * @param timeoutMillis The time after which this method throws an exception if any nodes match
-     * the given [matcher]. This observes wall clock time, not frame time.
-     *
+     *   the given [matcher]. This observes wall clock time, not frame time.
      * @throws androidx.compose.ui.test.ComposeTimeoutException If any nodes match the given
-     * [matcher] after [timeoutMillis] (in wall clock time).
+     *   [matcher] after [timeoutMillis] (in wall clock time).
+     * @see ComposeTestRule.waitUntil
      */
     @ExperimentalTestApi
     fun waitUntilDoesNotExist(matcher: SemanticsMatcher, timeoutMillis: Long = 1_000L)
 
-    /**
-     * Registers an [IdlingResource] in this test.
-     */
+    /** Registers an [IdlingResource] in this test. */
     fun registerIdlingResource(idlingResource: IdlingResource)
 
-    /**
-     * Unregisters an [IdlingResource] from this test.
-     */
+    /** Unregisters an [IdlingResource] from this test. */
     fun unregisterIdlingResource(idlingResource: IdlingResource)
+
+    /**
+     * Enables accessibility checks that will be run before every action that is expected to change
+     * the UI.
+     *
+     * Accessibility checks are platform dependent, refer to the documentation of the platform
+     * specific variant of [ComposeTestRule] to see if it is supported and how you can configure it.
+     *
+     * On Android, this requires API 34+ (Android U), and currently does not work on Robolectric.
+     *
+     * @sample androidx.compose.ui.test.samples.accessibilityChecks_withComposeTestRule_sample
+     * @see disableAccessibilityChecks
+     */
+    @RequiresApi(34)
+    fun enableAccessibilityChecks() {
+        throw NotImplementedError("Accessibility Checks are not implemented on this platform")
+    }
+
+    /**
+     * Disables accessibility checks.
+     *
+     * @sample androidx.compose.ui.test.samples.accessibilityChecks_withAndroidComposeTestRule_sample
+     * @see enableAccessibilityChecks
+     */
+    @RequiresApi(34)
+    fun disableAccessibilityChecks() {
+        throw NotImplementedError("Accessibility Checks are not implemented on this platform")
+    }
 }
 
 /**
@@ -243,10 +265,10 @@ interface ComposeTestRule : TestRule, SemanticsNodeInteractionsProvider {
  * An instance of [ComposeContentTestRule] can be created with [createComposeRule]. If you need to
  * specify which particular Activity is started on Android, you can use [createAndroidComposeRule].
  *
- * If you don't want any host to be started automatically by the test rule on Android, you
- * can use [createEmptyComposeRule]. In such a case, you will have to create a host in your test
- * and set the content using one of Compose UI's setters (like [ComponentActivity
- * .setContent][androidx.activity.compose.setContent]).
+ * If you don't want any host to be started automatically by the test rule on Android, you can use
+ * [createEmptyComposeRule]. In such a case, you will have to create a host in your test and set the
+ * content using one of Compose UI's setters (like
+ * [ComponentActivity .setContent][androidx.activity.compose.setContent]).
  */
 @JvmDefaultWithCompatibility
 interface ComposeContentTestRule : ComposeTestRule {
@@ -290,7 +312,9 @@ expect fun createComposeRule(): ComposeContentTestRule
  * launched, see [createAndroidComposeRule].
  *
  * @param effectContext The [CoroutineContext] used to run the composition. The context for
- * `LaunchedEffect`s and `rememberCoroutineScope` will be derived from this context.
+ *   `LaunchedEffect`s and `rememberCoroutineScope` will be derived from this context. If this
+ *   context contains a [TestDispatcher] or [TestCoroutineScheduler] (in that order), it will be
+ *   used for composition and the [MainTestClock].
  */
 @ExperimentalTestApi
 expect fun createComposeRule(

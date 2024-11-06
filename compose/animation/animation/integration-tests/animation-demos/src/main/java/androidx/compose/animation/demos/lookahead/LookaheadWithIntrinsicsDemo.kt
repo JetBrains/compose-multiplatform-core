@@ -16,6 +16,8 @@
 
 package androidx.compose.animation.demos.lookahead
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.animateBounds
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,34 +40,34 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun LookaheadWithIntrinsicsDemo() {
     Column {
         LookaheadScope {
             var isWide by remember { mutableStateOf(true) }
             Column {
-                Button(modifier = Modifier.padding(top = 20.dp, bottom = 20.dp),
-                    onClick = { isWide = !isWide }) {
+                Button(
+                    modifier = Modifier.padding(top = 20.dp, bottom = 20.dp),
+                    onClick = { isWide = !isWide }
+                ) {
                     Text("Toggle")
                 }
                 Text("IntrinsicSize.Min Column")
                 Spacer(Modifier.size(5.dp))
                 Column(
-                    Modifier
-                        .background(Color(0xfffdedac), RoundedCornerShape(10))
+                    Modifier.background(Color(0xfffdedac), RoundedCornerShape(10))
                         .padding(20.dp)
                         .width(IntrinsicSize.Min)
                 ) {
                     Box(
-                        Modifier
-                            .animateBounds(
+                        Modifier.animateBounds(
+                                lookaheadScope = this@LookaheadScope,
                                 if (isWide) Modifier.width(300.dp) else Modifier.width(150.dp)
                             )
                             .height(50.dp)
@@ -73,20 +75,10 @@ fun LookaheadWithIntrinsicsDemo() {
                     ) {
                         Text("Width: ${if (isWide) 300 else 150}.dp")
                     }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp)
-                            .background(colors[2])
-                    ) {
+                    Box(modifier = Modifier.fillMaxWidth().height(50.dp).background(colors[2])) {
                         Text("Match parent")
                     }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp)
-                            .background(colors[3])
-                    ) {
+                    Box(modifier = Modifier.fillMaxWidth().height(50.dp).background(colors[3])) {
                         Text("Match parent", color = Color.White)
                     }
                 }
@@ -107,21 +99,13 @@ fun MatchParentDividerForText() {
     // the divider to use the same height.
     Box {
         Row(Modifier.height(IntrinsicSize.Min)) {
+            Text(text = "This is a really short text", modifier = Modifier.fillMaxHeight())
+            Box(Modifier.width(1.dp).fillMaxHeight().background(Color.Black))
             Text(
-                text = "This is a really short text",
-                modifier = Modifier
-                    .fillMaxHeight()
-            )
-            Box(
-                Modifier
-                    .width(1.dp)
-                    .fillMaxHeight()
-                    .background(Color.Black))
-            Text(
-                text = "This is a much much much much much much much much much much" +
-                    " much much much much much much longer text",
-                modifier = Modifier
-                    .fillMaxHeight()
+                text =
+                    "This is a much much much much much much much much much much" +
+                        " much much much much much much longer text",
+                modifier = Modifier.fillMaxHeight()
             )
         }
     }
@@ -138,28 +122,12 @@ fun SameWidthTextBoxes() {
     // force the Boxs to use the same width.
 
     Box {
-        Column(
-            Modifier
-                .width(IntrinsicSize.Min)
-                .fillMaxHeight()) {
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .background(Color.Gray)) {
-                Text("Short text")
-            }
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .background(Color.Blue)) {
+        Column(Modifier.width(IntrinsicSize.Min).fillMaxHeight()) {
+            Box(Modifier.fillMaxWidth().background(Color.Gray)) { Text("Short text") }
+            Box(Modifier.fillMaxWidth().background(Color.Blue)) {
                 Text("Extremely long text giving the width of its siblings")
             }
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .background(Color.Magenta)) {
-                Text("Medium length text")
-            }
+            Box(Modifier.fillMaxWidth().background(Color.Magenta)) { Text("Medium length text") }
         }
     }
 }
@@ -176,33 +144,14 @@ fun MatchParentDividerForAspectRatio() {
     // will force the aspectRatios and the divider to use the same height.
     //
     Box {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Max)) {
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max)) {
             val modifier = Modifier
-            Box(
-                modifier
-                    .width(160.dp)
-                    .aspectRatio(2f)
-                    .background(Color.Gray))
-            Box(
-                Modifier
-                    .width(1.dp)
-                    .fillMaxHeight()
-                    .background(Color.Black))
-            Box(
-                modifier
-                    .widthIn(120.dp, 200.dp)
-                    .aspectRatio(1f)
-                    .background(Color.Blue))
+            Box(modifier.width(160.dp).aspectRatio(2f).background(Color.Gray))
+            Box(Modifier.width(1.dp).fillMaxHeight().background(Color.Black))
+            Box(modifier.widthIn(120.dp, 200.dp).aspectRatio(1f).background(Color.Blue))
         }
     }
 }
 
-private val colors = listOf(
-    Color(0xffff6f69),
-    Color(0xffffcc5c),
-    Color(0xff2a9d84),
-    Color(0xff264653)
-)
+private val colors =
+    listOf(Color(0xffff6f69), Color(0xffffcc5c), Color(0xff2a9d84), Color(0xff264653))

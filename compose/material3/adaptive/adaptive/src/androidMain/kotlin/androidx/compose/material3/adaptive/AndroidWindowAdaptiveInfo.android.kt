@@ -16,7 +16,6 @@
 
 package androidx.compose.material3.adaptive
 
-import android.app.Activity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
@@ -32,14 +31,13 @@ import androidx.window.layout.WindowInfoTracker
 import androidx.window.layout.WindowMetricsCalculator
 import kotlinx.coroutines.flow.map
 
-@ExperimentalMaterial3AdaptiveApi
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
+@Suppress("DEPRECATION") // WindowSizeClass#compute is deprecated
 actual fun currentWindowAdaptiveInfo(): WindowAdaptiveInfo {
-    val windowSize = with(LocalDensity.current) {
-        currentWindowSize().toSize().toDpSize()
-    }
+    val windowSize = with(LocalDensity.current) { currentWindowSize().toSize().toDpSize() }
     return WindowAdaptiveInfo(
-        WindowSizeClass(windowSize.width.value.toInt(), windowSize.height.value.toInt()),
+        WindowSizeClass.compute(windowSize.width.value, windowSize.height.value),
         calculatePosture(collectFoldingFeaturesAsState().value)
     )
 }
@@ -49,7 +47,6 @@ actual fun currentWindowAdaptiveInfo(): WindowAdaptiveInfo {
  *
  * @return an [IntSize] that represents the current window size.
  */
-@ExperimentalMaterial3AdaptiveApi
 @Composable
 fun currentWindowSize(): IntSize {
     // Observe view configuration changes and recalculate the size class on each change. We can't
@@ -58,11 +55,10 @@ fun currentWindowSize(): IntSize {
     // ComposeView's configuration changes.
     LocalConfiguration.current
     val windowBounds =
-        WindowMetricsCalculator
-            .getOrCreate()
+        WindowMetricsCalculator.getOrCreate()
             .computeCurrentWindowMetrics(LocalContext.current)
             .bounds
-   return IntSize(windowBounds.width(), windowBounds.height())
+    return IntSize(windowBounds.width(), windowBounds.height())
 }
 
 /**
@@ -70,20 +66,13 @@ fun currentWindowSize(): IntSize {
  *
  * @return a [State] of a [FoldingFeature] list.
  */
-@ExperimentalMaterial3AdaptiveApi
 @Composable
 fun collectFoldingFeaturesAsState(): State<List<FoldingFeature>> {
     val context = LocalContext.current
     return remember(context) {
-        if (context is Activity) {
-            // TODO(b/284347941) remove the instance check after the test bug is fixed.
-            WindowInfoTracker
-                .getOrCreate(context)
-                .windowLayoutInfo(context)
-        } else {
-            WindowInfoTracker
-                .getOrCreate(context)
-                .windowLayoutInfo(context)
-        }.map { it.displayFeatures.filterIsInstance<FoldingFeature>() }
-    }.collectAsState(emptyList())
+            WindowInfoTracker.getOrCreate(context).windowLayoutInfo(context).map {
+                it.displayFeatures.filterIsInstance<FoldingFeature>()
+            }
+        }
+        .collectAsState(emptyList())
 }

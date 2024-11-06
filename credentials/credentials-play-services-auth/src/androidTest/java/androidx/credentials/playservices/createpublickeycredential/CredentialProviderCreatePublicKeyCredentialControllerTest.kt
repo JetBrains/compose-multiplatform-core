@@ -16,6 +16,7 @@
 
 package androidx.credentials.playservices.createpublickeycredential
 
+import android.content.Context
 import androidx.credentials.CreatePublicKeyCredentialRequest
 import androidx.credentials.playservices.TestCredentialsActivity
 import androidx.credentials.playservices.TestUtils.Companion.isSubsetJson
@@ -32,12 +33,16 @@ import androidx.credentials.playservices.createkeycredential.CreatePublicKeyCred
 import androidx.credentials.playservices.createkeycredential.CreatePublicKeyCredentialControllerTestUtils.Companion.OPTIONAL_FIELD_WITH_EMPTY_REQUIRED_SUBFIELD
 import androidx.credentials.playservices.createkeycredential.CreatePublicKeyCredentialControllerTestUtils.Companion.createJsonObjectFromPublicKeyCredentialCreationOptions
 import androidx.test.core.app.ActivityScenario
+import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
 import com.google.common.truth.Truth.assertThat
 import org.json.JSONException
 import org.json.JSONObject
 import org.junit.Assert
+import org.junit.Assume.assumeFalse
 import org.junit.Test
 import org.junit.function.ThrowingRunnable
 import org.junit.runner.RunWith
@@ -47,20 +52,21 @@ import org.junit.runner.RunWith
 class CredentialProviderCreatePublicKeyCredentialControllerTest {
     @Test
     fun convertRequestToPlayServices_correctRequiredOnlyRequest_success() {
-        val activityScenario = ActivityScenario.launch(
-            TestCredentialsActivity::class.java
-        )
+        val activityScenario = ActivityScenario.launch(TestCredentialsActivity::class.java)
         activityScenario.onActivity { activity: TestCredentialsActivity? ->
             try {
                 val expectedJson = JSONObject(MAIN_CREATE_JSON_ALL_REQUIRED_FIELDS_PRESENT)
 
-                val actualResponse = getInstance(activity!!).convertRequestToPlayServices(
-                    CreatePublicKeyCredentialRequest(
-                        MAIN_CREATE_JSON_ALL_REQUIRED_FIELDS_PRESENT))
+                val actualResponse =
+                    getInstance(activity!!)
+                        .convertRequestToPlayServices(
+                            CreatePublicKeyCredentialRequest(
+                                MAIN_CREATE_JSON_ALL_REQUIRED_FIELDS_PRESENT
+                            )
+                        )
                 val actualJson =
                     createJsonObjectFromPublicKeyCredentialCreationOptions(actualResponse)
-                val requiredKeys =
-                    JSONObject(ALL_REQUIRED_FIELDS_SIGNATURE)
+                val requiredKeys = JSONObject(ALL_REQUIRED_FIELDS_SIGNATURE)
 
                 assertThat(isSubsetJson(expectedJson, actualJson, requiredKeys)).isTrue()
                 // TODO("Add remaining tests in detail after discussing ideal form")
@@ -72,21 +78,22 @@ class CredentialProviderCreatePublicKeyCredentialControllerTest {
 
     @Test
     fun convertRequestToPlayServices_correctRequiredAndOptionalRequest_success() {
-        val activityScenario = ActivityScenario.launch(
-            TestCredentialsActivity::class.java
-        )
+        val activityScenario = ActivityScenario.launch(TestCredentialsActivity::class.java)
         activityScenario.onActivity { activity: TestCredentialsActivity? ->
             try {
-                val expectedJson = JSONObject(
-                    MAIN_CREATE_JSON_ALL_REQUIRED_AND_OPTIONAL_FIELDS_PRESENT)
+                val expectedJson =
+                    JSONObject(MAIN_CREATE_JSON_ALL_REQUIRED_AND_OPTIONAL_FIELDS_PRESENT)
 
-                val actualResponse = getInstance(activity!!)
-                    .convertRequestToPlayServices(CreatePublicKeyCredentialRequest(
-                        MAIN_CREATE_JSON_ALL_REQUIRED_AND_OPTIONAL_FIELDS_PRESENT))
+                val actualResponse =
+                    getInstance(activity!!)
+                        .convertRequestToPlayServices(
+                            CreatePublicKeyCredentialRequest(
+                                MAIN_CREATE_JSON_ALL_REQUIRED_AND_OPTIONAL_FIELDS_PRESENT
+                            )
+                        )
                 val actualJson =
                     createJsonObjectFromPublicKeyCredentialCreationOptions(actualResponse)
-                val requiredKeys =
-                    JSONObject(ALL_REQUIRED_AND_OPTIONAL_SIGNATURE)
+                val requiredKeys = JSONObject(ALL_REQUIRED_AND_OPTIONAL_SIGNATURE)
 
                 assertThat(isSubsetJson(expectedJson, actualJson, requiredKeys)).isTrue()
                 // TODO("Add remaining tests in detail after discussing ideal form")
@@ -98,75 +105,85 @@ class CredentialProviderCreatePublicKeyCredentialControllerTest {
 
     @Test
     fun convertRequestToPlayServices_missingRequired_throws() {
-        val activityScenario = ActivityScenario.launch(
-            TestCredentialsActivity::class.java
-        )
+        val activityScenario = ActivityScenario.launch(TestCredentialsActivity::class.java)
         activityScenario.onActivity { activity: TestCredentialsActivity? ->
-
-            Assert.assertThrows("Expected bad required json to throw",
+            assumeFalse(deviceHasGMS(getApplicationContext()))
+            Assert.assertThrows(
+                "Expected bad required json to throw",
                 JSONException::class.java,
                 ThrowingRunnable {
-                    getInstance(
-                        activity!!
-                    ).convertRequestToPlayServices(
-                        CreatePublicKeyCredentialRequest(
-                            MAIN_CREATE_JSON_MISSING_REQUIRED_FIELD
-                        )) })
+                    getInstance(activity!!)
+                        .convertRequestToPlayServices(
+                            CreatePublicKeyCredentialRequest(
+                                MAIN_CREATE_JSON_MISSING_REQUIRED_FIELD
+                            )
+                        )
+                }
+            )
         }
     }
 
     @Test
     fun convertRequestToPlayServices_emptyRequired_throws() {
-        val activityScenario = ActivityScenario.launch(
-            TestCredentialsActivity::class.java
-        )
+        val activityScenario = ActivityScenario.launch(TestCredentialsActivity::class.java)
         activityScenario.onActivity { activity: TestCredentialsActivity? ->
-
-            Assert.assertThrows("Expected bad required json to throw",
-                JSONException::class.java,
-                ThrowingRunnable { getInstance(activity!!
-                ).convertRequestToPlayServices(CreatePublicKeyCredentialRequest(
-                    MAIN_CREATE_JSON_REQUIRED_FIELD_EMPTY)) })
-        }
-    }
-    @Test
-    fun convertRequestToPlayServices_missingOptionalRequired_throws() {
-        val activityScenario = ActivityScenario.launch(
-            TestCredentialsActivity::class.java
-        )
-        activityScenario.onActivity { activity: TestCredentialsActivity? ->
-
-            Assert.assertThrows("Expected bad required json to throw",
+            assumeFalse(deviceHasGMS(getApplicationContext()))
+            Assert.assertThrows(
+                "Expected bad required json to throw",
                 JSONException::class.java,
                 ThrowingRunnable {
-                    getInstance(
-                        activity!!
-                    ).convertRequestToPlayServices(
-                        CreatePublicKeyCredentialRequest(
-                            OPTIONAL_FIELD_MISSING_REQUIRED_SUBFIELD)) })
+                    getInstance(activity!!)
+                        .convertRequestToPlayServices(
+                            CreatePublicKeyCredentialRequest(MAIN_CREATE_JSON_REQUIRED_FIELD_EMPTY)
+                        )
+                }
+            )
+        }
+    }
+
+    @Test
+    fun convertRequestToPlayServices_missingOptionalRequired_throws() {
+        val activityScenario = ActivityScenario.launch(TestCredentialsActivity::class.java)
+        activityScenario.onActivity { activity: TestCredentialsActivity? ->
+            assumeFalse(deviceHasGMS(getApplicationContext()))
+            Assert.assertThrows(
+                "Expected bad required json to throw",
+                JSONException::class.java,
+                ThrowingRunnable {
+                    getInstance(activity!!)
+                        .convertRequestToPlayServices(
+                            CreatePublicKeyCredentialRequest(
+                                OPTIONAL_FIELD_MISSING_REQUIRED_SUBFIELD
+                            )
+                        )
+                }
+            )
         }
     }
 
     @Test
     fun convertRequestToPlayServices_emptyOptionalRequired_throws() {
-        val activityScenario = ActivityScenario.launch(
-            TestCredentialsActivity::class.java
-        )
+        val activityScenario = ActivityScenario.launch(TestCredentialsActivity::class.java)
         activityScenario.onActivity { activity: TestCredentialsActivity? ->
-
-            Assert.assertThrows("Expected bad required json to throw",
+            assumeFalse(deviceHasGMS(getApplicationContext()))
+            Assert.assertThrows(
+                "Expected bad required json to throw",
                 JSONException::class.java,
-                ThrowingRunnable { getInstance(activity!!).convertRequestToPlayServices(
-                    CreatePublicKeyCredentialRequest(
-                        OPTIONAL_FIELD_WITH_EMPTY_REQUIRED_SUBFIELD)) })
+                ThrowingRunnable {
+                    getInstance(activity!!)
+                        .convertRequestToPlayServices(
+                            CreatePublicKeyCredentialRequest(
+                                OPTIONAL_FIELD_WITH_EMPTY_REQUIRED_SUBFIELD
+                            )
+                        )
+                }
+            )
         }
     }
 
     @Test
     fun convertRequestToPlayServices_missingOptionalNotRequired_success() {
-        val activityScenario = ActivityScenario.launch(
-            TestCredentialsActivity::class.java
-        )
+        val activityScenario = ActivityScenario.launch(TestCredentialsActivity::class.java)
         activityScenario.onActivity { activity: TestCredentialsActivity? ->
             try {
                 val expectedJson = JSONObject(OPTIONAL_FIELD_MISSING_OPTIONAL_SUBFIELD)
@@ -175,11 +192,12 @@ class CredentialProviderCreatePublicKeyCredentialControllerTest {
                     getInstance(activity!!)
                         .convertRequestToPlayServices(
                             CreatePublicKeyCredentialRequest(
-                                OPTIONAL_FIELD_MISSING_OPTIONAL_SUBFIELD))
-                val actualJson = createJsonObjectFromPublicKeyCredentialCreationOptions(
-                    actualResponse)
-                val requiredKeys =
-                    JSONObject(OPTIONAL_FIELD_MISSING_OPTIONAL_SUBFIELD_SIGNATURE)
+                                OPTIONAL_FIELD_MISSING_OPTIONAL_SUBFIELD
+                            )
+                        )
+                val actualJson =
+                    createJsonObjectFromPublicKeyCredentialCreationOptions(actualResponse)
+                val requiredKeys = JSONObject(OPTIONAL_FIELD_MISSING_OPTIONAL_SUBFIELD_SIGNATURE)
 
                 assertThat(isSubsetJson(expectedJson, actualJson, requiredKeys)).isTrue()
                 // TODO("Add remaining tests in detail after discussing ideal form")
@@ -188,4 +206,8 @@ class CredentialProviderCreatePublicKeyCredentialControllerTest {
             }
         }
     }
+
+    private fun deviceHasGMS(context: Context): Boolean =
+        GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context) ==
+            ConnectionResult.SUCCESS
 }

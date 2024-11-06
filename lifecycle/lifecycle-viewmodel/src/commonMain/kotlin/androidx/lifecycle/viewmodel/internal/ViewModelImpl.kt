@@ -33,7 +33,7 @@ import kotlinx.coroutines.CoroutineScope
  */
 internal class ViewModelImpl {
 
-    private val lock = Lock()
+    private val lock = SynchronizedObject()
 
     /**
      * Holds a mapping between [String] keys and [AutoCloseable] resources that have been associated
@@ -42,25 +42,19 @@ internal class ViewModelImpl {
      * The associated resources will be [AutoCloseable.close] right before the [ViewModel.onCleared]
      * is called. This provides automatic resource cleanup upon [ViewModel] release.
      *
-     * The clearing order is:
-     * 1. [keyToCloseables][AutoCloseable.close]
-     * 2. [closeables][AutoCloseable.close]
-     * 3. [ViewModel.onCleared]
+     * For specifics about the clearing sequence, refer to the [ViewModel.clear] method.
      *
-     * **Note:** Manually [Lock] is necessary to prevent issues on Android API 21 and 22.
-     * This avoids potential problems found in older versions of `ConcurrentHashMap`.
+     * **Note:** Manually [SynchronizedObject] is necessary to prevent issues on Android API 21
+     * and 22. This avoids potential problems found in older versions of `ConcurrentHashMap`.
      *
      * @see <a href="https://issuetracker.google.com/37042460">b/37042460</a>
      */
     private val keyToCloseables = mutableMapOf<String, AutoCloseable>()
 
-    /**
-     * @see [keyToCloseables]
-     */
+    /** @see [keyToCloseables] */
     private val closeables = mutableSetOf<AutoCloseable>()
 
-    @Volatile
-    private var isCleared = false
+    @Volatile private var isCleared = false
 
     constructor()
 
@@ -83,10 +77,11 @@ internal class ViewModelImpl {
         if (isCleared) return
 
         isCleared = true
-        lock.withLock {
-            // 1. Closes resources added without a key.
-            // 2. Closes resources added with a key.
-            for (closeable in closeables + keyToCloseables.values) {
+        synchronized(lock) {
+            for (closeable in keyToCloseables.values) {
+                closeWithRuntimeException(closeable)
+            }
+            for (closeable in closeables) {
                 closeWithRuntimeException(closeable)
             }
             // Clear only resources without keys to prevent accidental recreation of resources.
@@ -105,7 +100,7 @@ internal class ViewModelImpl {
             return
         }
 
-        val oldCloseable = lock.withLock { keyToCloseables.put(key, closeable) }
+        val oldCloseable = synchronized(lock) { keyToCloseables.put(key, closeable) }
         closeWithRuntimeException(oldCloseable)
     }
 
@@ -119,13 +114,12 @@ internal class ViewModelImpl {
             return
         }
 
-        lock.withLock { closeables += closeable }
+        synchronized(lock) { closeables += closeable }
     }
 
     /** @see [ViewModel.getCloseable] */
     fun <T : AutoCloseable> getCloseable(key: String): T? =
-        @Suppress("UNCHECKED_CAST")
-        lock.withLock { keyToCloseables[key] as T? }
+        @Suppress("UNCHECKED_CAST") synchronized(lock) { keyToCloseables[key] as T? }
 
     private fun closeWithRuntimeException(closeable: AutoCloseable?) {
         try {

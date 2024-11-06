@@ -20,21 +20,23 @@ import android.util.Range;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.ExtendableBuilder;
+import androidx.camera.core.ImageCapture;
 import androidx.camera.core.UseCase;
+import androidx.camera.core.imagecapture.ImageCaptureControl;
+import androidx.camera.core.imagecapture.TakePictureManager;
+import androidx.camera.core.imagecapture.TakePictureManagerImpl;
 import androidx.camera.core.impl.stabilization.StabilizationMode;
 import androidx.camera.core.internal.TargetConfig;
-import androidx.camera.core.internal.UseCaseEventConfig;
+
+import java.util.Objects;
 
 /**
  * Configuration containing options for use cases.
  *
  * @param <T> The use case being configured.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, UseCaseEventConfig,
-        ImageInputConfig {
+public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, ImageInputConfig {
     // Option Declarations:
     // *********************************************************************************************
 
@@ -111,6 +113,10 @@ public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, UseCa
      */
     Option<Integer> OPTION_VIDEO_STABILIZATION_MODE =
             Option.create("camerax.core.useCase.videoStabilizationMode", int.class);
+
+    Option<TakePictureManager.Provider> OPTION_TAKE_PICTURE_MANAGER_PROVIDER =
+            Option.create("camerax.core.useCase.takePictureManagerProvider",
+                    TakePictureManager.Provider.class);
 
     // *********************************************************************************************
 
@@ -303,7 +309,7 @@ public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, UseCa
      * @return The stored value or <code>valueIfMissing</code> if the value does not exist in
      * this configuration
      */
-    default boolean isHigResolutionDisabled(boolean valueIfMissing) {
+    default boolean isHighResolutionDisabled(boolean valueIfMissing) {
         return retrieveOption(OPTION_HIGH_RESOLUTION_DISABLED, valueIfMissing);
     }
 
@@ -333,6 +339,22 @@ public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, UseCa
     }
 
     /**
+     * @return The {@link TakePictureManager} implementation for {@link ImageCapture} use case.
+     */
+    @NonNull
+    default TakePictureManager.Provider getTakePictureManagerProvider() {
+        return Objects.requireNonNull(retrieveOption(OPTION_TAKE_PICTURE_MANAGER_PROVIDER,
+                new TakePictureManager.Provider() {
+                    @NonNull
+                    @Override
+                    public TakePictureManager newInstance(
+                            @NonNull ImageCaptureControl imageCaptureControl) {
+                        return new TakePictureManagerImpl(imageCaptureControl);
+                    }
+                }));
+    }
+
+    /**
      * Builder for a {@link UseCase}.
      *
      * @param <T> The type of the object which will be built by {@link #build()}.
@@ -341,7 +363,7 @@ public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, UseCa
      * @param <B> The top level builder type for which this builder is composed with.
      */
     interface Builder<T extends UseCase, C extends UseCaseConfig<T>, B> extends
-            TargetConfig.Builder<T, B>, ExtendableBuilder<T>, UseCaseEventConfig.Builder<B> {
+            TargetConfig.Builder<T, B>, ExtendableBuilder<T> {
 
         /**
          * Sets the default session configuration for this use case.

@@ -12,6 +12,10 @@ package androidx.wear.phone.interactions {
 
   public static final class PhoneTypeHelper.Companion {
     method public int getPhoneDeviceType(android.content.Context context);
+    property public static final int DEVICE_TYPE_ANDROID;
+    property public static final int DEVICE_TYPE_ERROR;
+    property public static final int DEVICE_TYPE_IOS;
+    property public static final int DEVICE_TYPE_UNKNOWN;
   }
 
 }
@@ -54,12 +58,14 @@ package androidx.wear.phone.interactions.authentication {
   }
 
   public static final class OAuthRequest.Companion {
+    property public static final String WEAR_REDIRECT_URL_PREFIX;
+    property public static final String WEAR_REDIRECT_URL_PREFIX_CN;
   }
 
   public final class OAuthResponse {
     method public int getErrorCode();
     method public android.net.Uri? getResponseUrl();
-    property public final int errorCode;
+    property @androidx.wear.phone.interactions.authentication.RemoteAuthClient.Companion.ErrorCode public final int errorCode;
     property public final android.net.Uri? responseUrl;
   }
 
@@ -95,6 +101,13 @@ package androidx.wear.phone.interactions.authentication {
 
   public static final class RemoteAuthClient.Companion {
     method public androidx.wear.phone.interactions.authentication.RemoteAuthClient create(android.content.Context context);
+    property public static final int ERROR_PHONE_UNAVAILABLE;
+    property public static final int ERROR_UNSUPPORTED;
+    property public static final int NO_ERROR;
+    property public static final int STATUS_AVAILABLE;
+    property public static final int STATUS_TEMPORARILY_UNAVAILABLE;
+    property public static final int STATUS_UNAVAILABLE;
+    property public static final int STATUS_UNKNOWN;
   }
 
   @IntDef({androidx.wear.phone.interactions.authentication.RemoteAuthClient.NO_ERROR, androidx.wear.phone.interactions.authentication.RemoteAuthClient.ERROR_UNSUPPORTED, androidx.wear.phone.interactions.authentication.RemoteAuthClient.ERROR_PHONE_UNAVAILABLE}) @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP) @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) public static @interface RemoteAuthClient.Companion.ErrorCode {

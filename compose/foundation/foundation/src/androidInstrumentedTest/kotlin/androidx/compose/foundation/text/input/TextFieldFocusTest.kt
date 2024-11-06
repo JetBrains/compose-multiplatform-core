@@ -18,8 +18,8 @@ package androidx.compose.foundation.text.input
 
 import android.os.SystemClock
 import android.view.InputDevice
+import android.view.InputDevice.SOURCE_KEYBOARD
 import android.view.KeyEvent
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.FocusInteraction
@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -54,14 +55,19 @@ import androidx.compose.ui.input.key.NativeKeyEvent
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyPress
+import androidx.compose.ui.test.performTextInputSelection
 import androidx.compose.ui.test.requestFocus
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -76,12 +82,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalTestApi::class)
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 internal class TextFieldFocusTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
     private val inputMethodInterceptor = InputMethodInterceptor(rule)
 
     private val testKeyboardController = TestSoftwareKeyboardController(rule)
@@ -92,10 +97,10 @@ internal class TextFieldFocusTest {
             val state = remember { TextFieldState() }
             BasicTextField(
                 state = state,
-                modifier = Modifier
-                    .focusRequester(data.focusRequester)
-                    .onFocusChanged { data.focused = it.isFocused }
-                    .requiredWidth(10.dp)
+                modifier =
+                    Modifier.focusRequester(data.focusRequester)
+                        .onFocusChanged { data.focused = it.isFocused }
+                        .requiredWidth(10.dp)
             )
         }
     }
@@ -107,11 +112,12 @@ internal class TextFieldFocusTest {
         lateinit var testDataList: List<FocusTestData>
 
         rule.setContent {
-            testDataList = listOf(
-                FocusTestData(FocusRequester()),
-                FocusTestData(FocusRequester()),
-                FocusTestData(FocusRequester())
-            )
+            testDataList =
+                listOf(
+                    FocusTestData(FocusRequester()),
+                    FocusTestData(FocusRequester()),
+                    FocusTestData(FocusRequester())
+                )
 
             TextFieldApp(testDataList)
         }
@@ -159,9 +165,7 @@ internal class TextFieldFocusTest {
 
         val interactions = mutableListOf<Interaction>()
 
-        scope.launch {
-            interactionSource.interactions.collect { interactions.add(it) }
-        }
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
 
         rule.onNodeWithTag(tag).requestFocus()
 
@@ -186,42 +190,30 @@ internal class TextFieldFocusTest {
             BasicTextField(
                 state = state,
                 enabled = enabled.value,
-                modifier = Modifier
-                    .testTag(tag)
-                    .onFocusChanged {
-                        focused = it.isFocused
-                    }
-                    .requiredWidth(10.dp)
+                modifier =
+                    Modifier.testTag(tag)
+                        .onFocusChanged { focused = it.isFocused }
+                        .requiredWidth(10.dp)
             )
         }
         // bring enabled text field into focus
         rule.onNodeWithTag(tag).performClick()
-        rule.runOnIdle {
-            assertThat(focused).isTrue()
-        }
+        rule.runOnIdle { assertThat(focused).isTrue() }
 
         // make text field disabled
         enabled.value = false
-        rule.runOnIdle {
-            assertThat(focused).isFalse()
-        }
+        rule.runOnIdle { assertThat(focused).isFalse() }
 
         // make text field enabled again, it must not crash
         enabled.value = true
-        rule.runOnIdle {
-            assertThat(focused).isFalse()
-        }
+        rule.runOnIdle { assertThat(focused).isFalse() }
     }
 
     @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun textInputStarted_forFieldInActivity_whenFocusRequestedImmediately_fromLaunchedEffect() {
         textInputStarted_whenFocusRequestedImmediately_fromEffect(
-            runEffect = {
-                LaunchedEffect(Unit) {
-                    it()
-                }
-            }
+            runEffect = { LaunchedEffect(Unit) { it() } }
         )
     }
 
@@ -244,11 +236,7 @@ internal class TextFieldFocusTest {
     @Test
     fun textInputStarted_forFieldInDialog_whenFocusRequestedImmediately_fromLaunchedEffect() {
         textInputStarted_whenFocusRequestedImmediately_fromEffect(
-            runEffect = {
-                LaunchedEffect(Unit) {
-                    it()
-                }
-            },
+            runEffect = { LaunchedEffect(Unit) { it() } },
             wrapContent = {
                 Dialog(onDismissRequest = {}) {
                     // Need to explicitly install the interceptor in the dialog as well.
@@ -288,14 +276,9 @@ internal class TextFieldFocusTest {
 
         inputMethodInterceptor.setContent {
             wrapContent {
-                runEffect {
-                    focusRequester.requestFocus()
-                }
+                runEffect { focusRequester.requestFocus() }
 
-                BasicTextField(
-                    state = state,
-                    modifier = Modifier.focusRequester(focusRequester)
-                )
+                BasicTextField(state = state, modifier = Modifier.focusRequester(focusRequester))
             }
         }
 
@@ -304,13 +287,12 @@ internal class TextFieldFocusTest {
 
     @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
-    fun basicTextField_checkFocusNavigation_onDPadLeft() {
+    fun basicTextField_checkFocusNavigation_onDPadLeft_DPadDevice() {
         setupAndEnableBasicTextField()
         inputSingleLineTextInBasicTextField()
 
         // Dismiss keyboard on back press
         keyPressOnVirtualKeyboard(NativeKeyEvent.KEYCODE_BACK)
-        rule.waitForIdle()
 
         // Move focus to the focusable element on left
         if (!keyPressOnDpadInputDevice(rule, NativeKeyEvent.KEYCODE_DPAD_LEFT)) return
@@ -321,13 +303,12 @@ internal class TextFieldFocusTest {
 
     @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
-    fun basicTextField_checkFocusNavigation_onDPadRight() {
+    fun basicTextField_checkFocusNavigation_onDPadRight_DPadDevice() {
         setupAndEnableBasicTextField()
         inputSingleLineTextInBasicTextField()
 
         // Dismiss keyboard on back press
         keyPressOnVirtualKeyboard(NativeKeyEvent.KEYCODE_BACK)
-        rule.waitForIdle()
 
         // Move focus to the focusable element on right
         if (!keyPressOnDpadInputDevice(rule, NativeKeyEvent.KEYCODE_DPAD_RIGHT)) return
@@ -338,13 +319,12 @@ internal class TextFieldFocusTest {
 
     @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
-    fun basicTextField_checkFocusNavigation_onDPadUp() {
+    fun basicTextField_checkFocusNavigation_onDPadUp_DPadDevice() {
         setupAndEnableBasicTextField()
         inputMultilineTextInBasicTextField()
 
         // Dismiss keyboard on back press
         keyPressOnVirtualKeyboard(NativeKeyEvent.KEYCODE_BACK)
-        rule.waitForIdle()
 
         // Move focus to the focusable element on top
         if (!keyPressOnDpadInputDevice(rule, NativeKeyEvent.KEYCODE_DPAD_UP)) return
@@ -355,13 +335,12 @@ internal class TextFieldFocusTest {
 
     @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
-    fun basicTextField_checkFocusNavigation_onDPadDown() {
+    fun basicTextField_checkFocusNavigation_onDPadDown_DPadDevice() {
         setupAndEnableBasicTextField()
         inputMultilineTextInBasicTextField()
 
         // Dismiss keyboard on back press
         keyPressOnVirtualKeyboard(NativeKeyEvent.KEYCODE_BACK)
-        rule.waitForIdle()
 
         // Move focus to the focusable element on bottom
         if (!keyPressOnDpadInputDevice(rule, NativeKeyEvent.KEYCODE_DPAD_DOWN)) return
@@ -370,9 +349,8 @@ internal class TextFieldFocusTest {
         rule.onNodeWithTag("test-button-bottom").assertIsFocused()
     }
 
-    @FlakyTest(bugId = 305087008)
     @Test
-    fun basicTextField_checkKeyboardShown_onDPadCenter() {
+    fun basicTextField_checkKeyboardShown_onDPadCenter_DPadDevice() {
         setupAndEnableBasicTextField()
         inputSingleLineTextInBasicTextField()
 
@@ -385,6 +363,138 @@ internal class TextFieldFocusTest {
         testKeyboardController.assertShown()
     }
 
+    @SdkSuppress(minSdkVersion = 22) // b/266742195
+    @Test
+    fun basicTextField_checkFocusNavigation_onDPadLeft_hardwareKeyboard() {
+        setupAndEnableBasicTextField()
+        inputSingleLineTextInBasicTextField()
+
+        // Dismiss keyboard on back press
+        keyPressOnVirtualKeyboard(NativeKeyEvent.KEYCODE_BACK)
+
+        // Move the cursor to the left
+        if (!keyPressOnKeyboardInputDevice(rule, NativeKeyEvent.KEYCODE_DPAD_LEFT)) return
+
+        // Check if the element to the left of text field does not gain focus
+        rule.onNodeWithTag("test-button-left").assertIsNotFocused()
+        rule.onNodeWithTag("test-text-field-1").assertIsFocused()
+
+        // Check if the cursor has actually moved to the left -> "ab|c"
+        rule.onNodeWithTag("test-text-field-1").assertSelection(TextRange(2))
+    }
+
+    @FlakyTest(bugId = 348380475)
+    @SdkSuppress(minSdkVersion = 22) // b/266742195
+    @Test
+    fun basicTextField_checkFocusNavigation_onDPadRight_hardwareKeyboard() {
+        setupAndEnableBasicTextField()
+        inputSingleLineTextInBasicTextField()
+        // Carry the cursor to the start after typing -> "|abc"
+        rule.onNodeWithTag("test-text-field-1").performTextInputSelection(TextRange.Zero)
+
+        // Dismiss keyboard on back press
+        keyPressOnVirtualKeyboard(NativeKeyEvent.KEYCODE_BACK)
+
+        // Move the cursor to the left
+        if (!keyPressOnKeyboardInputDevice(rule, NativeKeyEvent.KEYCODE_DPAD_RIGHT)) return
+
+        // Check if the element to the right of text field does not gain focus
+        rule.onNodeWithTag("test-button-right").assertIsNotFocused()
+        rule.onNodeWithTag("test-text-field-1").assertIsFocused()
+
+        // Check if the cursor has actually moved to the right -> "a|bc"
+        rule.onNodeWithTag("test-text-field-1").assertSelection(TextRange(1))
+    }
+
+    @SdkSuppress(minSdkVersion = 22) // b/266742195
+    @Test
+    fun basicTextField_checkFocusNavigation_onDPadUp_hardwareKeyboard() {
+        setupAndEnableBasicTextField()
+        inputMultilineTextInBasicTextField()
+
+        // Dismiss keyboard on back press
+        keyPressOnVirtualKeyboard(NativeKeyEvent.KEYCODE_BACK)
+
+        // Move focus to the focusable element on top
+        if (!keyPressOnKeyboardInputDevice(rule, NativeKeyEvent.KEYCODE_DPAD_UP)) return
+
+        // Check if the element on the top of text field does not gain focus
+        rule.onNodeWithTag("test-button-top").assertIsNotFocused()
+        rule.onNodeWithTag("test-text-field-1").assertIsFocused()
+
+        // Check if the cursor has actually moved up -> "a\nb|\nc"
+        rule.onNodeWithTag("test-text-field-1").assertSelection(TextRange(3))
+    }
+
+    @FlakyTest(bugId = 348380475)
+    @SdkSuppress(minSdkVersion = 22) // b/266742195
+    @Test
+    fun basicTextField_checkFocusNavigation_onDPadDown_hardwareKeyboard() {
+        setupAndEnableBasicTextField()
+        inputMultilineTextInBasicTextField()
+        // Carry the cursor to the start after typing -> "|a\nb\nc"
+        rule.onNodeWithTag("test-text-field-1").performTextInputSelection(TextRange.Zero)
+
+        // Dismiss keyboard on back press
+        keyPressOnVirtualKeyboard(NativeKeyEvent.KEYCODE_BACK)
+
+        // Move focus to the focusable element on bottom
+        if (!keyPressOnKeyboardInputDevice(rule, NativeKeyEvent.KEYCODE_DPAD_DOWN)) return
+
+        // Check if the element to the bottom of text field does not gain focus
+        rule.onNodeWithTag("test-button-bottom").assertIsNotFocused()
+        rule.onNodeWithTag("test-text-field-1").assertIsFocused()
+
+        // Check if the cursor has actually moved down -> "a\n|b\nc"
+        rule.onNodeWithTag("test-text-field-1").assertSelection(TextRange(2))
+    }
+
+    @SdkSuppress(minSdkVersion = 22) // b/266742195
+    @Test
+    fun basicTextField_checkFocusNavigation_onTab() {
+        setupAndEnableBasicTextField(singleLine = true)
+        inputSingleLineTextInBasicTextField()
+
+        // Move focus to the next focusable element via tab
+        assertThat(keyPressOnKeyboardInputDevice(rule, NativeKeyEvent.KEYCODE_TAB)).isTrue()
+
+        // Check if the element to the right of text field gains focus
+        rule.onNodeWithTag("test-button-right").assertIsFocused()
+    }
+
+    @SdkSuppress(minSdkVersion = 22) // b/266742195
+    @Test
+    fun basicTextField_withImeActionNext_checkFocusNavigation_onEnter() {
+        setupAndEnableBasicTextField(singleLine = true)
+        inputSingleLineTextInBasicTextField()
+
+        // Move focus to the next focusable element via IME action
+        assertThat(keyPressOnKeyboardInputDevice(rule, NativeKeyEvent.KEYCODE_ENTER)).isTrue()
+
+        // Check if the element to the right of text field gains focus
+        rule.onNodeWithTag("test-button-right").assertIsFocused()
+    }
+
+    @SdkSuppress(minSdkVersion = 22) // b/266742195
+    @Test
+    fun basicTextField_checkFocusNavigation_onShiftTab() {
+        setupAndEnableBasicTextField(singleLine = true)
+        inputSingleLineTextInBasicTextField()
+
+        // Move focus to the next focusable element via shift+tab
+        assertThat(
+                keyPressOnKeyboardInputDevice(
+                    rule,
+                    NativeKeyEvent.KEYCODE_TAB,
+                    metaState = KeyEvent.META_SHIFT_ON
+                )
+            )
+            .isTrue()
+
+        // Check if the element to the left of text field gains focus
+        rule.onNodeWithTag("test-button-left").assertIsFocused()
+    }
+
     @Test
     fun basicTextField_handlesInvalidDevice() {
         setupAndEnableBasicTextField()
@@ -394,23 +504,39 @@ internal class TextFieldFocusTest {
         // event is actually null.
         val invalidDeviceId = -2
         val keyCode = NativeKeyEvent.KEYCODE_DPAD_CENTER
-        val keyEventDown = KeyEvent(
-            SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
-            KeyEvent.ACTION_DOWN, keyCode, 0, 0, invalidDeviceId, 0
-        )
+        val keyEventDown =
+            KeyEvent(
+                SystemClock.uptimeMillis(),
+                SystemClock.uptimeMillis(),
+                KeyEvent.ACTION_DOWN,
+                keyCode,
+                0,
+                0,
+                invalidDeviceId,
+                0
+            )
         assertThat(keyEventDown.device).isNull()
         rule.onRoot().performKeyPress(androidx.compose.ui.input.key.KeyEvent(keyEventDown))
         rule.waitForIdle()
-        val keyEventUp = KeyEvent(
-            SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
-            KeyEvent.ACTION_UP, keyCode, 0, 0, invalidDeviceId, 0
-        )
+        val keyEventUp =
+            KeyEvent(
+                SystemClock.uptimeMillis(),
+                SystemClock.uptimeMillis(),
+                KeyEvent.ACTION_UP,
+                keyCode,
+                0,
+                0,
+                invalidDeviceId,
+                0
+            )
         rule.onRoot().performKeyPress(androidx.compose.ui.input.key.KeyEvent(keyEventUp))
         rule.waitForIdle()
     }
 
-    private fun setupAndEnableBasicTextField() {
-        setupContent()
+    private fun setupAndEnableBasicTextField(
+        singleLine: Boolean = false,
+    ) {
+        setupContent(singleLine)
 
         rule.onNodeWithTag("test-text-field-1").assertIsFocused()
     }
@@ -418,28 +544,22 @@ internal class TextFieldFocusTest {
     private fun inputSingleLineTextInBasicTextField() {
         // Input "abc"
         keyPressOnVirtualKeyboard(NativeKeyEvent.KEYCODE_A)
-        rule.waitForIdle()
         keyPressOnVirtualKeyboard(NativeKeyEvent.KEYCODE_B)
-        rule.waitForIdle()
         keyPressOnVirtualKeyboard(NativeKeyEvent.KEYCODE_C)
-        rule.waitForIdle()
     }
 
     private fun inputMultilineTextInBasicTextField() {
         // Input "a\nb\nc"
         keyPressOnVirtualKeyboard(NativeKeyEvent.KEYCODE_A)
-        rule.waitForIdle()
         keyPressOnVirtualKeyboard(NativeKeyEvent.KEYCODE_ENTER)
-        rule.waitForIdle()
         keyPressOnVirtualKeyboard(NativeKeyEvent.KEYCODE_B)
-        rule.waitForIdle()
         keyPressOnVirtualKeyboard(NativeKeyEvent.KEYCODE_ENTER)
-        rule.waitForIdle()
         keyPressOnVirtualKeyboard(NativeKeyEvent.KEYCODE_C)
-        rule.waitForIdle()
     }
 
-    private fun setupContent() {
+    private fun setupContent(
+        singleLine: Boolean = false,
+    ) {
         rule.setContent {
             CompositionLocalProvider(
                 LocalSoftwareKeyboardController provides testKeyboardController
@@ -450,7 +570,7 @@ internal class TextFieldFocusTest {
                     }
                     Row {
                         TestFocusableElement(id = "left")
-                        TestBasicTextField(id = "1", requestFocus = true)
+                        TestBasicTextField(id = "1", singleLine = singleLine, requestFocus = true)
                         TestFocusableElement(id = "right")
                     }
                     Row(horizontalArrangement = Arrangement.Center) {
@@ -464,45 +584,40 @@ internal class TextFieldFocusTest {
 
     @Composable
     private fun TestFocusableElement(id: String) {
-        var isFocused by remember {
-            mutableStateOf(false)
-        }
+        var isFocused by remember { mutableStateOf(false) }
         BasicText(
             text = "test-button-$id",
-            modifier = Modifier
-                .testTag("test-button-$id")
-                .padding(10.dp)
-                .onFocusChanged {
-                    isFocused = it.hasFocus
-                }
-                .focusable()
-                .border(2.dp, if (isFocused) Color.Green else Color.Cyan)
+            modifier =
+                Modifier.testTag("test-button-$id")
+                    .padding(10.dp)
+                    .onFocusChanged { isFocused = it.hasFocus }
+                    .focusable()
+                    .border(2.dp, if (isFocused) Color.Green else Color.Cyan)
         )
     }
 
     @Composable
-    private fun TestBasicTextField(
-        id: String,
-        requestFocus: Boolean = false
-    ) {
+    private fun TestBasicTextField(id: String, singleLine: Boolean, requestFocus: Boolean = false) {
         val state = rememberTextFieldState()
-        var isFocused by remember {
-            mutableStateOf(false)
-        }
-        val focusRequester = remember {
-            FocusRequester()
-        }
+        var isFocused by remember { mutableStateOf(false) }
+        val focusRequester = remember { FocusRequester() }
         val modifier = if (requestFocus) Modifier.focusRequester(focusRequester) else Modifier
 
         BasicTextField(
             state = state,
-            modifier = modifier
-                .testTag("test-text-field-$id")
-                .padding(10.dp)
-                .onFocusChanged {
-                    isFocused = it.isFocused || it.hasFocus
-                }
-                .border(2.dp, if (isFocused) Color.Red else Color.Transparent)
+            lineLimits =
+                if (singleLine) {
+                    TextFieldLineLimits.SingleLine
+                } else {
+                    TextFieldLineLimits.Default
+                },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+            modifier =
+                modifier
+                    .testTag("test-text-field-$id")
+                    .padding(10.dp)
+                    .onFocusChanged { isFocused = it.isFocused || it.hasFocus }
+                    .border(2.dp, if (isFocused) Color.Red else Color.Transparent)
         )
 
         LaunchedEffect(requestFocus, focusRequester) {
@@ -517,6 +632,14 @@ internal class TextFieldFocusTest {
         count: Int = 1
     ) = keyPressOnPhysicalDevice(rule, keyCode, InputDevice.SOURCE_DPAD, count)
 
+    /** Triggers a key press on the root node from a non-virtual keyboard device (if supported). */
+    private fun keyPressOnKeyboardInputDevice(
+        rule: ComposeContentTestRule,
+        keyCode: Int,
+        count: Int = 1,
+        metaState: Int = 0,
+    ): Boolean = keyPressOnPhysicalDevice(rule, keyCode, SOURCE_KEYBOARD, count, metaState)
+
     private fun keyPressOnPhysicalDevice(
         rule: ComposeContentTestRule,
         keyCode: Int,
@@ -524,20 +647,37 @@ internal class TextFieldFocusTest {
         count: Int = 1,
         metaState: Int = 0,
     ): Boolean {
-        val deviceId = InputDevice.getDeviceIds().firstOrNull { id ->
-            InputDevice.getDevice(id)?.isVirtual?.not() ?: false &&
-                InputDevice.getDevice(id)?.supportsSource(source) ?: false
-        } ?: return false
-        val keyEventDown = KeyEvent(
-            SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
-            KeyEvent.ACTION_DOWN, keyCode, 0, metaState,
-            deviceId, 0, 0, InputDevice.SOURCE_DPAD
-        )
-        val keyEventUp = KeyEvent(
-            SystemClock.uptimeMillis(), SystemClock.uptimeMillis(),
-            KeyEvent.ACTION_UP, keyCode, 0, metaState,
-            deviceId, 0, 0, InputDevice.SOURCE_DPAD
-        )
+        val deviceId =
+            InputDevice.getDeviceIds().firstOrNull { id ->
+                InputDevice.getDevice(id)?.isVirtual?.not() ?: false &&
+                    InputDevice.getDevice(id)?.supportsSource(source) ?: false
+            } ?: return false
+        val keyEventDown =
+            KeyEvent(
+                SystemClock.uptimeMillis(),
+                SystemClock.uptimeMillis(),
+                KeyEvent.ACTION_DOWN,
+                keyCode,
+                0,
+                metaState,
+                deviceId,
+                0,
+                0,
+                source
+            )
+        val keyEventUp =
+            KeyEvent(
+                SystemClock.uptimeMillis(),
+                SystemClock.uptimeMillis(),
+                KeyEvent.ACTION_UP,
+                keyCode,
+                0,
+                metaState,
+                deviceId,
+                0,
+                0,
+                source
+            )
 
         repeat(count) {
             rule.onRoot().performKeyPress(androidx.compose.ui.input.key.KeyEvent(keyEventDown))
@@ -549,8 +689,8 @@ internal class TextFieldFocusTest {
 
     /** Triggers a key press on the virtual keyboard. */
     private fun keyPressOnVirtualKeyboard(keyCode: Int, count: Int = 1) {
-        repeat(count) {
-            InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(keyCode)
-        }
+        rule.waitForIdle()
+        repeat(count) { InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(keyCode) }
+        rule.waitForIdle()
     }
 }

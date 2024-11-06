@@ -17,7 +17,6 @@
 package androidx.compose.foundation.text.selection
 
 import android.os.Build
-import androidx.compose.foundation.text.InternalFoundationTextApi
 import androidx.compose.foundation.text.TEST_FONT_FAMILY
 import androidx.compose.foundation.text.TextDelegate
 import androidx.compose.ui.geometry.Offset
@@ -60,45 +59,43 @@ class MultiWidgetSelectionDelegateTest {
         val text = "hello world\n"
         val fontSize = 20.sp
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity
-        )
+        val layoutResult =
+            simpleTextLayout(text = text, fontSize = fontSize, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
         val selectableId = 1L
-        val selectable = MultiWidgetSelectionDelegate(
-            selectableId = selectableId,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                selectableId = selectableId,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val selectableInvalidId = 2L
         val startOffset = text.indexOf('h')
         val endOffset = text.indexOf('o')
 
-        val selection = Selection(
-            start = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = startOffset,
-                selectableId = selectableInvalidId
-            ),
-            end = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = endOffset,
-                selectableId = selectableInvalidId
-            ),
-            handlesCrossed = false
-        )
+        val selection =
+            Selection(
+                start =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = startOffset,
+                        selectableId = selectableInvalidId
+                    ),
+                end =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = endOffset,
+                        selectableId = selectableInvalidId
+                    ),
+                handlesCrossed = false
+            )
 
         // Act.
-        val coordinates = selectable.getHandlePosition(
-            selection = selection,
-            isStartHandle = true
-        )
+        val coordinates = selectable.getHandlePosition(selection = selection, isStartHandle = true)
 
         // Assert.
         assertThat(coordinates).isEqualTo(Offset.Unspecified)
@@ -109,45 +106,43 @@ class MultiWidgetSelectionDelegateTest {
         val text = "hello world\n"
         val fontSize = 20.sp
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity
-        )
+        val layoutResult =
+            simpleTextLayout(text = text, fontSize = fontSize, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
         val selectableId = 1L
-        val selectable = MultiWidgetSelectionDelegate(
-            selectableId = selectableId,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                selectableId = selectableId,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val selectableInvalidId = 2L
         val startOffset = text.indexOf('h')
         val endOffset = text.indexOf('o')
 
-        val selection = Selection(
-            start = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = startOffset,
-                selectableId = selectableInvalidId
-            ),
-            end = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = endOffset,
-                selectableId = selectableInvalidId
-            ),
-            handlesCrossed = false
-        )
+        val selection =
+            Selection(
+                start =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = startOffset,
+                        selectableId = selectableInvalidId
+                    ),
+                end =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = endOffset,
+                        selectableId = selectableInvalidId
+                    ),
+                handlesCrossed = false
+            )
 
         // Act.
-        val coordinates = selectable.getHandlePosition(
-            selection = selection,
-            isStartHandle = false
-        )
+        val coordinates = selectable.getHandlePosition(selection = selection, isStartHandle = false)
 
         // Assert.
         assertThat(coordinates).isEqualTo(Offset.Unspecified)
@@ -159,49 +154,45 @@ class MultiWidgetSelectionDelegateTest {
         val fontSize = 20.sp
         val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity
-        )
+        val layoutResult =
+            simpleTextLayout(text = text, fontSize = fontSize, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
         val selectableId = 1L
-        val selectable = MultiWidgetSelectionDelegate(
-            selectableId = selectableId,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                selectableId = selectableId,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val startOffset = text.indexOf('h')
         val endOffset = text.indexOf('o')
 
-        val selection = Selection(
-            start = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = startOffset,
-                selectableId = selectableId
-            ),
-            end = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = endOffset,
-                selectableId = selectableId
-            ),
-            handlesCrossed = false
-        )
+        val selection =
+            Selection(
+                start =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = startOffset,
+                        selectableId = selectableId
+                    ),
+                end =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = endOffset,
+                        selectableId = selectableId
+                    ),
+                handlesCrossed = false
+            )
 
         // Act.
-        val coordinates = selectable.getHandlePosition(
-            selection = selection,
-            isStartHandle = true
-        )
+        val coordinates = selectable.getHandlePosition(selection = selection, isStartHandle = true)
 
         // Assert.
-        assertThat(coordinates).isEqualTo(
-            Offset((fontSizeInPx * startOffset), fontSizeInPx)
-        )
+        assertThat(coordinates).isEqualTo(Offset((fontSizeInPx * startOffset), fontSizeInPx))
     }
 
     @Test
@@ -210,49 +201,45 @@ class MultiWidgetSelectionDelegateTest {
         val fontSize = 20.sp
         val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity
-        )
+        val layoutResult =
+            simpleTextLayout(text = text, fontSize = fontSize, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
         val selectableId = 1L
-        val selectable = MultiWidgetSelectionDelegate(
-            selectableId = selectableId,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                selectableId = selectableId,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val startOffset = text.indexOf('o')
         val endOffset = text.indexOf('h')
 
-        val selection = Selection(
-            start = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = startOffset,
-                selectableId = selectableId
-            ),
-            end = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = endOffset,
-                selectableId = selectableId
-            ),
-            handlesCrossed = true
-        )
+        val selection =
+            Selection(
+                start =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = startOffset,
+                        selectableId = selectableId
+                    ),
+                end =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = endOffset,
+                        selectableId = selectableId
+                    ),
+                handlesCrossed = true
+            )
 
         // Act.
-        val coordinates = selectable.getHandlePosition(
-            selection = selection,
-            isStartHandle = true
-        )
+        val coordinates = selectable.getHandlePosition(selection = selection, isStartHandle = true)
 
         // Assert.
-        assertThat(coordinates).isEqualTo(
-            Offset((fontSizeInPx * startOffset), fontSizeInPx)
-        )
+        assertThat(coordinates).isEqualTo(Offset((fontSizeInPx * startOffset), fontSizeInPx))
     }
 
     @Test
@@ -261,49 +248,46 @@ class MultiWidgetSelectionDelegateTest {
         val fontSize = 20.sp
         val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity
-        )
+        val layoutResult =
+            simpleTextLayout(text = text, fontSize = fontSize, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
         val selectableId = 1L
-        val selectable = MultiWidgetSelectionDelegate(
-            selectableId = selectableId,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                selectableId = selectableId,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val startOffset = text.indexOf('\u05D1')
         val endOffset = text.indexOf('\u05D5')
 
-        val selection = Selection(
-            start = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = startOffset,
-                selectableId = selectableId
-            ),
-            end = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = endOffset,
-                selectableId = selectableId
-            ),
-            handlesCrossed = false
-        )
+        val selection =
+            Selection(
+                start =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = startOffset,
+                        selectableId = selectableId
+                    ),
+                end =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = endOffset,
+                        selectableId = selectableId
+                    ),
+                handlesCrossed = false
+            )
 
         // Act.
-        val coordinates = selectable.getHandlePosition(
-            selection = selection,
-            isStartHandle = true
-        )
+        val coordinates = selectable.getHandlePosition(selection = selection, isStartHandle = true)
 
         // Assert.
-        assertThat(coordinates).isEqualTo(
-            Offset((fontSizeInPx * (text.length - 1 - startOffset)), fontSizeInPx)
-        )
+        assertThat(coordinates)
+            .isEqualTo(Offset((fontSizeInPx * (text.length - 1 - startOffset)), fontSizeInPx))
     }
 
     @Test
@@ -312,49 +296,46 @@ class MultiWidgetSelectionDelegateTest {
         val fontSize = 20.sp
         val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity
-        )
+        val layoutResult =
+            simpleTextLayout(text = text, fontSize = fontSize, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
         val selectableId = 1L
-        val selectable = MultiWidgetSelectionDelegate(
-            selectableId = selectableId,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                selectableId = selectableId,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val startOffset = text.indexOf('\u05D5')
         val endOffset = text.indexOf('\u05D1')
 
-        val selection = Selection(
-            start = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = startOffset,
-                selectableId = selectableId
-            ),
-            end = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = endOffset,
-                selectableId = selectableId
-            ),
-            handlesCrossed = true
-        )
+        val selection =
+            Selection(
+                start =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = startOffset,
+                        selectableId = selectableId
+                    ),
+                end =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = endOffset,
+                        selectableId = selectableId
+                    ),
+                handlesCrossed = true
+            )
 
         // Act.
-        val coordinates = selectable.getHandlePosition(
-            selection = selection,
-            isStartHandle = true
-        )
+        val coordinates = selectable.getHandlePosition(selection = selection, isStartHandle = true)
 
         // Assert.
-        assertThat(coordinates).isEqualTo(
-            Offset((fontSizeInPx * (text.length - 1 - startOffset)), fontSizeInPx)
-        )
+        assertThat(coordinates)
+            .isEqualTo(Offset((fontSizeInPx * (text.length - 1 - startOffset)), fontSizeInPx))
     }
 
     @Test
@@ -365,49 +346,45 @@ class MultiWidgetSelectionDelegateTest {
         val fontSize = 20.sp
         val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity
-        )
+        val layoutResult =
+            simpleTextLayout(text = text, fontSize = fontSize, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
         val selectableId = 1L
-        val selectable = MultiWidgetSelectionDelegate(
-            selectableId = selectableId,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                selectableId = selectableId,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val startOffset = text.indexOf('\u05D0')
         val endOffset = text.indexOf('\u05D2')
 
-        val selection = Selection(
-            start = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = startOffset,
-                selectableId = selectableId
-            ),
-            end = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = endOffset,
-                selectableId = selectableId
-            ),
-            handlesCrossed = false
-        )
+        val selection =
+            Selection(
+                start =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = startOffset,
+                        selectableId = selectableId
+                    ),
+                end =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = endOffset,
+                        selectableId = selectableId
+                    ),
+                handlesCrossed = false
+            )
 
         // Act.
-        val coordinates = selectable.getHandlePosition(
-            selection = selection,
-            isStartHandle = true
-        )
+        val coordinates = selectable.getHandlePosition(selection = selection, isStartHandle = true)
 
         // Assert.
-        assertThat(coordinates).isEqualTo(
-            Offset((fontSizeInPx * (text.length)), fontSizeInPx)
-        )
+        assertThat(coordinates).isEqualTo(Offset((fontSizeInPx * (text.length)), fontSizeInPx))
     }
 
     @Test
@@ -418,49 +395,45 @@ class MultiWidgetSelectionDelegateTest {
         val fontSize = 20.sp
         val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity
-        )
+        val layoutResult =
+            simpleTextLayout(text = text, fontSize = fontSize, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
         val selectableId = 1L
-        val selectable = MultiWidgetSelectionDelegate(
-            selectableId = selectableId,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                selectableId = selectableId,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val startOffset = text.indexOf('\u05D0')
         val endOffset = text.indexOf('H')
 
-        val selection = Selection(
-            start = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = startOffset,
-                selectableId = selectableId
-            ),
-            end = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = endOffset,
-                selectableId = selectableId
-            ),
-            handlesCrossed = true
-        )
+        val selection =
+            Selection(
+                start =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = startOffset,
+                        selectableId = selectableId
+                    ),
+                end =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = endOffset,
+                        selectableId = selectableId
+                    ),
+                handlesCrossed = true
+            )
 
         // Act.
-        val coordinates = selectable.getHandlePosition(
-            selection = selection,
-            isStartHandle = true
-        )
+        val coordinates = selectable.getHandlePosition(selection = selection, isStartHandle = true)
 
         // Assert.
-        assertThat(coordinates).isEqualTo(
-            Offset((fontSizeInPx * (textLtr.length)), fontSizeInPx)
-        )
+        assertThat(coordinates).isEqualTo(Offset((fontSizeInPx * (textLtr.length)), fontSizeInPx))
     }
 
     @Test
@@ -469,49 +442,45 @@ class MultiWidgetSelectionDelegateTest {
         val fontSize = 20.sp
         val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity
-        )
+        val layoutResult =
+            simpleTextLayout(text = text, fontSize = fontSize, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
         val selectableId = 1L
-        val selectable = MultiWidgetSelectionDelegate(
-            selectableId = selectableId,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                selectableId = selectableId,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val startOffset = text.indexOf('h')
         val endOffset = text.indexOf('o')
 
-        val selection = Selection(
-            start = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = startOffset,
-                selectableId = selectableId
-            ),
-            end = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = endOffset,
-                selectableId = selectableId
-            ),
-            handlesCrossed = false
-        )
+        val selection =
+            Selection(
+                start =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = startOffset,
+                        selectableId = selectableId
+                    ),
+                end =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = endOffset,
+                        selectableId = selectableId
+                    ),
+                handlesCrossed = false
+            )
 
         // Act.
-        val coordinates = selectable.getHandlePosition(
-            selection = selection,
-            isStartHandle = false
-        )
+        val coordinates = selectable.getHandlePosition(selection = selection, isStartHandle = false)
 
         // Assert.
-        assertThat(coordinates).isEqualTo(
-            Offset((fontSizeInPx * endOffset), fontSizeInPx)
-        )
+        assertThat(coordinates).isEqualTo(Offset((fontSizeInPx * endOffset), fontSizeInPx))
     }
 
     @Test
@@ -520,50 +489,53 @@ class MultiWidgetSelectionDelegateTest {
         val fontSize = 20.sp
         val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity,
-            maxLines = 1
-        )
+        val layoutResult =
+            simpleTextLayout(
+                text = text,
+                fontSize = fontSize,
+                density = defaultDensity,
+                maxLines = 1
+            )
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
         val selectableId = 1L
-        val selectable = MultiWidgetSelectionDelegate(
-            selectableId = selectableId,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                selectableId = selectableId,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val startOffset = text.indexOf('h')
         val endOffset = text.indexOf('r')
 
-        val selection = Selection(
-            start = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = startOffset,
-                selectableId = selectableId
-            ),
-            end = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = endOffset,
-                selectableId = selectableId
-            ),
-            handlesCrossed = false
-        )
+        val selection =
+            Selection(
+                start =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = startOffset,
+                        selectableId = selectableId
+                    ),
+                end =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = endOffset,
+                        selectableId = selectableId
+                    ),
+                handlesCrossed = false
+            )
 
         // Act.
-        val coordinates = selectable.getHandlePosition(
-            selection = selection,
-            isStartHandle = false
-        )
+        val coordinates = selectable.getHandlePosition(selection = selection, isStartHandle = false)
 
         // Assert.
-        assertThat(coordinates).isEqualTo(
-            Offset(fontSizeInPx * 5, fontSizeInPx) // the last offset in the first line
-        )
+        assertThat(coordinates)
+            .isEqualTo(
+                Offset(fontSizeInPx * 5, fontSizeInPx) // the last offset in the first line
+            )
     }
 
     @Test
@@ -572,49 +544,45 @@ class MultiWidgetSelectionDelegateTest {
         val fontSize = 20.sp
         val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity
-        )
+        val layoutResult =
+            simpleTextLayout(text = text, fontSize = fontSize, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
         val selectableId = 1L
-        val selectable = MultiWidgetSelectionDelegate(
-            selectableId = selectableId,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                selectableId = selectableId,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val startOffset = text.indexOf('o')
         val endOffset = text.indexOf('h')
 
-        val selection = Selection(
-            start = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = startOffset,
-                selectableId = selectableId
-            ),
-            end = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = endOffset,
-                selectableId = selectableId
-            ),
-            handlesCrossed = true
-        )
+        val selection =
+            Selection(
+                start =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = startOffset,
+                        selectableId = selectableId
+                    ),
+                end =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = endOffset,
+                        selectableId = selectableId
+                    ),
+                handlesCrossed = true
+            )
 
         // Act.
-        val coordinates = selectable.getHandlePosition(
-            selection = selection,
-            isStartHandle = false
-        )
+        val coordinates = selectable.getHandlePosition(selection = selection, isStartHandle = false)
 
         // Assert.
-        assertThat(coordinates).isEqualTo(
-            Offset((fontSizeInPx * endOffset), fontSizeInPx)
-        )
+        assertThat(coordinates).isEqualTo(Offset((fontSizeInPx * endOffset), fontSizeInPx))
     }
 
     @Test
@@ -623,50 +591,50 @@ class MultiWidgetSelectionDelegateTest {
         val fontSize = 20.sp
         val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity,
-            maxLines = 1
-        )
+        val layoutResult =
+            simpleTextLayout(
+                text = text,
+                fontSize = fontSize,
+                density = defaultDensity,
+                maxLines = 1
+            )
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
         val selectableId = 1L
-        val selectable = MultiWidgetSelectionDelegate(
-            selectableId = selectableId,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                selectableId = selectableId,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val startOffset = text.indexOf('r')
         val endOffset = text.indexOf('w')
 
-        val selection = Selection(
-            start = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = startOffset,
-                selectableId = selectableId
-            ),
-            end = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = endOffset,
-                selectableId = selectableId
-            ),
-            handlesCrossed = true
-        )
+        val selection =
+            Selection(
+                start =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = startOffset,
+                        selectableId = selectableId
+                    ),
+                end =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = endOffset,
+                        selectableId = selectableId
+                    ),
+                handlesCrossed = true
+            )
 
         // Act.
-        val coordinates = selectable.getHandlePosition(
-            selection = selection,
-            isStartHandle = false
-        )
+        val coordinates = selectable.getHandlePosition(selection = selection, isStartHandle = false)
 
         // Assert.
-        assertThat(coordinates).isEqualTo(
-            Offset((fontSizeInPx * 5), fontSizeInPx)
-        )
+        assertThat(coordinates).isEqualTo(Offset((fontSizeInPx * 5), fontSizeInPx))
     }
 
     @Test
@@ -675,49 +643,46 @@ class MultiWidgetSelectionDelegateTest {
         val fontSize = 20.sp
         val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity
-        )
+        val layoutResult =
+            simpleTextLayout(text = text, fontSize = fontSize, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
         val selectableId = 1L
-        val selectable = MultiWidgetSelectionDelegate(
-            selectableId = selectableId,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                selectableId = selectableId,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val startOffset = text.indexOf('\u05D1')
         val endOffset = text.indexOf('\u05D5')
 
-        val selection = Selection(
-            start = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = startOffset,
-                selectableId = selectableId
-            ),
-            end = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = endOffset,
-                selectableId = selectableId
-            ),
-            handlesCrossed = false
-        )
+        val selection =
+            Selection(
+                start =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = startOffset,
+                        selectableId = selectableId
+                    ),
+                end =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = endOffset,
+                        selectableId = selectableId
+                    ),
+                handlesCrossed = false
+            )
 
         // Act.
-        val coordinates = selectable.getHandlePosition(
-            selection = selection,
-            isStartHandle = false
-        )
+        val coordinates = selectable.getHandlePosition(selection = selection, isStartHandle = false)
 
         // Assert.
-        assertThat(coordinates).isEqualTo(
-            Offset((fontSizeInPx * (text.length - 1 - endOffset)), fontSizeInPx)
-        )
+        assertThat(coordinates)
+            .isEqualTo(Offset((fontSizeInPx * (text.length - 1 - endOffset)), fontSizeInPx))
     }
 
     @Test
@@ -726,49 +691,46 @@ class MultiWidgetSelectionDelegateTest {
         val fontSize = 20.sp
         val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity
-        )
+        val layoutResult =
+            simpleTextLayout(text = text, fontSize = fontSize, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
         val selectableId = 1L
-        val selectable = MultiWidgetSelectionDelegate(
-            selectableId = selectableId,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                selectableId = selectableId,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val startOffset = text.indexOf('\u05D5')
         val endOffset = text.indexOf('\u05D1')
 
-        val selection = Selection(
-            start = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = startOffset,
-                selectableId = selectableId
-            ),
-            end = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = endOffset,
-                selectableId = selectableId
-            ),
-            handlesCrossed = true
-        )
+        val selection =
+            Selection(
+                start =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = startOffset,
+                        selectableId = selectableId
+                    ),
+                end =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = endOffset,
+                        selectableId = selectableId
+                    ),
+                handlesCrossed = true
+            )
 
         // Act.
-        val coordinates = selectable.getHandlePosition(
-            selection = selection,
-            isStartHandle = false
-        )
+        val coordinates = selectable.getHandlePosition(selection = selection, isStartHandle = false)
 
         // Assert.
-        assertThat(coordinates).isEqualTo(
-            Offset((fontSizeInPx * (text.length - 1 - endOffset)), fontSizeInPx)
-        )
+        assertThat(coordinates)
+            .isEqualTo(Offset((fontSizeInPx * (text.length - 1 - endOffset)), fontSizeInPx))
     }
 
     @Test
@@ -777,45 +739,47 @@ class MultiWidgetSelectionDelegateTest {
         val fontSize = 20.sp
         val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity,
-            maxLines = 1
-        )
+        val layoutResult =
+            simpleTextLayout(
+                text = text,
+                fontSize = fontSize,
+                density = defaultDensity,
+                maxLines = 1
+            )
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
         val selectableId = 1L
-        val selectable = MultiWidgetSelectionDelegate(
-            selectableId = selectableId,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                selectableId = selectableId,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val startOffset = text.indexOf('\u05D1')
         val endOffset = text.indexOf('\u05D5')
 
-        val selection = Selection(
-            start = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Rtl,
-                offset = startOffset,
-                selectableId = selectableId
-            ),
-            end = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Rtl,
-                offset = endOffset,
-                selectableId = selectableId
-            ),
-            handlesCrossed = false
-        )
+        val selection =
+            Selection(
+                start =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Rtl,
+                        offset = startOffset,
+                        selectableId = selectableId
+                    ),
+                end =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Rtl,
+                        offset = endOffset,
+                        selectableId = selectableId
+                    ),
+                handlesCrossed = false
+            )
 
         // Act.
-        val coordinates = selectable.getHandlePosition(
-            selection = selection,
-            isStartHandle = false
-        )
+        val coordinates = selectable.getHandlePosition(selection = selection, isStartHandle = false)
 
         // Assert.
         assertThat(coordinates).isEqualTo(Offset(0f, fontSizeInPx))
@@ -827,45 +791,47 @@ class MultiWidgetSelectionDelegateTest {
         val fontSize = 20.sp
         val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity,
-            maxLines = 1
-        )
+        val layoutResult =
+            simpleTextLayout(
+                text = text,
+                fontSize = fontSize,
+                density = defaultDensity,
+                maxLines = 1
+            )
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
         val selectableId = 1L
-        val selectable = MultiWidgetSelectionDelegate(
-            selectableId = selectableId,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                selectableId = selectableId,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val startOffset = text.indexOf('\u05D5')
         val endOffset = text.indexOf('\u05D3')
 
-        val selection = Selection(
-            start = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Rtl,
-                offset = startOffset,
-                selectableId = selectableId
-            ),
-            end = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Rtl,
-                offset = endOffset,
-                selectableId = selectableId
-            ),
-            handlesCrossed = true
-        )
+        val selection =
+            Selection(
+                start =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Rtl,
+                        offset = startOffset,
+                        selectableId = selectableId
+                    ),
+                end =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Rtl,
+                        offset = endOffset,
+                        selectableId = selectableId
+                    ),
+                handlesCrossed = true
+            )
 
         // Act.
-        val coordinates = selectable.getHandlePosition(
-            selection = selection,
-            isStartHandle = false
-        )
+        val coordinates = selectable.getHandlePosition(selection = selection, isStartHandle = false)
 
         // Assert.
         assertThat(coordinates).isEqualTo(Offset((fontSizeInPx * 3), fontSizeInPx))
@@ -879,49 +845,45 @@ class MultiWidgetSelectionDelegateTest {
         val fontSize = 20.sp
         val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity
-        )
+        val layoutResult =
+            simpleTextLayout(text = text, fontSize = fontSize, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
         val selectableId = 1L
-        val selectable = MultiWidgetSelectionDelegate(
-            selectableId = selectableId,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                selectableId = selectableId,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val startOffset = text.indexOf('e')
         val endOffset = text.indexOf('\u05D0')
 
-        val selection = Selection(
-            start = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = startOffset,
-                selectableId = selectableId
-            ),
-            end = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = endOffset,
-                selectableId = selectableId
-            ),
-            handlesCrossed = false
-        )
+        val selection =
+            Selection(
+                start =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = startOffset,
+                        selectableId = selectableId
+                    ),
+                end =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = endOffset,
+                        selectableId = selectableId
+                    ),
+                handlesCrossed = false
+            )
 
         // Act.
-        val coordinates = selectable.getHandlePosition(
-            selection = selection,
-            isStartHandle = false
-        )
+        val coordinates = selectable.getHandlePosition(selection = selection, isStartHandle = false)
 
         // Assert.
-        assertThat(coordinates).isEqualTo(
-            Offset((fontSizeInPx * (textLtr.length)), fontSizeInPx)
-        )
+        assertThat(coordinates).isEqualTo(Offset((fontSizeInPx * (textLtr.length)), fontSizeInPx))
     }
 
     @Test
@@ -931,49 +893,45 @@ class MultiWidgetSelectionDelegateTest {
         val text = textLtr + textRtl
         val fontSize = 20.sp
         val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity
-        )
+        val layoutResult =
+            simpleTextLayout(text = text, fontSize = fontSize, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
         val selectableId = 1L
-        val selectable = MultiWidgetSelectionDelegate(
-            selectableId = selectableId,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                selectableId = selectableId,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val startOffset = text.indexOf('\u05D2')
         val endOffset = text.indexOf('\u05D0')
 
-        val selection = Selection(
-            start = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = startOffset,
-                selectableId = selectableId
-            ),
-            end = Selection.AnchorInfo(
-                direction = ResolvedTextDirection.Ltr,
-                offset = endOffset,
-                selectableId = selectableId
-            ),
-            handlesCrossed = true
-        )
+        val selection =
+            Selection(
+                start =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = startOffset,
+                        selectableId = selectableId
+                    ),
+                end =
+                    Selection.AnchorInfo(
+                        direction = ResolvedTextDirection.Ltr,
+                        offset = endOffset,
+                        selectableId = selectableId
+                    ),
+                handlesCrossed = true
+            )
 
         // Act.
-        val coordinates = selectable.getHandlePosition(
-            selection = selection,
-            isStartHandle = false
-        )
+        val coordinates = selectable.getHandlePosition(selection = selection, isStartHandle = false)
 
         // Assert.
-        assertThat(coordinates).isEqualTo(
-            Offset((fontSizeInPx * (text.length)), fontSizeInPx)
-        )
+        assertThat(coordinates).isEqualTo(Offset((fontSizeInPx * (text.length)), fontSizeInPx))
     }
 
     @Test
@@ -983,11 +941,12 @@ class MultiWidgetSelectionDelegateTest {
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            0,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                0,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         assertThat(selectable.getText()).isEqualTo(AnnotatedString(""))
     }
@@ -1000,20 +959,18 @@ class MultiWidgetSelectionDelegateTest {
         val fontSize = 20.sp
         val spanStyle = SpanStyle(fontSize = fontSize, fontFamily = fontFamily)
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity
-        )
+        val layoutResult =
+            simpleTextLayout(text = text, fontSize = fontSize, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            0,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                0,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         assertThat(selectable.getText()).isEqualTo(AnnotatedString(text, spanStyle))
     }
@@ -1024,20 +981,18 @@ class MultiWidgetSelectionDelegateTest {
         val fontSize = 20.sp
         val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity
-        )
+        val layoutResult =
+            simpleTextLayout(text = text, fontSize = fontSize, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val textOffset = text.indexOf('w')
 
@@ -1056,20 +1011,18 @@ class MultiWidgetSelectionDelegateTest {
         val text = ""
         val fontSize = 20.sp
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity
-        )
+        val layoutResult =
+            simpleTextLayout(text = text, fontSize = fontSize, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            0,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                0,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         // Act.
         val box = selectable.getBoundingBox(0)
@@ -1084,20 +1037,18 @@ class MultiWidgetSelectionDelegateTest {
         val fontSize = 20.sp
         val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity
-        )
+        val layoutResult =
+            simpleTextLayout(text = text, fontSize = fontSize, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            0,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                0,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         // Act.
         val box = selectable.getBoundingBox(-2)
@@ -1115,20 +1066,18 @@ class MultiWidgetSelectionDelegateTest {
         val fontSize = 20.sp
         val fontSizeInPx = with(defaultDensity) { fontSize.toPx() }
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            fontSize = fontSize,
-            density = defaultDensity
-        )
+        val layoutResult =
+            simpleTextLayout(text = text, fontSize = fontSize, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            selectableId = 1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                selectableId = 1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         // Act.
         val box = selectable.getBoundingBox(text.indexOf('d') + 5)
@@ -1144,19 +1093,17 @@ class MultiWidgetSelectionDelegateTest {
     fun getRangeOfLineContaining_zeroOffset() {
         val text = "hello\nworld\n"
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            density = defaultDensity
-        )
+        val layoutResult = simpleTextLayout(text = text, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         // Act.
         val lineRange = selectable.getRangeOfLineContaining(0)
@@ -1169,19 +1116,17 @@ class MultiWidgetSelectionDelegateTest {
     fun getRangeOfLineContaining_secondLine() {
         val text = "hello\nworld\n"
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            density = defaultDensity
-        )
+        val layoutResult = simpleTextLayout(text = text, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         // Act.
         val lineRange = selectable.getRangeOfLineContaining(7)
@@ -1194,19 +1139,17 @@ class MultiWidgetSelectionDelegateTest {
     fun getRangeOfLineContaining_negativeOffset_returnsFirstLine() {
         val text = "hello\nworld\n"
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            density = defaultDensity
-        )
+        val layoutResult = simpleTextLayout(text = text, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         // Act.
         val lineRange = selectable.getRangeOfLineContaining(-1)
@@ -1219,19 +1162,17 @@ class MultiWidgetSelectionDelegateTest {
     fun getRangeOfLineContaining_offsetPastTextLength_returnsLastLine() {
         val text = "hello\nworld\n"
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            density = defaultDensity
-        )
+        val layoutResult = simpleTextLayout(text = text, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         // Act.
         val lineRange = selectable.getRangeOfLineContaining(Int.MAX_VALUE)
@@ -1244,19 +1185,17 @@ class MultiWidgetSelectionDelegateTest {
     fun getRangeOfLineContaining_offsetAtNewline_returnsPreviousLine() {
         val text = "hello\nworld\n"
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            density = defaultDensity
-        )
+        val layoutResult = simpleTextLayout(text = text, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         // Act.
         val lineRange = selectable.getRangeOfLineContaining(5)
@@ -1269,19 +1208,17 @@ class MultiWidgetSelectionDelegateTest {
     fun getRangeOfLineContaining_emptyString_returnsEmptyRange() {
         val text = ""
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            density = defaultDensity
-        )
+        val layoutResult = simpleTextLayout(text = text, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         // Act.
         val lineRange = selectable.getRangeOfLineContaining(5)
@@ -1294,19 +1231,17 @@ class MultiWidgetSelectionDelegateTest {
     fun getRangeOfLineContaining_emptyLine_returnsEmptyNonZeroRange() {
         val text = "hello\n\nworld"
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            density = defaultDensity
-        )
+        val layoutResult = simpleTextLayout(text = text, density = defaultDensity)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         // Act.
         val lineRange = selectable.getRangeOfLineContaining(6)
@@ -1319,20 +1254,17 @@ class MultiWidgetSelectionDelegateTest {
     fun getRangeOfLineContaining_overflowed_returnsLastVisibleLine() {
         val text = "hello\nworld"
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            density = defaultDensity,
-            maxLines = 1
-        )
+        val layoutResult = simpleTextLayout(text = text, density = defaultDensity, maxLines = 1)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         // Act.
         val lineRange = selectable.getRangeOfLineContaining(6)
@@ -1346,21 +1278,24 @@ class MultiWidgetSelectionDelegateTest {
         val text = "hello\nworld"
         val fontSize = 20.sp
 
-        val layoutResult = simpleTextLayout(
-            text = text,
-            density = defaultDensity,
-            fontSize = fontSize,
-            constraints = Constraints(maxHeight = with(defaultDensity) { fontSize.roundToPx() } * 1)
-        )
+        val layoutResult =
+            simpleTextLayout(
+                text = text,
+                density = defaultDensity,
+                fontSize = fontSize,
+                constraints =
+                    Constraints(maxHeight = with(defaultDensity) { fontSize.roundToPx() } * 1)
+            )
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         // Act.
         val lineRange = selectable.getRangeOfLineContaining(6)
@@ -1373,18 +1308,17 @@ class MultiWidgetSelectionDelegateTest {
     fun getLastVisibleOffset_everythingVisible_returnsTextLength() {
         val text = "hello\nworld"
 
-        val layoutResult = constrainedTextLayout(
-            text = text
-        )
+        val layoutResult = constrainedTextLayout(text = text)
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val lastVisibleOffset = selectable.getLastVisibleOffset()
 
@@ -1400,11 +1334,12 @@ class MultiWidgetSelectionDelegateTest {
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         assertThat(selectable.getLastVisibleOffset()).isEqualTo(text.length)
 
@@ -1420,21 +1355,23 @@ class MultiWidgetSelectionDelegateTest {
     fun getLastVisibleOffset_maxLines1_clip_enabledSoftwrap_multiLineContent() {
         val text = "hello\nworld"
 
-        val layoutResult = constrainedTextLayout(
-            text = text,
-            overflow = TextOverflow.Clip,
-            maxLines = 1,
-            softWrap = true
-        )
+        val layoutResult =
+            constrainedTextLayout(
+                text = text,
+                overflow = TextOverflow.Clip,
+                maxLines = 1,
+                softWrap = true
+            )
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val lastVisibleOffset = selectable.getLastVisibleOffset()
 
@@ -1445,22 +1382,24 @@ class MultiWidgetSelectionDelegateTest {
     fun getLastVisibleOffset_maxLines1_clip_enabledSoftwrap_singleLineContent() {
         val text = "hello world"
 
-        val layoutResult = constrainedTextLayout(
-            text = text,
-            maxLines = 1,
-            overflow = TextOverflow.Clip,
-            softWrap = true,
-            widthInCharacters = 10
-        )
+        val layoutResult =
+            constrainedTextLayout(
+                text = text,
+                maxLines = 1,
+                overflow = TextOverflow.Clip,
+                softWrap = true,
+                widthInCharacters = 10
+            )
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val lastVisibleOffset = selectable.getLastVisibleOffset()
 
@@ -1472,21 +1411,23 @@ class MultiWidgetSelectionDelegateTest {
     fun getLastVisibleOffset_maxLines1_clip_disabledSoftwrap_multiLineContent() {
         val text = "hello\nworld"
 
-        val layoutResult = constrainedTextLayout(
-            text = text,
-            maxLines = 1,
-            overflow = TextOverflow.Clip,
-            softWrap = false
-        )
+        val layoutResult =
+            constrainedTextLayout(
+                text = text,
+                maxLines = 1,
+                overflow = TextOverflow.Clip,
+                softWrap = false
+            )
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val lastVisibleOffset = selectable.getLastVisibleOffset()
 
@@ -1497,22 +1438,24 @@ class MultiWidgetSelectionDelegateTest {
     fun getLastVisibleOffset_maxLines1_clip_disabledSoftwrap_singleLineContent() {
         val text = "hello world ".repeat(10)
 
-        val layoutResult = constrainedTextLayout(
-            text = text,
-            maxLines = 1,
-            overflow = TextOverflow.Clip,
-            softWrap = false,
-            widthInCharacters = 10
-        )
+        val layoutResult =
+            constrainedTextLayout(
+                text = text,
+                maxLines = 1,
+                overflow = TextOverflow.Clip,
+                softWrap = false,
+                widthInCharacters = 10
+            )
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val lastVisibleOffset = selectable.getLastVisibleOffset()
 
@@ -1525,50 +1468,55 @@ class MultiWidgetSelectionDelegateTest {
     fun getLastVisibleOffset_maxLines1_ellipsis_enabledSoftwrap_multiLineContent() {
         val text = "hello\nworld"
 
-        val layoutResult = constrainedTextLayout(
-            text = text,
-            overflow = TextOverflow.Ellipsis,
-            maxLines = 1,
-            softWrap = true,
-            widthInCharacters = 4
-        )
+        val layoutResult =
+            constrainedTextLayout(
+                text = text,
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 1,
+                softWrap = true,
+                widthInCharacters = 4
+            )
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val lastVisibleOffset = selectable.getLastVisibleOffset()
 
         assertThat(lastVisibleOffset).isEqualTo(3)
     }
 
-    // TODO(b/270441925); Last visible offset calculated using getLineVisibleEnd. It returns//   a different result below API 26.
+    // TODO(b/270441925); Last visible offset calculated using getLineVisibleEnd. It returns//   a
+    // different result below API 26.
     @SdkSuppress(minSdkVersion = 26)
     @Test
     fun getLastVisibleOffset_maxLines1_ellipsis_enabledSoftwrap_singleLineContent() {
         val text = "hello world ".repeat(10)
 
-        val layoutResult = constrainedTextLayout(
-            text = text,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            softWrap = true,
-            widthInCharacters = 10
-        )
+        val layoutResult =
+            constrainedTextLayout(
+                text = text,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                softWrap = true,
+                widthInCharacters = 10
+            )
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val lastVisibleOffset = selectable.getLastVisibleOffset()
 
@@ -1580,22 +1528,24 @@ class MultiWidgetSelectionDelegateTest {
     fun getLastVisibleOffset_maxLines1_ellipsis_disabledSoftwrap_multiLineContent() {
         val text = "hello\nworld"
 
-        val layoutResult = constrainedTextLayout(
-            text = text,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            softWrap = false,
-            widthInCharacters = 5
-        )
+        val layoutResult =
+            constrainedTextLayout(
+                text = text,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                softWrap = false,
+                widthInCharacters = 5
+            )
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val lastVisibleOffset = selectable.getLastVisibleOffset()
 
@@ -1607,22 +1557,24 @@ class MultiWidgetSelectionDelegateTest {
     fun getLastVisibleOffset_maxLines1_ellipsis_disabledSoftwrap_singleLineContent() {
         val text = "hello world ".repeat(10)
 
-        val layoutResult = constrainedTextLayout(
-            text = text,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            softWrap = false,
-            widthInCharacters = 20
-        )
+        val layoutResult =
+            constrainedTextLayout(
+                text = text,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                softWrap = false,
+                widthInCharacters = 20
+            )
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val lastVisibleOffset = selectable.getLastVisibleOffset()
 
@@ -1642,21 +1594,23 @@ class MultiWidgetSelectionDelegateTest {
     fun getLastVisibleOffset_limitHeight_clip_enabledSoftwrap_multiLineContent() {
         val text = "hello\nworld"
 
-        val layoutResult = constrainedTextLayout(
-            text = text,
-            overflow = TextOverflow.Clip,
-            softWrap = true,
-            maxHeightInLines = 1
-        )
+        val layoutResult =
+            constrainedTextLayout(
+                text = text,
+                overflow = TextOverflow.Clip,
+                softWrap = true,
+                maxHeightInLines = 1
+            )
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val lastVisibleOffset = selectable.getLastVisibleOffset()
 
@@ -1667,22 +1621,24 @@ class MultiWidgetSelectionDelegateTest {
     fun getLastVisibleOffset_limitHeight_clip_enabledSoftwrap_singleLineContent() {
         val text = "helloworld helloworld helloworld"
 
-        val layoutResult = constrainedTextLayout(
-            text = text,
-            overflow = TextOverflow.Clip,
-            softWrap = true,
-            widthInCharacters = 10,
-            maxHeightInLines = 2
-        )
+        val layoutResult =
+            constrainedTextLayout(
+                text = text,
+                overflow = TextOverflow.Clip,
+                softWrap = true,
+                widthInCharacters = 10,
+                maxHeightInLines = 2
+            )
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val lastVisibleOffset = selectable.getLastVisibleOffset()
 
@@ -1694,21 +1650,23 @@ class MultiWidgetSelectionDelegateTest {
     fun getLastVisibleOffset_limitHeight_clip_disabledSoftwrap_multiLineContent() {
         val text = "hello\nworld"
 
-        val layoutResult = constrainedTextLayout(
-            text = text,
-            overflow = TextOverflow.Clip,
-            softWrap = false,
-            maxHeightInLines = 1
-        )
+        val layoutResult =
+            constrainedTextLayout(
+                text = text,
+                overflow = TextOverflow.Clip,
+                softWrap = false,
+                maxHeightInLines = 1
+            )
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val lastVisibleOffset = selectable.getLastVisibleOffset()
 
@@ -1719,22 +1677,24 @@ class MultiWidgetSelectionDelegateTest {
     fun getLastVisibleOffset_limitHeight_clip_disabledSoftwrap_singleLineContent() {
         val text = "hello world ".repeat(10)
 
-        val layoutResult = constrainedTextLayout(
-            text = text,
-            overflow = TextOverflow.Clip,
-            softWrap = false,
-            widthInCharacters = 10,
-            maxHeightInLines = 1
-        )
+        val layoutResult =
+            constrainedTextLayout(
+                text = text,
+                overflow = TextOverflow.Clip,
+                softWrap = false,
+                widthInCharacters = 10,
+                maxHeightInLines = 1
+            )
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val lastVisibleOffset = selectable.getLastVisibleOffset()
 
@@ -1747,22 +1707,24 @@ class MultiWidgetSelectionDelegateTest {
     fun getLastVisibleOffset_limitHeight_ellipsis_enabledSoftwrap_multiLineContent() {
         val text = "hello\nworld\nhello\nworld"
 
-        val layoutResult = constrainedTextLayout(
-            text = text,
-            overflow = TextOverflow.Ellipsis,
-            softWrap = true,
-            widthInCharacters = 10,
-            maxHeightInLines = 2,
-        )
+        val layoutResult =
+            constrainedTextLayout(
+                text = text,
+                overflow = TextOverflow.Ellipsis,
+                softWrap = true,
+                widthInCharacters = 10,
+                maxHeightInLines = 2,
+            )
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val lastVisibleOffset = selectable.getLastVisibleOffset()
 
@@ -1773,22 +1735,24 @@ class MultiWidgetSelectionDelegateTest {
     fun getLastVisibleOffset_limitHeight_ellipsis_enabledSoftwrap_singleLineContent() {
         val text = "hello world ".repeat(10)
 
-        val layoutResult = constrainedTextLayout(
-            text = text,
-            overflow = TextOverflow.Ellipsis,
-            softWrap = true,
-            widthInCharacters = 10,
-            maxHeightInLines = 1
-        )
+        val layoutResult =
+            constrainedTextLayout(
+                text = text,
+                overflow = TextOverflow.Ellipsis,
+                softWrap = true,
+                widthInCharacters = 10,
+                maxHeightInLines = 1
+            )
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val lastVisibleOffset = selectable.getLastVisibleOffset()
 
@@ -1806,21 +1770,23 @@ class MultiWidgetSelectionDelegateTest {
     fun getLastVisibleOffset_limitHeight_ellipsis_disabledSoftwrap_multiLineContent() {
         val text = "hello\nworld"
 
-        val layoutResult = constrainedTextLayout(
-            text = text,
-            overflow = TextOverflow.Ellipsis,
-            softWrap = false,
-            maxHeightInLines = 1
-        )
+        val layoutResult =
+            constrainedTextLayout(
+                text = text,
+                overflow = TextOverflow.Ellipsis,
+                softWrap = false,
+                maxHeightInLines = 1
+            )
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val lastVisibleOffset = selectable.getLastVisibleOffset()
 
@@ -1832,22 +1798,24 @@ class MultiWidgetSelectionDelegateTest {
     fun getLastVisibleOffset_limitHeight_ellipsis_disabledSoftwrap_singleLineContent() {
         val text = "hello world ".repeat(10)
 
-        val layoutResult = constrainedTextLayout(
-            text = text,
-            overflow = TextOverflow.Ellipsis,
-            softWrap = false,
-            widthInCharacters = 20,
-            maxHeightInLines = 1
-        )
+        val layoutResult =
+            constrainedTextLayout(
+                text = text,
+                overflow = TextOverflow.Ellipsis,
+                softWrap = false,
+                widthInCharacters = 20,
+                maxHeightInLines = 1
+            )
 
         val layoutCoordinates = mock<LayoutCoordinates>()
         whenever(layoutCoordinates.isAttached).thenReturn(true)
 
-        val selectable = MultiWidgetSelectionDelegate(
-            1,
-            coordinatesCallback = { layoutCoordinates },
-            layoutResultCallback = { layoutResult }
-        )
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
 
         val lastVisibleOffset = selectable.getLastVisibleOffset()
 
@@ -1860,26 +1828,251 @@ class MultiWidgetSelectionDelegateTest {
         }
     }
 
-    @OptIn(InternalFoundationTextApi::class)
+    @Test
+    fun getLineHeight_line_in_the_middle() {
+        val line1FontSize = 10.sp
+        val line2FontSize = 20.sp
+        val line3FontSize = 30.sp
+        val line2FontSizePx = with(defaultDensity) { line2FontSize.toPx() }
+
+        val text =
+            AnnotatedString("text\n", line1FontSize) +
+                AnnotatedString("hello\n", line2FontSize) +
+                AnnotatedString("world", line3FontSize)
+
+        val layoutResult = annotatedTextLayout(text = text, density = defaultDensity)
+
+        val layoutCoordinates = mock<LayoutCoordinates>()
+        whenever(layoutCoordinates.isAttached).thenReturn(true)
+
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
+
+        val textOffset = text.indexOf('h')
+
+        // Act.
+        val lineHeight = selectable.getLineHeight(textOffset)
+
+        // Assert.
+        assertThat(lineHeight).isEqualTo(line2FontSizePx)
+    }
+
+    @Test
+    fun getLineHeight_offset_next_after_last_character() {
+        val line1FontSize = 10.sp
+        val line2FontSize = 20.sp
+        val line3FontSize = 30.sp
+        val line3FontSizePx = with(defaultDensity) { line3FontSize.toPx() }
+
+        val text =
+            AnnotatedString("text\n", line1FontSize) +
+                AnnotatedString("hello\n", line2FontSize) +
+                AnnotatedString("world", line3FontSize)
+
+        val layoutResult = annotatedTextLayout(text = text, density = defaultDensity)
+
+        val layoutCoordinates = mock<LayoutCoordinates>()
+        whenever(layoutCoordinates.isAttached).thenReturn(true)
+
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
+
+        val textOffset = text.length
+
+        // Act.
+        val lineHeight = selectable.getLineHeight(textOffset)
+
+        // Assert.
+        assertThat(lineHeight).isEqualTo(line3FontSizePx)
+    }
+
+    @Test
+    fun getLineHeight_offset_next_after_last_visible_character() {
+        val line1FontSize = 10.sp
+        val line2FontSize = 20.sp
+        val line3FontSize = 30.sp
+        val line2FontSizePx = with(defaultDensity) { line2FontSize.toPx() }
+
+        val text =
+            AnnotatedString("text\n", line1FontSize) +
+                AnnotatedString("hello\n", line2FontSize) +
+                AnnotatedString("world", line3FontSize)
+
+        val layoutResult = annotatedTextLayout(text = text, density = defaultDensity, maxLines = 2)
+
+        val layoutCoordinates = mock<LayoutCoordinates>()
+        whenever(layoutCoordinates.isAttached).thenReturn(true)
+
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                1,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
+
+        val textOffset = text.indexOf("w")
+
+        // Act.
+        val lineHeight = selectable.getLineHeight(textOffset)
+
+        // Assert.
+        assertThat(lineHeight).isEqualTo(line2FontSizePx)
+    }
+
+    @Test
+    fun getLineHeight_zero_length_text_return_zero() {
+        val fontSize = 10.sp
+        val text = AnnotatedString("", fontSize)
+        val layoutResult = annotatedTextLayout(text = text, density = defaultDensity)
+
+        val layoutCoordinates = mock<LayoutCoordinates>()
+        whenever(layoutCoordinates.isAttached).thenReturn(true)
+
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                0,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
+
+        // Act.
+        val lineHeight = selectable.getLineHeight(0)
+
+        // Assert.
+        assertThat(lineHeight).isEqualTo(0f)
+    }
+
+    @Test
+    fun getLineHeight_negative_offset_should_return_zero() {
+        val line1FontSize = 10.sp
+        val line2FontSize = 20.sp
+        val line3FontSize = 30.sp
+
+        val text =
+            AnnotatedString("text\n", line1FontSize) +
+                AnnotatedString("hello\n", line2FontSize) +
+                AnnotatedString("world", line3FontSize)
+
+        val layoutResult = annotatedTextLayout(text = text, density = defaultDensity)
+
+        val layoutCoordinates = mock<LayoutCoordinates>()
+        whenever(layoutCoordinates.isAttached).thenReturn(true)
+
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                0,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
+
+        // Act.
+        val lineHeight = selectable.getLineHeight(-2)
+
+        // Assert.
+        assertThat(lineHeight).isZero()
+    }
+
+    @Test
+    fun getLineHeight_offset_larger_than_range_should_return_zero() {
+        val line1FontSize = 10.sp
+        val line2FontSize = 20.sp
+        val line3FontSize = 30.sp
+
+        val text =
+            AnnotatedString("text\n", line1FontSize) +
+                AnnotatedString("hello\n", line2FontSize) +
+                AnnotatedString("world", line3FontSize)
+
+        val layoutResult = annotatedTextLayout(text = text, density = defaultDensity)
+
+        val layoutCoordinates = mock<LayoutCoordinates>()
+        whenever(layoutCoordinates.isAttached).thenReturn(true)
+
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                0,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
+
+        // Act.
+        val lineHeight = selectable.getLineHeight(text.indexOf('d') + 5)
+
+        // Assert.
+        assertThat(lineHeight).isZero()
+    }
+
+    @Test
+    fun getLineHeight_character_out_of_visible_range_return_zero() {
+        val line1FontSize = 10.sp
+        val line2FontSize = 20.sp
+        val line3FontSize = 30.sp
+
+        val text =
+            AnnotatedString("text\n", line1FontSize) +
+                AnnotatedString("hello\n", line2FontSize) +
+                AnnotatedString("world", line3FontSize)
+
+        val layoutResult = annotatedTextLayout(text = text, density = defaultDensity, maxLines = 2)
+
+        val layoutCoordinates = mock<LayoutCoordinates>()
+        whenever(layoutCoordinates.isAttached).thenReturn(true)
+
+        val selectable =
+            MultiWidgetSelectionDelegate(
+                0,
+                coordinatesCallback = { layoutCoordinates },
+                layoutResultCallback = { layoutResult }
+            )
+
+        // Act.
+        val lineHeight = selectable.getLineHeight(text.indexOf('d'))
+
+        // Assert.
+        assertThat(lineHeight).isZero()
+    }
+
+    private fun AnnotatedString(text: String, fontSize: TextUnit) =
+        AnnotatedString(text, SpanStyle(fontSize = fontSize, fontFamily = fontFamily))
+
     private fun simpleTextLayout(
         text: String = "",
         fontSize: TextUnit = TextUnit.Unspecified,
         density: Density,
         maxLines: Int = Int.MAX_VALUE,
         constraints: Constraints = Constraints()
-    ): TextLayoutResult {
-        val spanStyle = SpanStyle(fontSize = fontSize, fontFamily = fontFamily)
-        val annotatedString = AnnotatedString(text, spanStyle)
-        return TextDelegate(
-            text = annotatedString,
-            style = TextStyle(),
+    ) =
+        annotatedTextLayout(
+            text = AnnotatedString(text, SpanStyle(fontSize = fontSize, fontFamily = fontFamily)),
             density = density,
             maxLines = maxLines,
-            fontFamilyResolver = fontFamilyResolver
-        ).layout(constraints, LayoutDirection.Ltr)
+            constraints = constraints
+        )
+
+    private fun annotatedTextLayout(
+        text: AnnotatedString,
+        density: Density,
+        maxLines: Int = Int.MAX_VALUE,
+        constraints: Constraints = Constraints()
+    ): TextLayoutResult {
+        return TextDelegate(
+                text = text,
+                style = TextStyle(),
+                density = density,
+                maxLines = maxLines,
+                fontFamilyResolver = fontFamilyResolver
+            )
+            .layout(constraints, LayoutDirection.Ltr)
     }
 
-    @OptIn(InternalFoundationTextApi::class)
     private fun constrainedTextLayout(
         text: String = "",
         fontSize: TextUnit = 20.sp,
@@ -1893,23 +2086,26 @@ class MultiWidgetSelectionDelegateTest {
         val spanStyle = SpanStyle(fontSize = fontSize, fontFamily = fontFamily)
         val annotatedString = AnnotatedString(text, spanStyle)
         val width = with(density) { fontSize.roundToPx() } * widthInCharacters
-        val constraints = Constraints(
-            minWidth = width,
-            maxWidth = width,
-            maxHeight = if (maxHeightInLines == Int.MAX_VALUE) {
-                Int.MAX_VALUE
-            } else {
-                with(density) { fontSize.roundToPx() } * maxHeightInLines
-            }
-        )
+        val constraints =
+            Constraints(
+                minWidth = width,
+                maxWidth = width,
+                maxHeight =
+                    if (maxHeightInLines == Int.MAX_VALUE) {
+                        Int.MAX_VALUE
+                    } else {
+                        with(density) { fontSize.roundToPx() } * maxHeightInLines
+                    }
+            )
         return TextDelegate(
-            text = annotatedString,
-            style = TextStyle(),
-            density = density,
-            fontFamilyResolver = fontFamilyResolver,
-            maxLines = maxLines,
-            overflow = overflow,
-            softWrap = softWrap
-        ).layout(constraints, LayoutDirection.Ltr)
+                text = annotatedString,
+                style = TextStyle(),
+                density = density,
+                fontFamilyResolver = fontFamilyResolver,
+                maxLines = maxLines,
+                overflow = overflow,
+                softWrap = softWrap
+            )
+            .layout(constraints, LayoutDirection.Ltr)
     }
 }

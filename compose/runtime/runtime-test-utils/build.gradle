@@ -14,30 +14,40 @@
  * limitations under the License.
  */
 import androidx.build.LibraryType
+import androidx.build.PlatformIdentifier
 import androidx.build.Publish
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    android()
-    desktop()
+    androidLibrary {
+        namespace = "androidx.compose.runtime.testutils"
+        withAndroidTestOnDeviceBuilder {
+            it.compilationName = "instrumentedTest"
+            it.defaultSourceSetName = "androidInstrumentedTest"
+            it.sourceSetTreeName = "test"
+        }
+        withAndroidTestOnJvmBuilder {
+            it.defaultSourceSetName = "androidUnitTest"
+        }
+    }
+    jvmStubs()
+    linuxX64Stubs()
+
+    defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain {
             dependencies {
                 implementation(libs.kotlinStdlibCommon)
-                implementation(projectOrArtifact(":compose:runtime:runtime"))
-                implementation(projectOrArtifact(":compose:ui:ui-util"))
-                implementation kotlin("test-junit")
+                implementation(project(":compose:runtime:runtime"))
+                implementation kotlin("test")
                 implementation(libs.kotlinCoroutinesTest)
                 implementation(libs.kotlinReflect)
             }
-        }
-        androidMain.dependencies {
         }
 
         jvmMain {
@@ -52,10 +62,14 @@ androidXMultiplatform {
             }
         }
 
-        desktopMain {
+        commonStubsMain {
+            dependsOn(commonMain)
+        }
+        jvmStubsMain {
             dependsOn(jvmMain)
-            dependencies {
-            }
+        }
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
         }
     }
 }
@@ -63,11 +77,8 @@ androidXMultiplatform {
 androidx {
     name = "Compose Internal Test Utils"
     type = LibraryType.INTERNAL_TEST_LIBRARY
-    publish = Publish.NONE
+    publish = Publish.SNAPSHOT_ONLY
     inceptionYear = "2024"
     description = "Compose runtime test utils shared between runtime and compiler tests."
 }
 
-android {
-    namespace "androidx.compose.runtime.testutils"
-}

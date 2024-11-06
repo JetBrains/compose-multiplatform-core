@@ -28,7 +28,6 @@ import android.util.Size;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.Logger;
@@ -53,7 +52,6 @@ import java.util.Map;
 /**
  * Advanced vendor interface implementation
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class AdvancedVendorExtender implements VendorExtender {
     private static final String TAG = "AdvancedVendorExtender";
     private final ExtensionDisabledValidator mExtensionDisabledValidator =
@@ -111,7 +109,7 @@ public class AdvancedVendorExtender implements VendorExtender {
     public boolean isExtensionAvailable(@NonNull String cameraId,
             @NonNull Map<String, CameraCharacteristics> characteristicsMap) {
 
-        if (mExtensionDisabledValidator.shouldDisableExtension()) {
+        if (mExtensionDisabledValidator.shouldDisableExtension(cameraId)) {
             return false;
         }
 
@@ -183,7 +181,8 @@ public class AdvancedVendorExtender implements VendorExtender {
     }
 
     @NonNull
-    private List<CaptureResult.Key> getSupportedResultKeys() {
+    @Override
+    public List<CaptureResult.Key> getSupportedCaptureResultKeys() {
         List<CaptureResult.Key> keys = Collections.emptyList();
         if (ExtensionVersion.getRuntimeVersion().compareTo(Version.VERSION_1_3) >= 0) {
             try {
@@ -247,7 +246,7 @@ public class AdvancedVendorExtender implements VendorExtender {
         if (ClientVersion.isMinimumCompatibleVersion(Version.VERSION_1_4)
                 && ExtensionVersion.isMinimumCompatibleVersion(Version.VERSION_1_4)
                 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            return getSupportedResultKeys().contains(CaptureResult.EXTENSION_CURRENT_TYPE);
+            return getSupportedCaptureResultKeys().contains(CaptureResult.EXTENSION_CURRENT_TYPE);
         } else {
             return false;
         }

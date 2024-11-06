@@ -121,13 +121,24 @@ available in our repo.
 It will create a new project with the proper structure and configuration based
 on your project needs!
 
-To use it:
+To use it, first install the virtualenv if it is not already installed
+
+*   (Linux) `sudo apt-get install virtualenv python3-venv`
+*   (Mac) `pip3 install virtualenv`
+*   (Mac homebrew) `brew install virtualenv`
+
+Then run the script:
 
 ```sh
 cd ~/androidx-main/frameworks/support && \
-cd development/project-creator && \
-./create_project.py androidx.foo foo-bar
+./development/project-creator/create_project.sh androidx.foo foo-bar
 ```
+
+If the module you are creating is an application (not a library), such as you
+might want for integration-tests, edit the project's `build.gradle` file and
+replace the plugin `id("com.android.library")` with
+`id("com.android.application")`. This allows you to run activities in that
+module from within Android Studio.
 
 If you are creating an unpublished module such as an integration test app with \
 the project creator script, it may not make sense to follow the same naming \
@@ -135,28 +146,6 @@ conventions as published libraries. In this situation it is safe to comment out
 \
 the `artifact_id` validation from the script or rename the module after it has \
 been created.
-
-If you see an error message `No module named 'toml'` try the following steps.
-
-*   Install necessary tools if they are not already installed
-    *   (Linux) `sudo apt-get install virtualenv python3-venv`
-    *   (Mac) `pip3 install virtualenv`
-*   Create a virtual environment with `virtualenv androidx_project_creator` (you
-    can choose another name for your virtualenv if you wish).
-*   Install the `toml` library in your virtual env with
-    `androidx_project_creator/bin/pip3 install toml`
-*   Run the project creator script from your virtual env with
-    `androidx_project_creator/bin/python3
-    ../../development/project-creator/create_project.py androidx.foo foo-bar`
-*   Delete your virtual env with `rm -rf ./androidx-project_creator`
-    *   virtualenv will automatically .gitignore itself, but you may want to to
-        remove it anyway.
-
-Note: if the module you are creating is an application (not a library), such as
-you might want for integration-tests, edit the project's `build.gradle` file and
-replace the plugin `id("com.android.library")` with
-`id("com.android.application")`. This allows you to run activities in that
-module from within Android Studio.
 
 #### Common sub-feature names {#module-naming-subfeature}
 
@@ -313,7 +302,7 @@ DATASTORE = { group = "androidx.datastore", atomicGroupVersion = "versions.DATAS
 Note that you can specify a `multiplatformGroupVersion` if and only if you are
 also specifying a `atomicGroupVersion`.
 
-##### Non atomic Kotlin Multiplatform versions
+##### Non-atomic Kotlin Multiplatform versions
 
 If your Kotlin Multiplatform Library does not have atomic version groups, you
 can specify a KMP specifc version in the `build gradle` file:
@@ -335,14 +324,14 @@ androidx {
 ### Choosing a `minSdkVersion` {#module-minsdkversion}
 
 The recommended minimum SDK version for new Jetpack libraries is currently
-**21** (Android 5.0, Lollipop). This SDK was chosen to represent 99% of active
-devices based on Play Store check-ins (see Android Studio
+**23** (Android 6.0, Marshmallow). This SDK was chosen to represent 99% of
+active devices based on Play Store check-ins (see Android Studio
 [distribution metadata](https://dl.google.com/android/studio/metadata/distributions.json)
 for current statistics). This maximizes potential users for external developers
 while minimizing the amount of overhead necessary to support legacy versions.
 
 However, if no explicit minimum SDK version is specified for a library, the
-default is **19** (Android 4.4, KitKat).
+default is **21** (Android 5.0, Lollipop).
 
 Note that a library **must not** depend on another library with a higher
 `minSdkVersion` that its own, so it may be necessary for a new library to match

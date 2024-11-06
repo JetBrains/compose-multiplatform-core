@@ -34,6 +34,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -51,8 +52,7 @@ import org.junit.Test
 
 class LazyListsIndexedTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun lazyColumnShowsIndexedItems_zeroBeyondBoundsItemCount() {
@@ -60,25 +60,18 @@ class LazyListsIndexedTest {
         rule.setContent {
             LazyColumn(Modifier.height(200.dp), beyondBoundsItemCount = 0) {
                 itemsIndexed(items) { index, item ->
-                    Spacer(
-                        Modifier.height(101.dp).fillParentMaxWidth()
-                            .testTag("$index-$item")
-                    )
+                    Spacer(Modifier.height(101.dp).fillParentMaxWidth().testTag("$index-$item"))
                 }
             }
         }
 
-        rule.onNodeWithTag("0-1")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("0-1").assertIsDisplayed()
 
-        rule.onNodeWithTag("1-2")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("1-2").assertIsDisplayed()
 
-        rule.onNodeWithTag("2-3")
-            .assertDoesNotExist()
+        rule.onNodeWithTag("2-3").assertDoesNotExist()
 
-        rule.onNodeWithTag("3-4")
-            .assertDoesNotExist()
+        rule.onNodeWithTag("3-4").assertDoesNotExist()
     }
 
     @Test
@@ -87,25 +80,18 @@ class LazyListsIndexedTest {
         rule.setContent {
             LazyColumn(Modifier.height(200.dp), beyondBoundsItemCount = 1) {
                 itemsIndexed(items) { index, item ->
-                    Spacer(
-                        Modifier.height(101.dp).fillParentMaxWidth()
-                            .testTag("$index-$item")
-                    )
+                    Spacer(Modifier.height(101.dp).fillParentMaxWidth().testTag("$index-$item"))
                 }
             }
         }
 
-        rule.onNodeWithTag("0-1")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("0-1").assertIsDisplayed()
 
-        rule.onNodeWithTag("1-2")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("1-2").assertIsDisplayed()
 
-        rule.onNodeWithTag("2-3")
-            .assertExists()
+        rule.onNodeWithTag("2-3").assertExists()
 
-        rule.onNodeWithTag("3-4")
-            .assertDoesNotExist()
+        rule.onNodeWithTag("3-4").assertDoesNotExist()
     }
 
     @Test
@@ -115,17 +101,16 @@ class LazyListsIndexedTest {
             LazyColumn(Modifier.height(200.dp)) {
                 itemsIndexed(items) { index, item ->
                     BasicText(
-                        "${index}x$item", Modifier.fillParentMaxWidth().requiredHeight(100.dp)
+                        "${index}x$item",
+                        Modifier.fillParentMaxWidth().requiredHeight(100.dp)
                     )
                 }
             }
         }
 
-        rule.onNodeWithText("0x0")
-            .assertTopPositionInRootIsEqualTo(0.dp)
+        rule.onNodeWithText("0x0").assertTopPositionInRootIsEqualTo(0.dp)
 
-        rule.onNodeWithText("1x1")
-            .assertTopPositionInRootIsEqualTo(100.dp)
+        rule.onNodeWithText("1x1").assertTopPositionInRootIsEqualTo(100.dp)
     }
 
     @Test
@@ -134,25 +119,18 @@ class LazyListsIndexedTest {
         rule.setContent {
             LazyRow(Modifier.width(200.dp), beyondBoundsItemCount = 0) {
                 itemsIndexed(items) { index, item ->
-                    Spacer(
-                        Modifier.width(101.dp).fillParentMaxHeight()
-                            .testTag("$index-$item")
-                    )
+                    Spacer(Modifier.width(101.dp).fillParentMaxHeight().testTag("$index-$item"))
                 }
             }
         }
 
-        rule.onNodeWithTag("0-1")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("0-1").assertIsDisplayed()
 
-        rule.onNodeWithTag("1-2")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("1-2").assertIsDisplayed()
 
-        rule.onNodeWithTag("2-3")
-            .assertDoesNotExist()
+        rule.onNodeWithTag("2-3").assertDoesNotExist()
 
-        rule.onNodeWithTag("3-4")
-            .assertDoesNotExist()
+        rule.onNodeWithTag("3-4").assertDoesNotExist()
     }
 
     @Test
@@ -161,25 +139,18 @@ class LazyListsIndexedTest {
         rule.setContent {
             LazyRow(Modifier.width(200.dp), beyondBoundsItemCount = 1) {
                 itemsIndexed(items) { index, item ->
-                    Spacer(
-                        Modifier.width(101.dp).fillParentMaxHeight()
-                            .testTag("$index-$item")
-                    )
+                    Spacer(Modifier.width(101.dp).fillParentMaxHeight().testTag("$index-$item"))
                 }
             }
         }
 
-        rule.onNodeWithTag("0-1")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("0-1").assertIsDisplayed()
 
-        rule.onNodeWithTag("1-2")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("1-2").assertIsDisplayed()
 
-        rule.onNodeWithTag("2-3")
-            .assertExists()
+        rule.onNodeWithTag("2-3").assertExists()
 
-        rule.onNodeWithTag("3-4")
-            .assertDoesNotExist()
+        rule.onNodeWithTag("3-4").assertDoesNotExist()
     }
 
     @Test
@@ -190,17 +161,16 @@ class LazyListsIndexedTest {
             LazyRow(Modifier.width(200.dp)) {
                 itemsIndexed(items) { index, item ->
                     BasicText(
-                        "${index}x$item", Modifier.fillParentMaxHeight().requiredWidth(100.dp)
+                        "${index}x$item",
+                        Modifier.fillParentMaxHeight().requiredWidth(100.dp)
                     )
                 }
             }
         }
 
-        rule.onNodeWithText("0x0")
-            .assertLeftPositionInRootIsEqualTo(0.dp)
+        rule.onNodeWithText("0x0").assertLeftPositionInRootIsEqualTo(0.dp)
 
-        rule.onNodeWithText("1x1")
-            .assertLeftPositionInRootIsEqualTo(100.dp)
+        rule.onNodeWithText("1x1").assertLeftPositionInRootIsEqualTo(100.dp)
     }
 }
 
@@ -228,6 +198,7 @@ private fun LazyColumn(
         isVertical = true,
         reverseLayout = reverseLayout,
         userScrollEnabled = userScrollEnabled,
+        overscrollEffect = rememberOverscrollEffect(),
         beyondBoundsItemCount = beyondBoundsItemCount,
         content = content
     )
@@ -257,6 +228,7 @@ private fun LazyRow(
         flingBehavior = flingBehavior,
         reverseLayout = reverseLayout,
         userScrollEnabled = userScrollEnabled,
+        overscrollEffect = rememberOverscrollEffect(),
         beyondBoundsItemCount = beyondBoundsItemCount,
         content = content
     )

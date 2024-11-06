@@ -46,12 +46,11 @@ enum class Navigation(val displayName: String, val action: @Composable () -> Uni
     ModalNavigationDrawer("Modal Navigation Drawer", { ModalNavigationDrawer() }),
     LazyRowsAndColumns("Lazy Rows and Columns", { LazyRowsAndColumns() }),
     FeaturedCarousel("Featured Carousel", { FeaturedCarouselContent() }),
-    ImmersiveList("Immersive List", { ImmersiveListContent() }),
     TextField("Text Field", { TextFieldContent() }),
     StickyHeader("Sticky Header", { StickyHeaderContent() });
 
     fun toRouteValue(): String {
-        return "/${displayName.lowercase().replace(' ', '-')}";
+        return "/${displayName.lowercase().replace(' ', '-')}"
     }
 }
 
@@ -73,11 +72,11 @@ internal fun TopNavigation(
     )
 
     // Underlined indicator
-//    UnderlinedIndicatorTabRow(
-//        tabs = tabs,
-//        selectedTabIndex = selectedTabIndex,
-//        updateSelectedTab = { selectedTabIndex = it }
-//    )
+    //    UnderlinedIndicatorTabRow(
+    //        tabs = tabs,
+    //        selectedTabIndex = selectedTabIndex,
+    //        updateSelectedTab = { selectedTabIndex = it }
+    //    )
 
     LaunchedEffect(selectedTabIndex) {
         // Only update the tab after 250 milliseconds to avoid loading intermediate tabs while
@@ -87,9 +86,7 @@ internal fun TopNavigation(
     }
 }
 
-/**
- * Pill indicator tab row for reference
- */
+/** Pill indicator tab row for reference */
 @OptIn(ExperimentalTvMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun PillIndicatorTabRow(
@@ -99,10 +96,7 @@ fun PillIndicatorTabRow(
 ) {
     val focusRequester = remember { FocusRequester() }
 
-    TabRow(
-        selectedTabIndex = selectedTabIndex,
-        modifier = Modifier.focusRestorer { focusRequester }
-    ) {
+    TabRow(selectedTabIndex = selectedTabIndex, modifier = Modifier.focusRestorer(focusRequester)) {
         tabs.forEachIndexed { index, tab ->
             key(index) {
                 Tab(
@@ -121,9 +115,7 @@ fun PillIndicatorTabRow(
     }
 }
 
-/**
- * Underlined indicator tab row for reference
- */
+/** Underlined indicator tab row for reference */
 @OptIn(ExperimentalTvMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun UnderlinedIndicatorTabRow(
@@ -142,22 +134,16 @@ fun UnderlinedIndicatorTabRow(
                 doesTabRowHaveFocus = doesTabRowHaveFocus,
             )
         },
-        modifier = Modifier
-            .focusRestorer { focusRequester },
+        modifier = Modifier.focusRestorer(focusRequester),
     ) {
         tabs.forEachIndexed { index, tab ->
             Tab(
                 selected = index == selectedTabIndex,
                 onFocus = { updateSelectedTab(index) },
-                modifier = Modifier
-                    .ifElse(index == 0, Modifier.focusRequester(focusRequester)),
+                modifier = Modifier.ifElse(index == 0, Modifier.focusRequester(focusRequester)),
                 colors = TabDefaults.underlinedIndicatorTabColors(),
             ) {
-                Text(
-                    text = tab,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
+                Text(text = tab, fontSize = 12.sp, modifier = Modifier.padding(bottom = 4.dp))
             }
         }
     }

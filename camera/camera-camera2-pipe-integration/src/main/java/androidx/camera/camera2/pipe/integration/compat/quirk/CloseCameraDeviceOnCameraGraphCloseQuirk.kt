@@ -18,28 +18,26 @@ package androidx.camera.camera2.pipe.integration.compat.quirk
 
 import android.annotation.SuppressLint
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.camera.core.impl.Quirk
 
 /**
  * Quirk needed on devices where not closing the camera device before creating a new capture session
- * can lead to undesirable behaviors, such as native camera HAL crashes. On Exynos7870 platforms
- * for example, once their 3A pipeline times out, recreating a capture session has a high chance of
+ * can lead to undesirable behaviors, such as native camera HAL crashes. On Exynos7870 platforms for
+ * example, once their 3A pipeline times out, recreating a capture session has a high chance of
  * triggering use-after-free crashes.
  *
  * QuirkSummary
- * - Bug Id:      282871038
+ * - Bug Id: 282871038
  * - Description: Instructs CameraPipe to close the camera device before creating a new capture
- *                session to avoid undesirable behaviors
+ *   session to avoid undesirable behaviors
  *
  * TODO(b/270421716): enable CameraXQuirksClassDetector lint check when kotlin is supported.
  */
-@RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 @SuppressLint("CameraXQuirksClassDetector")
-class CloseCameraDeviceOnCameraGraphCloseQuirk : Quirk {
-    companion object {
+public class CloseCameraDeviceOnCameraGraphCloseQuirk : Quirk {
+    public companion object {
         @JvmStatic
-        fun isEnabled(): Boolean {
+        public fun isEnabled(): Boolean {
             return Build.HARDWARE == "samsungexynos7870"
         }
     }

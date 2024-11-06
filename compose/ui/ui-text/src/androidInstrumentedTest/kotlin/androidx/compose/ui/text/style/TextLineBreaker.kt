@@ -39,15 +39,13 @@ open class TextLineBreaker {
     ): Paragraph {
         return AndroidParagraph(
             text = text,
-            spanStyles = listOf(),
+            annotations = listOf(),
             placeholders = listOf(),
             style = textStyle,
             maxLines = Int.MAX_VALUE,
-            ellipsis = false,
-            constraints = Constraints(
-                maxWidth = maxWidth,
-                maxHeight = Float.POSITIVE_INFINITY.ceilToInt()
-            ),
+            overflow = TextOverflow.Clip,
+            constraints =
+                Constraints(maxWidth = maxWidth, maxHeight = Float.POSITIVE_INFINITY.ceilToInt()),
             density = density,
             fontFamilyResolver = fontFamilyResolver
         )
@@ -59,17 +57,15 @@ open class TextLineBreaker {
         lineBreak: LineBreak = defaultLineBreak,
         maxWidth: Int
     ): List<String> {
-        val layoutResult = paragraph(
-            text = text,
-            textStyle = TextStyle(hyphens = hyphens, lineBreak = lineBreak),
-            maxWidth = maxWidth
-        )
+        val layoutResult =
+            paragraph(
+                text = text,
+                textStyle = TextStyle(hyphens = hyphens, lineBreak = lineBreak),
+                maxWidth = maxWidth
+            )
 
         return (0 until layoutResult.lineCount).map { lineIndex ->
-            text.substring(
-                layoutResult.getLineStart(lineIndex),
-                layoutResult.getLineEnd(lineIndex)
-            )
+            text.substring(layoutResult.getLineStart(lineIndex), layoutResult.getLineEnd(lineIndex))
         }
     }
 }

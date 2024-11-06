@@ -14,29 +14,26 @@
  * limitations under the License.
  */
 
-@file:Suppress("AddVarianceModifier")
-
 package androidx.room.processor.cache
 
 import androidx.room.compiler.processing.XElement
-import androidx.room.compiler.processing.XType
+import androidx.room.compiler.processing.XTypeElement
 import androidx.room.processor.FieldProcessor
 import androidx.room.vo.BuiltInConverterFlags
 import androidx.room.vo.EmbeddedField
 import androidx.room.vo.Entity
 import androidx.room.vo.Pojo
 import androidx.room.vo.Warning
-import java.util.LinkedHashSet
 
 /**
  * A cache key can be used to avoid re-processing elements.
- * <p>
- * Each context has a cache variable that uses the same backing storage as the Root Context but
- * adds current adapters and warning suppression list to the key.
+ *
+ * Each context has a cache variable that uses the same backing storage as the Root Context but adds
+ * current adapters and warning suppression list to the key.
  */
 class Cache(
     val parent: Cache?,
-    val converters: LinkedHashSet<XType>,
+    val converters: Set<XTypeElement>,
     val suppressedWarnings: Set<Warning>,
     val builtInConverterFlags: BuiltInConverterFlags
 ) {
@@ -45,25 +42,17 @@ class Cache(
 
     inner class Bucket<K, T>(source: Bucket<K, T>?) {
         private val entries: MutableMap<FullKey<K>, T> = source?.entries ?: mutableMapOf()
+
         fun get(key: K, calculate: () -> T): T {
             val fullKey = FullKey(converters, suppressedWarnings, builtInConverterFlags, key)
-            return entries.getOrPut(
-                fullKey,
-                {
-                    calculate()
-                }
-            )
+            return entries.getOrPut(fullKey) { calculate() }
         }
     }
 
-    /**
-     * Key for Entity cache
-     */
+    /** Key for Entity cache */
     data class EntityKey(val element: XElement)
 
-    /**
-     * Key for Pojo cache
-     */
+    /** Key for Pojo cache */
     data class PojoKey(
         val element: XElement,
         val scope: FieldProcessor.BindingScope,
@@ -72,11 +61,11 @@ class Cache(
 
     /**
      * Internal key representation with adapters & warnings included.
-     * <p>
+     *
      * Converters are kept in a linked set since the order is important for the TypeAdapterStore.
      */
     private data class FullKey<T>(
-        val converters: LinkedHashSet<XType>,
+        val converters: Set<XTypeElement>,
         val suppressedWarnings: Set<Warning>,
         val builtInConverterFlags: BuiltInConverterFlags,
         val key: T

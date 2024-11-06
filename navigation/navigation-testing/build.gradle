@@ -21,35 +21,54 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
+    alias(libs.plugins.kotlinSerialization)
 }
 
 dependencies {
     api(project(":navigation:navigation-runtime"))
-    api("androidx.lifecycle:lifecycle-runtime-testing:2.3.1")
+    api("androidx.lifecycle:lifecycle-runtime-testing:2.6.2")
 
+    implementation(libs.kotlinCoroutinesCore)
+    implementation(libs.kotlinSerializationCore)
+    implementation(project(":navigation:navigation-common"))
+    implementation("androidx.core:core-ktx:1.8.0")
+    implementation("androidx.lifecycle:lifecycle-common:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.2")
+
+    androidTestRuntimeOnly(libs.kotlinTestJunit)
+    androidTestImplementation("androidx.lifecycle:lifecycle-runtime:2.6.2")
     androidTestImplementation(project(":internal-testutils-navigation"), {
         exclude group: "androidx.navigation", module: "navigation-common"
     })
+    androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testExtTruth)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
+
+    testRuntimeOnly(libs.testCore)
+    testRuntimeOnly(libs.kotlinTestJunit)
+    testImplementation(libs.junit)
+    testImplementation(libs.testRunner)
+    testImplementation(libs.truth)
+    testImplementation(libs.robolectric)
 }
 
 androidx {
     name = "Navigation Testing"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Navigation-Testing"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }
 
 android {

@@ -21,7 +21,7 @@ import static android.app.PendingIntent.FLAG_UPDATE_CURRENT;
 import static android.text.TextUtils.isEmpty;
 
 import static androidx.work.ListenableFutureKt.executeAsync;
-import static androidx.work.impl.UnfinishedWorkListenerKt.launchUnfinishedWorkListener;
+import static androidx.work.impl.UnfinishedWorkListenerKt.maybeLaunchUnfinishedWorkListener;
 import static androidx.work.impl.WorkManagerImplExtKt.createWorkManager;
 import static androidx.work.impl.WorkManagerImplExtKt.createWorkManagerScope;
 import static androidx.work.impl.WorkerUpdater.enqueueUniquelyNamedPeriodic;
@@ -37,7 +37,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -51,6 +50,8 @@ import androidx.work.Logger;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.Operation;
 import androidx.work.PeriodicWorkRequest;
+import androidx.work.StopReason;
+import androidx.work.TracerKt;
 import androidx.work.WorkContinuation;
 import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
@@ -76,16 +77,17 @@ import androidx.work.multiprocess.RemoteWorkManager;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import kotlin.Unit;
 
 import kotlinx.coroutines.CoroutineScope;
 import kotlinx.coroutines.flow.Flow;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
 /**
  * A concrete implementation of {@link WorkManager}.
- *
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class WorkManagerImpl extends WorkManager {
@@ -147,6 +149,7 @@ public class WorkManagerImpl extends WorkManager {
     }
 
     /**
+     *
      */
     @SuppressWarnings("deprecation")
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -189,11 +192,10 @@ public class WorkManagerImpl extends WorkManager {
      * you want to use a custom {@link Configuration} object and have disabled
      * WorkManagerInitializer.
      *
-     * @param context A {@link Context} object for configuration purposes. Internally, this class
-     *                will call {@link Context#getApplicationContext()}, so you may safely pass in
-     *                any Context without risking a memory leak.
+     * @param context       A {@link Context} object for configuration purposes. Internally, this
+     *                      class will call {@link Context#getApplicationContext()}, so you may
+     *                      safely pass in any Context without risking a memory leak.
      * @param configuration The {@link Configuration} for used to set up WorkManager.
-     *
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static void initialize(@NonNull Context context, @NonNull Configuration configuration) {
@@ -256,7 +258,7 @@ public class WorkManagerImpl extends WorkManager {
                 workTaskExecutor.getSerialTaskExecutor(), mWorkDatabase, configuration);
         // Checks for app force stops.
         mWorkTaskExecutor.executeOnTaskThread(new ForceStopRunnable(context, this));
-        launchUnfinishedWorkListener(mWorkManagerScope, mContext, workDatabase);
+        maybeLaunchUnfinishedWorkListener(mWorkManagerScope, mContext, configuration, workDatabase);
     }
 
     /**
@@ -463,7 +465,7 @@ public class WorkManagerImpl extends WorkManager {
 
     @Override
     public @NonNull Operation pruneWork() {
-        return PruneWorkRunnableKt.pruneWork(mWorkDatabase, mWorkTaskExecutor);
+        return PruneWorkRunnableKt.pruneWork(mWorkDatabase, mConfiguration, mWorkTaskExecutor);
     }
 
     @Override
@@ -545,7 +547,7 @@ public class WorkManagerImpl extends WorkManager {
     @NonNull
     public ListenableFuture<List<WorkInfo>> getWorkInfosForUniqueWork(
             @NonNull String uniqueWorkName) {
-        return StatusRunnable.forUniqueWork(mWorkDatabase, mWorkTaskExecutor,  uniqueWorkName);
+        return StatusRunnable.forUniqueWork(mWorkDatabase, mWorkTaskExecutor, uniqueWorkName);
     }
 
     @NonNull
@@ -593,6 +595,7 @@ public class WorkManagerImpl extends WorkManager {
     }
 
     /**
+     *
      */
     @Nullable
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -616,37 +619,42 @@ public class WorkManagerImpl extends WorkManager {
 
     /**
      * @param id The {@link WorkSpec} id to stop when running in the context of a
-     *                   foreground service.
+     *           foreground service.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public void stopForegroundWork(@NonNull WorkGenerationalId id) {
+    public void stopForegroundWork(@NonNull WorkGenerationalId id, @StopReason int reason) {
         mWorkTaskExecutor.executeOnTaskThread(new StopWorkRunnable(mProcessor,
-                new StartStopToken(id), true));
+                new StartStopToken(id), true, reason));
     }
 
     /**
      * Reschedules all the eligible work. Useful for cases like, app was force stopped or
      * BOOT_COMPLETED, TIMEZONE_CHANGED and TIME_SET for AlarmManager.
-     *
      */
     public void rescheduleEligibleWork() {
-        // TODO (rahulrav@) Make every scheduler do its own cancelAll().
-        if (Build.VERSION.SDK_INT >= WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL) {
-            SystemJobScheduler.cancelAll(getApplicationContext());
-        }
+        // Delegate to the getter so mocks continue to work when testing.
+        Configuration configuration = getConfiguration();
+        TracerKt.traced(configuration.getTracer(), "ReschedulingWork", () -> {
+            // This gives us an easy way to clear persisted work state, and then reschedule work
+            // that WorkManager is aware of. Ideally, we do something similar for other
+            // persistent schedulers.
+            if (Build.VERSION.SDK_INT >= WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL) {
+                SystemJobScheduler.cancelAllInAllNamespaces(getApplicationContext());
+            }
 
-        // Reset scheduled state.
-        getWorkDatabase().workSpecDao().resetScheduledState();
+            // Reset scheduled state.
+            getWorkDatabase().workSpecDao().resetScheduledState();
 
-        // Delegate to the WorkManager's schedulers.
-        // Using getters here so we can use from a mocked instance
-        // of WorkManagerImpl.
-        Schedulers.schedule(getConfiguration(), getWorkDatabase(), getSchedulers());
+            // Delegate to the WorkManager's schedulers.
+            // Using getters here so we can use from a mocked instance
+            // of WorkManagerImpl.
+            Schedulers.schedule(getConfiguration(), getWorkDatabase(), getSchedulers());
+            return Unit.INSTANCE;
+        });
     }
 
     /**
      * A way for {@link ForceStopRunnable} to tell {@link WorkManagerImpl} that it has completed.
-     *
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public void onForceStopRunnableCompleted() {
@@ -664,7 +672,6 @@ public class WorkManagerImpl extends WorkManager {
      * {@link RescheduleReceiver}
      * after a call to {@link BroadcastReceiver#goAsync()}. Once {@link ForceStopRunnable} is done,
      * we can safely call {@link BroadcastReceiver.PendingResult#finish()}.
-     *
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public void setReschedulePendingResult(
@@ -709,7 +716,6 @@ public class WorkManagerImpl extends WorkManager {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static boolean isDeviceProtectedStorage(Context context) {
             return context.isDeviceProtectedStorage();
         }

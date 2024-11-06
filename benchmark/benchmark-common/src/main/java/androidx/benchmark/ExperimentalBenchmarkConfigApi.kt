@@ -16,11 +16,34 @@
 
 package androidx.benchmark
 
+import androidx.annotation.RestrictTo
+import androidx.benchmark.perfetto.PerfettoConfig
+
 /**
- * Annotation indicating experimental API primarily intended to allow configuration of
- * microbenchmarks from code, overriding instrumentation arguments
- * like `androidx.benchmark.profiling.mode`, and custom microbenchmark metrics.
+ * Annotates declarations that are considered experimental within the Benchmark API, and are likely
+ * to change before becoming stable. Using experimental features can potentially break your code if
+ * the design or behavior changes.
  */
 @RequiresOptIn
 @Retention(AnnotationRetention.BINARY)
 public annotation class ExperimentalBenchmarkConfigApi
+
+@ExperimentalBenchmarkConfigApi
+public class ExperimentalConfig(
+    val perfettoConfig: PerfettoConfig? = null,
+    val startupInsightsConfig: StartupInsightsConfig? = null
+)
+
+/** Configuration for startup insights. */
+@ExperimentalBenchmarkConfigApi
+public class StartupInsightsConfig(val isEnabled: Boolean) {
+    /**
+     * Base URL for linking to more information about specific startup reasons. This URL should
+     * accept a reason ID as a direct suffix. For example, a base URL of
+     * `https://developer.android.com/[...]/slow-start-reason#` could be combined with a reason ID
+     * of `MAIN_THREAD_MONITOR_CONTENTION` to create a complete URL like:
+     * `https://developer.android.com/[...]/slow-start-reason#MAIN_THREAD_MONITOR_CONTENTION`
+     */
+    val reasonHelpUrlBase: String? = Arguments.startupInsightsHelpUrlBase
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) get
+}

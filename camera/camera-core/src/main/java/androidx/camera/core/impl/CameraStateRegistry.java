@@ -21,13 +21,13 @@ import static androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.WorkerThread;
 import androidx.camera.core.Camera;
 import androidx.camera.core.Logger;
 import androidx.camera.core.concurrent.CameraCoordinator;
 import androidx.camera.core.concurrent.CameraCoordinator.CameraOperatingMode;
 import androidx.core.util.Preconditions;
+import androidx.tracing.Trace;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -42,7 +42,6 @@ import java.util.concurrent.RejectedExecutionException;
  * Cameras that are in a {@link CameraInternal.State#PENDING_OPEN} state can be notified when
  * there is a slot available to open a camera.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class CameraStateRegistry implements CameraCoordinator.ConcurrentCameraModeListener {
     private static final String TAG = "CameraStateRegistry";
 
@@ -145,6 +144,7 @@ public final class CameraStateRegistry implements CameraCoordinator.ConcurrentCa
             if (mAvailableCameras > 0 || isOpen(registration.getState())) {
                 // Set state directly to OPENING.
                 registration.setState(CameraInternal.State.OPENING);
+                traceState(camera, CameraInternal.State.OPENING);
                 success = true;
             }
 
@@ -179,11 +179,12 @@ public final class CameraStateRegistry implements CameraCoordinator.ConcurrentCa
             if (mCameraCoordinator.getCameraOperatingMode() != CAMERA_OPERATING_MODE_CONCURRENT) {
                 return true;
             }
-            CameraInternal.State selfState = getCameraRegistration(cameraId) != null
-                    ? getCameraRegistration(cameraId).getState() : null;
+            CameraRegistration registration = getCameraRegistration(cameraId);
+            CameraInternal.State selfState = registration != null ? registration.getState() : null;
+            CameraRegistration pairedRegistration =
+                    pairedCameraId != null ? getCameraRegistration(pairedCameraId) : null;
             CameraInternal.State pairedState =
-                    (pairedCameraId != null && getCameraRegistration(pairedCameraId) != null)
-                            ? getCameraRegistration(pairedCameraId).getState() : null;
+                    (pairedRegistration != null) ? pairedRegistration.getState() : null;
             boolean isSelfAvailable = CameraInternal.State.OPEN.equals(selfState)
                     || CameraInternal.State.CONFIGURED.equals(selfState);
             boolean isPairAvailable = CameraInternal.State.OPEN.equals(pairedState)
@@ -230,7 +231,7 @@ public final class CameraStateRegistry implements CameraCoordinator.ConcurrentCa
         Map<Camera, CameraRegistration> camerasToNotifyOpen = null;
         CameraRegistration cameraToNotifyConfigure = null;
         synchronized (mLock) {
-            CameraInternal.State previousState = null;
+            CameraInternal.State previousState;
             int previousAvailableCameras = mAvailableCameras;
             if (state == CameraInternal.State.RELEASED) {
                 previousState = unregisterCamera(camera);
@@ -340,6 +341,7 @@ public final class CameraStateRegistry implements CameraCoordinator.ConcurrentCa
 
         // Only update the available camera count if the camera state has changed.
         if (previousState != state) {
+            traceState(camera, state);
             recalculateAvailableCameras();
         }
 
@@ -483,6 +485,13 @@ public final class CameraStateRegistry implements CameraCoordinator.ConcurrentCa
             } catch (RejectedExecutionException e) {
                 Logger.e(TAG, "Unable to notify camera to open.", e);
             }
+        }
+    }
+
+    private static void traceState(Camera camera, CameraInternal.State state) {
+        if (Trace.isEnabled()) {
+            String counterName = "CX:State[" + camera + "]";
+            Trace.setCounter(counterName, state.ordinal());
         }
     }
 }

@@ -19,40 +19,31 @@ package androidx.room.compiler.codegen.kotlin
 import androidx.room.compiler.codegen.KTypeSpecBuilder
 import androidx.room.compiler.codegen.VisibilityModifier
 import androidx.room.compiler.codegen.XAnnotationSpec
-import androidx.room.compiler.codegen.XClassName
 import androidx.room.compiler.codegen.XFunSpec
 import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.XTypeSpec
+import androidx.room.compiler.processing.XElement
+import androidx.room.compiler.processing.addOriginatingElement
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.javapoet.KTypeSpec
 
-internal class KotlinTypeSpec(
-    private val _className: XClassName?,
-    internal val actual: KTypeSpec
-) : KotlinLang(), XTypeSpec {
+internal class KotlinTypeSpec(internal val actual: KTypeSpec) : KotlinLang(), XTypeSpec {
+
+    override val name: String? = actual.name
+
     override fun toString() = actual.toString()
 
-    override val className: XClassName
-        get() {
-            checkNotNull(_className) { "Anonymous classes have no name." }
-            return _className
-        }
-
-    internal class Builder(
-        private val className: XClassName?,
-        internal val actual: KTypeSpecBuilder
-    ) : KotlinLang(), XTypeSpec.Builder {
-        override fun superclass(typeName: XTypeName) = apply {
-            actual.superclass(typeName.kotlin)
-        }
+    internal class Builder(internal val actual: KTypeSpecBuilder) :
+        KotlinLang(), XTypeSpec.Builder {
+        override fun superclass(typeName: XTypeName) = apply { actual.superclass(typeName.kotlin) }
 
         override fun addSuperinterface(typeName: XTypeName) = apply {
             actual.addSuperinterface(typeName.kotlin)
         }
 
-        override fun addAnnotation(annotation: XAnnotationSpec) {
-            check(annotation is KotlinAnnotationSpec)
+        override fun addAnnotation(annotation: XAnnotationSpec) = apply {
+            require(annotation is KotlinAnnotationSpec)
             actual.addAnnotation(annotation.actual)
         }
 
@@ -79,7 +70,7 @@ internal class KotlinTypeSpec(
             }
         }
 
-        override fun setVisibility(visibility: VisibilityModifier) {
+        override fun setVisibility(visibility: VisibilityModifier) = apply {
             actual.addModifiers(visibility.toKotlinVisibilityModifier())
         }
 
@@ -87,8 +78,10 @@ internal class KotlinTypeSpec(
             actual.addModifiers(KModifier.ABSTRACT)
         }
 
-        override fun build(): XTypeSpec {
-            return KotlinTypeSpec(className, actual.build())
+        override fun addOriginatingElement(element: XElement) = apply {
+            actual.addOriginatingElement(element)
         }
+
+        override fun build() = KotlinTypeSpec(actual.build())
     }
 }

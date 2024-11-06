@@ -18,7 +18,7 @@ package androidx.camera.core.impl;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import androidx.annotation.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +27,6 @@ import java.util.List;
  * Wraps a list of {@link Quirk}s, allowing to easily retrieve a {@link Quirk} instance by its
  * class.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class Quirks {
 
     @NonNull
@@ -98,5 +97,26 @@ public class Quirks {
         }
 
         return false;
+    }
+
+    /** Adds an extra quirk. */
+    @VisibleForTesting
+    public void addQuirkForTesting(@NonNull Quirk quirk) {
+        mQuirks.add(quirk);
+    }
+
+    /**
+     * Converts a Quirks into a human-readable string representation.
+     *
+     * @param quirks The Quirks to convert.
+     * @return A pipe-separated string containing the simple class names of each Quirk.
+     */
+    @NonNull
+    public static String toString(@NonNull Quirks quirks) {
+        List<String> quirkNames = new ArrayList<>();
+        for (Quirk quirk : quirks.mQuirks) {
+            quirkNames.add(quirk.getClass().getSimpleName());
+        }
+        return String.join(" | ", quirkNames);
     }
 }

@@ -26,24 +26,22 @@ import androidx.compose.runtime.internal.persistentCompositionLocalHashMapOf
 sealed interface CompositionLocalMap {
     /**
      * Returns the value of the provided [composition local][key] at the position in the composition
-     * hierarchy represented by this [CompositionLocalMap] instance. If the provided [key]
-     * is not set at this point in the hierarchy, its default value will be used.
+     * hierarchy represented by this [CompositionLocalMap] instance. If the provided [key] is not
+     * set at this point in the hierarchy, its default value will be used.
      *
      * For [non-static CompositionLocals][compositionLocalOf], this function will return the latest
      * value of the CompositionLocal, which might change over time across the same instance of the
      * CompositionLocalMap. Reads done in this way are not tracked in the snapshot system.
      *
-     * For [static CompositionLocals][staticCompositionLocalOf], this function returns the value
-     * at the time of creation of the CompositionLocalMap. When a static CompositionLocal is
+     * For [static CompositionLocals][staticCompositionLocalOf], this function returns the value at
+     * the time of creation of the CompositionLocalMap. When a static CompositionLocal is
      * reassigned, the entire composition hierarchy is recomposed and a new CompositionLocalMap is
      * created with the updated value of the static CompositionLocal.
      */
     operator fun <T> get(key: CompositionLocal<T>): T
 
     companion object {
-        /**
-         * An empty [CompositionLocalMap] instance which contains no keys or values.
-         */
+        /** An empty [CompositionLocalMap] instance which contains no keys or values. */
         val Empty: CompositionLocalMap = persistentCompositionLocalHashMapOf()
     }
 }
@@ -54,10 +52,17 @@ sealed interface CompositionLocalMap {
  * [CompositionLocal]s.
  */
 internal interface PersistentCompositionLocalMap :
-    PersistentMap<CompositionLocal<Any?>, State<Any?>>,
-    CompositionLocalMap {
+    PersistentMap<CompositionLocal<Any?>, ValueHolder<Any?>>,
+    CompositionLocalMap,
+    CompositionLocalAccessorScope {
 
-    fun putValue(key: CompositionLocal<Any?>, value: State<Any?>): PersistentCompositionLocalMap
+    fun putValue(
+        key: CompositionLocal<Any?>,
+        value: ValueHolder<Any?>
+    ): PersistentCompositionLocalMap
+
+    override val <T> CompositionLocal<T>.currentValue: T
+        get() = read(this)
 
     // Override the builder APIs so that we can create new PersistentMaps that retain the type
     // information of PersistentCompositionLocalMap. If we use the built-in implementation, we'll
@@ -65,13 +70,13 @@ internal interface PersistentCompositionLocalMap :
     // PersistentCompositionLocalMap
     override fun builder(): Builder
 
-    interface Builder : PersistentMap.Builder<CompositionLocal<Any?>, State<Any?>> {
+    interface Builder : PersistentMap.Builder<CompositionLocal<Any?>, ValueHolder<Any?>> {
         override fun build(): PersistentCompositionLocalMap
     }
 }
 
 internal inline fun PersistentCompositionLocalMap.mutate(
-    mutator: (MutableMap<CompositionLocal<Any?>, State<Any?>>) -> Unit
+    mutator: (MutableMap<CompositionLocal<Any?>, ValueHolder<Any?>>) -> Unit
 ): PersistentCompositionLocalMap = builder().apply(mutator).build()
 
 @Suppress("UNCHECKED_CAST")
@@ -79,9 +84,8 @@ internal fun <T> PersistentCompositionLocalMap.contains(key: CompositionLocal<T>
     this.containsKey(key as CompositionLocal<Any?>)
 
 @Suppress("UNCHECKED_CAST")
-internal fun <T> PersistentCompositionLocalMap.read(
-    key: CompositionLocal<T>
-): T = getOrElse(key as CompositionLocal<Any?>) { key.defaultValueHolder }.value as T
+internal fun <T> PersistentCompositionLocalMap.read(key: CompositionLocal<T>): T =
+    getOrElse(key as CompositionLocal<Any?>) { key.defaultValueHolder }.readValue(this) as T
 
 internal fun updateCompositionMap(
     values: Array<out ProvidedValue<*>>,
@@ -90,14 +94,14 @@ internal fun updateCompositionMap(
 ): PersistentCompositionLocalMap {
     val builder: PersistentCompositionLocalMap.Builder =
         persistentCompositionLocalHashMapOf().builder()
-    val map: PersistentMap<CompositionLocal<Any?>, State<Any?>> = previous
+    val map: PersistentMap<CompositionLocal<Any?>, ValueHolder<Any?>> = previous
     @Suppress("UNCHECKED_CAST")
     for (index in values.indices) {
         val provided = values[index]
         val local = provided.compositionLocal as ProvidableCompositionLocal<Any?>
         if (provided.canOverride || !parentScope.contains(local)) {
             val previousState = map[local]
-            val newState = local.updatedStateOf(provided.value, previousState)
+            val newState = local.updatedStateOf(provided as ProvidedValue<Any?>, previousState)
             builder[local] = newState
         }
     }

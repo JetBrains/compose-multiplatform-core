@@ -41,7 +41,7 @@ android {
 
 dependencies {
     implementation(libs.constraintLayout)
-    implementation("androidx.annotation:annotation:1.4.0")
+    implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.core:core:1.9.0")
     implementation(project(":core:core-telecom"))
     implementation('androidx.appcompat:appcompat:1.6.1')
@@ -50,7 +50,7 @@ dependencies {
     implementation('androidx.recyclerview:recyclerview:1.2.1')
 
     // Align dependencies in debugRuntimeClasspath and debugAndroidTestRuntimeClasspath.
-    androidTestImplementation("androidx.annotation:annotation-experimental:1.4.0")
+    androidTestImplementation("androidx.annotation:annotation-experimental:1.4.1")
 
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)

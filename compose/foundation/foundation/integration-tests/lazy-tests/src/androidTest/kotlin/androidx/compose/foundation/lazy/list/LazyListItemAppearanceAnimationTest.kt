@@ -22,7 +22,6 @@ import android.os.Build
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
@@ -55,6 +54,7 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
@@ -62,11 +62,9 @@ import org.junit.Test
 
 @LargeTest
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-@OptIn(ExperimentalFoundationApi::class)
 class LazyListItemAppearanceAnimationTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private val itemSize: Int = 4
     private var itemSizeDp: Dp = Dp.Infinity
@@ -90,21 +88,13 @@ class LazyListItemAppearanceAnimationTest {
     fun oneItemAdded() {
         var list by mutableStateOf(emptyList<Color>())
         rule.setContent {
-            LazyList(containerSize = itemSizeDp) {
-                items(list, key = { it.toArgb() }) {
-                    Item(it)
-                }
-            }
+            LazyList(containerSize = itemSizeDp) { items(list, key = { it.toArgb() }) { Item(it) } }
         }
 
-        rule.runOnUiThread {
-            list = listOf(Color.Black)
-        }
+        rule.runOnUiThread { list = listOf(Color.Black) }
 
         onAnimationFrame { fraction ->
-            assertPixels(mainAxisSize = itemSize) {
-                Color.Black.copy(alpha = fraction)
-            }
+            assertPixels(mainAxisSize = itemSize) { Color.Black.copy(alpha = fraction) }
         }
     }
 
@@ -112,15 +102,11 @@ class LazyListItemAppearanceAnimationTest {
     fun noAnimationForInitialList() {
         rule.setContent {
             LazyList(containerSize = itemSizeDp) {
-                items(listOf(Color.Black), key = { it.toArgb() }) {
-                    Item(it)
-                }
+                items(listOf(Color.Black), key = { it.toArgb() }) { Item(it) }
             }
         }
 
-        assertPixels(itemSize) {
-            Color.Black
-        }
+        assertPixels(itemSize) { Color.Black }
     }
 
     @Test
@@ -128,15 +114,11 @@ class LazyListItemAppearanceAnimationTest {
         var list by mutableStateOf(listOf(Color.Black))
         rule.setContent {
             LazyList(containerSize = itemSizeDp * 3) {
-                items(list, key = { it.toArgb() }) {
-                    Item(it)
-                }
+                items(list, key = { it.toArgb() }) { Item(it) }
             }
         }
 
-        rule.runOnUiThread {
-            list = listOf(Color.Black, Color.Red, Color.Green)
-        }
+        rule.runOnUiThread { list = listOf(Color.Black, Color.Red, Color.Green) }
 
         onAnimationFrame { fraction ->
             assertPixels(itemSize * 3) { offset ->
@@ -160,9 +142,7 @@ class LazyListItemAppearanceAnimationTest {
             }
         }
 
-        rule.runOnUiThread {
-            list = listOf(Color.Black, Color.Red)
-        }
+        rule.runOnUiThread { list = listOf(Color.Black, Color.Red) }
 
         onAnimationFrame { fraction ->
             assertPixels(itemSize * 2) { offset ->
@@ -179,9 +159,7 @@ class LazyListItemAppearanceAnimationTest {
         var list by mutableStateOf(listOf(Color.Black, Color.Red, Color.Green))
         rule.setContent {
             LazyList(containerSize = itemSizeDp * 2) {
-                items(list, key = { it.toArgb() }) {
-                    Item(it)
-                }
+                items(list, key = { it.toArgb() }) { Item(it) }
             }
         }
 
@@ -212,49 +190,31 @@ class LazyListItemAppearanceAnimationTest {
     fun animatedItemChangesTheContainerSize() {
         var list by mutableStateOf(listOf(Color.Black))
         rule.setContent {
-            LazyList(containerSize = null) {
-                items(list, key = { it.toArgb() }) {
-                    Item(it)
-                }
-            }
+            LazyList(containerSize = null) { items(list, key = { it.toArgb() }) { Item(it) } }
         }
 
-        rule.onNodeWithTag(ContainerTag)
-            .assertHeightIsEqualTo(itemSizeDp)
+        rule.onNodeWithTag(ContainerTag).assertHeightIsEqualTo(itemSizeDp)
 
-        rule.runOnUiThread {
-            list = listOf(Color.Black, Color.Red)
-        }
+        rule.runOnUiThread { list = listOf(Color.Black, Color.Red) }
 
-        onAnimationFrame {
-            rule.onNodeWithTag(ContainerTag)
-                .assertHeightIsEqualTo(itemSizeDp * 2)
-        }
+        onAnimationFrame { rule.onNodeWithTag(ContainerTag).assertHeightIsEqualTo(itemSizeDp * 2) }
     }
 
     @Test
     fun removeItemBeingAnimated() {
         var list by mutableStateOf(emptyList<Color>())
         rule.setContent {
-            LazyList(containerSize = itemSizeDp) {
-                items(list, key = { it.toArgb() }) {
-                    Item(it)
-                }
-            }
+            LazyList(containerSize = itemSizeDp) { items(list, key = { it.toArgb() }) { Item(it) } }
         }
 
-        rule.runOnUiThread {
-            list = listOf(Color.Black)
-        }
+        rule.runOnUiThread { list = listOf(Color.Black) }
 
         onAnimationFrame { fraction ->
             if (fraction < 0.5f) {
                 assertPixels(itemSize) { Color.Black.copy(alpha = fraction) }
             } else {
                 if (fraction.isCloseTo(0.5f)) {
-                    rule.runOnUiThread {
-                        list = emptyList()
-                    }
+                    rule.runOnUiThread { list = emptyList() }
                 }
                 assertPixels(itemSize) { Color.Transparent }
             }
@@ -266,9 +226,7 @@ class LazyListItemAppearanceAnimationTest {
         var list by mutableStateOf(listOf(Color.Black, Color.Green, Color.Blue, Color.Yellow))
         rule.setContent {
             LazyList(containerSize = itemSizeDp * 2) {
-                items(list, key = { it.toArgb() }) {
-                    Item(it)
-                }
+                items(list, key = { it.toArgb() }) { Item(it) }
             }
         }
 
@@ -300,11 +258,7 @@ class LazyListItemAppearanceAnimationTest {
                 }
             } else {
                 if (fraction.isCloseTo(0.75f)) {
-                    rule.runOnUiThread {
-                        runBlocking {
-                            state.scrollBy(-itemSize * 1.5f)
-                        }
-                    }
+                    rule.runOnUiThread { runBlocking { state.scrollBy(-itemSize * 1.5f) } }
                 }
                 assertPixels(itemSize * 2) { offset ->
                     // red item is not displayed anywhere
@@ -318,16 +272,49 @@ class LazyListItemAppearanceAnimationTest {
         }
     }
 
+    @Test
+    fun itemOutsideOfViewPortBeingAnimatedIn_shouldBePlacedAtTheEndOfList() {
+        var list by
+            mutableStateOf(
+                listOf(Color.Black, Color.Green, Color.Blue, Color.Yellow, Color.DarkGray)
+            )
+        rule.setContent {
+            LazyList(containerSize = itemSizeDp * 2.5f) {
+                items(list, key = { it.toArgb() }) { Item(it) }
+            }
+        }
+
+        rule.runOnUiThread {
+            // item 0 will leave, item 3 will pop up
+            list = listOf(Color.Green, Color.Blue, Color.Yellow, Color.DarkGray)
+        }
+
+        onAnimationFrame { fraction ->
+            if (fraction.isCloseTo(0.5f)) {
+                assertPixels((itemSize * 2.5f).roundToInt()) { offset ->
+                    when (offset) {
+                        // green item is first
+                        in 0 until itemSize -> Color.Green
+                        // blue item is second
+                        in itemSize until 2 * itemSize -> Color.Blue
+                        // yellow item pops up at the bottom
+                        else -> Color.Yellow
+                    }
+                }
+            }
+        }
+    }
+
     private fun assertPixels(
         mainAxisSize: Int,
         crossAxisSize: Int = this.crossAxisSize,
         expectedColorProvider: (offset: Int) -> Color?
     ) {
-        rule.onNodeWithTag(ContainerTag)
-            .captureToImage()
-            .assertPixels(IntSize(crossAxisSize, mainAxisSize)) {
-                expectedColorProvider(it.y)?.compositeOver(Color.White)
-            }
+        rule.onNodeWithTag(ContainerTag).captureToImage().assertPixels(
+            IntSize(crossAxisSize, mainAxisSize)
+        ) {
+            expectedColorProvider(it.y)?.compositeOver(Color.White)
+        }
     }
 
     private fun onAnimationFrame(duration: Long = Duration, onFrame: (fraction: Float) -> Unit) {
@@ -346,6 +333,20 @@ class LazyListItemAppearanceAnimationTest {
         }
     }
 
+    @Test
+    fun snapToPosition_noAnimation() {
+        val items = List(200) { Color.Black }
+        rule.setContent {
+            LazyList(containerSize = itemSizeDp) {
+                items(items, key = { it.toArgb() }) { Item(it) }
+            }
+        }
+
+        rule.runOnIdle { runBlocking { state.scrollToItem(200) } }
+
+        assertPixels(itemSize) { Color.Black }
+    }
+
     @Composable
     private fun LazyList(
         containerSize: Dp? = containerSizeDp,
@@ -357,23 +358,23 @@ class LazyListItemAppearanceAnimationTest {
 
         LazyColumn(
             state = state,
-            modifier = Modifier
-                .then(
-                    if (containerSize != null) {
-                        Modifier.requiredHeight(containerSize)
-                    } else {
-                        Modifier
-                    }
-                )
-                .background(Color.White)
-                .then(
-                    if (crossAxisSize != Dp.Unspecified) {
-                        Modifier.requiredWidth(crossAxisSize)
-                    } else {
-                        Modifier.fillMaxWidth()
-                    }
-                )
-                .testTag(ContainerTag),
+            modifier =
+                Modifier.then(
+                        if (containerSize != null) {
+                            Modifier.requiredHeight(containerSize)
+                        } else {
+                            Modifier
+                        }
+                    )
+                    .background(Color.White)
+                    .then(
+                        if (crossAxisSize != Dp.Unspecified) {
+                            Modifier.requiredWidth(crossAxisSize)
+                        } else {
+                            Modifier.fillMaxWidth()
+                        }
+                    )
+                    .testTag(ContainerTag),
             content = content
         )
     }
@@ -386,12 +387,7 @@ class LazyListItemAppearanceAnimationTest {
         animSpec: FiniteAnimationSpec<Float>? = AnimSpec
     ) {
         Box(
-            Modifier
-                .animateItem(
-                    fadeInSpec = animSpec,
-                    placementSpec = null,
-                    fadeOutSpec = null
-                )
+            Modifier.animateItem(fadeInSpec = animSpec, placementSpec = null, fadeOutSpec = null)
                 .background(color)
                 .requiredHeight(size)
                 .requiredWidth(crossAxisSize)

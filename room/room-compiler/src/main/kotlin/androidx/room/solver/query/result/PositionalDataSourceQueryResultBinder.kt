@@ -18,7 +18,6 @@ package androidx.room.solver.query.result
 
 import androidx.room.compiler.codegen.VisibilityModifier
 import androidx.room.compiler.codegen.XFunSpec
-import androidx.room.compiler.codegen.XFunSpec.Builder.Companion.addStatement
 import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.XTypeSpec
@@ -27,9 +26,7 @@ import androidx.room.ext.CommonTypeNames.LIST
 import androidx.room.ext.RoomTypeNames
 import androidx.room.solver.CodeGenScope
 
-/**
- * Used by Paging2 pipeline
- */
+/** Used by Paging2 pipeline */
 class PositionalDataSourceQueryResultBinder(
     val listAdapter: ListQueryResultAdapter?,
     val tableNames: Set<String>,
@@ -49,41 +46,43 @@ class PositionalDataSourceQueryResultBinder(
         // we don't need a comma. If list is empty, this prevents generating bad code (it is still
         // an error to have empty list but that is already reported while item is processed)
         val tableNamesList = tableNames.joinToString("") { ", \"$it\"" }
-        val spec = XTypeSpec.anonymousClassBuilder(
-            language = scope.language,
-            "%N, %L, %L, %L%L",
-            dbProperty,
-            roomSQLiteQueryVar,
-            inTransaction,
-            true,
-            tableNamesList
-        ).apply {
-            superclass(typeName)
-            addConvertRowsMethod(scope)
-        }.build()
+        val spec =
+            XTypeSpec.anonymousClassBuilder(
+                    language = scope.language,
+                    "%N, %L, %L, %L%L",
+                    dbProperty,
+                    roomSQLiteQueryVar,
+                    inTransaction,
+                    true,
+                    tableNamesList
+                )
+                .apply {
+                    superclass(typeName)
+                    addConvertRowsMethod(scope)
+                }
+                .build()
         scope.builder.addStatement("return %L", spec)
     }
 
     private fun XTypeSpec.Builder.addConvertRowsMethod(scope: CodeGenScope) {
         addFunction(
             XFunSpec.builder(
-                language = language,
-                name = "convertRows",
-                visibility = VisibilityModifier.PROTECTED,
-                isOverride = true
-            ).apply {
-                returns(LIST.parametrizedBy(itemTypeName))
-                val cursorParamName = "cursor"
-                addParameter(
-                    CURSOR,
-                    cursorParamName
+                    language = language,
+                    name = "convertRows",
+                    visibility = VisibilityModifier.PROTECTED,
+                    isOverride = true
                 )
-                val resultVar = scope.getTmpVar("_res")
-                val rowsScope = scope.fork()
-                listAdapter?.convert(resultVar, cursorParamName, rowsScope)
-                addCode(rowsScope.generate())
-                addStatement("return %L", resultVar)
-            }.build()
+                .apply {
+                    returns(LIST.parametrizedBy(itemTypeName))
+                    val cursorParamName = "cursor"
+                    addParameter(CURSOR, cursorParamName)
+                    val resultVar = scope.getTmpVar("_res")
+                    val rowsScope = scope.fork()
+                    listAdapter?.convert(resultVar, cursorParamName, rowsScope)
+                    addCode(rowsScope.generate())
+                    addStatement("return %L", resultVar)
+                }
+                .build()
         )
     }
 }

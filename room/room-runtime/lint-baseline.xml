@@ -1,91 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.3.0-alpha10" type="baseline" client="gradle" dependencies="false" name="AGP (8.3.0-alpha10)" variant="all" version="8.3.0-alpha10">
-
-    <issue
-        id="RestrictedApiAndroidX"
-        message="Api29Impl.setNotificationUris can only be called from within the same library group (referenced groupId=`androidx.sqlite` from groupId=`androidx.room`)"
-        errorLine1="            SupportSQLiteCompat.Api29Impl.setNotificationUris(delegate, cr, uris)"
-        errorLine2="                                          ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidMain/kotlin/androidx/room/support/AutoClosingRoomOpenHelper.android.kt"/>
-    </issue>
-
-    <issue
-        id="RestrictedApiAndroidX"
-        message="Api29Impl.setNotificationUris can only be called from within the same library group (referenced groupId=`androidx.sqlite` from groupId=`androidx.room`)"
-        errorLine1="            SupportSQLiteCompat.Api29Impl.setNotificationUris(delegate, cr, uris)"
-        errorLine2="                                                              ~~~~~~~~">
-        <location
-            file="src/androidMain/kotlin/androidx/room/support/AutoClosingRoomOpenHelper.android.kt"/>
-    </issue>
-
-    <issue
-        id="RestrictedApiAndroidX"
-        message="Api29Impl.setNotificationUris can only be called from within the same library group (referenced groupId=`androidx.sqlite` from groupId=`androidx.room`)"
-        errorLine1="            SupportSQLiteCompat.Api29Impl.setNotificationUris(delegate, cr, uris)"
-        errorLine2="                                                                        ~~">
-        <location
-            file="src/androidMain/kotlin/androidx/room/support/AutoClosingRoomOpenHelper.android.kt"/>
-    </issue>
-
-    <issue
-        id="RestrictedApiAndroidX"
-        message="Api29Impl.setNotificationUris can only be called from within the same library group (referenced groupId=`androidx.sqlite` from groupId=`androidx.room`)"
-        errorLine1="            SupportSQLiteCompat.Api29Impl.setNotificationUris(delegate, cr, uris)"
-        errorLine2="                                                                            ~~~~">
-        <location
-            file="src/androidMain/kotlin/androidx/room/support/AutoClosingRoomOpenHelper.android.kt"/>
-    </issue>
-
-    <issue
-        id="RestrictedApiAndroidX"
-        message="Api29Impl.getNotificationUris can only be called from within the same library group (referenced groupId=`androidx.sqlite` from groupId=`androidx.room`)"
-        errorLine1="            return SupportSQLiteCompat.Api29Impl.getNotificationUris(delegate)"
-        errorLine2="                                                 ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidMain/kotlin/androidx/room/support/AutoClosingRoomOpenHelper.android.kt"/>
-    </issue>
-
-    <issue
-        id="RestrictedApiAndroidX"
-        message="Api29Impl.getNotificationUris can only be called from within the same library group (referenced groupId=`androidx.sqlite` from groupId=`androidx.room`)"
-        errorLine1="            return SupportSQLiteCompat.Api29Impl.getNotificationUris(delegate)"
-        errorLine2="                                                                     ~~~~~~~~">
-        <location
-            file="src/androidMain/kotlin/androidx/room/support/AutoClosingRoomOpenHelper.android.kt"/>
-    </issue>
-
-    <issue
-        id="RestrictedApiAndroidX"
-        message="Api23Impl.setExtras can only be called from within the same library group (referenced groupId=`androidx.sqlite` from groupId=`androidx.room`)"
-        errorLine1="            SupportSQLiteCompat.Api23Impl.setExtras(delegate, extras)"
-        errorLine2="                                          ~~~~~~~~~">
-        <location
-            file="src/androidMain/kotlin/androidx/room/support/AutoClosingRoomOpenHelper.android.kt"/>
-    </issue>
-
-    <issue
-        id="RestrictedApiAndroidX"
-        message="Api23Impl.setExtras can only be called from within the same library group (referenced groupId=`androidx.sqlite` from groupId=`androidx.room`)"
-        errorLine1="            SupportSQLiteCompat.Api23Impl.setExtras(delegate, extras)"
-        errorLine2="                                                    ~~~~~~~~">
-        <location
-            file="src/androidMain/kotlin/androidx/room/support/AutoClosingRoomOpenHelper.android.kt"/>
-    </issue>
-
-    <issue
-        id="RestrictedApiAndroidX"
-        message="Api23Impl.setExtras can only be called from within the same library group (referenced groupId=`androidx.sqlite` from groupId=`androidx.room`)"
-        errorLine1="            SupportSQLiteCompat.Api23Impl.setExtras(delegate, extras)"
-        errorLine2="                                                              ~~~~~~">
-        <location
-            file="src/androidMain/kotlin/androidx/room/support/AutoClosingRoomOpenHelper.android.kt"/>
-    </issue>
+<issues format="6" by="lint 8.8.0-alpha01" type="baseline" client="gradle" dependencies="false" name="AGP (8.8.0-alpha01)" variant="all" version="8.8.0-alpha01">
 
     <issue
         id="RestrictedApiAndroidX"
         message="ProcessLock can only be called from within the same library group (referenced groupId=`androidx.sqlite` from groupId=`androidx.room`)"
-        errorLine1="        val copyLock = ProcessLock("
+        errorLine1="        val copyLock = ProcessLock(name, context.filesDir, processLevelLock)"
         errorLine2="                       ~~~~~~~~~~~">
         <location
             file="src/androidMain/kotlin/androidx/room/support/PrePackagedCopyOpenHelper.android.kt"/>
@@ -94,8 +13,8 @@
     <issue
         id="RestrictedApiAndroidX"
         message="ProcessLock can only be called from within the same library group (referenced groupId=`androidx.sqlite` from groupId=`androidx.room`)"
-        errorLine1="            name,"
-        errorLine2="            ~~~~">
+        errorLine1="        val copyLock = ProcessLock(name, context.filesDir, processLevelLock)"
+        errorLine2="                                   ~~~~">
         <location
             file="src/androidMain/kotlin/androidx/room/support/PrePackagedCopyOpenHelper.android.kt"/>
     </issue>
@@ -103,8 +22,8 @@
     <issue
         id="RestrictedApiAndroidX"
         message="ProcessLock can only be called from within the same library group (referenced groupId=`androidx.sqlite` from groupId=`androidx.room`)"
-        errorLine1="            context.filesDir,"
-        errorLine2="            ~~~~~~~~~~~~~~~~">
+        errorLine1="        val copyLock = ProcessLock(name, context.filesDir, processLevelLock)"
+        errorLine2="                                         ~~~~~~~~~~~~~~~~">
         <location
             file="src/androidMain/kotlin/androidx/room/support/PrePackagedCopyOpenHelper.android.kt"/>
     </issue>

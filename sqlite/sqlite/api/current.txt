@@ -1,6 +1,25 @@
 // Signature format: 4.0
 package androidx.sqlite {
 
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) public @interface DataType {
+  }
+
+  public final class SQLite {
+    method public static void execSQL(androidx.sqlite.SQLiteConnection, String sql);
+    method public static Void throwSQLiteException(int errorCode, String? errorMsg);
+    method public static inline <R> R use(androidx.sqlite.SQLiteStatement, kotlin.jvm.functions.Function1<? super androidx.sqlite.SQLiteStatement,? extends R> block);
+    property public static final int SQLITE_DATA_BLOB;
+    property public static final int SQLITE_DATA_FLOAT;
+    property public static final int SQLITE_DATA_INTEGER;
+    property public static final int SQLITE_DATA_NULL;
+    property public static final int SQLITE_DATA_TEXT;
+    field public static final int SQLITE_DATA_BLOB = 4; // 0x4
+    field public static final int SQLITE_DATA_FLOAT = 2; // 0x2
+    field public static final int SQLITE_DATA_INTEGER = 1; // 0x1
+    field public static final int SQLITE_DATA_NULL = 5; // 0x5
+    field public static final int SQLITE_DATA_TEXT = 3; // 0x3
+  }
+
   public interface SQLiteConnection {
     method public void close();
     method public androidx.sqlite.SQLiteStatement prepare(String sql);
@@ -8,12 +27,6 @@ package androidx.sqlite {
 
   public interface SQLiteDriver {
     method public androidx.sqlite.SQLiteConnection open(String fileName);
-  }
-
-  public final class SQLiteKt {
-    method public static void execSQL(androidx.sqlite.SQLiteConnection, String sql);
-    method public static Void throwSQLiteException(int errorCode, String? errorMsg);
-    method public static inline <R> R use(androidx.sqlite.SQLiteStatement, kotlin.jvm.functions.Function1<? super androidx.sqlite.SQLiteStatement,? extends R> block);
   }
 
   public interface SQLiteStatement {
@@ -32,6 +45,7 @@ package androidx.sqlite {
     method public int getColumnCount();
     method public String getColumnName(int index);
     method public default java.util.List<java.lang.String> getColumnNames();
+    method @androidx.sqlite.DataType public int getColumnType(int index);
     method public double getDouble(int index);
     method public default float getFloat(int index);
     method public default int getInt(int index);
@@ -137,12 +151,18 @@ package androidx.sqlite.db {
     method public void onDowngrade(androidx.sqlite.db.SupportSQLiteDatabase db, int oldVersion, int newVersion);
     method public void onOpen(androidx.sqlite.db.SupportSQLiteDatabase db);
     method public abstract void onUpgrade(androidx.sqlite.db.SupportSQLiteDatabase db, int oldVersion, int newVersion);
+    property public final int version;
     field public final int version;
   }
 
   public static final class SupportSQLiteOpenHelper.Configuration {
     ctor public SupportSQLiteOpenHelper.Configuration(android.content.Context context, String? name, androidx.sqlite.db.SupportSQLiteOpenHelper.Callback callback, optional boolean useNoBackupDirectory, optional boolean allowDataLossOnRecovery);
     method public static androidx.sqlite.db.SupportSQLiteOpenHelper.Configuration.Builder builder(android.content.Context context);
+    property public final boolean allowDataLossOnRecovery;
+    property public final androidx.sqlite.db.SupportSQLiteOpenHelper.Callback callback;
+    property public final android.content.Context context;
+    property public final String? name;
+    property public final boolean useNoBackupDirectory;
     field public static final androidx.sqlite.db.SupportSQLiteOpenHelper.Configuration.Companion Companion;
     field public final boolean allowDataLossOnRecovery;
     field public final androidx.sqlite.db.SupportSQLiteOpenHelper.Callback callback;

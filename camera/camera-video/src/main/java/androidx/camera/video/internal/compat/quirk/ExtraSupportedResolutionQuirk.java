@@ -18,8 +18,7 @@ package androidx.camera.video.internal.compat.quirk;
 
 import android.os.Build;
 
-import androidx.annotation.RequiresApi;
-import androidx.camera.core.impl.Quirk;
+import androidx.camera.core.internal.compat.quirk.SurfaceProcessingQuirk;
 
 /**
  * <p>QuirkSummary
@@ -31,8 +30,7 @@ import androidx.camera.core.impl.Quirk;
  *                  support these resolutions.
  *     Device(s): Motorola Moto E5 Play.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-public class ExtraSupportedResolutionQuirk implements Quirk {
+public class ExtraSupportedResolutionQuirk implements SurfaceProcessingQuirk {
 
     static boolean load() {
         return isMotoE5Play();

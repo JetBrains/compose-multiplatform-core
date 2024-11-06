@@ -18,6 +18,7 @@ package androidx.appsearch.platformstorage.converter;
 
 import android.os.Build;
 
+import androidx.annotation.DoNotInline;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
@@ -51,9 +52,27 @@ public final class RequestToPlatformConverter {
         Preconditions.checkNotNull(jetpackRequest);
         android.app.appsearch.PutDocumentsRequest.Builder platformBuilder =
                 new android.app.appsearch.PutDocumentsRequest.Builder();
+        // Convert normal generic documents.
         for (GenericDocument jetpackDocument : jetpackRequest.getGenericDocuments()) {
             platformBuilder.addGenericDocuments(
                     GenericDocumentToPlatformConverter.toPlatformGenericDocument(jetpackDocument));
+        }
+        // Convert taken action generic documents.
+        for (GenericDocument jetpackTakenActionGenericDocument :
+                jetpackRequest.getTakenActionGenericDocuments()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                ApiHelperForV.addTakenActionGenericDocuments(
+                        platformBuilder,
+                        GenericDocumentToPlatformConverter.toPlatformGenericDocument(
+                                jetpackTakenActionGenericDocument));
+            } else {
+                // This version of platform-storage doesn't support the dedicated
+                // addTakenActionGenericDocuments API, but we can still add them to the index via
+                // the put API (just without logging).
+                platformBuilder.addGenericDocuments(
+                        GenericDocumentToPlatformConverter.toPlatformGenericDocument(
+                                jetpackTakenActionGenericDocument));
+            }
         }
         return platformBuilder.build();
     }
@@ -71,7 +90,7 @@ public final class RequestToPlatformConverter {
                         jetpackRequest.getNamespace())
                         .addIds(jetpackRequest.getIds());
         for (Map.Entry<String, List<String>> projection :
-                jetpackRequest.getProjectionsInternal().entrySet()) {
+                jetpackRequest.getProjections().entrySet()) {
             platformBuilder.addProjection(projection.getKey(), projection.getValue());
         }
         return platformBuilder.build();
@@ -121,5 +140,25 @@ public final class RequestToPlatformConverter {
                 jetpackRequest.getDocumentId())
                 .setUsageTimestampMillis(jetpackRequest.getUsageTimestampMillis())
                 .build();
+    }
+
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    private static class ApiHelperForV {
+        private ApiHelperForV() {}
+
+        @DoNotInline
+        static void addTakenActionGenericDocuments(
+                android.app.appsearch.PutDocumentsRequest.Builder platformBuilder,
+                android.app.appsearch.GenericDocument platformTakenActionGenericDocument) {
+            try {
+                platformBuilder.addTakenActionGenericDocuments(platformTakenActionGenericDocument);
+            } catch (android.app.appsearch.exceptions.AppSearchException e) {
+                // This method incorrectly declares that it throws AppSearchException, whereas in
+                // fact there's nothing in its implementation that would do so. Suppress it here
+                // instead of piping all the way through the stack.
+                throw new RuntimeException(
+                        "Unexpected AppSearchException which should not be possible", e);
+            }
+        }
     }
 }

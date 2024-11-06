@@ -29,7 +29,6 @@ import android.view.Surface;
 import androidx.annotation.FloatRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraState;
@@ -51,6 +50,7 @@ import androidx.camera.core.internal.ImmutableZoomState;
 import androidx.core.util.Preconditions;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.test.core.app.ApplicationProvider;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,7 +67,6 @@ import java.util.concurrent.Executor;
  *
  * <p>This camera info can be constructed with fake values.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class FakeCameraInfoInternal implements CameraInfoInternal {
     private static final Set<Range<Integer>> FAKE_FPS_RANGES = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList(
@@ -120,34 +119,36 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
     }
 
     public FakeCameraInfoInternal(@NonNull String cameraId) {
-        this(cameraId, 0, CameraSelector.LENS_FACING_BACK, null);
+        this(cameraId, 0, CameraSelector.LENS_FACING_BACK,
+                ApplicationProvider.getApplicationContext());
     }
 
     public FakeCameraInfoInternal(@NonNull String cameraId,
             @CameraSelector.LensFacing int lensFacing) {
-        this(cameraId, 0, lensFacing, null);
+        this(cameraId, 0, lensFacing,
+                ApplicationProvider.getApplicationContext());
     }
 
     public FakeCameraInfoInternal(int sensorRotation, @CameraSelector.LensFacing int lensFacing) {
-        this("0", sensorRotation, lensFacing, null);
+        this("0", sensorRotation, lensFacing,
+                ApplicationProvider.getApplicationContext());
     }
 
     public FakeCameraInfoInternal(@NonNull String cameraId, int sensorRotation,
             @CameraSelector.LensFacing int lensFacing) {
-        this(cameraId, sensorRotation, lensFacing, null);
+        this(cameraId, sensorRotation, lensFacing,
+                ApplicationProvider.getApplicationContext());
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public FakeCameraInfoInternal(@NonNull String cameraId, int sensorRotation,
             @CameraSelector.LensFacing int lensFacing,
-            @Nullable Context context) {
+            @NonNull Context context) {
         mCameraId = cameraId;
         mSensorRotation = sensorRotation;
         mLensFacing = lensFacing;
         mZoomLiveData = new MutableLiveData<>(ImmutableZoomState.create(1.0f, 4.0f, 1.0f, 0.0f));
-        if (context != null) {
-            mCameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
-        }
+        mCameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
     }
 
     /**
@@ -457,7 +458,6 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
         }
     }
 
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     static final class FakeExposureState implements ExposureState {
         private int mIndex = 0;
         private Range<Integer> mRange = new Range<>(0, 0);

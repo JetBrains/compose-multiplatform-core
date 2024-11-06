@@ -75,7 +75,7 @@ def bundleTestSdkDexTaskProvider = tasks.register("bundleTestSdkDexTask", Bundle
 }
 
 androidComponents {
-    onVariants(selector().withBuildType("debug")) {
+    onVariants(selector().withBuildType("release")) {
         androidTest.sources.assets.addGeneratedSourceDirectory(
                 bundleTestSdkDexTaskProvider,
                 BundleTestSdkDexTask::getOutputDir
@@ -117,25 +117,19 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.multidex)
     androidTestImplementation(project(':internal-testutils-runtime'))
     androidTestImplementation(project(":internal-testutils-truth")) // for assertThrows
 
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy) // DexMaker has it"s own MockMaker
-    androidTestImplementation(libs.dexmakerMockitoInline, excludes.bytebuddy) // DexMaker has it"s own MockMaker
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockitoInline)
 
     androidTestBundleDex(project(":privacysandbox:sdkruntime:test-sdks:current"))
-    androidTestBundleDex(project(":privacysandbox:sdkruntime:test-sdks:v1"))
-    androidTestBundleDex(project(":privacysandbox:sdkruntime:test-sdks:v2"))
-    // V3 was released as V4 (original release postponed)
     androidTestBundleDex(project(":privacysandbox:sdkruntime:test-sdks:v4"))
     androidTestBundleDex(project(":privacysandbox:sdkruntime:test-sdks:v5"))
+    androidTestBundleDex(project(":privacysandbox:sdkruntime:test-sdks:v6"))
 }
 
 android {
-    defaultConfig {
-        multiDexEnabled = true
-    }
     sourceSets {
         androidTest {
             assets {
@@ -145,7 +139,8 @@ android {
     }
 
     namespace "androidx.privacysandbox.sdkruntime.client"
-    compileSdkVersion = "android-34-ext10"
+    compileSdk = 34
+    compileSdkExtension = 10
 }
 
 androidx {
@@ -153,5 +148,5 @@ androidx {
     type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "Provides components for SdkRuntime aware Applications"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

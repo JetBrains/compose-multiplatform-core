@@ -18,9 +18,12 @@ package androidx.wear.compose.material3.test
 
 import android.os.Build
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
@@ -40,6 +43,7 @@ import androidx.wear.compose.material3.TEST_TAG
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TextButton
 import androidx.wear.compose.material3.TextButtonDefaults
+import androidx.wear.compose.material3.TextButtonShapes
 import androidx.wear.compose.material3.setContentWithTheme
 import org.junit.Rule
 import org.junit.Test
@@ -51,25 +55,17 @@ import org.junit.runner.RunWith
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 class TextButtonScreenshotTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
-    @get:Rule
-    val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
+    @get:Rule val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
 
-    @get:Rule
-    val testName = TestName()
+    @get:Rule val testName = TestName()
 
     @Test
-    fun filled_text_button_enabled() = verifyScreenshot {
-        sampleFilledTextButton(enabled = true)
-    }
+    fun filled_text_button_enabled() = verifyScreenshot { sampleFilledTextButton(enabled = true) }
 
     @Test
-    fun filled_text_button_disabled() =
-        verifyScreenshot {
-            sampleFilledTextButton(enabled = false)
-        }
+    fun filled_text_button_disabled() = verifyScreenshot { sampleFilledTextButton(enabled = false) }
 
     @Test
     fun filled_tonal_text_button_enabled() = verifyScreenshot {
@@ -77,10 +73,9 @@ class TextButtonScreenshotTest {
     }
 
     @Test
-    fun filled_tonal_text_button_disabled() =
-        verifyScreenshot {
-            sampleFilledTonalTextButton(enabled = false)
-        }
+    fun filled_tonal_text_button_disabled() = verifyScreenshot {
+        sampleFilledTonalTextButton(enabled = false)
+    }
 
     @Test
     fun outlined_text_button_enabled() = verifyScreenshot {
@@ -92,19 +87,31 @@ class TextButtonScreenshotTest {
         sampleOutlinedTextButton(enabled = false)
     }
 
-    @Test
-    fun text_button_enabled() = verifyScreenshot {
-        sampleTextButton(enabled = true)
-    }
+    @Test fun text_button_enabled() = verifyScreenshot { sampleTextButton(enabled = true) }
 
-    @Test
-    fun text_button_disabled() = verifyScreenshot {
-        sampleTextButton(enabled = false)
-    }
+    @Test fun text_button_disabled() = verifyScreenshot { sampleTextButton(enabled = false) }
 
     @Test
     fun text_button_with_offset() = verifyScreenshot {
         sampleTextButton(enabled = true, modifier = Modifier.offset(10.dp))
+    }
+
+    @Test
+    fun text_button_with_corner_animation() = verifyScreenshot {
+        sampleTextButton(
+            shapes = TextButtonDefaults.animatedShapes(),
+        )
+    }
+
+    @Test
+    fun text_button_with_morph_animation() = verifyScreenshot {
+        sampleTextButton(
+            shapes =
+                TextButtonDefaults.animatedShapes(
+                    shape = CutCornerShape(15.dp),
+                    pressedShape = RoundedCornerShape(15.dp)
+                ),
+        )
     }
 
     @Composable
@@ -145,11 +152,18 @@ class TextButtonScreenshotTest {
     }
 
     @Composable
-    private fun sampleTextButton(enabled: Boolean, modifier: Modifier = Modifier) {
+    private fun sampleTextButton(
+        enabled: Boolean = true,
+        shapes: TextButtonShapes = TextButtonDefaults.shapes(),
+        modifier: Modifier = Modifier,
+        interactionSource: MutableInteractionSource? = null
+    ) {
         TextButton(
             onClick = {},
             enabled = enabled,
-            modifier = modifier.testTag(TEST_TAG)
+            shapes = shapes,
+            modifier = modifier.testTag(TEST_TAG),
+            interactionSource = interactionSource
         ) {
             Text(text = "ABC")
         }
@@ -161,15 +175,15 @@ class TextButtonScreenshotTest {
     ) {
         rule.setContentWithTheme {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
+                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
             ) {
                 content()
             }
         }
 
-        rule.onNodeWithTag(TEST_TAG).captureToImage()
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .captureToImage()
             .assertAgainstGolden(screenshotRule, methodName)
     }
 }

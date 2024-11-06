@@ -1,18 +1,18 @@
 /*
-* Copyright 2024 The Android Open Source Project
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright 2024 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package androidx.camera.camera2.pipe.compat
 
@@ -31,32 +31,37 @@ import javax.inject.Singleton
  * AudioRestrictionController keeps the global audio restriction mode and audio restriction mode on
  * each CameraGraph, and computes the final audio restriction mode based on the settings.
  */
-interface AudioRestrictionController {
+public interface AudioRestrictionController {
     /** Public global audio restriction mode across all CameraGraph instances. */
-    var globalAudioRestrictionMode: AudioRestrictionMode
+    public var globalAudioRestrictionMode: AudioRestrictionMode
 
     /** Update the audio restriction mode of the given CameraGraph. */
-    fun updateCameraGraphAudioRestrictionMode(cameraGraph: CameraGraph, mode: AudioRestrictionMode)
+    public fun updateCameraGraphAudioRestrictionMode(
+        cameraGraph: CameraGraph,
+        mode: AudioRestrictionMode
+    )
 
     /** Removes the CameraGraph from the local CameraGraph to audio restriction mode mapping. */
-    fun removeCameraGraph(cameraGraph: CameraGraph)
+    public fun removeCameraGraph(cameraGraph: CameraGraph)
 
     /** Adds the listener to the controller's stored collection of listeners. */
-    fun addListener(listener: Listener)
+    public fun addListener(listener: Listener)
 
-    /** Removes the listener to the controller's stored collection of listeners.*/
-    fun removeListener(listener: Listener)
+    /** Removes the listener to the controller's stored collection of listeners. */
+    public fun removeListener(listener: Listener)
 
-    /** [CameraDeviceWrapper] extends the [Listener]. When audio restriction mode changes, the
-     * listener's update method would be invoked. */
-    interface Listener {
+    /**
+     * [CameraDeviceWrapper] extends the [Listener]. When audio restriction mode changes, the
+     * listener's update method would be invoked.
+     */
+    public interface Listener {
         /** @see CameraDevice.getCameraAudioRestriction */
-        fun onCameraAudioRestrictionUpdated(mode: AudioRestrictionMode)
+        public fun onCameraAudioRestrictionUpdated(mode: AudioRestrictionMode)
     }
 }
 
 @Singleton
-class AudioRestrictionControllerImpl @Inject constructor() : AudioRestrictionController {
+public class AudioRestrictionControllerImpl @Inject constructor() : AudioRestrictionController {
     private val lock = Any()
     override var globalAudioRestrictionMode: AudioRestrictionMode = AUDIO_RESTRICTION_NONE
         get() = synchronized(lock) { field }
@@ -89,13 +94,15 @@ class AudioRestrictionControllerImpl @Inject constructor() : AudioRestrictionCon
 
     @GuardedBy("lock")
     private fun computeAudioRestrictionMode(): AudioRestrictionMode {
-        if (audioRestrictionModeMap.containsValue(AUDIO_RESTRICTION_VIBRATION_SOUND) ||
-            globalAudioRestrictionMode == AUDIO_RESTRICTION_VIBRATION_SOUND
+        if (
+            audioRestrictionModeMap.containsValue(AUDIO_RESTRICTION_VIBRATION_SOUND) ||
+                globalAudioRestrictionMode == AUDIO_RESTRICTION_VIBRATION_SOUND
         ) {
             return AUDIO_RESTRICTION_VIBRATION_SOUND
         }
-        if (audioRestrictionModeMap.containsValue(AUDIO_RESTRICTION_VIBRATION) ||
-            globalAudioRestrictionMode == AUDIO_RESTRICTION_VIBRATION
+        if (
+            audioRestrictionModeMap.containsValue(AUDIO_RESTRICTION_VIBRATION) ||
+                globalAudioRestrictionMode == AUDIO_RESTRICTION_VIBRATION
         ) {
             return AUDIO_RESTRICTION_VIBRATION
         }
@@ -117,9 +124,7 @@ class AudioRestrictionControllerImpl @Inject constructor() : AudioRestrictionCon
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             return
         }
-        synchronized(lock) {
-            activeListeners.remove(listener)
-        }
+        synchronized(lock) { activeListeners.remove(listener) }
     }
 
     @GuardedBy("lock")

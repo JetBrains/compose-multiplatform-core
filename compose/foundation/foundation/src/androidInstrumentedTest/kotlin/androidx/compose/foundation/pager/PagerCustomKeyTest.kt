@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.pager
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
@@ -28,13 +27,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalFoundationApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class PagerCustomKeyTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun keysLambdaIsCalledOnlyOnce() {
@@ -52,8 +49,6 @@ class PagerCustomKeyTest {
             }
         }
 
-        rule.runOnIdle {
-            Truth.assertThat(keyCalls).isEqualTo(1)
-        }
+        rule.runOnIdle { Truth.assertThat(keyCalls).isEqualTo(1) }
     }
 }

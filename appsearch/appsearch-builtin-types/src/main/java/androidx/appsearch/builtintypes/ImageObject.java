@@ -24,6 +24,7 @@ import androidx.appsearch.annotation.Document;
 import androidx.appsearch.builtintypes.properties.Keyword;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -48,18 +49,23 @@ public final class ImageObject extends Thing {
     @Document.StringProperty
     private final String mThumbnailSha256;
 
+    @Nullable
+    @Document.BytesProperty
+    private final byte[] mBytes;
+
     ImageObject(@NonNull String namespace, @NonNull String id, int documentScore,
             long creationTimestampMillis, long documentTtlMillis, @Nullable String name,
             @Nullable List<String> alternateNames, @Nullable String description,
             @Nullable String image, @Nullable String url,
             @NonNull List<PotentialAction> potentialActions,
             @NonNull List<Keyword> keywords,
-            @Nullable String sha256, @Nullable String thumbnailSha256) {
+            @Nullable String sha256, @Nullable String thumbnailSha256, @Nullable byte[] bytes) {
         super(namespace, id, documentScore, creationTimestampMillis, documentTtlMillis, name,
                 alternateNames, description, image, url, potentialActions);
         mKeywords = checkNotNull(keywords);
         mSha256 = sha256;
         mThumbnailSha256 = thumbnailSha256;
+        mBytes = bytes;
     }
 
     /**
@@ -92,18 +98,28 @@ public final class ImageObject extends Thing {
         return mThumbnailSha256;
     }
 
+    /**
+     * Returns the byte representation of this image or video.
+     * Can be a compressed bitmap (e.g. JPEG or PNG).
+     */
+    @Nullable
+    public byte[] getBytes() {
+        return mBytes;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ImageObject that = (ImageObject) o;
         return mKeywords.equals(that.mKeywords) && Objects.equals(mSha256, that.mSha256)
-                && Objects.equals(mThumbnailSha256, that.mThumbnailSha256);
+                && Objects.equals(mThumbnailSha256, that.mThumbnailSha256)
+                && Arrays.equals(mBytes, that.mBytes);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mKeywords, mSha256, mThumbnailSha256);
+        return Objects.hash(mKeywords, mSha256, mThumbnailSha256, Arrays.hashCode(mBytes));
     }
 
     /**
@@ -140,11 +156,15 @@ public final class ImageObject extends Thing {
         @Nullable
         protected String mThumbnailSha256;
 
+        @Nullable
+        protected byte[] mBytes;
+
         BuilderImpl(@NonNull String namespace, @NonNull String id) {
             super(namespace, id);
             mKeywords = new ArrayList<>();
             mSha256 = null;
             mThumbnailSha256 = null;
+            mBytes = null;
         }
 
         BuilderImpl(@NonNull ImageObject copyFrom) {
@@ -152,6 +172,7 @@ public final class ImageObject extends Thing {
             mKeywords = new ArrayList<>(copyFrom.getKeywords());
             mSha256 = copyFrom.getSha256();
             mThumbnailSha256 = copyFrom.getThumbnailSha256();
+            mBytes = copyFrom.getBytes();
         }
 
         @NonNull
@@ -159,7 +180,8 @@ public final class ImageObject extends Thing {
         public ImageObject build() {
             return new ImageObject(mNamespace, mId, mDocumentScore, mCreationTimestampMillis,
                     mDocumentTtlMillis, mName, mAlternateNames, mDescription, mImage, mUrl,
-                    mPotentialActions, new ArrayList<>(mKeywords), mSha256, mThumbnailSha256);
+                    mPotentialActions, new ArrayList<>(mKeywords), mSha256, mThumbnailSha256,
+                    mBytes);
         }
 
         /**
@@ -208,6 +230,15 @@ public final class ImageObject extends Thing {
         @NonNull
         public Self setThumbnailSha256(@Nullable String text) {
             mThumbnailSha256 = text;
+            return (Self) this;
+        }
+
+        /**
+         * Sets the byte representation of this image or video.
+         */
+        @NonNull
+        public Self setBytes(@Nullable byte[] bytes) {
+            mBytes = bytes;
             return (Self) this;
         }
     }

@@ -28,11 +28,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth
@@ -45,8 +48,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class LazyListSlotsReuseTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     val itemsSizePx = 30f
     val itemsSizeDp = with(rule.density) { itemsSizePx.toDp() }
@@ -56,29 +58,20 @@ class LazyListSlotsReuseTest {
         lateinit var state: LazyListState
         rule.setContent {
             state = rememberLazyListState()
-            LazyColumn(
-                Modifier.height(itemsSizeDp * 1.5f),
-                state
-            ) {
+            LazyColumn(Modifier.height(itemsSizeDp * 1.5f), state) {
                 items(100) {
                     Spacer(Modifier.height(itemsSizeDp).fillParentMaxWidth().testTag("$it"))
                 }
             }
         }
 
-        rule.onNodeWithTag("0")
-            .assertIsDisplayed()
+        val id0 = rule.onNodeWithTag("0").semanticsId()
+        rule.onNodeWithTag("0").assertIsDisplayed()
 
-        rule.runOnIdle {
-            runBlocking {
-                state.scrollToItem(1)
-            }
-        }
+        rule.runOnIdle { runBlocking { state.scrollToItem(1) } }
 
-        rule.onNodeWithTag("0")
-            .assertIsDeactivated()
-        rule.onNodeWithTag("1")
-            .assertIsDisplayed()
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id0)
+        rule.onNodeWithTag("1").assertIsDisplayed()
     }
 
     @Test
@@ -86,33 +79,23 @@ class LazyListSlotsReuseTest {
         lateinit var state: LazyListState
         rule.setContent {
             state = rememberLazyListState()
-            LazyColumn(
-                Modifier.height(itemsSizeDp * 1.5f),
-                state
-            ) {
+            LazyColumn(Modifier.height(itemsSizeDp * 1.5f), state) {
                 items(100) {
                     Spacer(Modifier.height(itemsSizeDp).fillParentMaxWidth().testTag("$it"))
                 }
             }
         }
 
-        rule.onNodeWithTag("0")
-            .assertIsDisplayed()
-        rule.onNodeWithTag("1")
-            .assertIsDisplayed()
+        val id0 = rule.onNodeWithTag("0").semanticsId()
+        val id1 = rule.onNodeWithTag("1").semanticsId()
+        rule.onNodeWithTag("0").assertIsDisplayed()
+        rule.onNodeWithTag("1").assertIsDisplayed()
 
-        rule.runOnIdle {
-            runBlocking {
-                state.scrollToItem(2)
-            }
-        }
+        rule.runOnIdle { runBlocking { state.scrollToItem(2) } }
 
-        rule.onNodeWithTag("0")
-            .assertIsDeactivated()
-        rule.onNodeWithTag("1")
-            .assertIsDeactivated()
-        rule.onNodeWithTag("2")
-            .assertIsDisplayed()
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id0)
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id1)
+        rule.onNodeWithTag("2").assertIsDisplayed()
     }
 
     @Test
@@ -120,30 +103,25 @@ class LazyListSlotsReuseTest {
         lateinit var state: LazyListState
         rule.setContent {
             state = rememberLazyListState()
-            LazyColumn(
-                Modifier.height(itemsSizeDp * (DefaultMaxItemsToRetain + 0.5f)),
-                state
-            ) {
+            LazyColumn(Modifier.height(itemsSizeDp * (DefaultMaxItemsToRetain + 0.5f)), state) {
                 items(100) {
                     Spacer(Modifier.height(itemsSizeDp).fillParentMaxWidth().testTag("$it"))
                 }
             }
         }
-
-        rule.runOnIdle {
-            runBlocking {
-                state.scrollToItem(DefaultMaxItemsToRetain + 1)
-            }
-        }
-
+        // Semantics IDs must be fetched before scrolling.
+        val deactivatedIds = mutableListOf<Int>()
         repeat(DefaultMaxItemsToRetain) {
-            rule.onNodeWithTag("$it")
-                .assertIsDeactivated()
+            deactivatedIds.add(rule.onNodeWithTag("$it").semanticsId())
         }
-        rule.onNodeWithTag("$DefaultMaxItemsToRetain")
-            .assertDoesNotExist()
-        rule.onNodeWithTag("${DefaultMaxItemsToRetain + 1}")
-            .assertIsDisplayed()
+
+        rule.runOnIdle { runBlocking { state.scrollToItem(DefaultMaxItemsToRetain + 1) } }
+
+        deactivatedIds.fastForEach {
+            rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(it)
+        }
+        rule.onNodeWithTag("$DefaultMaxItemsToRetain").assertDoesNotExist()
+        rule.onNodeWithTag("${DefaultMaxItemsToRetain + 1}").assertIsDisplayed()
     }
 
     @Test
@@ -151,20 +129,17 @@ class LazyListSlotsReuseTest {
         lateinit var state: LazyListState
         rule.setContent {
             state = rememberLazyListState()
-            LazyColumn(
-                Modifier.height(itemsSizeDp * 1.5f),
-                state
-            ) {
+            LazyColumn(Modifier.height(itemsSizeDp * 1.5f), state) {
                 items(100) {
                     Spacer(Modifier.height(itemsSizeDp).fillParentMaxWidth().testTag("$it"))
                 }
             }
         }
 
-        rule.onNodeWithTag("0")
-            .assertIsDisplayed()
-        rule.onNodeWithTag("1")
-            .assertIsDisplayed()
+        val id0 = rule.onNodeWithTag("0").semanticsId()
+        val id1 = rule.onNodeWithTag("1").semanticsId()
+        rule.onNodeWithTag("0").assertIsDisplayed()
+        rule.onNodeWithTag("1").assertIsDisplayed()
 
         rule.runOnIdle {
             runBlocking {
@@ -178,20 +153,15 @@ class LazyListSlotsReuseTest {
         }
 
         // recycled
-        rule.onNodeWithTag("1")
-            .assertDoesNotExist()
+        rule.onNodeWithTag("1").assertDoesNotExist()
 
         // in buffer
-        rule.onNodeWithTag("0")
-            .assertIsDeactivated()
-        rule.onNodeWithTag("2")
-            .assertIsDeactivated()
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id0)
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id1)
 
         // visible
-        rule.onNodeWithTag("3")
-            .assertIsDisplayed()
-        rule.onNodeWithTag("4")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("3").assertIsDisplayed()
+        rule.onNodeWithTag("4").assertIsDisplayed()
     }
 
     @Test
@@ -199,10 +169,7 @@ class LazyListSlotsReuseTest {
         lateinit var state: LazyListState
         rule.setContent {
             state = rememberLazyListState()
-            LazyColumn(
-                Modifier.height(itemsSizeDp * 1.5f),
-                state
-            ) {
+            LazyColumn(Modifier.height(itemsSizeDp * 1.5f), state) {
                 items(100) {
                     Spacer(Modifier.height(itemsSizeDp).fillParentMaxWidth().testTag("$it"))
                 }
@@ -212,28 +179,30 @@ class LazyListSlotsReuseTest {
             runBlocking {
                 state.scrollToItem(1) // buffer is [0]
                 state.scrollToItem(2) // 0 used, buffer is [1]
+            }
+        }
+
+        // 3 should be visible at this point, so save its ID to check later
+        val id3 = rule.onNodeWithTag("3").semanticsId()
+
+        rule.runOnIdle {
+            runBlocking {
                 state.scrollToItem(3) // 1 used, buffer is [2]
                 state.scrollToItem(4) // 2 used, buffer is [3]
             }
         }
 
         // recycled
-        rule.onNodeWithTag("0")
-            .assertDoesNotExist()
-        rule.onNodeWithTag("1")
-            .assertDoesNotExist()
-        rule.onNodeWithTag("2")
-            .assertDoesNotExist()
+        rule.onNodeWithTag("0").assertDoesNotExist()
+        rule.onNodeWithTag("1").assertDoesNotExist()
+        rule.onNodeWithTag("2").assertDoesNotExist()
 
         // in buffer
-        rule.onNodeWithTag("3")
-            .assertIsDeactivated()
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id3)
 
         // visible
-        rule.onNodeWithTag("4")
-            .assertIsDisplayed()
-        rule.onNodeWithTag("5")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("4").assertIsDisplayed()
+        rule.onNodeWithTag("5").assertIsDisplayed()
     }
 
     @Test
@@ -241,15 +210,16 @@ class LazyListSlotsReuseTest {
         lateinit var state: LazyListState
         rule.setContent {
             state = rememberLazyListState(10)
-            LazyColumn(
-                Modifier.height(itemsSizeDp * 1.5f),
-                state
-            ) {
+            LazyColumn(Modifier.height(itemsSizeDp * 1.5f), state) {
                 items(100) {
                     Spacer(Modifier.height(itemsSizeDp).fillParentMaxWidth().testTag("$it"))
                 }
             }
         }
+
+        val id10 = rule.onNodeWithTag("10").semanticsId()
+        val id11 = rule.onNodeWithTag("11").semanticsId()
+
         rule.runOnIdle {
             runBlocking {
                 state.scrollToItem(8) // buffer is [10, 11]
@@ -257,16 +227,12 @@ class LazyListSlotsReuseTest {
         }
 
         // in buffer
-        rule.onNodeWithTag("10")
-            .assertIsDeactivated()
-        rule.onNodeWithTag("11")
-            .assertIsDeactivated()
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id10)
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id11)
 
         // visible
-        rule.onNodeWithTag("8")
-            .assertIsDisplayed()
-        rule.onNodeWithTag("9")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("8").assertIsDisplayed()
+        rule.onNodeWithTag("9").assertIsDisplayed()
     }
 
     @Test
@@ -274,10 +240,7 @@ class LazyListSlotsReuseTest {
         lateinit var state: LazyListState
         rule.setContent {
             state = rememberLazyListState(10)
-            LazyColumn(
-                Modifier.height(itemsSizeDp * 1.5f),
-                state
-            ) {
+            LazyColumn(Modifier.height(itemsSizeDp * 1.5f), state) {
                 items(100) {
                     Spacer(Modifier.height(itemsSizeDp).fillParentMaxWidth().testTag("$it"))
                 }
@@ -287,19 +250,22 @@ class LazyListSlotsReuseTest {
             runBlocking {
                 state.scrollToItem(9) // buffer is [11]
                 state.scrollToItem(7) // 11 reused, buffer is [9]
+            }
+        }
+        // 8 should be visible at this point, so save its ID to check later
+        val id8 = rule.onNodeWithTag("8").semanticsId()
+        rule.runOnIdle {
+            runBlocking {
                 state.scrollToItem(6) // 9 reused, buffer is [8]
             }
         }
 
         // in buffer
-        rule.onNodeWithTag("8")
-            .assertIsDeactivated()
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id8)
 
         // visible
-        rule.onNodeWithTag("6")
-            .assertIsDisplayed()
-        rule.onNodeWithTag("7")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("6").assertIsDisplayed()
+        rule.onNodeWithTag("7").assertIsDisplayed()
     }
 
     @Test
@@ -308,37 +274,32 @@ class LazyListSlotsReuseTest {
         var counter0 = 0
         var counter1 = 0
 
-        val measureCountModifier0 = Modifier.layout { measurable, constraints ->
-            counter0++
-            val placeable = measurable.measure(constraints)
-            layout(placeable.width, placeable.height) {
-                placeable.place(IntOffset.Zero)
+        val measureCountModifier0 =
+            Modifier.layout { measurable, constraints ->
+                counter0++
+                val placeable = measurable.measure(constraints)
+                layout(placeable.width, placeable.height) { placeable.place(IntOffset.Zero) }
             }
-        }
 
-        val measureCountModifier1 = Modifier.layout { measurable, constraints ->
-            counter1++
-            val placeable = measurable.measure(constraints)
-            layout(placeable.width, placeable.height) {
-                placeable.place(IntOffset.Zero)
+        val measureCountModifier1 =
+            Modifier.layout { measurable, constraints ->
+                counter1++
+                val placeable = measurable.measure(constraints)
+                layout(placeable.width, placeable.height) { placeable.place(IntOffset.Zero) }
             }
-        }
 
         rule.setContent {
             state = rememberLazyListState()
-            LazyColumn(
-                Modifier.height(itemsSizeDp * 1.5f),
-                state
-            ) {
+            LazyColumn(Modifier.height(itemsSizeDp * 1.5f), state) {
                 items(100) {
-                    val modifier = when (it) {
-                        0 -> measureCountModifier0
-                        1 -> measureCountModifier1
-                        else -> Modifier
-                    }
+                    val modifier =
+                        when (it) {
+                            0 -> measureCountModifier0
+                            1 -> measureCountModifier1
+                            else -> Modifier
+                        }
                     Spacer(
-                        Modifier
-                            .height(itemsSizeDp)
+                        Modifier.height(itemsSizeDp)
                             .fillParentMaxWidth()
                             .testTag("$it")
                             .then(modifier)
@@ -349,6 +310,15 @@ class LazyListSlotsReuseTest {
         rule.runOnIdle {
             runBlocking {
                 state.scrollToItem(2) // buffer is [0, 1]
+            }
+        }
+
+        // 2 and 3 should be visible at this point, so save its ID to check later
+        val id2 = rule.onNodeWithTag("2").semanticsId()
+        val id3 = rule.onNodeWithTag("3").semanticsId()
+
+        rule.runOnIdle {
+            runBlocking {
                 counter0 = 0
                 counter1 = 0
                 state.scrollToItem(0) // scrolled back, 0 and 1 are reused back. buffer: [2, 3]
@@ -357,20 +327,18 @@ class LazyListSlotsReuseTest {
 
         rule.runOnIdle {
             Truth.assertWithMessage("Item 0 measured $counter0 times, expected 0.")
-                .that(counter0).isEqualTo(0)
+                .that(counter0)
+                .isEqualTo(0)
             Truth.assertWithMessage("Item 1 measured $counter1 times, expected 0.")
-                .that(counter1).isEqualTo(0)
+                .that(counter1)
+                .isEqualTo(0)
         }
 
-        rule.onNodeWithTag("0")
-            .assertIsDisplayed()
-        rule.onNodeWithTag("1")
-            .assertIsDisplayed()
+        rule.onNodeWithTag("0").assertIsDisplayed()
+        rule.onNodeWithTag("1").assertIsDisplayed()
 
-        rule.onNodeWithTag("2")
-            .assertIsDeactivated()
-        rule.onNodeWithTag("3")
-            .assertIsDeactivated()
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id2)
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id3)
     }
 
     @Test
@@ -380,48 +348,33 @@ class LazyListSlotsReuseTest {
         val startOfType1 = DefaultMaxItemsToRetain + 1
         rule.setContent {
             state = rememberLazyListState()
-            LazyColumn(
-                Modifier.height(itemsSizeDp * (visibleItemsCount - 0.5f)),
-                state
-            ) {
-                items(
-                    100,
-                    contentType = { if (it >= startOfType1) 1 else 0 }
-                ) {
+            LazyColumn(Modifier.height(itemsSizeDp * (visibleItemsCount - 0.5f)), state) {
+                items(100, contentType = { if (it >= startOfType1) 1 else 0 }) {
                     Spacer(Modifier.height(itemsSizeDp).fillMaxWidth().testTag("$it"))
                 }
             }
         }
 
+        val deactivatedIds = mutableListOf<Int>()
         for (i in 0 until visibleItemsCount) {
-            rule.onNodeWithTag("$i")
-                .assertIsDisplayed()
+            deactivatedIds.add(rule.onNodeWithTag("$i").semanticsId())
+            rule.onNodeWithTag("$i").assertIsDisplayed()
         }
-
-        rule.runOnIdle {
-            runBlocking {
-                state.scrollToItem(visibleItemsCount)
-            }
-        }
-
-        rule.onNodeWithTag("$visibleItemsCount")
-            .assertIsDisplayed()
-
-        // [DefaultMaxItemsToRetain] items of type 0 are left for reuse
-        for (i in 0 until DefaultMaxItemsToRetain) {
-            rule.onNodeWithTag("$i")
-                .assertIsDeactivated()
-        }
-        rule.onNodeWithTag("$DefaultMaxItemsToRetain")
-            .assertDoesNotExist()
-
-        // and 7 items of type 1
         for (i in startOfType1 until startOfType1 + DefaultMaxItemsToRetain) {
-            rule.onNodeWithTag("$i")
-                .assertIsDeactivated()
+            deactivatedIds.add(rule.onNodeWithTag("$i").fetchSemanticsNode().id)
         }
-        rule.onNodeWithTag("${startOfType1 + DefaultMaxItemsToRetain}")
-            .assertDoesNotExist()
+
+        rule.runOnIdle { runBlocking { state.scrollToItem(visibleItemsCount) } }
+
+        rule.onNodeWithTag("$visibleItemsCount").assertIsDisplayed()
+
+        // [DefaultMaxItemsToRetain] items of type 0 are left for reuse and 7 items of type 1
+        deactivatedIds.fastForEach {
+            rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(it)
+        }
+
+        rule.onNodeWithTag("$DefaultMaxItemsToRetain").assertDoesNotExist()
+        rule.onNodeWithTag("${startOfType1 + DefaultMaxItemsToRetain}").assertDoesNotExist()
     }
 
     @Test
@@ -429,26 +382,24 @@ class LazyListSlotsReuseTest {
         lateinit var state: LazyListState
         rule.setContent {
             state = rememberLazyListState()
-            LazyColumn(
-                Modifier.height(itemsSizeDp * 2.5f),
-                state
-            ) {
-                val content = @Composable { tag: String ->
-                    Spacer(Modifier.height(itemsSizeDp).width(10.dp).testTag(tag))
-                }
-                item(contentType = "not-to-reuse-0") {
-                    content("0")
-                }
-                item(contentType = "reuse") {
-                    content("1")
-                }
+            LazyColumn(Modifier.height(itemsSizeDp * 2.5f), state) {
+                val content =
+                    @Composable { tag: String ->
+                        Spacer(Modifier.height(itemsSizeDp).width(10.dp).testTag(tag))
+                    }
+                item(contentType = "not-to-reuse-0") { content("0") }
+                item(contentType = "reuse") { content("1") }
                 items(
                     List(100) { it + 2 },
-                    contentType = { if (it == 10) "reuse" else "not-to-reuse-$it" }) {
+                    contentType = { if (it == 10) "reuse" else "not-to-reuse-$it" }
+                ) {
                     content("$it")
                 }
             }
         }
+
+        val id0 = rule.onNodeWithTag("0").semanticsId()
+        val id1 = rule.onNodeWithTag("1").semanticsId()
 
         rule.runOnIdle {
             runBlocking {
@@ -457,10 +408,8 @@ class LazyListSlotsReuseTest {
             }
         }
 
-        rule.onNodeWithTag("0")
-            .assertIsDeactivated()
-        rule.onNodeWithTag("1")
-            .assertIsDeactivated()
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id0)
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id1)
 
         rule.runOnIdle {
             runBlocking {
@@ -469,16 +418,19 @@ class LazyListSlotsReuseTest {
             }
         }
 
-        rule.onNodeWithTag("0")
-            .assertIsDeactivated()
-        rule.onNodeWithTag("1")
-            .assertDoesNotExist()
-        rule.onNodeWithTag("9")
-            .assertIsDisplayed()
-        rule.onNodeWithTag("10")
-            .assertIsDisplayed()
-        rule.onNodeWithTag("11")
-            .assertIsDisplayed()
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id0)
+        rule.onNodeWithTag("1").assertDoesNotExist()
+        rule.onNodeWithTag("9").assertIsDisplayed()
+        rule.onNodeWithTag("10").assertIsDisplayed()
+        rule.onNodeWithTag("11").assertIsDisplayed()
+    }
+
+    private fun SemanticsNode.assertLayoutDeactivatedById(id: Int) {
+        children.fastForEach {
+            if (it.id == id) {
+                assert(it.layoutInfo.isDeactivated)
+            }
+        }
     }
 }
 

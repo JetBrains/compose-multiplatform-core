@@ -62,12 +62,62 @@ public class FileProviderTest {
     private static final String ADDITIONAL_AUTHORITY = "additional.authority";
 
     private static final String TEST_FILE = "file.test";
-    private static final byte[] TEST_DATA = new byte[] { (byte) 0xf0, 0x00, 0x0d };
-    private static final byte[] TEST_DATA_ALT = new byte[] { (byte) 0x33, 0x66 };
+    private static final byte[] TEST_DATA = new byte[]{(byte) 0xf0, 0x00, 0x0d};
+    private static final byte[] TEST_DATA_ALT = new byte[]{(byte) 0x33, 0x66};
     private static final String TEST_FILE_DISPLAY_NAME = "Test Display Name";
 
     private ContentResolver mResolver;
     private Context mContext;
+
+    private static File buildPath(File base, String... segments) {
+        File cur = base;
+        for (String segment : segments) {
+            if (cur == null) {
+                cur = new File(segment);
+            } else {
+                cur = new File(cur, segment);
+            }
+        }
+        return cur;
+    }
+
+    /**
+     * Closes 'closeable', ignoring any checked exceptions. Does nothing if 'closeable' is null.
+     */
+    private static void closeQuietly(AutoCloseable closeable) {
+        if (closeable != null) {
+            try {
+                closeable.close();
+            } catch (RuntimeException rethrown) {
+                throw rethrown;
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    /**
+     * Returns a byte[] containing the remainder of 'in', closing it when done.
+     */
+    private static byte[] readFully(InputStream in) throws IOException {
+        try {
+            return readFullyNoClose(in);
+        } finally {
+            in.close();
+        }
+    }
+
+    /**
+     * Returns a byte[] containing the remainder of 'in'.
+     */
+    private static byte[] readFullyNoClose(InputStream in) throws IOException {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int count;
+        while ((count = in.read(buffer)) != -1) {
+            bytes.write(buffer, 0, count);
+        }
+        return bytes.toByteArray();
+    }
 
     @Before
     public void setup() throws Exception {
@@ -81,8 +131,7 @@ public class FileProviderTest {
         strat.addRoot("tag", mContext.getFilesDir());
 
         File file = buildPath(mContext.getFilesDir(), "file.test");
-        assertEquals("content://authority/tag/file.test",
-                strat.getUriForFile(file).toString());
+        assertEquals("content://authority/tag/file.test", strat.getUriForFile(file).toString());
 
         file = buildPath(mContext.getFilesDir(), "subdir", "file.test");
         assertEquals("content://authority/tag/subdir/file.test",
@@ -110,22 +159,46 @@ public class FileProviderTest {
     }
 
     @Test
+    public void testStrategyUriRootPathShouldNotBeReturned() throws Exception {
+        final SimplePathStrategy strat = new SimplePathStrategy("authority");
+        strat.addRoot("tag", buildPath(mContext.getFilesDir(), "tag"));
+
+        File file = buildPath(mContext.getFilesDir(), "tag");
+        try {
+            strat.getUriForFile(file);
+            fail("root path returned");
+        } catch (IllegalArgumentException e) {
+        }
+    }
+
+    @Test
+    public void testStrategyUriRootPathShouldNotBeReturnedUsingPathTraversal() throws Exception {
+        final SimplePathStrategy strat = new SimplePathStrategy("authority");
+        strat.addRoot("my_tag", buildPath(mContext.getFilesDir(), "tag"));
+
+        File file = buildPath(mContext.getFilesDir(), "my_tag", "..", "tag");
+        try {
+            strat.getUriForFile(file);
+            fail("root path returned");
+        } catch (IllegalArgumentException e) {
+        }
+    }
+
+    @Test
     public void testStrategyUriShortestRoot() throws Exception {
         SimplePathStrategy strat = new SimplePathStrategy("authority");
         strat.addRoot("tag1", mContext.getFilesDir());
         strat.addRoot("tag2", new File("/"));
 
         File file = buildPath(mContext.getFilesDir(), "file.test");
-        assertEquals("content://authority/tag1/file.test",
-                strat.getUriForFile(file).toString());
+        assertEquals("content://authority/tag1/file.test", strat.getUriForFile(file).toString());
 
         strat = new SimplePathStrategy("authority");
         strat.addRoot("tag1", new File("/"));
         strat.addRoot("tag2", mContext.getFilesDir());
 
         file = buildPath(mContext.getFilesDir(), "file.test");
-        assertEquals("content://authority/tag2/file.test",
-                strat.getUriForFile(file).toString());
+        assertEquals("content://authority/tag2/file.test", strat.getUriForFile(file).toString());
     }
 
     @Test
@@ -156,6 +229,31 @@ public class FileProviderTest {
     }
 
     @Test
+    public void testStrategyRootFolderShouldNotBeReturnedAsFileDirectly() throws Exception {
+        final SimplePathStrategy strat = new SimplePathStrategy("authority");
+        strat.addRoot("tag", buildPath(mContext.getFilesDir(), "tag"));
+
+        try {
+            strat.getFileForUri(Uri.parse("content://authority/tag"));
+            fail("root folder returned");
+        } catch (IllegalArgumentException e) {
+        }
+    }
+
+    @Test
+    public void testStrategyRootFolderShouldNotBeReturnedAsFileUsingPathTraversal()
+            throws Exception {
+        final SimplePathStrategy strat = new SimplePathStrategy("authority");
+        strat.addRoot("my_tag", buildPath(mContext.getFilesDir(), "tag"));
+
+        try {
+            strat.getFileForUri(Uri.parse("content://authority/my_tag/../tag"));
+            fail("root folder returned");
+        } catch (SecurityException e) {
+        }
+    }
+
+    @Test
     public void testStrategyEscaping() throws Exception {
         final SimplePathStrategy strat = new SimplePathStrategy("authority");
         strat.addRoot("t/g", mContext.getFilesDir());
@@ -164,10 +262,8 @@ public class FileProviderTest {
         File file = buildPath(expectedRoot, "lol\"wat?foo&bar", "wat.txt");
         final String expected = "content://authority/t%2Fg/lol%22wat%3Ffoo%26bar/wat.txt";
 
-        assertEquals(expected,
-                strat.getUriForFile(file).toString());
-        assertEquals(file.getPath(),
-                strat.getFileForUri(Uri.parse(expected)).getPath());
+        assertEquals(expected, strat.getUriForFile(file).toString());
+        assertEquals(file.getPath(), strat.getFileForUri(Uri.parse(expected)).getPath());
     }
 
     @Test
@@ -192,10 +288,8 @@ public class FileProviderTest {
         File outFile = new File(expectedRoot, "/foo/bar");
         final String expected = "content://authority/tag/foo/bar";
 
-        assertEquals(expected,
-                strat.getUriForFile(inFile).toString());
-        assertEquals(outFile.getPath(),
-                strat.getFileForUri(Uri.parse(expected)).getPath());
+        assertEquals(expected, strat.getUriForFile(inFile).toString());
+        assertEquals(outFile.getPath(), strat.getFileForUri(Uri.parse(expected)).getPath());
     }
 
     @Test
@@ -221,8 +315,7 @@ public class FileProviderTest {
         final Uri uri = stageFileAndGetUri(file, TEST_DATA);
 
         // Verify that swapped order works
-        Cursor cursor = mResolver.query(uri, new String[] {
-                SIZE, DISPLAY_NAME }, null, null, null);
+        Cursor cursor = mResolver.query(uri, new String[]{SIZE, DISPLAY_NAME}, null, null, null);
         try {
             assertEquals(1, cursor.getCount());
             cursor.moveToFirst();
@@ -232,8 +325,7 @@ public class FileProviderTest {
             cursor.close();
         }
 
-        cursor = mResolver.query(uri, new String[] {
-                DISPLAY_NAME, SIZE }, null, null, null);
+        cursor = mResolver.query(uri, new String[]{DISPLAY_NAME, SIZE}, null, null, null);
         try {
             assertEquals(1, cursor.getCount());
             cursor.moveToFirst();
@@ -250,8 +342,8 @@ public class FileProviderTest {
         final Uri uri = stageFileAndGetUri(file, TEST_DATA);
 
         // Verify that extra column doesn't gook things up
-        Cursor cursor = mResolver.query(uri, new String[] {
-                SIZE, "foobar", DISPLAY_NAME }, null, null, null);
+        Cursor cursor = mResolver.query(uri, new String[]{SIZE, "foobar", DISPLAY_NAME}, null, null,
+                null);
         try {
             assertEquals(1, cursor.getCount());
             cursor.moveToFirst();
@@ -318,7 +410,7 @@ public class FileProviderTest {
         try {
             assertContentsEquals(new byte[0], uri);
             fail("Somehow read missing file?");
-        } catch(FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
         }
 
         final OutputStream out = mResolver.openOutputStream(uri);
@@ -344,7 +436,7 @@ public class FileProviderTest {
         try {
             assertContentsEquals(new byte[0], uri);
             fail("Somehow read missing file?");
-        } catch(FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
         }
     }
 
@@ -352,8 +444,7 @@ public class FileProviderTest {
     public void testMetaDataTargets() {
         Uri actual;
 
-        actual = FileProvider.getUriForFile(mContext, TEST_AUTHORITY,
-                new File("/proc/version"));
+        actual = FileProvider.getUriForFile(mContext, TEST_AUTHORITY, new File("/proc/version"));
         assertEquals("content://moocow/test_root/proc/version", actual.toString());
 
         actual = FileProvider.getUriForFile(mContext, TEST_AUTHORITY,
@@ -378,12 +469,12 @@ public class FileProviderTest {
 
         File[] externalFilesDirs = ContextCompat.getExternalFilesDirs(mContext, null);
         actual = FileProvider.getUriForFile(mContext, TEST_AUTHORITY,
-            buildPath(externalFilesDirs[0], "foo", "bar"));
+                buildPath(externalFilesDirs[0], "foo", "bar"));
         assertEquals("content://moocow/test_external_files/foo/bar", actual.toString());
 
         File[] externalCacheDirs = ContextCompat.getExternalCacheDirs(mContext);
         actual = FileProvider.getUriForFile(mContext, TEST_AUTHORITY,
-            buildPath(externalCacheDirs[0], "foo", "bar"));
+                buildPath(externalCacheDirs[0], "foo", "bar"));
         assertEquals("content://moocow/test_external_cache/foo/bar", actual.toString());
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -420,8 +511,8 @@ public class FileProviderTest {
         providerInfo.grantUriPermissions = true;
         providerInfo.authority = TEST_AUTHORITY;
 
-        ProviderInfo resolvedProviderInfo = mContext.getPackageManager()
-                .resolveContentProvider(providerInfo.authority, PackageManager.GET_META_DATA);
+        ProviderInfo resolvedProviderInfo = mContext.getPackageManager().resolveContentProvider(
+                providerInfo.authority, PackageManager.GET_META_DATA);
         resolvedProviderInfo.metaData = null;
 
         // Should throw since there is no metadata.
@@ -430,8 +521,8 @@ public class FileProviderTest {
                         resolvedProviderInfo, ResourcesCompat.ID_NULL));
 
         // This should not throw even though there is no metadata, as we've explicitly provided it.
-        FileProvider.getFileProviderPathsMetaData(mContext, TEST_AUTHORITY,
-                resolvedProviderInfo, R.xml.paths);
+        FileProvider.getFileProviderPathsMetaData(mContext, TEST_AUTHORITY, resolvedProviderInfo,
+                R.xml.paths);
     }
 
     private void assertContentsEquals(byte[] expected, Uri actual) throws Exception {
@@ -468,55 +559,5 @@ public class FileProviderTest {
             return FileProvider.getUriForFile(mContext, authority, file, displayName);
         }
         return FileProvider.getUriForFile(mContext, authority, file);
-    }
-
-    private static File buildPath(File base, String... segments) {
-        File cur = base;
-        for (String segment : segments) {
-            if (cur == null) {
-                cur = new File(segment);
-            } else {
-                cur = new File(cur, segment);
-            }
-        }
-        return cur;
-    }
-
-    /**
-     * Closes 'closeable', ignoring any checked exceptions. Does nothing if 'closeable' is null.
-     */
-    private static void closeQuietly(AutoCloseable closeable) {
-        if (closeable != null) {
-            try {
-                closeable.close();
-            } catch (RuntimeException rethrown) {
-                throw rethrown;
-            } catch (Exception ignored) {
-            }
-        }
-    }
-
-    /**
-     * Returns a byte[] containing the remainder of 'in', closing it when done.
-     */
-    private static byte[] readFully(InputStream in) throws IOException {
-        try {
-            return readFullyNoClose(in);
-        } finally {
-            in.close();
-        }
-    }
-
-    /**
-     * Returns a byte[] containing the remainder of 'in'.
-     */
-    private static byte[] readFullyNoClose(InputStream in) throws IOException {
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        byte[] buffer = new byte[1024];
-        int count;
-        while ((count = in.read(buffer)) != -1) {
-            bytes.write(buffer, 0, count);
-        }
-        return bytes.toByteArray();
     }
 }

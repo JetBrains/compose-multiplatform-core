@@ -15,15 +15,12 @@ plugins {
 android {
     namespace 'androidx.webkit.instrumentation'
 
-    defaultConfig {
-        multiDexEnabled = true
-    }
     flavorDimensions = ["targetSdk"]
 
     productFlavors {
         targetSdk32 {
             dimension "targetSdk"
-            targetSdkVersion 32
+
         }
         targetSdkLatest {
             dimension "targetSdk"
@@ -31,6 +28,13 @@ android {
         }
     }
 }
+
+androidComponents {
+    beforeVariants(selector().withFlavor("targetSdk", "targetSdk32")) { variant ->
+        variant.androidTest.targetSdk = 32
+    }
+}
+
 dependencies {
     androidTestImplementation(project(":webkit:webkit"))
 
@@ -41,16 +45,14 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation("androidx.appcompat:appcompat:1.1.0")
     androidTestImplementation("androidx.concurrent:concurrent-futures:1.0.0")
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy) // DexMaker has it"s own MockMaker
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy)
-    androidTestImplementation(libs.multidex)
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
 
     // Hamcrest matchers:
-    androidTestImplementation(libs.bundles.espressoContrib, excludes.espresso)
+    androidTestImplementation(libs.bundles.espressoContrib)
 }
 
 androidx {
     type = type = LibraryType.INTERNAL_TEST_LIBRARY
-    publish = Publish.NONE  // This library exists for CI-testing only - do not publish.
     additionalDeviceTestApkKeys.add("chrome")
 }

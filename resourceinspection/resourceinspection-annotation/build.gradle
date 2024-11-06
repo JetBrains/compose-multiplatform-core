@@ -29,7 +29,7 @@ plugins {
 }
 
 dependencies {
-    implementation("androidx.annotation:annotation:1.1.0")
+    implementation("androidx.annotation:annotation:1.8.1")
 }
 
 androidx {
@@ -37,5 +37,4 @@ androidx {
     type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2021"
     description = "Annotation processors for Android resource and layout inspection"
-    metalavaK2UastEnabled = true
 }

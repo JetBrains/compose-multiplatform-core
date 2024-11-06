@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalFoundationApi::class)
+
 package androidx.compose.foundation.benchmark.lazy
 
 import android.os.Build
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
@@ -48,11 +51,8 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-class LazyListScrollingBenchmark(
-    private val testCase: LazyListScrollingTestCase
-) {
-    @get:Rule
-    val benchmarkRule = ComposeBenchmarkRule()
+class LazyListScrollingBenchmark(private val testCase: LazyListScrollingTestCase) {
+    @get:Rule val benchmarkRule = ComposeBenchmarkRule()
 
     @Test
     fun scrollProgrammatically_noNewItems() {
@@ -61,6 +61,18 @@ class LazyListScrollingBenchmark(
                 addNewItemOnToggle = false,
                 content = testCase.content,
                 isVertical = testCase.isVertical
+            )
+        }
+    }
+
+    @Test
+    fun scrollProgrammatically_useStickyHeader() {
+        benchmarkRule.toggleStateBenchmark {
+            ListRemeasureTestCase(
+                addNewItemOnToggle = false,
+                content = testCase.content,
+                isVertical = testCase.isVertical,
+                useStickyHeader = true
             )
         }
     }
@@ -113,6 +125,19 @@ class LazyListScrollingBenchmark(
     }
 
     @Test
+    fun scrollViaPointerInput_useStickyHeader() {
+        benchmarkRule.toggleStateBenchmark {
+            ListRemeasureTestCase(
+                addNewItemOnToggle = false,
+                content = testCase.content,
+                isVertical = testCase.isVertical,
+                usePointerInput = true,
+                useStickyHeader = true
+            )
+        }
+    }
+
+    @Test
     fun scrollViaPointerInput_newItemComposed() {
         benchmarkRule.toggleStateBenchmark {
             ListRemeasureTestCase(
@@ -155,84 +180,90 @@ class LazyListScrollingBenchmark(
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun initParameters(): Array<LazyListScrollingTestCase> =
-            arrayOf(
-                LazyColumn,
-                LazyRow
-            )
+        fun initParameters(): Array<LazyListScrollingTestCase> = arrayOf(LazyColumn, LazyRow)
 
         // Copied from AndroidComposeTestCaseRunner
         private val supportsRenderNode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-        private val supportsMRenderNode = Build.VERSION.SDK_INT < Build.VERSION_CODES.P &&
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+        private val supportsMRenderNode =
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.P &&
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
     }
 }
 
 class LazyListScrollingTestCase(
     private val name: String,
     val isVertical: Boolean,
-    val content: @Composable ListRemeasureTestCase.(LazyListState, useKeys: Boolean) -> Unit
+    val content:
+        @Composable
+        ListRemeasureTestCase.(LazyListState, useKeys: Boolean, useStickyHeader: Boolean) -> Unit
 ) {
     override fun toString(): String {
         return name
     }
 }
 
-private val LazyColumn = LazyListScrollingTestCase(
-    "LazyColumn",
-    isVertical = true
-) { state, useKeys ->
-    LazyColumn(
-        state = state,
-        modifier = Modifier
-            .requiredHeight(400.dp)
-            .fillMaxWidth(),
-        flingBehavior = NoFlingBehavior
-    ) {
-        item(key = if (useKeys) "header" else null) {
-            FirstLargeItem()
-        }
-        items(
-            items, key = if (useKeys) {
-                { it.index }
+private val LazyColumn =
+    LazyListScrollingTestCase("LazyColumn", isVertical = true) { state, useKeys, useStickyHeader ->
+        LazyColumn(
+            state = state,
+            modifier = Modifier.requiredHeight(400.dp).fillMaxWidth(),
+            flingBehavior = NoFlingBehavior
+        ) {
+            if (useStickyHeader) {
+                stickyHeader(key = if (useKeys) "header" else null) { FirstLargeItem() }
             } else {
-                null
-            }) {
-            RegularItem()
-        }
-    }
-}
+                item(key = if (useKeys) "header" else null) { FirstLargeItem() }
+            }
 
-private val LazyRow = LazyListScrollingTestCase(
-    "LazyRow",
-    isVertical = false
-) { state, useKeys ->
-    LazyRow(
-        state = state,
-        modifier = Modifier
-            .requiredWidth(400.dp)
-            .fillMaxHeight(),
-        flingBehavior = NoFlingBehavior
-    ) {
-        item(if (useKeys) "header" else null) {
-            FirstLargeItem()
-        }
-        items(items, key = if (useKeys) {
-            { it.index }
-        } else {
-            null
-        }) {
-            RegularItem()
+            items(
+                items,
+                key =
+                    if (useKeys) {
+                        { it.index }
+                    } else {
+                        null
+                    }
+            ) {
+                RegularItem()
+            }
         }
     }
-}
+
+private val LazyRow =
+    LazyListScrollingTestCase("LazyRow", isVertical = false) { state, useKeys, useStickyHeader ->
+        LazyRow(
+            state = state,
+            modifier = Modifier.requiredWidth(400.dp).fillMaxHeight(),
+            flingBehavior = NoFlingBehavior
+        ) {
+            if (useStickyHeader) {
+                stickyHeader(key = if (useKeys) "header" else null) { FirstLargeItem() }
+            } else {
+                item(key = if (useKeys) "header" else null) { FirstLargeItem() }
+            }
+            items(
+                items,
+                key =
+                    if (useKeys) {
+                        { it.index }
+                    } else {
+                        null
+                    }
+            ) {
+                RegularItem()
+            }
+        }
+    }
 
 class ListRemeasureTestCase(
     val addNewItemOnToggle: Boolean,
-    val content: @Composable ListRemeasureTestCase.(LazyListState, useKeys: Boolean) -> Unit,
+    val content:
+        @Composable
+        ListRemeasureTestCase.(LazyListState, useKeys: Boolean, useStickyHeader: Boolean) -> Unit,
     val isVertical: Boolean,
     val usePointerInput: Boolean = false,
-    val useKeys: Boolean = true
+    val useKeys: Boolean = true,
+    val useStickyHeader: Boolean = false
 ) : LazyBenchmarkTestCase(isVertical, usePointerInput) {
 
     val items = List(100) { LazyItem(it) }
@@ -246,23 +277,20 @@ class ListRemeasureTestCase(
 
     @Composable
     override fun Content() {
-        val scrollBy = if (addNewItemOnToggle) {
-            with(LocalDensity.current) { 15.dp.roundToPx() }
-        } else {
-            5
-        }
+        val scrollBy =
+            if (addNewItemOnToggle) {
+                with(LocalDensity.current) { 15.dp.roundToPx() }
+            } else {
+                5
+            }
         InitializeScrollHelper(scrollAmount = scrollBy)
         listState = rememberLazyListState()
-        content(listState, useKeys)
+        content(listState, useKeys, useStickyHeader)
     }
 
     @Composable
     fun RegularItem() {
-        Box(
-            Modifier
-                .requiredSize(20.dp)
-                .background(Color.Red, RoundedCornerShape(8.dp))
-        )
+        Box(Modifier.requiredSize(20.dp).background(Color.Red, RoundedCornerShape(8.dp)))
     }
 
     override fun beforeToggleCheck() {
@@ -276,15 +304,11 @@ class ListRemeasureTestCase(
     }
 
     override suspend fun programmaticScroll(amount: Int) {
-        runBlocking {
-            listState.scrollBy(amount.toFloat())
-        }
+        runBlocking { listState.scrollBy(amount.toFloat()) }
     }
 
     override fun setUp() {
-        runBlocking {
-            listState.scrollToItem(0, 0)
-        }
+        runBlocking { listState.scrollToItem(0, 0) }
     }
 
     override fun tearDown() {

@@ -34,6 +34,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.statement.UiThreadStatement.runOnUiThread
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertNotEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,17 +42,14 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class NestedScrollingBenchmark {
-    @get:Rule
-    val benchmarkRule = ComposeBenchmarkRule()
+    @get:Rule val benchmarkRule = ComposeBenchmarkRule()
 
     private val nestedScrollingCaseFactory = { NestedScrollingTestCase() }
 
     @Test
     fun nested_scroll_propagation() {
         benchmarkRule.runBenchmarkFor(nestedScrollingCaseFactory) {
-            runOnUiThread {
-                doFramesUntilNoChangesPending()
-            }
+            runOnUiThread { doFramesUntilNoChangesPending() }
 
             benchmarkRule.measureRepeatedOnUiThread {
                 getTestCase().toggleState()
@@ -70,53 +68,45 @@ class NestedScrollingTestCase : LayeredComposeTestCase(), ToggleableTestCase {
     private var collectedVelocityOuter = Velocity.Zero
     private var collectedVelocityMiddle = Velocity.Zero
 
-    private val outerConnection = object : NestedScrollConnection {
-        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-            collectedDeltasOuter += available
-            return super.onPreScroll(available, source)
+    private val outerConnection =
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                collectedDeltasOuter += available
+                return super.onPreScroll(available, source)
+            }
+
+            override suspend fun onPreFling(available: Velocity): Velocity {
+                collectedVelocityOuter += available
+                return super.onPreFling(available)
+            }
         }
 
-        override suspend fun onPreFling(available: Velocity): Velocity {
-            collectedVelocityOuter += available
-            return super.onPreFling(available)
-        }
-    }
+    private val middleConnection =
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                collectedDeltasMiddle += available
+                return super.onPreScroll(available, source)
+            }
 
-    private val middleConnection = object : NestedScrollConnection {
-        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-            collectedDeltasMiddle += available
-            return super.onPreScroll(available, source)
+            override suspend fun onPreFling(available: Velocity): Velocity {
+                collectedVelocityMiddle += available
+                return super.onPreFling(available)
+            }
         }
-
-        override suspend fun onPreFling(available: Velocity): Velocity {
-            collectedVelocityMiddle += available
-            return super.onPreFling(available)
-        }
-    }
 
     private val dispatcher = NestedScrollDispatcher()
     private val noOpConnection = object : NestedScrollConnection {}
     private val delta = Offset(200f, 200f)
     private val velocity = Velocity(2000f, 200f)
-    private var scrollResult = Offset.Zero
     private var velocityResult = Velocity.Zero
     private val IntermediateConnection = object : NestedScrollConnection {}
 
     @Composable
     override fun MeasuredContent() {
-        Box(
-            modifier = Modifier
-                .nestedScroll(outerConnection)
-        ) {
-            Box(
-                modifier = Modifier
-                    .nestedScroll(middleConnection)
-            ) {
+        Box(modifier = Modifier.nestedScroll(outerConnection)) {
+            Box(modifier = Modifier.nestedScroll(middleConnection)) {
                 NestedBox(boxLevel = 20) {
-                    Box(
-                        modifier = Modifier
-                            .nestedScroll(noOpConnection, dispatcher)
-                    )
+                    Box(modifier = Modifier.nestedScroll(noOpConnection, dispatcher))
                 }
             }
         }
@@ -125,9 +115,7 @@ class NestedScrollingTestCase : LayeredComposeTestCase(), ToggleableTestCase {
     @Composable
     private fun NestedBox(boxLevel: Int, leafContent: @Composable () -> Unit) {
         if (boxLevel == 0) {
-            Box {
-                leafContent()
-            }
+            Box { leafContent() }
             return
         }
 
@@ -137,8 +125,8 @@ class NestedScrollingTestCase : LayeredComposeTestCase(), ToggleableTestCase {
     }
 
     override fun toggleState() {
-        scrollResult = dispatcher.dispatchPreScroll(delta, NestedScrollSource.Drag)
-        scrollResult = dispatcher.dispatchPostScroll(delta, scrollResult, NestedScrollSource.Drag)
+        val scrollResult = dispatcher.dispatchPreScroll(delta, NestedScrollSource.UserInput)
+        dispatcher.dispatchPostScroll(delta, scrollResult, NestedScrollSource.UserInput)
 
         runBlocking {
             velocityResult = dispatcher.dispatchPreFling(velocity)
@@ -147,12 +135,9 @@ class NestedScrollingTestCase : LayeredComposeTestCase(), ToggleableTestCase {
     }
 
     fun assertPostToggle() {
-        assert(collectedDeltasOuter != Offset.Zero)
-        assert(collectedDeltasMiddle != Offset.Zero)
-        assert(collectedVelocityOuter != Velocity.Zero)
-        assert(collectedVelocityMiddle != Velocity.Zero)
-
-        assert(collectedDeltasOuter == scrollResult)
-        assert(collectedVelocityOuter == velocityResult)
+        assertNotEquals(collectedDeltasOuter, Offset.Zero)
+        assertNotEquals(collectedDeltasMiddle, Offset.Zero)
+        assertNotEquals(collectedVelocityOuter, Velocity.Zero)
+        assertNotEquals(collectedVelocityMiddle, Velocity.Zero)
     }
 }

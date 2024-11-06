@@ -16,6 +16,7 @@
 
 package androidx.tv.integration.playground
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
@@ -26,6 +27,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,39 +41,36 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.tv.foundation.ExperimentalTvFoundationApi
-import androidx.tv.foundation.lazy.list.TvLazyColumn
 
 data class MonthActivity(
     val month: String,
     val activities: List<String>,
 )
 
-val monthActivities = listOf(
-    MonthActivity(
-        month = "October 2022",
-        activities = buildActivities(),
-    ),
-    MonthActivity(
-        month = "September 2022",
-        activities = buildActivities(),
-    ),
-    MonthActivity(
-        month = "August 2022",
-        activities = buildActivities(),
-    ),
-)
+val monthActivities =
+    listOf(
+        MonthActivity(
+            month = "October 2022",
+            activities = buildActivities(),
+        ),
+        MonthActivity(
+            month = "September 2022",
+            activities = buildActivities(),
+        ),
+        MonthActivity(
+            month = "August 2022",
+            activities = buildActivities(),
+        ),
+    )
 
-@OptIn(ExperimentalTvFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun StickyHeaderContent() {
-    TvLazyColumn(modifier = Modifier.fillMaxWidth()) {
+    LazyColumn(modifier = Modifier.fillMaxWidth()) {
         monthActivities.forEachIndexed { monthIndex, monthActivity ->
             val isLastMonth = monthIndex == monthActivities.lastIndex
 
-            stickyHeader {
-                MonthHeader(month = monthActivity.month)
-            }
+            stickyHeader { MonthHeader(month = monthActivity.month) }
 
             items(monthActivity.activities.size) { activityIndex ->
                 val activity = monthActivity.activities[activityIndex]
@@ -80,9 +79,7 @@ fun StickyHeaderContent() {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(20.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 20.dp),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
                     ) {
                         Box(modifier = Modifier.fillMaxWidth()) {
                             MonthActivityComponent(this, activity)
@@ -104,17 +101,17 @@ private fun MonthActivityComponent(boxScope: BoxScope, activity: String) {
 
     boxScope.apply {
         Box(
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .fillMaxWidth(0.5f)
-                .height(70.dp)
-                .onFocusChanged { isFocused = it.isFocused }
-                .border(
-                    width = 2.dp,
-                    color = if (isFocused) Color.Red else Color.White,
-                    shape = RoundedCornerShape(10.dp),
-                )
-                .focusable(),
+            modifier =
+                Modifier.align(Alignment.CenterEnd)
+                    .fillMaxWidth(0.5f)
+                    .height(70.dp)
+                    .onFocusChanged { isFocused = it.isFocused }
+                    .border(
+                        width = 2.dp,
+                        color = if (isFocused) Color.Red else Color.White,
+                        shape = RoundedCornerShape(10.dp),
+                    )
+                    .focusable(),
             contentAlignment = Alignment.Center
         ) {
             Text(text = activity, color = Color.White)
@@ -134,10 +131,8 @@ private fun MonthHeader(month: String) {
 @Composable
 private fun MonthDivider() {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(2.dp)
-            .background(Color.White, RoundedCornerShape(50))
+        modifier =
+            Modifier.fillMaxWidth().height(2.dp).background(Color.White, RoundedCornerShape(50))
     )
 }
 

@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -30,14 +30,14 @@ plugins {
 
 dependencies {
     api("androidx.core:core:1.6.0")
-    implementation("androidx.annotation:annotation:1.2.0")
-    implementation("androidx.collection:collection:1.1.0")
+    implementation("androidx.annotation:annotation:1.8.1")
+    implementation("androidx.collection:collection:1.4.2")
     implementation("androidx.core:core:1.9.0")
 
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.espressoCore, excludes.espresso)
+    androidTestImplementation(libs.espressoCore)
     androidTestImplementation(project(":internal-testutils-runtime"))
     annotationProcessor(project(":versionedparcelable:versionedparcelable-compiler"))
 }
@@ -52,7 +52,7 @@ android {
         main.res.srcDirs += "src/main/res-public"
     }
 
-    buildTypes.all {
+    buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
     namespace "androidx.media"
@@ -60,10 +60,9 @@ android {
 
 androidx {
     name = "Media"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.MEDIA
     inceptionYear = "2011"
     description = "The Support Library is a static library that you can add to your Android application in order to use APIs that are either not available for older platform versions or utility APIs that aren't a part of the framework APIs. Compatible on devices running API 14 or later."
     failOnDeprecationWarnings = false
-    metalavaK2UastEnabled = true
 }

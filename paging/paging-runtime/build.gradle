@@ -21,8 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import androidx.build.LibraryType
 
 plugins {
     id("AndroidXPlugin")
@@ -31,9 +30,6 @@ plugins {
 }
 
 android {
-    defaultConfig {
-        multiDexEnabled true
-    }
     namespace "androidx.paging.runtime"
 }
 
@@ -42,9 +38,9 @@ dependencies {
     // Ensure that the -ktx dependency graph mirrors the Java dependency graph
     api(project(":paging:paging-common-ktx"))
 
-    api("androidx.lifecycle:lifecycle-livedata-ktx:2.4.0")
-    api("androidx.lifecycle:lifecycle-runtime-ktx:2.4.0")
-    api("androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0")
+    api("androidx.lifecycle:lifecycle-livedata-ktx:2.8.3")
+    api("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
+    api("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3")
     api("androidx.recyclerview:recyclerview:1.2.1")
     api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
@@ -54,7 +50,7 @@ dependencies {
     androidTestImplementation(project(":internal-testutils-ktx"))
     androidTestImplementation(project(":internal-testutils-paging"))
     androidTestImplementation(project(":paging:paging-testing"))
-    androidTestImplementation(projectOrArtifact(":lifecycle:lifecycle-runtime-testing"))
+    androidTestImplementation(project(":lifecycle:lifecycle-runtime-testing"))
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
@@ -63,15 +59,13 @@ dependencies {
     androidTestImplementation(libs.kotlinTest)
     androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.multidex)
 }
 
 androidx {
     name = "Paging-Runtime"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Paging-Runtime"
     legacyDisableKotlinStrictApiMode = true
-    metalavaK2UastEnabled = true
     samples(project(":paging:paging-samples"))
 }

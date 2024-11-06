@@ -21,7 +21,6 @@ import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraDevice
 import android.os.Build
 import android.view.Surface
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
@@ -32,6 +31,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.atomicfu.atomic
 
+@JvmDefaultWithCompatibility
 internal interface Camera2DeviceCloser {
     fun closeCamera(
         cameraDeviceWrapper: CameraDeviceWrapper? = null,
@@ -43,8 +43,9 @@ internal interface Camera2DeviceCloser {
 }
 
 @Singleton
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-internal class Camera2DeviceCloserImpl @Inject constructor(
+internal class Camera2DeviceCloserImpl
+@Inject
+constructor(
     val threads: Threads,
     private val camera2Quirks: Camera2Quirks,
 ) : Camera2DeviceCloser {
@@ -63,16 +64,12 @@ internal class Camera2DeviceCloserImpl @Inject constructor(
                         "but the wrapped camera device has camera ID ${it.id}!"
                 }
             }
-            closeCameraDevice(
-                unwrappedCameraDevice,
-                closeUnderError,
-                androidCameraState
-            )
+            closeCameraDevice(unwrappedCameraDevice, closeUnderError, androidCameraState)
             cameraDeviceWrapper.onDeviceClosed()
             /**
-             * Only remove the audio restriction when CameraDeviceWrapper is present.
-             * When closeCamera is called without a CameraDeviceWrapper, that means a wrapper
-             * hadn't been created for the opened camera.
+             * Only remove the audio restriction when CameraDeviceWrapper is present. When
+             * closeCamera is called without a CameraDeviceWrapper, that means a wrapper hadn't been
+             * created for the opened camera.
              */
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 audioRestrictionController.removeListener(cameraDeviceWrapper)
@@ -82,13 +79,7 @@ internal class Camera2DeviceCloserImpl @Inject constructor(
             // Return here.
             return
         }
-        cameraDevice?.let {
-            closeCameraDevice(
-                it,
-                closeUnderError,
-                androidCameraState
-            )
-        }
+        cameraDevice?.let { closeCameraDevice(it, closeUnderError, androidCameraState) }
     }
 
     private fun closeCameraDevice(
@@ -96,6 +87,7 @@ internal class Camera2DeviceCloserImpl @Inject constructor(
         closeUnderError: Boolean,
         androidCameraState: AndroidCameraState,
     ) {
+        Log.debug { "$this#closeCameraDevice($cameraDevice)" }
         val cameraId = CameraId.fromCamera2Id(cameraDevice.id)
         if (camera2Quirks.shouldCreateCaptureSessionBeforeClosing(cameraId) && !closeUnderError) {
             Debug.trace("Camera2DeviceCloserImpl#createCaptureSession") {
@@ -104,9 +96,15 @@ internal class Camera2DeviceCloserImpl @Inject constructor(
                 Log.debug { "Empty capture session quirk completed" }
             }
         }
-        Threading.runBlockingWithTimeout(threads.backgroundDispatcher, 5000L) {
+        Threading.runBlockingCheckedOrNull(threads.backgroundDispatcher, CAMERA_CLOSE_TIMEOUT_MS) {
             cameraDevice.closeWithTrace()
         }
+            ?: run {
+                Log.error {
+                    "Camera device close timed out after ${CAMERA_CLOSE_TIMEOUT_MS}ms. " +
+                        "The camera is likely in a bad state."
+                }
+            }
         if (camera2Quirks.shouldWaitForCameraDeviceOnClosed(cameraId)) {
             Log.debug { "Waiting for OnClosed from $cameraId" }
             if (androidCameraState.awaitCameraDeviceClosed(timeoutMillis = 5000)) {
@@ -122,32 +120,33 @@ internal class Camera2DeviceCloserImpl @Inject constructor(
         val surface = Surface(surfaceTexture)
         val surfaceReleased = atomic(false)
         val sessionConfigured = CountDownLatch(1)
-        val callback = object : CameraCaptureSession.StateCallback() {
-            override fun onConfigured(session: CameraCaptureSession) {
-                Log.debug { "Empty capture session configured. Closing it" }
-                // We don't need to wait for the session to close, instead we can just invoke
-                // close() and end here.
-                session.close()
-                sessionConfigured.countDown()
-            }
+        val callback =
+            object : CameraCaptureSession.StateCallback() {
+                override fun onConfigured(session: CameraCaptureSession) {
+                    Log.debug { "Empty capture session configured. Closing it" }
+                    // We don't need to wait for the session to close, instead we can just invoke
+                    // close() and end here.
+                    session.close()
+                    sessionConfigured.countDown()
+                }
 
-            override fun onClosed(session: CameraCaptureSession) {
-                Log.debug { "Empty capture session closed" }
-                if (surfaceReleased.compareAndSet(expect = false, update = true)) {
-                    surface.release()
-                    surfaceTexture.release()
+                override fun onClosed(session: CameraCaptureSession) {
+                    Log.debug { "Empty capture session closed" }
+                    if (surfaceReleased.compareAndSet(expect = false, update = true)) {
+                        surface.release()
+                        surfaceTexture.release()
+                    }
+                }
+
+                override fun onConfigureFailed(session: CameraCaptureSession) {
+                    Log.debug { "Empty capture session configure failed" }
+                    if (surfaceReleased.compareAndSet(expect = false, update = true)) {
+                        surface.release()
+                        surfaceTexture.release()
+                    }
+                    sessionConfigured.countDown()
                 }
             }
-
-            override fun onConfigureFailed(session: CameraCaptureSession) {
-                Log.debug { "Empty capture session configure failed" }
-                if (surfaceReleased.compareAndSet(expect = false, update = true)) {
-                    surface.release()
-                    surfaceTexture.release()
-                }
-                sessionConfigured.countDown()
-            }
-        }
         try {
             // This function was deprecated in Android Q, but is required since this quirk is
             // needed on older API levels.
@@ -164,5 +163,9 @@ internal class Camera2DeviceCloserImpl @Inject constructor(
             }
         }
         sessionConfigured.await()
+    }
+
+    companion object {
+        const val CAMERA_CLOSE_TIMEOUT_MS = 8_000L // 8s
     }
 }

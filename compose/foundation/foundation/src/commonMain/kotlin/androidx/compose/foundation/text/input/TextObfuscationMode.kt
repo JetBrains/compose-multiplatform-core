@@ -16,20 +16,19 @@
 
 package androidx.compose.foundation.text.input
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import kotlin.jvm.JvmInline
 
 /**
  * Defines how the text will be obscured in secure text fields.
  *
- * Text obscuring refers to replacing the original text content with a mask via various methods.
- * It is most common in password fields.
+ * Text obscuring refers to replacing the original text content with a mask via various methods. It
+ * is most common in password fields.
  *
  * The default behavior for typing input on Desktop has always been to keep it completely hidden.
  * However, on mobile devices, the default behavior is to briefly reveal the last typed character
  * for a short period or until another character is typed. This helps the user to follow the text
  * input while also protecting their privacy by not revealing too much information to others.
  */
-@ExperimentalFoundationApi
 @JvmInline
 value class TextObfuscationMode internal constructor(val value: Int) {
     companion object {
@@ -50,9 +49,7 @@ value class TextObfuscationMode internal constructor(val value: Int) {
          */
         val RevealLastTyped = TextObfuscationMode(1)
 
-        /**
-         * Default behavior on desktop platforms. All characters are hidden.
-         */
+        /** Default behavior on desktop platforms. All characters are hidden. */
         val Hidden = TextObfuscationMode(2)
     }
 }

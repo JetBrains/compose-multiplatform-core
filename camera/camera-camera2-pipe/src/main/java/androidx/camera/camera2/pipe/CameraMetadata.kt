@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe
 
 import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
+import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
+import android.hardware.camera2.CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_3
+import android.hardware.camera2.CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_EXTERNAL
+import android.hardware.camera2.CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_FULL
+import android.hardware.camera2.CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
-import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 
 /**
@@ -34,99 +37,118 @@ import androidx.annotation.RestrictTo
  * makes behavior that depends on [CameraMetadata] easier to test and reason about.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-interface CameraMetadata : Metadata, UnsafeWrapper {
-    operator fun <T> get(key: CameraCharacteristics.Key<T>): T?
-    fun <T> getOrDefault(key: CameraCharacteristics.Key<T>, default: T): T
+public interface CameraMetadata : Metadata, UnsafeWrapper {
+    public operator fun <T> get(key: CameraCharacteristics.Key<T>): T?
 
-    val camera: CameraId
-    val isRedacted: Boolean
+    public fun <T> getOrDefault(key: CameraCharacteristics.Key<T>, default: T): T
 
-    val keys: Set<CameraCharacteristics.Key<*>>
-    val requestKeys: Set<CaptureRequest.Key<*>>
-    val resultKeys: Set<CaptureResult.Key<*>>
-    val sessionKeys: Set<CaptureRequest.Key<*>>
+    public val camera: CameraId
+    public val isRedacted: Boolean
 
-    val physicalCameraIds: Set<CameraId>
-    val physicalRequestKeys: Set<CaptureRequest.Key<*>>
-    val supportedExtensions: Set<Int>
+    public val keys: Set<CameraCharacteristics.Key<*>>
+    public val requestKeys: Set<CaptureRequest.Key<*>>
+    public val resultKeys: Set<CaptureResult.Key<*>>
+    public val sessionKeys: Set<CaptureRequest.Key<*>>
 
-    suspend fun getPhysicalMetadata(cameraId: CameraId): CameraMetadata
-    fun awaitPhysicalMetadata(cameraId: CameraId): CameraMetadata
-    suspend fun getExtensionMetadata(extension: Int): CameraExtensionMetadata
-    fun awaitExtensionMetadata(extension: Int): CameraExtensionMetadata
+    public val physicalCameraIds: Set<CameraId>
+    public val physicalRequestKeys: Set<CaptureRequest.Key<*>>
+    public val supportedExtensions: Set<Int>
 
-    companion object {
+    public suspend fun getPhysicalMetadata(cameraId: CameraId): CameraMetadata
+
+    public fun awaitPhysicalMetadata(cameraId: CameraId): CameraMetadata
+
+    public suspend fun getExtensionMetadata(extension: Int): CameraExtensionMetadata
+
+    public fun awaitExtensionMetadata(extension: Int): CameraExtensionMetadata
+
+    public companion object {
         /**
          * Extension properties for querying the available capabilities of a camera device across
          * all API levels.
          */
-        var EMPTY_INT_ARRAY = IntArray(0)
+        public var EMPTY_INT_ARRAY: IntArray = IntArray(0)
 
-        const val CAPABILITIES_MANUAL_SENSOR = 1
-        const val CAPABILITIES_MANUAL_POST_PROCESSING = 2
-        const val CAPABILITIES_RAW = 3
-        const val CAPABILITIES_PRIVATE_REPROCESSING = 4
-        const val CAPABILITIES_READ_SENSOR_SETTINGS = 5
-        const val CAPABILITIES_BURST_CAPTURE = 6
-        const val CAPABILITIES_YUV_REPROCESSING = 7
-        const val CAPABILITIES_DEPTH_OUTPUT = 8
-        const val CAPABILITIES_CONSTRAINED_HIGH_SPEED_VIDEO = 9
-        const val CAPABILITIES_MOTION_TRACKING = 10
-        const val CAPABILITIES_LOGICAL_MULTI_CAMERA = 11
-        const val CAPABILITIES_MONOCHROME = 12
-        const val CAPABILITIES_SECURE_IMAGE_DATA = 13
-        const val CAPABILITIES_SYSTEM_CAMERA = 14
-        const val CAPABILITIES_OFFLINE_REPROCESSING = 15
+        public const val CAPABILITIES_MANUAL_SENSOR: Int = 1
+        public const val CAPABILITIES_MANUAL_POST_PROCESSING: Int = 2
+        public const val CAPABILITIES_RAW: Int = 3
+        public const val CAPABILITIES_PRIVATE_REPROCESSING: Int = 4
+        public const val CAPABILITIES_READ_SENSOR_SETTINGS: Int = 5
+        public const val CAPABILITIES_BURST_CAPTURE: Int = 6
+        public const val CAPABILITIES_YUV_REPROCESSING: Int = 7
+        public const val CAPABILITIES_DEPTH_OUTPUT: Int = 8
+        public const val CAPABILITIES_CONSTRAINED_HIGH_SPEED_VIDEO: Int = 9
+        public const val CAPABILITIES_MOTION_TRACKING: Int = 10
+        public const val CAPABILITIES_LOGICAL_MULTI_CAMERA: Int = 11
+        public const val CAPABILITIES_MONOCHROME: Int = 12
+        public const val CAPABILITIES_SECURE_IMAGE_DATA: Int = 13
+        public const val CAPABILITIES_SYSTEM_CAMERA: Int = 14
+        public const val CAPABILITIES_OFFLINE_REPROCESSING: Int = 15
 
-        val CameraMetadata.availableCapabilities: IntArray
+        public val CameraMetadata.availableCapabilities: IntArray
             get() = this[CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES] ?: EMPTY_INT_ARRAY
 
-        val CameraMetadata.supportsManualSensor: Boolean
+        public val CameraMetadata.isHardwareLevelExternal: Boolean
+            get() = this[INFO_SUPPORTED_HARDWARE_LEVEL] == INFO_SUPPORTED_HARDWARE_LEVEL_EXTERNAL
+
+        public val CameraMetadata.isHardwareLevelLegacy: Boolean
+            get() = this[INFO_SUPPORTED_HARDWARE_LEVEL] == INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
+
+        public val CameraMetadata.isHardwareLevelLimited: Boolean
+            get() = this[INFO_SUPPORTED_HARDWARE_LEVEL] == INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
+
+        public val CameraMetadata.isHardwareLevelFull: Boolean
+            get() = this[INFO_SUPPORTED_HARDWARE_LEVEL] == INFO_SUPPORTED_HARDWARE_LEVEL_FULL
+
+        public val CameraMetadata.isHardwareLevel3: Boolean
+            get() = this[INFO_SUPPORTED_HARDWARE_LEVEL] == INFO_SUPPORTED_HARDWARE_LEVEL_3
+
+        public val CameraMetadata.supportsManualSensor: Boolean
             get() = this.availableCapabilities.contains(CAPABILITIES_MANUAL_SENSOR)
 
-        val CameraMetadata.supportsManualPostProcessing: Boolean
+        public val CameraMetadata.supportsManualPostProcessing: Boolean
             get() = this.availableCapabilities.contains(CAPABILITIES_MANUAL_POST_PROCESSING)
 
-        val CameraMetadata.supportsRaw: Boolean
+        public val CameraMetadata.supportsRaw: Boolean
             get() = this.availableCapabilities.contains(CAPABILITIES_RAW)
 
-        val CameraMetadata.supportsPrivateReprocessing: Boolean
+        public val CameraMetadata.supportsPrivateReprocessing: Boolean
             get() = this.availableCapabilities.contains(CAPABILITIES_PRIVATE_REPROCESSING)
 
-        val CameraMetadata.supportsSensorSettings: Boolean
+        public val CameraMetadata.supportsSensorSettings: Boolean
             get() = this.availableCapabilities.contains(CAPABILITIES_READ_SENSOR_SETTINGS)
 
-        val CameraMetadata.supportsBurstCapture: Boolean
+        public val CameraMetadata.supportsBurstCapture: Boolean
             get() = this.availableCapabilities.contains(CAPABILITIES_BURST_CAPTURE)
 
-        val CameraMetadata.supportsYuvReprocessing: Boolean
+        public val CameraMetadata.supportsYuvReprocessing: Boolean
             get() = this.availableCapabilities.contains(CAPABILITIES_YUV_REPROCESSING)
 
-        val CameraMetadata.supportsDepthOutput: Boolean
+        public val CameraMetadata.supportsDepthOutput: Boolean
             get() = this.availableCapabilities.contains(CAPABILITIES_DEPTH_OUTPUT)
 
-        val CameraMetadata.supportsHighSpeedVideo: Boolean
+        public val CameraMetadata.supportsHighSpeedVideo: Boolean
             get() = this.availableCapabilities.contains(CAPABILITIES_CONSTRAINED_HIGH_SPEED_VIDEO)
 
-        val CameraMetadata.supportsMotionTracking: Boolean
+        public val CameraMetadata.supportsMotionTracking: Boolean
             get() = this.availableCapabilities.contains(CAPABILITIES_MOTION_TRACKING)
 
-        val CameraMetadata.supportsLogicalMultiCamera: Boolean
+        public val CameraMetadata.supportsLogicalMultiCamera: Boolean
             get() = this.availableCapabilities.contains(CAPABILITIES_LOGICAL_MULTI_CAMERA)
 
-        val CameraMetadata.supportsMonochrome: Boolean
+        public val CameraMetadata.supportsMonochrome: Boolean
             get() = this.availableCapabilities.contains(CAPABILITIES_MONOCHROME)
 
-        val CameraMetadata.supportsSecureImageData: Boolean
+        public val CameraMetadata.supportsSecureImageData: Boolean
             get() = this.availableCapabilities.contains(CAPABILITIES_SECURE_IMAGE_DATA)
 
-        val CameraMetadata.supportsSystemCamera: Boolean
+        public val CameraMetadata.supportsSystemCamera: Boolean
             get() = this.availableCapabilities.contains(CAPABILITIES_SYSTEM_CAMERA)
 
-        val CameraMetadata.supportsOfflineReprocessing: Boolean
+        public val CameraMetadata.supportsOfflineReprocessing: Boolean
             get() = this.availableCapabilities.contains(CAPABILITIES_OFFLINE_REPROCESSING)
 
-        val CameraMetadata.supportsAutoFocusTrigger: Boolean
+        public val CameraMetadata.supportsAutoFocusTrigger: Boolean
             get() {
                 val minFocusDistance = this[CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE]
                 if (minFocusDistance != null) {

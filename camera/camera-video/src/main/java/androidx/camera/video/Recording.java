@@ -20,7 +20,6 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.impl.utils.CloseGuardHelper;
 import androidx.core.util.Consumer;
@@ -46,7 +45,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * when the object is garbage collected, and no new recordings can be started from the same
  * {@link Recorder} that generated the object until that occurs.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class Recording implements AutoCloseable {
 
     // Indicates the recording has been explicitly stopped by users.
@@ -180,7 +178,8 @@ public final class Recording implements AutoCloseable {
      *
      * <p>The output file will contain an audio track even the whole recording is muted. Create a
      * recording without calling {@link PendingRecording#withAudioEnabled()} to record a file
-     * with no audio track.
+     * with no audio track. To set the initial mute state of the recording, use
+     * {@link PendingRecording#withAudioEnabled(boolean)}.
      *
      * <p>Muting or unmuting a recording that isn't created
      * {@link PendingRecording#withAudioEnabled()} with audio enabled is no-op.

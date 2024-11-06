@@ -21,6 +21,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
@@ -72,15 +73,16 @@ class ForegroundWorker(context: Context, parameters: WorkerParameters) :
             createChannel()
         }
 
-        val notification = NotificationCompat.Builder(applicationContext, id)
-            .setContentTitle(title)
-            .setTicker(title)
-            .setContentText(content)
-            .setSmallIcon(R.drawable.ic_work_notification)
-            .setOngoing(true)
-            .build()
+        val notification =
+            NotificationCompat.Builder(applicationContext, id)
+                .setContentTitle(title)
+                .setTicker(title)
+                .setContentText(content)
+                .setSmallIcon(R.drawable.ic_work_notification)
+                .setOngoing(true)
+                .build()
 
-        return ForegroundInfo(notificationId, notification)
+        return ForegroundInfo(notificationId, notification, FOREGROUND_SERVICE_TYPE_DATA_SYNC)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

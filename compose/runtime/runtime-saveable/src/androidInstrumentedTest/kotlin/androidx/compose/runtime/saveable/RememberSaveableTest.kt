@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -38,19 +39,14 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class RememberSaveableTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private val restorationTester = StateRestorationTester(rule)
 
     @Test
     fun simpleRestore() {
         var array: IntArray? = null
-        restorationTester.setContent {
-            array = rememberSaveable {
-                intArrayOf(0)
-            }
-        }
+        restorationTester.setContent { array = rememberSaveable { intArrayOf(0) } }
 
         assertThat(array).isEqualTo(intArrayOf(0))
 
@@ -69,9 +65,7 @@ class RememberSaveableTest {
     fun restoreWithSaver() {
         var holder: Holder? = null
         restorationTester.setContent {
-            holder = rememberSaveable(saver = HolderSaver) {
-                Holder(0)
-            }
+            holder = rememberSaveable(saver = HolderSaver) { Holder(0) }
         }
 
         assertThat(holder).isEqualTo(Holder(0))
@@ -170,31 +164,28 @@ class RememberSaveableTest {
     @Test
     fun unregistersFromPrevProviderAndRegistersToTheNewOne() {
         var unregisterCalledForKey: String? = null
-        var registryFactory by mutableStateOf<(SaveableStateRegistry) -> SaveableStateRegistry>(
-            value = {
-                object : DelegateRegistry(it) {
-                    override fun registerProvider(
-                        key: String,
-                        valueProvider: () -> Any?
-                    ): SaveableStateRegistry.Entry {
-                        val entry = super.registerProvider(key, valueProvider)
-                        return object : SaveableStateRegistry.Entry {
-                            override fun unregister() {
-                                unregisterCalledForKey = key
-                                entry.unregister()
+        var registryFactory by
+            mutableStateOf<(SaveableStateRegistry) -> SaveableStateRegistry>(
+                value = {
+                    object : DelegateRegistry(it) {
+                        override fun registerProvider(
+                            key: String,
+                            valueProvider: () -> Any?
+                        ): SaveableStateRegistry.Entry {
+                            val entry = super.registerProvider(key, valueProvider)
+                            return object : SaveableStateRegistry.Entry {
+                                override fun unregister() {
+                                    unregisterCalledForKey = key
+                                    entry.unregister()
+                                }
                             }
                         }
                     }
                 }
-            }
-        )
+            )
 
         rule.setContent {
-            WrapRegistry(
-                wrap = {
-                    registryFactory(it)
-                }
-            ) {
+            WrapRegistry(wrap = registryFactory) {
                 val v = rememberSaveable { 1 }
                 assertEquals(1, v)
             }
@@ -256,9 +247,7 @@ class RememberSaveableTest {
         }
 
         rule.mainClock.advanceTimeUntil { registerCalled == 1 }
-        rule.runOnUiThread {
-            key = "key2"
-        }
+        rule.runOnUiThread { key = "key2" }
 
         rule.mainClock.advanceTimeUntil { registerCalled == 2 }
         assertThat(registeredKeys).isEqualTo(mutableSetOf("key2"))
@@ -266,27 +255,21 @@ class RememberSaveableTest {
 
     @Test
     fun theLatestPassedSaverIsUsed() {
-        var saver by mutableStateOf(
-            Saver<Int, Int>(
-                save = { 1 },
-                restore = { 1 }
-            )
-        )
+        var saver by mutableStateOf(Saver<Int, Int>(save = { 1 }, restore = { 1 }))
 
-        restorationTester.setContent {
-            rememberSaveable(saver = saver) { 1 }
-        }
+        restorationTester.setContent { rememberSaveable(saver = saver) { 1 } }
 
         val latch = CountDownLatch(1)
 
         rule.runOnIdle {
-            saver = Saver(
-                save = {
-                    latch.countDown()
-                    1
-                },
-                restore = { 1 }
-            )
+            saver =
+                Saver(
+                    save = {
+                        latch.countDown()
+                        1
+                    },
+                    restore = { 1 }
+                )
         }
 
         restorationTester.emulateSavedInstanceStateRestore()
@@ -298,25 +281,25 @@ class RememberSaveableTest {
         var doEmit by mutableStateOf(true)
         var onUnregisterCalled = false
 
-        rule.setContent {
-            WrapRegistry(
-                wrap = {
-                    object : DelegateRegistry(it) {
-                        override fun registerProvider(
-                            key: String,
-                            valueProvider: () -> Any?
-                        ): SaveableStateRegistry.Entry {
-                            val entry = super.registerProvider(key, valueProvider)
-                            return object : SaveableStateRegistry.Entry {
-                                override fun unregister() {
-                                    onUnregisterCalled = true
-                                    entry.unregister()
-                                }
-                            }
+        // Define the lambda here to avoid it changing in recompositions
+        val wrapRegistryLambda: (SaveableStateRegistry) -> SaveableStateRegistry = {
+            object : DelegateRegistry(it) {
+                override fun registerProvider(
+                    key: String,
+                    valueProvider: () -> Any?
+                ): SaveableStateRegistry.Entry {
+                    val entry = super.registerProvider(key, valueProvider)
+                    return object : SaveableStateRegistry.Entry {
+                        override fun unregister() {
+                            onUnregisterCalled = true
+                            entry.unregister()
                         }
                     }
                 }
-            ) {
+            }
+        }
+        rule.setContent {
+            WrapRegistry(wrap = wrapRegistryLambda) {
                 if (doEmit) {
                     rememberSaveable { 1 }
                 }
@@ -388,11 +371,7 @@ class RememberSaveableTest {
         var counter = 0
         var composedValue: Int? = null
         var input by mutableStateOf(0)
-        restorationTester.setContent {
-            composedValue = rememberSaveable(input) {
-                counter++
-            }
-        }
+        restorationTester.setContent { composedValue = rememberSaveable(input) { counter++ } }
 
         rule.runOnIdle {
             assertThat(composedValue).isEqualTo(0)
@@ -406,9 +385,7 @@ class RememberSaveableTest {
 
         restorationTester.emulateSavedInstanceStateRestore()
 
-        rule.runOnIdle {
-            assertThat(composedValue).isEqualTo(1)
-        }
+        rule.runOnIdle { assertThat(composedValue).isEqualTo(1) }
     }
 
     @Test
@@ -452,13 +429,12 @@ class RememberSaveableTest {
 
 @Composable
 private fun WrapRegistry(
-    wrap: @Composable (SaveableStateRegistry) -> SaveableStateRegistry,
+    wrap: (SaveableStateRegistry) -> SaveableStateRegistry,
     content: @Composable () -> Unit
 ) {
-    CompositionLocalProvider(
-        LocalSaveableStateRegistry provides wrap(LocalSaveableStateRegistry.current!!),
-        content = content
-    )
+    val original = LocalSaveableStateRegistry.current!!
+    val wrapped = remember(original, wrap) { wrap(original) }
+    CompositionLocalProvider(LocalSaveableStateRegistry provides wrapped, content = content)
 }
 
 private open class DelegateRegistry(original: SaveableStateRegistry) :

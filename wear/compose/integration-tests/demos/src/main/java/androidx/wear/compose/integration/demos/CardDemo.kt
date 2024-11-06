@@ -32,7 +32,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.integration.demos.common.ScalingLazyColumnWithRSB
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.material.AppCard
 import androidx.wear.compose.material.Card
 import androidx.wear.compose.material.CardDefaults
@@ -42,19 +42,14 @@ import androidx.wear.compose.material.TitleCard
 
 @Composable
 fun CardDemo() {
-    ScalingLazyColumnWithRSB(
+    ScalingLazyColumn(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(
-            space = 4.dp,
-            alignment = Alignment.CenterVertically
-        ),
+        verticalArrangement =
+            Arrangement.spacedBy(space = 4.dp, alignment = Alignment.CenterVertically),
         modifier = Modifier.fillMaxSize()
     ) {
         item {
-            Card(
-                onClick = {},
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Card(onClick = {}, modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text("Basic unopinionated chip")
                     Text("Sets the shape")
@@ -169,18 +164,17 @@ fun CardDemo() {
             TitleCard(
                 onClick = {},
                 title = { Text("TitleCard With an ImageBackground") },
-                backgroundPainter = CardDefaults.imageWithScrimBackgroundPainter(
-                    backgroundImagePainter = painterResource(id = R.drawable.backgroundimage1)
-                ),
+                backgroundPainter =
+                    CardDefaults.imageWithScrimBackgroundPainter(
+                        backgroundImagePainter = painterResource(id = R.drawable.backgroundimage1)
+                    ),
                 contentColor = MaterialTheme.colors.onSurface,
                 titleColor = MaterialTheme.colors.onSurface,
             ) {
                 // Apply 24.dp padding in bottom for TitleCard with an ImageBackground.
                 // Already 12.dp padding exists. Ref - [CardDefaults.ContentPadding]
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 12.dp),
+                    modifier = Modifier.fillMaxSize().padding(bottom = 12.dp),
                 ) {
                     Text("Text coloured to stand out on the image")
                 }

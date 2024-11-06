@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("NOTHING_TO_INLINE", "KotlinRedundantDiagnosticSuppress")
+
 package androidx.compose.ui.graphics
 
 import androidx.annotation.RestrictTo
@@ -23,6 +25,7 @@ import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastMaxOf
 import androidx.compose.ui.util.fastMinOf
 import androidx.compose.ui.util.lerp
+import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.acos
 import kotlin.math.cos
@@ -31,134 +34,70 @@ import kotlin.math.min
 import kotlin.math.sign
 import kotlin.math.sqrt
 
-private const val Tau = Math.PI * 2.0
+private const val Tau = PI * 2.0
 private const val Epsilon = 1e-7
 // We use a fairly high epsilon here because it's post double->float conversion
 // and because we use a fast approximation of cbrt(). The epsilon we use here is
-// the max error of fastCbrt() in the -1f..1f range.
-private const val FloatEpsilon = 8.3446500e-7f
+// slightly larger than the max error of fastCbrt() in the -1f..1f range
+// (8.3446500e-7f) but smaller than 1.0f.ulp * 10.
+private const val FloatEpsilon = 1.05e-6f
 
 /**
- * Evaluate the specified [segment] at position [t] and returns the X
- * coordinate of the segment's curve at that position.
+ * Evaluate the specified [segment] at position [t] and returns the X coordinate of the segment's
+ * curve at that position.
  */
-private fun evaluateX(
-    segment: PathSegment,
-    t: Float
-): Float {
+private fun evaluateX(segment: PathSegment, t: Float): Float {
     val points = segment.points
 
     return when (segment.type) {
         PathSegment.Type.Move -> points[0]
-
         PathSegment.Type.Line -> {
-            evaluateLine(
-                points[0],
-                points[2],
-                t
-            )
+            evaluateLine(points[0], points[2], t)
         }
-
         PathSegment.Type.Quadratic -> {
-            evaluateQuadratic(
-                points[0],
-                points[2],
-                points[4],
-                t
-            )
+            evaluateQuadratic(points[0], points[2], points[4], t)
         }
-
-        // We convert all conics to cubics, won't happen
-        PathSegment.Type.Conic -> Float.NaN
-
         PathSegment.Type.Cubic -> {
-            evaluateCubic(
-                points[0],
-                points[2],
-                points[4],
-                points[6],
-                t
-            )
+            evaluateCubic(points[0], points[2], points[4], points[6], t)
         }
-
-        PathSegment.Type.Close -> Float.NaN
-        PathSegment.Type.Done -> Float.NaN
+        // Conic (converted to Cubic), Close, Done
+        else -> Float.NaN
     }
 }
 
 /**
- * Evaluate the specified [segment] at position [t] and returns the Y
- * coordinate of the segment's curve at that position.
+ * Evaluate the specified [segment] at position [t] and returns the Y coordinate of the segment's
+ * curve at that position.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-fun evaluateY(
-    segment: PathSegment,
-    t: Float
-): Float {
+fun evaluateY(segment: PathSegment, t: Float): Float {
     val points = segment.points
 
     return when (segment.type) {
         PathSegment.Type.Move -> points[1]
-
         PathSegment.Type.Line -> {
-            evaluateLine(
-                points[1],
-                points[3],
-                t
-            )
+            evaluateLine(points[1], points[3], t)
         }
-
         PathSegment.Type.Quadratic -> {
-            evaluateQuadratic(
-                points[1],
-                points[3],
-                points[5],
-                t
-            )
+            evaluateQuadratic(points[1], points[3], points[5], t)
         }
-
-        // We convert all conics to cubics, won't happen
-        PathSegment.Type.Conic -> Float.NaN
-
         PathSegment.Type.Cubic -> {
-            evaluateCubic(
-                points[1],
-                points[3],
-                points[5],
-                points[7],
-                t
-            )
+            evaluateCubic(points[1], points[3], points[5], points[7], t)
         }
-
-        PathSegment.Type.Close -> Float.NaN
-        PathSegment.Type.Done -> Float.NaN
+        // Conic (converted to Cubic), Close, Done
+        else -> Float.NaN
     }
 }
 
-private fun evaluateLine(
-    p0y: Float,
-    p1y: Float,
-    t: Float
-) = (p1y - p0y) * t + p0y
+private fun evaluateLine(p0y: Float, p1y: Float, t: Float) = (p1y - p0y) * t + p0y
 
-private fun evaluateQuadratic(
-    p0: Float,
-    p1: Float,
-    p2: Float,
-    t: Float
-): Float {
+private fun evaluateQuadratic(p0: Float, p1: Float, p2: Float, t: Float): Float {
     val by = 2.0f * (p1 - p0)
     val ay = p2 - 2.0f * p1 + p0
     return (ay * t + by) * t + p0
 }
 
-private fun evaluateCubic(
-    p0: Float,
-    p1: Float,
-    p2: Float,
-    p3: Float,
-    t: Float
-): Float {
+private fun evaluateCubic(p0: Float, p1: Float, p2: Float, p3: Float, t: Float): Float {
     val a = p3 + 3.0f * (p1 - p2) - p0
     val b = 3.0f * (p2 - 2.0f * p1 + p0)
     val c = 3.0f * (p1 - p0)
@@ -166,17 +105,13 @@ private fun evaluateCubic(
 }
 
 /**
- * Evaluates a cubic Bézier curve at position [t] along the curve. The curve is
- * defined by the start point (0, 0), the end point (0, 0) and two control points
- * of respective coordinates [p1] and [p2].
+ * Evaluates a cubic Bézier curve at position [t] along the curve. The curve is defined by the start
+ * point (0, 0), the end point (0, 0) and two control points of respective coordinates [p1] and
+ * [p2].
  */
 @Suppress("UnnecessaryVariable")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-fun evaluateCubic(
-    p1: Float,
-    p2: Float,
-    t: Float
-): Float {
+fun evaluateCubic(p1: Float, p2: Float, t: Float): Float {
     val a = 1.0f / 3.0f + (p1 - p2)
     val b = (p2 - 2.0f * p1)
     val c = p1
@@ -184,47 +119,37 @@ fun evaluateCubic(
 }
 
 /**
- * Finds the first real root of the specified [segment].
- * If no root can be found, this method returns [Float.NaN].
+ * Finds the first real root of the specified [segment]. If no root can be found, this method
+ * returns [Float.NaN].
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-fun findFirstRoot(
-    segment: PathSegment,
-    fraction: Float
-): Float {
+fun findFirstRoot(segment: PathSegment, fraction: Float): Float {
     val points = segment.points
     return when (segment.type) {
         PathSegment.Type.Move -> Float.NaN
-
         PathSegment.Type.Line -> {
             findFirstLineRoot(
                 points[0] - fraction,
                 points[2] - fraction,
             )
         }
-
-        PathSegment.Type.Quadratic -> findFirstQuadraticRoot(
-            points[0] - fraction,
-            points[2] - fraction,
-            points[4] - fraction
-        )
+        PathSegment.Type.Quadratic ->
+            findFirstQuadraticRoot(points[0] - fraction, points[2] - fraction, points[4] - fraction)
 
         // We convert all conics to cubics, won't happen
         PathSegment.Type.Conic -> Float.NaN
-
-        PathSegment.Type.Cubic -> findFirstCubicRoot(
-            points[0] - fraction,
-            points[2] - fraction,
-            points[4] - fraction,
-            points[6] - fraction
-        )
-
+        PathSegment.Type.Cubic ->
+            findFirstCubicRoot(
+                points[0] - fraction,
+                points[2] - fraction,
+                points[4] - fraction,
+                points[6] - fraction
+            )
         PathSegment.Type.Close -> Float.NaN
         PathSegment.Type.Done -> Float.NaN
     }
 }
 
-@Suppress("NOTHING_TO_INLINE")
 private inline fun findFirstLineRoot(p0: Float, p1: Float) =
     clampValidRootInUnitRange(-p0 / (p1 - p0))
 
@@ -236,11 +161,7 @@ private inline fun findFirstLineRoot(p0: Float, p1: Float) =
  *
  * If no root can be found, this method returns [Float.NaN].
  */
-private fun findFirstQuadraticRoot(
-    p0: Float,
-    p1: Float,
-    p2: Float
-): Float {
+private fun findFirstQuadraticRoot(p0: Float, p1: Float, p2: Float): Float {
     val a = p0.toDouble()
     val b = p1.toDouble()
     val c = p2.toDouble()
@@ -271,12 +192,7 @@ private fun findFirstQuadraticRoot(
  * If no root can be found, this method returns [Float.NaN].
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-fun findFirstCubicRoot(
-    p0: Float,
-    p1: Float,
-    p2: Float,
-    p3: Float
-): Float {
+fun findFirstCubicRoot(p0: Float, p1: Float, p2: Float, p3: Float): Float {
     // This function implements Cardano's algorithm as described in "A Primer on Bézier Curves":
     // https://pomax.github.io/bezierinfo/#yforx
     //
@@ -349,23 +265,22 @@ fun findFirstCubicRoot(
 }
 
 /**
- * Finds the real root of a line defined by the X coordinates of its start ([p0])
- * and end ([p1]) points. The root, if any, is written in the [roots] array at
- * [index]. Returns 1 if a root was found, 0 otherwise.
+ * Finds the real root of a line defined by the X coordinates of its start ([p0]) and end ([p1])
+ * points. The root, if any, is written in the [roots] array at [index]. Returns 1 if a root was
+ * found, 0 otherwise.
  */
-@Suppress("NOTHING_TO_INLINE")
 private inline fun findLineRoot(p0: Float, p1: Float, roots: FloatArray, index: Int = 0) =
     writeValidRootInUnitRange(-p0 / (p1 - p0), roots, index)
 
 /**
- * Finds the real roots of a quadratic Bézier curve. To find the roots, only the X
- * coordinates of the four points are required:
+ * Finds the real roots of a quadratic Bézier curve. To find the roots, only the X coordinates of
+ * the four points are required:
  * - [p0]: x coordinate of the start point
  * - [p1]: x coordinate of the control point
  * - [p2]: x coordinate of the end point
  *
- * Any root found is written in the [roots] array, starting at [index]. The
- * function returns the number of roots found and written to the array.
+ * Any root found is written in the [roots] array, starting at [index]. The function returns the
+ * number of roots found and written to the array.
  */
 private fun findQuadraticRoots(
     p0: Float,
@@ -385,12 +300,8 @@ private fun findQuadraticRoots(
         val v1 = -sqrt(b * b - a * c)
         val v2 = -a + b
 
-        rootCount += writeValidRootInUnitRange(
-            (-(v1 + v2) / d).toFloat(), roots, index
-        )
-        rootCount += writeValidRootInUnitRange(
-            ((v1 - v2) / d).toFloat(), roots, index + rootCount
-        )
+        rootCount += writeValidRootInUnitRange((-(v1 + v2) / d).toFloat(), roots, index)
+        rootCount += writeValidRootInUnitRange(((v1 - v2) / d).toFloat(), roots, index + rootCount)
 
         // Returns the roots sorted
         if (rootCount > 1) {
@@ -405,50 +316,43 @@ private fun findQuadraticRoots(
             }
         }
     } else if (b != c) {
-        rootCount += writeValidRootInUnitRange(
-            ((2.0 * b - c) / (2.0 * b - 2.0 * c)).toFloat(), roots, index
-        )
+        rootCount +=
+            writeValidRootInUnitRange(((2.0 * b - c) / (2.0 * b - 2.0 * c)).toFloat(), roots, index)
     }
 
     return rootCount
 }
 
 /**
- * Finds the roots of the derivative of the curve described by [segment].
- * The roots, if any, are written in the [roots] array starting at [index].
- * The function returns the number of roots founds and written into the array.
- * The [roots] array must be able to hold at least 5 floats starting at [index].
+ * Finds the roots of the derivative of the curve described by [segment]. The roots, if any, are
+ * written in the [roots] array starting at [index]. The function returns the number of roots founds
+ * and written into the array. The [roots] array must be able to hold at least 5 floats starting at
+ * [index].
  */
 private fun findDerivativeRoots(
     segment: PathSegment,
+    horizontal: Boolean,
     roots: FloatArray,
-    index: Int = 0,
+    index: Int
 ): Int {
+    val offset = if (horizontal) 0 else 1
     val points = segment.points
     return when (segment.type) {
-        PathSegment.Type.Move -> 0
-
-        PathSegment.Type.Line -> 0
-
         PathSegment.Type.Quadratic -> {
             // Line derivative of a quadratic function
             // We do the computation inline to avoid using arrays of other data
             // structures to return the result
-            val d0 = 2 * (points[2] - points[0])
-            val d1 = 2 * (points[4] - points[2])
+            val d0 = 2 * (points[offset + 2] - points[offset + 0])
+            val d1 = 2 * (points[offset + 4] - points[offset + 2])
             findLineRoot(d0, d1, roots, index)
         }
-
-        // We convert all conics to cubics, won't happen
-        PathSegment.Type.Conic -> 0
-
         PathSegment.Type.Cubic -> {
             // Quadratic derivative of a cubic function
             // We do the computation inline to avoid using arrays of other data
             // structures to return the result
-            val d0 = 3.0f * (points[2] - points[0])
-            val d1 = 3.0f * (points[4] - points[2])
-            val d2 = 3.0f * (points[6] - points[4])
+            val d0 = 3.0f * (points[offset + 2] - points[offset + 0])
+            val d1 = 3.0f * (points[offset + 4] - points[offset + 2])
+            val d2 = 3.0f * (points[offset + 6] - points[offset + 4])
             val count = findQuadraticRoots(d0, d1, d2, roots, index)
 
             // Compute the second derivative as a line
@@ -457,19 +361,15 @@ private fun findDerivativeRoots(
             // Return the sum of the roots count
             count + findLineRoot(dd0, dd1, roots, index + count)
         }
-
-        PathSegment.Type.Close -> 0
-        PathSegment.Type.Done -> 0
+        else -> 0
     }
 }
 
 /**
- * Computes the horizontal bounds of the specified [segment] and returns
- * a pair of floats containing the lowest bound as the first value, and
- * the highest bound as the second value.
+ * Computes the horizontal bounds of the specified [segment] and returns a pair of floats containing
+ * the lowest bound as the first value, and the highest bound as the second value.
  *
- * The [roots] array is used as a scratch array and must be able to hold
- * at least 5 floats.
+ * The [roots] array is used as a scratch array and must be able to hold at least 5 floats.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 fun computeHorizontalBounds(
@@ -477,7 +377,7 @@ fun computeHorizontalBounds(
     roots: FloatArray,
     index: Int = 0
 ): FloatFloatPair {
-    val count = findDerivativeRoots(segment, roots, index)
+    val count = findDerivativeRoots(segment, true, roots, index)
     var minX = min(segment.startX, segment.endX)
     var maxX = max(segment.startX, segment.endX)
 
@@ -492,57 +392,92 @@ fun computeHorizontalBounds(
 }
 
 /**
- * Computes the vertical bounds of the specified [segment] and returns
- * a pair of floats containing the lowest bound as the first value, and
- * the highest bound as the second value.
+ * Computes the vertical bounds of the specified [segment] and returns a pair of floats containing
+ * the lowest bound as the first value, and the highest bound as the second value.
  *
- * The [roots] array is used as a scratch array and must be able to hold
- * at least 5 floats.
+ * The [roots] array is used as a scratch array and must be able to hold at least 5 floats.
  */
 internal fun computeVerticalBounds(
     segment: PathSegment,
     roots: FloatArray,
     index: Int = 0
 ): FloatFloatPair {
-    val count = findDerivativeRoots(segment, roots, index)
-    var minX = min(segment.startY, segment.endY)
-    var maxX = max(segment.startY, segment.endY)
+    val count = findDerivativeRoots(segment, false, roots, index)
+    var minY = min(segment.startY, segment.endY)
+    var maxY = max(segment.startY, segment.endY)
 
     for (i in 0 until count) {
         val t = roots[i]
         val x = evaluateY(segment, t)
-        minX = min(minX, x)
-        maxX = max(maxX, x)
+        minY = min(minY, x)
+        maxY = max(maxY, x)
     }
 
-    return FloatFloatPair(minX, maxX)
+    return FloatFloatPair(minY, maxY)
 }
 
-@Suppress("NOTHING_TO_INLINE")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+fun computeCubicVerticalBounds(
+    p0y: Float,
+    p1y: Float,
+    p2y: Float,
+    p3y: Float,
+    roots: FloatArray,
+    index: Int = 0
+): FloatFloatPair {
+    // Quadratic derivative of a cubic function
+    // We do the computation inline to avoid using arrays of other data
+    // structures to return the result
+    val d0 = 3.0f * (p1y - p0y)
+    val d1 = 3.0f * (p2y - p1y)
+    val d2 = 3.0f * (p3y - p2y)
+    var count = findQuadraticRoots(d0, d1, d2, roots, index)
+
+    // Compute the second derivative as a line
+    val dd0 = 2.0f * (d1 - d0)
+    val dd1 = 2.0f * (d2 - d1)
+    count += findLineRoot(dd0, dd1, roots, index + count)
+
+    var minY = min(p0y, p3y)
+    var maxY = max(p0y, p3y)
+
+    for (i in 0 until count) {
+        val t = roots[i]
+        val y = evaluateCubic(p0y, p1y, p2y, p3y, t)
+        minY = min(minY, y)
+        maxY = max(maxY, y)
+    }
+
+    return FloatFloatPair(minY, maxY)
+}
+
 internal inline fun Double.closeTo(b: Double) = abs(this - b) < Epsilon
 
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun Float.closeTo(b: Float) = abs(this - b) < FloatEpsilon
 
 /**
- * Returns [r] if it's in the [0..1] range, and [Float.NaN] otherwise. To account
- * for numerical imprecision in computations, values in the [-FloatEpsilon..1+FloatEpsilon]
- * range are considered to be in the [0..1] range and clamped appropriately.
+ * Returns [r] if it's in the [0..1] range, and [Float.NaN] otherwise. To account for numerical
+ * imprecision in computations, values in the [-FloatEpsilon..1+FloatEpsilon] range are considered
+ * to be in the [0..1] range and clamped appropriately.
  */
-@Suppress("NOTHING_TO_INLINE")
-private inline fun clampValidRootInUnitRange(r: Float): Float = if (r < 0.0f) {
-    if (r >= -FloatEpsilon) 0.0f else Float.NaN
-} else if (r > 1.0f) {
-    if (r <= 1.0f + FloatEpsilon) 1.0f else Float.NaN
-} else {
-    r
+private inline fun clampValidRootInUnitRange(r: Float): Float {
+    // The code below is a branchless version of:
+    // if (r < 0.0f) {
+    //     if (r >= -FloatEpsilon) 0.0f else Float.NaN
+    // } else if (r > 1.0f) {
+    //     if (r <= 1.0f + FloatEpsilon) 1.0f else Float.NaN
+    // } else {
+    //     r
+    // }
+    val s = r.fastCoerceIn(0f, 1f)
+    return if (abs(s - r) > FloatEpsilon) Float.NaN else s
 }
 
 /**
- * Writes [r] in the [roots] array at [index], if it's in the [0..1] range. To account
- * for numerical imprecision in computations, values in the [-FloatEpsilon..1+FloatEpsilon]
- * range are considered to be in the [0..1] range and clamped appropriately. Returns 0 if
- * no value was written, 1 otherwise.
+ * Writes [r] in the [roots] array at [index], if it's in the [0..1] range. To account for numerical
+ * imprecision in computations, values in the [-FloatEpsilon..1+FloatEpsilon] range are considered
+ * to be in the [0..1] range and clamped appropriately. Returns 0 if no value was written, 1
+ * otherwise.
  */
 private fun writeValidRootInUnitRange(r: Float, roots: FloatArray, index: Int): Int {
     val v = clampValidRootInUnitRange(r)
@@ -551,11 +486,13 @@ private fun writeValidRootInUnitRange(r: Float, roots: FloatArray, index: Int): 
 }
 
 /**
- * Computes the winding value for a position [x]/[y] and the line defined by the [points]
- * array. The array must contain at least 4 floats defining the start and end points of the
- * line as pairs of x/y coordinates.
+ * Computes the winding value for a position [x]/[y] and the line defined by the [points] array. The
+ * array must contain at least 4 floats defining the start and end points of the line as pairs of
+ * x/y coordinates.
  */
 internal fun lineWinding(points: FloatArray, x: Float, y: Float): Int {
+    if (points.size < 4) return 0
+
     val x0 = points[0]
     var y0 = points[1]
     val yo = y0
@@ -592,23 +529,22 @@ internal fun lineWinding(points: FloatArray, x: Float, y: Float): Int {
 }
 
 /**
- * Returns whether the quadratic Bézier curve defined the start, control, and points
- * [y0], [y1], and [y2] is monotonic on the Y axis.
+ * Returns whether the quadratic Bézier curve defined the start, control, and points [y0], [y1], and
+ * [y2] is monotonic on the Y axis.
  */
 private fun isQuadraticMonotonic(y0: Float, y1: Float, y2: Float): Boolean =
     (y0 - y1).sign + (y1 - y2).sign != 0.0f
 
 /**
- * Computes the winding value for a position [x]/[y] and the quadratic Bézier curve defined by
- * the [points] array. The array must contain at least 6 floats defining the start, control,
- * and end points of the curve as pairs of x/y coordinates.
+ * Computes the winding value for a position [x]/[y] and the quadratic Bézier curve defined by the
+ * [points] array. The array must contain at least 6 floats defining the start, control, and end
+ * points of the curve as pairs of x/y coordinates.
  *
- * The [tmpQuadratics] array is a scratch array used to hold temporary values and must
- * contain at least 10 floats. Its content can be ignored after calling this function.
+ * The [tmpQuadratics] array is a scratch array used to hold temporary values and must contain at
+ * least 10 floats. Its content can be ignored after calling this function.
  *
- * The [tmpRoots] array is a scratch array that must contain at least 2 values. It is
- * used to hold temporary values and its content can be ignored after calling this
- * function.
+ * The [tmpRoots] array is a scratch array that must contain at least 2 values. It is used to hold
+ * temporary values and its content can be ignored after calling this function.
  */
 internal fun quadraticWinding(
     points: FloatArray,
@@ -635,15 +571,13 @@ internal fun quadraticWinding(
 }
 
 /**
- * Computes the winding value of a _monotonic_ quadratic Bézier curve for the given
- * [x] and [y] coordinates. The curve is defined as 6 floats in the [points] array
- * corresponding to the start, control, and end points. The floats are stored at
- * position [offset] in the array, meaning the array must hold at least [offset] + 6
- * values.
+ * Computes the winding value of a _monotonic_ quadratic Bézier curve for the given [x] and [y]
+ * coordinates. The curve is defined as 6 floats in the [points] array corresponding to the start,
+ * control, and end points. The floats are stored at position [offset] in the array, meaning the
+ * array must hold at least [offset] + 6 values.
  *
- * The [tmpRoots] array is a scratch array that must contain at least 2 values. It is
- * used to hold temporary values and its content can be ignored after calling this
- * function.
+ * The [tmpRoots] array is a scratch array that must contain at least 2 values. It is used to hold
+ * temporary values and its content can be ignored after calling this function.
  */
 private fun monotonicQuadraticWinding(
     points: FloatArray,
@@ -672,18 +606,14 @@ private fun monotonicQuadraticWinding(
     val y1 = points[offset + 3]
     y2 = points[offset + 5]
 
-    val rootCount = findQuadraticRoots(
-        y0 - 2.0f * y1 + y2,
-        2.0f * (y1 - y0),
-        y0 - y,
-        tmpRoots
-    )
+    val rootCount = findQuadraticRoots(y0 - 2.0f * y1 + y2, 2.0f * (y1 - y0), y0 - y, tmpRoots)
 
-    val xt = if (rootCount == 0) {
-        points[(1 - direction) * 2]
-    } else {
-        evaluateQuadratic(points[0], points[2], points[4], tmpRoots[0])
-    }
+    val xt =
+        if (rootCount == 0) {
+            points[(1 - direction) * 2]
+        } else {
+            evaluateQuadratic(points[0], points[2], points[4], tmpRoots[0])
+        }
 
     if (xt.closeTo(x)) {
         if (x != points[4] || y != y2) {
@@ -696,19 +626,20 @@ private fun monotonicQuadraticWinding(
 }
 
 /**
- * Splits the specified [quadratic] Bézier curve into 1 or 2 monotonic quadratic
- * Bézier curves. The results are stored in the [dst] array. Both the input
- * [quadratic] and the output [dst] arrays store the curves as 3 pairs of floats
- * defined by the start, control, and end points. In the [dst] array, successive curves
- * share a point: the end point of the first curve is the start point of the second
- * curve. As a result this function will output at most 10 values in the [dst] array
- * (6 floats per curve, minus 2 for a shared point).
+ * Splits the specified [quadratic] Bézier curve into 1 or 2 monotonic quadratic Bézier curves. The
+ * results are stored in the [dst] array. Both the input [quadratic] and the output [dst] arrays
+ * store the curves as 3 pairs of floats defined by the start, control, and end points. In the [dst]
+ * array, successive curves share a point: the end point of the first curve is the start point of
+ * the second curve. As a result this function will output at most 10 values in the [dst] array (6
+ * floats per curve, minus 2 for a shared point).
  *
- * The function returns the number of splits: if 0 is returned, the [dst] array contains
- * a single quadratic curve, if 1 is returned, the array contains 2 curves with a shared
- * point.
+ * The function returns the number of splits: if 0 is returned, the [dst] array contains a single
+ * quadratic curve, if 1 is returned, the array contains 2 curves with a shared point.
  */
 private fun quadraticToMonotonicQuadratics(quadratic: FloatArray, dst: FloatArray): Int {
+    if (quadratic.size < 6) return 0
+    if (dst.size < 6) return 0
+
     val y0 = quadratic[1]
     var y1 = quadratic[3]
     val y2 = quadratic[5]
@@ -730,12 +661,14 @@ private fun quadraticToMonotonicQuadratics(quadratic: FloatArray, dst: FloatArra
 }
 
 /**
- * Splits the specified [src] quadratic Bézier curve into two quadratic Bézier curves
- * at position [t] (in the range 0..1), and stores the results in [dst]. The [dst]
- * array must hold at least 10 floats. See [quadraticToMonotonicQuadratics] for more
- * details.
+ * Splits the specified [src] quadratic Bézier curve into two quadratic Bézier curves at position
+ * [t] (in the range 0..1), and stores the results in [dst]. The [dst] array must hold at least 10
+ * floats. See [quadraticToMonotonicQuadratics] for more details.
  */
 private fun splitQuadraticAt(src: FloatArray, dst: FloatArray, t: Float) {
+    if (src.size < 6) return
+    if (dst.size < 10) return
+
     val p0x = src[0]
     val p0y = src[1]
     val p1x = src[2]
@@ -766,9 +699,9 @@ private fun splitQuadraticAt(src: FloatArray, dst: FloatArray, t: Float) {
 }
 
 /**
- * Performs the division [x]/[y] and returns the result. If the division is invalid,
- * for instance if it would leads to [Float.POSITIVE_INFINITY] or if it underflows,
- * this function returns [Float.NaN].
+ * Performs the division [x]/[y] and returns the result. If the division is invalid, for instance if
+ * it would leads to [Float.POSITIVE_INFINITY] or if it underflows, this function returns
+ * [Float.NaN].
  */
 private fun unitDivide(x: Float, y: Float): Float {
     var n = x
@@ -792,16 +725,15 @@ private fun unitDivide(x: Float, y: Float): Float {
 }
 
 /**
- * Computes the winding value for a position [x]/[y] and the cubic Bézier curve defined by
- * the [points] array. The array must contain at least 8 floats defining the start, 2 control,
- * and end points of the curve as pairs of x/y coordinates.
+ * Computes the winding value for a position [x]/[y] and the cubic Bézier curve defined by the
+ * [points] array. The array must contain at least 8 floats defining the start, 2 control, and end
+ * points of the curve as pairs of x/y coordinates.
  *
- * The [tmpCubics] array is a scratch array used to hold temporary values and must
- * contain at least 20 floats. Its content can be ignored after calling this function.
+ * The [tmpCubics] array is a scratch array used to hold temporary values and must contain at least
+ * 20 floats. Its content can be ignored after calling this function.
  *
- * The [tmpRoots] array is a scratch array that must contain at least 2 values. It is
- * used to hold temporary values and its content can be ignored after calling this
- * function.
+ * The [tmpRoots] array is a scratch array that must contain at least 2 values. It is used to hold
+ * temporary values and its content can be ignored after calling this function.
  */
 internal fun cubicWinding(
     points: FloatArray,
@@ -820,10 +752,10 @@ internal fun cubicWinding(
 }
 
 /**
- * Computes the winding value for a position [x]/[y] and the cubic Bézier curve defined by
- * the [points] array, starting at the specified [offset]. The array must contain at least
- * 10 floats after [offset] defining the start, control, and end points of the curve as pairs
- * of x/y coordinates.
+ * Computes the winding value for a position [x]/[y] and the cubic Bézier curve defined by the
+ * [points] array, starting at the specified [offset]. The array must contain at least 10 floats
+ * after [offset] defining the start, control, and end points of the curve as pairs of x/y
+ * coordinates.
  */
 private fun monotonicCubicWinding(points: FloatArray, offset: Int, x: Float, y: Float): Int {
     var y0 = points[offset + 1]
@@ -860,12 +792,13 @@ private fun monotonicCubicWinding(points: FloatArray, offset: Int, x: Float, y: 
     val y2 = points[offset + 5]
     y3 = points[offset + 7]
 
-    val root = findFirstCubicRoot(
-        y0 - y,
-        y1 - y,
-        y2 - y,
-        y3 - y,
-    )
+    val root =
+        findFirstCubicRoot(
+            y0 - y,
+            y1 - y,
+            y2 - y,
+            y3 - y,
+        )
     if (root.isNaN()) return 0
 
     val xt = evaluateCubic(x0, x1, x2, x3, root)
@@ -880,26 +813,26 @@ private fun monotonicCubicWinding(points: FloatArray, offset: Int, x: Float, y: 
 }
 
 /**
- * Splits the specified [cubic] Bézier curve into 1, 2, or 3 monotonic cubic Bézier curves.
- * The results are stored in the [dst] array. Both the input [cubic] and the output [dst]
- * arrays store the curves as 4 pairs of floats defined by the start, 2 control, and end
- * points. In the [dst] array, successive curves share a point: the end point of the first
- * curve is the start point of the second curve. As a result this function will output at
- * most 20 values in the [dst] array (8 floats per curve, minus 2 for each shared point).
+ * Splits the specified [cubic] Bézier curve into 1, 2, or 3 monotonic cubic Bézier curves. The
+ * results are stored in the [dst] array. Both the input [cubic] and the output [dst] arrays store
+ * the curves as 4 pairs of floats defined by the start, 2 control, and end points. In the [dst]
+ * array, successive curves share a point: the end point of the first curve is the start point of
+ * the second curve. As a result this function will output at most 20 values in the [dst] array (8
+ * floats per curve, minus 2 for each shared point).
  *
- * The function returns the number of splits: if 0 is returned, the [dst] array contains
- * a single cubic curve, if 1 is returned, the array contains 2 curves with a shared
- * point, and if 2 is returned, the array contains 3 curves with 2 shared points.
+ * The function returns the number of splits: if 0 is returned, the [dst] array contains a single
+ * cubic curve, if 1 is returned, the array contains 2 curves with a shared point, and if 2 is
+ * returned, the array contains 3 curves with 2 shared points.
  *
- * The [tmpRoot] array is a scratch array that must contain at least 2 values. It is
- * used to hold temporary values and its content can be ignored after calling this
- * function.
+ * The [tmpRoot] array is a scratch array that must contain at least 2 values. It is used to hold
+ * temporary values and its content can be ignored after calling this function.
  */
 private fun cubicToMonotonicCubics(cubic: FloatArray, dst: FloatArray, tmpRoot: FloatArray): Int {
     val rootCount = findCubicExtremaY(cubic, tmpRoot)
 
     // Split the curve at the extrema
     if (rootCount == 0) {
+        if (dst.size < 8) return 0
         // The cubic segment is already monotonic, copy it as-is
         cubic.copyInto(dst, 0, 0, 8)
     } else {
@@ -923,10 +856,9 @@ private fun cubicToMonotonicCubics(cubic: FloatArray, dst: FloatArray, tmpRoot: 
 }
 
 /**
- * Finds the roots of the cubic function which coincide with the specified [cubic]
- * Bézier curve's extrema on the Y axis. The roots are written in the specified
- * [dstRoots] array which must hold at least 2 floats. This function returns the number
- * of roots found: 0, 1, or 2.
+ * Finds the roots of the cubic function which coincide with the specified [cubic] Bézier curve's
+ * extrema on the Y axis. The roots are written in the specified [dstRoots] array which must hold at
+ * least 2 floats. This function returns the number of roots found: 0, 1, or 2.
  */
 private fun findCubicExtremaY(cubic: FloatArray, dstRoots: FloatArray): Int {
     val a = cubic[1]
@@ -942,12 +874,11 @@ private fun findCubicExtremaY(cubic: FloatArray, dstRoots: FloatArray): Int {
 }
 
 /**
- * Splits the cubic Bézier curve, specified by 4 pairs of floats (8 values) in the [src]
- * array starting at the index [srcOffset], at position [t] (in the 0..1 range). The
- * results are written in the [dst] array starting at index [dstOffset]. This function
- * always outputs 2 curves sharing a point in the [dst] array, for a total of 14 float
- * values: 8 for the first curve, 7 for the second curve (the end point of the first
- * curve is shared as the start point of the second curve).
+ * Splits the cubic Bézier curve, specified by 4 pairs of floats (8 values) in the [src] array
+ * starting at the index [srcOffset], at position [t] (in the 0..1 range). The results are written
+ * in the [dst] array starting at index [dstOffset]. This function always outputs 2 curves sharing a
+ * point in the [dst] array, for a total of 14 float values: 8 for the first curve, 7 for the second
+ * curve (the end point of the first curve is shared as the start point of the second curve).
  */
 private fun splitCubicAt(
     src: FloatArray,
@@ -956,6 +887,9 @@ private fun splitCubicAt(
     dstOffset: Int,
     t: Float
 ) {
+    if (src.size < srcOffset + 8) return
+    if (dst.size < dstOffset + 14) return
+
     if (t >= 1.0f) {
         src.copyInto(dst, dstOffset, srcOffset, 8)
         val x = src[srcOffset + 6]
@@ -1042,40 +976,34 @@ internal fun cubicArea(
 ): Float {
     // See "Computing the area and winding number for a Bézier curve", Jackowski 2012
     // https://tug.org/TUGboat/tb33-1/tb103jackowski.pdf
-    return (
-        (y3 - y0) * (x1 + x2) -
-        (x3 - x0) * (y1 + y2) +
-        y1 * (x0 - x2) -
-        x1 * (y0 - y2) +
-        y3 * (x2 + x0 / 3.0f) -
-        x3 * (y2 + y0 / 3.0f)
-    ) * 3.0f / 20.0f
+    return ((y3 - y0) * (x1 + x2) - (x3 - x0) * (y1 + y2) + y1 * (x0 - x2) - x1 * (y0 - y2) +
+        y3 * (x2 + x0 / 3.0f) - x3 * (y2 + y0 / 3.0f)) * 3.0f / 20.0f
 }
 
 private inline val PathSegment.startX: Float
     get() = points[0]
 
 private val PathSegment.endX: Float
-    get() = points[when (type) {
-        PathSegment.Type.Move -> 0
-        PathSegment.Type.Line -> 2
-        PathSegment.Type.Quadratic -> 4
-        PathSegment.Type.Conic -> 4
-        PathSegment.Type.Cubic -> 6
-        PathSegment.Type.Close -> 0
-        PathSegment.Type.Done -> 0
-    }]
+    get() =
+        points[
+            when (type) {
+                PathSegment.Type.Line -> 2
+                PathSegment.Type.Quadratic -> 4
+                PathSegment.Type.Conic -> 4
+                PathSegment.Type.Cubic -> 6
+                else -> 0
+            }]
 
 private inline val PathSegment.startY: Float
     get() = points[1]
 
 private val PathSegment.endY: Float
-    get() = points[when (type) {
-        PathSegment.Type.Move -> 0
-        PathSegment.Type.Line -> 3
-        PathSegment.Type.Quadratic -> 5
-        PathSegment.Type.Conic -> 5
-        PathSegment.Type.Cubic -> 7
-        PathSegment.Type.Close -> 0
-        PathSegment.Type.Done -> 0
-    }]
+    get() =
+        points[
+            when (type) {
+                PathSegment.Type.Line -> 3
+                PathSegment.Type.Quadratic -> 5
+                PathSegment.Type.Conic -> 5
+                PathSegment.Type.Cubic -> 7
+                else -> 0
+            }]

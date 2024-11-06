@@ -35,7 +35,7 @@ plugins {
 dependencies {
     api(project(":glance:glance"))
     api(project(":glance:glance-appwidget"))
-    api("androidx.annotation:annotation:1.2.0")
+    api("androidx.annotation:annotation:1.8.1")
     api("androidx.compose.runtime:runtime:1.1.1")
     api("androidx.compose.ui:ui-graphics:1.1.1")
     api("androidx.compose.ui:ui-unit:1.1.1")
@@ -43,13 +43,12 @@ dependencies {
     api("androidx.datastore:datastore-preferences-core:1.0.0")
     api("androidx.datastore:datastore-preferences:1.0.0")
 
-    implementation("androidx.annotation:annotation:1.1.0")
     implementation("androidx.work:work-runtime:2.7.1")
     implementation("androidx.work:work-runtime-ktx:2.7.1")
     implementation(libs.kotlinStdlib)
 
     // Force upgrade since 1.2.0 is not compatible with latest lint.
-    implementation("androidx.annotation:annotation-experimental:1.4.0")
+    implementation("androidx.annotation:annotation-experimental:1.4.1")
 
     testImplementation(libs.robolectric)
     testImplementation(libs.testCore)
@@ -75,13 +74,16 @@ android {
     testOptions.unitTests.includeAndroidResources = true
     resourcePrefix "glance_template_"
     namespace "androidx.glance.template"
+    compileSdk 35
 }
 
 androidx {
     name = "Glance Templates"
-    type = LibraryType.PUBLISHED_KOTLIN_ONLY_LIBRARY
+    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     mavenVersion = LibraryVersions.GLANCE_TEMPLATE
     inceptionYear = "2021"
     description = "Glance allows developers to build layouts for remote surfaces using a Jetpack " +
             "Compose-style API."
+    legacyDisableKotlinStrictApiMode = true
+    metalavaK2UastEnabled = false
 }

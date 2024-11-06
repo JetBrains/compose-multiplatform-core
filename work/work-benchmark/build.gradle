@@ -34,8 +34,8 @@ dependencies {
     androidTestImplementation(project(":work:work-runtime-ktx"))
     androidTestImplementation(project(":work:work-multiprocess"))
     androidTestImplementation(projectOrArtifact(":benchmark:benchmark-junit4"))
-    androidTestImplementation(projectOrArtifact(":room:room-runtime"))
-    androidTestImplementation(projectOrArtifact(":room:room-ktx"))
+    androidTestImplementation(project(":room:room-runtime"))
+    androidTestImplementation(project(":room:room-ktx"))
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
@@ -53,5 +53,6 @@ androidx {
 }
 
 android {
+    compileSdk 35
     namespace "androidx.work.benchmark"
 }

@@ -21,6 +21,10 @@ package androidx.compose.ui.util
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.abs
 import kotlin.math.cbrt
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.test.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -132,5 +136,109 @@ class MathHelpersTest {
             val error = abs(fastCbrt(v) - cbrt(v))
             assertTrue(error <= maxError)
         }
+    }
+
+    @Test
+    fun testCosSinAtRightAngles() {
+        // 0 degrees
+        assertEquals(1.0f, normalizedAngleCos(0.0f))
+        assertEquals(0.0f, abs(normalizedAngleSin(0.0f)))
+        // 90 degrees (pi/2)
+        assertEquals(0.0f, abs(normalizedAngleCos(0.25f)))
+        assertEquals(1.0f, normalizedAngleSin(0.25f))
+        // 180 degrees (pi)
+        assertEquals(-1.0f, normalizedAngleCos(0.5f))
+        assertEquals(0.0f, abs(normalizedAngleSin(0.5f)))
+        // 270 degrees (3*pi/2)
+        assertEquals(0.0f, abs(normalizedAngleCos(0.75f)))
+        assertEquals(-1.0f, normalizedAngleSin(0.75f))
+        // 360 degrees
+        assertEquals(1.0f, normalizedAngleCos(1.0f))
+        assertEquals(0.0f, abs(normalizedAngleSin(1.0f)))
+    }
+
+    @Test
+    fun testNonFiniteCosSin() {
+        assertTrue(normalizedAngleCos(Float.NaN).isNaN())
+        assertTrue(normalizedAngleCos(Float.POSITIVE_INFINITY).isNaN())
+        assertTrue(normalizedAngleCos(Float.NEGATIVE_INFINITY).isNaN())
+
+        assertTrue(normalizedAngleSin(Float.NaN).isNaN())
+        assertTrue(normalizedAngleSin(Float.POSITIVE_INFINITY).isNaN())
+        assertTrue(normalizedAngleSin(Float.NEGATIVE_INFINITY).isNaN())
+    }
+
+    @Test
+    fun testCosSinError() {
+        val maxCosError = 1.63232e-3f
+        val maxSinError = 1.63198e-3f
+
+        // Test all floats between 0 and 360
+        var i = 0.0f.toRawBits()
+        val e = 360.0f.toRawBits()
+
+        while (i <= e) {
+            val x = Float.fromBits(i)
+
+            val normalizedDegrees = x / 360.0f
+            val radians = x * Math.PI / 180.0
+
+            val cosError = abs(cos(radians) - normalizedAngleCos(normalizedDegrees))
+            assertTrue(cosError <= maxCosError)
+
+            val sinError = abs(sin(radians) - normalizedAngleSin(normalizedDegrees))
+            assertTrue(sinError <= maxSinError)
+
+            i++
+        }
+    }
+
+    @Test
+    fun testIsFinite() {
+        assertFalse(Float.NaN.fastIsFinite())
+
+        assertFalse(Float.POSITIVE_INFINITY.fastIsFinite())
+        assertFalse(Float.NEGATIVE_INFINITY.fastIsFinite())
+
+        assertTrue(0.0f.fastIsFinite())
+        assertTrue((-0.0f).fastIsFinite())
+
+        assertTrue(1.0f.fastIsFinite())
+        assertTrue((-1.0f).fastIsFinite())
+
+        assertTrue(16.0f.fastIsFinite())
+        assertTrue((-16.0f).fastIsFinite())
+
+        assertTrue(2037.0f.fastIsFinite())
+        assertTrue((-2037.0f).fastIsFinite())
+
+        assertTrue(Float.MAX_VALUE.isFinite())
+        assertTrue((-Float.MAX_VALUE).isFinite())
+
+        assertTrue(Float.MIN_VALUE.isFinite())
+        assertTrue((-Float.MIN_VALUE).isFinite())
+
+        assertFalse(Double.NaN.fastIsFinite())
+
+        assertFalse(Double.POSITIVE_INFINITY.fastIsFinite())
+        assertFalse(Double.NEGATIVE_INFINITY.fastIsFinite())
+
+        assertTrue(0.0.fastIsFinite())
+        assertTrue((-0.0).fastIsFinite())
+
+        assertTrue(1.0.fastIsFinite())
+        assertTrue((-1.0).fastIsFinite())
+
+        assertTrue(16.0.fastIsFinite())
+        assertTrue((-16.0).fastIsFinite())
+
+        assertTrue(2037.0.fastIsFinite())
+        assertTrue((-2037.0).fastIsFinite())
+
+        assertTrue(Double.MAX_VALUE.isFinite())
+        assertTrue((-Double.MAX_VALUE).isFinite())
+
+        assertTrue(Double.MIN_VALUE.isFinite())
+        assertTrue((-Double.MIN_VALUE).isFinite())
     }
 }

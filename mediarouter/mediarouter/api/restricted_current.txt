@@ -102,7 +102,9 @@ package androidx.mediarouter.media {
     field public static final String ACTION_STOP = "android.media.intent.action.STOP";
     field public static final String CATEGORY_LIVE_AUDIO = "android.media.intent.category.LIVE_AUDIO";
     field public static final String CATEGORY_LIVE_VIDEO = "android.media.intent.category.LIVE_VIDEO";
+    field public static final String CATEGORY_REMOTE_AUDIO_PLAYBACK = "android.media.intent.category.REMOTE_AUDIO_PLAYBACK";
     field public static final String CATEGORY_REMOTE_PLAYBACK = "android.media.intent.category.REMOTE_PLAYBACK";
+    field public static final String CATEGORY_REMOTE_VIDEO_PLAYBACK = "android.media.intent.category.REMOTE_VIDEO_PLAYBACK";
     field public static final int ERROR_INVALID_ITEM_ID = 3; // 0x3
     field public static final int ERROR_INVALID_SESSION_ID = 2; // 0x2
     field public static final int ERROR_UNKNOWN = 0; // 0x0
@@ -242,6 +244,7 @@ package androidx.mediarouter.media {
     method public final android.os.Handler getHandler();
     method public final androidx.mediarouter.media.MediaRouteProvider.ProviderMetadata getMetadata();
     method public androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController? onCreateDynamicGroupRouteController(String);
+    method public androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController? onCreateDynamicGroupRouteController(String, androidx.mediarouter.media.MediaRouteProvider.RouteControllerOptions);
     method public androidx.mediarouter.media.MediaRouteProvider.RouteController? onCreateRouteController(String);
     method public void onDiscoveryRequestChanged(androidx.mediarouter.media.MediaRouteDiscoveryRequest?);
     method public final void setCallback(androidx.mediarouter.media.MediaRouteProvider.Callback?);
@@ -303,6 +306,16 @@ package androidx.mediarouter.media {
     method public void onUpdateVolume(int);
   }
 
+  public static final class MediaRouteProvider.RouteControllerOptions {
+    method public android.os.Bundle getControlHints();
+  }
+
+  public static final class MediaRouteProvider.RouteControllerOptions.Builder {
+    ctor public MediaRouteProvider.RouteControllerOptions.Builder();
+    method public androidx.mediarouter.media.MediaRouteProvider.RouteControllerOptions build();
+    method public androidx.mediarouter.media.MediaRouteProvider.RouteControllerOptions.Builder setControlHints(android.os.Bundle?);
+  }
+
   public final class MediaRouteProviderDescriptor {
     method public android.os.Bundle asBundle();
     method public static androidx.mediarouter.media.MediaRouteProviderDescriptor? fromBundle(android.os.Bundle?);
@@ -322,10 +335,21 @@ package androidx.mediarouter.media {
 
   public abstract class MediaRouteProviderService extends android.app.Service {
     ctor public MediaRouteProviderService();
+    method public void addClientInfoListener(java.util.concurrent.Executor, androidx.core.util.Consumer<java.util.List<androidx.mediarouter.media.MediaRouteProviderService.ClientInfo!>!>);
     method public androidx.mediarouter.media.MediaRouteProvider? getMediaRouteProvider();
     method public android.os.IBinder? onBind(android.content.Intent);
     method public abstract androidx.mediarouter.media.MediaRouteProvider? onCreateMediaRouteProvider();
+    method public void removeClientInfoListener(androidx.core.util.Consumer<java.util.List<androidx.mediarouter.media.MediaRouteProviderService.ClientInfo!>!>);
     field public static final String SERVICE_INTERFACE = "android.media.MediaRouteProviderService";
+  }
+
+  public static final class MediaRouteProviderService.ClientInfo {
+    method public String getPackageName();
+  }
+
+  public static final class MediaRouteProviderService.ClientInfo.Builder {
+    ctor public MediaRouteProviderService.ClientInfo.Builder(String);
+    method public androidx.mediarouter.media.MediaRouteProviderService.ClientInfo build();
   }
 
   public final class MediaRouteSelector {
