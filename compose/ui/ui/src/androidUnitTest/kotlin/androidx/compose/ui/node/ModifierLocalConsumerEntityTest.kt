@@ -18,8 +18,6 @@
 
 package androidx.compose.ui.node
 
-import androidx.collection.IntObjectMap
-import androidx.collection.intObjectMapOf
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,8 +49,6 @@ import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
-import androidx.compose.ui.semantics.EmptySemanticsModifier
-import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.spatial.RectManager
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -336,9 +332,7 @@ class ModifierLocalConsumerEntityTest {
 
         override fun onDetach(node: LayoutNode) {}
 
-        override val root: LayoutNode = LayoutNode()
-
-        override val layoutNodes: IntObjectMap<LayoutNode>
+        override val root: LayoutNode
             get() = TODO("Not yet implemented")
 
         override val sharedDrawScope: LayoutNodeDrawScope
@@ -379,9 +373,6 @@ class ModifierLocalConsumerEntityTest {
 
         override val focusOwner: FocusOwner
             get() = TODO("Not yet implemented")
-
-        override val semanticsOwner: SemanticsOwner =
-            SemanticsOwner(root, EmptySemanticsModifier(), intObjectMapOf())
 
         override val windowInfo: WindowInfo
             get() = TODO("Not yet implemented")
@@ -449,7 +440,7 @@ class ModifierLocalConsumerEntityTest {
         override fun forceMeasureTheSubtree(layoutNode: LayoutNode, affectsLookahead: Boolean) =
             TODO("Not yet implemented")
 
-        override fun onSemanticsChange() {}
+        override fun onSemanticsChange() = TODO("Not yet implemented")
 
         override fun onLayoutChange(layoutNode: LayoutNode) = TODO("Not yet implemented")
 

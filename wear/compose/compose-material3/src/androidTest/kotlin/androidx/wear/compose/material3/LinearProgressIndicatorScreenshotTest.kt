@@ -21,6 +21,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -59,9 +60,25 @@ class LinearProgressIndicatorScreenshotTest {
     }
 
     @Test
+    fun linear_progress_indicator_1_percent() = linear_progress_indicator_test {
+        LinearProgressIndicator(
+            progress = { 0.01f },
+            modifier = Modifier.aspectRatio(1f).testTag(TEST_TAG),
+        )
+    }
+
+    @Test
     fun linear_progress_indicator_50_percent() = linear_progress_indicator_test {
         LinearProgressIndicator(
             progress = { 0.5f },
+            modifier = Modifier.aspectRatio(1f).testTag(TEST_TAG),
+        )
+    }
+
+    @Test
+    fun linear_progress_indicator_95_percent() = linear_progress_indicator_test {
+        LinearProgressIndicator(
+            progress = { 0.95f },
             modifier = Modifier.aspectRatio(1f).testTag(TEST_TAG),
         )
     }
@@ -105,16 +122,41 @@ class LinearProgressIndicatorScreenshotTest {
             )
         }
 
+    @Test
+    fun linear_progress_indicator_animated_progress() {
+        rule.mainClock.autoAdvance = false
+        val progress = mutableFloatStateOf(0f)
+
+        rule.setContentWithTheme {
+            ScreenConfiguration(ScreenSize.LARGE.size) {
+                LinearProgressIndicator(
+                    progress = { progress.value },
+                    modifier = Modifier.aspectRatio(1f).testTag(TEST_TAG),
+                )
+            }
+        }
+
+        rule.runOnIdle { progress.value = 1f }
+        rule.mainClock.advanceTimeBy(100)
+
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, testName.goldenIdentifier())
+    }
+
     private fun linear_progress_indicator_test(
         isLtr: Boolean = true,
         content: @Composable () -> Unit
     ) {
         rule.setContentWithTheme(modifier = Modifier.background(Color.Black)) {
-            val layoutDirection = if (isLtr) LayoutDirection.Ltr else LayoutDirection.Rtl
-            CompositionLocalProvider(
-                LocalLayoutDirection provides layoutDirection,
-                content = content
-            )
+            ScreenConfiguration(ScreenSize.LARGE.size) {
+                val layoutDirection = if (isLtr) LayoutDirection.Ltr else LayoutDirection.Rtl
+                CompositionLocalProvider(
+                    LocalLayoutDirection provides layoutDirection,
+                    content = content
+                )
+            }
         }
 
         rule

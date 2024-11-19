@@ -21,13 +21,11 @@ import androidx.benchmark.macro.PowerCategory
 import androidx.benchmark.macro.PowerMetric
 import androidx.benchmark.perfetto.PerfettoTraceProcessor
 import androidx.benchmark.perfetto.Slice
-import org.intellij.lang.annotations.Language
 
 // We want to use android_powrails.sql, but cannot as they do not split into sections with slice
 
 @OptIn(ExperimentalMetricApi::class)
 internal object PowerQuery {
-    @Language("sql")
     private fun getFullQuery(slice: Slice) =
         """
         SELECT

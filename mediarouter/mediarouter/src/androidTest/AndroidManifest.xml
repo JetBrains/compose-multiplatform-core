@@ -54,7 +54,8 @@
             android:exported="true"
             android:enabled="true">
             <intent-filter>
-                <action android:name="aandroid.media.MediaRouteProviderService"/>
+                <action android:name="android.media.MediaRouteProviderService"/>
+                <action android:name="android.media.MediaRoute2ProviderService"/>
             </intent-filter>
         </service>
     </application>

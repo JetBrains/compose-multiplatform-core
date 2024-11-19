@@ -49,7 +49,6 @@ import android.view.Surface;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.OptIn;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
@@ -64,6 +63,8 @@ import androidx.camera.core.Preview;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.ViewPort;
 import androidx.camera.core.concurrent.CameraCoordinator;
+import androidx.camera.core.impl.AdapterCameraInfo;
+import androidx.camera.core.impl.AdapterCameraInternal;
 import androidx.camera.core.impl.AttachedSurfaceInfo;
 import androidx.camera.core.impl.CameraConfig;
 import androidx.camera.core.impl.CameraConfigs;
@@ -76,8 +77,6 @@ import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.Identifier;
 import androidx.camera.core.impl.MutableOptionsBundle;
 import androidx.camera.core.impl.PreviewConfig;
-import androidx.camera.core.impl.RestrictedCameraControl;
-import androidx.camera.core.impl.RestrictedCameraInfo;
 import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.impl.SessionProcessor;
 import androidx.camera.core.impl.StreamSpec;
@@ -111,9 +110,9 @@ import java.util.Set;
  */
 public final class CameraUseCaseAdapter implements Camera {
     @NonNull
-    private final CameraInternal mCameraInternal;
+    private final AdapterCameraInternal mCameraInternal;
     @Nullable
-    private final CameraInternal mSecondaryCameraInternal;
+    private final AdapterCameraInternal mSecondaryCameraInternal;
     private final CameraDeviceSurfaceManager mCameraDeviceSurfaceManager;
     private final UseCaseConfigFactory mUseCaseConfigFactory;
 
@@ -167,14 +166,6 @@ public final class CameraUseCaseAdapter implements Camera {
     private StreamSharing mStreamSharing;
 
     @NonNull
-    private final RestrictedCameraControl mAdapterCameraControl;
-    @NonNull
-    private final RestrictedCameraInfo mAdapterCameraInfo;
-
-    @Nullable
-    private final RestrictedCameraInfo mAdapterSecondaryCameraInfo;
-
-    @NonNull
     private final CompositionSettings mCompositionSettings;
     @NonNull
     private final CompositionSettings mSecondaryCompositionSettings;
@@ -197,7 +188,7 @@ public final class CameraUseCaseAdapter implements Camera {
             @NonNull UseCaseConfigFactory useCaseConfigFactory) {
         this(camera,
                 null,
-                new RestrictedCameraInfo(camera.getCameraInfoInternal(),
+                new AdapterCameraInfo(camera.getCameraInfoInternal(),
                         CameraConfigs.defaultConfig()),
                 null,
                 CompositionSettings.DEFAULT,
@@ -212,10 +203,10 @@ public final class CameraUseCaseAdapter implements Camera {
      *
      * @param camera                     The camera that is wrapped.
      * @param secondaryCamera            The secondary camera that is wrapped.
-     * @param restrictedCameraInfo       The {@link RestrictedCameraInfo} that contains the extra
+     * @param adapterCameraInfo       The {@link AdapterCameraInfo} that contains the extra
      *                                   information to configure the {@link CameraInternal} when
      *                                   attaching the uses cases of this adapter to the camera.
-     * @param secondaryRestrictedCameraInfo The {@link RestrictedCameraInfo} of secondary camera.
+     * @param secondaryAdapterCameraInfo The {@link AdapterCameraInfo} of secondary camera.
      * @param compositionSettings        The composition settings that will be used to configure the
      *                                   camera.
      * @param secondaryCompositionSettings  The composition settings that will be used to configure
@@ -229,37 +220,36 @@ public final class CameraUseCaseAdapter implements Camera {
     public CameraUseCaseAdapter(
             @NonNull CameraInternal camera,
             @Nullable CameraInternal secondaryCamera,
-            @NonNull RestrictedCameraInfo restrictedCameraInfo,
-            @Nullable RestrictedCameraInfo secondaryRestrictedCameraInfo,
+            @NonNull AdapterCameraInfo adapterCameraInfo,
+            @Nullable AdapterCameraInfo secondaryAdapterCameraInfo,
             @NonNull CompositionSettings compositionSettings,
             @NonNull CompositionSettings secondaryCompositionSettings,
             @NonNull CameraCoordinator cameraCoordinator,
             @NonNull CameraDeviceSurfaceManager cameraDeviceSurfaceManager,
             @NonNull UseCaseConfigFactory useCaseConfigFactory) {
-        mCameraInternal = camera;
-        mSecondaryCameraInternal = secondaryCamera;
+        mCameraConfig = adapterCameraInfo.getCameraConfig();
+        mCameraInternal = new AdapterCameraInternal(camera, adapterCameraInfo);
+        if (secondaryCamera != null && secondaryAdapterCameraInfo != null) {
+            mSecondaryCameraInternal = new AdapterCameraInternal(secondaryCamera,
+                    secondaryAdapterCameraInfo);
+        } else {
+            mSecondaryCameraInternal = null;
+        }
         mCompositionSettings = compositionSettings;
         mSecondaryCompositionSettings = secondaryCompositionSettings;
         mCameraCoordinator = cameraCoordinator;
         mCameraDeviceSurfaceManager = cameraDeviceSurfaceManager;
         mUseCaseConfigFactory = useCaseConfigFactory;
-        mCameraConfig = restrictedCameraInfo.getCameraConfig();
-        SessionProcessor sessionProcessor = mCameraConfig.getSessionProcessor(null);
-        // TODO(b/279996499): bind the same restricted CameraControl and CameraInfo to use cases.
-        mAdapterCameraControl = new RestrictedCameraControl(
-                mCameraInternal.getCameraControlInternal(), sessionProcessor);
-        mAdapterCameraInfo = restrictedCameraInfo;
-        mAdapterSecondaryCameraInfo = secondaryRestrictedCameraInfo;
-        mId = generateCameraId(restrictedCameraInfo, secondaryRestrictedCameraInfo);
+        mId = generateCameraId(adapterCameraInfo, secondaryAdapterCameraInfo);
     }
 
     /**
-     * Generate a identifier for the {@link RestrictedCameraInfo}.
+     * Generate a identifier for the {@link AdapterCameraInfo}.
      */
     @NonNull
     public static CameraId generateCameraId(
-            @NonNull RestrictedCameraInfo primaryCameraInfo,
-            @Nullable RestrictedCameraInfo secondaryCameraInfo) {
+            @NonNull AdapterCameraInfo primaryCameraInfo,
+            @Nullable AdapterCameraInfo secondaryCameraInfo) {
         return CameraId.create(
                 primaryCameraInfo.getCameraId()
                         + (secondaryCameraInfo == null ? "" : secondaryCameraInfo.getCameraId()),
@@ -1044,11 +1034,6 @@ public final class CameraUseCaseAdapter implements Camera {
                         + "standard dynamic range.");
             }
 
-            if (hasUltraHdrImageCapture(useCases)) {
-                throw new IllegalArgumentException("Extensions are not supported for use with "
-                        + "Ultra HDR image capture.");
-            }
-
             if (hasRawImageCapture(useCases)) {
                 throw new IllegalArgumentException("Extensions are not supported for use with "
                         + "Raw image capture.");
@@ -1084,7 +1069,6 @@ public final class CameraUseCaseAdapter implements Camera {
         return is10Bit || isHdr;
     }
 
-    @OptIn(markerClass = androidx.camera.core.ExperimentalImageCaptureOutputFormat.class)
     private static boolean hasUltraHdrImageCapture(@NonNull Collection<UseCase> useCases) {
         for (UseCase useCase : useCases) {
             if (!isImageCapture(useCase)) {
@@ -1165,18 +1149,18 @@ public final class CameraUseCaseAdapter implements Camera {
     @NonNull
     @Override
     public CameraControl getCameraControl() {
-        return mAdapterCameraControl;
+        return mCameraInternal.getCameraControl();
     }
 
     @NonNull
     @Override
     public CameraInfo getCameraInfo() {
-        return mAdapterCameraInfo;
+        return mCameraInternal.getCameraInfo();
     }
 
     @Nullable
     public CameraInfo getSecondaryCameraInfo() {
-        return mAdapterSecondaryCameraInfo;
+        return mSecondaryCameraInternal != null ? mSecondaryCameraInternal.getCameraInfo() : null;
     }
 
     @Override

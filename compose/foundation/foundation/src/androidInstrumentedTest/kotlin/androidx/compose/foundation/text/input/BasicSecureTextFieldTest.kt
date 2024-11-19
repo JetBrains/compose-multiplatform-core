@@ -18,8 +18,10 @@ package androidx.compose.foundation.text.input
 
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicSecureTextField
 import androidx.compose.foundation.text.selection.FakeTextToolbar
@@ -40,6 +42,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsMatcher.Companion.expectValue
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.isEditable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -502,5 +505,21 @@ internal class BasicSecureTextFieldTest {
         rule.mainClock.advanceTimeByFrame()
 
         rule.onNodeWithTag(Tag).assert(isEditable())
+    }
+
+    @Test
+    fun minConstraints_arePassedDown() {
+        var width = 0
+        rule.setContent {
+            BoxWithConstraints(Modifier.fillMaxWidth(), propagateMinConstraints = true) {
+                width = constraints.maxWidth
+                BasicSecureTextField(
+                    state = rememberTextFieldState(),
+                    modifier = Modifier.testTag(Tag)
+                )
+            }
+        }
+
+        rule.onNodeWithTag(Tag).assertWidthIsEqualTo(with(rule.density) { width.toDp() })
     }
 }

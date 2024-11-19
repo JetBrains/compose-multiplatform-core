@@ -2,17 +2,22 @@
 # -----------------------------------------------------------------------------
 # All of the following should be updated in sync.
 # -----------------------------------------------------------------------------
-androidGradlePlugin = "8.8.0-alpha06"
+androidGradlePlugin = "8.9.0-alpha01"
 # NOTE: When updating the lint version we also need to update the `api` version
 # supported by `IssueRegistry`'s.' For e.g. r.android.com/1331903
-androidLint = "31.8.0-alpha06"
+androidLint = "31.9.0-alpha01"
 # Once you have a chosen version of AGP to upgrade to, go to
 # https://developer.android.com/studio/archive and find the matching version of Studio.
-androidStudio = "2024.2.2.6"
+androidStudio = "2024.3.1.1"
 # -----------------------------------------------------------------------------
 
 androidLintMin = "31.1.0"
-androidLintPrev = "31.7.0-alpha02"
+# Lint version that uses the old analysis API. Updating projects using this version to the new
+# analysis API would make those lint checks unavailable for users of previous AGP versions.
+androidLintPrevAnalysis = "31.7.0-alpha02"
+# Lint version that uses an older version of Kotlin (pre 2.1). Updating projects using this version
+# would require bumping their Kotlin target to 2.1
+androidLintPrevKotlin = "31.8.0-alpha06"
 androidxTestRunner = "1.6.1"
 androidxTestRules = "1.6.1"
 androidxTestMonitor = "1.7.1"
@@ -81,14 +86,18 @@ androidGradleSettingsPlugin = { module = "com.android.tools.build:gradle-setting
 androidLayoutlibApi = { module = "com.android.tools.layoutlib:layoutlib-api", version.ref = "androidLint" }
 androidLint = { module = "com.android.tools.lint:lint", version.ref = "androidLint" }
 androidLintMin = { module = "com.android.tools.lint:lint", version.ref = "androidLintMin" }
-androidLintPrev = { module = "com.android.tools.lint:lint", version.ref = "androidLintPrev" }
-androidLintPrevApi = { module = "com.android.tools.lint:lint-api", version.ref = "androidLintPrev" }
+androidLintPrevAnalysis = { module = "com.android.tools.lint:lint", version.ref = "androidLintPrevAnalysis" }
+androidLintApiPrevAnalysis = { module = "com.android.tools.lint:lint-api", version.ref = "androidLintPrevAnalysis" }
+androidLintPrevKotlin = { module = "com.android.tools.lint:lint", version.ref = "androidLintPrevKotlin" }
+androidLintApiPrevKotlin = { module = "com.android.tools.lint:lint-api", version.ref = "androidLintPrevKotlin" }
 androidLintApi = { module = "com.android.tools.lint:lint-api", version.ref = "androidLint" }
 androidLintMinApi = { module = "com.android.tools.lint:lint-api", version.ref = "androidLintMin" }
 androidLintChecks = { module = "com.android.tools.lint:lint-checks", version.ref = "androidLint" }
+androidLintChecksPrevKotlin = { module = "com.android.tools.lint:lint-checks", version.ref = "androidLintPrevKotlin" }
 androidLintChecksMin = { module = "com.android.tools.lint:lint-checks", version.ref = "androidLintMin" }
 androidLintTests = { module = "com.android.tools.lint:lint-tests", version.ref = "androidLint" }
-androidLintPrevTests = { module = "com.android.tools.lint:lint-tests", version.ref = "androidLintPrev" }
+androidLintTestsPrevAnalysis = { module = "com.android.tools.lint:lint-tests", version.ref = "androidLintPrevAnalysis" }
+androidLintTestsPrevKotlin = { module = "com.android.tools.lint:lint-tests", version.ref = "androidLintPrevKotlin" }
 androidToolsCommon = { module = "com.android.tools:common", version.ref = "androidLint" }
 androidToolsRepository= { module = "com.android.tools:repository", version.ref = "androidLint" }
 androidToolsSdkCommon = { module = "com.android.tools:sdk-common", version.ref = "androidLint" }
@@ -275,7 +284,7 @@ protobufLite = { module = "com.google.protobuf:protobuf-javalite", version.ref =
 reactiveStreams = { module = "org.reactivestreams:reactive-streams", version = "1.0.0" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofitConverterWire = { module = "com.squareup.retrofit2:converter-wire", version.ref = "retrofit" }
-robolectric = { module = "org.robolectric:robolectric", version = "4.12.2" }
+robolectric = { module = "org.robolectric:robolectric", version = "4.14" }
 rxjava2 = { module = "io.reactivex.rxjava2:rxjava", version = "2.2.9" }
 rxjava3 = { module = "io.reactivex.rxjava3:rxjava", version = "3.0.0" }
 sdklib = { module = "com.android.tools:sdklib", version.ref = "androidLint" }

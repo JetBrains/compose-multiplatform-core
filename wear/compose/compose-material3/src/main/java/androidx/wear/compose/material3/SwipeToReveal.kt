@@ -17,8 +17,8 @@
 package androidx.wear.compose.material3
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -322,7 +322,7 @@ fun rememberRevealState(
     val anchorFraction = anchorWidth.value / screenWidthDp()
     return androidx.wear.compose.foundation.rememberRevealState(
         initialValue = initialValue,
-        animationSpec = spring(1f, Spring.StiffnessMedium),
+        animationSpec = tween(durationMillis = RAPID_ANIMATION, easing = FastOutSlowInEasing),
         anchors =
             createAnchors(
                 revealingAnchor = if (useAnchoredActions) anchorFraction else 0f,
@@ -540,3 +540,6 @@ internal data class SwipeToRevealAction(
      */
     val contentColor: Color,
 )
+
+/** Rapid animation length in milliseconds. */
+internal const val RAPID_ANIMATION = 200

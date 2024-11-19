@@ -49,7 +49,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @RunWith(AndroidJUnit4.class)
 @LargeTest
-@SdkSuppress(minSdkVersion = 30)
+@SdkSuppress(minSdkVersion = 31)
 public class ImeViewCompatMultiWindowTest {
 
     @Rule
@@ -73,13 +73,11 @@ public class ImeViewCompatMultiWindowTest {
 
     /**
      * This test is using a deprecated codepath that doesn't support the workaround, so it is
-     * expected to fail hiding the IME.
-     * If this test begins failing on a new API version (that is, an assertion error is no longer
-     * being thrown), it is likely that the workaround is no longer needed on that API version:
-     * b/280532442
+     * expected to fail hiding the IME. The workaround is no longer needed on API version 35.
+     * See b/280532442 for details.
      */
     @Test(expected = AssertionError.class)
-    @SdkSuppress(minSdkVersion = 30, excludedSdks = { 30 }) // Excluded due to flakes (b/324889554)
+    @SdkSuppress(minSdkVersion = 31, maxSdkVersion = 35)
     public void testImeShowAndHide_splitScreen() {
         if (Build.VERSION.SDK_INT < 32) {
             // FLAG_ACTIVITY_LAUNCH_ADJACENT is not support before Sdk 32, using the

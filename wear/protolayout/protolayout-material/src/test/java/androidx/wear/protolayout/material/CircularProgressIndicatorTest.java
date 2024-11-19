@@ -76,8 +76,12 @@ public class CircularProgressIndicatorTest {
                 CircularProgressIndicator.fromLayoutElement(box.getContents().get(0));
 
         assertThat(newCpi).isNotNull();
-        assertThat(newCpi.getProgress().toProto().hasDynamicValue()).isTrue();
-        assertThat(newCpi.getProgress().toProto().hasValueForLayout()).isTrue();
+        assertThat(
+                newCpi.getProgress().toAngularDimensionProto().getDegrees().hasDynamicValue()
+        ).isTrue();
+        assertThat(
+                newCpi.getProgress().toAngularDimensionProto().getDegrees().hasValueForLayout()
+        ).isTrue();
     }
 
     @Test

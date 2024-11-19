@@ -44,7 +44,6 @@ androidXMultiplatform {
     mingwX64()
     tvos()
     wasmJs()
-    watchosDeviceArm64()
     watchos()
 
     defaultPlatform(PlatformIdentifier.JVM)
@@ -71,8 +70,8 @@ androidXMultiplatform {
                 // Published artifacts are unaffected by this, they continue to target Kotlin 1.9
                 // TODO(b/375358921) Set to libs.kotlinTest when collection targets Kotlin 2
                 implementation("org.jetbrains.kotlin:kotlin-test:2.0.10")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
             }
         }
 

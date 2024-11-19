@@ -16,13 +16,9 @@
 
 package androidx.build
 
-import java.io.File
-import org.gradle.api.Project
 import org.gradle.api.configuration.BuildFeatures
 
 @Suppress("UnstableApiUsage")
 fun BuildFeatures.isIsolatedProjectsEnabled(): Boolean {
     return isolatedProjects.active.orElse(false).get()
 }
-
-fun Project.getOutDirectory(): File = extensions.extraProperties.get("outDir") as File

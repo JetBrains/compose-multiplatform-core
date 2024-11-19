@@ -104,7 +104,14 @@ public class StreamConfigurationMapCompat {
             return cachedOutputSizes == null ? null : mCachedFormatOutputSizes.get(format).clone();
         }
 
-        Size[] outputSizes = mImpl.getOutputSizes(format);
+        Size[] outputSizes = null;
+        try {
+            // b/378508360: try-catch to workaround the exception when using
+            // StreamConfigurationMap provided by Robolectric.
+            outputSizes = mImpl.getOutputSizes(format);
+        } catch (Throwable t) {
+            Logger.w(TAG, "Failed to get output sizes for " + format, t);
+        }
 
         if (outputSizes == null || outputSizes.length == 0) {
             Logger.w(TAG, "Retrieved output sizes array is null or empty for format " + format);
@@ -133,7 +140,14 @@ public class StreamConfigurationMapCompat {
             return cachedOutputSizes == null ? null : mCachedClassOutputSizes.get(klass).clone();
         }
 
-        Size[] outputSizes = mImpl.getOutputSizes(klass);
+        Size[] outputSizes = null;
+        try {
+            // b/378508360: try-catch to workaround the exception when using
+            // StreamConfigurationMap provided by Robolectric.
+            outputSizes = mImpl.getOutputSizes(klass);
+        } catch (Throwable t) {
+            Logger.w(TAG, "Fail to get output sizes for " + klass, t);
+        }
 
         if (outputSizes == null || outputSizes.length == 0) {
             Logger.w(TAG, "Retrieved output sizes array is null or empty for class " + klass);

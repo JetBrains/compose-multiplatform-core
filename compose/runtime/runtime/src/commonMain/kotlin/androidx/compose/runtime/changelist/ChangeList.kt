@@ -27,7 +27,7 @@ import androidx.compose.runtime.MovableContentState
 import androidx.compose.runtime.MovableContentStateReference
 import androidx.compose.runtime.RecomposeScopeImpl
 import androidx.compose.runtime.RememberManager
-import androidx.compose.runtime.RememberObserver
+import androidx.compose.runtime.RememberObserverHolder
 import androidx.compose.runtime.SlotTable
 import androidx.compose.runtime.SlotWriter
 import androidx.compose.runtime.changelist.Operation.AdvanceSlotsBy
@@ -87,7 +87,7 @@ internal class ChangeList : OperationsDebugStringFormattable() {
         rememberManager: RememberManager
     ) = operations.executeAndFlushAllPendingOperations(applier, slots, rememberManager)
 
-    fun pushRemember(value: RememberObserver) {
+    fun pushRemember(value: RememberObserverHolder) {
         operations.push(Remember) { setObject(Remember.Value, value) }
     }
 

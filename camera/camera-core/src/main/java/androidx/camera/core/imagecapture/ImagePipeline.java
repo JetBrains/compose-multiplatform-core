@@ -92,7 +92,7 @@ public class ImagePipeline {
             @NonNull Size cameraSurfaceSize,
             @NonNull CameraCharacteristics cameraCharacteristics) {
         this(useCaseConfig, cameraSurfaceSize, cameraCharacteristics, /*cameraEffect=*/ null,
-                /*isVirtualCamera=*/ false, /* postviewSize */ null, ImageFormat.YUV_420_888);
+                /*isVirtualCamera=*/ false, /* postviewSettings */ null);
     }
 
     @MainThread
@@ -103,7 +103,7 @@ public class ImagePipeline {
             @Nullable CameraEffect cameraEffect,
             boolean isVirtualCamera) {
         this(useCaseConfig, cameraSurfaceSize, cameraCharacteristics, cameraEffect, isVirtualCamera,
-                null, ImageFormat.YUV_420_888);
+                null);
     }
 
     @MainThread
@@ -113,8 +113,7 @@ public class ImagePipeline {
             @Nullable CameraCharacteristics cameraCharacteristics,
             @Nullable CameraEffect cameraEffect,
             boolean isVirtualCamera,
-            @Nullable Size postviewSize,
-            int postviewImageFormat) {
+            @Nullable PostviewSettings postviewSettings) {
         checkMainThread();
         mUseCaseConfig = useCaseConfig;
         mCaptureConfig = CaptureConfig.Builder.createFrom(useCaseConfig).build();
@@ -142,8 +141,7 @@ public class ImagePipeline {
                 outputFormats,
                 isVirtualCamera,
                 mUseCaseConfig.getImageReaderProxyProvider(),
-                postviewSize,
-                postviewImageFormat);
+                postviewSettings);
         ProcessingNode.In processingIn = mCaptureNode.transform(mPipelineIn);
         mProcessingNode.transform(processingIn);
     }
@@ -299,8 +297,8 @@ public class ImagePipeline {
 
     @VisibleForTesting
     @Nullable
-    public Size getPostviewSize() {
-        return mPipelineIn.getPostviewSize();
+    public PostviewSettings getPostviewSettings() {
+        return mPipelineIn.getPostviewSettings();
     }
 
     private CameraRequest createCameraRequest(

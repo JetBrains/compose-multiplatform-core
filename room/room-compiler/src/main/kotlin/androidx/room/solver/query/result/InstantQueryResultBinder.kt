@@ -17,6 +17,7 @@ package androidx.room.solver.query.result
 
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.box
@@ -54,7 +55,6 @@ class InstantQueryResultBinder(adapter: QueryResultAdapter?) : QueryResultBinder
                 typeName = AndroidTypeNames.CURSOR,
                 assignExpr =
                     XCodeBlock.of(
-                        language,
                         "%M(%N, %L, %L, %L)",
                         DB_UTIL_QUERY,
                         dbProperty,
@@ -105,11 +105,6 @@ class InstantQueryResultBinder(adapter: QueryResultAdapter?) : QueryResultBinder
                             javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable
                         ) {
                         override fun XCodeBlock.Builder.body(scope: CodeGenScope) {
-                            val returnPrefix =
-                                when (language) {
-                                    CodeLanguage.JAVA -> "return "
-                                    CodeLanguage.KOTLIN -> ""
-                                }
                             val statementVar = scope.getTmpVar("_stmt")
                             addLocalVal(
                                 statementVar,
@@ -122,7 +117,12 @@ class InstantQueryResultBinder(adapter: QueryResultAdapter?) : QueryResultBinder
                             bindStatement?.invoke(scope, statementVar)
                             val outVar = scope.getTmpVar("_result")
                             adapter?.convert(outVar, statementVar, scope)
-                            addStatement("$returnPrefix%L", outVar)
+                            applyTo { language ->
+                                when (language) {
+                                    CodeLanguage.JAVA -> addStatement("return %L", outVar)
+                                    CodeLanguage.KOTLIN -> addStatement("%L", outVar)
+                                }
+                            }
                             nextControlFlow("finally")
                             addStatement("%L.close()", statementVar)
                             endControlFlow()

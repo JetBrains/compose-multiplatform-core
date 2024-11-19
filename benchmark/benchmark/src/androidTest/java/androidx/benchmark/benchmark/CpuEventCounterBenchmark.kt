@@ -17,6 +17,7 @@
 package androidx.benchmark.benchmark
 
 import android.os.Build
+import androidx.benchmark.Arguments
 import androidx.benchmark.CpuEventCounter
 import androidx.benchmark.DeviceInfo
 import androidx.benchmark.junit4.BenchmarkRule
@@ -45,6 +46,11 @@ class CpuEventCounterBenchmark {
         CpuEventCounter.forceEnable()?.let { errorMessage -> assumeTrue(errorMessage, false) }
 
         assumeFalse(DeviceInfo.isEmulator && Build.VERSION.SDK_INT == 28) // see b/357101113
+
+        assumeFalse(
+            "cpu events enabled for all benchmarks, disabling this test",
+            Arguments.cpuEventCounterEnable
+        )
     }
 
     @After

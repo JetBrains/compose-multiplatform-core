@@ -381,6 +381,39 @@ class TextFieldStateTest {
     }
 
     @Test
+    fun noOpEdit_doesNot_commitComposition() {
+        val scope = DefaultImeEditCommandScope(TransformedTextFieldState(state))
+        scope.setComposingText("Hello", 1)
+
+        assertThat(state.composition).isEqualTo(TextRange(0, 5))
+
+        state.edit { /*no-op*/ }
+        assertThat(state.composition).isEqualTo(TextRange(0, 5))
+    }
+
+    @Test
+    fun editContentChange_commitsComposition() {
+        val scope = DefaultImeEditCommandScope(TransformedTextFieldState(state))
+        scope.setComposingText("Hello", 1)
+
+        assertThat(state.composition).isEqualTo(TextRange(0, 5))
+
+        state.edit { append(" world") }
+        assertThat(state.composition).isNull()
+    }
+
+    @Test
+    fun editSelectionChange_commitsComposition() {
+        val scope = DefaultImeEditCommandScope(TransformedTextFieldState(state))
+        scope.setComposingText("Hello", 1)
+
+        assertThat(state.composition).isEqualTo(TextRange(0, 5))
+
+        state.edit { selection = TextRange(3) }
+        assertThat(state.composition).isNull()
+    }
+
+    @Test
     fun setTextAndPlaceCursorAtEnd_works() {
         state.setTextAndPlaceCursorAtEnd("Hello")
         assertThat(state.text.toString()).isEqualTo("Hello")

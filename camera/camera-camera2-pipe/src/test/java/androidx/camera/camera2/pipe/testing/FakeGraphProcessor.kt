@@ -192,4 +192,25 @@ internal class FakeGraphProcessor(
             listeners = defaultListeners
         )
     }
+
+    override fun updateParameters(parameters: Map<*, Any?>) {
+        if (closed) {
+            return
+        }
+        val currProcessor = processor
+        val currRepeatingRequest = repeatingRequest
+        val requiredParameters = graphState3A.readState()
+
+        if (currProcessor == null || currRepeatingRequest == null) {
+            return
+        }
+        currProcessor.submit(
+            isRepeating = true,
+            requests = listOf(currRepeatingRequest),
+            defaultParameters = defaultParameters,
+            graphParameters = parameters,
+            requiredParameters = requiredParameters,
+            listeners = defaultListeners
+        )
+    }
 }

@@ -49,9 +49,9 @@ private constructor(
 
     fun createAnonymous(typeWriter: TypeWriter, dbParam: String, useDriverApi: Boolean): XTypeSpec {
         return if (useDriverApi) {
-                XTypeSpec.anonymousClassBuilder(typeWriter.codeLanguage)
+                XTypeSpec.anonymousClassBuilder()
             } else {
-                XTypeSpec.anonymousClassBuilder(typeWriter.codeLanguage, "%L", dbParam)
+                XTypeSpec.anonymousClassBuilder("%L", dbParam)
             }
             .apply {
                 superclass(
@@ -63,7 +63,6 @@ private constructor(
                 )
                 addFunction(
                     XFunSpec.builder(
-                            language = language,
                             name = "createQuery",
                             visibility = VisibilityModifier.PROTECTED,
                             isOverride = true
@@ -89,7 +88,6 @@ private constructor(
                 )
                 addFunction(
                     XFunSpec.builder(
-                            language = language,
                             name = "bind",
                             visibility = VisibilityModifier.PROTECTED,
                             isOverride = true
@@ -97,15 +95,15 @@ private constructor(
                         .apply {
                             val stmtParam = "statement"
                             addParameter(
+                                stmtParam,
                                 if (useDriverApi) {
                                     SQLiteDriverTypeNames.STATEMENT
                                 } else {
                                     SupportDbTypeNames.SQLITE_STMT
-                                },
-                                stmtParam
+                                }
                             )
                             val entityParam = "entity"
-                            addParameter(pojo.typeName, entityParam)
+                            addParameter(entityParam, pojo.typeName)
                             val mappedField = FieldWithIndex.byOrder(pojo.fields)
                             val bindScope =
                                 CodeGenScope(writer = typeWriter, useDriverApi = useDriverApi)

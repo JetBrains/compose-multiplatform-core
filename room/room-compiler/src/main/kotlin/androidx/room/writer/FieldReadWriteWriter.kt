@@ -18,6 +18,7 @@ package androidx.room.writer
 
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.processing.XNullability
 import androidx.room.ext.capitalize
@@ -154,11 +155,7 @@ class FieldReadWriteWriter(fieldWithIndex: FieldWithIndex) {
             if (constructor == null) {
                 // Instantiate with default constructor, best hope for code generation
                 scope.builder.apply {
-                    addStatement(
-                        "%L = %L",
-                        outVar,
-                        XCodeBlock.ofNewInstance(scope.language, typeName)
-                    )
+                    addStatement("%L = %L", outVar, XCodeBlock.ofNewInstance(typeName))
                 }
                 return
             }
@@ -353,7 +350,7 @@ class FieldReadWriteWriter(fieldWithIndex: FieldWithIndex) {
             if (alwaysExists) {
                 field.cursorValueReader?.readFromCursor(tmpField, cursorVar, indexVar, scope)
             } else {
-                beginControlFlow("if (%L == -1)", indexVar).apply {
+                beginControlFlow("if (%L == -1)", indexVar).applyTo { language ->
                     val defaultValue = typeName.defaultValue()
                     if (
                         language == CodeLanguage.KOTLIN &&

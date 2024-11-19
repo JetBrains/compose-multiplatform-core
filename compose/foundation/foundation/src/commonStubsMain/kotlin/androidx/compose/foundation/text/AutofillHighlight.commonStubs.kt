@@ -16,22 +16,8 @@
 
 package androidx.compose.foundation.text
 
+import androidx.compose.foundation.implementedInJetBrainsFork
 import androidx.compose.ui.graphics.Color
-import kotlin.jvm.JvmInline
 
-/**
- * Represents the colors used for text selection by text and text field components.
- *
- * See [LocalAutofillHighlight] to provide new values for this throughout the hierarchy.
- *
- * @property autofillHighlightColor the color used to draw the background behind autofilled
- *   elements.
- */
-@JvmInline
-actual value class AutofillHighlight actual constructor(actual val autofillHighlightColor: Color) {
-    actual companion object {
-        /** Default instance of [AutofillHighlight]. */
-        actual val Default: AutofillHighlight
-            get() = TODO("Not yet implemented")
-    }
-}
+/** Returns the color used to indicate Autofill has been performed on fillable components. */
+internal actual fun autofillHighlightColor(): Color = implementedInJetBrainsFork()

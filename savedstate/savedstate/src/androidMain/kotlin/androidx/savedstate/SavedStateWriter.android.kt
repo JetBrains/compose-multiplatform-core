@@ -20,7 +20,12 @@
 
 package androidx.savedstate
 
+import android.os.IBinder
 import android.os.Parcelable
+import android.util.Size
+import android.util.SizeF
+import android.util.SparseArray
+import java.io.Serializable
 
 @JvmInline
 actual value class SavedStateWriter
@@ -29,12 +34,26 @@ internal actual constructor(
     @PublishedApi internal actual val source: SavedState,
 ) {
 
+    /**
+     * Stores an [IBinder] value associated with the specified key in the [IBinder].
+     *
+     * @param key The key to associate the value with.
+     * @param value The [IBinder] value to store.
+     */
+    inline fun putBinder(key: String, value: IBinder) {
+        source.putBinder(key, value)
+    }
+
     actual inline fun putBoolean(key: String, value: Boolean) {
         source.putBoolean(key, value)
     }
 
     actual inline fun putChar(key: String, value: Char) {
         source.putChar(key, value)
+    }
+
+    actual inline fun putCharSequence(key: String, value: CharSequence) {
+        source.putCharSequence(key, value)
     }
 
     actual inline fun putDouble(key: String, value: Double) {
@@ -67,63 +86,132 @@ internal actual constructor(
         source.putParcelable(key, value)
     }
 
+    /**
+     * Stores an [Serializable] value associated with the specified key in the [Serializable].
+     *
+     * @param key The key to associate the value with.
+     * @param value The [Serializable] value to store.
+     */
+    inline fun <reified T : Serializable> putSerializable(key: String, value: T) {
+        source.putSerializable(key, value)
+    }
+
+    /**
+     * Stores an [Size] value associated with the specified key in the [Size].
+     *
+     * @param key The key to associate the value with.
+     * @param value The [Size] value to store.
+     */
+    inline fun putSize(key: String, value: Size) {
+        source.putSize(key, value)
+    }
+
+    /**
+     * Stores an [SizeF] value associated with the specified key in the [SizeF].
+     *
+     * @param key The key to associate the value with.
+     * @param value The [SizeF] value to store.
+     */
+    inline fun putSizeF(key: String, value: SizeF) {
+        source.putSizeF(key, value)
+    }
+
     actual inline fun putString(key: String, value: String) {
         source.putString(key, value)
     }
 
-    actual inline fun putIntList(key: String, values: List<Int>) {
-        source.putIntegerArrayList(key, values.toArrayListUnsafe())
+    actual inline fun putIntList(key: String, value: List<Int>) {
+        source.putIntegerArrayList(key, value.toArrayListUnsafe())
     }
 
-    actual inline fun putStringList(key: String, values: List<String>) {
-        source.putStringArrayList(key, values.toArrayListUnsafe())
+    actual inline fun putCharSequenceList(key: String, value: List<CharSequence>) {
+        source.putCharSequenceArrayList(key, value.toArrayListUnsafe())
+    }
+
+    actual inline fun putStringList(key: String, value: List<String>) {
+        source.putStringArrayList(key, value.toArrayListUnsafe())
     }
 
     /**
-     * Stores a list of elements of [Parcelable] associated with the specified key in the
+     * Stores a [List] of elements of [Parcelable] associated with the specified key in the
      * [SavedState].
      *
      * @param key The key to associate the value with.
-     * @param values The list of elements to store.
+     * @param value The [List] of elements to store.
      */
-    inline fun <reified T : Parcelable> putParcelableList(key: String, values: List<T>) {
-        source.putParcelableArrayList(key, values.toArrayListUnsafe())
+    inline fun <reified T : Parcelable> putParcelableList(key: String, value: List<T>) {
+        source.putParcelableArrayList(key, value.toArrayListUnsafe())
     }
 
-    actual inline fun putBooleanArray(key: String, values: BooleanArray) {
-        source.putBooleanArray(key, values)
+    actual inline fun putBooleanArray(key: String, value: BooleanArray) {
+        source.putBooleanArray(key, value)
     }
 
-    actual inline fun putCharArray(key: String, values: CharArray) {
-        source.putCharArray(key, values)
+    actual inline fun putCharArray(key: String, value: CharArray) {
+        source.putCharArray(key, value)
     }
 
-    actual inline fun putDoubleArray(key: String, values: DoubleArray) {
-        source.putDoubleArray(key, values)
+    actual inline fun putCharSequenceArray(
+        key: String,
+        @Suppress("ArrayReturn") value: Array<CharSequence>
+    ) {
+        source.putCharSequenceArray(key, value)
     }
 
-    actual inline fun putFloatArray(key: String, values: FloatArray) {
-        source.putFloatArray(key, values)
+    actual inline fun putDoubleArray(key: String, value: DoubleArray) {
+        source.putDoubleArray(key, value)
     }
 
-    actual inline fun putIntArray(key: String, values: IntArray) {
-        source.putIntArray(key, values)
+    actual inline fun putFloatArray(key: String, value: FloatArray) {
+        source.putFloatArray(key, value)
     }
 
-    actual inline fun putLongArray(key: String, values: LongArray) {
-        source.putLongArray(key, values)
+    actual inline fun putIntArray(key: String, value: IntArray) {
+        source.putIntArray(key, value)
     }
 
-    actual inline fun putStringArray(key: String, values: Array<String>) {
-        source.putStringArray(key, values)
+    actual inline fun putLongArray(key: String, value: LongArray) {
+        source.putLongArray(key, value)
+    }
+
+    actual inline fun putStringArray(key: String, value: Array<String>) {
+        source.putStringArray(key, value)
+    }
+
+    /**
+     * Stores a [Array] of elements of [Parcelable] associated with the specified key in the
+     * [SavedState].
+     *
+     * @param key The key to associate the value with.
+     * @param value The [Array] of elements to store.
+     */
+    inline fun <reified T : Parcelable> putParcelableArray(
+        key: String,
+        @Suppress("ArrayReturn") value: Array<T>
+    ) {
+        source.putParcelableArray(key, value)
+    }
+
+    /**
+     * Stores a [SparseArray] of elements of [Parcelable] associated with the specified key in the
+     * [SavedState].
+     *
+     * @param key The key to associate the value with.
+     * @param value The [SparseArray] of elements to store.
+     */
+    inline fun <reified T : Parcelable> putSparseParcelableArray(
+        key: String,
+        value: SparseArray<T>
+    ) {
+        source.putSparseParcelableArray(key, value)
     }
 
     actual inline fun putSavedState(key: String, value: SavedState) {
         source.putBundle(key, value)
     }
 
-    actual inline fun putAll(values: SavedState) {
-        source.putAll(values)
+    actual inline fun putAll(from: SavedState) {
+        source.putAll(from)
     }
 
     actual inline fun remove(key: String) {

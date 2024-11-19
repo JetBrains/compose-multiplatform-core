@@ -32,7 +32,7 @@ class MapQueryResultAdapter(
             addLocalVariable(
                 name = outVarName,
                 typeName = mapValueResultAdapter.getDeclarationTypeName(),
-                assignExpr = mapValueResultAdapter.getInstantiationCodeBlock(language)
+                assignExpr = mapValueResultAdapter.getInstantiationCodeBlock()
             )
             val stepName = if (scope.useDriverApi) "step" else "moveToNext"
             beginControlFlow("while (%L.$stepName())", cursorVarName)

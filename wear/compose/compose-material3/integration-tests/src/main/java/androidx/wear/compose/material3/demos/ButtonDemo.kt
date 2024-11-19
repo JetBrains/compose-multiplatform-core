@@ -16,18 +16,31 @@
 
 package androidx.wear.compose.material3.demos
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.shape.CornerBasedShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.lazy.ScalingLazyListScope
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonColors
 import androidx.wear.compose.material3.ButtonDefaults
@@ -36,6 +49,7 @@ import androidx.wear.compose.material3.CompactButton
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ListSubHeader
+import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.OutlinedButton
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.samples.ButtonExtraLargeIconSample
@@ -430,7 +444,13 @@ fun ChildButtonDemo() {
         item {
             ChildButton(
                 onClick = { /* Do something */ },
-                label = { Text("Child Button") },
+                label = {
+                    Text(
+                        "Child Button",
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
                 enabled = false,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -540,7 +560,7 @@ fun CompactButtonDemo() {
             }
         }
         item { ListHeader { Text("Icon and Label") } }
-        item { CompactButtonSample() }
+        item { CompactButtonSample(modifier = Modifier.fillMaxWidth()) }
         item {
             CompactButton(
                 onClick = { /* Do something */ },
@@ -614,12 +634,13 @@ fun CompactButtonDemo() {
         item { ListHeader { Text("Long Click") } }
         item {
             CompactButtonWithOnLongClickSample(
+                modifier = Modifier.fillMaxWidth(),
                 onClickHandler = { showOnClickToast(context) },
                 onLongClickHandler = { showOnLongClickToast(context) }
             )
         }
         item { ListHeader { Text("Expandable") } }
-        item { OutlinedCompactButtonSample() }
+        item { OutlinedCompactButtonSample(modifier = Modifier.fillMaxWidth()) }
     }
 }
 
@@ -789,3 +810,120 @@ private fun ButtonExtraLargeIcon(enabled: Boolean = true) {
         contentPadding = ButtonDefaults.ButtonWithExtraLargeIconContentPadding
     )
 }
+
+@Composable
+fun ButtonStackDemo() {
+    val cornerExtraSmall = MaterialTheme.shapes.extraSmall.topStart
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        ScalingLazyDemo {
+            item { ListHeader { Text(text = "Button Stack") } }
+
+            buttonStack(cornerExtraSmall)
+
+            // Additional spacing between button stacks to emphasise the groupings
+            item { Spacer(Modifier.height(8.dp)) }
+
+            buttonStack(cornerExtraSmall)
+        }
+    }
+}
+
+private fun ScalingLazyListScope.buttonStack(cornerSize: CornerSize) {
+    item {
+        Button(
+            onClick = {},
+            modifier = Modifier.fillMaxWidth(),
+            shape = ButtonDefaults.shape.bottom(cornerSize),
+            label = { Text("Top", Modifier.fillMaxWidth()) }
+        )
+    }
+
+    item {
+        Button(
+            onClick = {},
+            modifier = Modifier.fillMaxWidth(),
+            shape = ButtonDefaults.shape.copy(cornerSize),
+            label = { Text("Middle", Modifier.fillMaxWidth()) }
+        )
+    }
+
+    item {
+        Button(
+            onClick = {},
+            modifier = Modifier.fillMaxWidth(),
+            shape = ButtonDefaults.shape.top(cornerSize),
+            label = { Text("Bottom", Modifier.fillMaxWidth()) }
+        )
+    }
+}
+
+@Composable
+fun ButtonMergeDemo() {
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        ScalingLazyDemo {
+            item { ListHeader { Text(text = "Button Merge") } }
+
+            buttonMerge()
+
+            // Additional spacing to emphasise the groupings
+            item { Spacer(Modifier.height(8.dp)) }
+
+            buttonMerge()
+        }
+    }
+}
+
+private fun ScalingLazyListScope.buttonMerge() {
+    item {
+        val noCorner = CornerSize(0)
+        Column {
+            Button(
+                onClick = {},
+                modifier = Modifier.fillMaxWidth().height(ButtonDefaults.CompactButtonHeight),
+                shape = ButtonDefaults.shape.bottom(noCorner),
+                label = { Text("Top", Modifier.fillMaxWidth()) },
+                colors = ButtonDefaults.filledTonalButtonColors(),
+            )
+            ButtonDivider(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant,
+                MaterialTheme.colorScheme.surfaceContainer
+            )
+            Button(
+                onClick = {},
+                modifier = Modifier.fillMaxWidth(),
+                shape = ButtonDefaults.shape.copy(noCorner),
+                label = { Text("Middle", Modifier.fillMaxWidth()) },
+                colors = ButtonDefaults.filledTonalButtonColors(),
+            )
+            ButtonDivider(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant,
+                MaterialTheme.colorScheme.surfaceContainer
+            )
+            Button(
+                onClick = {},
+                modifier = Modifier.fillMaxWidth(),
+                shape = ButtonDefaults.shape.top(noCorner),
+                label = { Text("Bottom", Modifier.fillMaxWidth()) },
+                colors = ButtonDefaults.filledTonalButtonColors(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ButtonDivider(height: Dp, contentColor: Color, containerColor: Color) {
+    Row(
+        modifier = Modifier.fillMaxWidth().background(containerColor),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Spacer(Modifier.height(height).fillMaxWidth(0.8f).background(contentColor))
+    }
+}
+
+private fun CornerBasedShape.top(cornerSize: CornerSize): CornerBasedShape =
+    copy(topStart = cornerSize, topEnd = cornerSize)
+
+private fun CornerBasedShape.bottom(cornerSize: CornerSize): CornerBasedShape =
+    copy(bottomStart = cornerSize, bottomEnd = cornerSize)

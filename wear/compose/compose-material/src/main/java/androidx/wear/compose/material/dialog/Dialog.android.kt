@@ -175,11 +175,11 @@ private fun Dialog(
                 SwipeToDismissBox(
                     state = rememberSwipeToDismissBoxState(),
                     modifier =
-                        Modifier.graphicsLayer(
-                            alpha = backgroundScrimAlpha,
-                            scaleX = scale,
-                            scaleY = scale,
-                        ),
+                        Modifier.graphicsLayer {
+                            alpha = backgroundScrimAlpha
+                            scaleX = scale
+                            scaleY = scale
+                        },
                     onDismissed = {
                         onDismissRequest()
                         // Reset state for the next time this dialog is shown.
@@ -190,7 +190,7 @@ private fun Dialog(
                         Box(
                             modifier =
                                 Modifier.matchParentSize()
-                                    .graphicsLayer(alpha = contentAlpha)
+                                    .graphicsLayer { alpha = contentAlpha }
                                     .background(MaterialTheme.colors.background)
                         ) {
                             content()

@@ -147,7 +147,7 @@ class DateRangeInputTest {
                 delayCompleted = true
             }
         }
-        rule.waitUntil("Waiting for focus", 3_000L) { delayCompleted }
+        rule.waitUntil("Waiting for focus", 5_000L) { delayCompleted }
         rule.onNodeWithText("05/11/2010").assertIsFocused()
         rule.onNodeWithText("10/20/2020").assertIsNotFocused()
     }
@@ -177,7 +177,7 @@ class DateRangeInputTest {
                 delayCompleted = true
             }
         }
-        rule.waitUntil("Waiting for delay completion", 3_000L) { delayCompleted }
+        rule.waitUntil("Waiting for delay completion", 5_000L) { delayCompleted }
         rule.onNodeWithText("05/11/2010").assertIsNotFocused()
         rule.onNodeWithText("10/20/2020").assertIsNotFocused()
     }

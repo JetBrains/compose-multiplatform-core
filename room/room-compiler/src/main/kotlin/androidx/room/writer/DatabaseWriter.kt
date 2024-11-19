@@ -17,13 +17,22 @@
 package androidx.room.writer
 
 import androidx.room.compiler.codegen.CodeLanguage
+import androidx.room.compiler.codegen.KFunSpec
 import androidx.room.compiler.codegen.VisibilityModifier
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.codegen.XFunSpec
+import androidx.room.compiler.codegen.XFunSpec.Builder.Companion.applyTo
+import androidx.room.compiler.codegen.XName
 import androidx.room.compiler.codegen.XPropertySpec
+import androidx.room.compiler.codegen.XPropertySpec.Builder.Companion.applyTo
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.XTypeSpec
+import androidx.room.compiler.codegen.XTypeSpec.Builder.Companion.applyTo
+import androidx.room.compiler.codegen.buildCodeBlock
 import androidx.room.compiler.codegen.compat.XConverters.applyToJavaPoet
+import androidx.room.compiler.codegen.compat.XConverters.applyToKotlinPoet
+import androidx.room.compiler.processing.PropertySpecHelper
 import androidx.room.ext.CommonTypeNames
 import androidx.room.ext.KotlinCollectionMemberNames
 import androidx.room.ext.KotlinTypeNames
@@ -45,7 +54,7 @@ class DatabaseWriter(
     override val packageName = className.packageName
 
     override fun createTypeSpecBuilder(): XTypeSpec.Builder {
-        return XTypeSpec.classBuilder(codeLanguage, className).apply {
+        return XTypeSpec.classBuilder(className).apply {
             addOriginatingElement(database.element)
             superclass(database.typeName)
             setVisibility(
@@ -69,74 +78,68 @@ class DatabaseWriter(
 
     private fun createCreateTypeConvertersMap(): XFunSpec {
         val scope = CodeGenScope(this)
-        val classOfAnyTypeName =
-            when (codeLanguage) {
+        val typeConvertersVar = scope.getTmpVar("_typeConvertersMap")
+        fun classOfAnyTypeName(language: CodeLanguage) =
+            when (language) {
                 CodeLanguage.JAVA -> CommonTypeNames.JAVA_CLASS
                 CodeLanguage.KOTLIN -> CommonTypeNames.KOTLIN_CLASS
             }.parametrizedBy(XTypeName.ANY_WILDCARD)
-        val typeConvertersTypeName =
-            CommonTypeNames.MUTABLE_MAP.parametrizedBy(
-                classOfAnyTypeName,
-                CommonTypeNames.LIST.parametrizedBy(classOfAnyTypeName)
-            )
-        val body =
-            XCodeBlock.builder(codeLanguage)
-                .apply {
-                    val typeConvertersVar = scope.getTmpVar("_typeConvertersMap")
+        val body = buildCodeBlock { language ->
+            val classOfAnyTypeName = classOfAnyTypeName(language)
+            val typeConvertersTypeName =
+                CommonTypeNames.MUTABLE_MAP.parametrizedBy(
+                    classOfAnyTypeName,
+                    CommonTypeNames.LIST.parametrizedBy(classOfAnyTypeName)
+                )
+            when (language) {
+                CodeLanguage.JAVA ->
+                    addLocalVariable(
+                        name = typeConvertersVar,
+                        typeName = typeConvertersTypeName,
+                        assignExpr =
+                            XCodeBlock.ofNewInstance(
+                                CommonTypeNames.HASH_MAP.parametrizedBy(
+                                    classOfAnyTypeName,
+                                    CommonTypeNames.LIST.parametrizedBy(classOfAnyTypeName)
+                                )
+                            )
+                    )
+                CodeLanguage.KOTLIN ->
+                    addLocalVal(
+                        typeConvertersVar,
+                        typeConvertersTypeName,
+                        "%M()",
+                        KotlinCollectionMemberNames.MUTABLE_MAP_OF
+                    )
+            }
+            database.daoMethods.forEach {
+                addStatement(
+                    "%L.put(%L, %T.%L())",
+                    typeConvertersVar,
                     when (language) {
-                        CodeLanguage.JAVA ->
-                            addLocalVariable(
-                                name = typeConvertersVar,
-                                typeName = typeConvertersTypeName,
-                                assignExpr =
-                                    XCodeBlock.ofNewInstance(
-                                        codeLanguage,
-                                        CommonTypeNames.HASH_MAP.parametrizedBy(
-                                            classOfAnyTypeName,
-                                            CommonTypeNames.LIST.parametrizedBy(classOfAnyTypeName)
-                                        )
-                                    )
-                            )
-                        CodeLanguage.KOTLIN ->
-                            addLocalVal(
-                                typeConvertersVar,
-                                typeConvertersTypeName,
-                                "%M()",
-                                KotlinCollectionMemberNames.MUTABLE_MAP_OF
-                            )
-                    }
-                    database.daoMethods.forEach {
-                        addStatement(
-                            "%L.put(%L, %T.%L())",
-                            typeConvertersVar,
-                            when (language) {
-                                CodeLanguage.JAVA ->
-                                    XCodeBlock.ofJavaClassLiteral(language, it.dao.typeName)
-                                CodeLanguage.KOTLIN ->
-                                    XCodeBlock.ofKotlinClassLiteral(language, it.dao.typeName)
-                            },
-                            it.dao.implTypeName,
-                            DaoWriter.GET_LIST_OF_TYPE_CONVERTERS_METHOD
-                        )
-                    }
-                    addStatement("return %L", typeConvertersVar)
-                }
-                .build()
-        return XFunSpec.builder(
-                language = codeLanguage,
-                name =
-                    when (codeLanguage) {
-                        CodeLanguage.JAVA -> "getRequiredTypeConverters"
-                        CodeLanguage.KOTLIN -> "getRequiredTypeConverterClasses"
+                        CodeLanguage.JAVA -> XCodeBlock.ofJavaClassLiteral(it.dao.typeName)
+                        CodeLanguage.KOTLIN -> XCodeBlock.ofKotlinClassLiteral(it.dao.typeName)
                     },
+                    it.dao.implTypeName,
+                    DaoWriter.GET_LIST_OF_TYPE_CONVERTERS_METHOD
+                )
+            }
+            addStatement("return %L", typeConvertersVar)
+        }
+        return XFunSpec.builder(
+                name =
+                    XName.of(
+                        java = "getRequiredTypeConverters",
+                        kotlin = "getRequiredTypeConverterClasses"
+                    ),
                 visibility = VisibilityModifier.PROTECTED,
                 isOverride = true
             )
-            .apply {
+            .applyTo { language ->
                 returns(
                     CommonTypeNames.MAP.parametrizedBy(
-                        classOfAnyTypeName,
-                        CommonTypeNames.LIST.parametrizedBy(classOfAnyTypeName)
+                        classOfAnyTypeName(language),
+                        CommonTypeNames.LIST.parametrizedBy(classOfAnyTypeName(language))
                     )
                 )
                 addCode(body)
@@ -146,68 +149,64 @@ class DatabaseWriter(
 
     private fun createCreateAutoMigrationSpecsSet(): XFunSpec {
         val scope = CodeGenScope(this)
-        val classOfAutoMigrationSpecTypeName =
-            when (codeLanguage) {
+        fun classOfAutoMigrationSpecTypeName(language: CodeLanguage) =
+            when (language) {
                 CodeLanguage.JAVA -> CommonTypeNames.JAVA_CLASS
                 CodeLanguage.KOTLIN -> CommonTypeNames.KOTLIN_CLASS
             }.parametrizedBy(XTypeName.getProducerExtendsName(RoomTypeNames.AUTO_MIGRATION_SPEC))
-        val autoMigrationSpecsTypeName =
-            CommonTypeNames.MUTABLE_SET.parametrizedBy(classOfAutoMigrationSpecTypeName)
-        val body =
-            XCodeBlock.builder(codeLanguage)
-                .apply {
-                    val autoMigrationSpecsVar = scope.getTmpVar("_autoMigrationSpecsSet")
-                    when (language) {
-                        CodeLanguage.JAVA ->
-                            addLocalVariable(
-                                name = autoMigrationSpecsVar,
-                                typeName = autoMigrationSpecsTypeName,
-                                assignExpr =
-                                    XCodeBlock.ofNewInstance(
-                                        codeLanguage,
-                                        CommonTypeNames.HASH_SET.parametrizedBy(
-                                            classOfAutoMigrationSpecTypeName
-                                        )
-                                    )
+        val autoMigrationSpecsVar = scope.getTmpVar("_autoMigrationSpecsSet")
+        val body = buildCodeBlock { language ->
+            val classOfAutoMigrationSpecTypeName = classOfAutoMigrationSpecTypeName(language)
+            val autoMigrationSpecsTypeName =
+                CommonTypeNames.MUTABLE_SET.parametrizedBy(classOfAutoMigrationSpecTypeName)
+            when (language) {
+                CodeLanguage.JAVA ->
+                    addLocalVariable(
+                        name = autoMigrationSpecsVar,
+                        typeName = autoMigrationSpecsTypeName,
+                        assignExpr =
+                            XCodeBlock.ofNewInstance(
+                                CommonTypeNames.HASH_SET.parametrizedBy(
+                                    classOfAutoMigrationSpecTypeName
+                                )
                             )
-                        CodeLanguage.KOTLIN ->
-                            addLocalVal(
-                                autoMigrationSpecsVar,
-                                autoMigrationSpecsTypeName,
-                                "%M()",
-                                KotlinCollectionMemberNames.MUTABLE_SET_OF
-                            )
-                    }
-                    database.autoMigrations
-                        .filter { it.isSpecProvided }
-                        .map { autoMigration ->
-                            val specClassName = checkNotNull(autoMigration.specClassName)
-                            addStatement(
-                                "%L.add(%L)",
-                                autoMigrationSpecsVar,
-                                when (language) {
-                                    CodeLanguage.JAVA ->
-                                        XCodeBlock.ofJavaClassLiteral(language, specClassName)
-                                    CodeLanguage.KOTLIN ->
-                                        XCodeBlock.ofKotlinClassLiteral(language, specClassName)
-                                }
-                            )
+                    )
+                CodeLanguage.KOTLIN ->
+                    addLocalVal(
+                        autoMigrationSpecsVar,
+                        autoMigrationSpecsTypeName,
+                        "%M()",
+                        KotlinCollectionMemberNames.MUTABLE_SET_OF
+                    )
+            }
+            database.autoMigrations
+                .filter { it.isSpecProvided }
+                .map { autoMigration ->
+                    val specClassName = checkNotNull(autoMigration.specClassName)
+                    addStatement(
+                        "%L.add(%L)",
+                        autoMigrationSpecsVar,
+                        when (language) {
+                            CodeLanguage.JAVA -> XCodeBlock.ofJavaClassLiteral(specClassName)
+                            CodeLanguage.KOTLIN -> XCodeBlock.ofKotlinClassLiteral(specClassName)
                         }
-                    addStatement("return %L", autoMigrationSpecsVar)
+                    )
                 }
-                .build()
+            addStatement("return %L", autoMigrationSpecsVar)
+        }
         return XFunSpec.builder(
-                language = codeLanguage,
                 name =
-                    when (codeLanguage) {
-                        CodeLanguage.JAVA -> "getRequiredAutoMigrationSpecs"
-                        CodeLanguage.KOTLIN -> "getRequiredAutoMigrationSpecClasses"
-                    },
+                    XName.of(
+                        java = "getRequiredAutoMigrationSpecs",
+                        kotlin = "getRequiredAutoMigrationSpecClasses"
+                    ),
                 visibility = VisibilityModifier.PUBLIC,
                 isOverride = true,
             )
-            .apply {
-                returns(CommonTypeNames.SET.parametrizedBy(classOfAutoMigrationSpecTypeName))
+            .applyTo { language ->
+                returns(
+                    CommonTypeNames.SET.parametrizedBy(classOfAutoMigrationSpecTypeName(language))
+                )
                 addCode(body)
             }
             .build()
@@ -215,7 +214,6 @@ class DatabaseWriter(
 
     private fun createClearAllTables(): XFunSpec {
         return XFunSpec.builder(
-                language = codeLanguage,
                 name = "clearAllTables",
                 visibility = VisibilityModifier.PUBLIC,
                 isOverride = true
@@ -233,7 +231,7 @@ class DatabaseWriter(
     private fun createCreateInvalidationTracker(): XFunSpec {
         val scope = CodeGenScope(this)
         val body =
-            XCodeBlock.builder(codeLanguage)
+            XCodeBlock.builder()
                 .apply {
                     val shadowTablesVar = "_shadowTablesMap"
                     val shadowTablesTypeParam =
@@ -248,22 +246,19 @@ class DatabaseWriter(
                         name = shadowTablesVar,
                         typeName = shadowTablesTypeName,
                         assignExpr =
-                            when (language) {
-                                CodeLanguage.JAVA ->
-                                    XCodeBlock.ofNewInstance(
-                                        codeLanguage,
-                                        CommonTypeNames.HASH_MAP.parametrizedBy(
-                                            *shadowTablesTypeParam
-                                        ),
-                                        "%L",
-                                        shadowTableNames.size
-                                    )
-                                CodeLanguage.KOTLIN ->
-                                    XCodeBlock.of(
-                                        language,
-                                        "%M()",
-                                        KotlinCollectionMemberNames.MUTABLE_MAP_OF
-                                    )
+                            buildCodeBlock { language ->
+                                when (language) {
+                                    CodeLanguage.JAVA ->
+                                        add(
+                                            "new %T(%L)",
+                                            CommonTypeNames.HASH_MAP.parametrizedBy(
+                                                *shadowTablesTypeParam
+                                            ),
+                                            shadowTableNames.size
+                                        )
+                                    CodeLanguage.KOTLIN ->
+                                        add("%M()", KotlinCollectionMemberNames.MUTABLE_MAP_OF)
+                                }
                             }
                     )
                     shadowTableNames.forEach { (tableName, shadowTableName) ->
@@ -281,22 +276,19 @@ class DatabaseWriter(
                         name = viewTablesVar,
                         typeName = viewTablesTypeName,
                         assignExpr =
-                            when (language) {
-                                CodeLanguage.JAVA ->
-                                    XCodeBlock.ofNewInstance(
-                                        codeLanguage,
-                                        CommonTypeNames.HASH_MAP.parametrizedBy(
-                                            *viewTableTypeParam
-                                        ),
-                                        "%L",
-                                        database.views.size
-                                    )
-                                CodeLanguage.KOTLIN ->
-                                    XCodeBlock.of(
-                                        language,
-                                        "%M()",
-                                        KotlinCollectionMemberNames.MUTABLE_MAP_OF
-                                    )
+                            buildCodeBlock { language ->
+                                when (language) {
+                                    CodeLanguage.JAVA ->
+                                        add(
+                                            "new %T(%L)",
+                                            CommonTypeNames.HASH_MAP.parametrizedBy(
+                                                *viewTableTypeParam
+                                            ),
+                                            database.views.size
+                                        )
+                                    CodeLanguage.KOTLIN ->
+                                        add("%M()", KotlinCollectionMemberNames.MUTABLE_MAP_OF)
+                                }
                             }
                     )
                     val tablesType =
@@ -307,22 +299,19 @@ class DatabaseWriter(
                             name = tablesVar,
                             typeName = tablesType,
                             assignExpr =
-                                when (language) {
-                                    CodeLanguage.JAVA ->
-                                        XCodeBlock.ofNewInstance(
-                                            codeLanguage,
-                                            CommonTypeNames.HASH_SET.parametrizedBy(
-                                                CommonTypeNames.STRING
-                                            ),
-                                            "%L",
-                                            view.tables.size
-                                        )
-                                    CodeLanguage.KOTLIN ->
-                                        XCodeBlock.of(
-                                            language,
-                                            "%M()",
-                                            KotlinCollectionMemberNames.MUTABLE_SET_OF
-                                        )
+                                buildCodeBlock { language ->
+                                    when (language) {
+                                        CodeLanguage.JAVA ->
+                                            add(
+                                                "new %T(%L)",
+                                                CommonTypeNames.HASH_SET.parametrizedBy(
+                                                    CommonTypeNames.STRING
+                                                ),
+                                                view.tables.size
+                                            )
+                                        CodeLanguage.KOTLIN ->
+                                            add("%M()", KotlinCollectionMemberNames.MUTABLE_SET_OF)
+                                    }
                                 }
                         )
                         for (table in view.tables) {
@@ -339,7 +328,6 @@ class DatabaseWriter(
                     addStatement(
                         "return %L",
                         XCodeBlock.ofNewInstance(
-                            codeLanguage,
                             RoomTypeNames.INVALIDATION_TRACKER,
                             "this, %L, %L, %L",
                             shadowTablesVar,
@@ -350,7 +338,6 @@ class DatabaseWriter(
                 }
                 .build()
         return XFunSpec.builder(
-                language = codeLanguage,
                 name = "createInvalidationTracker",
                 visibility = VisibilityModifier.PROTECTED,
                 isOverride = true
@@ -369,30 +356,27 @@ class DatabaseWriter(
                 method.dao.typeName.simpleNames.first().decapitalize(Locale.US).stripNonJava()
             val privateDaoProperty =
                 XPropertySpec.builder(
-                        language = codeLanguage,
                         name = scope.getTmpVar("_$name"),
                         typeName =
-                            when (codeLanguage) {
+                            when (scope.language) {
                                 CodeLanguage.KOTLIN ->
                                     KotlinTypeNames.LAZY.parametrizedBy(method.dao.typeName)
                                 CodeLanguage.JAVA -> method.dao.typeName
                             },
                         visibility = VisibilityModifier.PRIVATE,
-                        isMutable = codeLanguage == CodeLanguage.JAVA
+                        isMutable = scope.language == CodeLanguage.JAVA
                     )
-                    .apply {
+                    .applyTo { language ->
                         // For Kotlin we rely on kotlin.Lazy while for Java we'll memoize the dao
-                        // impl in
-                        // the getter.
+                        // impl in the getter.
                         if (language == CodeLanguage.KOTLIN) {
                             val lazyInit =
-                                XCodeBlock.builder(language)
+                                XCodeBlock.builder()
                                     .apply {
                                         beginControlFlow("lazy")
                                         addStatement(
                                             "%L",
                                             XCodeBlock.ofNewInstance(
-                                                language,
                                                 method.dao.implTypeName,
                                                 "this"
                                             )
@@ -403,28 +387,36 @@ class DatabaseWriter(
                             initializer(lazyInit)
                         }
                     }
-                    .applyToJavaPoet {
-                        // The volatile modifier is needed since in Java the memoization is
-                        // generated.
-                        addModifiers(Modifier.VOLATILE)
-                    }
+                    // The volatile modifier is needed since in Java the memoization is generated.
+                    .applyToJavaPoet { addModifiers(Modifier.VOLATILE) }
                     .build()
             builder.addProperty(privateDaoProperty)
-            if (codeLanguage == CodeLanguage.KOTLIN && method.isProperty) {
-                builder.addProperty(createDaoProperty(method, privateDaoProperty))
-            } else {
-                builder.addFunction(createDaoGetter(method, privateDaoProperty))
+            builder.applyTo { language ->
+                if (language == CodeLanguage.KOTLIN && method.isProperty) {
+                    applyToKotlinPoet {
+                        addProperty(
+                            PropertySpecHelper.overriding(method.element, database.type)
+                                .getter(
+                                    KFunSpec.getterBuilder()
+                                        .addCode("return %L.value", privateDaoProperty.name)
+                                        .build()
+                                )
+                                .build()
+                        )
+                    }
+                } else {
+                    addFunction(createDaoGetter(method, privateDaoProperty))
+                }
             }
         }
     }
 
     private fun createDaoGetter(method: DaoMethod, daoProperty: XPropertySpec): XFunSpec {
         val body =
-            XCodeBlock.builder(codeLanguage).apply {
+            XCodeBlock.builder().applyTo { language ->
                 // For Java we implement the memoization logic in the Dao getter, meanwhile for
-                // Kotlin
-                // we rely on kotlin.Lazy to the getter just delegates to it.
-                when (codeLanguage) {
+                // Kotlin we rely on kotlin.Lazy to the getter just delegates to it.
+                when (language) {
                     CodeLanguage.JAVA -> {
                         beginControlFlow("if (%N != null)", daoProperty).apply {
                             addStatement("return %N", daoProperty)
@@ -435,11 +427,7 @@ class DatabaseWriter(
                                     addStatement(
                                         "%N = %L",
                                         daoProperty,
-                                        XCodeBlock.ofNewInstance(
-                                            language,
-                                            method.dao.implTypeName,
-                                            "this"
-                                        )
+                                        XCodeBlock.ofNewInstance(method.dao.implTypeName, "this")
                                     )
                                 }
                                 endControlFlow()
@@ -454,29 +442,15 @@ class DatabaseWriter(
                     }
                 }
             }
-        return XFunSpec.overridingBuilder(
-                language = codeLanguage,
-                element = method.element,
-                owner = database.element.type
-            )
+        return XFunSpec.overridingBuilder(element = method.element, owner = database.element.type)
             .apply { addCode(body.build()) }
-            .build()
-    }
-
-    private fun createDaoProperty(method: DaoMethod, daoProperty: XPropertySpec): XPropertySpec {
-        return XPropertySpec.overridingBuilder(
-                language = codeLanguage,
-                element = method.element,
-                owner = database.type
-            )
-            .getter(XCodeBlock.of(codeLanguage, "return %L.value", daoProperty.name))
             .build()
     }
 
     private fun createOpenDelegate(): XFunSpec {
         val scope = CodeGenScope(this)
         val body =
-            XCodeBlock.builder(codeLanguage)
+            XCodeBlock.builder()
                 .apply {
                     val openDelegateVar = scope.getTmpVar("_openDelegate")
                     val openDelegateCode = scope.fork()
@@ -486,7 +460,6 @@ class DatabaseWriter(
                 }
                 .build()
         return XFunSpec.builder(
-                language = codeLanguage,
                 name = "createOpenDelegate",
                 visibility = VisibilityModifier.PROTECTED,
                 isOverride = true,
@@ -500,93 +473,76 @@ class DatabaseWriter(
 
     private fun createGetAutoMigrations(): XFunSpec {
         val scope = CodeGenScope(this)
-        val classOfAutoMigrationSpecTypeName =
-            when (codeLanguage) {
-                CodeLanguage.JAVA -> CommonTypeNames.JAVA_CLASS
-                CodeLanguage.KOTLIN -> CommonTypeNames.KOTLIN_CLASS
-            }.parametrizedBy(XTypeName.getProducerExtendsName(RoomTypeNames.AUTO_MIGRATION_SPEC))
         val specsMapParamName = "autoMigrationSpecs"
-        val body =
-            XCodeBlock.builder(codeLanguage)
-                .apply {
-                    val listVar = scope.getTmpVar("_autoMigrations")
-                    when (language) {
-                        CodeLanguage.JAVA ->
-                            addLocalVariable(
-                                name = listVar,
-                                typeName =
-                                    CommonTypeNames.MUTABLE_LIST.parametrizedBy(
-                                        RoomTypeNames.MIGRATION
-                                    ),
-                                assignExpr =
-                                    XCodeBlock.ofNewInstance(
-                                        codeLanguage,
-                                        CommonTypeNames.ARRAY_LIST.parametrizedBy(
-                                            RoomTypeNames.MIGRATION
-                                        )
-                                    )
+        val listVar = scope.getTmpVar("_autoMigrations")
+        val body = buildCodeBlock { language ->
+            when (language) {
+                CodeLanguage.JAVA ->
+                    addLocalVariable(
+                        name = listVar,
+                        typeName =
+                            CommonTypeNames.MUTABLE_LIST.parametrizedBy(RoomTypeNames.MIGRATION),
+                        assignExpr =
+                            XCodeBlock.ofNewInstance(
+                                CommonTypeNames.ARRAY_LIST.parametrizedBy(RoomTypeNames.MIGRATION)
                             )
-                        CodeLanguage.KOTLIN ->
-                            addLocalVal(
-                                listVar,
-                                CommonTypeNames.MUTABLE_LIST.parametrizedBy(
-                                    RoomTypeNames.MIGRATION
-                                ),
-                                "%M()",
-                                KotlinCollectionMemberNames.MUTABLE_LIST_OF
-                            )
-                    }
+                    )
+                CodeLanguage.KOTLIN ->
+                    addLocalVal(
+                        listVar,
+                        CommonTypeNames.MUTABLE_LIST.parametrizedBy(RoomTypeNames.MIGRATION),
+                        "%M()",
+                        KotlinCollectionMemberNames.MUTABLE_LIST_OF
+                    )
+            }
 
-                    database.autoMigrations.forEach { autoMigrationResult ->
-                        val implTypeName = autoMigrationResult.getImplTypeName(database.typeName)
-                        val newInstanceCode =
-                            if (autoMigrationResult.isSpecProvided) {
-                                val specClassName = checkNotNull(autoMigrationResult.specClassName)
-                                // For Kotlin use getValue() as the Map's values are never null.
-                                val getFunction =
-                                    when (language) {
-                                        CodeLanguage.JAVA -> "get"
-                                        CodeLanguage.KOTLIN -> "getValue"
-                                    }
-                                XCodeBlock.ofNewInstance(
-                                    language,
-                                    implTypeName,
-                                    "%L.%L(%L)",
-                                    specsMapParamName,
-                                    getFunction,
-                                    when (codeLanguage) {
-                                        CodeLanguage.JAVA ->
-                                            XCodeBlock.ofJavaClassLiteral(language, specClassName)
-                                        CodeLanguage.KOTLIN ->
-                                            XCodeBlock.ofKotlinClassLiteral(language, specClassName)
-                                    }
-                                )
-                            } else {
-                                XCodeBlock.ofNewInstance(language, implTypeName)
+            database.autoMigrations.forEach { autoMigrationResult ->
+                val implTypeName = autoMigrationResult.getImplTypeName(database.typeName)
+                val newInstanceCode =
+                    if (autoMigrationResult.isSpecProvided) {
+                        val specClassName = checkNotNull(autoMigrationResult.specClassName)
+                        // For Kotlin use getValue() as the Map's values are never null.
+                        XCodeBlock.ofNewInstance(
+                            implTypeName,
+                            "%L.%L(%L)",
+                            specsMapParamName,
+                            XName.of(java = "get", kotlin = "getValue"),
+                            buildCodeBlock { language ->
+                                when (language) {
+                                    CodeLanguage.JAVA ->
+                                        add(XCodeBlock.ofJavaClassLiteral(specClassName))
+                                    CodeLanguage.KOTLIN ->
+                                        add(XCodeBlock.ofKotlinClassLiteral(specClassName))
+                                }
                             }
-                        addStatement("%L.add(%L)", listVar, newInstanceCode)
+                        )
+                    } else {
+                        XCodeBlock.ofNewInstance(implTypeName)
                     }
-                    addStatement("return %L", listVar)
-                }
-                .build()
+                addStatement("%L.add(%L)", listVar, newInstanceCode)
+            }
+            addStatement("return %L", listVar)
+        }
         return XFunSpec.builder(
-                language = codeLanguage,
-                name =
-                    when (codeLanguage) {
-                        CodeLanguage.JAVA -> "getAutoMigrations"
-                        CodeLanguage.KOTLIN -> "createAutoMigrations"
-                    },
+                name = XName.of(java = "getAutoMigrations", kotlin = "createAutoMigrations"),
                 visibility = VisibilityModifier.PUBLIC,
                 isOverride = true,
             )
-            .apply {
+            .applyTo { language ->
+                val classOfAutoMigrationSpecTypeName =
+                    when (language) {
+                        CodeLanguage.JAVA -> CommonTypeNames.JAVA_CLASS
+                        CodeLanguage.KOTLIN -> CommonTypeNames.KOTLIN_CLASS
+                    }.parametrizedBy(
+                        XTypeName.getProducerExtendsName(RoomTypeNames.AUTO_MIGRATION_SPEC)
+                    )
                 returns(CommonTypeNames.LIST.parametrizedBy(RoomTypeNames.MIGRATION))
                 addParameter(
+                    specsMapParamName,
                     CommonTypeNames.MAP.parametrizedBy(
                         classOfAutoMigrationSpecTypeName,
                         RoomTypeNames.AUTO_MIGRATION_SPEC,
-                    ),
-                    specsMapParamName
+                    )
                 )
                 addCode(body)
             }

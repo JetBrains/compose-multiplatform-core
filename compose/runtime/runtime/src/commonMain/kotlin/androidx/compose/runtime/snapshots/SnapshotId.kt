@@ -18,30 +18,40 @@
 
 package androidx.compose.runtime.snapshots
 
+/**
+ * The type of [Snapshot.snapshotId]. On most platforms this is a [Long] but may be a different type
+ * if the platform target does not support [Long] efficiently (such as JavaScript).
+ */
 expect class SnapshotId
 
-expect val SnapshotIdZero: SnapshotId
-expect val SnapshotIdMax: SnapshotId
-expect val SnapshotIdInvalidValue: SnapshotId
+internal expect val SnapshotIdZero: SnapshotId
+internal expect val SnapshotIdMax: SnapshotId
+internal expect val SnapshotIdInvalidValue: SnapshotId
 
-expect val SnapshotIdSize: Int
+internal expect val SnapshotIdSize: Int
 
-expect operator fun SnapshotId.compareTo(other: SnapshotId): Int
+internal expect operator fun SnapshotId.compareTo(other: SnapshotId): Int
 
-expect operator fun SnapshotId.compareTo(other: Int): Int
+internal expect operator fun SnapshotId.compareTo(other: Int): Int
 
-expect operator fun SnapshotId.plus(other: Int): SnapshotId
+internal expect operator fun SnapshotId.plus(other: Int): SnapshotId
 
-expect operator fun SnapshotId.minus(other: SnapshotId): SnapshotId
+internal expect operator fun SnapshotId.minus(other: SnapshotId): SnapshotId
 
-expect operator fun SnapshotId.minus(other: Int): SnapshotId
+internal expect operator fun SnapshotId.minus(other: Int): SnapshotId
 
-expect operator fun SnapshotId.div(other: Int): SnapshotId
+internal expect operator fun SnapshotId.div(other: Int): SnapshotId
 
-expect operator fun SnapshotId.times(other: Int): SnapshotId
+internal expect operator fun SnapshotId.times(other: Int): SnapshotId
 
 expect fun SnapshotId.toInt(): Int
 
+expect fun SnapshotId.toLong(): Long
+
+/**
+ * An array of [SnapshotId]. On most platforms this is an array of [Long] but may be a different
+ * type if the platform target does not support [Long] efficiently (such as JavaScript).
+ */
 expect class SnapshotIdArray
 
 internal expect fun snapshotIdArrayWithCapacity(capacity: Int): SnapshotIdArray

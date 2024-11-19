@@ -89,7 +89,7 @@ constructor(
     private val cameraCallbackMap: CameraCallbackMap,
     private val focusMeteringControl: FocusMeteringControl,
     private val cameraQuirks: CameraQuirks,
-    private val encoderProfilesProviderAdapter: EncoderProfilesProviderAdapter,
+    private val encoderProfilesProvider: EncoderProfilesProvider,
     private val streamConfigurationMapCompat: StreamConfigurationMapCompat,
     private val cameraFovInfo: CameraFovInfo,
 ) : CameraInfoInternal, UnsafeWrapper {
@@ -195,7 +195,7 @@ constructor(
         else CameraInfo.IMPLEMENTATION_TYPE_CAMERA2
 
     override fun getEncoderProfilesProvider(): EncoderProfilesProvider {
-        return encoderProfilesProviderAdapter
+        return encoderProfilesProvider
     }
 
     override fun getTimebase(): Timebase {

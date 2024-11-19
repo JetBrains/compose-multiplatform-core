@@ -42,6 +42,20 @@ public class OrNodeCtsTest {
     public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
 
     @Test
+    public void testEquals_identical() {
+        TextNode foo = new TextNode("foo");
+        TextNode bar = new TextNode("bar");
+        OrNode orNodeOne = new OrNode(List.of(foo, bar));
+
+        TextNode fooTwo = new TextNode("foo");
+        TextNode barTwo = new TextNode("bar");
+        OrNode orNodeTwo = new OrNode(List.of(fooTwo, barTwo));
+
+        assertThat(orNodeOne).isEqualTo(orNodeTwo);
+        assertThat(orNodeOne.hashCode()).isEqualTo(orNodeTwo.hashCode());
+    }
+
+    @Test
     public void testConstructor_buildsOrNode() {
         TextNode foo = new TextNode("foo");
         TextNode bar = new TextNode("bar");

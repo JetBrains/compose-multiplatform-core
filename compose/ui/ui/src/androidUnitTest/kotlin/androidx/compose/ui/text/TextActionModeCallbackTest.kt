@@ -33,9 +33,57 @@ import androidx.compose.ui.platform.actionmodecallback.TextActionModeCallback
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
+import org.mockito.kotlin.mock
 
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
 class TextActionModeCallbackTest {
+    @Test
+    @SdkSuppress(maxSdkVersion = 25)
+    fun onCreateActionMode_beforeApi26() {
+        val callback =
+            TextActionModeCallback(
+                onCopyRequested = {},
+                onPasteRequested = {},
+                onCutRequested = {},
+                onSelectAllRequested = {},
+                onAutofillRequested = {}
+            )
+        val menu = ItemTrackingFakeMenu()
+        callback.onCreateActionMode(mock(), menu)
+
+        // Before API 26, the last menu item should be "Select all."
+        val lastItem = menu.menuItems.last()
+        assertThat(lastItem.itemId).isEqualTo(MenuItemOption.SelectAll.id)
+        assertThat(lastItem.order).isEqualTo(MenuItemOption.SelectAll.id)
+        assertThat(lastItem.title).isEqualTo(MenuItemOption.SelectAll.titleResource.toString())
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 26)
+    @RequiresApi(26)
+    fun onCreateActionMode_afterApi26() {
+        // TODO(mnuzen): investigate why `NullDevice` has API level 0
+        if (Build.VERSION.SDK_INT == 0) {
+            return
+        }
+        val callback =
+            TextActionModeCallback(
+                onCopyRequested = {},
+                onPasteRequested = {},
+                onCutRequested = {},
+                onSelectAllRequested = {},
+                onAutofillRequested = {}
+            )
+        val menu = ItemTrackingFakeMenu()
+        callback.onCreateActionMode(mock(), menu)
+
+        // For API level 26 and on, the last menu item should be "Autofill."
+        val lastItem = menu.menuItems.last()
+        assertThat(lastItem.itemId).isEqualTo(MenuItemOption.Autofill.id)
+        assertThat(lastItem.order).isEqualTo(MenuItemOption.Autofill.id)
+        assertThat(lastItem.title).isEqualTo(MenuItemOption.Autofill.titleResource.toString())
+    }
+
     @Test
     fun addMenuItem_correctValues() {
         val callback = TextActionModeCallback(onCopyRequested = { /* copy */ })

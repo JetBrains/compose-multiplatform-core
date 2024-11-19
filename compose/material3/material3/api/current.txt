@@ -702,6 +702,11 @@ package androidx.compose.material3 {
     field public static final androidx.compose.material3.DefaultNavigationBarComponentOverride INSTANCE;
   }
 
+  @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public final class DefaultNavigationBarItemComponentOverride implements androidx.compose.material3.NavigationBarItemComponentOverride {
+    method @androidx.compose.runtime.Composable public void NavigationBarItem(androidx.compose.material3.NavigationBarItemComponentOverrideContext);
+    field public static final androidx.compose.material3.DefaultNavigationBarItemComponentOverride INSTANCE;
+  }
+
   @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public final class DefaultNavigationRailComponentOverride implements androidx.compose.material3.NavigationRailComponentOverride {
     method @androidx.compose.runtime.Composable public void NavigationRail(androidx.compose.material3.NavigationRailComponentOverrideContext);
     field public static final androidx.compose.material3.DefaultNavigationRailComponentOverride INSTANCE;
@@ -863,7 +868,7 @@ package androidx.compose.material3 {
     field public static final androidx.compose.material3.ExposedDropdownMenuDefaults INSTANCE;
   }
 
-  public final class ExposedDropdownMenu_androidKt {
+  public final class ExposedDropdownMenuKt {
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public static void ExposedDropdownMenuBox(boolean expanded, kotlin.jvm.functions.Function1<? super java.lang.Boolean,kotlin.Unit> onExpandedChange, optional androidx.compose.ui.Modifier modifier, kotlin.jvm.functions.Function1<? super androidx.compose.material3.ExposedDropdownMenuBoxScope,kotlin.Unit> content);
   }
 
@@ -1536,6 +1541,31 @@ package androidx.compose.material3 {
     property public final long unselectedTextColor;
   }
 
+  @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public interface NavigationBarItemComponentOverride {
+    method @androidx.compose.runtime.Composable public void NavigationBarItem(androidx.compose.material3.NavigationBarItemComponentOverrideContext);
+  }
+
+  @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public final class NavigationBarItemComponentOverrideContext implements androidx.compose.foundation.layout.RowScope {
+    method public androidx.compose.material3.NavigationBarItemColors getColors();
+    method public kotlin.jvm.functions.Function0<kotlin.Unit> getIcon();
+    method public androidx.compose.foundation.interaction.MutableInteractionSource? getInteractionSource();
+    method public kotlin.jvm.functions.Function0<kotlin.Unit>? getLabel();
+    method public androidx.compose.ui.Modifier getModifier();
+    method public kotlin.jvm.functions.Function0<kotlin.Unit> getOnClick();
+    method public boolean getShouldAlwaysShowLabel();
+    method public boolean isEnabled();
+    method public boolean isSelected();
+    property public final androidx.compose.material3.NavigationBarItemColors colors;
+    property public final kotlin.jvm.functions.Function0<kotlin.Unit> icon;
+    property public final androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource;
+    property public final boolean isEnabled;
+    property public final boolean isSelected;
+    property public final kotlin.jvm.functions.Function0<kotlin.Unit>? label;
+    property public final androidx.compose.ui.Modifier modifier;
+    property public final kotlin.jvm.functions.Function0<kotlin.Unit> onClick;
+    property public final boolean shouldAlwaysShowLabel;
+  }
+
   public final class NavigationBarItemDefaults {
     method @androidx.compose.runtime.Composable public androidx.compose.material3.NavigationBarItemColors colors();
     method @Deprecated @androidx.compose.runtime.Composable public androidx.compose.material3.NavigationBarItemColors colors(optional long selectedIconColor, optional long selectedTextColor, optional long indicatorColor, optional long unselectedIconColor, optional long unselectedTextColor);
@@ -1547,7 +1577,9 @@ package androidx.compose.material3 {
     method @androidx.compose.runtime.Composable public static void NavigationBar(optional androidx.compose.ui.Modifier modifier, optional long containerColor, optional long contentColor, optional float tonalElevation, optional androidx.compose.foundation.layout.WindowInsets windowInsets, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.RowScope,kotlin.Unit> content);
     method @androidx.compose.runtime.Composable public static void NavigationBarItem(androidx.compose.foundation.layout.RowScope, boolean selected, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, kotlin.jvm.functions.Function0<kotlin.Unit> icon, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional kotlin.jvm.functions.Function0<kotlin.Unit>? label, optional boolean alwaysShowLabel, optional androidx.compose.material3.NavigationBarItemColors colors, optional androidx.compose.foundation.interaction.MutableInteractionSource? interactionSource);
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.material3.NavigationBarComponentOverride> getLocalNavigationBarComponentOverride();
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.material3.NavigationBarItemComponentOverride> getLocalNavigationBarItemComponentOverride();
     property @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public static final androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.material3.NavigationBarComponentOverride> LocalNavigationBarComponentOverride;
+    property @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public static final androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.material3.NavigationBarItemComponentOverride> LocalNavigationBarItemComponentOverride;
   }
 
   @androidx.compose.runtime.Stable public interface NavigationDrawerItemColors {
@@ -3123,21 +3155,18 @@ package androidx.compose.material3 {
   @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public interface WideNavigationRailState {
     method public suspend Object? collapse(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? expand(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public boolean getCurrentValue();
+    method public boolean getTargetValue();
     method public boolean isAnimating();
-    method public boolean isExpanded();
-    method public suspend Object? snapTo(androidx.compose.material3.WideNavigationRailValue targetValue, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? snapTo(boolean targetValue, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? toggle(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    property public abstract boolean currentValue;
     property public abstract boolean isAnimating;
-    property public abstract boolean isExpanded;
+    property public abstract boolean targetValue;
   }
 
   public final class WideNavigationRailStateKt {
-    method @androidx.compose.runtime.Composable public static androidx.compose.material3.WideNavigationRailState rememberWideNavigationRailState(optional androidx.compose.material3.WideNavigationRailValue initialValue);
-  }
-
-  @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi public enum WideNavigationRailValue {
-    enum_constant public static final androidx.compose.material3.WideNavigationRailValue Collapsed;
-    enum_constant public static final androidx.compose.material3.WideNavigationRailValue Expanded;
+    method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3ExpressiveApi @androidx.compose.runtime.Composable public static androidx.compose.material3.WideNavigationRailState rememberWideNavigationRailState(optional boolean initialValue);
   }
 
 }

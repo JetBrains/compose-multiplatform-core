@@ -44,7 +44,7 @@ bannedJars = ["-x", "noto-emoji-compat-java.jar", "-x", "classes.jar"]
 # exclude them. Same for exclude-non-klib and .kt/.knm
 areNotZips = ["-x", r"**\.java", "-x", r"**\.json", "-x", r"**\.kt", "-x", r"**\.knm", "-x", r"**\.xml",
               "-x", r"**\.sha1", "-x", r"**\.sha256", "-x", r"**\.sha512", "-x", r"**\.md5",
-              "-x", r"**\.module", "-x", r"**\.pom"]
+              "-x", r"**\.module", "-x", r"**\.pom", "-x", r"**\.html"]
 # keeps making my regexes fall over :(
 hasNoExtension = ["-x", "manifest", "-x", "module"]
 doNotUnzip = bannedJars + areNotZips + hasNoExtension
@@ -305,7 +305,7 @@ findFilesNotMatchingWithDiffAndUnzip(r"**\.zip", r"**\.aar", r"**\.apk")
 # now find all diffs in classes.jars
 # TODO(375636734) Disabled because this tracks internal methods' diffs
 # classesJarsWithDiffs = popenAndReturn(["find", "../../out-old/dist/", "-name", "classes.jar"])
-logger.info("classes.jar s: " + str(classesJarsWithDiffs))
+# logger.info("classes.jar s: " + str(classesJarsWithDiffs))
 # compareWithDiffuse(classesJarsWithDiffs)
 
 # Now find all diffs in non-zipped files

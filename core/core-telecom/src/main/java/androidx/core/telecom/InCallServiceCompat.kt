@@ -32,6 +32,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ServiceLifecycleDispatcher
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /**
@@ -99,7 +101,9 @@ public open class InCallServiceCompat : InCallService(), LifecycleOwner, CallExt
     @ExperimentalAppActions
     override suspend fun connectExtensions(call: Call, init: CallExtensionScope.() -> Unit) {
         // Attach this to the scope of the InCallService so it does not outlive its lifecycle
-        lifecycleScope
+        // Use a supervisor job to ensure that any exceptions that are encountered here do not kill
+        // the lifecycleScope.
+        CoroutineScope(lifecycleScope.coroutineContext + SupervisorJob())
             .launch {
                 val scope = CallExtensionScopeImpl(applicationContext, this, call)
                 Log.v(TAG, "connectExtensions: calling init")

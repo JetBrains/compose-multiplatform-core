@@ -72,12 +72,22 @@ class BaselineProfileProjectSetupRule(
             rule = producerSetupRule,
             name = producerName,
             tempFolder = tempFolder,
-            consumer = consumer
+            consumer = consumer,
+            managedDeviceContainerName = managedDeviceContainerName,
         )
     }
 
     /** Represents a simple java library dependency module. */
     val dependency by lazy { DependencyModule(name = dependencyName) }
+
+    /** The managed device container name to use in the build.gradle file. */
+    val managedDeviceContainerName: String
+        get() =
+            if (forcedTestAgpVersion.isAtLeast(TestAgpVersion.TEST_AGP_VERSION_8_1_0)) {
+                "allDevices"
+            } else {
+                "devices"
+            }
 
     // Temp folder for temp generated files that need to be referenced by a module.
     private val tempFolder by lazy { File(rootFolder.root, "temp").apply { mkdirs() } }
@@ -371,6 +381,7 @@ class ProducerModule(
     override val name: String,
     private val tempFolder: File,
     private val consumer: Module,
+    private val managedDeviceContainerName: String,
 ) : Module {
 
     fun setupWithFreeAndPaidFlavors(
@@ -494,7 +505,7 @@ class ProducerModule(
             if (managedDevices.isEmpty()) ""
             else
                 """
-            testOptions.managedDevices.devices {
+            testOptions.managedDevices.$managedDeviceContainerName {
             ${
                     managedDevices.joinToString("\n") {
                         """

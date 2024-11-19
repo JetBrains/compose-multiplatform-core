@@ -21,7 +21,6 @@ import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.asMutableClassName
 import androidx.room.compiler.processing.ksp.KspProcessingEnv
 import androidx.room.compiler.processing.util.CONTINUATION_JCLASS_NAME
-import androidx.room.compiler.processing.util.KOTLINC_LANGUAGE_1_9_ARGS
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.UNIT_JCLASS_NAME
 import androidx.room.compiler.processing.util.XTestInvocation
@@ -63,8 +62,6 @@ class XExecutableTypeTest {
                             .trimIndent()
                     )
                 ),
-            // https://github.com/google/ksp/issues/1642
-            kotlincArguments = KOTLINC_LANGUAGE_1_9_ARGS
         ) { invocation ->
             fun checkConstructor(className: String) {
                 val typeElement = invocation.processingEnv.requireTypeElement(className)

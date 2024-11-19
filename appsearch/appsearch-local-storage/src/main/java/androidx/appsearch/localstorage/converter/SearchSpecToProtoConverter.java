@@ -25,8 +25,10 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.EmbeddingVector;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.FeatureConstants;
 import androidx.appsearch.app.JoinSpec;
 import androidx.appsearch.app.SearchResult;
@@ -43,6 +45,7 @@ import androidx.collection.ArraySet;
 import androidx.core.util.Preconditions;
 
 import com.google.android.icing.proto.JoinSpecProto;
+import com.google.android.icing.proto.NamespaceDocumentUriGroup;
 import com.google.android.icing.proto.PropertyWeight;
 import com.google.android.icing.proto.ResultSpecProto;
 import com.google.android.icing.proto.SchemaTypeConfigProto;
@@ -281,6 +284,7 @@ public final class SearchSpecToProtoConverter {
 
     /** Extracts {@link SearchSpecProto} information from a {@link SearchSpec}. */
     @NonNull
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public SearchSpecProto toSearchSpecProto() {
         // set query to SearchSpecProto and override schema and namespace filter by
         // targetPrefixedFilters which contains all existing and also accessible to the caller
@@ -317,6 +321,17 @@ public final class SearchSpecToProtoConverter {
                                 .build());
                     }
                 }
+            }
+        }
+
+        // Convert document id filters.
+        List<String> filterDocumentIds = mSearchSpec.getFilterDocumentIds();
+        if (!filterDocumentIds.isEmpty()) {
+            for (String targetPrefixedNamespaceFilter : mTargetPrefixedNamespaceFilters) {
+                protoBuilder.addDocumentUriFilters(NamespaceDocumentUriGroup.newBuilder()
+                        .setNamespace(targetPrefixedNamespaceFilter)
+                        .addAllDocumentUris(filterDocumentIds)
+                        .build());
             }
         }
 

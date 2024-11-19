@@ -118,7 +118,7 @@ class AndroidComposeViewScreenCoordinatesTest {
 
         rule.waitUntil {
             val coordinates = assertNotNull(view.coordinates)
-            coordinates.positionOnScreen() == view.locationOnScreen
+            coordinates.positionOnScreen() == view.locationOnScreen + Offset(30f, 40f)
         }
     }
 

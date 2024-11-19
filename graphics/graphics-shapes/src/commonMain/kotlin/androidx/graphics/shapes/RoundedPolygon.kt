@@ -29,8 +29,7 @@ import kotlin.math.sqrt
  * the vertices. Polygons can be constructed with either the number of vertices desired or an
  * ordered list of vertices.
  */
-class RoundedPolygon
-internal constructor(internal val features: List<Feature>, internal val center: Point) {
+class RoundedPolygon internal constructor(val features: List<Feature>, internal val center: Point) {
     val centerX
         get() = center.x
 

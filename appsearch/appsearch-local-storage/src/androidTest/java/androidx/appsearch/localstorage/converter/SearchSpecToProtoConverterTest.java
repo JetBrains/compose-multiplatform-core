@@ -25,6 +25,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import androidx.appsearch.app.JoinSpec;
 import androidx.appsearch.app.SearchSpec;
+import androidx.appsearch.localstorage.AppSearchConfig;
 import androidx.appsearch.localstorage.AppSearchConfigImpl;
 import androidx.appsearch.localstorage.AppSearchImpl;
 import androidx.appsearch.localstorage.IcingOptionsConfig;
@@ -38,6 +39,7 @@ import androidx.appsearch.localstorage.visibilitystore.VisibilityStore;
 import androidx.appsearch.testutil.AppSearchTestUtils;
 
 import com.google.android.icing.proto.JoinSpecProto;
+import com.google.android.icing.proto.NamespaceDocumentUriGroup;
 import com.google.android.icing.proto.PropertyWeight;
 import com.google.android.icing.proto.ResultSpecProto;
 import com.google.android.icing.proto.SchemaTypeConfigProto;
@@ -72,14 +74,16 @@ public class SearchSpecToProtoConverterTest {
 
     @Before
     public void setUp() throws Exception {
+        AppSearchConfig config = new AppSearchConfigImpl(
+                new UnlimitedLimitConfig(),
+                mLocalStorageIcingOptionsConfig
+        );
         mAppSearchImpl = AppSearchImpl.create(
                 mTemporaryFolder.newFolder(),
-                new AppSearchConfigImpl(
-                        new UnlimitedLimitConfig(),
-                        mLocalStorageIcingOptionsConfig
-                ),
+                config,
                 /*initStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
     }
 
@@ -1737,5 +1741,178 @@ public class SearchSpecToProtoConverterTest {
         ScoringSpecProto convertedScoringSpecProto = converter.toScoringSpecProto();
 
         assertThat(convertedScoringSpecProto.getTypePropertyWeightsList()).isEmpty();
+    }
+
+    @Test
+    public void testConvertDocumentIdFilters() throws Exception {
+        String prefix1 = PrefixUtil.createPrefix("package1", "database1");
+        String prefix2 = PrefixUtil.createPrefix("package2", "database2");
+        Map<String, Set<String>> namespaceMap = ImmutableMap.of(
+                prefix1, ImmutableSet.of(prefix1 + "namespace_common", prefix1 + "namespace1"),
+                prefix2, ImmutableSet.of(prefix2 + "namespace_common", prefix2 + "namespace2"));
+
+        SearchSpec searchSpec =
+                new SearchSpec.Builder()
+                        .addFilterDocumentIds(ImmutableList.of("uri1", "uri2"))
+                        .addFilterDocumentIds("uri3")
+                        .build();
+        SearchSpecToProtoConverter converter =
+                new SearchSpecToProtoConverter(
+                        /*queryExpression=*/ "query",
+                        searchSpec,
+                        /*prefixes=*/ ImmutableSet.of(prefix1, prefix2),
+                        namespaceMap,
+                        new SchemaCache(),
+                        mLocalStorageIcingOptionsConfig);
+        SearchSpecProto proto = converter.toSearchSpecProto();
+        assertThat(proto.getDocumentUriFiltersList()).containsExactly(
+                NamespaceDocumentUriGroup.newBuilder()
+                        .setNamespace("package1$database1/namespace_common")
+                        .addDocumentUris("uri1")
+                        .addDocumentUris("uri2")
+                        .addDocumentUris("uri3")
+                        .build(),
+                NamespaceDocumentUriGroup.newBuilder()
+                        .setNamespace("package1$database1/namespace1")
+                        .addDocumentUris("uri1")
+                        .addDocumentUris("uri2")
+                        .addDocumentUris("uri3")
+                        .build(),
+                NamespaceDocumentUriGroup.newBuilder()
+                        .setNamespace("package2$database2/namespace_common")
+                        .addDocumentUris("uri1")
+                        .addDocumentUris("uri2")
+                        .addDocumentUris("uri3")
+                        .build(),
+                NamespaceDocumentUriGroup.newBuilder()
+                        .setNamespace("package2$database2/namespace2")
+                        .addDocumentUris("uri1")
+                        .addDocumentUris("uri2")
+                        .addDocumentUris("uri3")
+                        .build());
+    }
+
+    @Test
+    public void testConvertDocumentIdFilters_withNamespaceFilters() throws Exception {
+        String prefix1 = PrefixUtil.createPrefix("package1", "database1");
+        String prefix2 = PrefixUtil.createPrefix("package2", "database2");
+        Map<String, Set<String>> namespaceMap = ImmutableMap.of(
+                prefix1, ImmutableSet.of(prefix1 + "namespace_common", prefix1 + "namespace1"),
+                prefix2, ImmutableSet.of(prefix2 + "namespace_common", prefix2 + "namespace2"));
+
+        SearchSpec searchSpec =
+                new SearchSpec.Builder()
+                        .addFilterDocumentIds(ImmutableList.of("uri1", "uri2"))
+                        .addFilterDocumentIds("uri3")
+                        .addFilterNamespaces("namespace1")
+                        .build();
+        SearchSpecToProtoConverter converter =
+                new SearchSpecToProtoConverter(
+                        /*queryExpression=*/ "query",
+                        searchSpec,
+                        /*prefixes=*/ ImmutableSet.of(prefix1, prefix2),
+                        namespaceMap,
+                        new SchemaCache(),
+                        mLocalStorageIcingOptionsConfig);
+        SearchSpecProto proto = converter.toSearchSpecProto();
+        assertThat(proto.getDocumentUriFiltersList()).containsExactly(
+                NamespaceDocumentUriGroup.newBuilder()
+                        .setNamespace("package1$database1/namespace1")
+                        .addDocumentUris("uri1")
+                        .addDocumentUris("uri2")
+                        .addDocumentUris("uri3")
+                        .build());
+    }
+
+    @Test
+    public void testConvertDocumentIdFilters_withPackageFilters() throws Exception {
+        String prefix1 = PrefixUtil.createPrefix("package1", "database1");
+        String prefix2 = PrefixUtil.createPrefix("package2", "database2");
+        Map<String, Set<String>> namespaceMap = ImmutableMap.of(
+                prefix1, ImmutableSet.of(prefix1 + "namespace_common", prefix1 + "namespace1"),
+                prefix2, ImmutableSet.of(prefix2 + "namespace_common", prefix2 + "namespace2"));
+
+        SearchSpec searchSpec =
+                new SearchSpec.Builder()
+                        .addFilterDocumentIds(ImmutableList.of("uri1", "uri2"))
+                        .addFilterDocumentIds("uri3")
+                        .addFilterPackageNames("package1")
+                        .build();
+        SearchSpecToProtoConverter converter =
+                new SearchSpecToProtoConverter(
+                        /*queryExpression=*/ "query",
+                        searchSpec,
+                        /*prefixes=*/ ImmutableSet.of(prefix1, prefix2),
+                        namespaceMap,
+                        new SchemaCache(),
+                        mLocalStorageIcingOptionsConfig);
+        SearchSpecProto proto = converter.toSearchSpecProto();
+        assertThat(proto.getDocumentUriFiltersList()).containsExactly(
+                NamespaceDocumentUriGroup.newBuilder()
+                        .setNamespace("package1$database1/namespace_common")
+                        .addDocumentUris("uri1")
+                        .addDocumentUris("uri2")
+                        .addDocumentUris("uri3")
+                        .build(),
+                NamespaceDocumentUriGroup.newBuilder()
+                        .setNamespace("package1$database1/namespace1")
+                        .addDocumentUris("uri1")
+                        .addDocumentUris("uri2")
+                        .addDocumentUris("uri3")
+                        .build());
+    }
+
+    @Test
+    public void testConvertDocumentIdFilters_withPackageAndNamespaceFilters() throws Exception {
+        String prefix1 = PrefixUtil.createPrefix("package1", "database1");
+        String prefix2 = PrefixUtil.createPrefix("package2", "database2");
+        Map<String, Set<String>> namespaceMap = ImmutableMap.of(
+                prefix1, ImmutableSet.of(prefix1 + "namespace_common", prefix1 + "namespace1"),
+                prefix2, ImmutableSet.of(prefix2 + "namespace_common", prefix2 + "namespace2"));
+
+        SearchSpec searchSpec =
+                new SearchSpec.Builder()
+                        .addFilterDocumentIds(ImmutableList.of("uri1", "uri2"))
+                        .addFilterDocumentIds("uri3")
+                        .addFilterPackageNames("package1")
+                        .addFilterNamespaces("namespace_common")
+                        .build();
+        SearchSpecToProtoConverter converter =
+                new SearchSpecToProtoConverter(
+                        /*queryExpression=*/ "query",
+                        searchSpec,
+                        /*prefixes=*/ ImmutableSet.of(prefix1, prefix2),
+                        namespaceMap,
+                        new SchemaCache(),
+                        mLocalStorageIcingOptionsConfig);
+        SearchSpecProto proto = converter.toSearchSpecProto();
+        assertThat(proto.getDocumentUriFiltersList()).containsExactly(
+                NamespaceDocumentUriGroup.newBuilder()
+                        .setNamespace("package1$database1/namespace_common")
+                        .addDocumentUris("uri1")
+                        .addDocumentUris("uri2")
+                        .addDocumentUris("uri3")
+                        .build());
+    }
+
+    @Test
+    public void testConvertDocumentIdFilters_empty() throws Exception {
+        String prefix1 = PrefixUtil.createPrefix("package1", "database1");
+        String prefix2 = PrefixUtil.createPrefix("package2", "database2");
+        Map<String, Set<String>> namespaceMap = ImmutableMap.of(
+                prefix1, ImmutableSet.of(prefix1 + "namespace_common", prefix1 + "namespace1"),
+                prefix2, ImmutableSet.of(prefix2 + "namespace_common", prefix2 + "namespace2"));
+
+        SearchSpec searchSpec = new SearchSpec.Builder().build();
+        SearchSpecToProtoConverter converter =
+                new SearchSpecToProtoConverter(
+                        /*queryExpression=*/ "query",
+                        searchSpec,
+                        /*prefixes=*/ ImmutableSet.of(prefix1, prefix2),
+                        namespaceMap,
+                        new SchemaCache(),
+                        mLocalStorageIcingOptionsConfig);
+        SearchSpecProto proto = converter.toSearchSpecProto();
+        assertThat(proto.getDocumentUriFiltersList()).isEmpty();
     }
 }

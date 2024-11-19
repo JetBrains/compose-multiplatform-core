@@ -16,13 +16,14 @@
 
 package androidx.wear.compose.material3.macrobenchmark.common
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.wear.compose.material3.macrobenchmark.common.baselineprofile.AnimatedTextScreen
 
+@RequiresApi(Build.VERSION_CODES.S)
 object AnimatedTextBenchmark : MacrobenchmarkScreen {
     override val content: @Composable BoxScope.() -> Unit
         get() = AnimatedTextScreen.content

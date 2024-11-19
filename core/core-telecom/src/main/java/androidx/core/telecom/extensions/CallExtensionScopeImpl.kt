@@ -314,7 +314,7 @@ internal class CallExtensionScopeImpl(
             }
             initializeExtensions(extensions)
             invokeDelegate()
-            waitForDestroy()
+            waitForDestroy(extensions)
         } finally {
             Log.i(TAG, "setupExtensionSession: scope closing, calling onRemoveExtensions")
             callScope.cancel()
@@ -477,22 +477,33 @@ internal class CallExtensionScopeImpl(
         awaitClose { call.unregisterCallback(callback) }
     }
 
-    /** Wait for the call to be destroyed. */
-    private suspend fun waitForDestroy() = suspendCancellableCoroutine { continuation ->
-        val callback =
-            object : Callback() {
-                override fun onCallDestroyed(targetCall: Call?) {
-                    if (targetCall == null || call != targetCall || continuation.isCompleted) return
-                    continuation.resume(Unit)
+    /** Wait for the call to be destroyed or the remote process to be killed. */
+    private suspend fun waitForDestroy(cer: CapabilityExchangeResult?) =
+        suspendCancellableCoroutine { continuation ->
+            val callback =
+                object : Callback() {
+                    override fun onCallDestroyed(targetCall: Call?) {
+                        if (targetCall == null || call != targetCall || continuation.isCompleted)
+                            return
+                        continuation.resume(Unit)
+                    }
                 }
+            cer?.extensionInitializationBinder
+                ?.asBinder()
+                ?.linkToDeath(
+                    {
+                        Log.w(TAG, "waitForDestroy: binderDied called, cleaning up")
+                        continuation.resume(Unit)
+                    },
+                    0 /* flags */
+                )
+            if (Api26Impl.getCallState(call) != Call.STATE_DISCONNECTED) {
+                call.registerCallback(callback, Handler(Looper.getMainLooper()))
+                continuation.invokeOnCancellation { call.unregisterCallback(callback) }
+            } else {
+                continuation.resume(Unit)
             }
-        if (Api26Impl.getCallState(call) != Call.STATE_DISCONNECTED) {
-            call.registerCallback(callback, Handler(Looper.getMainLooper()))
-            continuation.invokeOnCancellation { call.unregisterCallback(callback) }
-        } else {
-            continuation.resume(Unit)
         }
-    }
 }
 
 /** Ensure compatibility for [Call] APIs back to API level 26 */

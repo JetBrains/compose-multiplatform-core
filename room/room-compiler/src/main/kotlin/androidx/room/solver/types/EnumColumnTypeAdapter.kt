@@ -19,6 +19,7 @@ package androidx.room.solver.types
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
 import androidx.room.compiler.codegen.XFunSpec
+import androidx.room.compiler.codegen.buildCodeBlock
 import androidx.room.compiler.processing.XEnumTypeElement
 import androidx.room.compiler.processing.XNullability
 import androidx.room.compiler.processing.XType
@@ -105,53 +106,50 @@ class EnumColumnTypeAdapter(private val enumTypeElement: XEnumTypeElement, out: 
                     writer: TypeWriter,
                     builder: XFunSpec.Builder
                 ) {
-                    val body =
-                        XCodeBlock.builder(builder.language)
-                            .apply {
-                                when (writer.codeLanguage) {
-                                    // Use a switch control flow
-                                    CodeLanguage.JAVA -> {
-                                        beginControlFlow("switch (%L)", paramName)
-                                        enumTypeElement.entries
-                                            .map { it.name }
-                                            .forEach { enumConstantName ->
-                                                addStatement(
-                                                    "case %L: return %S",
-                                                    enumConstantName,
-                                                    enumConstantName
-                                                )
-                                            }
+                    val body = buildCodeBlock { language ->
+                        when (language) {
+                            // Use a switch control flow
+                            CodeLanguage.JAVA -> {
+                                beginControlFlow("switch (%L)", paramName)
+                                enumTypeElement.entries
+                                    .map { it.name }
+                                    .forEach { enumConstantName ->
                                         addStatement(
-                                            "default: throw new %T(%S + %L)",
-                                            ExceptionTypeNames.JAVA_ILLEGAL_ARG_EXCEPTION,
-                                            ENUM_TO_STRING_ERROR_MSG,
-                                            paramName
+                                            "case %L: return %S",
+                                            enumConstantName,
+                                            enumConstantName
                                         )
-                                        endControlFlow()
                                     }
-                                    // Use a when control flow, note that it is exhaustive and there
-                                    // is no need
-                                    // or an `else` case.
-                                    CodeLanguage.KOTLIN -> {
-                                        beginControlFlow("return when (%L)", paramName)
-                                        enumTypeElement.entries
-                                            .map { it.name }
-                                            .forEach { enumConstantName ->
-                                                addStatement(
-                                                    "%T.%L -> %S",
-                                                    enumTypeElement.asClassName(),
-                                                    enumConstantName,
-                                                    enumConstantName
-                                                )
-                                            }
-                                        endControlFlow()
-                                    }
-                                }
+                                addStatement(
+                                    "default: throw new %T(%S + %L)",
+                                    ExceptionTypeNames.JAVA_ILLEGAL_ARG_EXCEPTION,
+                                    ENUM_TO_STRING_ERROR_MSG,
+                                    paramName
+                                )
+                                endControlFlow()
                             }
-                            .build()
+                            // Use a when control flow, note that it is exhaustive and there
+                            // is no need
+                            // or an `else` case.
+                            CodeLanguage.KOTLIN -> {
+                                beginControlFlow("return when (%L)", paramName)
+                                enumTypeElement.entries
+                                    .map { it.name }
+                                    .forEach { enumConstantName ->
+                                        addStatement(
+                                            "%T.%L -> %S",
+                                            enumTypeElement.asClassName(),
+                                            enumConstantName,
+                                            enumConstantName
+                                        )
+                                    }
+                                endControlFlow()
+                            }
+                        }
+                    }
                     builder.apply {
                         returns(CommonTypeNames.STRING.copy(nullable = false))
-                        addParameter(enumTypeElement.asClassName(), paramName)
+                        addParameter(paramName, enumTypeElement.asClassName())
                         addCode(body)
                     }
                 }
@@ -173,58 +171,55 @@ class EnumColumnTypeAdapter(private val enumTypeElement: XEnumTypeElement, out: 
                     writer: TypeWriter,
                     builder: XFunSpec.Builder
                 ) {
-                    val body =
-                        XCodeBlock.builder(builder.language)
-                            .apply {
-                                when (writer.codeLanguage) {
-                                    // Use a switch control flow
-                                    CodeLanguage.JAVA -> {
-                                        beginControlFlow("switch (%L)", paramName)
-                                        enumTypeElement.entries
-                                            .map { it.name }
-                                            .forEach { enumConstantName ->
-                                                addStatement(
-                                                    "case %S: return %T.%L",
-                                                    enumConstantName,
-                                                    enumTypeElement.asClassName(),
-                                                    enumConstantName
-                                                )
-                                            }
+                    val body = buildCodeBlock { language ->
+                        when (language) {
+                            // Use a switch control flow
+                            CodeLanguage.JAVA -> {
+                                beginControlFlow("switch (%L)", paramName)
+                                enumTypeElement.entries
+                                    .map { it.name }
+                                    .forEach { enumConstantName ->
                                         addStatement(
-                                            "default: throw new %T(%S + %L)",
-                                            ExceptionTypeNames.JAVA_ILLEGAL_ARG_EXCEPTION,
-                                            STRING_TO_ENUM_ERROR_MSG,
-                                            paramName
+                                            "case %S: return %T.%L",
+                                            enumConstantName,
+                                            enumTypeElement.asClassName(),
+                                            enumConstantName
                                         )
-                                        endControlFlow()
                                     }
-                                    // Use a when control flow
-                                    CodeLanguage.KOTLIN -> {
-                                        beginControlFlow("return when (%L)", paramName)
-                                        enumTypeElement.entries
-                                            .map { it.name }
-                                            .forEach { enumConstantName ->
-                                                addStatement(
-                                                    "%S -> %T.%L",
-                                                    enumConstantName,
-                                                    enumTypeElement.asClassName(),
-                                                    enumConstantName
-                                                )
-                                            }
-                                        addStatement(
-                                            "else -> throw %T(%S + %L)",
-                                            ExceptionTypeNames.KOTLIN_ILLEGAL_ARG_EXCEPTION,
-                                            STRING_TO_ENUM_ERROR_MSG,
-                                            paramName
-                                        )
-                                        endControlFlow()
-                                    }
-                                }
+                                addStatement(
+                                    "default: throw new %T(%S + %L)",
+                                    ExceptionTypeNames.JAVA_ILLEGAL_ARG_EXCEPTION,
+                                    STRING_TO_ENUM_ERROR_MSG,
+                                    paramName
+                                )
+                                endControlFlow()
                             }
-                            .build()
+                            // Use a when control flow
+                            CodeLanguage.KOTLIN -> {
+                                beginControlFlow("return when (%L)", paramName)
+                                enumTypeElement.entries
+                                    .map { it.name }
+                                    .forEach { enumConstantName ->
+                                        addStatement(
+                                            "%S -> %T.%L",
+                                            enumConstantName,
+                                            enumTypeElement.asClassName(),
+                                            enumConstantName
+                                        )
+                                    }
+                                addStatement(
+                                    "else -> throw %T(%S + %L)",
+                                    ExceptionTypeNames.KOTLIN_ILLEGAL_ARG_EXCEPTION,
+                                    STRING_TO_ENUM_ERROR_MSG,
+                                    paramName
+                                )
+                                endControlFlow()
+                            }
+                        }
+                    }
                     builder.apply {
                         returns(enumTypeElement.asClassName())
-                        addParameter(CommonTypeNames.STRING.copy(nullable = false), paramName)
+                        addParameter(paramName, CommonTypeNames.STRING.copy(nullable = false))
                         addCode(body)
                     }
                 }

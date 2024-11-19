@@ -16,14 +16,11 @@
 
 package androidx.benchmark.macro.junit4
 
-import android.Manifest
 import androidx.annotation.RequiresApi
 import androidx.benchmark.Arguments
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.benchmark.macro.collect
-import androidx.test.rule.GrantPermissionRule
 import org.junit.Assume.assumeTrue
-import org.junit.rules.RuleChain
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
@@ -83,15 +80,7 @@ import org.junit.runners.model.Statement
 class BaselineProfileRule : TestRule {
     private lateinit var currentDescription: Description
 
-    override fun apply(base: Statement, description: Description): Statement {
-        return RuleChain.outerRule(
-                GrantPermissionRule.grant(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            )
-            .around(::applyInternal)
-            .apply(base, description)
-    }
-
-    private fun applyInternal(base: Statement, description: Description) =
+    override fun apply(base: Statement, description: Description): Statement =
         object : Statement() {
             override fun evaluate() {
                 assumeTrue(Arguments.RuleType.BaselineProfile in Arguments.enabledRules)

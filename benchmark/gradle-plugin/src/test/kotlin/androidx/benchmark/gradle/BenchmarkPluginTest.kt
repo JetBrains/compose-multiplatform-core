@@ -441,7 +441,7 @@ class BenchmarkPluginWithCurrentAgpTest {
                     ${projectSetup.allRepositoryPaths.joinToString("\n") { """ maven { url "$it" } """ }}
                 }
                 dependencies {
-                    classpath "com.android.tools.build:gradle:8.8.0-alpha06"
+                    classpath "${projectSetup.props.agpDependency}"
                     classpath "androidx.benchmark:androidx.benchmark.gradle.plugin:+"
                 }
             }

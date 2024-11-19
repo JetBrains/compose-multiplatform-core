@@ -21,7 +21,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,6 +37,7 @@ import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.SuccessConfirmation
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.samples.icons.FavoriteIcon
 
 @Sampled
 @Composable
@@ -57,11 +59,7 @@ fun ConfirmationSample() {
         onDismissRequest = { showConfirmation = false },
         curvedText = ConfirmationDefaults.curvedText("Confirmed")
     ) {
-        Icon(
-            imageVector = Icons.Filled.Add,
-            contentDescription = null,
-            modifier = Modifier.size(ConfirmationDefaults.IconSize),
-        )
+        FavoriteIcon(ConfirmationDefaults.IconSize)
     }
 }
 
@@ -86,7 +84,7 @@ fun LongTextConfirmationSample() {
         text = { Text(text = "Your message has been sent") },
     ) {
         Icon(
-            imageVector = Icons.Filled.Add,
+            imageVector = Icons.AutoMirrored.Filled.Send,
             contentDescription = null,
             modifier = Modifier.size(ConfirmationDefaults.SmallIconSize),
         )

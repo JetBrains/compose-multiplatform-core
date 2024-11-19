@@ -46,13 +46,7 @@ import androidx.wear.compose.material3.touchTargetAwareSize
 fun IconToggleButtonDemo() {
     ScalingLazyDemo {
         item { ListHeader { Text("Icon Toggle Button", textAlign = TextAlign.Center) } }
-        item {
-            Row {
-                IconToggleButtonSample() // Enabled & checked
-                Spacer(modifier = Modifier.width(5.dp))
-                IconToggleButtonsDemo(enabled = true, initialChecked = false)
-            }
-        }
+        item { IconToggleButtonSample() }
         item {
             Row {
                 IconToggleButtonsDemo(enabled = false, initialChecked = true)

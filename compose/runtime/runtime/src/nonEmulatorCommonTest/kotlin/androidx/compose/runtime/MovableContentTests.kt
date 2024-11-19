@@ -1542,7 +1542,211 @@ class MovableContentTests {
         condition = false
         expectChanges()
         revalidate()
+        verifyConsistent()
+
         condition = true
+        expectChanges()
+        println("Done")
+        revalidate()
+        verifyConsistent()
+    }
+
+    @Test // 362539770
+    fun movableContent_nestedMovableContent_direct() = compositionTest {
+        var data = 0
+
+        var condition by mutableStateOf(true)
+
+        val common = movableContentOf {
+            val state = remember { data++ }
+            Text("Generated state: $state")
+        }
+
+        val wrapper = movableContentOf {
+            Text("Wrapper start")
+            common()
+            Text("Wrapper end")
+        }
+
+        compose {
+            Text("Outer")
+            if (condition) {
+                wrapper()
+            } else {
+                common()
+            }
+        }
+
+        validate {
+            Text("Outer")
+            if (condition) {
+                Text("Wrapper start")
+            }
+            Text("Generated state: 0")
+            if (condition) {
+                Text("Wrapper end")
+            }
+        }
+
+        condition = false
+        expectChanges()
+        revalidate()
+
+        condition = true
+        expectChanges()
+        revalidate()
+    }
+
+    @Test // 362539770
+    @OptIn(ExperimentalComposeApi::class)
+    fun movableContent_nestedMovableContent_disabled() = compositionTest {
+        var data = 0
+
+        var condition by mutableStateOf(true)
+
+        val common = movableContentOf {
+            val state = remember { data++ }
+            Text("Generated state: $state")
+        }
+
+        val wrapper = movableContentOf {
+            Text("Wrapper start")
+            common()
+            Text("Wrapper end")
+        }
+
+        compose {
+            Text("Outer")
+            if (condition) {
+                wrapper()
+            } else {
+                common()
+            }
+        }
+
+        var expectedState = 0
+        validate {
+            Text("Outer")
+            if (condition) {
+                Text("Wrapper start")
+            }
+            Text("Generated state: $expectedState")
+            if (condition) {
+                Text("Wrapper end")
+            }
+        }
+
+        ComposeRuntimeFlags.isMovingNestedMovableContentEnabled = false
+        try {
+            // With moving nested content disabled the call to common() will generate new
+            // state when it moves out of the containing movable content.
+            expectedState = 1
+            condition = false
+            expectChanges()
+            revalidate()
+
+            condition = true
+            expectChanges()
+            revalidate()
+        } finally {
+            ComposeRuntimeFlags.isMovingNestedMovableContentEnabled = true
+        }
+    }
+
+    @Test
+    fun movableContent_nestedMovableContent_simpleMove() = compositionTest {
+        var data = 0
+
+        var condition by mutableStateOf(true)
+
+        val common = movableContentOf {
+            val state = remember { data++ }
+            Text("Generated state: $state")
+        }
+
+        val wrapper = movableContentOf {
+            Text("Wrapper start")
+            common()
+            Text("Wrapper end")
+        }
+
+        compose {
+            Text("Outer")
+            if (condition) {
+                Linear { wrapper() }
+            } else {
+                wrapper()
+            }
+        }
+
+        validate {
+            Text("Outer")
+            if (condition) {
+                Linear {
+                    Text("Wrapper start")
+                    Text("Generated state: 0")
+                    Text("Wrapper end")
+                }
+            } else {
+                Text("Wrapper start")
+                Text("Generated state: 0")
+                Text("Wrapper end")
+            }
+        }
+
+        condition = false
+        expectChanges()
+        revalidate()
+
+        condition = true
+        expectChanges()
+        revalidate()
+    }
+
+    @Test
+    fun movableContent_nestedMovableContent_tree() = compositionTest {
+        var data = 0
+
+        @Composable
+        fun Leaf() {
+            val value = remember { data++ }
+            Text("Data $value")
+        }
+
+        val level0 = Array(16) { movableContentOf { Leaf() } }
+        val level1 =
+            Array(8) { it ->
+                movableContentOf {
+                    level0[it * 2]()
+                    level0[it * 2 + 1]()
+                }
+            }
+        val level2 =
+            Array(4) {
+                movableContentOf {
+                    level1[it * 2]()
+                    level1[it * 2 + 1]()
+                }
+            }
+        val level3 =
+            Array(2) {
+                movableContentOf {
+                    level2[it * 2]()
+                    level2[it * 2 + 1]()
+                }
+            }
+
+        var displayTree by mutableStateOf(false)
+
+        compose { if (displayTree) level3.forEach { it() } else level0.forEach { it() } }
+
+        validate { repeat(16) { Text("Data $it") } }
+
+        displayTree = true
+        expectChanges()
+        revalidate()
+
+        displayTree = false
         expectChanges()
         revalidate()
     }

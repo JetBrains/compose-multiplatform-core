@@ -204,7 +204,10 @@ public open class NavController(
     private val lifecycleObserver: LifecycleObserver = LifecycleEventObserver { _, event ->
         hostLifecycleState = event.targetState
         if (_graph != null) {
-            for (entry in backQueue) {
+            // Operate on a copy of the queue to avoid issues with reentrant
+            // calls if updating the Lifecycle calls navigate() or popBackStack()
+            val backStack = backQueue.toMutableList()
+            for (entry in backStack) {
                 entry.handleLifecycleEvent(event)
             }
         }
@@ -1710,34 +1713,72 @@ public open class NavController(
             return currentBackStackEntry?.destination
         }
 
-    /** Recursively searches through parents */
+    /**
+     * Recursively searches through parents
+     *
+     * @param destinationId the [NavDestination.id]
+     * @param matchingDest an optional NavDestination that the node should match with. This is
+     *   because [destinationId] is only unique to a local graph. Nodes in sibling graphs can have
+     *   the same id.
+     */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun findDestination(@IdRes destinationId: Int): NavDestination? {
+    public fun findDestination(
+        @IdRes destinationId: Int,
+        matchingDest: NavDestination? = null,
+    ): NavDestination? {
         if (_graph == null) {
             return null
         }
+
         if (_graph!!.id == destinationId) {
-            return _graph
+            when {
+                /**
+                 * if the search expected a specific NavDestination (i.e. a duplicated destination
+                 * within a specific graph), we need to make sure the result matches it to ensure
+                 * this search returns the correct duplicate.
+                 */
+                matchingDest != null ->
+                    if (_graph == matchingDest && matchingDest.parent == null) return _graph
+                else -> return _graph
+            }
         }
+
         val currentNode = backQueue.lastOrNull()?.destination ?: _graph!!
-        return currentNode.findDestinationComprehensive(destinationId, false)
+        return currentNode.findDestinationComprehensive(destinationId, false, matchingDest)
     }
 
     /**
      * Recursively searches through parents. If [searchChildren] is true, also recursively searches
      * children.
+     *
+     * @param destinationId the [NavDestination.id]
+     * @param searchChildren recursively searches children when true
+     * @param matchingDest an optional NavDestination that the node should match with. This is
+     *   because [destinationId] is only unique to a local graph. Nodes in sibling graphs can have
+     *   the same id.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun NavDestination.findDestinationComprehensive(
         @IdRes destinationId: Int,
-        searchChildren: Boolean
+        searchChildren: Boolean,
+        matchingDest: NavDestination? = null,
     ): NavDestination? {
-
         if (id == destinationId) {
-            return this
+            when {
+                // check parent in case of duplicated destinations to ensure it finds the correct
+                // nested destination
+                matchingDest != null ->
+                    if (this == matchingDest && this.parent == matchingDest.parent) return this
+                else -> return this
+            }
         }
         val currentGraph = if (this is NavGraph) this else parent!!
-        return currentGraph.findNodeComprehensive(destinationId, currentGraph, searchChildren)
+        return currentGraph.findNodeComprehensive(
+            destinationId,
+            currentGraph,
+            searchChildren,
+            matchingDest
+        )
     }
 
     /** Recursively searches through parents */
@@ -2349,7 +2390,9 @@ public open class NavController(
         // equality to ensure that same destinations with a parent that is not this _graph
         // will also have their parents added to the hierarchy.
         destination = if (hierarchy.isEmpty()) newDest else hierarchy.first().destination
-        while (destination != null && findDestination(destination.id) !== destination) {
+        while (
+            destination != null && findDestination(destination.id, destination) !== destination
+        ) {
             val parent = destination.parent
             if (parent != null) {
                 val args = if (finalArgs?.isEmpty == true) null else finalArgs

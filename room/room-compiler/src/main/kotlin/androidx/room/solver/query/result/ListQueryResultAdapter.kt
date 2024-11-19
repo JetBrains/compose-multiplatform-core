@@ -18,6 +18,7 @@ package androidx.room.solver.query.result
 
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.processing.XType
 import androidx.room.ext.CommonTypeNames
 import androidx.room.ext.CommonTypeNames.ARRAY_LIST
@@ -27,37 +28,39 @@ import androidx.room.solver.CodeGenScope
 class ListQueryResultAdapter(private val typeArg: XType, private val rowAdapter: RowAdapter) :
     QueryResultAdapter(listOf(rowAdapter)) {
     override fun convert(outVarName: String, cursorVarName: String, scope: CodeGenScope) {
-        scope.builder.apply {
-            rowAdapter.onCursorReady(cursorVarName = cursorVarName, scope = scope)
-            val listTypeName = CommonTypeNames.MUTABLE_LIST.parametrizedBy(typeArg.asTypeName())
-            when (language) {
-                CodeLanguage.JAVA ->
-                    addLocalVariable(
-                        name = outVarName,
-                        typeName = listTypeName,
-                        assignExpr =
-                            XCodeBlock.ofNewInstance(
-                                language,
-                                ARRAY_LIST.parametrizedBy(typeArg.asTypeName())
-                            )
-                    )
-                CodeLanguage.KOTLIN ->
-                    addLocalVal(
-                        outVarName,
-                        listTypeName,
-                        "%M()",
-                        KotlinCollectionMemberNames.MUTABLE_LIST_OF
-                    )
+        rowAdapter.onCursorReady(cursorVarName = cursorVarName, scope = scope)
+        scope.builder
+            .applyTo { language ->
+                val listTypeName = CommonTypeNames.MUTABLE_LIST.parametrizedBy(typeArg.asTypeName())
+                when (language) {
+                    CodeLanguage.JAVA ->
+                        addLocalVariable(
+                            name = outVarName,
+                            typeName = listTypeName,
+                            assignExpr =
+                                XCodeBlock.ofNewInstance(
+                                    ARRAY_LIST.parametrizedBy(typeArg.asTypeName())
+                                )
+                        )
+                    CodeLanguage.KOTLIN ->
+                        addLocalVal(
+                            outVarName,
+                            listTypeName,
+                            "%M()",
+                            KotlinCollectionMemberNames.MUTABLE_LIST_OF
+                        )
+                }
             }
-            val tmpVarName = scope.getTmpVar("_item")
-            val stepName = if (scope.useDriverApi) "step" else "moveToNext"
-            beginControlFlow("while (%L.$stepName())", cursorVarName).apply {
-                addLocalVariable(name = tmpVarName, typeName = typeArg.asTypeName())
-                rowAdapter.convert(tmpVarName, cursorVarName, scope)
-                addStatement("%L.add(%L)", outVarName, tmpVarName)
+            .apply {
+                val tmpVarName = scope.getTmpVar("_item")
+                val stepName = if (scope.useDriverApi) "step" else "moveToNext"
+                beginControlFlow("while (%L.$stepName())", cursorVarName).apply {
+                    addLocalVariable(name = tmpVarName, typeName = typeArg.asTypeName())
+                    rowAdapter.convert(tmpVarName, cursorVarName, scope)
+                    addStatement("%L.add(%L)", outVarName, tmpVarName)
+                }
+                endControlFlow()
             }
-            endControlFlow()
-        }
     }
 
     override fun isMigratedToDriver(): Boolean = rowAdapter.isMigratedToDriver()

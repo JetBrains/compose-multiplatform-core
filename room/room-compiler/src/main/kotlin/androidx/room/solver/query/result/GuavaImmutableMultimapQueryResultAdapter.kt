@@ -83,8 +83,7 @@ class GuavaImmutableMultimapQueryResultAdapter(
                         keyTypeArg.asTypeName(),
                         valueTypeArg.asTypeName()
                     ),
-                assignExpr =
-                    XCodeBlock.of(language = language, format = "%T.builder()", immutableClassName)
+                assignExpr = XCodeBlock.of(format = "%T.builder()", immutableClassName)
             )
 
             val tmpKeyVarName = scope.getTmpVar("_key")
@@ -102,7 +101,6 @@ class GuavaImmutableMultimapQueryResultAdapter(
                         ?: valueRowAdapter.getDefaultIndexAdapter().getIndexVars()
                 val columnNullCheckCodeBlock =
                     getColumnNullCheckCode(
-                        language = language,
                         cursorVarName = cursorVarName,
                         indexVars = valueIndexVars
                     )
@@ -119,7 +117,7 @@ class GuavaImmutableMultimapQueryResultAdapter(
             addLocalVariable(
                 name = outVarName,
                 typeName = mapType,
-                assignExpr = XCodeBlock.of(language = language, format = "%L.build()", mapVarName)
+                assignExpr = XCodeBlock.of(format = "%L.build()", mapVarName)
             )
         }
     }

@@ -19,17 +19,19 @@ package androidx.room.compiler.codegen.kotlin
 import androidx.room.compiler.codegen.KAnnotationSpecBuilder
 import androidx.room.compiler.codegen.XAnnotationSpec
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.XSpec
+import androidx.room.compiler.codegen.impl.XCodeBlockImpl
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.javapoet.KAnnotationSpec
 
 internal class KotlinAnnotationSpec(internal val actual: KAnnotationSpec) :
-    KotlinLang(), XAnnotationSpec {
+    XSpec(), XAnnotationSpec {
 
     internal class Builder(internal val actual: KAnnotationSpecBuilder) :
-        KotlinLang(), XAnnotationSpec.Builder {
+        XSpec.Builder(), XAnnotationSpec.Builder {
         override fun addMember(name: String, code: XCodeBlock) = apply {
-            require(code is KotlinCodeBlock)
-            actual.addMember(CodeBlock.of("$name = %L", code.actual))
+            require(code is XCodeBlockImpl)
+            actual.addMember(CodeBlock.of("$name = %L", code.kotlin.actual))
         }
 
         override fun build() = KotlinAnnotationSpec(actual.build())

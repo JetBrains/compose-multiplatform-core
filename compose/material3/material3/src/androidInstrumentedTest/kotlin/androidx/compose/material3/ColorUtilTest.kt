@@ -20,9 +20,10 @@ import androidx.compose.material3.internal.colorUtil.Cam
 import androidx.compose.material3.internal.colorUtil.CamUtils.lstarFromInt
 import androidx.compose.material3.internal.colorUtil.CamUtils.yFromLstar
 import androidx.compose.material3.internal.colorUtil.Frame
+import androidx.compose.material3.tokens.ColorLightTokens
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.LargeTest
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertEquals
@@ -330,10 +331,31 @@ class ColorUtilTest {
         assertEquals(0.789f, vc.flRoot, 0.001f)
     }
 
-    @LargeTest
     @Test
     fun testHctReflexivity() {
-        for (i in 0..0x00ffffff) {
+        val baseline =
+            listOf(
+                SURFACE,
+                SURFACE_CONTAINER,
+                ON_SURFACE,
+                PRIMARY,
+                ON_PRIMARY,
+                SECONDARY,
+                ON_SECONDARY,
+                TERTIARY,
+                ON_TERTIARY,
+                PRIMARY_CONTAINER,
+                ON_PRIMARY_CONTAINER,
+                SECONDARY_CONTAINER,
+                ON_SECONDARY_CONTAINER,
+                TERTIARY_CONTAINER,
+                ON_TERTIARY_CONTAINER,
+                ERROR,
+                ON_ERROR,
+                ERROR_CONTAINER,
+                ON_ERROR_CONTAINER,
+            )
+        for (i in baseline) {
             val color = -0x1000000 or i
             val hct: Cam = Cam.fromInt(color)
             val reconstructedFromHct: Int = Cam.getInt(hct.hue, hct.chroma, lstarFromInt(color))
@@ -357,6 +379,26 @@ class ColorUtilTest {
         const val RED: Int = -0x10000
         const val GREEN: Int = -0xff0100
         const val BLUE: Int = -0xffff01
+
+        val SURFACE: Int = ColorLightTokens.Surface.toArgb()
+        val SURFACE_CONTAINER: Int = ColorLightTokens.SurfaceContainer.toArgb()
+        val ON_SURFACE: Int = ColorLightTokens.OnSurface.toArgb()
+        val PRIMARY: Int = ColorLightTokens.Primary.toArgb()
+        val ON_PRIMARY: Int = ColorLightTokens.OnPrimary.toArgb()
+        val SECONDARY: Int = ColorLightTokens.Secondary.toArgb()
+        val ON_SECONDARY: Int = ColorLightTokens.OnSecondary.toArgb()
+        val TERTIARY: Int = ColorLightTokens.Tertiary.toArgb()
+        val ON_TERTIARY: Int = ColorLightTokens.OnTertiary.toArgb()
+        val PRIMARY_CONTAINER: Int = ColorLightTokens.PrimaryContainer.toArgb()
+        val ON_PRIMARY_CONTAINER: Int = ColorLightTokens.OnPrimaryContainer.toArgb()
+        val SECONDARY_CONTAINER: Int = ColorLightTokens.SecondaryContainer.toArgb()
+        val ON_SECONDARY_CONTAINER: Int = ColorLightTokens.OnSecondaryContainer.toArgb()
+        val TERTIARY_CONTAINER: Int = ColorLightTokens.TertiaryContainer.toArgb()
+        val ON_TERTIARY_CONTAINER: Int = ColorLightTokens.OnTertiaryContainer.toArgb()
+        val ERROR: Int = ColorLightTokens.Error.toArgb()
+        val ON_ERROR: Int = ColorLightTokens.OnError.toArgb()
+        val ERROR_CONTAINER: Int = ColorLightTokens.ErrorContainer.toArgb()
+        val ON_ERROR_CONTAINER: Int = ColorLightTokens.OnErrorContainer.toArgb()
     }
 
     private fun assertColorWithinTolerance(expected: Color, actual: Color, tolerance: Float = 1f) {

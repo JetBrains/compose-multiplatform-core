@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -37,6 +38,7 @@ import androidx.mediarouter.media.MediaRouteProviderService.ClientInfo;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
+import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 import androidx.test.rule.ServiceTestRule;
 
@@ -192,8 +194,10 @@ public class MediaRouteProviderServiceTest {
 
     @LargeTest
     @Test
-    public void testSetEmptyPassiveDiscoveryRequest_shouldNotRequestScan() throws Exception {
-        sendDiscoveryRequest(mReceiveMessenger1,
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
+    public void setEmptyPassiveDiscoveryRequest_shouldNotScan() throws Exception {
+        sendDiscoveryRequest(
+                mReceiveMessenger1,
                 new MediaRouteDiscoveryRequest(MediaRouteSelector.EMPTY, false));
 
         Thread.sleep(TIME_OUT_MS);

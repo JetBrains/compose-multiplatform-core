@@ -40,16 +40,12 @@ fun ButtonGroupSample() {
         ButtonGroup(Modifier.fillMaxWidth()) {
             buttonGroupItem(interactionSource = interactionSourceLeft) {
                 Button(onClick = {}, interactionSource = interactionSourceLeft) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Left")
-                    }
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("L") }
                 }
             }
             buttonGroupItem(interactionSource = interactionSourceRight) {
                 Button(onClick = {}, interactionSource = interactionSourceRight) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Right")
-                    }
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("R") }
                 }
             }
         }

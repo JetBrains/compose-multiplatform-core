@@ -77,6 +77,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.ScaleFactor
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.approachLayout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onPlaced
@@ -116,6 +117,7 @@ import org.junit.runner.RunWith
 @LargeTest
 class SharedTransitionTest {
     val rule = createComposeRule()
+
     // Detect leaks BEFORE and AFTER compose rule work
     @get:Rule
     val ruleChain: RuleChain = RuleChain.outerRule(DetectLeaksAfterTestSuccess()).around(rule)
@@ -2861,6 +2863,38 @@ class SharedTransitionTest {
 
         // Transition into a Red box
         clickAndAssertColorDuringTransition(Color.Red)
+    }
+
+    @Test
+    fun foundMatchedElementButNeverMeasured() {
+        var target by mutableStateOf(true)
+        rule.setContent {
+            SharedTransitionLayout {
+                AnimatedContent(target) {
+                    SubcomposeLayout {
+                        subcompose(0) {
+                            Box(
+                                Modifier.sharedBounds(
+                                        rememberSharedContentState("test"),
+                                        animatedVisibilityScope = this@AnimatedContent
+                                    )
+                                    .size(200.dp)
+                                    .background(Color.Red)
+                            )
+                        }
+                        // Skip measure and return size
+                        layout(200, 200) {}
+                    }
+                    Box(Modifier.size(200.dp).background(Color.Black))
+                }
+            }
+        }
+
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+        target = !target
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
     }
 }
 

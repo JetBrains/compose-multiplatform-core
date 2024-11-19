@@ -18,6 +18,7 @@ package androidx.wear.compose.material3.macrobenchmark.common.baselineprofile
 
 import android.os.Build
 import android.os.SystemClock
+import androidx.annotation.RequiresApi
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.clickable
@@ -55,81 +56,77 @@ import androidx.wear.compose.material3.macrobenchmark.common.R
 import androidx.wear.compose.material3.rememberAnimatedTextFontRegistry
 import kotlinx.coroutines.launch
 
+@RequiresApi(Build.VERSION_CODES.S)
 val AnimatedTextScreen =
     object : MacrobenchmarkScreen {
         override val content: @Composable BoxScope.() -> Unit
             get() = {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                        val scope = rememberCoroutineScope()
-                        val animatable = remember { Animatable(0.5f) }
-                        val textStyle = remember {
-                            TextStyle.Default.copy(
-                                fontFamily = Font(R.font.robotoflex_variable).toFontFamily(),
-                                fontSize = 50.sp
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    val scope = rememberCoroutineScope()
+                    val animatable = remember { Animatable(0.5f) }
+                    val textStyle = remember {
+                        TextStyle.Default.copy(
+                            fontFamily = Font(R.font.robotoflex_variable).toFontFamily(),
+                            fontSize = 50.sp
+                        )
+                    }
+                    val fontRegistry =
+                        rememberAnimatedTextFontRegistry(
+                            startFontVariationSettings =
+                                FontVariation.Settings(
+                                    FontVariation.width(10f),
+                                    FontVariation.weight(100)
+                                ),
+                            endFontVariationSettings =
+                                FontVariation.Settings(
+                                    FontVariation.width(100f),
+                                    FontVariation.weight(900)
+                                ),
+                            textStyle = textStyle
+                        )
+
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        var textValue by remember { mutableIntStateOf(150) }
+                        Box(
+                            modifier =
+                                Modifier.weight(1f)
+                                    .semantics { contentDescription = MinusContentDescription }
+                                    .clickable {
+                                        textValue -= 1
+                                        scope.launch {
+                                            animatable.animateTo(0f)
+                                            animatable.animateTo(0.5f)
+                                        }
+                                    },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("-", fontSize = 30.sp, textAlign = TextAlign.Center)
+                        }
+                        Box(modifier = Modifier.weight(2f), contentAlignment = Alignment.Center) {
+                            AnimatedText(
+                                text = textValue.toString(),
+                                fontRegistry = fontRegistry,
+                                progressFraction = { animatable.value }
                             )
                         }
-                        val fontRegistry =
-                            rememberAnimatedTextFontRegistry(
-                                startFontVariationSettings =
-                                    FontVariation.Settings(
-                                        FontVariation.width(10f),
-                                        FontVariation.weight(100)
-                                    ),
-                                endFontVariationSettings =
-                                    FontVariation.Settings(
-                                        FontVariation.width(100f),
-                                        FontVariation.weight(900)
-                                    ),
-                                textStyle = textStyle
-                            )
-
-                        Row(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
+                        Box(
+                            modifier =
+                                Modifier.weight(1f)
+                                    .semantics { contentDescription = PlusContentDescription }
+                                    .clickable {
+                                        textValue += 1
+                                        scope.launch {
+                                            animatable.animateTo(1f)
+                                            animatable.animateTo(0.5f)
+                                        }
+                                    },
+                            contentAlignment = Alignment.Center
                         ) {
-                            var textValue by remember { mutableIntStateOf(150) }
-                            Box(
-                                modifier =
-                                    Modifier.weight(1f)
-                                        .semantics { contentDescription = MinusContentDescription }
-                                        .clickable {
-                                            textValue -= 1
-                                            scope.launch {
-                                                animatable.animateTo(0f)
-                                                animatable.animateTo(0.5f)
-                                            }
-                                        },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("-", fontSize = 30.sp, textAlign = TextAlign.Center)
-                            }
-                            Box(
-                                modifier = Modifier.weight(2f),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                AnimatedText(
-                                    text = textValue.toString(),
-                                    fontRegistry = fontRegistry,
-                                    progressFraction = { animatable.value }
-                                )
-                            }
-                            Box(
-                                modifier =
-                                    Modifier.weight(1f)
-                                        .semantics { contentDescription = PlusContentDescription }
-                                        .clickable {
-                                            textValue += 1
-                                            scope.launch {
-                                                animatable.animateTo(1f)
-                                                animatable.animateTo(0.5f)
-                                            }
-                                        },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("+", fontSize = 30.sp)
-                            }
+                            Text("+", fontSize = 30.sp)
                         }
                     }
                 }
@@ -137,16 +134,22 @@ val AnimatedTextScreen =
 
         override val exercise: MacrobenchmarkScope.() -> Unit
             get() = {
-                device.wait(
-                    Until.findObject(By.desc(MinusContentDescription)),
-                    FIND_OBJECT_TIMEOUT_MS
-                )
                 repeat(3) {
-                    device.findObject(By.desc(MinusContentDescription)).click()
+                    device
+                        .wait(
+                            Until.findObject(By.desc(MinusContentDescription)),
+                            FIND_OBJECT_TIMEOUT_MS
+                        )
+                        .click()
                     SystemClock.sleep(250L)
                 }
                 repeat(3) {
-                    device.findObject(By.desc(PlusContentDescription)).click()
+                    device
+                        .wait(
+                            Until.findObject(By.desc(PlusContentDescription)),
+                            FIND_OBJECT_TIMEOUT_MS
+                        )
+                        .click()
                     SystemClock.sleep(250L)
                 }
                 device.waitForIdle()

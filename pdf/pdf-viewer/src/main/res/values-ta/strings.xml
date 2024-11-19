@@ -50,6 +50,10 @@
     <string name="match_status_description" msgid="4996847358326345288">"<xliff:g id="POSITION">%1$d</xliff:g>/<xliff:g id="TOTAL">%2$d</xliff:g>"</string>
     <string name="message_no_match_status" msgid="5929387004361286433">"பொருந்தும் முடிவுகள் எதுவுமில்லை"</string>
     <string name="action_edit" msgid="5882082700509010966">"ஃபைலைத் திருத்து"</string>
+    <!-- no translation found for action_search (1044074359976464346) -->
+    <skip />
+    <!-- no translation found for scrollbar_description (5720892205323882483) -->
+    <skip />
     <string name="password_not_entered" msgid="8875370870743585303">"அன்லாக் செய்ய கடவுச்சொல்லை டைப் செய்யவும்"</string>
     <string name="retry_button_text" msgid="3443862378337999137">"மீண்டும் முயலுங்கள்"</string>
     <string name="pdf_error" msgid="3287950599604474450">"PDF ஆவணத்தைச் செயலாக்க முடியவில்லை!"</string>

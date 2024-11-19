@@ -184,10 +184,6 @@ final class SupportedSurfaceCombination {
             generate10BitSupportedCombinationList();
         }
 
-        if (isUltraHdrSupported()) {
-            generateUltraHdrSupportedCombinationList();
-        }
-
         mIsStreamUseCaseSupported = StreamUseCaseUtil.isStreamUseCaseSupported(mCharacteristics);
         if (mIsStreamUseCaseSupported) {
             generateStreamUseCaseSupportedCombinationList();
@@ -213,22 +209,6 @@ final class SupportedSurfaceCombination {
 
     boolean isBurstCaptureSupported() {
         return mIsBurstCaptureSupported;
-    }
-
-    private boolean isUltraHdrSupported() {
-        StreamConfigurationMapCompat mapCompat = mCharacteristics.getStreamConfigurationMapCompat();
-        int[] formats = mapCompat.getOutputFormats();
-        if (formats == null) {
-            return false;
-        }
-
-        for (int format : formats) {
-            if (format == ImageFormat.JPEG_R) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**
@@ -289,6 +269,10 @@ final class SupportedSurfaceCombination {
         List<SurfaceCombination> supportedSurfaceCombinations = new ArrayList<>();
 
         if (featureSettings.isUltraHdrOn()) {
+            // Creates Ultra Hdr list only when it is needed.
+            if (mSurfaceCombinationsUltraHdr.isEmpty()) {
+                generateUltraHdrSupportedCombinationList();
+            }
             // For Ultra HDR output, only the default camera mode is currently supported.
             if (featureSettings.getCameraMode() == CameraMode.DEFAULT) {
                 supportedSurfaceCombinations.addAll(mSurfaceCombinationsUltraHdr);
@@ -1260,16 +1244,22 @@ final class SupportedSurfaceCombination {
      */
     private Size getMaxOutputSizeByFormat(StreamConfigurationMap map, int imageFormat,
             boolean highResolutionIncluded) {
-        Size[] outputSizes;
-        if (imageFormat == ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE) {
-            // This is a little tricky that 0x22 that is internal defined in
-            // StreamConfigurationMap.java to be equal to ImageFormat.PRIVATE that is public
-            // after Android level 23 but not public in Android L. Use {@link SurfaceTexture}
-            // or {@link MediaCodec} will finally mapped to 0x22 in StreamConfigurationMap to
-            // retrieve the output sizes information.
-            outputSizes = map.getOutputSizes(SurfaceTexture.class);
-        } else {
-            outputSizes = map.getOutputSizes(imageFormat);
+        Size[] outputSizes = null;
+        try {
+            // b/378508360: try-catch to workaround the exception when using
+            // StreamConfigurationMap provided by Robolectric.
+            if (imageFormat == ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE) {
+                // This is a little tricky that 0x22 that is internal defined in
+                // StreamConfigurationMap.java to be equal to ImageFormat.PRIVATE that is public
+                // after Android level 23 but not public in Android L. Use {@link SurfaceTexture}
+                // or {@link MediaCodec} will finally mapped to 0x22 in StreamConfigurationMap to
+                // retrieve the output sizes information.
+                outputSizes = map.getOutputSizes(SurfaceTexture.class);
+            } else {
+                outputSizes = map.getOutputSizes(imageFormat);
+            }
+        } catch (Throwable t) {
+            // No-Op.
         }
 
         if (outputSizes == null || outputSizes.length == 0) {
@@ -1455,92 +1445,88 @@ final class SupportedSurfaceCombination {
      */
     @NonNull
     private Size getRecordSize() {
-        int cameraId;
-
         try {
-            cameraId = Integer.parseInt(mCameraId);
-        } catch (NumberFormatException e) {
-            // The camera Id is not an integer because the camera may be a removable device. Use
-            // StreamConfigurationMap to determine the RECORD size.
-            return getRecordSizeFromStreamConfigurationMap();
-        }
-
-        CamcorderProfile profile = null;
-
-        if (mCamcorderProfileHelper.hasProfile(cameraId, CamcorderProfile.QUALITY_HIGH)) {
-            profile = mCamcorderProfileHelper.get(cameraId, CamcorderProfile.QUALITY_HIGH);
-        }
-
-        if (profile != null) {
-            return new Size(profile.videoFrameWidth, profile.videoFrameHeight);
-        }
-
-        return getRecordSizeByHasProfile(cameraId);
-    }
-
-    /**
-     * Return the maximum supported video size for cameras using data from the stream
-     * configuration map.
-     *
-     * @return Maximum supported video size.
-     */
-    @NonNull
-    private Size getRecordSizeFromStreamConfigurationMap() {
-        // Determining the record size needs to retrieve the output size from the original stream
-        // configuration map without quirks applied.
-        StreamConfigurationMapCompat mapCompat = mCharacteristics.getStreamConfigurationMapCompat();
-        Size[] videoSizeArr = mapCompat.toStreamConfigurationMap().getOutputSizes(
-                MediaRecorder.class);
-
-        if (videoSizeArr == null) {
-            return RESOLUTION_480P;
-        }
-
-        Arrays.sort(videoSizeArr, new CompareSizesByArea(true));
-
-        for (Size size : videoSizeArr) {
-            // Returns the largest supported size under 1080P
-            if (size.getWidth() <= RESOLUTION_1080P.getWidth()
-                    && size.getHeight() <= RESOLUTION_1080P.getHeight()) {
-                return size;
+            int cameraId = Integer.parseInt(mCameraId);
+            Size recordSize = getRecordSizeFromCamcorderProfile(cameraId);
+            if (recordSize != null) {
+                return recordSize;
             }
+        } catch (NumberFormatException e) {
+            // The camera Id is not an integer. The camera may be a removable device.
+        }
+        // Use StreamConfigurationMap to determine the RECORD size.
+        Size recordSize = getRecordSizeFromStreamConfigurationMap();
+        if (recordSize != null) {
+            return recordSize;
         }
 
         return RESOLUTION_480P;
     }
 
     /**
-     * Return the maximum supported video size for cameras by
-     * {@link CamcorderProfile#hasProfile(int, int)}.
+     * Returns the maximum supported video size for cameras using data from the stream
+     * configuration map.
      *
-     * @return Maximum supported video size.
+     * @return Maximum supported video size or null if none are found.
      */
-    @NonNull
-    private Size getRecordSizeByHasProfile(int cameraId) {
-        Size recordSize = RESOLUTION_480P;
-        CamcorderProfile profile = null;
-
-        // Check whether 4KDCI, 2160P, 2K, 1080P, 720P, 480P (sorted by size) are supported by
-        // CamcorderProfile
-        if (mCamcorderProfileHelper.hasProfile(cameraId, CamcorderProfile.QUALITY_4KDCI)) {
-            profile = mCamcorderProfileHelper.get(cameraId, CamcorderProfile.QUALITY_4KDCI);
-        } else if (mCamcorderProfileHelper.hasProfile(cameraId, CamcorderProfile.QUALITY_2160P)) {
-            profile = mCamcorderProfileHelper.get(cameraId, CamcorderProfile.QUALITY_2160P);
-        } else if (mCamcorderProfileHelper.hasProfile(cameraId, CamcorderProfile.QUALITY_2K)) {
-            profile = mCamcorderProfileHelper.get(cameraId, CamcorderProfile.QUALITY_2K);
-        } else if (mCamcorderProfileHelper.hasProfile(cameraId, CamcorderProfile.QUALITY_1080P)) {
-            profile = mCamcorderProfileHelper.get(cameraId, CamcorderProfile.QUALITY_1080P);
-        } else if (mCamcorderProfileHelper.hasProfile(cameraId, CamcorderProfile.QUALITY_720P)) {
-            profile = mCamcorderProfileHelper.get(cameraId, CamcorderProfile.QUALITY_720P);
-        } else if (mCamcorderProfileHelper.hasProfile(cameraId, CamcorderProfile.QUALITY_480P)) {
-            profile = mCamcorderProfileHelper.get(cameraId, CamcorderProfile.QUALITY_480P);
+    @Nullable
+    private Size getRecordSizeFromStreamConfigurationMap() {
+        // Determining the record size needs to retrieve the output size from the original stream
+        // configuration map without quirks applied.
+        StreamConfigurationMapCompat mapCompat = mCharacteristics.getStreamConfigurationMapCompat();
+        Size[] videoSizeArr = null;
+        try {
+            // b/378508360: try-catch to workaround the exception when using
+            // StreamConfigurationMap provided by Robolectric.
+            videoSizeArr = mapCompat.toStreamConfigurationMap().getOutputSizes(MediaRecorder.class);
+        } catch (Throwable t) {
+            // No-Op
         }
 
-        if (profile != null) {
-            recordSize = new Size(profile.videoFrameWidth, profile.videoFrameHeight);
+        if (videoSizeArr == null) {
+            return null;
         }
 
-        return recordSize;
+        Arrays.sort(videoSizeArr, new CompareSizesByArea(true));
+
+        for (Size size : videoSizeArr) {
+            if (size.getWidth() <= RESOLUTION_1080P.getWidth()
+                    && size.getHeight() <= RESOLUTION_1080P.getHeight()) {
+                return size;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns the maximum supported video size for cameras by {@link CamcorderProfile}.
+     *
+     * @return Maximum supported video size or null if none are found.
+     */
+    @Nullable
+    private Size getRecordSizeFromCamcorderProfile(int cameraId) {
+        int[] qualities = {
+                CamcorderProfile.QUALITY_HIGH,
+                CamcorderProfile.QUALITY_8KUHD,
+                CamcorderProfile.QUALITY_4KDCI,
+                CamcorderProfile.QUALITY_2160P,
+                CamcorderProfile.QUALITY_2K,
+                CamcorderProfile.QUALITY_1080P,
+                CamcorderProfile.QUALITY_720P,
+                CamcorderProfile.QUALITY_480P
+        };
+
+        for (int quality : qualities) {
+            if (mCamcorderProfileHelper.hasProfile(cameraId, quality)) {
+                CamcorderProfile profile = mCamcorderProfileHelper.get(cameraId, quality);
+                if (profile != null) {
+                    return new Size(profile.videoFrameWidth, profile.videoFrameHeight);
+                }
+            }
+        }
+
+        return null;
     }
 
     @RequiresApi(23)

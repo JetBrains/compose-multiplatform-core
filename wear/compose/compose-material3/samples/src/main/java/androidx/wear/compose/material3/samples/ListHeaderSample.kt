@@ -17,31 +17,88 @@
 package androidx.wear.compose.material3.samples
 
 import androidx.annotation.Sampled
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Home
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ListSubHeader
+import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 
 @Sampled
 @Composable
 fun ListHeaderSample() {
-    ListHeader { Text("Header") }
-}
+    val scrollState = rememberScalingLazyListState()
+    val horizontalPadding = LocalConfiguration.current.screenWidthDp.dp * 0.052f
 
-@Sampled
-@Composable
-fun ListSubHeaderSample() {
-    ListSubHeader { Text("SubHeader") }
-}
-
-@Sampled
-@Composable
-fun ListSubHeaderWithIconSample() {
-    ListSubHeader(
-        label = { Text(text = "SubHeader") },
-        icon = { Icon(imageVector = Icons.Outlined.Home, "home") }
-    )
+    ScreenScaffold(scrollState = scrollState) {
+        ScalingLazyColumn(
+            state = scrollState,
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            contentPadding = PaddingValues(horizontal = horizontalPadding)
+        ) {
+            item { ListHeader { Text("Settings") } }
+            item {
+                ListSubHeader(
+                    icon = {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_connectivity),
+                            contentDescription = "Connectivity",
+                        )
+                    },
+                    label = { Text("Connectivity") }
+                )
+            }
+            item {
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {},
+                    icon = {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_bluetooth),
+                            contentDescription = "Bluetooth",
+                            modifier = Modifier.size(ButtonDefaults.IconSize)
+                        )
+                    },
+                ) {
+                    Text("Bluetooth")
+                }
+            }
+            item {
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {},
+                    icon = {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_wifi),
+                            contentDescription = "Wifi",
+                            modifier = Modifier.size(ButtonDefaults.IconSize)
+                        )
+                    },
+                ) {
+                    Text("Wifi")
+                }
+            }
+            item { ListSubHeader { Text("Display") } }
+            item {
+                Button(modifier = Modifier.fillMaxWidth(), onClick = {}) {
+                    Text("Change Watchface")
+                }
+            }
+            item { Button(modifier = Modifier.fillMaxWidth(), onClick = {}) { Text("Brightness") } }
+        }
+    }
 }

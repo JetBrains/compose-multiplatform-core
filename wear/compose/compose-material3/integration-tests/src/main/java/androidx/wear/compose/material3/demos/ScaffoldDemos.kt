@@ -16,18 +16,50 @@
 
 package androidx.wear.compose.material3.demos
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.pager.rememberPagerState
 import androidx.wear.compose.material3.AppScaffold
+import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.HorizontalPagerScaffold
 import androidx.wear.compose.material3.PagerScaffoldDefaults
+import androidx.wear.compose.material3.RadioButton
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.VerticalPagerScaffold
+
+@Composable
+fun RandomComponent(page: Int) {
+    when (page % 3) {
+        0 -> Button(onClick = {}) { Text("Button") }
+        1 ->
+            RadioButton(
+                label = {
+                    Text(
+                        "Radio Button",
+                    )
+                },
+                selected = true,
+                onSelect = {},
+                enabled = true,
+            )
+        2 ->
+            DefaultSlider(
+                value = 5f,
+                enabled = true,
+                valueRange = 1f..10f,
+                steps = 10,
+                onValueChange = {}
+            )
+    }
+}
 
 @Composable
 fun HorizontalPagerScaffoldFadeOutIndicatorDemo() {
@@ -39,8 +71,14 @@ fun HorizontalPagerScaffoldFadeOutIndicatorDemo() {
             pageIndicatorAnimationSpec = PagerScaffoldDefaults.FadeOutAnimation
         ) { page ->
             ScreenScaffold {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text("Page $page")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    RandomComponent(page)
                 }
             }
         }
@@ -57,8 +95,14 @@ fun VerticalPagerScaffoldFadeOutIndicatorDemo() {
             pageIndicatorAnimationSpec = PagerScaffoldDefaults.FadeOutAnimation
         ) { page ->
             ScreenScaffold {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text("Page $page")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    RandomComponent(page)
                 }
             }
         }

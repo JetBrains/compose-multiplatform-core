@@ -33,9 +33,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.camera.core.Logger;
 import androidx.camera.core.Preview;
+import androidx.camera.core.SurfaceRequest;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.os.HandlerCompat;
+import androidx.core.util.Consumer;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -87,6 +89,45 @@ public final class SurfaceTextureProvider {
     @NonNull
     public static Preview.SurfaceProvider createSurfaceTextureProvider(
             @NonNull SurfaceTextureCallback surfaceTextureCallback) {
+        return createSurfaceTextureProvider(surfaceTextureCallback, null);
+    }
+
+    /**
+     * Creates a {@link Preview.SurfaceProvider} that is backed by a {@link SurfaceTexture} with
+     * a {@link SurfaceRequest.Result} listener.
+     *
+     * <p>This is a convenience method for creating a {@link Preview.SurfaceProvider}
+     * whose {@link Surface} is backed by a {@link SurfaceTexture}. The returned
+     * {@link Preview.SurfaceProvider} is responsible for creating the
+     * {@link SurfaceTexture}. The {@link SurfaceTexture} may not be safe to use with
+     * {@link TextureView}
+     * Example:
+     *
+     * <pre><code>
+     * preview.setSurfaceProvider(createSurfaceTextureProvider(
+     *         new SurfaceTextureProvider.SurfaceTextureCallback() {
+     *             &#64;Override
+     *             public void onSurfaceTextureReady(@NonNull SurfaceTexture surfaceTexture) {
+     *                 // Use the SurfaceTexture
+     *             }
+     *
+     *             &#64;Override
+     *             public void onSafeToRelease(@NonNull SurfaceTexture surfaceTexture) {
+     *                 surfaceTexture.release();
+     *             }
+     *         }));
+     * </code></pre>
+     *
+     * @param surfaceTextureCallback callback called when the SurfaceTexture is ready to be
+     *                               set/released.
+     * @param resultListener listener to receive the {@link SurfaceRequest.Result}.
+     * @return a {@link Preview.SurfaceProvider} to be used with
+     * {@link Preview#setSurfaceProvider(Preview.SurfaceProvider)}.
+     */
+    @NonNull
+    public static Preview.SurfaceProvider createSurfaceTextureProvider(
+            @NonNull SurfaceTextureCallback surfaceTextureCallback,
+            @Nullable Consumer<SurfaceRequest.Result> resultListener) {
         return (surfaceRequest) -> {
             SurfaceTexture surfaceTexture = new SurfaceTexture(0);
             surfaceTexture.setDefaultBufferSize(surfaceRequest.getResolution().getWidth(),
@@ -97,9 +138,12 @@ public final class SurfaceTextureProvider {
             Surface surface = new Surface(surfaceTexture);
             surfaceRequest.provideSurface(surface,
                     CameraXExecutors.directExecutor(),
-                    (surfaceResponse) -> {
+                    (surfaceResponse) ->  {
                         surface.release();
                         surfaceTextureCallback.onSafeToRelease(surfaceTexture);
+                        if (resultListener != null) {
+                            resultListener.accept(surfaceResponse);
+                        }
                     });
         };
     }
@@ -139,37 +183,55 @@ public final class SurfaceTextureProvider {
     }
 
     /**
+     * Creates a {@link Preview.SurfaceProvider} that is backed by a {@link SurfaceTexture} with
+     * a given listener to monitor the frame available event.
+     *
+     * <p>This method also creates a backing OpenGL thread that will automatically drain frames
+     * from the SurfaceTexture as they become available.
+     */
+    @NonNull
+    public static Preview.SurfaceProvider createAutoDrainingSurfaceTextureProvider(
+            @Nullable SurfaceTexture.OnFrameAvailableListener frameAvailableListener) {
+        return createAutoDrainingSurfaceTextureProvider(frameAvailableListener, null, null);
+    }
+    /**
      * Creates a {@link Preview.SurfaceProvider} that is backed by a {@link SurfaceTexture}.
      *
      * <p>This method also creates a backing OpenGL thread that will automatically drain frames
      * from the SurfaceTexture as they become available.
      *
      * @param frameAvailableListener listener to be invoked when frame is updated.
+     * @param onSurfaceRequestAvailableListener listener to be invoked when the
+     *                                          surface request is triggered
+     * @param resultListener listener to be invoked for the surface provided.
      */
     @NonNull
     public static Preview.SurfaceProvider createAutoDrainingSurfaceTextureProvider(
-            @Nullable SurfaceTexture.OnFrameAvailableListener frameAvailableListener
+            @Nullable SurfaceTexture.OnFrameAvailableListener frameAvailableListener,
+            @Nullable Consumer<SurfaceRequest> onSurfaceRequestAvailableListener,
+            @Nullable Consumer<SurfaceRequest.Result> resultListener
     ) {
         return (surfaceRequest) -> {
-            HandlerThread handlerThread = new HandlerThread(String.format("CameraX"
-                    + "-AutoDrainThread-%x", surfaceRequest.hashCode()));
-            handlerThread.start();
-            Handler handler = HandlerCompat.createAsync(handlerThread.getLooper());
-            Executor glContextExecutor = CameraXExecutors.newHandlerExecutor(handler);
+            if (onSurfaceRequestAvailableListener != null) {
+                onSurfaceRequestAvailableListener.accept(surfaceRequest);
+            }
             ListenableFuture<SurfaceTextureHolder> surfaceTextureFuture =
-                    createAutoDrainingSurfaceTextureAsync(glContextExecutor,
-                            surfaceRequest.getResolution().getWidth(),
-                            surfaceRequest.getResolution().getHeight(), frameAvailableListener,
-                            handlerThread::quitSafely);
+                    createAutoDrainingSurfaceTextureAsync(surfaceRequest.getResolution().getWidth(),
+                            surfaceRequest.getResolution().getHeight(), frameAvailableListener);
 
             surfaceTextureFuture.addListener(() -> {
                 try {
                     SurfaceTextureHolder holder = surfaceTextureFuture.get();
-                    surfaceRequest.provideSurface(new Surface(holder.getSurfaceTexture()),
-                            glContextExecutor,
+                    Surface surface = new Surface(holder.getSurfaceTexture());
+                    surfaceRequest.provideSurface(surface,
+                            CameraXExecutors.directExecutor(),
                             (surfaceResponse) -> {
+                                if (resultListener != null) {
+                                    resultListener.accept(surfaceResponse);
+                                }
                                 try {
                                     holder.close();
+                                    surface.release();
                                 } catch (Exception e) {
                                     throw new AssertionError("SurfaceTextureHolder failed"
                                             + " to close", e);
@@ -181,7 +243,7 @@ public final class SurfaceTextureProvider {
                             + "texture",
                             e);
                 }
-            }, glContextExecutor);
+            }, CameraXExecutors.directExecutor());
         };
     }
 
@@ -189,21 +251,20 @@ public final class SurfaceTextureProvider {
      * Creates a {@link SurfaceTextureHolder} asynchronously that contains a {@link SurfaceTexture}
      * which will automatically drain frames as new frames arrive.
      *
-     * @param glExecutor             the executor where the GL codes will run.
      * @param width                  the width of the SurfaceTexture size
      * @param height                 the height of the SurfaceTexture size.
      * @param frameAvailableListener listener to be invoked when there are new frames.
-     * @param onClosed               runnable which will be called after all resources managed by
-     *                               the SurfaceTextureHolder have been released.
      */
     @NonNull
     public static ListenableFuture<SurfaceTextureHolder> createAutoDrainingSurfaceTextureAsync(
-            @NonNull Executor glExecutor,
             int width,
             int height,
-            @Nullable SurfaceTexture.OnFrameAvailableListener frameAvailableListener,
-            @Nullable Runnable onClosed) {
+            @Nullable SurfaceTexture.OnFrameAvailableListener frameAvailableListener) {
         return CallbackToFutureAdapter.getFuture((completer) -> {
+            HandlerThread handlerThread = new HandlerThread("CameraX-AutoDrainThread");
+            handlerThread.start();
+            Handler handler = HandlerCompat.createAsync(handlerThread.getLooper());
+            Executor glExecutor = CameraXExecutors.newHandlerExecutor(handler);
             glExecutor.execute(() -> {
                 Object lock = new Object();
                 AtomicBoolean surfaceTextureReleased = new AtomicBoolean(false);
@@ -240,9 +301,7 @@ public final class SurfaceTextureProvider {
                             surfaceTexture.release();
                             GLES20.glDeleteTextures(1, textureIds, 0);
                             terminateEGLContext(contextParams);
-                            if (onClosed != null) {
-                                onClosed.run();
-                            }
+                            handlerThread.quitSafely();
                         })));
             });
             return "createAutoDrainingSurfaceTexture";

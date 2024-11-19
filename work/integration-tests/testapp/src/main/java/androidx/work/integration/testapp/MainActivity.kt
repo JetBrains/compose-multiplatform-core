@@ -437,6 +437,7 @@ class MainActivity : AppCompatActivity() {
             )
         return OneTimeWorkRequest.Builder(RemoteWorker::class.java)
             .setInputData(data)
+            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .setConstraints(Constraints(requiredNetworkType = NetworkType.CONNECTED))
             .build()
     }

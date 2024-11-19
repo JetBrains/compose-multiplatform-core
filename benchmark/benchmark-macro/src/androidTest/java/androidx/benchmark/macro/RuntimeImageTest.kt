@@ -58,19 +58,19 @@ class RuntimeImageTest {
 
     @LargeTest
     @Test
-    fun classInitCount() {
+    fun classLoadCount() {
         assumeTrue("Test requires runtime image support", DeviceInfo.supportsRuntimeImages)
-        assumeTrue("Test requires class init tracing", DeviceInfo.supportsClassInitTracing)
+        assumeTrue("Test requires class load tracing", DeviceInfo.supportsClassLoadTracing)
 
-        val testName = RuntimeImageTest::classInitCount.name
+        val testName = RuntimeImageTest::classLoadCount.name
         val results = captureRecyclerViewListStartupMetrics(testName)
 
-        val classInitCount = results["artClassInitCount"]!!.runs
+        val classLoadCount = results["artClassLoadCount"]!!.runs
 
         // observed >700 in practice, lower threshold used to be resilient
         assertTrue(
-            classInitCount.all { it > 500 },
-            "too few class inits seen, observed: $classInitCount"
+            classLoadCount.all { it > 500 },
+            "too few class loads seen, observed: $classLoadCount"
         )
     }
 }

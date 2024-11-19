@@ -27,12 +27,11 @@ import androidx.room.solver.CodeGenScope
 class PreparedStatementWriter(val queryWriter: QueryWriter) {
     fun createAnonymous(typeWriter: TypeWriter, dbProperty: XPropertySpec): XTypeSpec {
         val scope = CodeGenScope(typeWriter)
-        return XTypeSpec.anonymousClassBuilder(scope.language, "%N", dbProperty)
+        return XTypeSpec.anonymousClassBuilder("%N", dbProperty)
             .apply {
                 superclass(RoomTypeNames.SHARED_SQLITE_STMT)
                 addFunction(
                     XFunSpec.builder(
-                            language = scope.language,
                             name = "createQuery",
                             visibility = VisibilityModifier.PUBLIC,
                             isOverride = true

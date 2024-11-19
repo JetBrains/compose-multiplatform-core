@@ -37,6 +37,7 @@ import androidx.core.telecom.CallControlScope
 import androidx.core.telecom.CallEndpointCompat
 import androidx.core.telecom.CallException
 import androidx.core.telecom.internal.utils.EndpointUtils
+import androidx.core.telecom.internal.utils.EndpointUtils.Companion.getMaskedMacAddress
 import androidx.core.telecom.internal.utils.EndpointUtils.Companion.getSpeakerEndpoint
 import androidx.core.telecom.internal.utils.EndpointUtils.Companion.isBluetoothAvailable
 import androidx.core.telecom.internal.utils.EndpointUtils.Companion.isEarpieceEndpoint
@@ -48,11 +49,13 @@ import androidx.core.telecom.internal.utils.Utils.Companion.isBuildAtLeastP
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 
 @RequiresApi(VERSION_CODES.O)
 internal class CallSessionLegacy(
@@ -81,6 +84,7 @@ internal class CallSessionLegacy(
     private var mLastClientRequestedEndpoint: CallEndpointCompat? = null
     private val mCallSessionLegacyId: Int = CallEndpointUuidTracker.startSession()
     private var mGlobalMuteStateReceiver: MuteStateReceiver? = null
+    private val mDialingOrRingingStateReached = CompletableDeferred<Unit>()
 
     init {
         if (isBuildAtLeastP()) {
@@ -111,6 +115,7 @@ internal class CallSessionLegacy(
         // TODO:: b/369153472 , remove delay and instead wait until onCallEndpointChanged
         //    provides the bluetooth endpoint before requesting the switch
         private const val DELAY_INITIAL_ENDPOINT_SWITCH: Long = 2000L
+        private const val WAIT_FOR_RINGING_OR_DIALING: Long = 5000L
         // CallStates. All these states mirror the values in the platform.
         const val STATE_INITIALIZING = 0
         const val STATE_NEW = 1
@@ -127,7 +132,10 @@ internal class CallSessionLegacy(
      * =========================================================================================
      */
     override fun onStateChanged(state: Int) {
-        Log.v(TAG, "onStateChanged: state=${platformCallStateToString(state)}")
+        Log.d(TAG, "onStateChanged: state=${platformCallStateToString(state)}")
+        if (state == STATE_DIALING || state == STATE_RINGING) {
+            mDialingOrRingingStateReached.complete(Unit)
+        }
     }
 
     private fun platformCallStateToString(state: Int): String {
@@ -357,15 +365,31 @@ internal class CallSessionLegacy(
 
     fun answer(videoState: Int): CallControlResult {
         setVideoState(videoState)
-        setActive()
-        moveState(CallStateEvent.ACTIVE)
+        setConnectionActive()
         return CallControlResult.Success()
     }
 
     fun setConnectionActive(): CallControlResult {
         setActive()
-        moveState(CallStateEvent.ACTIVE)
-        return CallControlResult.Success()
+        var caughtTimeout = false
+        CoroutineScope(coroutineContext).launch {
+            try {
+                withTimeout(WAIT_FOR_RINGING_OR_DIALING) {
+                    Log.i(TAG, "setConnectionActive: mDialingOrRingingStateReached BEFORE")
+                    mDialingOrRingingStateReached.await()
+                    Log.i(TAG, "setConnectionActive: mDialingOrRingingStateReached AFTER")
+                }
+                setActive()
+                moveState(CallStateEvent.ACTIVE)
+            } catch (timeout: TimeoutCancellationException) {
+                caughtTimeout = true
+            }
+        }
+        return if (caughtTimeout) {
+            CallControlResult.Error(CallException.ERROR_UNKNOWN)
+        } else {
+            CallControlResult.Success()
+        }
     }
 
     fun setConnectionInactive(): CallControlResult {
@@ -416,7 +440,8 @@ internal class CallSessionLegacy(
 
     @Suppress("deprecation")
     @RequiresApi(VERSION_CODES.P)
-    private object Api28PlusImpl {
+    @VisibleForTesting
+    internal object Api28PlusImpl {
         @JvmStatic
         fun setAudio(
             callEndpoint: CallEndpointCompat,
@@ -451,18 +476,39 @@ internal class CallSessionLegacy(
             endpoint: CallEndpointCompat
         ): BluetoothDevice? {
             for (btDevice in btCacheList) {
-                if (bluetoothDeviceMatchesEndpoint(btDevice, endpoint)) {
+                var btName = ""
+                try {
+                    btName = btDevice.name
+                } catch (se: SecurityException) {
+                    // fall through
+                }
+                if (bluetoothDeviceMatchesEndpoint(btName, btDevice.address, endpoint)) {
                     return btDevice
                 }
             }
             return null
         }
 
-        fun bluetoothDeviceMatchesEndpoint(
-            btDevice: BluetoothDevice,
+        @VisibleForTesting
+        internal fun bluetoothDeviceMatchesEndpoint(
+            btName: String?,
+            btAddress: String?,
             endpoint: CallEndpointCompat
         ): Boolean {
-            return (btDevice.address?.equals(endpoint.mMackAddress) ?: false)
+            Log.i(
+                "bDME",
+                "{btName=[$btName], btAddress=${getMaskedMacAddress(btAddress)}}," +
+                    "{eName=[${endpoint.name}], eAddress=${getMaskedMacAddress(endpoint.mMackAddress)}}"
+            )
+            // If both endpoints have a populated mac address, we should match on that
+            return if (
+                endpoint.mMackAddress != CallEndpointCompat.UNKNOWN_MAC_ADDRESS && btAddress != null
+            ) {
+                endpoint.mMackAddress == btAddress
+            } else {
+                // otherwise, match on the bluetooth name
+                endpoint.name == btName
+            }
         }
     }
 
@@ -477,9 +523,8 @@ internal class CallSessionLegacy(
             // state as it does in the platform. This behavior is intentional for this path.
             try {
                 onAnswerCallback(videoState)
-                setActive()
+                setConnectionActive()
                 setVideoState(videoState)
-                moveState(CallStateEvent.ACTIVE)
             } catch (e: Exception) {
                 handleCallbackFailure(e)
             }

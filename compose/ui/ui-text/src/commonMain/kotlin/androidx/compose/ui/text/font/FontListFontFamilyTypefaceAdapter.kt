@@ -197,9 +197,9 @@ private fun List<Font>.firstImmediatelyAvailable(
                         try {
                             platformFontLoader.loadBlocking(font)
                         } catch (cause: Exception) {
-                            throw IllegalStateException("Unable to load font $font", cause)
+                            createDefaultTypeface(typefaceRequest)
                         }
-                    } ?: throw IllegalStateException("Unable to load font $font")
+                    } ?: createDefaultTypeface(typefaceRequest)
                 return asyncFontsToLoad to
                     typefaceRequest.fontSynthesis.synthesizeTypeface(
                         result,

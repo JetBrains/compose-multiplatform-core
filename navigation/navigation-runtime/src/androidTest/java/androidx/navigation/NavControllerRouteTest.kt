@@ -1076,6 +1076,32 @@ class NavControllerRouteTest {
 
     @UiThreadTest
     @Test
+    fun testNavigateNestedDuplicateDestination() {
+        val navController = createNavController()
+        navController.graph =
+            navController.createGraph(route = "root", startDestination = "start") {
+                test("start")
+                navigation(route = "second", startDestination = "duplicate") { test("duplicate") }
+                navigation(route = "duplicate", startDestination = "third") { test("third") }
+            }
+        assertThat(navController.currentDestination?.route).isEqualTo("start")
+
+        navController.navigate("second")
+        assertThat(navController.currentBackStack.value.map { it.destination.route })
+            .containsExactly("root", "start", "second", "duplicate")
+
+        navController.navigate("third")
+        assertThat(navController.currentBackStack.value.map { it.destination.route })
+            .containsExactly("root", "start", "second", "duplicate", "duplicate", "third")
+        val duplicateNode =
+            navController.currentBackStack.value
+                .last { it.destination.route == "duplicate" }
+                .destination
+        assertThat(duplicateNode.parent?.route).isEqualTo("root")
+    }
+
+    @UiThreadTest
+    @Test
     fun testNavigateWithObject() {
         val navController = createNavController()
         navController.graph =

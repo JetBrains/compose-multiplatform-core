@@ -18,7 +18,9 @@ package androidx.room.solver.query.result
 
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.codegen.XTypeName
+import androidx.room.compiler.codegen.buildCodeBlock
 import androidx.room.compiler.processing.XNullability
 import androidx.room.compiler.processing.XType
 import androidx.room.ext.CommonTypeNames
@@ -55,7 +57,7 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
     abstract fun getDeclarationTypeName(): XTypeName
 
     /** Right-Hand-Side of a Map value type arg initialization. */
-    abstract fun getInstantiationCodeBlock(language: CodeLanguage): XCodeBlock
+    abstract fun getInstantiationCodeBlock(): XCodeBlock
 
     abstract fun isMigratedToDriver(): Boolean
 
@@ -64,7 +66,7 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
         valuesVarName: String,
         cursorVarName: String,
         dupeColumnsIndexAdapter: AmbiguousColumnIndexAdapter?,
-        genPutValueCode: (String, Boolean) -> Unit = { _, _ -> }
+        addPutValueCode: XCodeBlock.Builder.(String, Boolean) -> Unit = { _, _ -> }
     )
 
     abstract fun generateContinueColumnCheck(
@@ -111,24 +113,26 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
                     )
             }
 
-        override fun getInstantiationCodeBlock(language: CodeLanguage): XCodeBlock =
+        override fun getInstantiationCodeBlock(): XCodeBlock =
             when (val typeOfMap = this.mapType) {
                 MultimapQueryResultAdapter.MapType.DEFAULT ->
                     // LinkedHashMap is used as impl to preserve key ordering for ordered
                     // query results.
-                    XCodeBlock.ofNewInstance(
-                        language,
-                        when (language) {
-                            CodeLanguage.JAVA -> CommonTypeNames.LINKED_HASH_MAP
-                            CodeLanguage.KOTLIN -> KotlinTypeNames.LINKED_HASH_MAP
-                        }.parametrizedBy(
-                            keyTypeName,
-                            mapValueResultAdapter.getDeclarationTypeName()
+                    buildCodeBlock { language ->
+                        add(
+                            XCodeBlock.ofNewInstance(
+                                when (language) {
+                                    CodeLanguage.JAVA -> CommonTypeNames.LINKED_HASH_MAP
+                                    CodeLanguage.KOTLIN -> KotlinTypeNames.LINKED_HASH_MAP
+                                }.parametrizedBy(
+                                    keyTypeName,
+                                    mapValueResultAdapter.getDeclarationTypeName()
+                                )
+                            )
                         )
-                    )
+                    }
                 MultimapQueryResultAdapter.MapType.ARRAY_MAP ->
                     XCodeBlock.ofNewInstance(
-                        language,
                         typeOfMap.className.parametrizedBy(
                             keyTypeName,
                             mapValueResultAdapter.getDeclarationTypeName()
@@ -137,7 +141,6 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
                 MultimapQueryResultAdapter.MapType.LONG_SPARSE,
                 MultimapQueryResultAdapter.MapType.INT_SPARSE ->
                     XCodeBlock.ofNewInstance(
-                        language,
                         typeOfMap.className.parametrizedBy(
                             mapValueResultAdapter.getDeclarationTypeName()
                         )
@@ -151,7 +154,7 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
             valuesVarName: String,
             cursorVarName: String,
             dupeColumnsIndexAdapter: AmbiguousColumnIndexAdapter?,
-            genPutValueCode: (String, Boolean) -> Unit
+            addPutValueCode: XCodeBlock.Builder.(String, Boolean) -> Unit
         ) {
             scope.builder.apply {
                 // Read map key
@@ -182,7 +185,7 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
                                         tmpKeyVarName
                                     )
                                 }
-                                .apply {
+                                .applyTo { language ->
                                     val getFunction =
                                         when (language) {
                                             CodeLanguage.JAVA -> "get"
@@ -202,7 +205,7 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
                                     addStatement(
                                         "%L = %L",
                                         tmpValuesVarName,
-                                        mapValueResultAdapter.getInstantiationCodeBlock(language)
+                                        mapValueResultAdapter.getInstantiationCodeBlock()
                                     )
                                     addStatement(
                                         "%L.put(%L, %L)",
@@ -225,48 +228,49 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
                         valuesVarName
                     }
                 @Suppress("NAME_SHADOWING") // On purpose, to avoid using param
-                val genPutValueCode: (String, Boolean) -> Unit = { tmpValueVarName, doKeyCheck ->
-                    if (doKeyCheck) {
-                        // For consistency purposes, in the one-to-one object mapping case, if
-                        // multiple values are encountered for the same key, we will only
-                        // consider the first ever encountered mapping.
-                        if (mapType.isSparseArray()) {
-                                beginControlFlow(
-                                    "if (%L.get(%L) == null)",
-                                    valuesVarName,
-                                    tmpKeyVarName
-                                )
-                            } else {
-                                beginControlFlow(
-                                    "if (!%L.containsKey(%L))",
-                                    valuesVarName,
-                                    tmpKeyVarName
-                                )
-                            }
-                            .apply {
-                                addStatement(
-                                    "%L.put(%L, %L)",
-                                    valuesVarName,
-                                    tmpKeyVarName,
-                                    tmpValueVarName
-                                )
-                            }
-                            .endControlFlow()
-                    } else {
-                        addStatement(
-                            "%L.put(%L, %L)",
-                            valuesVarName,
-                            tmpKeyVarName,
-                            tmpValueVarName
-                        )
+                val addPutValueCode: XCodeBlock.Builder.(String, Boolean) -> Unit =
+                    { tmpValueVarName, doKeyCheck ->
+                        if (doKeyCheck) {
+                            // For consistency purposes, in the one-to-one object mapping case, if
+                            // multiple values are encountered for the same key, we will only
+                            // consider the first ever encountered mapping.
+                            if (mapType.isSparseArray()) {
+                                    beginControlFlow(
+                                        "if (%L.get(%L) == null)",
+                                        valuesVarName,
+                                        tmpKeyVarName
+                                    )
+                                } else {
+                                    beginControlFlow(
+                                        "if (!%L.containsKey(%L))",
+                                        valuesVarName,
+                                        tmpKeyVarName
+                                    )
+                                }
+                                .apply {
+                                    addStatement(
+                                        "%L.put(%L, %L)",
+                                        valuesVarName,
+                                        tmpKeyVarName,
+                                        tmpValueVarName
+                                    )
+                                }
+                                .endControlFlow()
+                        } else {
+                            addStatement(
+                                "%L.put(%L, %L)",
+                                valuesVarName,
+                                tmpKeyVarName,
+                                tmpValueVarName
+                            )
+                        }
                     }
-                }
                 mapValueResultAdapter.convert(
                     scope = scope,
                     valuesVarName = valuesVarName,
                     cursorVarName = cursorVarName,
                     dupeColumnsIndexAdapter = dupeColumnsIndexAdapter,
-                    genPutValueCode = genPutValueCode
+                    addPutValueCode = addPutValueCode
                 )
             }
         }
@@ -278,7 +282,6 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
         ) {
             scope.builder.add(
                 getContinueColumnNullCheck(
-                    language = scope.language,
                     cursorVarName = cursorVarName,
                     rowAdapter = keyRowAdapter,
                     dupeColumnsIndexAdapter = dupeColumnsIndexAdapter
@@ -312,37 +315,30 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
         // The type name of the result map value
         // For Map<Foo, Bar> it is Bar
         // for Map<Foo, List<Bar> it is List<Bar>
-        override fun getInstantiationCodeBlock(language: CodeLanguage): XCodeBlock {
+        override fun getInstantiationCodeBlock(): XCodeBlock {
             return when (valueCollectionType) {
                 MultimapQueryResultAdapter.CollectionValueType.LIST ->
-                    when (language) {
-                        CodeLanguage.JAVA ->
-                            XCodeBlock.ofNewInstance(
-                                language,
-                                ARRAY_LIST.parametrizedBy(valueTypeArg.asTypeName())
-                            )
-                        CodeLanguage.KOTLIN ->
-                            XCodeBlock.of(
-                                language,
-                                "%M()",
-                                KotlinCollectionMemberNames.MUTABLE_LIST_OF
-                            )
+                    buildCodeBlock { language ->
+                        when (language) {
+                            CodeLanguage.JAVA ->
+                                add(
+                                    "new %T()",
+                                    ARRAY_LIST.parametrizedBy(valueTypeArg.asTypeName())
+                                )
+                            CodeLanguage.KOTLIN ->
+                                add("%M()", KotlinCollectionMemberNames.MUTABLE_LIST_OF)
+                        }
                     }
                 MultimapQueryResultAdapter.CollectionValueType.SET ->
-                    when (language) {
-                        CodeLanguage.JAVA ->
-                            XCodeBlock.ofNewInstance(
-                                language,
-                                HASH_SET.parametrizedBy(valueTypeArg.asTypeName())
-                            )
-                        CodeLanguage.KOTLIN ->
-                            XCodeBlock.of(
-                                language,
-                                "%M()",
-                                KotlinCollectionMemberNames.MUTABLE_SET_OF
-                            )
+                    buildCodeBlock { language ->
+                        when (language) {
+                            CodeLanguage.JAVA ->
+                                add("new %T()", HASH_SET.parametrizedBy(valueTypeArg.asTypeName()))
+                            CodeLanguage.KOTLIN ->
+                                add("%M()", KotlinCollectionMemberNames.MUTABLE_SET_OF)
+                        }
                     }
-                else -> XCodeBlock.ofNewInstance(language, valueTypeArg.asTypeName())
+                else -> XCodeBlock.ofNewInstance(valueTypeArg.asTypeName())
             }
         }
 
@@ -353,7 +349,7 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
             valuesVarName: String,
             cursorVarName: String,
             dupeColumnsIndexAdapter: AmbiguousColumnIndexAdapter?,
-            genPutValueCode: (String, Boolean) -> Unit
+            addPutValueCode: XCodeBlock.Builder.(String, Boolean) -> Unit
         ) {
             scope.builder.apply {
                 val tmpValueVarName = scope.getTmpVar("_value")
@@ -371,7 +367,6 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
                             ?: valueRowAdapter.getDefaultIndexAdapter().getIndexVars()
                     val columnNullCheckCodeBlock =
                         getColumnNullCheckCode(
-                            language = scope.language,
                             cursorVarName = cursorVarName,
                             indexVars = valueIndexVars
                         )
@@ -379,7 +374,7 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
                     // Perform value columns null check, in a 1-to-1 mapping we still add the key
                     // with a null value entry if permitted.
                     beginControlFlow("if (%L)", columnNullCheckCodeBlock)
-                        .apply {
+                        .applyTo { language ->
                             if (
                                 language == CodeLanguage.KOTLIN &&
                                     valueTypeArg.nullability == XNullability.NONNULL
@@ -391,7 +386,7 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
                                         "argument expect it to be NON-NULL"
                                 )
                             } else {
-                                genPutValueCode.invoke("null", false)
+                                addPutValueCode("null", false)
                                 addStatement("continue")
                             }
                         }
@@ -399,7 +394,7 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
 
                     addLocalVariable(tmpValueVarName, valueTypeArg.asTypeName())
                     valueRowAdapter.convert(tmpValueVarName, cursorVarName, scope)
-                    genPutValueCode.invoke(tmpValueVarName, true)
+                    addPutValueCode(tmpValueVarName, true)
                 }
             }
         }
@@ -411,7 +406,6 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
         ) {
             scope.builder.add(
                 getContinueColumnNullCheck(
-                    language = scope.language,
                     cursorVarName = cursorVarName,
                     rowAdapter = valueRowAdapter,
                     dupeColumnsIndexAdapter = dupeColumnsIndexAdapter
@@ -425,12 +419,11 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
      * matched fields are null.
      */
     protected fun getContinueColumnNullCheck(
-        language: CodeLanguage,
         rowAdapter: RowAdapter,
         cursorVarName: String,
         dupeColumnsIndexAdapter: AmbiguousColumnIndexAdapter?
     ) =
-        XCodeBlock.builder(language)
+        XCodeBlock.builder()
             .apply {
                 check(rowAdapter is QueryMappedRowAdapter)
                 val valueIndexVars =
@@ -438,7 +431,6 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
                         ?: rowAdapter.getDefaultIndexAdapter().getIndexVars()
                 val columnNullCheckCodeBlock =
                     getColumnNullCheckCode(
-                        language = language,
                         cursorVarName = cursorVarName,
                         indexVars = valueIndexVars
                     )
@@ -449,24 +441,16 @@ sealed class MapValueResultAdapter(val rowAdapters: List<RowAdapter>) {
             .build()
 
     /** Generates a code expression that verifies if all matched fields are null. */
-    protected fun getColumnNullCheckCode(
-        language: CodeLanguage,
-        cursorVarName: String,
-        indexVars: List<ColumnIndexVar>
-    ) =
-        XCodeBlock.builder(language)
-            .apply {
-                val space =
-                    when (language) {
-                        CodeLanguage.JAVA -> "%W"
-                        CodeLanguage.KOTLIN -> " "
-                    }
-                val conditions =
-                    indexVars.map {
-                        XCodeBlock.of(language, "%L.isNull(%L)", cursorVarName, it.indexVar)
-                    }
-                val placeholders = conditions.joinToString(separator = "$space&&$space") { "%L" }
-                add(placeholders, *conditions.toTypedArray())
-            }
-            .build()
+    protected fun getColumnNullCheckCode(cursorVarName: String, indexVars: List<ColumnIndexVar>) =
+        buildCodeBlock { language ->
+            val space =
+                when (language) {
+                    CodeLanguage.JAVA -> "%W"
+                    CodeLanguage.KOTLIN -> " "
+                }
+            val conditions =
+                indexVars.map { XCodeBlock.of("%L.isNull(%L)", cursorVarName, it.indexVar) }
+            val placeholders = conditions.joinToString(separator = "$space&&$space") { "%L" }
+            add(placeholders, *conditions.toTypedArray())
+        }
 }

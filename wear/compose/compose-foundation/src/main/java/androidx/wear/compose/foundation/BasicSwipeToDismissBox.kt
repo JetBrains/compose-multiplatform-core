@@ -483,65 +483,69 @@ fun Modifier.edgeSwipeToDismiss(
     swipeToDismissBoxState: SwipeToDismissBoxState,
     edgeWidth: Dp = SwipeToDismissBoxDefaults.EdgeWidth
 ): Modifier =
-    composed(
-        inspectorInfo =
-            debugInspectorInfo {
-                name = "edgeSwipeToDismiss"
-                properties["swipeToDismissBoxState"] = swipeToDismissBoxState
-                properties["edgeWidth"] = edgeWidth
-            }
-    ) {
-        // Tracks the current swipe status
-        val edgeSwipeState = remember { mutableStateOf(EdgeSwipeState.WaitingForTouch) }
-        val nestedScrollConnection =
-            remember(swipeToDismissBoxState) {
-                swipeToDismissBoxState.edgeNestedScrollConnection(edgeSwipeState)
-            }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+        this // Edge swipe to dismiss doesn't work on API >= 35 for now
+    } else
+        composed(
+            inspectorInfo =
+                debugInspectorInfo {
+                    name = "edgeSwipeToDismiss"
+                    properties["swipeToDismissBoxState"] = swipeToDismissBoxState
+                    properties["edgeWidth"] = edgeWidth
+                }
+        ) {
+            // Tracks the current swipe status
+            val edgeSwipeState = remember { mutableStateOf(EdgeSwipeState.WaitingForTouch) }
+            val nestedScrollConnection =
+                remember(swipeToDismissBoxState) {
+                    swipeToDismissBoxState.edgeNestedScrollConnection(edgeSwipeState)
+                }
 
-        val nestedPointerInput: suspend PointerInputScope.() -> Unit = {
-            coroutineScope {
-                awaitPointerEventScope {
-                    while (isActive) {
-                        awaitPointerEvent(PointerEventPass.Initial).changes.fastForEach { change ->
-                            // By default swipeState is WaitingForTouch.
-                            // If it is in this state and a first touch hit an edge area, we
-                            // set swipeState to EdgeClickedWaitingForDirection.
-                            // After that to track which direction the swipe will go, we check
-                            // the next touch. If it lands to the left of the first, we consider
-                            // it as a swipe left and set the state to SwipingToPage. Otherwise,
-                            // set the state to SwipingToDismiss
-                            when (edgeSwipeState.value) {
-                                EdgeSwipeState.SwipeToDismissInProgress,
-                                EdgeSwipeState.WaitingForTouch -> {
-                                    edgeSwipeState.value =
-                                        if (change.position.x < edgeWidth.toPx())
-                                            EdgeSwipeState.EdgeClickedWaitingForDirection
-                                        else EdgeSwipeState.SwipingToPage
+            val nestedPointerInput: suspend PointerInputScope.() -> Unit = {
+                coroutineScope {
+                    awaitPointerEventScope {
+                        while (isActive) {
+                            awaitPointerEvent(PointerEventPass.Initial).changes.fastForEach { change
+                                ->
+                                // By default swipeState is WaitingForTouch.
+                                // If it is in this state and a first touch hit an edge area, we
+                                // set swipeState to EdgeClickedWaitingForDirection.
+                                // After that to track which direction the swipe will go, we check
+                                // the next touch. If it lands to the left of the first, we consider
+                                // it as a swipe left and set the state to SwipingToPage. Otherwise,
+                                // set the state to SwipingToDismiss
+                                when (edgeSwipeState.value) {
+                                    EdgeSwipeState.SwipeToDismissInProgress,
+                                    EdgeSwipeState.WaitingForTouch -> {
+                                        edgeSwipeState.value =
+                                            if (change.position.x < edgeWidth.toPx())
+                                                EdgeSwipeState.EdgeClickedWaitingForDirection
+                                            else EdgeSwipeState.SwipingToPage
+                                    }
+                                    EdgeSwipeState.EdgeClickedWaitingForDirection -> {
+                                        edgeSwipeState.value =
+                                            if (change.position.x < change.previousPosition.x)
+                                                EdgeSwipeState.SwipingToPage
+                                            else EdgeSwipeState.SwipingToDismiss
+                                    }
+                                    else -> {} // Do nothing
                                 }
-                                EdgeSwipeState.EdgeClickedWaitingForDirection -> {
+                                // When finger is up - reset swipeState to WaitingForTouch
+                                // or to SwipeToDismissInProgress if current
+                                // state is SwipingToDismiss
+                                if (change.changedToUp()) {
                                     edgeSwipeState.value =
-                                        if (change.position.x < change.previousPosition.x)
-                                            EdgeSwipeState.SwipingToPage
-                                        else EdgeSwipeState.SwipingToDismiss
+                                        if (edgeSwipeState.value == EdgeSwipeState.SwipingToDismiss)
+                                            EdgeSwipeState.SwipeToDismissInProgress
+                                        else EdgeSwipeState.WaitingForTouch
                                 }
-                                else -> {} // Do nothing
-                            }
-                            // When finger is up - reset swipeState to WaitingForTouch
-                            // or to SwipeToDismissInProgress if current
-                            // state is SwipingToDismiss
-                            if (change.changedToUp()) {
-                                edgeSwipeState.value =
-                                    if (edgeSwipeState.value == EdgeSwipeState.SwipingToDismiss)
-                                        EdgeSwipeState.SwipeToDismissInProgress
-                                    else EdgeSwipeState.WaitingForTouch
                             }
                         }
                     }
                 }
             }
+            pointerInput(edgeWidth, nestedPointerInput).nestedScroll(nestedScrollConnection)
         }
-        pointerInput(edgeWidth, nestedPointerInput).nestedScroll(nestedScrollConnection)
-    }
 
 /** An enum which represents a current state of swipe action. */
 internal enum class EdgeSwipeState {

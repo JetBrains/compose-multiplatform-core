@@ -134,11 +134,11 @@ internal class LazyColumnScrollTransformBehavior(private val morphingMinHeight: 
                         1f,
                         widthMorphEasing.transform((0f..0.3f).progression(flippedTopOffsetFraction))
                     )
-                else -> 0f
+                else -> 1f
             }
 
     val TransformingLazyColumnItemScrollProgress.contentXOffsetFraction: Float
-        get() = if (backgroundXOffsetFraction > 0f) 1f - backgroundXOffsetFraction else 0f
+        get() = 1f - backgroundXOffsetFraction
 
     val TransformingLazyColumnItemScrollProgress.contentAlpha: Float
         get() =

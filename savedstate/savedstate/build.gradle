@@ -65,6 +65,7 @@ androidXMultiplatform {
             dependencies {
                 api("androidx.annotation:annotation:1.8.1")
                 implementation("androidx.core:core-ktx:1.13.1")
+                implementation(projectOrArtifact(":core:core-viewtree"))
                 api(libs.kotlinStdlib)
             }
         }
@@ -170,6 +171,7 @@ android {
 androidx {
     name = "Saved State"
     type = LibraryType.PUBLISHED_LIBRARY
+    samples(project(":savedstate:savedstate-samples"))
     inceptionYear = "2018"
     description = "Android Lifecycle Saved State"
     legacyDisableKotlinStrictApiMode = true

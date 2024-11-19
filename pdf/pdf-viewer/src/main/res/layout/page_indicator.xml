@@ -24,6 +24,8 @@
     android:background="@drawable/page_indicator_background"
     android:elevation="1dp"
     android:focusableInTouchMode="true"
+    android:focusable="true"
+    android:clickable="true"
     android:gravity="center"
     android:paddingLeft="12dp"
     android:paddingRight="12dp"

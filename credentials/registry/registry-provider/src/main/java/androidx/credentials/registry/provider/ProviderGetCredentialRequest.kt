@@ -35,6 +35,9 @@ public const val EXTRA_CREDENTIAL_ID: String =
  * A null return means that entry ID isn't supported for the given type of the use case at all. For
  * example, a [androidx.credentials.provider.PasswordCredentialEntry] does not have an id property
  * and so this getter will return null if the selected entry was a password credential.
+ *
+ * For how to handle a user selection and extract the [ProviderGetCredentialRequest] containing the
+ * selection information, see [RegistryManager.ACTION_GET_CREDENTIAL].
  */
 @get:JvmName("getSelectedEntryId")
 public val ProviderGetCredentialRequest.selectedEntryId: String?

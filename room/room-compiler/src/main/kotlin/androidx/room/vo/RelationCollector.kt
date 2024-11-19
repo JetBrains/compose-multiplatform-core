@@ -19,7 +19,9 @@ package androidx.room.vo
 import androidx.room.BuiltInTypeConverters
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.codegen.XTypeName
+import androidx.room.compiler.codegen.buildCodeBlock
 import androidx.room.compiler.processing.XNullability
 import androidx.room.ext.CollectionTypeNames.ARRAY_MAP
 import androidx.room.ext.CollectionTypeNames.LONG_SPARSE_ARRAY
@@ -89,7 +91,7 @@ data class RelationCollector(
             scope.getTmpVar(
                 "_collection${relation.field.getPath().stripNonJava().capitalize(Locale.US)}"
             )
-        scope.builder.apply {
+        scope.builder.applyTo { language ->
             if (
                 language == CodeLanguage.JAVA ||
                     mapTypeName.rawTypeName == ARRAY_MAP ||
@@ -98,7 +100,7 @@ data class RelationCollector(
                 addLocalVariable(
                     name = varName,
                     typeName = mapTypeName,
-                    assignExpr = XCodeBlock.ofNewInstance(language, mapTypeName)
+                    assignExpr = XCodeBlock.ofNewInstance(mapTypeName)
                 )
             } else {
                 addLocalVal(
@@ -128,21 +130,17 @@ data class RelationCollector(
                 // for relation collection put an empty collections in the map, otherwise put nulls
                 if (relationTypeIsCollection) {
                     beginControlFlow("if (!%L.containsKey(%L))", varName, tmpVar).apply {
-                        val newEmptyCollection =
+                        val newEmptyCollection = buildCodeBlock { language ->
                             when (language) {
-                                CodeLanguage.JAVA ->
-                                    XCodeBlock.ofNewInstance(language, relationTypeName)
+                                CodeLanguage.JAVA -> add("new %T()", relationTypeName)
                                 CodeLanguage.KOTLIN ->
-                                    XCodeBlock.of(
-                                        language = language,
-                                        "%M()",
-                                        if (relationTypeName == CommonTypeNames.MUTABLE_SET) {
-                                            MUTABLE_SET_OF
-                                        } else {
-                                            MUTABLE_LIST_OF
-                                        }
-                                    )
+                                    if (relationTypeName == CommonTypeNames.MUTABLE_SET) {
+                                        add("%M()", MUTABLE_SET_OF)
+                                    } else {
+                                        add("%M()", MUTABLE_LIST_OF)
+                                    }
                             }
+                        }
                         addStatement("%L.put(%L, %L)", varName, tmpVar, newEmptyCollection)
                     }
                     endControlFlow()
@@ -184,58 +182,63 @@ data class RelationCollector(
                         // values for all keys, so this is safe. Special case for LongSParseArray
                         // since it does not have a getValue() from Kotlin.
                         val usingLongSparseArray = mapTypeName.rawTypeName == LONG_SPARSE_ARRAY
-                        when (language) {
-                            CodeLanguage.JAVA ->
-                                addStatement("%L = %L.get(%L)", tmpRelationVar, varName, tmpKeyVar)
-                            CodeLanguage.KOTLIN ->
-                                if (usingLongSparseArray) {
+                        applyTo { language ->
+                            when (language) {
+                                CodeLanguage.JAVA ->
                                     addStatement(
-                                        "%L = checkNotNull(%L.get(%L))",
+                                        "%L = %L.get(%L)",
                                         tmpRelationVar,
                                         varName,
                                         tmpKeyVar
                                     )
-                                } else {
-                                    addStatement(
-                                        "%L = %L.getValue(%L)",
-                                        tmpRelationVar,
-                                        varName,
-                                        tmpKeyVar
-                                    )
-                                }
+                                CodeLanguage.KOTLIN ->
+                                    if (usingLongSparseArray) {
+                                        addStatement(
+                                            "%L = checkNotNull(%L.get(%L))",
+                                            tmpRelationVar,
+                                            varName,
+                                            tmpKeyVar
+                                        )
+                                    } else {
+                                        addStatement(
+                                            "%L = %L.getValue(%L)",
+                                            tmpRelationVar,
+                                            varName,
+                                            tmpKeyVar
+                                        )
+                                    }
+                            }
                         }
                     } else {
                         addStatement("%L = %L.get(%L)", tmpRelationVar, varName, tmpKeyVar)
-                        if (language == CodeLanguage.KOTLIN && relation.field.nonNull) {
-                            beginControlFlow("if (%L == null)", tmpRelationVar)
-                            addStatement(
-                                "error(%S)",
-                                "Relationship item '${relation.field.name}' was expected to" +
-                                    " be NON-NULL but is NULL in @Relation involving " +
-                                    "a parent column named '${relation.parentField.columnName}' and " +
-                                    "entityColumn named '${relation.entityField.columnName}'."
-                            )
-                            endControlFlow()
+                        if (relation.field.nonNull) {
+                            applyTo(CodeLanguage.KOTLIN) {
+                                beginControlFlow("if (%L == null)", tmpRelationVar)
+                                addStatement(
+                                    "error(%S)",
+                                    "Relationship item '${relation.field.name}' was expected to" +
+                                        " be NON-NULL but is NULL in @Relation involving " +
+                                        "a parent column named '${relation.parentField.columnName}' and " +
+                                        "entityColumn named '${relation.entityField.columnName}'."
+                                )
+                                endControlFlow()
+                            }
                         }
                     }
                 },
                 onKeyUnavailable = {
                     if (relationTypeIsCollection) {
-                        val newEmptyCollection =
+                        val newEmptyCollection = buildCodeBlock { language ->
                             when (language) {
-                                CodeLanguage.JAVA ->
-                                    XCodeBlock.ofNewInstance(language, relationTypeName)
+                                CodeLanguage.JAVA -> add("new %T()", relationTypeName)
                                 CodeLanguage.KOTLIN ->
-                                    XCodeBlock.of(
-                                        language = language,
-                                        "%M()",
-                                        if (relationTypeName == CommonTypeNames.MUTABLE_SET) {
-                                            MUTABLE_SET_OF
-                                        } else {
-                                            MUTABLE_LIST_OF
-                                        }
-                                    )
+                                    if (relationTypeName == CommonTypeNames.MUTABLE_SET) {
+                                        add("%M()", MUTABLE_SET_OF)
+                                    } else {
+                                        add("%M()", MUTABLE_LIST_OF)
+                                    }
                             }
+                        }
                         addStatement("%L = %L", tmpRelationVar, newEmptyCollection)
                     } else {
                         addStatement("%L = null", tmpRelationVar)
@@ -311,9 +314,9 @@ data class RelationCollector(
             startIndexVarName: String,
             scope: CodeGenScope
         ) {
-            scope.builder.apply {
-                val itrIndexVar = "i"
-                val itrItemVar = scope.getTmpVar("_item")
+            val itrIndexVar = "i"
+            val itrItemVar = scope.getTmpVar("_item")
+            scope.builder.applyTo { language ->
                 when (language) {
                     CodeLanguage.JAVA ->
                         beginControlFlow(

@@ -16,7 +16,6 @@
 
 package androidx.core.uwb.impl
 
-import android.util.Log
 import androidx.core.uwb.RangingCapabilities
 import androidx.core.uwb.RangingMeasurement
 import androidx.core.uwb.RangingParameters
@@ -135,7 +134,11 @@ internal open class UwbClientSessionScopeAospImpl(
         val callback =
             object : IRangingSessionCallback.Stub() {
                 override fun onRangingInitialized(device: UwbDevice) {
-                    Log.i(TAG, "Started UWB ranging.")
+                    trySend(
+                        RangingResult.RangingResultInitialized(
+                            androidx.core.uwb.UwbDevice(UwbAddress(device.address?.address!!))
+                        )
+                    )
                 }
 
                 override fun onRangingResult(device: UwbDevice, position: RangingPosition) {

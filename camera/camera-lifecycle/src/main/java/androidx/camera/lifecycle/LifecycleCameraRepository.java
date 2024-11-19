@@ -24,8 +24,8 @@ import androidx.camera.core.CameraEffect;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.ViewPort;
 import androidx.camera.core.concurrent.CameraCoordinator;
+import androidx.camera.core.impl.AdapterCameraInfo;
 import androidx.camera.core.impl.CameraInternal;
-import androidx.camera.core.impl.RestrictedCameraInfo;
 import androidx.camera.core.internal.CameraUseCaseAdapter;
 import androidx.core.util.Preconditions;
 import androidx.lifecycle.Lifecycle;
@@ -197,8 +197,8 @@ final class LifecycleCameraRepository {
             LifecycleOwner lifecycleOwner = lifecycleCamera.getLifecycleOwner();
             Key key = Key.create(lifecycleOwner,
                     CameraUseCaseAdapter.generateCameraId(
-                            (RestrictedCameraInfo) lifecycleCamera.getCameraInfo(),
-                            (RestrictedCameraInfo) lifecycleCamera.getSecondaryCameraInfo()));
+                            (AdapterCameraInfo) lifecycleCamera.getCameraInfo(),
+                            (AdapterCameraInfo) lifecycleCamera.getSecondaryCameraInfo()));
 
             LifecycleCameraRepositoryObserver observer =
                     getLifecycleCameraRepositoryObserver(lifecycleOwner);

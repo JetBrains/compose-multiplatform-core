@@ -15,22 +15,59 @@
  */
 package androidx.camera.camera2.pipe.internal
 
+import android.graphics.SurfaceTexture
 import android.hardware.camera2.CaptureRequest
+import android.view.Surface
+import androidx.camera.camera2.pipe.CameraGraphId
+import androidx.camera.camera2.pipe.Request
+import androidx.camera.camera2.pipe.StreamId
+import androidx.camera.camera2.pipe.graph.GraphProcessorImpl
+import androidx.camera.camera2.pipe.graph.GraphRequestProcessor
+import androidx.camera.camera2.pipe.graph.GraphState3A
+import androidx.camera.camera2.pipe.graph.Listener3A
 import androidx.camera.camera2.pipe.graph.SessionLock
+import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceProcessor
+import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceProcessor.Companion.graphParameters
+import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceProcessor.Companion.isRepeating
+import androidx.camera.camera2.pipe.testing.FakeGraphConfigs
 import androidx.camera.camera2.pipe.testing.FakeGraphProcessor
 import androidx.camera.camera2.pipe.testing.FakeMetadata.Companion.TEST_KEY
+import androidx.camera.camera2.pipe.testing.FakeRequestListener
+import androidx.camera.camera2.pipe.testing.FakeThreads
+import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
+import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 
 /** Tests for [CameraGraphParametersImpl] */
-@RunWith(RobolectricTestRunner::class)
+@OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricCameraPipeTestRunner::class)
 class CameraGraphParametersImplTest {
+    private val testScope = TestScope()
+
     private var parameters =
-        CameraGraphParametersImpl(SessionLock(), FakeGraphProcessor(), TestScope())
+        CameraGraphParametersImpl(SessionLock(), FakeGraphProcessor(), testScope)
+
+    private val graphProcessor =
+        GraphProcessorImpl(
+            FakeThreads.fromTestScope(testScope),
+            CameraGraphId.nextId(),
+            FakeGraphConfigs.graphConfig,
+            GraphState3A(),
+            Listener3A(),
+            arrayListOf(FakeRequestListener())
+        )
+    private val surfaceMap = mapOf(StreamId(0) to Surface(SurfaceTexture(1)))
+    private val csp1 = FakeCaptureSequenceProcessor().also { it.surfaceMap = surfaceMap }
+    private val grp1 = GraphRequestProcessor.from(csp1)
+    private val request1 = Request(listOf(StreamId(0)), listeners = listOf(FakeRequestListener()))
 
     @Test
     fun get_returnLatestValue() {
@@ -75,19 +112,20 @@ class CameraGraphParametersImplTest {
     }
 
     @Test
-    fun fetchUpdatedParameters_returnOnlyDirtyParameters() {
-        assertNull(parameters.fetchUpdatedParameters())
+    fun set_invokesUpdate() =
+        testScope.runTest {
+            graphProcessor.onGraphStarted(grp1)
+            graphProcessor.repeatingRequest = request1
 
-        parameters[TEST_KEY] = 42
-        assertEquals(parameters.fetchUpdatedParameters(), mapOf<Any, Any?>(TEST_KEY to 42))
-        assertNull(parameters.fetchUpdatedParameters())
+            val parameters = CameraGraphParametersImpl(SessionLock(), graphProcessor, testScope)
+            parameters[TEST_KEY] = 42
+            advanceUntilIdle()
 
-        parameters[CAPTURE_REQUEST_KEY] = 2
-        assertEquals(
-            parameters.fetchUpdatedParameters(),
-            mapOf<Any, Any?>(TEST_KEY to 42, CAPTURE_REQUEST_KEY to 2)
-        )
-    }
+            // Check that the latest request with existing repeatingRequest has graphParameters
+            assertEquals(csp1.events.size, 2)
+            assertTrue(csp1.events[1].isRepeating)
+            assertThat(csp1.events[1].graphParameters).containsExactly(TEST_KEY, 42)
+        }
 
     companion object {
         private val CAPTURE_REQUEST_KEY = CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION

@@ -22,9 +22,8 @@ import android.view.View
 import android.view.autofill.AutofillValue
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.text.AutofillHighlight
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.LocalAutofillHighlight
+import androidx.compose.foundation.text.LocalAutofillHighlightColor
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
@@ -67,7 +66,7 @@ class TextFieldsSemanticAutofillTest {
     @get:Rule val rule = createAndroidComposeRule<TestActivity>()
     private lateinit var androidComposeView: AndroidComposeView
     private lateinit var composeView: View
-    private var autofillHighlight: AutofillHighlight? = null
+    private var autofillHighlight: Color? = null
 
     // ============================================================================================
     // Tests to verify legacy TextField populating and filling.
@@ -194,9 +193,7 @@ class TextFieldsSemanticAutofillTest {
         val customHighlightColor = Color.Red
 
         rule.setContentWithAutofillEnabled {
-            CompositionLocalProvider(
-                LocalAutofillHighlight provides AutofillHighlight(customHighlightColor)
-            ) {
+            CompositionLocalProvider(LocalAutofillHighlightColor provides customHighlightColor) {
                 Column {
                     TextField(
                         value = usernameInput,
@@ -245,7 +242,7 @@ class TextFieldsSemanticAutofillTest {
             isSemanticAutofillEnabled = true
 
             composeView = LocalView.current
-            autofillHighlight = LocalAutofillHighlight.current
+            autofillHighlight = LocalAutofillHighlightColor.current
             LaunchedEffect(Unit) {
                 // Make sure the delay between batches of events is set to zero.
                 (composeView as RootForTest).setAccessibilityEventBatchIntervalMillis(0L)

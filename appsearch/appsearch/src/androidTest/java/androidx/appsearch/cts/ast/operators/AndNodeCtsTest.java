@@ -42,6 +42,20 @@ public class AndNodeCtsTest {
     public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
 
     @Test
+    public void testEquals_identical() {
+        TextNode foo = new TextNode("foo");
+        TextNode bar = new TextNode("bar");
+        AndNode andNodeOne = new AndNode(List.of(foo, bar));
+
+        TextNode fooTwo = new TextNode("foo");
+        TextNode barTwo = new TextNode("bar");
+        AndNode andNodeTwo = new AndNode(List.of(fooTwo, barTwo));
+
+        assertThat(andNodeOne).isEqualTo(andNodeTwo);
+        assertThat(andNodeOne.hashCode()).isEqualTo(andNodeTwo.hashCode());
+    }
+
+    @Test
     public void testConstructor_buildsAndNode() {
         TextNode foo = new TextNode("foo");
         TextNode bar = new TextNode("bar");

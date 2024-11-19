@@ -34,9 +34,9 @@ import androidx.camera.integration.extensions.utils.CameraIdExtensionModePair
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
 import androidx.camera.testing.impl.StressTestRule
-import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.idling.CountingIdlingResource
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
@@ -135,8 +135,7 @@ class Camera2ExtensionsActivityTest(private val config: CameraIdExtensionModePai
                 waitForPreviewIdle()
 
                 // Pauses and resumes the activity
-                moveToState(Lifecycle.State.CREATED)
-                moveToState(Lifecycle.State.RESUMED)
+                launchAutoClosedForegroundActivity(activityScenario)
 
                 // Waits for preview to receive enough frames again
                 waitForPreviewIdle()
@@ -154,8 +153,7 @@ class Camera2ExtensionsActivityTest(private val config: CameraIdExtensionModePai
                 waitForImageSavedIdle()
 
                 // Pauses and resumes the activity
-                moveToState(Lifecycle.State.CREATED)
-                moveToState(Lifecycle.State.RESUMED)
+                launchAutoClosedForegroundActivity(activityScenario)
 
                 // Waits for the capture session configured again after resuming the activity
                 waitForCaptureSessionConfiguredIdle()
@@ -164,6 +162,18 @@ class Camera2ExtensionsActivityTest(private val config: CameraIdExtensionModePai
                 waitForImageSavedIdle()
             }
         }
+    }
+
+    private fun launchAutoClosedForegroundActivity(
+        activityScenario: ActivityScenario<Camera2ExtensionsActivity>
+    ) {
+        var countingIdlingResource: CountingIdlingResource? = null
+        activityScenario.withActivity { countingIdlingResource = getCameraClosedIdlingResource() }
+        CoreAppTestUtil.launchAutoClosedForegroundActivity(
+            context,
+            InstrumentationRegistry.getInstrumentation(),
+            countingIdlingResource
+        )
     }
 
     @Test

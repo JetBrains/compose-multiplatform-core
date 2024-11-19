@@ -28,8 +28,11 @@ internal class TestPrefetchScheduler : PrefetchScheduler {
     }
 
     fun executeActiveRequests() {
-        activeRequests.forEach { with(it) { scope.execute() } }
-        activeRequests.clear()
+        while (activeRequests.isNotEmpty()) {
+            val request = activeRequests[0]
+            val hasMoreWorkToDo = with(request) { scope.execute() }
+            if (!hasMoreWorkToDo) activeRequests.removeAt(0)
+        }
     }
 
     private val scope =

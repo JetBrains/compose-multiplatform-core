@@ -43,6 +43,7 @@ import androidx.wear.protolayout.ColorBuilders.Brush;
 import androidx.wear.protolayout.ColorBuilders.ColorProp;
 import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters;
 import androidx.wear.protolayout.DimensionBuilders.AngularLayoutConstraint;
+import androidx.wear.protolayout.DimensionBuilders.AngularDimension;
 import androidx.wear.protolayout.DimensionBuilders.ContainerDimension;
 import androidx.wear.protolayout.DimensionBuilders.DegreesProp;
 import androidx.wear.protolayout.DimensionBuilders.DpProp;
@@ -5665,6 +5666,16 @@ public final class LayoutElementBuilders {
             }
         }
 
+        /** Gets the length of this spacer.*/
+        @Nullable
+        public AngularDimension getAngularLength() {
+            if (mImpl.hasAngularLength()) {
+                return DimensionBuilders.angularDimensionFromProto(mImpl.getAngularLength());
+            } else {
+                return null;
+            }
+        }
+
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Nullable
@@ -5709,6 +5720,8 @@ public final class LayoutElementBuilders {
                     + getThickness()
                     + ", modifiers="
                     + getModifiers()
+                    + ", angularLength="
+                    + getAngularLength()
                     + "}";
         }
 
@@ -5724,6 +5737,9 @@ public final class LayoutElementBuilders {
 
             /**
              * Sets the length of this spacer, in degrees. If not defined, defaults to 0.
+             *
+             * <p>This value is ignored when an angular length is provided by calling {@code
+             * setAngularLength()}.
              *
              * <p>Note that this field only supports static values.
              */
@@ -5767,6 +5783,31 @@ public final class LayoutElementBuilders {
                 mImpl.setModifiers(modifiers.toProto());
                 mFingerprint.recordPropertyUpdate(
                         3, checkNotNull(modifiers.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            /**
+             * Sets the length of this spacer. If not defined, defaults to 0 degrees. If set, this
+             * angular length will be used instead of the value provided in {@code setLength()}.
+             *
+             *  <p>Note that this field only supports static values.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 500)
+            @NonNull
+            public Builder setAngularLength(@NonNull AngularDimension angularLength) {
+                DimensionProto. AngularDimension angularDimensionProto =
+                        angularLength.toAngularDimensionProto();
+                if ((angularDimensionProto.hasDegrees()
+                        && angularDimensionProto.getDegrees().getDynamicValue() != null)
+                        || (angularDimensionProto.hasDp()
+                        && angularDimensionProto.getDp().getDynamicValue() != null)) {
+                    throw new IllegalArgumentException(
+                            "ArcSpacer.Builder.setAngularLength doesn't support dynamic values.");
+                }
+
+                mImpl.setAngularLength(angularDimensionProto);
+                mFingerprint.recordPropertyUpdate(
+                        4, checkNotNull(angularLength.getFingerprint()).aggregateValueAsInt());
                 return this;
             }
 

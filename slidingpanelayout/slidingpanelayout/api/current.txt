@@ -46,6 +46,7 @@ package androidx.slidingpanelayout.widget {
     method public final void setUserResizeBehavior(androidx.slidingpanelayout.widget.SlidingPaneLayout.UserResizeBehavior userResizeBehavior);
     method public final void setUserResizingDividerDrawable(android.graphics.drawable.Drawable? drawable);
     method public final void setUserResizingDividerDrawable(@DrawableRes int resId);
+    method public final void setUserResizingDividerTint(android.content.res.ColorStateList? colorStateList);
     method public final void setUserResizingEnabled(boolean);
     method @Deprecated public void smoothSlideClosed();
     method @Deprecated public void smoothSlideOpen();

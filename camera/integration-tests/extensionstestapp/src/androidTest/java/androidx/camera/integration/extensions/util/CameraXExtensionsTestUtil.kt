@@ -245,6 +245,31 @@ object CameraXExtensionsTestUtil {
     }
 
     @JvmStatic
+    fun assumeExtensionModeOutputFormatSupported(
+        cameraProvider: ProcessCameraProvider,
+        extensionsManager: ExtensionsManager,
+        cameraId: String,
+        extensionMode: Int,
+        outputFormat: Int
+    ) {
+        val cameraIdCameraSelector = createCameraSelectorById(cameraId)
+        val extensionsEnabledCameraSelector =
+            extensionsManager.getExtensionEnabledCameraSelector(
+                cameraIdCameraSelector,
+                extensionMode
+            )
+        val imageCaptureCapabilities =
+            ImageCapture.getImageCaptureCapabilities(
+                cameraProvider.getCameraInfo(extensionsEnabledCameraSelector)
+            )
+        assumeTrue(
+            "Extensions mode($extensionMode) does not supported output format $outputFormat still" +
+                " image capture",
+            imageCaptureCapabilities.supportedOutputFormats.contains(outputFormat)
+        )
+    }
+
+    @JvmStatic
     fun assumeAnyExtensionModeSupported(extensionsManager: ExtensionsManager, cameraId: String) {
         val cameraIdCameraSelector = createCameraSelectorById(cameraId)
         var anyExtensionModeSupported = false
@@ -291,6 +316,7 @@ object CameraXExtensionsTestUtil {
     fun launchCameraExtensionsActivity(
         cameraId: String,
         extensionMode: Int,
+        outputFormat: Int = ImageCapture.OUTPUT_FORMAT_JPEG,
         videoCaptureEnabled: Boolean? = null,
         deleteCapturedImages: Boolean = true,
     ): ActivityScenario<CameraExtensionsActivity> {
@@ -301,6 +327,7 @@ object CameraXExtensionsTestUtil {
                 ?.apply {
                     putExtra(IntentExtraKey.INTENT_EXTRA_KEY_CAMERA_ID, cameraId)
                     putExtra(IntentExtraKey.INTENT_EXTRA_KEY_EXTENSION_MODE, extensionMode)
+                    putExtra(IntentExtraKey.INTENT_EXTRA_KEY_OUTPUT_FORMAT, outputFormat)
                     putExtra(
                         IntentExtraKey.INTENT_EXTRA_KEY_DELETE_CAPTURED_IMAGE,
                         deleteCapturedImages

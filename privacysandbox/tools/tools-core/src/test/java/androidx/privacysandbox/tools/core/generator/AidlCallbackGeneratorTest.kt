@@ -71,6 +71,12 @@ class AidlCallbackGeneratorTest {
                                             ),
                                         returnType = Types.unit,
                                         isSuspend = false,
+                                    ),
+                                    Method(
+                                        name = "getName",
+                                        parameters = listOf(),
+                                        returnType = Types.string,
+                                        isSuspend = true,
                                     )
                                 )
                         )
@@ -82,6 +88,10 @@ class AidlCallbackGeneratorTest {
             .containsExactly(
                 "com.mysdk" to "IMySdk",
                 "com.mysdk" to "IMyCallback",
+                "com.mysdk" to "IStringTransactionCallback",
+                "com.mysdk" to "ICancellationSignal",
+                "com.mysdk" to "ParcelableStackFrame",
+                "com.mysdk" to "PrivacySandboxThrowableParcel",
             )
 
         val outputTestDataDir = File("src/test/test-data/aidlcallbackgeneratortest/output")

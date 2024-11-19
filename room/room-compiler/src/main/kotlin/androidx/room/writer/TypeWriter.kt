@@ -41,11 +41,7 @@ abstract class TypeWriter(val context: WriterContext) {
     private val sharedMethodSpecs = mutableMapOf<String, XFunSpec>()
     private val sharedFieldNames = mutableSetOf<String>()
     private val sharedMethodNames = mutableSetOf<String>()
-
     private val metadata = mutableMapOf<KClass<*>, Any>()
-
-    val codeLanguage: CodeLanguage = context.codeLanguage
-
     abstract val packageName: String
 
     abstract fun createTypeSpecBuilder(): XTypeSpec.Builder
@@ -76,14 +72,20 @@ abstract class TypeWriter(val context: WriterContext) {
         sharedMethodSpecs.values.forEach { builder.addFunction(it) }
         addGeneratedAnnotationIfAvailable(builder, processingEnv)
         addSuppressWarnings(builder)
-        builder.build().writeTo(codeLanguage, packageName, processingEnv.filer)
+        builder
+            .build()
+            .writeTo(
+                language = context.codeLanguage,
+                packageName = packageName,
+                generator = processingEnv.filer
+            )
     }
 
     private fun addSuppressWarnings(builder: XTypeSpec.Builder) {
         builder
             .applyToJavaPoet {
                 addAnnotation(
-                    com.squareup.javapoet.AnnotationSpec.builder(SuppressWarnings::class.java)
+                    JAnnotationSpec.builder(SuppressWarnings::class.java)
                         .addMember(
                             "value",
                             "{\$S, \$S, \$S}",
@@ -96,7 +98,7 @@ abstract class TypeWriter(val context: WriterContext) {
             }
             .applyToKotlinPoet {
                 addAnnotation(
-                    com.squareup.kotlinpoet.AnnotationSpec.builder(Suppress::class)
+                    KAnnotationSpec.builder(Suppress::class)
                         .addMember(
                             "names = [%S, %S, %S, %S]",
                             "UNCHECKED_CAST",
@@ -173,7 +175,6 @@ abstract class TypeWriter(val context: WriterContext) {
         fun build(classWriter: TypeWriter, name: String): XPropertySpec {
             val builder =
                 XPropertySpec.builder(
-                    language = classWriter.codeLanguage,
                     name = name,
                     typeName = type,
                     visibility = VisibilityModifier.PRIVATE,
@@ -191,7 +192,7 @@ abstract class TypeWriter(val context: WriterContext) {
         abstract fun prepare(methodName: String, writer: TypeWriter, builder: XFunSpec.Builder)
 
         fun build(writer: TypeWriter, name: String): XFunSpec {
-            val builder = XFunSpec.builder(writer.codeLanguage, name, VisibilityModifier.PRIVATE)
+            val builder = XFunSpec.builder(name, VisibilityModifier.PRIVATE)
             prepare(name, writer, builder)
             return builder.build()
         }

@@ -28,6 +28,7 @@ import androidx.core.util.Preconditions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * {@link FunctionNode} that represents the search function.
@@ -218,5 +219,19 @@ public final class SearchNode implements FunctionNode {
             stringBuilder.append(strLiteral.charAt(i));
         }
         return stringBuilder.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SearchNode that = (SearchNode) o;
+        return Objects.equals(mChildren, that.mChildren) && Objects.equals(
+                mProperties, that.mProperties);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(mChildren, mProperties);
     }
 }

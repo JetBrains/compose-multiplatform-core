@@ -825,6 +825,7 @@ public final class Preview extends UseCase {
                     .setSurfaceOccupancyPriority(DEFAULT_SURFACE_OCCUPANCY_PRIORITY)
                     .setTargetAspectRatio(DEFAULT_ASPECT_RATIO)
                     .setResolutionSelector(DEFAULT_RESOLUTION_SELECTOR)
+                    .setHighResolutionDisabled(true)
                     .setDynamicRange(DEFAULT_DYNAMIC_RANGE);
             DEFAULT_CONFIG = builder.getUseCaseConfig();
         }

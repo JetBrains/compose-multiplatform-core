@@ -18,6 +18,7 @@ package androidx.room.solver.query.result
 
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.processing.XType
@@ -43,9 +44,9 @@ class LiveDataQueryResultBinder(
         scope: CodeGenScope
     ) {
         val callableImpl =
-            CallableTypeSpecBuilder(scope.language, typeArg.asTypeName()) {
+            CallableTypeSpecBuilder(typeArg.asTypeName()) {
                     addCode(
-                        XCodeBlock.builder(language)
+                        XCodeBlock.builder()
                             .apply {
                                 createRunQueryAndReturnStatements(
                                     builder = this,
@@ -66,9 +67,9 @@ class LiveDataQueryResultBinder(
                 }
                 .build()
 
-        scope.builder.apply {
+        scope.builder.applyTo { language ->
             val arrayOfTableNamesLiteral =
-                ArrayLiteral(scope.language, CommonTypeNames.STRING, *tableNames.toTypedArray())
+                ArrayLiteral(CommonTypeNames.STRING, *tableNames.toTypedArray())
             // Use property syntax in Kotlin and getter in Java
             val getInvalidationTracker =
                 when (language) {
@@ -98,14 +99,13 @@ class LiveDataQueryResultBinder(
         scope: CodeGenScope
     ) {
         val arrayOfTableNamesLiteral =
-            ArrayLiteral(scope.language, CommonTypeNames.STRING, *tableNames.toTypedArray())
+            ArrayLiteral(CommonTypeNames.STRING, *tableNames.toTypedArray())
         val connectionVar = scope.getTmpVar("_connection")
         val createBlock =
             InvokeWithLambdaParameter(
                 scope = scope,
                 functionCall =
                     XCodeBlock.of(
-                        scope.language,
                         "%N.%L.createLiveData",
                         dbProperty,
                         when (scope.language) {
@@ -124,11 +124,6 @@ class LiveDataQueryResultBinder(
                             javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable
                         ) {
                         override fun XCodeBlock.Builder.body(scope: CodeGenScope) {
-                            val returnPrefix =
-                                when (language) {
-                                    CodeLanguage.JAVA -> "return "
-                                    CodeLanguage.KOTLIN -> ""
-                                }
                             val statementVar = scope.getTmpVar("_stmt")
                             addLocalVal(
                                 statementVar,
@@ -141,7 +136,12 @@ class LiveDataQueryResultBinder(
                             bindStatement?.invoke(scope, statementVar)
                             val outVar = scope.getTmpVar("_result")
                             adapter?.convert(outVar, statementVar, scope)
-                            addStatement("$returnPrefix%L", outVar)
+                            applyTo { language ->
+                                when (language) {
+                                    CodeLanguage.JAVA -> addStatement("return %L", outVar)
+                                    CodeLanguage.KOTLIN -> addStatement("%L", outVar)
+                                }
+                            }
                             nextControlFlow("finally")
                             addStatement("%L.close()", statementVar)
                             endControlFlow()

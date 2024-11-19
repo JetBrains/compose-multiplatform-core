@@ -58,6 +58,11 @@ public class SecondaryActionsAndDecorationDemoScreen extends Screen {
                 12,
                 action));
 
+        listBuilder.addItem(buildRowForTemplate(
+                R.string.secondary_actions_decoration_test_title_long,
+                9,
+                action));
+
         return new ListTemplate.Builder()
                 .setSingleList(listBuilder.build())
                 .setHeader(new Header.Builder()

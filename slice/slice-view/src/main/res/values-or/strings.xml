@@ -22,8 +22,8 @@
     <string name="abc_slice_show_more" msgid="1112789899890391107">"ଅଧିକ ଦେଖାନ୍ତୁ"</string>
     <string name="abc_slice_updated" msgid="7932359091871934205">"<xliff:g id="TIME">%1$s</xliff:g>ରେ ଅପଡେଟ୍ ହୋଇଛି"</string>
     <plurals name="abc_slice_duration_min" formatted="false" msgid="7664017844210142826">
-      <item quantity="other"><xliff:g id="ID_2">%d</xliff:g> ମିନିଟ୍ ପୂର୍ବେ</item>
-      <item quantity="one"><xliff:g id="ID_1">%d</xliff:g> ମିନିଟ୍ ପୂର୍ବେ</item>
+      <item quantity="other"><xliff:g id="ID_2">%d</xliff:g> ମିନିଟ ପୂର୍ବେ</item>
+      <item quantity="one"><xliff:g id="ID_1">%d</xliff:g> ମିନିଟ ପୂର୍ବେ</item>
     </plurals>
     <plurals name="abc_slice_duration_years" formatted="false" msgid="2628491538787454021">
       <item quantity="other"><xliff:g id="ID_2">%d</xliff:g> ବର୍ଷ ପୂର୍ବେ</item>

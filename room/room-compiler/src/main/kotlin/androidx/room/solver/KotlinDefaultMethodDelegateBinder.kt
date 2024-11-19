@@ -18,6 +18,7 @@ package androidx.room.solver
 
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XClassName
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.processing.XType
 import androidx.room.compiler.processing.isVoid
 import androidx.room.ext.DEFAULT_IMPLS_CLASS_NAME
@@ -38,8 +39,7 @@ object KotlinDefaultMethodDelegateBinder {
         parameterNames: List<String>,
         scope: CodeGenScope
     ) {
-        check(scope.language == CodeLanguage.JAVA)
-        scope.builder.apply {
+        scope.builder.applyTo(CodeLanguage.JAVA) {
             val params = mutableListOf<Any>()
             val format = buildString {
                 if (!returnType.isVoid()) {

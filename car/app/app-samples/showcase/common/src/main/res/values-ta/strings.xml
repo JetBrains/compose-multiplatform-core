@@ -321,6 +321,7 @@
     <string name="secondary_actions_test_subtitle" msgid="6985282813402073703">"இரண்டாம்நிலைச் செயலை மட்டுமே தேர்ந்தெடுக்க முடியும்"</string>
     <string name="decoration_test_title" msgid="8450127046762442244">"அலங்காரப் பரிசோதனை"</string>
     <string name="secondary_actions_decoration_test_title" msgid="6282873404859209490">"இரண்டாம்நிலைச் செயல்கள் மற்றும் அலங்காரம்"</string>
+    <string name="secondary_actions_decoration_test_title_long" msgid="3700606949229899169">"இரண்டாம்நிலைச் செயல்களைக் கொண்ட வரிசை மற்றும் நீண்ட தலைப்பைக் கொண்ட அலங்காரம்"</string>
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"வரிசையையும் தேர்ந்தெடுக்க முடியும்"</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"இரண்டாம்நிலைச் செயல் தேர்ந்தெடுக்கப்பட்டது"</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"வரிசையின் முதன்மைச் செயல் தேர்ந்தெடுக்கப்பட்டது"</string>

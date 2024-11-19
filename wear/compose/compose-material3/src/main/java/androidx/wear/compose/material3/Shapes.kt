@@ -131,7 +131,7 @@ object ShapeDefaults {
 
 /**
  * Helper function for component shape tokens. Here is an example on how to use component color
- * tokens: ``MaterialTheme.shapes.fromToken(FabPrimarySmallTokens.ContainerShape)``
+ * tokens: ``MaterialTheme.shapes.fromToken(IconButtonTokens.ContainerShape)``
  */
 internal fun Shapes.fromToken(value: ShapeKeyTokens): Shape {
     return when (value) {

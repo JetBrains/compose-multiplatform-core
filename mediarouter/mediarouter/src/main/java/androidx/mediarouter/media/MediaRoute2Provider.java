@@ -47,6 +47,7 @@ import android.util.SparseArray;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.annotation.VisibleForTesting;
 import androidx.mediarouter.R;
 import androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController.DynamicRouteDescriptor;
 import androidx.mediarouter.media.MediaRouter.ControlRequestCallback;
@@ -67,6 +68,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 class MediaRoute2Provider extends MediaRouteProvider {
     static final String TAG = "MR2Provider";
     static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
+    private static final String PACKAGE_NAME_SEPARATOR = "/";
 
     final MediaRouter2 mMediaRouter2;
     final Callback mCallback;
@@ -77,9 +79,10 @@ class MediaRoute2Provider extends MediaRouteProvider {
     private final MediaRouter2.ControllerCallback mControllerCallback = new ControllerCallback();
     private final Handler mHandler;
     private final Executor mHandlerExecutor;
-
+    private boolean mMediaTransferRestrictedToSelfProviders;
     private List<MediaRoute2Info> mRoutes = new ArrayList<>();
     private Map<String, String> mRouteIdToOriginalRouteIdMap = new ArrayMap<>();
+
     @SuppressWarnings({"SyntheticAccessor"})
     MediaRoute2Provider(@NonNull Context context, @NonNull Callback callback) {
         super(context);
@@ -153,6 +156,17 @@ class MediaRoute2Provider extends MediaRouteProvider {
         return null;
     }
 
+    /* package */ void setMediaTransferRestrictedToSelfProviders(
+            boolean mediaTransferRestrictedToSelfProviders) {
+        mMediaTransferRestrictedToSelfProviders = mediaTransferRestrictedToSelfProviders;
+        refreshRoutes();
+    }
+
+    @VisibleForTesting
+    /* package */ boolean isMediaTransferRestrictedToSelfProviders() {
+        return mMediaTransferRestrictedToSelfProviders;
+    }
+
     public void transferTo(@NonNull String routeId) {
         MediaRoute2Info route = getRouteById(routeId);
         if (route == null) {
@@ -171,6 +185,17 @@ class MediaRoute2Provider extends MediaRouteProvider {
             if (route == null || route2InfoSet.contains(route) || route.isSystemRoute()) {
                 continue;
             }
+
+            if (mMediaTransferRestrictedToSelfProviders) {
+                // The routeId is created by Android framework with the provider's package name.
+                boolean isRoutePublishedBySelfProviders =
+                        route.getId()
+                                .startsWith(getContext().getPackageName() + PACKAGE_NAME_SEPARATOR);
+                if (!isRoutePublishedBySelfProviders) {
+                    continue;
+                }
+            }
+
             route2InfoSet.add(route);
 
             // Not using new ArrayList(route2InfoSet) here for preserving the order.
@@ -374,8 +399,9 @@ class MediaRoute2Provider extends MediaRouteProvider {
     }
 
     abstract static class Callback {
-        public abstract void onSelectRoute(@NonNull String routeDescriptorId,
-                @MediaRouter.UnselectReason int reason);
+        public abstract void onSelectRoute(
+                @NonNull String routeDescriptorId, @MediaRouter.UnselectReason int reason);
+
         public abstract void onSelectFallbackRoute(@MediaRouter.UnselectReason int reason);
 
         public abstract void onReleaseController(@NonNull RouteController controller);

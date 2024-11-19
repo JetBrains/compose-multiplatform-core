@@ -28,10 +28,10 @@ import android.os.Build
 import android.os.Bundle
 import androidx.annotation.RequiresApi
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.gson.Gson
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.Date
+import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -56,6 +56,11 @@ class SecurityPatchStateTest {
             .setSecurityPatchLevel("2022-01-01")
             .setPublishedDate(Date.from(LocalDate.now().atStartOfDay().toInstant(ZoneOffset.UTC)))
             .build()
+    private val updateInfoJson =
+        Json.encodeToString(
+            SerializableUpdateInfo.serializer(),
+            updateInfo.toSerializableUpdateInfo()
+        )
     private val mockEmptyEditor: SharedPreferences.Editor = mock<SharedPreferences.Editor> {}
     private val mockEditor: SharedPreferences.Editor =
         mock<SharedPreferences.Editor> {
@@ -65,7 +70,7 @@ class SecurityPatchStateTest {
     private val mockPrefs: SharedPreferences =
         mock<SharedPreferences> {
             on { edit() } doReturn mockEditor
-            on { all } doReturn mapOf(Pair("key", Gson().toJson(updateInfo)))
+            on { all } doReturn mapOf(Pair("key", updateInfoJson))
         }
     private val mockPackageManager: PackageManager =
         mock<PackageManager> {
@@ -77,7 +82,7 @@ class SecurityPatchStateTest {
         mock<Cursor> {
             on { moveToNext() } doReturn true doReturn false doReturn true doReturn false
             on { getColumnIndexOrThrow(Mockito.eq("json")) } doReturn 123
-            on { getString(Mockito.eq(123)) } doReturn Gson().toJson(updateInfo)
+            on { getString(Mockito.eq(123)) } doReturn updateInfoJson
         }
     private val mockContentResolver: ContentResolver =
         mock<ContentResolver> {

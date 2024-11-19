@@ -111,12 +111,19 @@ private fun FocusTargetNode.generateAndSearchChildren(
         return true
     }
 
+    val focusTransactionManager = requireTransactionManager()
+    val generationBeforeSearch = focusTransactionManager.generation
     // Generate more items until searchChildren() finds a result.
     return searchBeyondBounds(direction) {
-        // Search among the added children. (The search continues as long as we return null).
-        searchChildren(focusedItem, direction, onFound).takeIf { found ->
-            // Stop searching when we find a result or if we don't have any more content.
-            found || !hasMoreContent
+        if (generationBeforeSearch != focusTransactionManager.generation) {
+            // A new focus change was triggered during searchBeyondBounds.
+            true
+        } else {
+            // Search among the added children. (The search continues as long as we return null).
+            searchChildren(focusedItem, direction, onFound).takeIf { found ->
+                // Stop searching when we find a result or if we don't have any more content.
+                found || !hasMoreContent
+            }
         }
     } ?: false
 }

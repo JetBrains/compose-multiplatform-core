@@ -16,6 +16,7 @@
 
 package androidx.wear.compose.foundation.rotary
 
+import android.view.MotionEvent
 import android.view.ViewConfiguration
 import androidx.compose.animation.core.AnimationState
 import androidx.compose.animation.core.CubicBezierEasing
@@ -852,7 +853,7 @@ internal class FlingRotaryScrollableBehavior(
         rotaryScrollDistance += delta
         debugLog { "Rotary scroll distance: $rotaryScrollDistance" }
 
-        rotaryHaptics.handleScrollHaptic(timestampMillis, delta)
+        rotaryHaptics.handleScrollHaptic(timestampMillis, delta, inputDeviceId, AxisScroll)
 
         previousScrollEventTime = timestampMillis
         scrollHandler.scrollToTarget(this, rotaryScrollDistance)
@@ -863,7 +864,9 @@ internal class FlingRotaryScrollableBehavior(
                 debugLog { "Calling beforeFling section" }
                 resetScrolling()
             },
-            edgeReached = { velocity -> rotaryHaptics.handleLimitHaptic(velocity > 0f) }
+            edgeReached = { velocity ->
+                rotaryHaptics.handleLimitHaptic(velocity > 0f, inputDeviceId, AxisScroll)
+            }
         )
     }
 
@@ -969,7 +972,7 @@ internal class HighResSnapRotaryScrollableBehavior(
                     "Accumulated snap delta: $accumulatedSnapDelta"
             }
             if (edgeNotReached(snapDistanceInItems)) {
-                rotaryHaptics.handleSnapHaptic(timestampMillis, delta)
+                rotaryHaptics.handleSnapHaptic(timestampMillis, delta, inputDeviceId, AxisScroll)
             }
 
             snapHandler.updateSnapTarget(snapDistanceInItems, sequentialSnap)
@@ -1077,7 +1080,7 @@ internal class LowResSnapRotaryScrollableBehavior(
         if (abs(accumulatedSnapDelta) > 1f) {
 
             val snapDistanceInItems = sign(accumulatedSnapDelta).toInt()
-            rotaryHaptics.handleSnapHaptic(timestampMillis, delta)
+            rotaryHaptics.handleSnapHaptic(timestampMillis, delta, inputDeviceId, AxisScroll)
             val sequentialSnap = snapJob.isActive
             debugLog {
                 "Snap threshold reached: snapDistanceInItems:$snapDistanceInItems, " +
@@ -1298,6 +1301,8 @@ internal enum class RotarySnapSensitivity(
     // Used for full-screen pagers
     HIGH(5f, 7.5f, 5f),
 }
+
+private const val AxisScroll = MotionEvent.AXIS_SCROLL
 
 /** Debug logging that can be enabled. */
 private const val DEBUG = false

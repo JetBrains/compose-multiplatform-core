@@ -40,7 +40,6 @@ class OptionalQueryResultAdapter(
                 typeName = CommonTypeNames.OPTIONAL.parametrizedBy(typeArg.asTypeName()),
                 assignExpr =
                     XCodeBlock.of(
-                        language = language,
                         format = "%T.ofNullable(%L)",
                         CommonTypeNames.OPTIONAL,
                         valueVarName

@@ -478,16 +478,18 @@ class FontFamilyResolverImplTest {
         assertThat(typeface).isSameInstanceAs(Typeface.DEFAULT)
     }
 
-    @Test(expected = IllegalStateException::class)
-    fun throwsExceptionIfFontIsNotIncludedInTheApp() {
+    @Test
+    fun doesntThrowExceptionIfFontIsNotIncludedInTheApp() {
         val fontFamily = FontFamily(Font(resId = -1))
-        resolveAsTypeface(fontFamily)
+        val result = resolveAsTypeface(fontFamily)
+        assertThat(result).isNotNull()
     }
 
-    @Test(expected = IllegalStateException::class)
-    fun throwsExceptionIfFontIsNotReadable() {
+    @Test
+    fun doesntThrowExceptionIfFontIsNotReadable() {
         val fontFamily = FontFamily(FontTestData.FONT_INVALID)
-        resolveAsTypeface(fontFamily)
+        val result = resolveAsTypeface(fontFamily)
+        assertThat(result).isNotNull()
     }
 
     @Test

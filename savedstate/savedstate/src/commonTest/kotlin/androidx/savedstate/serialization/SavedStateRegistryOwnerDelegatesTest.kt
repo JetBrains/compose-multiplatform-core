@@ -32,6 +32,7 @@ import kotlin.test.Test
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.serializer
 
 internal class SavedStateRegistryOwnerDelegatesTest : RobolectricTest() {
 
@@ -53,6 +54,36 @@ internal class SavedStateRegistryOwnerDelegatesTest : RobolectricTest() {
         val expectedState =
             createRestoredState(DEFAULT_KEY_PROPERTY, Int.serializer(), Int.MAX_VALUE)
         assertThat(actualState.read { contentDeepEquals(expectedState) }).isTrue()
+    }
+
+    @Test
+    fun saved_empty_value_stays_empty() {
+        val owner =
+            FakeSavedStateRegistryOwner().apply {
+                savedStateRegistryController.performAttach()
+                savedStateRegistryController.performRestore(savedState = null)
+                lifecycleRegistry.currentState = State.CREATED
+            }
+
+        var property: List<Double> by owner.saved { listOf(1.0, 2.0, 3.0) }
+        property = emptyList()
+
+        val actualState = savedState()
+        owner.savedStateRegistryController.performSave(actualState)
+
+        val expectedState =
+            createRestoredState(DEFAULT_KEY_PROPERTY, serializer<List<Double>>(), emptyList())
+        assertThat(actualState.read { contentDeepEquals(expectedState) }).isTrue()
+
+        // Simulate configuration change
+        val newOwner =
+            FakeSavedStateRegistryOwner().apply {
+                savedStateRegistryController.performAttach()
+                savedStateRegistryController.performRestore(savedState = actualState)
+                lifecycleRegistry.currentState = State.CREATED
+            }
+        val newProperty: List<Double> by newOwner.saved(key = "property") { listOf(1.0, 2.0, 3.0) }
+        assertThat(newProperty).isEmpty()
     }
 
     @Test

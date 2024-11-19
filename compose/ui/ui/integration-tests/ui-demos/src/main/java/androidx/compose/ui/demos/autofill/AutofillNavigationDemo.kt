@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalAutofillManager
+import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -147,7 +148,7 @@ fun LoginScreen(navController: NavController) {
                     state = remember { TextFieldState() },
                     modifier =
                         Modifier.fillMaxWidth().border(1.dp, Color.LightGray).semantics {
-                            ContentType.Username
+                            contentType = ContentType.Username
                         }
                 )
 
@@ -155,7 +156,7 @@ fun LoginScreen(navController: NavController) {
                     state = remember { TextFieldState() },
                     modifier =
                         Modifier.fillMaxWidth().border(1.dp, Color.LightGray).semantics {
-                            ContentType.Username
+                            contentType = ContentType.Username
                         }
                 )
             }

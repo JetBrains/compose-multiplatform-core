@@ -22,6 +22,11 @@ import static androidx.camera.core.ImageCapture.ERROR_CAPTURE_FAILED;
 import static androidx.camera.core.ImageCapture.ERROR_FILE_IO;
 import static androidx.camera.core.ImageCapture.ERROR_INVALID_CAMERA;
 import static androidx.camera.core.ImageCapture.ERROR_UNKNOWN;
+import static androidx.camera.core.ImageCapture.OUTPUT_FORMAT_JPEG;
+import static androidx.camera.core.ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR;
+import static androidx.camera.core.ImageCapture.OUTPUT_FORMAT_RAW;
+import static androidx.camera.core.ImageCapture.OUTPUT_FORMAT_RAW_JPEG;
+import static androidx.camera.core.ImageCapture.getImageCaptureCapabilities;
 import static androidx.camera.integration.extensions.CameraDirection.BACKWARD;
 import static androidx.camera.integration.extensions.CameraDirection.FORWARD;
 import static androidx.camera.integration.extensions.IntentExtraKey.INTENT_EXTRA_CAMERA_IMPLEMENTATION;
@@ -29,6 +34,7 @@ import static androidx.camera.integration.extensions.IntentExtraKey.INTENT_EXTRA
 import static androidx.camera.integration.extensions.IntentExtraKey.INTENT_EXTRA_KEY_CAMERA_ID;
 import static androidx.camera.integration.extensions.IntentExtraKey.INTENT_EXTRA_KEY_DELETE_CAPTURED_IMAGE;
 import static androidx.camera.integration.extensions.IntentExtraKey.INTENT_EXTRA_KEY_EXTENSION_MODE;
+import static androidx.camera.integration.extensions.IntentExtraKey.INTENT_EXTRA_KEY_OUTPUT_FORMAT;
 import static androidx.camera.integration.extensions.IntentExtraKey.INTENT_EXTRA_KEY_VIDEO_CAPTURE_ENABLED;
 import static androidx.camera.integration.extensions.utils.PermissionUtil.setupPermissions;
 import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED;
@@ -64,6 +70,7 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewStub;
 import android.widget.Button;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
@@ -83,6 +90,7 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.FocusMeteringResult;
 import androidx.camera.core.ImageCapture;
+import androidx.camera.core.ImageCaptureCapabilities;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.MeteringPoint;
 import androidx.camera.core.Preview;
@@ -125,6 +133,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /** An activity that shows off how extensions can be applied */
 public class CameraExtensionsActivity extends AppCompatActivity
@@ -202,6 +211,9 @@ public class CameraExtensionsActivity extends AppCompatActivity
     private String mLastTakePictureErrorMessage = null;
 
     private PreviewView.StreamState mCurrentStreamState = null;
+
+    private @ImageCapture.OutputFormat int mImageOutputFormat = OUTPUT_FORMAT_JPEG;
+    private Button mButtonImageOutputFormat;
 
     void setupButtons() {
         Button btnToggleMode = findViewById(R.id.PhotoToggle);
@@ -282,6 +294,14 @@ public class CameraExtensionsActivity extends AppCompatActivity
 
         mCamera = mCameraProvider.bindToLifecycle(this, cameraSelector);
 
+        // Reset to the default JPEG output format if the format set previously is not supported by
+        // the new extensions mode or the different lens facing camera.
+        if (!ImageCapture.getImageCaptureCapabilities(
+                mCamera.getCameraInfo()).getSupportedOutputFormats().contains(mImageOutputFormat)) {
+            mImageOutputFormat = OUTPUT_FORMAT_JPEG;
+        }
+        setUpImageOutputFormatButton();
+
         final boolean isPostviewSupported = ImageCapture.getImageCaptureCapabilities(
                 mCamera.getCameraInfo()).isPostviewSupported();
 
@@ -290,6 +310,7 @@ public class CameraExtensionsActivity extends AppCompatActivity
 
         ImageCapture.Builder imageCaptureBuilder = new ImageCapture.Builder()
                 .setTargetName("ImageCapture")
+                .setOutputFormat(mImageOutputFormat)
                 .setPostviewEnabled(isPostviewSupported);
         mImageCapture = imageCaptureBuilder.build();
 
@@ -603,6 +624,8 @@ public class CameraExtensionsActivity extends AppCompatActivity
         }
         mCurrentExtensionMode = getIntent().getIntExtra(INTENT_EXTRA_KEY_EXTENSION_MODE,
                 mCurrentExtensionMode);
+        mImageOutputFormat = getIntent().getIntExtra(INTENT_EXTRA_KEY_OUTPUT_FORMAT,
+                mImageOutputFormat);
 
         mDeleteCapturedImage = getIntent().getBooleanExtra(INTENT_EXTRA_KEY_DELETE_CAPTURED_IMAGE,
                 mDeleteCapturedImage);
@@ -996,5 +1019,90 @@ public class CameraExtensionsActivity extends AppCompatActivity
 
         return errorCodeString + ", Message: " + exception.getMessage() + ", Cause: "
                 + exception.getCause();
+    }
+
+    private void setUpImageOutputFormatButton() {
+        mButtonImageOutputFormat = findViewById(R.id.image_output_format);
+        mButtonImageOutputFormat.setText(getImageOutputFormatMenuItemName(mImageOutputFormat));
+        mButtonImageOutputFormat.setOnClickListener(view -> {
+            PopupMenu popup = new PopupMenu(this, view);
+            Menu menu = popup.getMenu();
+            final int groupId = Menu.NONE;
+
+            // Add device supported output formats.
+            ImageCaptureCapabilities capabilities = getImageCaptureCapabilities(
+                    mCamera.getCameraInfo());
+            Set<Integer> supportedOutputFormats = capabilities.getSupportedOutputFormats();
+            for (int supportedOutputFormat : supportedOutputFormats) {
+                // Add output format item to menu.
+                final int menuItemId = imageOutputFormatToItemId(supportedOutputFormat);
+                final int order = menu.size();
+                final String menuItemName = getImageOutputFormatMenuItemName(supportedOutputFormat);
+
+                menu.add(groupId, menuItemId, order, menuItemName);
+                if (mImageOutputFormat == supportedOutputFormat) {
+                    menu.findItem(menuItemId).setChecked(true);
+                }
+            }
+
+            // Make menu single checkable.
+            menu.setGroupCheckable(groupId, true, true);
+
+            // Set item click listener.
+            popup.setOnMenuItemClickListener(item -> {
+                int outputFormat = itemIdToImageOutputFormat(item.getItemId());
+                if (outputFormat != mImageOutputFormat) {
+                    mImageOutputFormat = outputFormat;
+                    final String newIconName = getImageOutputFormatMenuItemName(mImageOutputFormat);
+                    mButtonImageOutputFormat.setText(newIconName);
+
+                    // Output format changed, rebind UseCases.
+                    bindUseCasesWithCurrentExtensionMode();
+                }
+                return true;
+            });
+
+            popup.show();
+        });
+        mButtonImageOutputFormat.setVisibility(View.VISIBLE);
+    }
+
+    @NonNull
+    private static String getImageOutputFormatMenuItemName(@ImageCapture.OutputFormat int format) {
+        switch (format) {
+            case OUTPUT_FORMAT_JPEG:
+                return "Jpeg";
+            case OUTPUT_FORMAT_JPEG_ULTRA_HDR:
+                return "Jpeg Ultra HDR";
+            case OUTPUT_FORMAT_RAW:
+                return "Raw";
+            case OUTPUT_FORMAT_RAW_JPEG:
+                return "Raw + Jpeg";
+            default:
+                return "Unknown format";
+        }
+    }
+
+    private static int imageOutputFormatToItemId(@ImageCapture.OutputFormat int format) {
+        switch (format) {
+            case OUTPUT_FORMAT_JPEG:
+                return 0;
+            case OUTPUT_FORMAT_JPEG_ULTRA_HDR:
+                return 1;
+            default:
+                throw new IllegalArgumentException("Undefined output format: " + format);
+        }
+    }
+
+    @ImageCapture.OutputFormat
+    private static int itemIdToImageOutputFormat(int itemId) {
+        switch (itemId) {
+            case 0:
+                return OUTPUT_FORMAT_JPEG;
+            case 1:
+                return OUTPUT_FORMAT_JPEG_ULTRA_HDR;
+            default:
+                throw new IllegalArgumentException("Undefined item id: " + itemId);
+        }
     }
 }

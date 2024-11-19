@@ -39,6 +39,10 @@ internal actual constructor(
         source.map[key] = value
     }
 
+    actual inline fun putCharSequence(key: String, value: CharSequence) {
+        source.map[key] = value
+    }
+
     actual inline fun putDouble(key: String, value: Double) {
         source.map[key] = value
     }
@@ -63,48 +67,56 @@ internal actual constructor(
         source.map[key] = value
     }
 
-    actual inline fun putIntList(key: String, values: List<Int>) {
-        source.map[key] = values
+    actual inline fun putCharSequenceList(key: String, value: List<CharSequence>) {
+        source.map[key] = value
     }
 
-    actual inline fun putStringList(key: String, values: List<String>) {
-        source.map[key] = values
+    actual inline fun putIntList(key: String, value: List<Int>) {
+        source.map[key] = value
     }
 
-    actual inline fun putBooleanArray(key: String, values: BooleanArray) {
-        source.map[key] = values
+    actual inline fun putStringList(key: String, value: List<String>) {
+        source.map[key] = value
     }
 
-    actual inline fun putCharArray(key: String, values: CharArray) {
-        source.map[key] = values
+    actual inline fun putBooleanArray(key: String, value: BooleanArray) {
+        source.map[key] = value
     }
 
-    actual inline fun putDoubleArray(key: String, values: DoubleArray) {
-        source.map[key] = values
+    actual inline fun putCharArray(key: String, value: CharArray) {
+        source.map[key] = value
     }
 
-    actual inline fun putFloatArray(key: String, values: FloatArray) {
-        source.map[key] = values
+    actual inline fun putCharSequenceArray(key: String, value: Array<CharSequence>) {
+        source.map[key] = value
     }
 
-    actual inline fun putIntArray(key: String, values: IntArray) {
-        source.map[key] = values
+    actual inline fun putDoubleArray(key: String, value: DoubleArray) {
+        source.map[key] = value
     }
 
-    actual inline fun putLongArray(key: String, values: LongArray) {
-        source.map[key] = values
+    actual inline fun putFloatArray(key: String, value: FloatArray) {
+        source.map[key] = value
     }
 
-    actual inline fun putStringArray(key: String, values: Array<String>) {
-        source.map[key] = values
+    actual inline fun putIntArray(key: String, value: IntArray) {
+        source.map[key] = value
+    }
+
+    actual inline fun putLongArray(key: String, value: LongArray) {
+        source.map[key] = value
+    }
+
+    actual inline fun putStringArray(key: String, value: Array<String>) {
+        source.map[key] = value
     }
 
     actual inline fun putSavedState(key: String, value: SavedState) {
         source.map[key] = value
     }
 
-    actual inline fun putAll(values: SavedState) {
-        source.map.putAll(values.map)
+    actual inline fun putAll(from: SavedState) {
+        source.map.putAll(from.map)
     }
 
     actual inline fun remove(key: String) {

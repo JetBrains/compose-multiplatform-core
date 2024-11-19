@@ -147,7 +147,7 @@ public interface SessionProcessor {
      * Returns the supported camera operations when the SessionProcessor is enabled.
      */
     @NonNull
-    default @RestrictedCameraInfo.CameraOperation Set<Integer> getSupportedCameraOperations() {
+    default @AdapterCameraInfo.CameraOperation Set<Integer> getSupportedCameraOperations() {
         return Collections.emptySet();
     }
 

@@ -78,7 +78,15 @@ constructor(map: StreamConfigurationMap?, private val outputSizesCorrector: Outp
             return cachedFormatOutputSizes[format]?.clone()
         }
 
-        val outputSizes = impl.getOutputSizes(format)
+        val outputSizes =
+            try {
+                // b/378508360: try-catch to workaround the exception when using
+                // StreamConfigurationMap provided by Robolectric.
+                impl.getOutputSizes(format)
+            } catch (t: Throwable) {
+                Logger.w(tag, "Failed to get output sizes for $format", t)
+                null
+            }
 
         if (outputSizes.isNullOrEmpty()) {
             Logger.w(tag, "Retrieved output sizes array is null or empty for format $format")
@@ -106,7 +114,15 @@ constructor(map: StreamConfigurationMap?, private val outputSizesCorrector: Outp
             return cachedClassOutputSizes[klass]?.clone()
         }
 
-        val outputSizes = impl.getOutputSizes(klass)
+        val outputSizes =
+            try {
+                // b/378508360: try-catch to workaround the exception when using
+                // StreamConfigurationMap provided by Robolectric.
+                impl.getOutputSizes(klass)
+            } catch (t: Throwable) {
+                Logger.w(tag, "Failed to get output sizes for $klass", t)
+                null
+            }
 
         if (outputSizes.isNullOrEmpty()) {
             Logger.w(tag, "Retrieved output sizes array is null or empty for class $klass")

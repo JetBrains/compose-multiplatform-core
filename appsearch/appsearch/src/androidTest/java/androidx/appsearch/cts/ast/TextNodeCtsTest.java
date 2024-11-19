@@ -35,6 +35,18 @@ public class TextNodeCtsTest {
     public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
 
     @Test
+    public void testEquals_identical() {
+        TextNode nodeOne = new TextNode("foo");
+        nodeOne.setPrefix(true);
+
+        TextNode nodeTwo = new TextNode("foo");
+        nodeTwo.setPrefix(true);
+
+        assertThat(nodeOne).isEqualTo(nodeTwo);
+        assertThat(nodeOne.hashCode()).isEqualTo(nodeTwo.hashCode());
+    }
+
+    @Test
     public void testConstructor_prefixVerbatimFalseByDefault() {
         TextNode defaultTextNode = new TextNode("foo");
 

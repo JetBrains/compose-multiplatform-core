@@ -22,6 +22,7 @@ import androidx.binarycompatibilityvalidator.ValidationException
 import androidx.build.Version
 import androidx.build.metalava.shouldFreezeApis
 import androidx.build.metalava.summarizeDiff
+import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.RegularFileProperty
@@ -29,6 +30,8 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
@@ -37,6 +40,9 @@ import org.jetbrains.kotlin.library.abi.ExperimentalLibraryAbiReader
 @CacheableTask
 @OptIn(ExperimentalLibraryAbiReader::class)
 abstract class CheckAbiIsCompatibleTask : DefaultTask() {
+
+    // Input annotation is handled by getIgnoreFile
+    @get:Internal abstract val ignoreFile: RegularFileProperty
 
     /** Text file from which API signatures will be read. */
     @get:PathSensitive(PathSensitivity.RELATIVE)
@@ -50,6 +56,11 @@ abstract class CheckAbiIsCompatibleTask : DefaultTask() {
     @get:Input abstract var referenceVersion: Provider<String>
 
     @get:Input abstract var projectVersion: Provider<String>
+
+    @PathSensitive(PathSensitivity.RELATIVE)
+    @InputFile
+    @Optional
+    fun getBaseline(): File? = ignoreFile.get().asFile.takeIf { it.exists() }
 
     @TaskAction
     fun execute() {
@@ -67,7 +78,11 @@ abstract class CheckAbiIsCompatibleTask : DefaultTask() {
         val currentDump = KlibDumpParser(currentApiDumpText, currentApiPath).parse()
 
         try {
-            BinaryCompatibilityChecker.checkAllBinariesAreCompatible(currentDump, previousDump)
+            BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
+                currentDump,
+                previousDump,
+                getBaseline()
+            )
         } catch (e: ValidationException) {
             throw GradleException(compatErrorMessage(e), e)
         }

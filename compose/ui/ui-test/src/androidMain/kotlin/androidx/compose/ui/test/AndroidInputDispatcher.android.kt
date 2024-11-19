@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.test
 
+import android.content.Context
+import android.hardware.input.InputManager
 import android.view.InputEvent
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
@@ -477,7 +479,7 @@ internal class AndroidInputDispatcher(
                     /* buttonState = */ 0,
                     /* xPrecision = */ 1f,
                     /* yPrecision = */ 1f,
-                    /* deviceId = */ 0,
+                    /* deviceId = */ findInputDevice(root.view.context, SOURCE_ROTARY_ENCODER),
                     /* edgeFlags = */ 0,
                     /* source = */ SOURCE_ROTARY_ENCODER,
                     /* flags = */ 0
@@ -596,5 +598,20 @@ internal class AndroidInputDispatcher(
      */
     private fun recycleEventIfPossible(event: InputEvent) {
         (event as? MotionEvent)?.recycle()
+    }
+
+    private fun findInputDevice(context: Context, source: Int): Int {
+        with(context.getSystemService(Context.INPUT_SERVICE) as InputManager) {
+            inputDeviceIds.forEach { deviceId ->
+                getInputDevice(deviceId)?.apply {
+                    motionRanges
+                        .find { it.source == source }
+                        ?.let {
+                            return deviceId
+                        }
+                }
+            }
+        }
+        return 0
     }
 }

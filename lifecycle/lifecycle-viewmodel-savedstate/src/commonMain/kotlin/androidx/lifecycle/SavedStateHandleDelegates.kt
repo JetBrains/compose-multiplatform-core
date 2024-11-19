@@ -17,7 +17,6 @@
 package androidx.lifecycle
 
 import androidx.savedstate.SavedState
-import androidx.savedstate.read
 import androidx.savedstate.serialization.decodeFromSavedState
 import androidx.savedstate.serialization.encodeToSavedState
 import kotlin.properties.ReadWriteProperty
@@ -120,7 +119,7 @@ private class SerializablePropertyDelegate<T : Any>(
 
         val restoredState = savedStateHandle.get<SavedState>(qualifiedKey)
         val value =
-            if (restoredState != null && restoredState.read { !isEmpty() }) {
+            if (restoredState != null) {
                 decodeFromSavedState(serializer, restoredState)
             } else {
                 init()

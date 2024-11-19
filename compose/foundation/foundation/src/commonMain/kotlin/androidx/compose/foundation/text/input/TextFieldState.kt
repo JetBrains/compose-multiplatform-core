@@ -571,7 +571,11 @@ internal constructor(
 
         // Composition should be decided by the IME after the content or selection has been
         // changed programmatically, outside the knowledge of the IME.
-        mainBuffer.commitComposition()
+        if (
+            textChanged || selectionChanged || oldValue.composition != temporaryBuffer.composition
+        ) {
+            mainBuffer.commitComposition()
+        }
 
         val finalValue = mainBuffer.toTextFieldCharSequence()
 

@@ -520,6 +520,7 @@ private val goldenDefaultConfigMacroBenchmark =
     <option name="instrumentation-arg" key="androidx.test.argument2" value="something2" />
     <option name="instrumentation-arg" key="androidx.benchmark.output.payload.testApkSha256" value="123456" />
     <option name="instrumentation-arg" key="androidx.benchmark.output.payload.appApkSha256" value="654321" />
+    <option name="instrumentation-arg" key="androidx.benchmark.enabledRules" value="Macrobenchmark" />
     <include name="google/unbundled/common/setup" />
     <target_preparer class="com.android.tradefed.targetprep.suite.SuiteApkInstaller">
     <option name="cleanup-apks" value="true" />

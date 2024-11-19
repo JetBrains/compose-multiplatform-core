@@ -183,7 +183,7 @@ class ThreePaneScaffoldTest {
         }
 
         rule.runOnIdle {
-            mockPaneExpansionState.dispatchRawDelta(mockDraggingPx)
+            mockPaneExpansionState.draggableState.dispatchRawDelta(mockDraggingPx)
             scope.launch { mockPaneExpansionState.settleToAnchorIfNeeded(0F) }
         }
 
@@ -207,7 +207,7 @@ class ThreePaneScaffoldTest {
         }
 
         rule.runOnIdle {
-            mockPaneExpansionState.dispatchRawDelta(mockDraggingPx)
+            mockPaneExpansionState.draggableState.dispatchRawDelta(mockDraggingPx)
             scope.launch { mockPaneExpansionState.settleToAnchorIfNeeded(400F) }
         }
 
@@ -231,7 +231,7 @@ class ThreePaneScaffoldTest {
         }
 
         rule.runOnIdle {
-            mockPaneExpansionState.dispatchRawDelta(mockDraggingPx)
+            mockPaneExpansionState.draggableState.dispatchRawDelta(mockDraggingPx)
             scope.launch { mockPaneExpansionState.settleToAnchorIfNeeded(800F) }
         }
 
@@ -255,7 +255,7 @@ class ThreePaneScaffoldTest {
         }
 
         rule.runOnIdle {
-            mockPaneExpansionState.dispatchRawDelta(mockDraggingDp)
+            mockPaneExpansionState.draggableState.dispatchRawDelta(mockDraggingDp)
             scope.launch { mockPaneExpansionState.settleToAnchorIfNeeded(-200F) }
         }
 
@@ -278,7 +278,7 @@ class ThreePaneScaffoldTest {
         }
 
         rule.runOnIdle {
-            mockPaneExpansionState.dispatchRawDelta(mockDraggingDp)
+            mockPaneExpansionState.draggableState.dispatchRawDelta(mockDraggingDp)
             scope.launch { mockPaneExpansionState.settleToAnchorIfNeeded(200F) }
         }
 

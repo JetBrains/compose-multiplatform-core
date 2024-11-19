@@ -259,4 +259,228 @@ class CircularProgressIndicatorTest {
     }
 }
 
+class CircularProgressIndicatorContentTest {
+
+    @get:Rule val rule = createComposeRule()
+
+    @Test
+    fun supports_testtag() {
+        setContentWithTheme {
+            CircularProgressIndicatorContent(
+                progress = { 0.5f },
+                modifier = Modifier.testTag(TEST_TAG)
+            )
+        }
+
+        rule.onNodeWithTag(TEST_TAG).assertExists()
+    }
+
+    @Test
+    fun allows_semantics_to_be_added_correctly() {
+        val progress = mutableStateOf(0f)
+
+        setContentWithTheme {
+            CircularProgressIndicatorContent(
+                modifier =
+                    Modifier.testTag(TEST_TAG).semantics {
+                        progressBarRangeInfo = ProgressBarRangeInfo(progress.value, 0f..1f)
+                    },
+                progress = { progress.value }
+            )
+        }
+
+        rule.onNodeWithTag(TEST_TAG).assertRangeInfoEquals(ProgressBarRangeInfo(0f, 0f..1f))
+
+        rule.runOnIdle { progress.value = 0.5f }
+
+        rule.onNodeWithTag(TEST_TAG).assertRangeInfoEquals(ProgressBarRangeInfo(0.5f, 0f..1f))
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun contains_progress_color() {
+        setContentWithTheme {
+            CircularProgressIndicatorContent(
+                modifier = Modifier.size(COMPONENT_SIZE).testTag(TEST_TAG),
+                progress = { 1f },
+                colors =
+                    ProgressIndicatorDefaults.colors(
+                        indicatorColor = Color.Yellow,
+                        trackColor = Color.Red
+                    ),
+            )
+        }
+        rule.waitForIdle()
+        // With default stroke width the filled progress approximately takes 16% of the control.
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .captureToImage()
+            .assertColorInPercentageRange(Color.Yellow, 15f..18f)
+        rule.onNodeWithTag(TEST_TAG).captureToImage().assertDoesNotContainColor(Color.Red)
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun contains_progress_incomplete_color() {
+        setContentWithTheme {
+            CircularProgressIndicatorContent(
+                modifier = Modifier.size(COMPONENT_SIZE).testTag(TEST_TAG),
+                progress = { 0f },
+                colors =
+                    ProgressIndicatorDefaults.colors(
+                        indicatorColor = Color.Yellow,
+                        trackColor = Color.Red
+                    ),
+            )
+        }
+        rule.waitForIdle()
+        rule.onNodeWithTag(TEST_TAG).captureToImage().assertDoesNotContainColor(Color.Yellow)
+        // With default stroke width the progress track approximately takes 16% of the control.
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .captureToImage()
+            .assertColorInPercentageRange(Color.Red, 15f..18f)
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun change_start_end_angle() {
+        setContentWithTheme {
+            CircularProgressIndicatorContent(
+                modifier = Modifier.size(COMPONENT_SIZE).testTag(TEST_TAG),
+                progress = { 0.5f },
+                startAngle = 0f,
+                endAngle = 180f,
+                colors =
+                    ProgressIndicatorDefaults.colors(
+                        indicatorColor = Color.Yellow,
+                        trackColor = Color.Red
+                    ),
+            )
+        }
+        rule.waitForIdle()
+        // Color should take approximately a quarter of the full screen color percentages,
+        // eg 16% / 4 ≈ 4%.
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .captureToImage()
+            .assertColorInPercentageRange(Color.Yellow, 3f..5f)
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .captureToImage()
+            .assertColorInPercentageRange(Color.Red, 3f..5f)
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun set_small_progress_value() {
+        setContentWithTheme {
+            CircularProgressIndicatorContent(
+                modifier = Modifier.size(COMPONENT_SIZE).testTag(TEST_TAG),
+                progress = { 0.02f },
+                colors =
+                    ProgressIndicatorDefaults.colors(
+                        indicatorColor = Color.Yellow,
+                        trackColor = Color.Red
+                    ),
+            )
+        }
+        rule.waitForIdle()
+        // Small progress values like 2% should be rounded up to at least the stroke width.
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .captureToImage()
+            .assertColorInPercentageRange(Color.Yellow, 0.2f..0.5f)
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .captureToImage()
+            .assertColorInPercentageRange(Color.Red, 15f..18f)
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun set_small_stroke_width() {
+        setContentWithTheme {
+            CircularProgressIndicatorContent(
+                modifier = Modifier.size(COMPONENT_SIZE).testTag(TEST_TAG),
+                progress = { 0.5f },
+                strokeWidth = CircularProgressIndicatorDefaults.smallStrokeWidth,
+                colors =
+                    ProgressIndicatorDefaults.colors(
+                        indicatorColor = Color.Yellow,
+                        trackColor = Color.Red
+                    ),
+            )
+        }
+        rule.waitForIdle()
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .captureToImage()
+            .assertColorInPercentageRange(Color.Yellow, 5f..7f)
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .captureToImage()
+            .assertColorInPercentageRange(Color.Red, 5f..7f)
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun set_large_stroke_width() {
+        setContentWithTheme {
+            CircularProgressIndicatorContent(
+                modifier = Modifier.size(COMPONENT_SIZE).testTag(TEST_TAG),
+                progress = { 0.5f },
+                strokeWidth = CircularProgressIndicatorDefaults.largeStrokeWidth,
+                colors =
+                    ProgressIndicatorDefaults.colors(
+                        indicatorColor = Color.Yellow,
+                        trackColor = Color.Red
+                    ),
+            )
+        }
+        rule.waitForIdle()
+        // Because of the stroke cap, progress color takes same amount as track color.
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .captureToImage()
+            .assertColorInPercentageRange(Color.Yellow, 8f..10f)
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .captureToImage()
+            .assertColorInPercentageRange(Color.Red, 8f..10f)
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun progress_disabled_contains_disabled_colors() {
+        setContentWithTheme {
+            CircularProgressIndicatorContent(
+                modifier = Modifier.size(COMPONENT_SIZE).testTag(TEST_TAG),
+                progress = { 0.5f },
+                enabled = false,
+                colors =
+                    ProgressIndicatorDefaults.colors(
+                        indicatorColor = Color.Yellow,
+                        trackColor = Color.Red,
+                        disabledIndicatorColor = Color.Blue,
+                        disabledTrackColor = Color.Green,
+                    ),
+            )
+        }
+        rule.waitForIdle()
+
+        rule.onNodeWithTag(TEST_TAG).captureToImage().assertDoesNotContainColor(Color.Yellow)
+        rule.onNodeWithTag(TEST_TAG).captureToImage().assertDoesNotContainColor(Color.Red)
+        rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(Color.Blue)
+        rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(Color.Green)
+    }
+
+    private fun setContentWithTheme(composable: @Composable BoxScope.() -> Unit) {
+        // Use constant size modifier to limit relative color percentage ranges.
+        rule.setContentWithTheme(modifier = Modifier.size(COMPONENT_SIZE)) {
+            ScreenConfiguration(SCREEN_SIZE_LARGE) { composable() }
+        }
+    }
+}
+
 private val COMPONENT_SIZE = 204.dp

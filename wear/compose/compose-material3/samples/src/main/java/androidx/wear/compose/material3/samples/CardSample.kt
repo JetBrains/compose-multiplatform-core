@@ -77,7 +77,7 @@ fun AppCardSample() {
         onClick = { /* Do something */ },
         appName = { Text("App name") },
         title = { Text("Card title") },
-        time = { Text("now") },
+        time = { Text("Now") },
     ) {
         Text("Card content")
     }
@@ -96,10 +96,11 @@ fun AppCardWithIconSample() {
                 modifier =
                     Modifier.size(CardDefaults.AppImageSize)
                         .wrapContentSize(align = Alignment.Center),
+                tint = MaterialTheme.colorScheme.primary
             )
         },
         title = { Text("Card title") },
-        time = { Text("now") },
+        time = { Text("Now") },
     ) {
         Text("Card content")
     }
@@ -122,10 +123,11 @@ fun AppCardWithImageSample() {
                 modifier =
                     Modifier.size(CardDefaults.AppImageSize)
                         .wrapContentSize(align = Alignment.Center),
+                tint = MaterialTheme.colorScheme.primary
             )
         },
         title = { Text("With image") },
-        time = { Text("now") },
+        time = { Text("Now") },
     ) {
         Spacer(modifier = Modifier.height(4.dp))
         Row(modifier = Modifier.fillMaxWidth()) {
@@ -147,7 +149,7 @@ fun TitleCardSample() {
     TitleCard(
         onClick = { /* Do something */ },
         title = { Text("Title card") },
-        time = { Text("now") },
+        time = { Text("Now") },
     ) {
         Text("Card content")
     }
@@ -158,7 +160,7 @@ fun TitleCardSample() {
 fun TitleCardWithSubtitleAndTimeSample() {
     TitleCard(
         onClick = { /* Do something */ },
-        time = { Text("now") },
+        time = { Text("Now") },
         title = { Text("Title card") },
         subtitle = { Text("Subtitle") }
     )
@@ -170,7 +172,7 @@ fun TitleCardWithMultipleImagesSample() {
     TitleCard(
         onClick = { /* Do something */ },
         title = { Text("Title card") },
-        time = { Text("now") },
+        time = { Text("Now") },
         modifier = Modifier.semantics { contentDescription = "Background image" }
     ) {
         Spacer(Modifier.height(4.dp))
@@ -206,7 +208,7 @@ fun TitleCardWithImageBackgroundSample() {
     TitleCard(
         onClick = { /* Do something */ },
         title = { Text("Card title") },
-        time = { Text("now") },
+        time = { Text("Now") },
         colors =
             CardDefaults.imageCardColors(
                 containerPainter =
@@ -247,7 +249,7 @@ fun OutlinedAppCardSample() {
             )
         },
         title = { Text("App card") },
-        time = { Text("now") },
+        time = { Text("Now") },
         colors = CardDefaults.outlinedCardColors(),
         border = CardDefaults.outlinedCardBorder(),
     ) {
@@ -261,7 +263,7 @@ fun OutlinedTitleCardSample() {
     TitleCard(
         onClick = { /* Do something */ },
         title = { Text("Title card") },
-        time = { Text("now") },
+        time = { Text("Now") },
         colors = CardDefaults.outlinedCardColors(),
         border = CardDefaults.outlinedCardBorder(),
     ) {

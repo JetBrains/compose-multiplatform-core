@@ -121,7 +121,10 @@ public final class ResolutionStrategy {
      * </ul>
      *
      * @param boundSize the bound size to select the best resolution with the fallback rule.
-     * @param fallbackRule the rule to follow when the specified bound size is not available.
+     * @param fallbackRule the rule to apply when the specified bound size is unavailable. This
+     *                     can be
+     *                     {@link ResolutionStrategy#FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER} or
+     *                     another strategy appropriate for the application.
      */
     public ResolutionStrategy(@NonNull Size boundSize, @ResolutionFallbackRule int fallbackRule) {
         mBoundSize = boundSize;

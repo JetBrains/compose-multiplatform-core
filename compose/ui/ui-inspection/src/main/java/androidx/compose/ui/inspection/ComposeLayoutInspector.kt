@@ -26,7 +26,6 @@ import androidx.collection.mutableIntListOf
 import androidx.collection.mutableLongObjectMapOf
 import androidx.compose.ui.inspection.compose.AndroidComposeViewWrapper
 import androidx.compose.ui.inspection.compose.convertToParameterGroup
-import androidx.compose.ui.inspection.compose.flatten
 import androidx.compose.ui.inspection.framework.addSlotTable
 import androidx.compose.ui.inspection.framework.flatten
 import androidx.compose.ui.inspection.framework.hasSlotTable
@@ -516,7 +515,7 @@ class ComposeLayoutInspector(connection: Connection, environment: InspectorEnvir
     /** Add a slot table to all AndroidComposeViews that doesn't already have one. */
     private fun addSlotTableToComposeViews() =
         ThreadUtils.runOnMainThread {
-                val roots = rootsDetector.getRoots()
+                val roots = rootsDetector.getAllRoots()
                 val composeViews =
                     roots.flatMap { it.flatten() }.filter { it.isAndroidComposeView() }
 

@@ -69,7 +69,7 @@ internal class GraphLoop(
 
     @GuardedBy("lock") private var _repeatingRequest: Request? = null
 
-    @GuardedBy("lock") private var _graphParameters: Map<Any, Any?> = emptyMap()
+    @GuardedBy("lock") private var _graphParameters: Map<*, Any?> = emptyMap<Any, Any?>()
 
     var requestProcessor: GraphRequestProcessor?
         get() = synchronized(lock) { _requestProcessor }
@@ -151,7 +151,7 @@ internal class GraphLoop(
             }
         }
 
-    var graphParameters: Map<Any, Any?>
+    var graphParameters: Map<*, Any?>
         get() = synchronized(lock) { _graphParameters }
         set(value) =
             synchronized(lock) {
@@ -189,7 +189,7 @@ internal class GraphLoop(
         }
     }
 
-    private fun updateParameters(parameters: Map<Any, Any?>): Boolean {
+    private fun updateParameters(parameters: Map<*, Any?>): Boolean {
         synchronized(lock) {
             val currentRepeatingRequest = _repeatingRequest
             if (currentRepeatingRequest != null) {
@@ -492,7 +492,7 @@ internal class GraphLoop(
         isRepeating: Boolean,
         requests: List<Request>,
         parameters: Map<*, Any?> = emptyMap<Any, Any?>(),
-        graphParameters: Map<Any, Any?> = emptyMap()
+        graphParameters: Map<*, Any?> = emptyMap<Any, Any?>()
     ): Boolean {
         val graphRequiredParameters = buildMap {
             // Build the required parameter map:
@@ -537,6 +537,6 @@ internal class GraphLoop(
     private class SubmitParameters(val request: Request, val parameters: Map<*, Any?>) :
         GraphCommand()
 
-    private class UpdateParameters(val request: Request, val graphParameters: Map<Any, Any?>) :
+    private class UpdateParameters(val request: Request, val graphParameters: Map<*, Any?>) :
         GraphCommand()
 }

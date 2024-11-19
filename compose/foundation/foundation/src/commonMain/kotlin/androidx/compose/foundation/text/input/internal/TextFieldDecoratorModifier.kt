@@ -29,7 +29,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.Handle
 import androidx.compose.foundation.text.KeyboardActionScope
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.LocalAutofillHighlight
+import androidx.compose.foundation.text.LocalAutofillHighlightColor
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.KeyboardActionHandler
 import androidx.compose.foundation.text.input.internal.selection.TextFieldSelectionState
@@ -386,7 +386,7 @@ internal class TextFieldDecoratorModifierNode(
         // Autofill highlight is drawn on top of the content — this way the coloring appears over
         // any Material background applied.
         if (autofillHighlightOn) {
-            drawRect(color = currentValueOf(LocalAutofillHighlight).autofillHighlightColor)
+            drawRect(color = currentValueOf(LocalAutofillHighlightColor))
         }
     }
 

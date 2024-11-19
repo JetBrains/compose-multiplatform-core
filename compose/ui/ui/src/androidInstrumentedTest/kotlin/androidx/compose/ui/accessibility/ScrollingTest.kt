@@ -64,8 +64,10 @@ import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.ACTION_SCROL
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Correspondence
 import com.google.common.truth.Truth.assertThat
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -79,6 +81,19 @@ class ScrollingTest {
     private lateinit var androidComposeView: AndroidComposeView
     private val dispatchedAccessibilityEvents = mutableListOf<AccessibilityEvent>()
     private val accessibilityEventLoopIntervalMs = 100L
+
+    @After
+    fun teardown() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val activity = rule.activity
+        while (!activity.isDestroyed) {
+            instrumentation.runOnMainSync {
+                if (!activity.isDestroyed) {
+                    activity.finish()
+                }
+            }
+        }
+    }
 
     @SdkSuppress(maxSdkVersion = 33) // b/322354981
     @Test

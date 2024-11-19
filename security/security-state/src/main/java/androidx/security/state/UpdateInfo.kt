@@ -16,8 +16,39 @@
 
 package androidx.security.state
 
+import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Objects
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+
+private object DateSerializer : KSerializer<Date> {
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("Date", PrimitiveKind.STRING)
+
+    private val dateFormat: SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+
+    override fun serialize(encoder: Encoder, value: Date): Unit =
+        encoder.encodeString(dateFormat.format(value))
+
+    override fun deserialize(decoder: Decoder): Date = dateFormat.parse(decoder.decodeString())!!
+}
+
+@Serializable
+internal class SerializableUpdateInfo(
+    private val uri: String,
+    private val component: String,
+    private val securityPatchLevel: String,
+    @Serializable(with = DateSerializer::class) private val publishedDate: Date
+) {
+    internal fun toUpdateInfo(): UpdateInfo =
+        UpdateInfo(uri, component, securityPatchLevel, publishedDate)
+}
 
 /** Represents information about an available update for a component. */
 public class UpdateInfo(
@@ -33,6 +64,10 @@ public class UpdateInfo(
     /** Date when the available update was published. */
     public val publishedDate: Date
 ) {
+
+    internal fun toSerializableUpdateInfo(): SerializableUpdateInfo =
+        SerializableUpdateInfo(uri, component, securityPatchLevel, publishedDate)
+
     /**
      * Returns a string representation of the update information.
      *

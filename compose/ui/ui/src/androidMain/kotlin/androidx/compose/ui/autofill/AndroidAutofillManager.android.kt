@@ -176,12 +176,6 @@ internal class AndroidAutofillManager(val view: AndroidComposeView) : AutofillMa
     }
 
     private fun notifyViewEntered(semanticsId: Int) {
-        // When a field is entered for the first time, a pop-up dialog should appear. Compose does
-        // not need to keep track of whether or not this is the first time a field is entered;
-        // the Autofill framework takes care of that. Compose simply calls `showAutofillDialog`
-        // each time a field is entered and the dialog appears if the appropriate conditions are
-        // met.
-        autofillManager.showAutofillDialog(semanticsId)
         currentSemanticsNodes[semanticsId]?.adjustedBounds?.let {
             autofillManager.notifyViewEntered(semanticsId, it)
         }
@@ -193,8 +187,7 @@ internal class AndroidAutofillManager(val view: AndroidComposeView) : AutofillMa
 
     private fun notifyAutofillValueChanged(semanticsId: Int, newAutofillValue: Any) {
         val currSemanticsNode = currentSemanticsNodes[semanticsId]?.semanticsNode
-        val currDataType =
-            currSemanticsNode?.unmergedConfig?.getOrNull(SemanticsContentDataType) ?: return
+        val currDataType = currSemanticsNode?.unmergedConfig?.getOrNull(SemanticsContentDataType)
 
         when (currDataType) {
             ContentDataType.Text ->
@@ -302,8 +295,6 @@ internal fun AndroidAutofillManager.populateViewStructure(root: ViewStructure) {
                     SemanticsContentDataType
                 )
         }
-    // TODO(b/138549623): Instead of creating a flattened tree by using the nodes from the map, we
-    //  can use SemanticsOwner to get the root SemanticsInfo and create a more representative tree.
     var index = AutofillApi26Helper.addChildCount(root, count)
 
     // Iterate through currentSemanticsNodes, finding autofill-related nodes
@@ -475,8 +466,6 @@ internal interface AutofillManagerWrapper {
 
     fun notifyViewVisibilityChanged(semanticsId: Int, isVisible: Boolean)
 
-    fun showAutofillDialog(semanticsId: Int)
-
     fun commit()
 
     fun cancel()
@@ -485,7 +474,7 @@ internal interface AutofillManagerWrapper {
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-private class AutofillManagerWrapperImpl(val view: View) : AutofillManagerWrapper {
+private class AutofillManagerWrapperImpl(val view: AndroidComposeView) : AutofillManagerWrapper {
     override val autofillManager =
         view.context.getSystemService(PlatformAndroidManager::class.java)
             ?: error("Autofill service could not be located.")
@@ -510,12 +499,6 @@ private class AutofillManagerWrapperImpl(val view: View) : AutofillManagerWrappe
                 semanticsId,
                 isVisible
             )
-        }
-    }
-
-    override fun showAutofillDialog(semanticsId: Int) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            AutofillApi33Helper.showAutofillDialog(view, autofillManager, semanticsId)
         }
     }
 

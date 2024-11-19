@@ -1459,7 +1459,7 @@ class XAnnotationValueTest(
                 """
                         .trimIndent()
                 ) as Source.KotlinSource,
-            kotlincArgs = KOTLINC_LANGUAGE_1_9_ARGS
+            kotlincArgs = KOTLINC_LANGUAGE_1_9_ARGS,
         ) { invocation ->
             val annotation = getAnnotation(invocation)
             // Compare the AnnotationSpec string ignoring whitespace

@@ -39,11 +39,11 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
+import androidx.camera.core.impl.AdapterCameraControl
 import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.ImageFormatConstants
 import androidx.camera.core.impl.ImageOutputConfig
 import androidx.camera.core.impl.Quirk
-import androidx.camera.core.impl.RestrictedCameraControl
 import androidx.camera.core.impl.utils.AspectRatioUtil
 import androidx.camera.core.impl.utils.AspectRatioUtil.ASPECT_RATIO_16_9
 import androidx.camera.core.impl.utils.AspectRatioUtil.ASPECT_RATIO_4_3
@@ -310,17 +310,6 @@ class ResolutionSelectorDeviceTest(
         )
 
     @Test
-    fun canSelectAnyHighResolutionForPreviewByResolutionFilter() =
-        canSelectAnyHighResolutionByResolutionFilter(
-            Preview::class.java,
-            // For Preview, need to override resolution strategy so that the output sizes larger
-            // than PREVIEW size can be selected.
-            cameraInfoInternal
-                .getSupportedHighResolutions(useCaseFormatMap[Preview::class.java]!!)
-                .maxWithOrNull(CompareSizesByArea())
-        )
-
-    @Test
     fun canSelectAnyResolutionForImageCaptureByResolutionFilter() =
         canSelectAnyResolutionByResolutionFilter(ImageCapture::class.java)
 
@@ -510,7 +499,7 @@ class ResolutionSelectorDeviceTest(
     }
 
     private fun List<Size>.getClosestAspectRatioSublist(targetAspectRatio: Int): List<Size> {
-        val sensorRect = (camera.cameraControl as RestrictedCameraControl).sensorRect
+        val sensorRect = (camera.cameraControl as AdapterCameraControl).sensorRect
         val aspectRatios = getResolutionListGroupingAspectRatioKeys(this)
         val sortedAspectRatios =
             aspectRatios.sortedWith(

@@ -52,7 +52,6 @@ class SingleNamedColumnRowAdapter(
                     typeName = XTypeName.PRIMITIVE_INT,
                     assignExpr =
                         XCodeBlock.of(
-                            scope.language,
                             "%M(%L, %S)",
                             if (scope.useDriverApi) {
                                 RoomTypeNames.STATEMENT_UTIL.packageMember("getColumnIndexOrThrow")

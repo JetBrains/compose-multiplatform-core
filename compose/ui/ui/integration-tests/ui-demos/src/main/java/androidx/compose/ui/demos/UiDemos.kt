@@ -27,6 +27,7 @@ import androidx.compose.integration.demos.common.DemoCategory
 import androidx.compose.ui.demos.accessibility.LinearProgressIndicatorDemo
 import androidx.compose.ui.demos.accessibility.NestedContainersFalseDemo
 import androidx.compose.ui.demos.accessibility.NestedContainersTrueDemo
+import androidx.compose.ui.demos.accessibility.SampleScrollingTooltipScreen
 import androidx.compose.ui.demos.accessibility.ScaffoldSampleDemo
 import androidx.compose.ui.demos.accessibility.ScaffoldSampleScrollDemo
 import androidx.compose.ui.demos.accessibility.ScrollingColumnDemo
@@ -299,7 +300,8 @@ val AccessibilityDemos =
             ComposableDemo("Nested Containers—True") { NestedContainersTrueDemo() },
             ComposableDemo("Nested Containers—False") { NestedContainersFalseDemo() },
             ComposableDemo("Linear Progress Indicator") { LinearProgressIndicatorDemo() },
-            ComposableDemo("Dual LTR and RTL Scene") { SimpleRtlLayoutDemo() }
+            ComposableDemo("Dual LTR and RTL Scene") { SimpleRtlLayoutDemo() },
+            ComposableDemo("Scrolling Tooltip scene") { SampleScrollingTooltipScreen() }
         )
     )
 

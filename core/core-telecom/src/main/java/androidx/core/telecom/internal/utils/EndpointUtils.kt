@@ -316,6 +316,14 @@ internal class EndpointUtils {
                 else -> "UNKNOWN ($endpointType)"
             }
         }
+
+        internal fun getMaskedMacAddress(address: String?): String {
+            return if (address == null) {
+                ""
+            } else {
+                "[**:**:**:**:" + address.takeLast(4) + "]"
+            }
+        }
     }
 
     @RequiresApi(34)
@@ -364,6 +372,10 @@ internal class EndpointUtils {
             // Account for [BluetoothDevice#getAddress()] returning a null value
             if (mackAddress == null) {
                 mackAddress = UUID.randomUUID().toString()
+                Log.i(
+                    "BluetoothApi28PlusImpl",
+                    "setting mac_address[${getMaskedMacAddress(mackAddress)}]"
+                )
             }
             return CallEndpointCompat(
                 endpointName,

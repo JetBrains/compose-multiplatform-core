@@ -95,8 +95,10 @@ import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.imagecapture.ImageCaptureControl;
 import androidx.camera.core.imagecapture.ImagePipeline;
+import androidx.camera.core.imagecapture.PostviewSettings;
 import androidx.camera.core.imagecapture.TakePictureManager;
 import androidx.camera.core.imagecapture.TakePictureRequest;
+import androidx.camera.core.impl.AdapterCameraInfo;
 import androidx.camera.core.impl.CameraConfig;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.CameraInternal;
@@ -297,7 +299,6 @@ public final class ImageCapture extends UseCase {
      * Captures 8-bit standard dynamic range (SDR) images using the {@link ImageFormat#JPEG}
      * image format.
      */
-    @ExperimentalImageCaptureOutputFormat
     public static final int OUTPUT_FORMAT_JPEG = 0;
 
     /**
@@ -310,7 +311,6 @@ public final class ImageCapture extends UseCase {
      * <p>For more information see
      * <a href="https://developer.android.com/media/grow/ultra-hdr">Support Ultra HDR</a>.
      */
-    @ExperimentalImageCaptureOutputFormat
     public static final int OUTPUT_FORMAT_JPEG_ULTRA_HDR = 1;
 
     /**
@@ -529,7 +529,6 @@ public final class ImageCapture extends UseCase {
         return false;
     }
 
-    @OptIn(markerClass = ExperimentalImageCaptureOutputFormat.class)
     private static boolean isOutputFormatUltraHdr(@NonNull MutableConfig config) {
         return Objects.equals(config.retrieveOption(OPTION_OUTPUT_FORMAT, null),
                 OUTPUT_FORMAT_JPEG_ULTRA_HDR);
@@ -889,7 +888,6 @@ public final class ImageCapture extends UseCase {
      *
      * @see ImageCapture.Builder#setOutputFormat(int)
      */
-    @ExperimentalImageCaptureOutputFormat
     @OutputFormat
     public int getOutputFormat() {
         return checkNotNull(getCurrentConfig().retrieveOption(OPTION_OUTPUT_FORMAT,
@@ -1045,10 +1043,16 @@ public final class ImageCapture extends UseCase {
             return false;
         }
 
-        @ExperimentalImageCaptureOutputFormat
         @NonNull
         @Override
         public Set<@OutputFormat Integer> getSupportedOutputFormats() {
+            Set<Integer> outputFormatsFromAdapterCameraInfo =
+                    getSupportedOutputFormatsFromAdapterCameraInfo();
+
+            if (outputFormatsFromAdapterCameraInfo != null) {
+                return outputFormatsFromAdapterCameraInfo;
+            }
+
             Set<Integer> formats = new HashSet<>();
             formats.add(OUTPUT_FORMAT_JPEG);
             if (isUltraHdrSupported()) {
@@ -1079,6 +1083,41 @@ public final class ImageCapture extends UseCase {
             }
 
             return false;
+        }
+
+        @Nullable
+        private Set<Integer> getSupportedOutputFormatsFromAdapterCameraInfo() {
+            if (!(mCameraInfo instanceof AdapterCameraInfo)) {
+                return null;
+            }
+
+            // If AdapterCameraInfo is used to query the capabilities, retrieves the supported
+            // output formats from the CameraConfig associated with it.
+            CameraConfig cameraConfig = ((AdapterCameraInfo) mCameraInfo).getCameraConfig();
+            UseCaseConfigFactory useCaseConfigFactory = cameraConfig.getUseCaseConfigFactory();
+            Config useCaseConfig = useCaseConfigFactory.getConfig(
+                    UseCaseConfigFactory.CaptureType.IMAGE_CAPTURE, DEFAULT_CAPTURE_MODE);
+
+            if (useCaseConfig == null || !useCaseConfig.containsOption(
+                    OPTION_SUPPORTED_RESOLUTIONS)) {
+                return null;
+            }
+
+            Set<Integer> formats = new HashSet<>();
+            // JPEG output format should always be supported for ImageCapture.
+            formats.add(OUTPUT_FORMAT_JPEG);
+            for (Pair<Integer, Size[]> formatSizesPair : useCaseConfig.retrieveOption(
+                    OPTION_SUPPORTED_RESOLUTIONS)) {
+                if (formatSizesPair.first == ImageFormat.JPEG_R) {
+                    formats.add(OUTPUT_FORMAT_JPEG_ULTRA_HDR);
+                    // Besides JPEG, only JPEG_ULTRA_HDR can be supported for now from the
+                    // adapter camera info. Breaks the for-loop when it has been confirmed that
+                    // JPEG_ULTRA_HDR can be supported.
+                    break;
+                }
+            }
+
+            return formats;
         }
     }
 
@@ -1332,7 +1371,7 @@ public final class ImageCapture extends UseCase {
     /**
      * Creates the pipeline for both capture request configuration and image post-processing.
      */
-    @OptIn(markerClass = ExperimentalZeroShutterLag.class)
+    @OptIn(markerClass = {ExperimentalZeroShutterLag.class})
     @MainThread
     private SessionConfig.Builder createPipeline(@NonNull String cameraId,
             @NonNull ImageCaptureConfig config, @NonNull StreamSpec streamSpec) {
@@ -1348,54 +1387,15 @@ public final class ImageCapture extends UseCase {
             mImagePipeline.close();
         }
 
-        boolean isPostviewEnabled =
-                getCurrentConfig().retrieveOption(OPTION_POSTVIEW_ENABLED, false);
-        Size postViewSize = null;
-        int postviewFormat = ImageFormat.YUV_420_888;
+        Set<Integer> supportedOutputFormats = getImageCaptureCapabilities(
+                getCamera().getCameraInfo()).getSupportedOutputFormats();
+        Preconditions.checkArgument(supportedOutputFormats.contains(getOutputFormat()),
+                "The specified output format (" + getOutputFormat()
+                        + ") is not supported by current configuration. Supported output formats: "
+                        + supportedOutputFormats);
 
-        if (isPostviewEnabled) {
-            SessionProcessor sessionProcessor = getSessionProcessor();
-            if (sessionProcessor != null) {
-                ResolutionSelector postviewSizeSelector =
-                        getCurrentConfig().retrieveOption(OPTION_POSTVIEW_RESOLUTION_SELECTOR,
-                                null);
-                Map<Integer, List<Size>> map =
-                        sessionProcessor.getSupportedPostviewSize(resolution);
-                // Prefer YUV because it takes less time to decode to bitmap.
-                List<Size> sizes = map.get(ImageFormat.YUV_420_888);
-                if (sizes == null || sizes.isEmpty()) {
-                    sizes = map.get(JPEG);
-                    postviewFormat = JPEG;
-                }
-
-                if (sizes != null && !sizes.isEmpty()) {
-                    if (postviewSizeSelector != null) {
-                        Collections.sort(sizes, new CompareSizesByArea(true));
-                        CameraInternal camera = getCamera();
-                        Rect sensorRect = camera.getCameraControlInternal().getSensorRect();
-                        CameraInfoInternal cameraInfo = camera.getCameraInfoInternal();
-                        Rational fullFov = new Rational(sensorRect.width(), sensorRect.height());
-                        List<Size> result =
-                                SupportedOutputSizesSorter
-                                        .sortSupportedOutputSizesByResolutionSelector(
-                                                postviewSizeSelector,
-                                                sizes,
-                                                null,
-                                                getTargetRotation(),
-                                                fullFov,
-                                                cameraInfo.getSensorRotationDegrees(),
-                                                cameraInfo.getLensFacing());
-                        if (result.isEmpty()) {
-                            throw new IllegalArgumentException("The postview ResolutionSelector "
-                                    + "cannot select a valid size for the postview.");
-                        }
-                        postViewSize = result.get(0);
-                    } else {
-                        postViewSize = Collections.max(sizes, new CompareSizesByArea());
-                    }
-                }
-            }
-        }
+        PostviewSettings postviewSettings = isPostviewEnabled() ? calculatePostviewSettings(
+                resolution) : null;
 
         CameraCharacteristics cameraCharacteristics = null;
         if (getCamera() != null) {
@@ -1409,10 +1409,8 @@ public final class ImageCapture extends UseCase {
             }
         }
 
-        mImagePipeline = new ImagePipeline(config, resolution,
-                cameraCharacteristics,
-                getEffect(), isVirtualCamera,
-                postViewSize, postviewFormat);
+        mImagePipeline = new ImagePipeline(config, resolution, cameraCharacteristics, getEffect(),
+                isVirtualCamera, postviewSettings);
 
         if (mTakePictureManager == null) {
             // mTakePictureManager is reused when the Surface is reset.
@@ -1453,6 +1451,73 @@ public final class ImageCapture extends UseCase {
                 });
         sessionConfigBuilder.setErrorListener(mCloseableErrorListener);
         return sessionConfigBuilder;
+    }
+
+    /**
+     * Calculates the best format and size to generate the postview output bitmap according to the
+     * info retrieved from the use case config.
+     *
+     * @param targetResolution the target resolution of the still image
+     * @return the settings for the postview, or <code>null</code> if no supported format or
+     * output size can be found.
+     */
+    @Nullable
+    private PostviewSettings calculatePostviewSettings(@NonNull Size targetResolution) {
+        SessionProcessor sessionProcessor = getSessionProcessor();
+
+        // No session processor can be found which is necessary for supporting postview
+        if (sessionProcessor == null) {
+            return null;
+        }
+
+        Map<Integer, List<Size>> formatSizesMap = sessionProcessor.getSupportedPostviewSize(
+                targetResolution);
+
+        int format = ImageFormat.UNKNOWN;
+        // Prefer YUV because it takes less time to decode to bitmap.
+        if (isPostviewImageFormatSupported(formatSizesMap, ImageFormat.YUV_420_888)) {
+            format = ImageFormat.YUV_420_888;
+        } else if (isPostviewImageFormatSupported(formatSizesMap, ImageFormat.JPEG)) {
+            format = ImageFormat.JPEG;
+        } else if (isPostviewImageFormatSupported(formatSizesMap, ImageFormat.JPEG_R)) {
+            format = ImageFormat.JPEG_R;
+        }
+
+        // No supported postview image format can be found
+        if (format == ImageFormat.UNKNOWN) {
+            return null;
+        }
+
+        List<Size> sizes = formatSizesMap.get(format);
+        ResolutionSelector postviewSizeSelector = getCurrentConfig().retrieveOption(
+                OPTION_POSTVIEW_RESOLUTION_SELECTOR, null);
+
+        if (postviewSizeSelector != null) {
+            Collections.sort(sizes, new CompareSizesByArea(true));
+            CameraInternal camera = getCamera();
+            Rect sensorRect = camera.getCameraControlInternal().getSensorRect();
+            CameraInfoInternal cameraInfo = camera.getCameraInfoInternal();
+            Rational fullFov = new Rational(sensorRect.width(), sensorRect.height());
+            List<Size> result =
+                    SupportedOutputSizesSorter.sortSupportedOutputSizesByResolutionSelector(
+                            postviewSizeSelector, sizes, null, getTargetRotation(), fullFov,
+                            cameraInfo.getSensorRotationDegrees(), cameraInfo.getLensFacing());
+
+            if (result.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "The postview ResolutionSelector cannot select a valid size for the "
+                                + "postview.");
+            }
+            return PostviewSettings.create(result.get(0), format);
+        } else {
+            return PostviewSettings.create(Collections.max(sizes, new CompareSizesByArea()),
+                    format);
+        }
+    }
+
+    private boolean isPostviewImageFormatSupported(@NonNull Map<Integer, List<Size>> formatSizesMap,
+            int format) {
+        return formatSizesMap.containsKey(format) && !formatSizesMap.get(format).isEmpty();
     }
 
     /**
@@ -1713,7 +1778,6 @@ public final class ImageCapture extends UseCase {
     /**
      * The output format of the captured image.
      */
-    @OptIn(markerClass = androidx.camera.core.ExperimentalImageCaptureOutputFormat.class)
     @Target({ElementType.TYPE_USE})
     @IntDef({OUTPUT_FORMAT_JPEG, OUTPUT_FORMAT_JPEG_ULTRA_HDR,
             OUTPUT_FORMAT_RAW, OUTPUT_FORMAT_RAW_JPEG})
@@ -1978,7 +2042,6 @@ public final class ImageCapture extends UseCase {
      * <p>These values may be overridden by the implementation. They only provide a minimum set of
      * defaults that are implementation independent.
      */
-    @OptIn(markerClass = androidx.camera.core.ExperimentalImageCaptureOutputFormat.class)
     @RestrictTo(Scope.LIBRARY_GROUP)
     public static final class Defaults
             implements ConfigProvider<ImageCaptureConfig> {
@@ -2964,6 +3027,10 @@ public final class ImageCapture extends UseCase {
          *
          * <p>If not set, the output format will default to {@link #OUTPUT_FORMAT_JPEG}.
          *
+         * <p>An {@link IllegalArgumentException} will be thrown when binding the UseCase if the
+         * specified output format is not supported. Please note that the supported output formats
+         * might be changed when Extensions is enabled.
+         *
          * @param outputFormat The output image format. Value is {@link #OUTPUT_FORMAT_JPEG} or
          *                     {@link #OUTPUT_FORMAT_JPEG_ULTRA_HDR} or {@link #OUTPUT_FORMAT_RAW}.
          * @return The current Builder.
@@ -2971,7 +3038,6 @@ public final class ImageCapture extends UseCase {
          * @see OutputFormat
          * @see ImageCaptureCapabilities#getSupportedOutputFormats()
          */
-        @ExperimentalImageCaptureOutputFormat
         @NonNull
         public Builder setOutputFormat(@OutputFormat int outputFormat) {
             getMutableConfig().insertOption(OPTION_OUTPUT_FORMAT, outputFormat);

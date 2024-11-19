@@ -55,6 +55,7 @@ import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.records.RespiratoryRateRecord
 import androidx.health.connect.client.records.RestingHeartRateRecord
 import androidx.health.connect.client.records.SexualActivityRecord
+import androidx.health.connect.client.records.SkinTemperatureRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.SpeedRecord
 import androidx.health.connect.client.records.StepsCadenceRecord
@@ -521,6 +522,22 @@ fun toRecord(proto: DataProto.DataPoint): Record =
                     startZoneOffset = startZoneOffset,
                     endTime = endTime,
                     endZoneOffset = endZoneOffset,
+                    metadata = metadata
+                )
+            "SkinTemperature" ->
+                SkinTemperatureRecord(
+                    baseline = valuesMap["baseline"]?.doubleVal?.celsius,
+                    measurementLocation =
+                        mapEnum(
+                            "measurementLocation",
+                            SkinTemperatureRecord.MEASUREMENT_LOCATION_STRING_TO_INT_MAP,
+                            SkinTemperatureRecord.MEASUREMENT_LOCATION_UNKNOWN,
+                        ),
+                    startTime = startTime,
+                    startZoneOffset = startZoneOffset,
+                    endTime = endTime,
+                    endZoneOffset = endZoneOffset,
+                    deltas = subTypeDataListsMap["deltas"]?.toDeltasList() ?: emptyList(),
                     metadata = metadata
                 )
             "SleepSession" ->

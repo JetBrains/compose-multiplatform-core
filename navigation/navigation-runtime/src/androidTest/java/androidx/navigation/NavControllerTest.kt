@@ -1774,6 +1774,43 @@ class NavControllerTest {
 
     @UiThreadTest
     @Test
+    fun testNavigateFromLifecycleObserverDuringHostLifecycleChange() {
+        val navController = createNavController()
+        val hostLifecycleOwner = TestLifecycleOwner(Lifecycle.State.CREATED)
+        navController.setLifecycleOwner(hostLifecycleOwner)
+        navController.setGraph(R.navigation.nav_simple)
+
+        val receivedDestinationIds = mutableListOf<Int>()
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            receivedDestinationIds += destination.id
+        }
+
+        navController.navigate(R.id.second_test)
+
+        val destinationLifecycle = navController.getBackStackEntry(R.id.second_test).lifecycle
+        assertThat(destinationLifecycle.currentState).isEqualTo(Lifecycle.State.CREATED)
+        destinationLifecycle.addObserver(
+            object : LifecycleEventObserver {
+                override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+                    if (event == Lifecycle.Event.ON_RESUME) {
+                        navController.popBackStack()
+                    }
+                }
+            }
+        )
+
+        // Now change the host lifecycle to trigger our observer
+        hostLifecycleOwner.currentState = Lifecycle.State.RESUMED
+
+        // And assert that we navigated correctly
+        assertThat(navController.currentDestination?.id).isEqualTo(R.id.start_test)
+        assertThat(receivedDestinationIds)
+            .containsExactly(R.id.start_test, R.id.second_test, R.id.start_test)
+            .inOrder()
+    }
+
+    @UiThreadTest
+    @Test
     fun testPopFromLifecycleObserver() {
         val navController = createNavController()
         navController.setLifecycleOwner(TestLifecycleOwner(Lifecycle.State.RESUMED))

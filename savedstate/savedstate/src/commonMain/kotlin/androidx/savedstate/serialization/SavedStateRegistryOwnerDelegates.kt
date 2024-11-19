@@ -18,7 +18,6 @@ package androidx.savedstate.serialization
 
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryOwner
-import androidx.savedstate.read
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 import kotlinx.serialization.KSerializer
@@ -130,7 +129,7 @@ private class SavedStateReadWriteProperty<T : Any>(
 
         val restoredState = registry.consumeRestoredStateForKey(qualifiedKey)
         val initialValue =
-            if (restoredState != null && restoredState.read { !isEmpty() }) {
+            if (restoredState != null) {
                 decodeFromSavedState(serializer, restoredState)
             } else {
                 init()

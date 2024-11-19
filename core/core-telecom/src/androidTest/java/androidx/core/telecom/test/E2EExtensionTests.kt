@@ -417,12 +417,12 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
     @Test(timeout = 10000)
     fun testVoipAndIcsTogglingTheLocalCallSilenceExtension(): Unit = runBlocking {
         usingIcs { ics ->
-            val globalMuteStateReceiver = TestMuteStateReceiver(this)
-            mContext.registerReceiver(
-                globalMuteStateReceiver,
-                IntentFilter(AudioManager.ACTION_MICROPHONE_MUTE_CHANGED)
-            )
+            val globalMuteStateReceiver = TestMuteStateReceiver()
             try {
+                mContext.registerReceiver(
+                    globalMuteStateReceiver,
+                    IntentFilter(AudioManager.ACTION_MICROPHONE_MUTE_CHANGED)
+                )
                 val voipAppControl = bindToVoipAppWithExtensions()
                 val callback = TestCallCallbackListener(this)
                 voipAppControl.setCallback(callback)
@@ -451,12 +451,18 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                                 // the mute is called. Otherwise, telecom will unmute during the
                                 // call setup
                                 delay(500)
+                                Log.i("LCS_Test", "manually muting the mic")
                                 am.setMicrophoneMute(true)
                                 assertTrue(am.isMicrophoneMute)
-                                globalMuteStateReceiver.waitForGlobalMuteState(true, "1")
+                                waitForGlobalMuteState(true, "1", callback, globalMuteStateReceiver)
                                 // LocalCallSilenceExtensionImpl handles globally unmuting the
                                 // microphone
-                                globalMuteStateReceiver.waitForGlobalMuteState(false, "2")
+                                waitForGlobalMuteState(
+                                    false,
+                                    "2",
+                                    callback,
+                                    globalMuteStateReceiver
+                                )
                             }
 
                             // VoIP --> ICS
@@ -472,11 +478,16 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                             callback.waitForIsLocalSilenced(voipCallId, false)
 
                             // set the call state via voip app control
-                            if (VERSION.SDK_INT >= VERSION_CODES.P) {
+                            if (VERSION.SDK_INT >= VERSION_CODES.R) {
                                 call.hold()
-                                globalMuteStateReceiver.waitForGlobalMuteState(true, "3")
+                                waitForGlobalMuteState(true, "3", callback, globalMuteStateReceiver)
                                 call.unhold()
-                                globalMuteStateReceiver.waitForGlobalMuteState(false, "4")
+                                waitForGlobalMuteState(
+                                    false,
+                                    "4",
+                                    callback,
+                                    globalMuteStateReceiver
+                                )
                             }
                             call.disconnect()
                         }
@@ -486,6 +497,19 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
             } finally {
                 mContext.unregisterReceiver(globalMuteStateReceiver)
             }
+        }
+    }
+
+    private suspend fun waitForGlobalMuteState(
+        expectedValue: Boolean,
+        tag: String,
+        cb: TestCallCallbackListener,
+        receiver: TestMuteStateReceiver
+    ) {
+        if (VERSION.SDK_INT >= VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            cb.waitForGlobalMuteState(expectedValue, tag)
+        } else if (VERSION.SDK_INT >= VERSION_CODES.P) {
+            receiver.waitForGlobalMuteState(expectedValue, tag)
         }
     }
 

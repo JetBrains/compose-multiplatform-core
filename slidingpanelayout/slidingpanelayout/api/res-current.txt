@@ -3,3 +3,4 @@ attr isOverlappingEnabled
 attr isUserResizingEnabled
 attr userResizeBehavior
 attr userResizingDividerDrawable
+attr userResizingDividerTint

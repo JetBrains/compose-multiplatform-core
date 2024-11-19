@@ -24,6 +24,10 @@ import android.os.RemoteException
 import android.util.Log
 import androidx.room.Room.LOG_TAG
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 
 /**
@@ -48,6 +52,14 @@ internal class MultiInstanceInvalidationClient(
     private var clientId = 0
     private var invalidationService: IMultiInstanceInvalidationService? = null
 
+    /** The set of tables invalidated from another instance. */
+    private val invalidatedTables =
+        MutableSharedFlow<Set<String>>(
+            replay = 0,
+            extraBufferCapacity = 0,
+            onBufferOverflow = BufferOverflow.SUSPEND
+        )
+
     /** All table observer to notify service of changes. */
     private val observer =
         object : InvalidationTracker.Observer(invalidationTracker.tableNames) {
@@ -70,7 +82,11 @@ internal class MultiInstanceInvalidationClient(
     private val invalidationCallback: IMultiInstanceInvalidationCallback =
         object : IMultiInstanceInvalidationCallback.Stub() {
             override fun onInvalidation(tables: Array<out String>) {
-                coroutineScope.launch { invalidationTracker.notifyObserversByTableNames(*tables) }
+                coroutineScope.launch {
+                    val invalidatedTablesSet = setOf(*tables)
+                    invalidatedTables.emit(invalidatedTablesSet)
+                    invalidationTracker.notifyObserversByTableNames(invalidatedTablesSet)
+                }
             }
         }
 
@@ -112,4 +128,18 @@ internal class MultiInstanceInvalidationClient(
             appContext.unbindService(serviceConnection)
         }
     }
+
+    fun createFlow(resolvedTableNames: Array<out String>): Flow<Set<String>> =
+        invalidatedTables.mapNotNull { invalidatedTables ->
+            buildSet {
+                    resolvedTableNames.forEach { flowTable ->
+                        invalidatedTables.forEach { invalidatedTable ->
+                            if (flowTable.equals(invalidatedTable, ignoreCase = true)) {
+                                add(flowTable)
+                            }
+                        }
+                    }
+                }
+                .ifEmpty { null }
+        }
 }

@@ -155,12 +155,22 @@ class ImageCaptureTest(
     }
 
     @Test
-    fun canBindToLifeCycleAndTakePicture(): Unit = runBlocking {
+    fun canBindToLifeCycleAndTakeJpegPicture() {
+        canBindToLifeCycleAndTakePicture(ImageCapture.OUTPUT_FORMAT_JPEG)
+    }
+
+    @Test
+    fun canBindToLifeCycleAndTakeJpegUltraHdrPicture() {
+        assumeTrue(isSupportedJpegUltraHdrStillImageCapture())
+        canBindToLifeCycleAndTakePicture(ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR)
+    }
+
+    private fun canBindToLifeCycleAndTakePicture(outputFormat: Int): Unit = runBlocking {
         val isCaptureProcessProgressSupported = isCaptureProcessProgressSupported()
         val mockOnImageCapturedCallback =
             Mockito.mock(ImageCapture.OnImageCapturedCallback::class.java)
 
-        bindAndTakePicture(mockOnImageCapturedCallback)
+        bindAndTakePicture(mockOnImageCapturedCallback, outputFormat = outputFormat)
 
         // Verify the image captured.
         val imageProxy = ArgumentCaptor.forClass(ImageProxy::class.java)
@@ -281,12 +291,30 @@ class ImageCaptureTest(
     }
 
     @Test
-    fun canBindToLifeCycleAndTakePicture_diskIo(): Unit = runBlocking {
+    fun canBindToLifeCycleAndTakeJpegPicture_diskIo() {
+        canBindToLifeCycleAndTakePicture_diskIo(ImageCapture.OUTPUT_FORMAT_JPEG)
+    }
+
+    @Test
+    fun canBindToLifeCycleAndTakeJpegUltraHdrPicture_diskIo() {
+        assumeTrue(isSupportedJpegUltraHdrStillImageCapture())
+        canBindToLifeCycleAndTakePicture_diskIo(ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR)
+    }
+
+    private fun isSupportedJpegUltraHdrStillImageCapture(): Boolean {
+        val cameraInfo = cameraProvider.getCameraInfo(extensionsCameraSelector)
+        val imageCaptureCapabilities = ImageCapture.getImageCaptureCapabilities(cameraInfo)
+        return imageCaptureCapabilities.supportedOutputFormats.contains(
+            ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR
+        )
+    }
+
+    private fun canBindToLifeCycleAndTakePicture_diskIo(outputFormat: Int): Unit = runBlocking {
         val isCaptureProcessProgressSupported = isCaptureProcessProgressSupported()
 
         val mockOnImageSavedCallback = Mockito.mock(ImageCapture.OnImageSavedCallback::class.java)
 
-        bindAndTakePicture(mockOnImageSavedCallback)
+        bindAndTakePicture(mockOnImageSavedCallback, outputFormat = outputFormat)
 
         // Verify the image captured.
         val outputFileResults = ArgumentCaptor.forClass(ImageCapture.OutputFileResults::class.java)
@@ -328,13 +356,15 @@ class ImageCaptureTest(
         onImageCaptureCallback: ImageCapture.OnImageCapturedCallback,
         imageCapture: ImageCapture? = null,
         targetRotation: Int? = null,
-        enablePostview: Boolean = false
+        enablePostview: Boolean = false,
+        outputFormat: Int = ImageCapture.OUTPUT_FORMAT_JPEG
     ): Camera {
         // To test bind/unbind and take picture.
         val imageCaptureUsecase =
             imageCapture
                 ?: ImageCapture.Builder()
                     .apply {
+                        setOutputFormat(outputFormat)
                         targetRotation?.let { setTargetRotation(it) }
                         setPostviewEnabled(enablePostview)
                     }
@@ -415,12 +445,14 @@ class ImageCaptureTest(
     private suspend fun bindAndTakePicture(
         onImageSavedCallback: ImageCapture.OnImageSavedCallback,
         targetRotation: Int? = null,
-        enablePostview: Boolean = false
+        enablePostview: Boolean = false,
+        outputFormat: Int = ImageCapture.OUTPUT_FORMAT_JPEG
     ): Camera {
         // To test bind/unbind and take picture.
         val imageCapture =
             ImageCapture.Builder()
                 .apply {
+                    setOutputFormat(outputFormat)
                     targetRotation?.let { setTargetRotation(it) }
                     setPostviewEnabled(enablePostview)
                 }

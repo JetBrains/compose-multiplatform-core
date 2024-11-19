@@ -19,20 +19,8 @@ package androidx.compose.foundation.text
 import androidx.compose.ui.graphics.Color
 
 /**
- * Represents the colors used for text selection by text and text field components.
- *
- * See [LocalAutofillHighlight] to provide new values for this throughout the hierarchy.
- *
- * @property autofillHighlightColor the color used to draw the background behind autofilled
- *   elements.
+ * Returns the color used to indicate Autofill has been performed on fillable components on Android.
  */
-@JvmInline
-actual value class AutofillHighlight actual constructor(actual val autofillHighlightColor: Color) {
-    actual companion object {
-        /** Default color used is framework's "autofilled_highlight" color. */
-        private val DefaultAutofillColor = Color(0x4dffeb3b)
-
-        /** Default instance of [AutofillHighlight]. */
-        actual val Default = AutofillHighlight(DefaultAutofillColor)
-    }
+internal actual fun autofillHighlightColor(): Color {
+    return Color(0x4dffeb3b)
 }

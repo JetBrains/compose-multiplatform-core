@@ -98,4 +98,14 @@ public class LocalStorageIcingOptionsConfig implements IcingOptionsConfig {
     public boolean getBuildPropertyExistenceMetadataHits() {
         return true;
     }
+
+    @Override
+    public boolean getEnableBlobStore() {
+        return true;
+    }
+
+    @Override
+    public long getOrphanBlobTimeToLiveMs() {
+        return DEFAULT_ORPHAN_BLOB_TIME_TO_LIVE_MS;
+    }
 }

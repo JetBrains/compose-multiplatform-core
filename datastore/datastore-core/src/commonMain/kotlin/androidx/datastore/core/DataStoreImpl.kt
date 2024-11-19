@@ -59,7 +59,7 @@ internal class DataStoreImpl<T>(
      */
     private val corruptionHandler: CorruptionHandler<T> = NoOpCorruptionHandler(),
     private val scope: CoroutineScope = CoroutineScope(ioDispatcher() + SupervisorJob())
-) : DataStore<T> {
+) : CurrentDataProviderStore<T> {
 
     /**
      * The actual values of DataStore. This is exposed in the API via [data] to be able to combine
@@ -112,6 +112,17 @@ internal class DataStoreImpl<T>(
                 }
                 .onCompletion { decrementCollector() }
         )
+    }
+
+    override suspend fun currentData(): T {
+        val startState = readState(requireLock = false)
+        when (startState) {
+            is Data<T> -> return startState.value
+            is UnInitialized -> error(BUG_MESSAGE)
+            is ReadException<T> -> throw startState.readException
+            // TODO(b/273990827): decide the contract of accessing when state is Final
+            is Final -> throw startState.finalException
+        }
     }
 
     private val collectorMutex = Mutex()

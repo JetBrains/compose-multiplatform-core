@@ -26,7 +26,6 @@ androidXMultiplatform {
     tvos()
     wasmJs()
     watchos()
-    watchosDeviceArm64()
 
     defaultPlatform(PlatformIdentifier.JVM)
 

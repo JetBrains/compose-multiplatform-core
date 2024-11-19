@@ -216,7 +216,7 @@ internal fun rememberPagerMeasurePolicy(
                         )
                     }
                 )
-            state.applyMeasureResult(measureResult)
+            state.applyMeasureResult(measureResult, isLookingAhead = isLookingAhead)
             measureResult
         }
     }

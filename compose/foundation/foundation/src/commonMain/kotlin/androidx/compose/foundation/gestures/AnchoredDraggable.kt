@@ -65,7 +65,6 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.sign
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
@@ -1455,10 +1454,9 @@ private fun <T> DraggableAnchors<T>.computeTarget(
 ): T {
     val currentAnchors = this
     require(!currentOffset.isNaN()) { "The offset provided to computeTarget must not be NaN." }
-    val velocitySign = sign(velocity)
-    val isMoving = velocitySign == 1.0f || velocitySign == 1.0f
-    val isMovingForward = isMoving && sign(velocity) > 0f
-    // When we're not moving, just pick the closest anchor and don't consider directionality
+    val isMoving = abs(velocity) > 0.0f
+    val isMovingForward = isMoving && velocity > 0f
+    // When we're not moving, pick the closest anchor and don't consider directionality
     return if (!isMoving) {
         currentAnchors.closestAnchor(currentOffset)!!
     } else if (abs(velocity) >= abs(velocityThreshold())) {
@@ -1473,7 +1471,10 @@ private fun <T> DraggableAnchors<T>.computeTarget(
         val closestAnchorFromStart =
             if (isMovingForward) leftAnchorPosition else rightAnchorPosition
         val relativePosition = abs(closestAnchorFromStart - currentOffset)
-        if (relativePosition <= relativeThreshold) left else right
+        when (relativePosition >= relativeThreshold) {
+            true -> if (isMovingForward) right else left
+            false -> if (isMovingForward) left else right
+        }
     }
 }
 

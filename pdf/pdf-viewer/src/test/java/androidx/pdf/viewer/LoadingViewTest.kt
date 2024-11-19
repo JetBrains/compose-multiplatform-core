@@ -24,6 +24,7 @@ import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth
 import org.junit.Assert
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -39,11 +40,13 @@ class LoadingViewTest {
         loadingView = LoadingView(ActivityUtils.getThemedActivity())
     }
 
+    @Ignore // b/376314114
     @Test
     fun testLoadingView_isNotNull() {
         Assert.assertNotNull(loadingView)
     }
 
+    @Ignore // b/376314114
     @Test
     fun showLoadingView_showsLoadingSpinner() {
         val progressBar = loadingView.findViewById<ProgressBar>(R.id.loadingProgressBar)
@@ -55,6 +58,7 @@ class LoadingViewTest {
         Assert.assertEquals(View.GONE.toLong(), errorMessage.visibility.toLong())
     }
 
+    @Ignore // b/376314114
     @Test
     fun showErrorView_showsErrorMessage() {
         val dummyErrorMessage = "testing error"

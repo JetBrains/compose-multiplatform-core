@@ -26,7 +26,6 @@ import androidx.room.compiler.processing.ksp.KspFieldElement
 import androidx.room.compiler.processing.ksp.KspFileMemberContainer
 import androidx.room.compiler.processing.ksp.synthetic.KspSyntheticFileMemberContainer
 import androidx.room.compiler.processing.testcode.OtherAnnotation
-import androidx.room.compiler.processing.util.KOTLINC_LANGUAGE_1_9_ARGS
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
 import androidx.room.compiler.processing.util.asJClassName
@@ -868,8 +867,6 @@ class XElementTest {
                         .trimIndent()
                 )
             ),
-            // https://github.com/google/ksp/issues/1898
-            kotlincArgs = KOTLINC_LANGUAGE_1_9_ARGS
         ) { invocation, precompiled ->
             val enclosingElement =
                 invocation.processingEnv.requireTypeElement("foo.bar.KotlinClass")

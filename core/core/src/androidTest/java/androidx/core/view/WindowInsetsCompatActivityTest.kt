@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicReference
 import org.hamcrest.Matchers.`is`
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assume.assumeFalse
@@ -245,6 +246,22 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
                 // (unlike the old system window insets)
                 assertEquals(initialSystemBars, insets.getInsets(Type.systemBars()))
             }
+    }
+
+    @SdkSuppress(minSdkVersion = 20)
+    @Test
+    public fun systemBars_hidden() {
+        scenario.onActivity { activity ->
+            WindowCompat.setDecorFitsSystemWindows(activity.window, false)
+            WindowInsetsControllerCompat(activity.window, activity.window.decorView)
+                .hide(Type.systemBars())
+        }
+        val container: View = scenario.withActivity { findViewById(R.id.container) }
+
+        // System bar insets should be empty and invisible because we just hide them
+        val insets = container.requestAndAwaitInsets()
+        assertEquals(Insets.NONE, insets.getInsets(Type.systemBars()))
+        assertFalse(insets.isVisible(Type.systemBars()))
     }
 
     @SdkSuppress(minSdkVersion = 23)

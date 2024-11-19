@@ -16,7 +16,6 @@
 
 package androidx.wear.compose.material3
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -39,12 +38,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.material3.tokens.ListHeaderTokens
 import androidx.wear.compose.material3.tokens.ListSubHeaderTokens
 
 /**
  * A slot based composable for creating a list header item. [ListHeader]s are typically expected to
  * be a few words of text on a single line. The contents will be start and end padded.
+ *
+ * ListHeader scales itself appropriately when used within the scope of a [TransformingLazyColumn].
  *
  * Example of a [ListHeader]:
  *
@@ -71,7 +73,7 @@ fun ListHeader(
                 .defaultMinSize(minHeight = ListHeaderTokens.Height)
                 .height(IntrinsicSize.Min)
                 .wrapContentSize()
-                .background(backgroundColor)
+                .container(backgroundColor)
                 .padding(contentPadding)
                 .semantics(mergeDescendants = true) { heading() }
     ) {
@@ -88,13 +90,12 @@ fun ListHeader(
  * A two slot based composable for creating a list sub-header item. [ListSubHeader]s offer slots for
  * an icon and for a text label. The contents will be start and end padded.
  *
- * Example of a [ListSubHeader]:
+ * ListSubHeader scales itself appropriately when used within the scope of a
+ * [TransformingLazyColumn].
  *
- * @sample androidx.wear.compose.material3.samples.ListSubHeaderSample
+ * Example with use of [ListSubHeader]:
  *
- * Example of a [ListSubHeader] with an icon:
- *
- * @sample androidx.wear.compose.material3.samples.ListSubHeaderWithIconSample
+ * @sample androidx.wear.compose.material3.samples.ListHeaderSample
  * @param modifier The modifier for the [ListSubHeader].
  * @param backgroundColor The background color to apply - typically Color.Transparent
  * @param contentColor The color to apply to content.
@@ -121,7 +122,7 @@ fun ListSubHeader(
                 .height(IntrinsicSize.Min)
                 .fillMaxWidth()
                 .wrapContentSize(align = Alignment.CenterStart)
-                .background(backgroundColor)
+                .container(backgroundColor)
                 .padding(contentPadding)
                 .semantics(mergeDescendants = true) { heading() }
     ) {

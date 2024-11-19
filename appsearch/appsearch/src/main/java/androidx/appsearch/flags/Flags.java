@@ -155,6 +155,12 @@ public final class Flags {
             FLAG_PREFIX + "enable_abstract_syntax_trees";
 
     /**
+     * Enable the {@link androidx.appsearch.app.SearchSpec.Builder#addFilterDocumentIds}.
+     */
+    public static final String FLAG_ENABLE_SEARCH_SPEC_FILTER_DOCUMENT_IDS =
+            FLAG_PREFIX + "enable_search_spec_filter_document_ids";
+
+    /**
      * Enables additional builder copy constructors for
      * {@link androidx.appsearch.app.AppSearchSchema},
      * {@link androidx.appsearch.app.SetSchemaRequest}, {@link androidx.appsearch.app.SearchSpec},
@@ -313,4 +319,12 @@ public final class Flags {
      * reached.
      */
     public static boolean enableDocumentLimiterReplaceTracking() { return true; }
+
+    /**
+     * Whether the {@link androidx.appsearch.app.SearchSpec.Builder#addFilterDocumentIds} should be
+     * enabled.
+     */
+    public static boolean enableSearchSpecFilterDocumentIds() {
+        return true;
+    }
 }

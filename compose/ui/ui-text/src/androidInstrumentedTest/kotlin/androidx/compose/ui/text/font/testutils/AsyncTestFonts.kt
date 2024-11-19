@@ -157,3 +157,24 @@ class BlockingFauxFont(
         return "$name[$weight, $style]"
     }
 }
+
+class ThrowingFauxFont(
+    typefaceLoader: ThrowingTypefaceLoader,
+    override val weight: FontWeight = FontWeight.Normal,
+    override val style: FontStyle = FontStyle.Normal,
+    private val name: String = "ThrowingFauxFont"
+) : AndroidFont(Blocking, typefaceLoader, FontVariation.Settings(weight, style)) {
+    override fun toString(): String {
+        return "$name[$weight, $style]"
+    }
+}
+
+class ThrowingTypefaceLoader(private val thrower: () -> Nothing) : AndroidFont.TypefaceLoader {
+    override fun loadBlocking(context: Context, font: AndroidFont): Typeface? {
+        thrower()
+    }
+
+    override suspend fun awaitLoad(context: Context, font: AndroidFont): Typeface? {
+        thrower()
+    }
+}

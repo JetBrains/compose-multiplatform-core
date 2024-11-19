@@ -398,7 +398,7 @@ private class BaselineProfileProducerAgpPlugin(private val project: Project) :
                 existing gradle managed devices. Example:
 
                 android {
-                    testOptions.managedDevices.devices {
+                    testOptions.managedDevices.allDevices {
                         pixel6Api31(ManagedVirtualDevice) {
                             device = "Pixel 6"
                             apiLevel = 31

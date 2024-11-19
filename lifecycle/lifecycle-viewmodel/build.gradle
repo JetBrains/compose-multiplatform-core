@@ -82,6 +82,7 @@ androidXMultiplatform {
             dependsOn(jvmCommonMain)
             dependencies {
                 api(libs.kotlinCoroutinesAndroid)
+                implementation(projectOrArtifact(":core:core-viewtree"))
             }
         }
 

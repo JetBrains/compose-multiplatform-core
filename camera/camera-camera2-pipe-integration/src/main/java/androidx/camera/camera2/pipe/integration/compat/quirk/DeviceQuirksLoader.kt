@@ -64,6 +64,14 @@ public object DeviceQuirksLoader {
         }
         if (
             quirkSettings.shouldEnableQuirk(
+                DisableAbortCapturesOnStopQuirk::class.java,
+                DisableAbortCapturesOnStopQuirk.isEnabled()
+            )
+        ) {
+            quirks.add(DisableAbortCapturesOnStopQuirk())
+        }
+        if (
+            quirkSettings.shouldEnableQuirk(
                 DisableAbortCapturesOnStopWithSessionProcessorQuirk::class.java,
                 DisableAbortCapturesOnStopWithSessionProcessorQuirk.isEnabled()
             )

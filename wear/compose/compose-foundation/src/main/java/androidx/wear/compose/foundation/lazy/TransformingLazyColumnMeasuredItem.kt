@@ -26,8 +26,8 @@ import androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollPro
 internal data class TransformingLazyColumnMeasuredItem(
     /** The index of the item in the list. */
     override val index: Int,
-    /** The [Placeable] representing the content of the item. */
-    val placeable: Placeable,
+    /** The [Placeable] representing the content of the item, or null if no composable is inside. */
+    val placeable: Placeable?,
     /** The constraints of the container holding the item. */
     val containerConstraints: Constraints,
     /** The vertical offset of the item from the top of the list after transformations applied. */
@@ -55,15 +55,17 @@ internal data class TransformingLazyColumnMeasuredItem(
     /** The height of the item after transformations applied. */
     override val transformedHeight: Int
         get() =
-            (placeable.parentData as? HeightProviderParentData)?.let {
-                it.heightProvider(placeable.height, scrollProgress)
-            } ?: placeable.height
+            placeable?.let { p ->
+                (p.parentData as? HeightProviderParentData)?.let {
+                    it.heightProvider(p.height, scrollProgress)
+                } ?: p.height
+            } ?: 0
 
-    override val measuredHeight = placeable.height
+    override val measuredHeight = placeable?.height ?: 0
 
     fun place(scope: Placeable.PlacementScope) =
         with(scope) {
-            placeable.placeWithLayer(
+            placeable?.placeWithLayer(
                 x =
                     leftPadding +
                         horizontalAlignment.align(
@@ -78,8 +80,8 @@ internal data class TransformingLazyColumnMeasuredItem(
     fun pinToCenter() {
         scrollProgress =
             bottomItemScrollProgress(
-                containerConstraints.maxHeight / 2 - placeable.height / 2,
-                placeable.height,
+                containerConstraints.maxHeight / 2 - measuredHeight / 2,
+                measuredHeight,
                 containerConstraints.maxHeight
             )
         offset = containerConstraints.maxHeight / 2 - transformedHeight / 2

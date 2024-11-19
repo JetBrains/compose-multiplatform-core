@@ -33,6 +33,7 @@ import androidx.credentials.CredentialOption
 import androidx.credentials.GetCredentialResponse
 import androidx.credentials.exceptions.CreateCredentialException
 import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.internal.toJetpackCreateException
 import androidx.credentials.internal.toJetpackGetException
 import androidx.credentials.provider.utils.BeginGetCredentialUtil
 import java.util.stream.Collectors
@@ -120,6 +121,19 @@ class PendingIntentHandler {
                 Api34Impl.setCreateCredentialResponse(intent, response)
             } else {
                 Api23Impl.setCreateCredentialResponse(intent, response)
+            }
+        }
+
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        @JvmStatic
+        fun retrieveCreateCredentialResponse(
+            type: String,
+            intent: Intent
+        ): CreateCredentialResponse? {
+            return if (Build.VERSION.SDK_INT >= 34) {
+                Api34Impl.extractCreateCredentialResponse(type, intent)
+            } else {
+                Api23Impl.extractCreateCredentialResponse(intent)
             }
         }
 
@@ -284,6 +298,16 @@ class PendingIntentHandler {
                 Api23Impl.setCreateCredentialException(intent, exception)
             }
         }
+
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        @JvmStatic
+        fun retrieveCreateCredentialException(intent: Intent): CreateCredentialException? {
+            return if (Build.VERSION.SDK_INT >= 34) {
+                Api34Impl.extractCreateCredentialException(intent)
+            } else {
+                Api23Impl.extractCreateCredentialException(intent)
+            }
+        }
     }
 
     @SuppressLint("ObsoleteSdkInt") // TODO: b/356939416 - remove with official API update
@@ -442,9 +466,9 @@ class PendingIntentHandler {
                 "android.service.credentials.extra.CREATE_CREDENTIAL_EXCEPTION"
 
             @JvmStatic
-            fun Intent.extractCreateCredentialException(): CreateCredentialException? {
+            fun extractCreateCredentialException(intent: Intent): CreateCredentialException? {
                 return CreateCredentialException.fromBundle(
-                    this.getBundleExtra(EXTRA_CREATE_CREDENTIAL_EXCEPTION) ?: return null
+                    intent.getBundleExtra(EXTRA_CREATE_CREDENTIAL_EXCEPTION) ?: return null
                 )
             }
 
@@ -610,6 +634,19 @@ class PendingIntentHandler {
             }
 
             @JvmStatic
+            fun extractCreateCredentialResponse(
+                type: String,
+                intent: Intent
+            ): CreateCredentialResponse? {
+                val response =
+                    intent.getParcelableExtra(
+                        CredentialProviderService.EXTRA_CREATE_CREDENTIAL_RESPONSE,
+                        android.credentials.CreateCredentialResponse::class.java
+                    ) ?: return null
+                return CreateCredentialResponse.createFrom(type, response.data)
+            }
+
+            @JvmStatic
             fun extractGetCredentialResponse(intent: Intent): GetCredentialResponse? {
                 val response =
                     intent.getParcelableExtra(
@@ -641,6 +678,16 @@ class PendingIntentHandler {
                     CredentialProviderService.EXTRA_BEGIN_GET_CREDENTIAL_RESPONSE,
                     BeginGetCredentialUtil.convertToFrameworkResponse(response)
                 )
+            }
+
+            @JvmStatic
+            fun extractCreateCredentialException(intent: Intent): CreateCredentialException? {
+                val ex =
+                    intent.getSerializableExtra(
+                        CredentialProviderService.EXTRA_CREATE_CREDENTIAL_EXCEPTION,
+                        android.credentials.CreateCredentialException::class.java
+                    ) ?: return null
+                return toJetpackCreateException(ex.type, ex.message)
             }
 
             @JvmStatic

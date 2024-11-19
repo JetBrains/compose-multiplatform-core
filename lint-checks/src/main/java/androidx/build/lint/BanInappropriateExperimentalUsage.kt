@@ -356,23 +356,24 @@ class BanInappropriateExperimentalUsage : Detector(), Detector.UastScanner {
          * Extracts the Maven coordinates from a given JAR path
          *
          * For example: given `<checkout
-         * root>/androidx/paging/paging-common/build/libs/paging-common-3.2.0-alpha01.jar`, this
+         * root>/androidx/compose/ui/ui-test/build/libs/ui-test-jvmstubs-1.8.0-beta01.jar`, this
          * method will return a:
-         * - `groupId` of `androidx.paging`
-         * - `artifactId` of `paging-common`
-         * - `version` of `3.2.0-alpha01`
+         * - `groupId` of `androidx.compose.ui`
+         * - `artifactId` of `ui-test`
+         * - `version` of `jvmstubs-1.8.0-beta01`
          *
          * @param jarFilePath the path to the JAR file
          * @return a [LintModelMavenName] with the groupId, artifactId, and version parsed from the
-         *   path, or `null` if [jarFilePath] doesn't contain the string "androidx".
+         *   path, or `null` if [jarFilePath] doesn't contain the strings "androidx" and "build".
          */
         internal fun getMavenCoordinatesFromPath(jarFilePath: String): LintModelMavenName? {
             val pathParts = jarFilePath.split("/")
             val androidxIndex = pathParts.indexOf("androidx")
-            if (androidxIndex == -1) return null
+            val buildIndex = pathParts.indexOf("build")
+            if (androidxIndex == -1 || buildIndex == -1) return null
 
-            val groupId = pathParts[androidxIndex] + "." + pathParts[androidxIndex + 1]
-            val artifactId = pathParts[androidxIndex + 2]
+            val groupId = pathParts.subList(androidxIndex, buildIndex - 1).joinToString(".")
+            val artifactId = pathParts[buildIndex - 1]
 
             val filename = pathParts.last()
             val version = filename.removePrefix("$artifactId-").removeSuffix(".jar")

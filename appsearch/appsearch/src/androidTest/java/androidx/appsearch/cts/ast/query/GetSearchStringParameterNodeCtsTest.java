@@ -35,6 +35,18 @@ public class GetSearchStringParameterNodeCtsTest {
     public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
 
     @Test
+    public void testEquals_identical() {
+        GetSearchStringParameterNode getSearchStringParameterNodeOne =
+                new GetSearchStringParameterNode(1);
+        GetSearchStringParameterNode getSearchStringParameterNodeTwo =
+                new GetSearchStringParameterNode(1);
+
+        assertThat(getSearchStringParameterNodeOne).isEqualTo(getSearchStringParameterNodeTwo);
+        assertThat(getSearchStringParameterNodeOne.hashCode())
+                .isEqualTo(getSearchStringParameterNodeTwo.hashCode());
+    }
+
+    @Test
     public void testConstructor_throwsOnNegativeIndex() {
         IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
                 () -> new GetSearchStringParameterNode(-1));

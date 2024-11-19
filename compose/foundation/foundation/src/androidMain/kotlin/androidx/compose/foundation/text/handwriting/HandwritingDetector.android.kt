@@ -17,10 +17,12 @@
 package androidx.compose.foundation.text.handwriting
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.handwritingPointerIcon
 import androidx.compose.foundation.text.input.internal.ComposeInputMethodManager
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.stylusHoverIcon
 import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.PointerInputModifierNode
@@ -53,7 +55,8 @@ import androidx.compose.ui.unit.IntSize
  */
 fun Modifier.handwritingDetector(callback: () -> Unit) =
     if (isStylusHandwritingSupported) {
-        then(HandwritingDetectorElement(callback))
+        this.stylusHoverIcon(handwritingPointerIcon, false, HandwritingBoundsExpansion)
+            .then(HandwritingDetectorElement(callback))
     } else {
         this
     }

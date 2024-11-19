@@ -18,11 +18,9 @@ package androidx.benchmark.macro.perfetto
 
 import androidx.benchmark.perfetto.PerfettoTraceProcessor
 import androidx.benchmark.perfetto.processNameLikePkg
-import org.intellij.lang.annotations.Language
 
 internal object MemoryCountersQuery {
     // https://perfetto.dev/docs/data-sources/memory-counters
-    @Language("sql")
     internal fun getQuery(targetPackageName: String) =
         """
         SELECT

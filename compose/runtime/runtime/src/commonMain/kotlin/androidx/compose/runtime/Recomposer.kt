@@ -19,9 +19,13 @@ package androidx.compose.runtime
 import androidx.collection.MutableObjectList
 import androidx.collection.MutableScatterSet
 import androidx.collection.ScatterSet
+import androidx.collection.emptyObjectList
 import androidx.collection.emptyScatterSet
+import androidx.collection.mutableScatterMapOf
 import androidx.collection.mutableScatterSetOf
+import androidx.compose.runtime.collection.MultiValueMap
 import androidx.compose.runtime.collection.fastForEach
+import androidx.compose.runtime.collection.fastMap
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.collection.wrapIntoSet
 import androidx.compose.runtime.external.kotlinx.collections.immutable.persistentSetOf
@@ -44,7 +48,6 @@ import androidx.compose.runtime.snapshots.fastMapNotNull
 import androidx.compose.runtime.tooling.CompositionData
 import androidx.compose.runtime.tooling.CompositionObserverHandle
 import androidx.compose.runtime.tooling.CompositionRegistrationObserver
-import kotlin.collections.removeFirst as removeFirstKt
 import kotlin.collections.removeLast as removeLastKt
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
@@ -223,11 +226,14 @@ class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionContext(
     private var snapshotInvalidations = MutableScatterSet<Any>()
     private val compositionInvalidations = mutableVectorOf<ControlledComposition>()
     private val compositionsAwaitingApply = mutableListOf<ControlledComposition>()
-    private val compositionValuesAwaitingInsert = mutableListOf<MovableContentStateReference>()
-    private val compositionValuesRemoved =
-        mutableMapOf<MovableContent<Any?>, MutableList<MovableContentStateReference>>()
-    private val compositionValueStatesAvailable =
-        mutableMapOf<MovableContentStateReference, MovableContentState>()
+    private val movableContentAwaitingInsert = mutableListOf<MovableContentStateReference>()
+    private val movableContentRemoved =
+        MultiValueMap<MovableContent<Any?>, MovableContentStateReference>()
+    private val movableContentNestedStatesAvailable = NestedContentMap()
+    private val movableContentStatesAvailable =
+        mutableScatterMapOf<MovableContentStateReference, MovableContentState>()
+    private val movableContentNestedExtractionsPending =
+        MultiValueMap<MovableContentStateReference, MovableContentStateReference>()
     private var failedCompositions: MutableList<ControlledComposition>? = null
     private var compositionsRemoved: MutableSet<ControlledComposition>? = null
     private var workContinuation: CancellableContinuation<Unit>? = null
@@ -318,7 +324,7 @@ class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionContext(
             snapshotInvalidations = MutableScatterSet()
             compositionInvalidations.clear()
             compositionsAwaitingApply.clear()
-            compositionValuesAwaitingInsert.clear()
+            movableContentAwaitingInsert.clear()
             failedCompositions = null
             workContinuation?.cancel()
             workContinuation = null
@@ -340,7 +346,7 @@ class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionContext(
                 compositionInvalidations.isNotEmpty() ||
                     snapshotInvalidations.isNotEmpty() ||
                     compositionsAwaitingApply.isNotEmpty() ||
-                    compositionValuesAwaitingInsert.isNotEmpty() ||
+                    movableContentAwaitingInsert.isNotEmpty() ||
                     concurrentCompositionsOutstanding > 0 ||
                     hasBroadcastFrameClockAwaitersLocked -> State.PendingWork
                 else -> State.Idle
@@ -562,8 +568,8 @@ class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionContext(
         fun fillToInsert() {
             toInsert.clear()
             synchronized(stateLock) {
-                compositionValuesAwaitingInsert.fastForEach { toInsert += it }
-                compositionValuesAwaitingInsert.clear()
+                movableContentAwaitingInsert.fastForEach { toInsert += it }
+                movableContentAwaitingInsert.clear()
             }
         }
 
@@ -721,7 +727,7 @@ class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionContext(
                 }
             }
 
-            discardUnusedValues()
+            discardUnusedMovableContentState()
         }
     }
 
@@ -738,9 +744,9 @@ class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionContext(
                 compositionInvalidations.clear()
                 snapshotInvalidations = MutableScatterSet()
 
-                compositionValuesAwaitingInsert.clear()
-                compositionValuesRemoved.clear()
-                compositionValueStatesAvailable.clear()
+                movableContentAwaitingInsert.clear()
+                movableContentRemoved.clear()
+                movableContentStatesAvailable.clear()
 
                 errorState = RecomposerErrorState(recoverable = recoverable, cause = e)
 
@@ -1211,13 +1217,13 @@ class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionContext(
 
     private fun performInitialMovableContentInserts(composition: ControlledComposition) {
         synchronized(stateLock) {
-            if (!compositionValuesAwaitingInsert.fastAny { it.composition == composition }) return
+            if (!movableContentAwaitingInsert.fastAny { it.composition == composition }) return
         }
         val toInsert = mutableListOf<MovableContentStateReference>()
         fun fillToInsert() {
             toInsert.clear()
             synchronized(stateLock) {
-                val iterator = compositionValuesAwaitingInsert.iterator()
+                val iterator = movableContentAwaitingInsert.iterator()
                 while (iterator.hasNext()) {
                     val value = iterator.next()
                     if (value.composition == composition) {
@@ -1261,6 +1267,7 @@ class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionContext(
         else null
     }
 
+    @OptIn(ExperimentalComposeApi::class)
     private fun performInsertValues(
         references: List<MovableContentStateReference>,
         modifiedValues: MutableScatterSet<Any>?
@@ -1273,10 +1280,46 @@ class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionContext(
                 // during `performRecompose`.
                 val pairs =
                     synchronized(stateLock) {
-                        refs.fastMap { reference ->
-                            reference to
-                                compositionValuesRemoved.removeLastMultiValue(reference.content)
-                        }
+                        refs
+                            .fastMap { reference ->
+                                reference to
+                                    movableContentRemoved.removeLast(reference.content).also {
+                                        if (it != null) {
+                                            movableContentNestedStatesAvailable.usedContainer(it)
+                                        }
+                                    }
+                            }
+                            .let { pairs ->
+                                // Check for any nested states
+                                if (
+                                    ComposeRuntimeFlags.isMovingNestedMovableContentEnabled &&
+                                        pairs.fastAny {
+                                            it.second == null &&
+                                                it.first.content in
+                                                    movableContentNestedStatesAvailable
+                                        }
+                                ) {
+                                    // We have at least one nested state we could use, if a state
+                                    // is available for the container then schedule the state to be
+                                    // removed from the container when it is released.
+                                    pairs.map { pair ->
+                                        if (pair.second == null) {
+                                            val nestedContentReference =
+                                                movableContentNestedStatesAvailable.removeLast(
+                                                    pair.first.content
+                                                )
+                                            if (nestedContentReference == null) return@map pair
+                                            val content = nestedContentReference.content
+                                            val container = nestedContentReference.container
+                                            movableContentNestedExtractionsPending.add(
+                                                container,
+                                                content
+                                            )
+                                            pair.first to content
+                                        } else pair
+                                    }
+                                } else pairs
+                            }
                     }
 
                 // Avoid mixing creating new content with moving content as the moved content
@@ -1294,7 +1337,7 @@ class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionContext(
                             pairs.fastMapNotNull { item ->
                                 if (item.second == null) item.first else null
                             }
-                        synchronized(stateLock) { compositionValuesAwaitingInsert += toReturn }
+                        synchronized(stateLock) { movableContentAwaitingInsert += toReturn }
 
                         // Only insert the moving content this time
                         pairs.fastFilterIndexed { _, item -> item.second != null }
@@ -1314,19 +1357,21 @@ class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionContext(
         return tasks.keys.toList()
     }
 
-    private fun discardUnusedValues() {
+    private fun discardUnusedMovableContentState() {
         val unusedValues =
             synchronized(stateLock) {
-                if (compositionValuesRemoved.isNotEmpty()) {
-                    val references = compositionValuesRemoved.values.flatten()
-                    compositionValuesRemoved.clear()
+                if (movableContentRemoved.isNotEmpty()) {
+                    val references = movableContentRemoved.values()
+                    movableContentRemoved.clear()
+                    movableContentNestedStatesAvailable.clear()
+                    movableContentNestedExtractionsPending.clear()
                     val unusedValues =
-                        references.fastMap { it to compositionValueStatesAvailable[it] }
-                    compositionValueStatesAvailable.clear()
+                        references.fastMap { it to movableContentStatesAvailable[it] }
+                    movableContentStatesAvailable.clear()
                     unusedValues
-                } else emptyList()
+                } else emptyObjectList()
             }
-        unusedValues.fastForEach { (reference, state) ->
+        unusedValues.forEach { (reference, state) ->
             if (state != null) {
                 reference.composition.disposeUnusedMovableContent(state)
             }
@@ -1494,7 +1539,7 @@ class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionContext(
 
     internal override fun insertMovableContent(reference: MovableContentStateReference) {
         synchronized(stateLock) {
-                compositionValuesAwaitingInsert += reference
+                movableContentAwaitingInsert += reference
                 deriveStateLocked()
             }
             ?.resume(Unit)
@@ -1502,15 +1547,38 @@ class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionContext(
 
     internal override fun deletedMovableContent(reference: MovableContentStateReference) {
         synchronized(stateLock) {
-            compositionValuesRemoved.addMultiValue(reference.content, reference)
+            movableContentRemoved.add(reference.content, reference)
+            if (reference.nestedReferences != null) {
+                val container = reference
+                fun recordNestedStatesOf(reference: MovableContentStateReference) {
+                    reference.nestedReferences?.fastForEach { nestedReference ->
+                        movableContentNestedStatesAvailable.add(
+                            nestedReference.content,
+                            NestedMovableContent(nestedReference, container)
+                        )
+                        recordNestedStatesOf(nestedReference)
+                    }
+                }
+                recordNestedStatesOf(reference)
+            }
         }
     }
 
     internal override fun movableContentStateReleased(
         reference: MovableContentStateReference,
-        data: MovableContentState
+        data: MovableContentState,
+        applier: Applier<*>,
     ) {
-        synchronized(stateLock) { compositionValueStatesAvailable[reference] = data }
+        synchronized(stateLock) {
+            movableContentStatesAvailable[reference] = data
+            val extractions = movableContentNestedExtractionsPending[reference]
+            if (extractions.isNotEmpty()) {
+                val states = data.extractNestedStates(applier, extractions)
+                states.forEach { reference, state ->
+                    movableContentStatesAvailable[reference] = state
+                }
+            }
+        }
     }
 
     internal override fun reportRemovedComposition(composition: ControlledComposition) {
@@ -1525,7 +1593,7 @@ class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionContext(
     override fun movableContentStateResolve(
         reference: MovableContentStateReference
     ): MovableContentState? =
-        synchronized(stateLock) { compositionValueStatesAvailable.remove(reference) }
+        synchronized(stateLock) { movableContentStatesAvailable.remove(reference) }
 
     /**
      * hack: the companion object is thread local in Kotlin/Native to avoid freezing
@@ -1678,9 +1746,35 @@ private class ProduceFrameSignal {
         }
 }
 
-// Allow treating a mutable map of shape MutableMap<K, MutableMap<V>> as a multi-value map
-internal fun <K, V> MutableMap<K, MutableList<V>>.addMultiValue(key: K, value: V) =
-    getOrPut(key) { mutableListOf() }.add(value)
+@OptIn(InternalComposeApi::class)
+private class NestedContentMap {
+    private val contentMap = MultiValueMap<MovableContent<Any?>, NestedMovableContent>()
+    private val containerMap = MultiValueMap<MovableContentStateReference, MovableContent<Any?>>()
 
-internal fun <K, V> MutableMap<K, MutableList<V>>.removeLastMultiValue(key: K): V? =
-    get(key)?.let { list -> list.removeFirstKt().also { if (list.isEmpty()) remove(key) } }
+    fun add(content: MovableContent<Any?>, nestedContent: NestedMovableContent) {
+        contentMap.add(content, nestedContent)
+        containerMap.add(nestedContent.container, content)
+    }
+
+    fun clear() {
+        contentMap.clear()
+        containerMap.clear()
+    }
+
+    fun removeLast(key: MovableContent<Any?>) =
+        contentMap.removeLast(key).also { if (contentMap.isEmpty()) containerMap.clear() }
+
+    operator fun contains(key: MovableContent<Any?>) = key in contentMap
+
+    fun usedContainer(reference: MovableContentStateReference) {
+        containerMap.forEachValue(reference) { value ->
+            contentMap.removeValueIf(value) { it.container == reference }
+        }
+    }
+}
+
+@InternalComposeApi
+private class NestedMovableContent(
+    val content: MovableContentStateReference,
+    val container: MovableContentStateReference
+)

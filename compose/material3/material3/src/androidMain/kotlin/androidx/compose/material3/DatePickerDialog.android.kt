@@ -63,15 +63,15 @@ import androidx.compose.ui.window.DialogProperties
  */
 @ExperimentalMaterial3Api
 @Composable
-fun DatePickerDialog(
+actual fun DatePickerDialog(
     onDismissRequest: () -> Unit,
     confirmButton: @Composable () -> Unit,
-    modifier: Modifier = Modifier,
-    dismissButton: @Composable (() -> Unit)? = null,
-    shape: Shape = DatePickerDefaults.shape,
-    tonalElevation: Dp = DatePickerDefaults.TonalElevation,
-    colors: DatePickerColors = DatePickerDefaults.colors(),
-    properties: DialogProperties = DialogProperties(usePlatformDefaultWidth = false),
+    modifier: Modifier,
+    dismissButton: @Composable (() -> Unit)?,
+    shape: Shape,
+    tonalElevation: Dp,
+    colors: DatePickerColors,
+    properties: DialogProperties,
     content: @Composable ColumnScope.() -> Unit
 ) {
     BasicAlertDialog(

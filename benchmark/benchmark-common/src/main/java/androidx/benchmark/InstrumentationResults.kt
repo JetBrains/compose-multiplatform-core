@@ -79,7 +79,7 @@ class InstrumentationResultScope(val bundle: Bundle = Bundle()) {
         measurements: Measurements? = null,
         iterationTracePaths: List<String>? = null,
         profilerResults: List<Profiler.ResultFile> = emptyList(),
-        insights: List<Insight> = emptyList(),
+        insightSummaries: List<InsightSummary> = emptyList(),
         useTreeDisplayFormat: Boolean = false
     ) {
         if (warningMessage != null) {
@@ -92,7 +92,7 @@ class InstrumentationResultScope(val bundle: Bundle = Bundle()) {
                 measurements = measurements,
                 iterationTracePaths = iterationTracePaths,
                 profilerResults = profilerResults,
-                insights = insights,
+                insightSummaries = insightSummaries,
                 useTreeDisplayFormat = useTreeDisplayFormat
             )
         reportIdeSummary(summaryV2 = summaryPair.summaryV2, summaryV3 = summaryPair.summaryV3)
@@ -192,7 +192,7 @@ object InstrumentationResults {
         measurements: Measurements? = null,
         iterationTracePaths: List<String>? = null,
         profilerResults: List<Profiler.ResultFile> = emptyList(),
-        insights: List<Insight> = emptyList(),
+        insightSummaries: List<InsightSummary> = emptyList(),
         useTreeDisplayFormat: Boolean = false,
     ): IdeSummaryPair {
         val warningMessage = ideWarningPrefix.ifEmpty { null }
@@ -317,10 +317,10 @@ object InstrumentationResults {
                             tree.append("Metrics", 0)
                             for (metric in v2metricLines) tree.append(metric, 1)
                         }
-                        if (insights.isNotEmpty()) {
+                        if (insightSummaries.isNotEmpty()) {
                             tree.append("App Startup Insights", 0)
-                            for (insight in insights) {
-                                tree.append(insight.criterion, 1)
+                            for (insight in insightSummaries) {
+                                tree.append(insight.category, 1)
                                 val observed =
                                     when (linkFormat) {
                                         LinkFormat.V2 -> insight.observedV2

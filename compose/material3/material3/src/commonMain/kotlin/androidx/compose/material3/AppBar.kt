@@ -1562,6 +1562,8 @@ object TopAppBarDefaults {
      * Returns a pinned [TopAppBarScrollBehavior] that tracks nested-scroll callbacks and updates
      * its [TopAppBarState.contentOffset] accordingly.
      *
+     * The returned [TopAppBarScrollBehavior] is remembered across compositions.
+     *
      * @param state the state object to be used to control or observe the top app bar's scroll
      *   state. See [rememberTopAppBarState] for a state that is remembered across compositions.
      * @param canScroll a callback used to determine whether scroll events are to be handled by this
@@ -1572,12 +1574,15 @@ object TopAppBarDefaults {
     fun pinnedScrollBehavior(
         state: TopAppBarState = rememberTopAppBarState(),
         canScroll: () -> Boolean = { true }
-    ): TopAppBarScrollBehavior = PinnedScrollBehavior(state = state, canScroll = canScroll)
+    ): TopAppBarScrollBehavior =
+        remember(state, canScroll) { PinnedScrollBehavior(state = state, canScroll = canScroll) }
 
     /**
      * Returns a [TopAppBarScrollBehavior]. A top app bar that is set up with this
      * [TopAppBarScrollBehavior] will immediately collapse when the content is pulled up, and will
      * immediately appear when the content is pulled down.
+     *
+     * The returned [TopAppBarScrollBehavior] is remembered across compositions.
      *
      * @param state the state object to be used to control or observe the top app bar's scroll
      *   state. See [rememberTopAppBarState] for a state that is remembered across compositions.
@@ -1613,6 +1618,8 @@ object TopAppBarDefaults {
      * [TopAppBarScrollBehavior] will immediately collapse when the content is pulled up, and will
      * immediately appear when the content is pulled down.
      *
+     * The returned [TopAppBarScrollBehavior] is remembered across compositions.
+     *
      * @param state the state object to be used to control or observe the top app bar's scroll
      *   state. See [rememberTopAppBarState] for a state that is remembered across compositions.
      * @param canScroll a callback used to determine whether scroll events are to be handled by this
@@ -1635,13 +1642,15 @@ object TopAppBarDefaults {
         flingAnimationSpec: DecayAnimationSpec<Float>? = rememberSplineBasedDecay(),
         reverseLayout: Boolean = false
     ): TopAppBarScrollBehavior =
-        EnterAlwaysScrollBehavior(
-            state = state,
-            snapAnimationSpec = snapAnimationSpec,
-            flingAnimationSpec = flingAnimationSpec,
-            canScroll = canScroll,
-            reverseLayout = reverseLayout
-        )
+        remember(state, canScroll, snapAnimationSpec, flingAnimationSpec, reverseLayout) {
+            EnterAlwaysScrollBehavior(
+                state = state,
+                snapAnimationSpec = snapAnimationSpec,
+                flingAnimationSpec = flingAnimationSpec,
+                canScroll = canScroll,
+                reverseLayout = reverseLayout
+            )
+        }
 
     /**
      * Returns a [TopAppBarScrollBehavior] that adjusts its properties to affect the colors and
@@ -1650,6 +1659,8 @@ object TopAppBarDefaults {
      * A top app bar that is set up with this [TopAppBarScrollBehavior] will immediately collapse
      * when the nested content is pulled up, and will expand back the collapsed area when the
      * content is pulled all the way down.
+     *
+     * The returned [TopAppBarScrollBehavior] is remembered across compositions.
      *
      * @param state the state object to be used to control or observe the top app bar's scroll
      *   state. See [rememberTopAppBarState] for a state that is remembered across compositions.
@@ -1836,7 +1847,7 @@ class TopAppBarState(
  * container color according to the top app bar scroll state. It does not animate the leading,
  * headline, or trailing colors.
  *
- * @param containerColor the color used for the background of this BottomAppBar. Use
+ * @param containerColor the color used for the background of this TopAppBar. Use
  *   [Color.Transparent] to have no color.
  * @param scrolledContainerColor the container color when content is scrolled behind it
  * @param navigationIconContentColor the content color used for the navigation icon
@@ -2022,6 +2033,8 @@ object BottomAppBarDefaults {
      * [BottomAppBarScrollBehavior] will immediately collapse when the content is pulled up, and
      * will immediately appear when the content is pulled down.
      *
+     * The returned [BottomAppBarScrollBehavior] is remembered across compositions.
+     *
      * @param state the state object to be used to control or observe the bottom app bar's scroll
      *   state. See [rememberBottomAppBarState] for a state that is remembered across compositions.
      * @param canScroll a callback used to determine whether scroll events are to be handled by this
@@ -2041,12 +2054,14 @@ object BottomAppBarDefaults {
         snapAnimationSpec: AnimationSpec<Float>? = MotionSchemeKeyTokens.FastSpatial.value(),
         flingAnimationSpec: DecayAnimationSpec<Float>? = rememberSplineBasedDecay()
     ): BottomAppBarScrollBehavior =
-        ExitAlwaysScrollBehavior(
-            state = state,
-            snapAnimationSpec = snapAnimationSpec,
-            flingAnimationSpec = flingAnimationSpec,
-            canScroll = canScroll
-        )
+        remember(state, canScroll, snapAnimationSpec, flingAnimationSpec) {
+            ExitAlwaysScrollBehavior(
+                state = state,
+                snapAnimationSpec = snapAnimationSpec,
+                flingAnimationSpec = flingAnimationSpec,
+                canScroll = canScroll
+            )
+        }
 }
 
 /**

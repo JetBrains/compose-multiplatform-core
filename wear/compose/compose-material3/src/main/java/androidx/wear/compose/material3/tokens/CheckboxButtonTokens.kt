@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-// VERSION: v0_100
+// VERSION: v0_103
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 package androidx.wear.compose.material3.tokens
 internal object CheckboxButtonTokens {
     val CheckedBoxColor = ColorSchemeKeyTokens.Primary
-    val CheckedCheckmarkColor = ColorSchemeKeyTokens.OnPrimary
+    val CheckedCheckmarkColor = ColorSchemeKeyTokens.PrimaryContainer
     val CheckedContainerColor = ColorSchemeKeyTokens.PrimaryContainer
     val CheckedContentColor = ColorSchemeKeyTokens.OnPrimaryContainer
     val CheckedIconColor = ColorSchemeKeyTokens.Primary

@@ -35,6 +35,7 @@ import android.location.Location;
 import android.media.MediaDataSource;
 import android.media.MediaMetadataRetriever;
 import android.os.Build;
+import android.system.Os;
 import android.system.OsConstants;
 import android.util.Log;
 import android.util.Pair;
@@ -42,7 +43,6 @@ import android.util.Pair;
 import androidx.annotation.IntDef;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
-import androidx.exifinterface.media.ExifInterfaceUtils.Api21Impl;
 import androidx.exifinterface.media.ExifInterfaceUtils.Api23Impl;
 
 import org.jspecify.annotations.NonNull;
@@ -106,7 +106,7 @@ import java.util.zip.CRC32;
  * separate storage location for XMP. ExifInterface handles this ambiguity as follows:
  *
  * <ul>
- *   <li>JPEG
+ *   <li><b>JPEG</b>
  *       <ul>
  *         <li>The XMP spec part 3 section 3.3.2 forbids the XMP tag (700) being present in the Exif
  *             segment of JPEG files (i.e. XMP should always be in a separate APP1 segment).
@@ -119,16 +119,12 @@ import java.util.zip.CRC32;
  *         <li>If XMP is not present in either location, and is added with {@link #setAttribute}, it
  *             is written as a standalone segment, in line with the spec described above.
  *       </ul>
- *   <li>HEIF
+ *   <li><b>HEIC & AVIF</b>
  *       <ul>
- *         <li>If XMP is present in both Exif and separate segments, the XMP from the Exif segment
- *             is returned from {@link #getAttributeBytes}.
+ *         <li>If XMP is present in both Exif and separate segments, the XMP from the separate
+ *             segment is returned from {@link #getAttributeBytes}.
  *       </ul>
  * </ul>
- *
- * Note: JPEG and HEIF files may contain XMP data either inside the Exif data chunk or outside of
- * it. This class will search both locations for XMP data, but if XMP data exist both inside and
- * outside Exif, will favor the XMP data inside Exif over the one outside.
  */
 public class ExifInterface {
     private static final String TAG = "ExifInterface";
@@ -3105,9 +3101,9 @@ public class ExifInterface {
             (byte) 0x47, (byte) 0x0d, (byte) 0x0a, (byte) 0x1a, (byte) 0x0a};
     // See "Extensions to the PNG 1.2 Specification, Version 1.5.0",
     // 3.7. eXIf Exchangeable Image File (Exif) Profile
-    private static final int PNG_CHUNK_TYPE_EXIF = intFromBytes('e', 'X', 'I', 'f');
-    private static final int PNG_CHUNK_TYPE_IHDR = intFromBytes('I', 'H', 'D', 'R');
-    private static final int PNG_CHUNK_TYPE_IEND = intFromBytes('I', 'E', 'N', 'D');
+    private static final int PNG_CHUNK_TYPE_EXIF = 'e' << 24 | 'X' << 16 | 'I' << 8 | 'f';
+    private static final int PNG_CHUNK_TYPE_IHDR = 'I' << 24 | 'H' << 16 | 'D' << 8 | 'R';
+    private static final int PNG_CHUNK_TYPE_IEND = 'I' << 24 | 'E' << 16 | 'N' << 8 | 'D';
     private static final int PNG_CHUNK_TYPE_BYTE_LENGTH = 4;
     private static final int PNG_CHUNK_CRC_BYTE_LENGTH = 4;
 
@@ -4113,13 +4109,13 @@ public class ExifInterface {
         mFilename = null;
 
         boolean isFdDuped = false;
-        if (Build.VERSION.SDK_INT >= 21 && isSeekableFD(fileDescriptor)) {
+        if (isSeekableFD(fileDescriptor)) {
             mSeekableFileDescriptor = fileDescriptor;
             // Keep the original file descriptor in order to save attributes when it's seekable.
             // Otherwise, just close the given file descriptor after reading it because the save
             // feature won't be working.
             try {
-                fileDescriptor = Api21Impl.dup(fileDescriptor);
+                fileDescriptor = Os.dup(fileDescriptor);
                 isFdDuped = true;
             } catch (Exception e) {
                 throw new IOException("Failed to duplicate file descriptor", e);
@@ -4264,15 +4260,15 @@ public class ExifInterface {
     private static @XmpHandling int getXmpHandlingForImageType(int imageType) {
         switch (imageType) {
             // ExifInterface has a documented (but spec-violating) preference for reading and
-            // writing JPEG and HEIC XMP data from Exif/TIFF tag 700 instead of a separate XMP
-            // APP1 segment (for JPEG) or a top-level XMP UUID box (for HEIC) if both are present.
+            // writing JPEG XMP data from Exif/TIFF tag 700 instead of a separate XMP APP1 segment
+            // if both are present.
             case IMAGE_TYPE_JPEG:
-            case IMAGE_TYPE_HEIC:
                 return XMP_HANDLING_PREFER_TIFF_700_IF_PRESENT;
+            case IMAGE_TYPE_AVIF:
+            case IMAGE_TYPE_HEIC:
             // RAF stores XMP/Exif in JPEG, but we have no documented backwards-compat obligations
             // so we can implement the spec to store XMP in a separate APP1 segment.
             case IMAGE_TYPE_RAF:
-            case IMAGE_TYPE_AVIF:
                 return XMP_HANDLING_PREFER_SEPARATE;
             case IMAGE_TYPE_DNG:
             case IMAGE_TYPE_ORF:
@@ -4824,18 +4820,15 @@ public class ExifInterface {
     }
 
     private static boolean isSeekableFD(FileDescriptor fd) {
-        if (Build.VERSION.SDK_INT >= 21) {
-            try {
-                Api21Impl.lseek(fd, 0, OsConstants.SEEK_CUR);
-                return true;
-            } catch (Exception e) {
-                if (DEBUG) {
-                    Log.d(TAG, "The file descriptor for the given input is not seekable");
-                }
-                return false;
+        try {
+            Os.lseek(fd, /* offset= */ 0, /* whence= */ OsConstants.SEEK_CUR);
+            return true;
+        } catch (Exception e) {
+            if (DEBUG) {
+                Log.d(TAG, "The file descriptor for the given input is not seekable");
             }
+            return false;
         }
-        return false;
     }
 
     // Prints out attributes for debugging.
@@ -4899,12 +4892,11 @@ public class ExifInterface {
             if (mFilename != null) {
                 in = new FileInputStream(mFilename);
             } else {
-                // mSeekableFileDescriptor will be non-null only for SDK_INT >= 21, but this check
-                // is needed to prevent calling Os.lseek at runtime for SDK < 21.
-                if (Build.VERSION.SDK_INT >= 21) {
-                    Api21Impl.lseek(mSeekableFileDescriptor, 0, OsConstants.SEEK_SET);
-                    in = new FileInputStream(mSeekableFileDescriptor);
-                }
+                Os.lseek(
+                        mSeekableFileDescriptor,
+                        /* offset= */ 0,
+                        /* whence= */ OsConstants.SEEK_SET);
+                in = new FileInputStream(mSeekableFileDescriptor);
             }
             out = new FileOutputStream(tempFile);
             copy(in, out);
@@ -4926,12 +4918,9 @@ public class ExifInterface {
             if (mFilename != null) {
                 out = new FileOutputStream(mFilename);
             } else {
-                // mSeekableFileDescriptor will be non-null only for SDK_INT >= 21, but this check
-                // is needed to prevent calling Os.lseek at runtime for SDK < 21.
-                if (Build.VERSION.SDK_INT >= 21) {
-                    Api21Impl.lseek(mSeekableFileDescriptor, 0, OsConstants.SEEK_SET);
-                    out = new FileOutputStream(mSeekableFileDescriptor);
-                }
+                FileDescriptor fd = mSeekableFileDescriptor;
+                Os.lseek(fd, /* offset= */ 0, /* whence= */ OsConstants.SEEK_SET);
+                out = new FileOutputStream(mSeekableFileDescriptor);
             }
             bufferedIn = new BufferedInputStream(in);
             bufferedOut = new BufferedOutputStream(out);
@@ -4949,12 +4938,11 @@ public class ExifInterface {
                 if (mFilename != null) {
                     out = new FileOutputStream(mFilename);
                 } else {
-                    // mSeekableFileDescriptor will be non-null only for SDK_INT >= 21, but this
-                    // check is needed to prevent calling Os.lseek at runtime for SDK < 21.
-                    if (Build.VERSION.SDK_INT >= 21) {
-                        Api21Impl.lseek(mSeekableFileDescriptor, 0, OsConstants.SEEK_SET);
-                        out = new FileOutputStream(mSeekableFileDescriptor);
-                    }
+                    Os.lseek(
+                            mSeekableFileDescriptor,
+                            /* offset= */ 0,
+                            /* whence= */ OsConstants.SEEK_SET);
+                    out = new FileOutputStream(mSeekableFileDescriptor);
                 }
                 copy(in, out);
             } catch (Exception exception) {
@@ -5034,13 +5022,9 @@ public class ExifInterface {
             } else if (mFilename != null) {
                 in = new FileInputStream(mFilename);
             } else {
-                // mSeekableFileDescriptor will be non-null only for SDK_INT >= 21, but this check
-                // is needed to prevent calling Os.lseek and Os.dup at runtime for SDK < 21.
-                if (Build.VERSION.SDK_INT >= 21) {
-                    newFileDescriptor = Api21Impl.dup(mSeekableFileDescriptor);
-                    Api21Impl.lseek(newFileDescriptor, 0, OsConstants.SEEK_SET);
-                    in = new FileInputStream(newFileDescriptor);
-                }
+                newFileDescriptor = Os.dup(mSeekableFileDescriptor);
+                Os.lseek(newFileDescriptor, /* offset= */ 0, /* whence= */ OsConstants.SEEK_SET);
+                in = new FileInputStream(newFileDescriptor);
             }
             if (in == null) {
                 // Should not be reached this.
@@ -8343,13 +8327,5 @@ public class ExifInterface {
             return true;
         }
         return false;
-    }
-
-    /*
-     * Combines the lower eight bits of each parameter into a 32-bit int. {@code b1} is the highest
-     * byte of the result, {@code b4} is the lowest.
-     */
-    private static int intFromBytes(int b1, int b2, int b3, int b4) {
-        return ((b1 & 0xFF) << 24) | ((b2 & 0xFF) << 16) | ((b3 & 0xFF) << 8) | (b4 & 0xFF);
     }
 }

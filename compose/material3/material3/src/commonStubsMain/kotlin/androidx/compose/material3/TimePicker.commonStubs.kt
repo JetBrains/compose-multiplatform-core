@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
-@file:Suppress("ACTUAL_ANNOTATIONS_NOT_MATCH_EXPECT")
-
 package androidx.compose.material3
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
+
 @OptIn(ExperimentalMaterial3Api::class)
-internal actual val defaultTimePickerLayoutType: TimePickerLayoutType = implementedInJetBrainsFork()
+@ReadOnlyComposable
+@Composable
+internal actual fun defaultTimePickerLayoutType(): TimePickerLayoutType {
+    implementedInJetBrainsFork()
+}

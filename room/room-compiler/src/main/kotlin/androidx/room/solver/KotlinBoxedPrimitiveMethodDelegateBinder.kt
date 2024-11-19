@@ -17,6 +17,7 @@
 package androidx.room.solver
 
 import androidx.room.compiler.codegen.CodeLanguage
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.unbox
 import androidx.room.compiler.processing.XType
@@ -37,8 +38,7 @@ object KotlinBoxedPrimitiveMethodDelegateBinder {
         parameters: List<Pair<XTypeName, String>>,
         scope: CodeGenScope
     ) {
-        check(scope.language == CodeLanguage.JAVA)
-        scope.builder.apply {
+        scope.builder.applyTo(CodeLanguage.JAVA) {
             val params = mutableListOf<Any>()
             val format = buildString {
                 if (!returnType.isVoid()) {

@@ -20,11 +20,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
-import android.content.res.Configuration
 import android.graphics.Rect
-import android.os.Bundle
 import android.os.IBinder
-import android.os.SystemClock
 import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
@@ -38,7 +35,6 @@ import androidx.privacysandbox.ui.client.view.SandboxedSdkUiSessionState
 import androidx.privacysandbox.ui.client.view.SandboxedSdkUiSessionStateChangedListener
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
 import androidx.privacysandbox.ui.core.BackwardCompatUtil
-import androidx.privacysandbox.ui.core.SandboxedSdkViewUiInfo
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
 import androidx.privacysandbox.ui.provider.AbstractSandboxedUiAdapter
 import androidx.test.espresso.Espresso.onView
@@ -53,11 +49,9 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import androidx.testutils.withActivity
 import com.google.common.truth.Truth.assertThat
-import java.lang.Long.min
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
-import kotlin.Long.Companion.MAX_VALUE
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -103,129 +97,6 @@ class SandboxedSdkViewTest {
             client: SandboxedUiAdapter.SessionClient
         ) {
             clientExecutor.execute { client.onSessionError(Exception("Error in openSession()")) }
-        }
-    }
-
-    class TestSandboxedUiAdapter(private val signalOptions: Set<String> = setOf("option")) :
-        AbstractSandboxedUiAdapter() {
-
-        var isSessionOpened = false
-        var internalClient: SandboxedUiAdapter.SessionClient? = null
-        var testSession: TestSession? = null
-        var isZOrderOnTop = true
-        var inputToken: IBinder? = null
-
-        // When set to true, the onSessionOpened callback will only be invoked when specified
-        // by the test. This is to test race conditions when the session is being loaded.
-        var delayOpenSessionCallback = false
-
-        private val openSessionLatch = CountDownLatch(1)
-        private val resizeLatch = CountDownLatch(1)
-        private val configChangedLatch = CountDownLatch(1)
-
-        override fun openSession(
-            context: Context,
-            windowInputToken: IBinder,
-            initialWidth: Int,
-            initialHeight: Int,
-            isZOrderOnTop: Boolean,
-            clientExecutor: Executor,
-            client: SandboxedUiAdapter.SessionClient
-        ) {
-            internalClient = client
-            testSession = TestSession(context, signalOptions)
-            clientExecutor.execute {
-                if (!delayOpenSessionCallback) {
-                    client.onSessionOpened(testSession!!)
-                }
-                isSessionOpened = true
-                this.isZOrderOnTop = isZOrderOnTop
-                this.inputToken = windowInputToken
-                openSessionLatch.countDown()
-            }
-        }
-
-        internal fun sendOnSessionOpened() {
-            internalClient?.onSessionOpened(testSession!!)
-        }
-
-        internal fun assertSessionOpened() {
-            assertThat(openSessionLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
-        }
-
-        internal fun assertSessionNotOpened() {
-            assertThat(openSessionLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isFalse()
-        }
-
-        internal fun wasNotifyResizedCalled(): Boolean {
-            return resizeLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)
-        }
-
-        internal fun wasOnConfigChangedCalled(): Boolean {
-            return configChangedLatch.await(UI_INTENSIVE_TIMEOUT, TimeUnit.MILLISECONDS)
-        }
-
-        inner class TestSession(context: Context, override val signalOptions: Set<String>) :
-            SandboxedUiAdapter.Session {
-
-            var zOrderChangedLatch: CountDownLatch = CountDownLatch(1)
-            var shortestGapBetweenUiChangeEvents = MAX_VALUE
-            private var notifyUiChangedLatch: CountDownLatch = CountDownLatch(1)
-            private var latestUiChange: Bundle = Bundle()
-            private var hasReceivedFirstUiChange = false
-            private var timeReceivedLastUiChange = SystemClock.elapsedRealtime()
-
-            override val view: View = View(context)
-
-            fun requestResize(width: Int, height: Int) {
-                internalClient?.onResizeRequested(width, height)
-            }
-
-            override fun notifyResized(width: Int, height: Int) {
-                resizeLatch.countDown()
-            }
-
-            override fun notifyZOrderChanged(isZOrderOnTop: Boolean) {
-                this@TestSandboxedUiAdapter.isZOrderOnTop = isZOrderOnTop
-                zOrderChangedLatch.countDown()
-            }
-
-            override fun notifyConfigurationChanged(configuration: Configuration) {
-                configChangedLatch.countDown()
-            }
-
-            override fun close() {}
-
-            override fun notifyUiChanged(uiContainerInfo: Bundle) {
-                if (hasReceivedFirstUiChange) {
-                    shortestGapBetweenUiChangeEvents =
-                        min(
-                            shortestGapBetweenUiChangeEvents,
-                            SystemClock.elapsedRealtime() - timeReceivedLastUiChange
-                        )
-                }
-                hasReceivedFirstUiChange = true
-                timeReceivedLastUiChange = SystemClock.elapsedRealtime()
-                latestUiChange = uiContainerInfo
-                notifyUiChangedLatch.countDown()
-            }
-
-            fun assertNoSubsequentUiChanges() {
-                notifyUiChangedLatch = CountDownLatch(1)
-                assertThat(notifyUiChangedLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isFalse()
-            }
-
-            /**
-             * Performs the action specified in the Runnable, and waits for the next UI change.
-             *
-             * Throws an [AssertionError] if no UI change is reported.
-             */
-            fun runAndRetrieveNextUiChange(runnable: Runnable): SandboxedSdkViewUiInfo {
-                notifyUiChangedLatch = CountDownLatch(1)
-                runnable.run()
-                assertThat(notifyUiChangedLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
-                return SandboxedSdkViewUiInfo.fromBundle(latestUiChange)
-            }
         }
     }
 

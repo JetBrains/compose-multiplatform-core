@@ -17,6 +17,7 @@
 package androidx.room.solver.prepared.result
 
 import androidx.room.compiler.codegen.CodeLanguage
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.codegen.XMemberName.Companion.packageMember
 import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.processing.XType
@@ -81,8 +82,10 @@ class PreparedQueryResultAdapter(private val returnType: XType, private val quer
                     addStatement("%N.setTransactionSuccessful()", dbProperty)
                     if (returnType.isVoidObject()) {
                         addStatement("return null")
-                    } else if (returnType.isKotlinUnit() && language == CodeLanguage.JAVA) {
-                        addStatement("return %T.INSTANCE", KotlinTypeNames.UNIT)
+                    } else if (returnType.isKotlinUnit()) {
+                        applyTo(CodeLanguage.JAVA) {
+                            addStatement("return %T.INSTANCE", KotlinTypeNames.UNIT)
+                        }
                     }
                 } else {
                     val resultVar = scope.getTmpVar("_result")
@@ -108,7 +111,7 @@ class PreparedQueryResultAdapter(private val returnType: XType, private val quer
     }
 
     fun executeAndReturn(connectionVar: String, statementVar: String, scope: CodeGenScope) {
-        scope.builder.apply {
+        scope.builder.applyTo { language ->
             addStatement("%L.step()", statementVar)
             val returnPrefix =
                 when (language) {

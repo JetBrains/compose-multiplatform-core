@@ -28,7 +28,7 @@ import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestNumber
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.StreamId
-import androidx.camera.camera2.pipe.core.tryAcquireToken
+import androidx.camera.camera2.pipe.internal.CameraGraphParametersImpl
 import androidx.camera.camera2.pipe.internal.FrameCaptureQueue
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceProcessor
@@ -40,7 +40,7 @@ import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -76,11 +76,18 @@ internal class CameraGraphSessionImplTest {
             listener3A
         )
     private val frameCaptureQueue = FrameCaptureQueue()
-    private val sessionMutex = Mutex()
+    private val sessionMutex = SessionLock()
     private val sessionToken = sessionMutex.tryAcquireToken()!!
-
+    private val testScope = TestScope()
+    private val parameters = CameraGraphParametersImpl(sessionMutex, graphProcessor, testScope)
     private val session =
-        CameraGraphSessionImpl(sessionToken, graphProcessor, controller3A, frameCaptureQueue)
+        CameraGraphSessionImpl(
+            sessionToken,
+            graphProcessor,
+            controller3A,
+            frameCaptureQueue,
+            parameters
+        )
 
     @Test
     fun createCameraGraphSession() {

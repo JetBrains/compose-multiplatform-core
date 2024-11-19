@@ -96,7 +96,7 @@ fun CardDemo() {
 }
 
 @Composable
-private fun VerticallyCenteredBaseCard() {
+fun VerticallyCenteredBaseCard() {
     // Provide a demo of a base Card with vertically centered content
     Card(
         onClick = {},
@@ -155,7 +155,7 @@ fun AppCardWithMultipleImagesDemo() {
 }
 
 @Composable
-private fun OutlinedTitleCardWithSubtitleAndTimeDemo() {
+fun OutlinedTitleCardWithSubtitleAndTimeDemo() {
     TitleCard(
         onClick = { /* Do something */ },
         time = { Text("now") },

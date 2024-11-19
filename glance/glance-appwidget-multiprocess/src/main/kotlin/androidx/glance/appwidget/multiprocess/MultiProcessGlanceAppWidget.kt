@@ -125,9 +125,9 @@ public class MultiProcessConfig(
 
     internal fun toGlanceComponents() =
         GlanceComponents(
-            actionTrampolineActivity,
-            invisibleActionTrampolineActivity,
-            actionTrampolineActivity,
-            remoteViewsService
+            actionTrampolineActivity = actionTrampolineActivity,
+            invisibleActionTrampolineActivity = invisibleActionTrampolineActivity,
+            actionCallbackBroadcastReceiver = actionCallbackBroadcastReceiver,
+            remoteViewsService = remoteViewsService
         )
 }

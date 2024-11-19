@@ -25,18 +25,19 @@ package androidx.compose.ui.autofill
 interface AutofillManager {
 
     /**
-     * Indicate the autofill context should be committed.
+     * Indicate the autofill session should be committed.
      *
-     * Call this function to notify the Autofill framework that the current context should be
-     * committed. After calling this function, the framework considers the form submitted, and the
-     * credentials entered will be processed.
+     * Call this function to notify the Autofill framework that the current session should be
+     * committed and so the entered credentials might be saved or updated. After calling this
+     * function, the framework considers the form submitted, and any relevant dialog will appear to
+     * notify the user of the data processed.
      */
     fun commit()
 
     /**
      * Indicate the autofill context should be canceled.
      *
-     * Call this function to notify the Autofill framework that the current context should be
+     * Call this function to notify the Autofill framework that the current session should be
      * canceled. After calling this function, the framework will stop the current autofill session
      * without processing any information entered in the autofillable field.
      */

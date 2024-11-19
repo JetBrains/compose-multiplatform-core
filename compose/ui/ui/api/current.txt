@@ -711,7 +711,8 @@ package androidx.compose.ui.focus {
     ctor public FocusRequester();
     method public boolean captureFocus();
     method public boolean freeFocus();
-    method public void requestFocus();
+    method @Deprecated public void requestFocus();
+    method public boolean requestFocus(optional int focusDirection);
     method public boolean restoreFocusedChild();
     method public boolean saveFocusedChild();
     field public static final androidx.compose.ui.focus.FocusRequester.Companion Companion;
@@ -782,7 +783,8 @@ package androidx.compose.ui.focus {
   public sealed interface FocusTargetModifierNode extends androidx.compose.ui.node.DelegatableNode {
     method public androidx.compose.ui.focus.FocusState getFocusState();
     method public int getFocusability();
-    method public boolean requestFocus();
+    method @Deprecated public boolean requestFocus();
+    method public boolean requestFocus(optional int focusDirection);
     method public void setFocusability(int);
     property public abstract androidx.compose.ui.focus.FocusState focusState;
     property public abstract int focusability;

@@ -292,7 +292,7 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
     }
 
     internal fun setContentView(contentView: View) {
-        if (childCount > 1) {
+        if (childCount > 0) {
             throw IllegalStateException("Number of children views must not exceed 1")
         }
 

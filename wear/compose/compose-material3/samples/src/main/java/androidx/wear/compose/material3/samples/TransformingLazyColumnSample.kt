@@ -19,11 +19,14 @@ package androidx.wear.compose.material3.samples
 import androidx.annotation.Sampled
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement.spacedBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,7 +34,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -49,23 +55,48 @@ import androidx.wear.compose.material3.ScreenScaffoldDefaults
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.lazy.scrollTransform
 import androidx.wear.compose.material3.lazy.targetMorphingHeight
+import kotlin.random.Random
 import kotlinx.coroutines.launch
+
+fun rainbowColor(progress: Float): Color {
+    val hue = progress * 360f
+    val saturation = 1f
+    val value = 1f
+
+    return Color(android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, value)))
+}
 
 @Preview
 @Composable
 fun TransformingLazyColumnScrollingSample() {
     val state = rememberTransformingLazyColumnState()
     val coroutineScope = rememberCoroutineScope()
-    var expandedIndex by remember { mutableStateOf(-1) }
+    var expandedItem by remember { mutableStateOf(-1) }
+    var elements by remember { mutableStateOf(listOf(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)) }
+
+    var nextElement = 10
+    fun addElement(index: Int) {
+        elements =
+            elements.subList(0, index) +
+                listOf(nextElement++) +
+                elements.subList(index, elements.count())
+    }
+
     AppScaffold {
         ScreenScaffold(
             state,
             edgeButton = {
-                EdgeButton(onClick = { coroutineScope.launch { state.animateScrollToItem(0) } }) {
-                    Text("To top")
+                EdgeButton(
+                    onClick = {
+                        addElement(elements.count())
+                        coroutineScope.launch { state.scrollToItem(elements.count() - 1) }
+                    }
+                ) {
+                    Text("Add item")
                 }
             }
         ) {
+            val random = remember { Random }
             TransformingLazyColumn(
                 state = state,
                 contentPadding =
@@ -78,7 +109,7 @@ fun TransformingLazyColumnScrollingSample() {
                     ),
                 modifier = Modifier.background(MaterialTheme.colorScheme.background)
             ) {
-                items(20) {
+                items(elements, key = { it }) {
                     Column(
                         modifier =
                             Modifier.fillMaxWidth()
@@ -87,20 +118,57 @@ fun TransformingLazyColumnScrollingSample() {
                                     backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                                     shape = MaterialTheme.shapes.medium
                                 )
-                                .padding(10.dp)
+                                .padding(5.dp)
                                 .clickable {
-                                    coroutineScope.launch {
-                                        expandedIndex = if (expandedIndex == it) -1 else it
-                                        state.requestScrollToItem(it)
-                                    }
+                                    val index = elements.indexOf(it)
+                                    elements =
+                                        elements.subList(0, index) +
+                                            elements.subList(index + 1, elements.count())
                                 }
                     ) {
-                        Text(
-                            "Item $it",
-                            color = MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        if (expandedIndex == it) {
+                        Row(
+                            verticalAlignment = CenterVertically,
+                            horizontalArrangement = spacedBy(2.dp)
+                        ) {
+                            Text(
+                                "Item $it",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Text(
+                                "^",
+                                Modifier.clickable {
+                                    val index = elements.indexOf(it)
+                                    addElement(index)
+                                }
+                            )
+                            Box(
+                                Modifier.size(25.dp)
+                                    .drawWithContent {
+                                        drawContent()
+
+                                        val colorProgress =
+                                            scrollProgress?.let {
+                                                (it.topOffsetFraction + it.bottomOffsetFraction) /
+                                                    2f
+                                            } ?: 0f
+                                        val r = size.height / 2f
+                                        drawCircle(
+                                            rainbowColor(colorProgress),
+                                            radius = r,
+                                            center = Offset(size.width - r, r)
+                                        )
+                                        drawCircle(
+                                            rainbowColor(random.nextFloat()),
+                                            radius = r / 8,
+                                            center = Offset(size.width - r, r)
+                                        )
+                                    }
+                                    .clickable { expandedItem = if (expandedItem == it) -1 else it }
+                            )
+                        }
+                        if (expandedItem == it) {
                             Box(modifier = Modifier.fillMaxWidth().height(100.dp))
                         }
                     }

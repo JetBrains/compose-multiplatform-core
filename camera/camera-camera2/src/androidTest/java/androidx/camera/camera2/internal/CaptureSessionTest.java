@@ -1600,11 +1600,11 @@ public final class CaptureSessionTest {
         CountDownLatch latch0 = new CountDownLatch(1);
         AtomicInteger dataSpace = new AtomicInteger(DataSpace.DATASPACE_UNKNOWN);
         ListenableFuture<SurfaceTextureProvider.SurfaceTextureHolder> surfaceTextureHolderFuture =
-                SurfaceTextureProvider.createAutoDrainingSurfaceTextureAsync(mExecutor, 640, 480,
+                SurfaceTextureProvider.createAutoDrainingSurfaceTextureAsync(640, 480,
                         surfaceTexture -> {
                             dataSpace.set(surfaceTexture.getDataSpace());
                             latch0.countDown();
-                        }, /* onClosed= */null);
+                        });
 
         DeferrableSurface deferrableSurface = new DeferrableSurface() {
             @NonNull

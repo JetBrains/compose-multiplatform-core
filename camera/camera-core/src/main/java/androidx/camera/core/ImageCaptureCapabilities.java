@@ -56,7 +56,6 @@ public interface ImageCaptureCapabilities {
      *
      * @see ImageCapture.Builder#setOutputFormat(int)
      */
-    @ExperimentalImageCaptureOutputFormat
     @NonNull
     Set<@ImageCapture.OutputFormat Integer> getSupportedOutputFormats();
 }

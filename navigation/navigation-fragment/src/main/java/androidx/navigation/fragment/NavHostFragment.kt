@@ -43,21 +43,23 @@ import androidx.navigation.plusAssign
  * app's chrome around it, e.g.:
  * ```
  * <androidx.drawerlayout.widget.DrawerLayout
- * xmlns:android="http://schemas.android.com/apk/res/android"
- * xmlns:app="http://schemas.android.com/apk/res-auto"
- * android:layout_width="match_parent"
- * android:layout_height="match_parent">
- * <androidx.fragment.app.FragmentContainerView
- * android:layout_width="match_parent"
- * android:layout_height="match_parent"
- * android:id="@+id/my_nav_host_fragment"
- * android:name="androidx.navigation.fragment.NavHostFragment"
- * app:navGraph="@navigation/nav_sample"
- * app:defaultNavHost="true" />
- * <com.google.android.material.navigation.NavigationView
- * android:layout_width="wrap_content"
- * android:layout_height="match_parent"
- * android:layout_gravity="start"/>;
+ *     xmlns:android="http://schemas.android.com/apk/res/android"
+ *     xmlns:app="http://schemas.android.com/apk/res-auto"
+ *     android:layout_width="match_parent"
+ *     android:layout_height="match_parent">
+ *
+ *     <androidx.fragment.app.FragmentContainerView
+ *         android:layout_width="match_parent"
+ *         android:layout_height="match_parent"
+ *         android:id="@+id/my_nav_host_fragment"
+ *         android:name="androidx.navigation.fragment.NavHostFragment"
+ *         app:navGraph="@navigation/nav_sample"
+ *         app:defaultNavHost="true" />
+ *
+ *     <com.google.android.material.navigation.NavigationView
+ *         android:layout_width="wrap_content"
+ *         android:layout_height="match_parent"
+ *         android:layout_gravity="start"/>;
  * </androidx.drawerlayout.widget.DrawerLayout>
  * ```
  *

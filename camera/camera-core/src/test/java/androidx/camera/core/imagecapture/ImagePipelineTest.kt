@@ -17,6 +17,8 @@
 package androidx.camera.core.imagecapture
 
 import android.graphics.ImageFormat
+import android.graphics.ImageFormat.JPEG
+import android.graphics.ImageFormat.YUV_420_888
 import android.graphics.Rect
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
@@ -118,7 +120,7 @@ class ImagePipelineTest {
             ImageCapture.Builder()
                 .setImageReaderProxyProvider(imageReaderProxyProvider)
                 .setCaptureOptionUnpacker { _, builder -> builder.templateType = TEMPLATE_TYPE }
-        builder.mutableConfig.insertOption(ImageInputConfig.OPTION_INPUT_FORMAT, ImageFormat.JPEG)
+        builder.mutableConfig.insertOption(ImageInputConfig.OPTION_INPUT_FORMAT, JPEG)
         // Act.
         val pipeline = ImagePipeline(builder.useCaseConfig, SIZE, cameraCharacteristics)
         // Assert.
@@ -219,7 +221,7 @@ class ImagePipelineTest {
         imageCaptureConfig =
             createImageCaptureConfig(
                 inputFormat = ImageFormat.RAW_SENSOR,
-                secondaryInputFormat = ImageFormat.JPEG
+                secondaryInputFormat = JPEG
             )
         imagePipeline = ImagePipeline(imageCaptureConfig, SIZE, cameraCharacteristics)
         val captureInput = imagePipeline.captureNode.inputEdge
@@ -287,7 +289,7 @@ class ImagePipelineTest {
     @Test
     fun createSessionConfigBuilderWithYuvPostviewEnabled() {
         // Arrange.
-        val postviewSize = Size(640, 480)
+        val postviewSettings = PostviewSettings.create(Size(640, 480), YUV_420_888)
         imagePipeline =
             ImagePipeline(
                 imageCaptureConfig,
@@ -295,8 +297,7 @@ class ImagePipelineTest {
                 cameraCharacteristics,
                 null,
                 false,
-                postviewSize,
-                ImageFormat.YUV_420_888
+                postviewSettings
             )
 
         // Act: create SessionConfig
@@ -305,15 +306,15 @@ class ImagePipelineTest {
         // Assert: SessionConfig contains the postview output config.
         assertThat(sessionConfig.postviewOutputConfig).isNotNull()
         assertThat(sessionConfig.postviewOutputConfig!!.surface.prescribedSize)
-            .isEqualTo(postviewSize)
+            .isEqualTo(postviewSettings.resolution)
         assertThat(sessionConfig.postviewOutputConfig!!.surface.prescribedStreamFormat)
-            .isEqualTo(ImageFormat.YUV_420_888)
+            .isEqualTo(postviewSettings.inputFormat)
     }
 
     @Test
     fun createSessionConfigBuilderWithJpegPostviewEnabled() {
         // Arrange.
-        val postviewSize = Size(640, 480)
+        val postviewSettings = PostviewSettings.create(Size(640, 480), JPEG)
         imagePipeline =
             ImagePipeline(
                 imageCaptureConfig,
@@ -321,8 +322,7 @@ class ImagePipelineTest {
                 cameraCharacteristics,
                 null,
                 false,
-                postviewSize,
-                ImageFormat.JPEG
+                postviewSettings
             )
 
         // Act: create SessionConfig
@@ -331,15 +331,15 @@ class ImagePipelineTest {
         // Assert: SessionConfig contains the postview output config.
         assertThat(sessionConfig.postviewOutputConfig).isNotNull()
         assertThat(sessionConfig.postviewOutputConfig!!.surface.prescribedSize)
-            .isEqualTo(postviewSize)
+            .isEqualTo(postviewSettings.resolution)
         assertThat(sessionConfig.postviewOutputConfig!!.surface.prescribedStreamFormat)
-            .isEqualTo(ImageFormat.JPEG)
+            .isEqualTo(postviewSettings.inputFormat)
     }
 
     @Test
     fun createCameraRequestWithPostviewEnabled() {
         // Arrange.
-        val postviewSize = Size(640, 480)
+        val postviewSettings = PostviewSettings.create(Size(640, 480), YUV_420_888)
         imagePipeline =
             ImagePipeline(
                 imageCaptureConfig,
@@ -347,8 +347,7 @@ class ImagePipelineTest {
                 cameraCharacteristics,
                 null,
                 false,
-                postviewSize,
-                ImageFormat.YUV_420_888
+                postviewSettings
             )
 
         // Act: create requests
@@ -412,15 +411,15 @@ class ImagePipelineTest {
             ImageCapture.Builder().setCaptureOptionUnpacker { _, builder ->
                 builder.templateType = TEMPLATE_TYPE
             }
-        builder.mutableConfig.insertOption(OPTION_BUFFER_FORMAT, ImageFormat.YUV_420_888)
+        builder.mutableConfig.insertOption(OPTION_BUFFER_FORMAT, YUV_420_888)
         builder.mutableConfig.insertOption(OPTION_IO_EXECUTOR, mainThreadExecutor())
-        builder.mutableConfig.insertOption(ImageInputConfig.OPTION_INPUT_FORMAT, ImageFormat.JPEG)
+        builder.mutableConfig.insertOption(ImageInputConfig.OPTION_INPUT_FORMAT, JPEG)
         val pipeline = ImagePipeline(builder.useCaseConfig, SIZE, cameraCharacteristics)
 
         // Arrange & act.
-        sendInMemoryRequest(pipeline, ImageFormat.YUV_420_888)
+        sendInMemoryRequest(pipeline, YUV_420_888)
 
-        assertThat(CALLBACK.inMemoryResult!!.format).isEqualTo(ImageFormat.YUV_420_888)
+        assertThat(CALLBACK.inMemoryResult!!.format).isEqualTo(YUV_420_888)
     }
 
     @Test
@@ -429,8 +428,8 @@ class ImagePipelineTest {
         val image = sendInMemoryRequest(imagePipeline)
 
         // Assert: the image is received by TakePictureCallback.
-        assertThat(image.format).isEqualTo(ImageFormat.JPEG)
-        assertThat(CALLBACK.inMemoryResult!!.format).isEqualTo(ImageFormat.JPEG)
+        assertThat(image.format).isEqualTo(JPEG)
+        assertThat(CALLBACK.inMemoryResult!!.format).isEqualTo(JPEG)
         assertThat(CALLBACK.inMemoryResult!!.planes).isEqualTo(image.planes)
     }
 
@@ -467,21 +466,18 @@ class ImagePipelineTest {
         imageCaptureConfig =
             createImageCaptureConfig(
                 inputFormat = ImageFormat.RAW_SENSOR,
-                secondaryInputFormat = ImageFormat.JPEG
+                secondaryInputFormat = JPEG
             )
         imagePipeline = ImagePipeline(imageCaptureConfig, SIZE, cameraCharacteristics)
         val image = sendInMemoryRequest(imagePipeline)
 
         // Assert: the image is received by TakePictureCallback.
-        assertThat(image.format).isEqualTo(ImageFormat.JPEG)
+        assertThat(image.format).isEqualTo(JPEG)
         assertThat(CALLBACK.inMemoryResult).isNotNull()
     }
 
     /** Creates a ImageProxy and sends it to the pipeline. */
-    private fun sendInMemoryRequest(
-        pipeline: ImagePipeline,
-        format: Int = ImageFormat.JPEG
-    ): ImageProxy {
+    private fun sendInMemoryRequest(pipeline: ImagePipeline, format: Int = JPEG): ImageProxy {
         // Arrange.
         val processingRequest =
             imagePipeline
@@ -494,7 +490,7 @@ class ImagePipelineTest {
             )
         val image =
             when (format) {
-                ImageFormat.YUV_420_888 -> {
+                YUV_420_888 -> {
                     createYuvFakeImageProxy(imageInfo, WIDTH, HEIGHT)
                 }
                 ImageFormat.JPEG_R -> {
@@ -562,7 +558,7 @@ class ImagePipelineTest {
 
     private fun createImageCaptureConfig(
         templateType: Int = TEMPLATE_TYPE,
-        inputFormat: Int = ImageFormat.JPEG,
+        inputFormat: Int = JPEG,
         secondaryInputFormat: Int? = null,
     ): ImageCaptureConfig {
         val builder =

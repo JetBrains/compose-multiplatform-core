@@ -167,7 +167,16 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
     }
 
     private fun Project.configureTasksForKotlinWeb() {
-        val offlineMirrorStorage = File(getPrebuiltsRoot(), "androidx/javascript-for-kotlin")
+        val offlineMirrorStorage =
+            if (ProjectLayoutType.isPlayground(this)) {
+                project.file(
+                    layout.buildDirectory.dir("javascript-for-playground").map {
+                        it.asFile.also { it.mkdirs() }
+                    }
+                )
+            } else {
+                File(getPrebuiltsRoot(), "androidx/javascript-for-kotlin")
+            }
         val createYarnRcFileTask =
             tasks.register("createYarnRcFile", CreateYarnRcFileTask::class.java) {
                 it.offlineMirrorStorage.set(offlineMirrorStorage)

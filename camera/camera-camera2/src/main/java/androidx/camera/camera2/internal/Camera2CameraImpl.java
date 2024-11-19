@@ -1973,7 +1973,6 @@ final class Camera2CameraImpl implements CameraInternal {
         State publicState;
         switch (state) {
             case INITIALIZED:
-            case OPENING_WITH_ERROR:
                 publicState = State.CLOSED;
                 break;
             case PENDING_OPEN:
@@ -1991,6 +1990,7 @@ final class Camera2CameraImpl implements CameraInternal {
                 break;
             case CLOSING:
             case REOPENING_QUIRK:
+            case OPENING_WITH_ERROR:
                 publicState = State.CLOSING;
                 break;
             case RELEASING:

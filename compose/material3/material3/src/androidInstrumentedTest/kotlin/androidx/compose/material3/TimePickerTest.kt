@@ -28,6 +28,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.SemanticsProperties.SelectableGroup
 import androidx.compose.ui.semantics.getOrNull
@@ -66,6 +67,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onSiblings
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.text.input.ImeAction
@@ -172,6 +174,26 @@ class TimePickerTest {
 
         // state updated
         assertThat(state.hour).isEqualTo(18)
+    }
+
+    @Test
+    fun timePicker_selectHour_a11y() {
+        rule.mainClock.autoAdvance = false
+        val state = TimePickerState(initialHour = 14, initialMinute = 23, is24Hour = false)
+        rule.setMaterialContent(lightColorScheme()) { TimePicker(state) }
+
+        rule
+            .onNodeWithTimeValue(number = 9, selection = TimePickerSelectionMode.Hour)
+            .assertHasClickAction()
+            .performSemanticsAction(SemanticsActions.OnClick)
+
+        rule.mainClock.advanceTimeBy(1000)
+
+        // switches to minutes
+        rule.onNodeWithText("23").assertIsSelected()
+
+        // state updated
+        assertThat(state.hour).isEqualTo(21)
     }
 
     @Test
@@ -649,10 +671,15 @@ class TimePickerTest {
             rule
                 .onNodeWithTimeValue(number, TimePickerSelectionMode.Hour, is24Hour = true)
                 .performClick()
+
             rule.runOnIdle {
                 state.selection = TimePickerSelectionMode.Hour
                 assertThat(state.hour).isEqualTo(number)
             }
+
+            rule
+                .onNodeWithTimeValue(number, TimePickerSelectionMode.Hour, is24Hour = true)
+                .assertIsSelected()
         }
     }
 
@@ -679,6 +706,10 @@ class TimePickerTest {
                 state.selection = TimePickerSelectionMode.Hour
                 assertThat(state.hour).isEqualTo(number)
             }
+
+            rule
+                .onNodeWithTimeValue(hour, TimePickerSelectionMode.Hour, is24Hour = false)
+                .assertIsSelected()
         }
     }
 

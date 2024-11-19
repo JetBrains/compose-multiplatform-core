@@ -28,6 +28,7 @@ import android.icu.text.MessageFormat
 import android.os.Build
 import android.os.Bundle
 import android.util.TypedValue
+import androidx.annotation.ColorInt
 import androidx.annotation.Px
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
@@ -47,6 +48,8 @@ import androidx.wear.watchface.style.UserStyleSetting.ComplicationSlotsUserStyle
 import androidx.wear.watchface.style.UserStyleSetting.Id
 import androidx.wear.watchface.style.data.BooleanOptionWireFormat
 import androidx.wear.watchface.style.data.BooleanUserStyleSettingWireFormat
+import androidx.wear.watchface.style.data.ColorOptionWireFormat
+import androidx.wear.watchface.style.data.ColorUserStyleSettingWireFormat
 import androidx.wear.watchface.style.data.ComplicationOverlayWireFormat
 import androidx.wear.watchface.style.data.ComplicationsOptionWireFormat
 import androidx.wear.watchface.style.data.ComplicationsUserStyleSettingWireFormat
@@ -327,6 +330,7 @@ private constructor(
                 is BooleanUserStyleSettingWireFormat -> BooleanUserStyleSetting(wireFormat)
                 is ComplicationsUserStyleSettingWireFormat ->
                     ComplicationSlotsUserStyleSetting(wireFormat)
+                is ColorUserStyleSettingWireFormat -> ColorUserStyleSetting(wireFormat)
                 is CustomValueUserStyleSettingWireFormat -> CustomValueUserStyleSetting(wireFormat)
                 is CustomValueUserStyleSetting2WireFormat ->
                     LargeCustomValueUserStyleSetting(wireFormat)
@@ -670,6 +674,7 @@ private constructor(
                 when (wireFormat) {
                     is BooleanOptionWireFormat ->
                         BooleanUserStyleSetting.BooleanOption.fromWireFormat(wireFormat)
+                    is ColorOptionWireFormat -> ColorUserStyleSetting.ColorOption(wireFormat)
                     is ComplicationsOptionWireFormat ->
                         ComplicationSlotsUserStyleSetting.ComplicationSlotsOption(wireFormat)
                     is CustomValueOptionWireFormat ->
@@ -1026,6 +1031,318 @@ private constructor(
                 internal fun fromWireFormat(wireFormat: BooleanOptionWireFormat): BooleanOption {
                     return from(wireFormat.mId[0] == 1.toByte())
                 }
+            }
+        }
+    }
+
+    /**
+     * A ColorUserStyleSetting allows the user to select colour(s) from a list of predefined
+     * choices.
+     */
+    @RequiresApi(34)
+    public class ColorUserStyleSetting : UserStyleSetting {
+
+        /** A Builder for [ColorUserStyleSetting]. */
+        class Builder
+        private constructor(
+            private val id: Id,
+            private val options: List<ColorOption>,
+            private val affectsWatchFaceLayers: Collection<WatchFaceLayer>,
+            private val displayName: DisplayText,
+            private val description: DisplayText
+        ) {
+            private var iconProvider: () -> Icon? = { null }
+            private var watchFaceEditorData: WatchFaceEditorData? = null
+            private var defaultOption = options.first()
+
+            /**
+             * Constructs a builder for [ColorUserStyleSetting].
+             *
+             * @param id [Id] for the [ColorUserStyleSetting], must be unique.
+             * @param options: The [ColorOption]s the user can choose from.
+             * @param affectsWatchFaceLayers Used by the style configuration UI. Describes which
+             *   watch face rendering layers this style affects.
+             * @param displayName Human readable name for the [ColorUserStyleSetting], used in the
+             *   userStyle selection UI.
+             * @param description Human readable description string displayed under the displayName
+             *   in the userStyle selection UI.
+             */
+            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+            constructor(
+                id: Id,
+                options: List<ColorOption>,
+                affectsWatchFaceLayers: Collection<WatchFaceLayer>,
+                displayName: CharSequence,
+                description: CharSequence
+            ) : this(
+                id,
+                options,
+                affectsWatchFaceLayers,
+                DisplayText.CharSequenceDisplayText(displayName),
+                DisplayText.CharSequenceDisplayText(description)
+            )
+
+            /**
+             * Sets the default option. If not specified, the default will be the first element of
+             * [options].
+             *
+             * @param defaultOption The default option, used when data isn't persisted.
+             */
+            fun setDefaultOption(defaultOption: ColorOption) = apply {
+                this.defaultOption = defaultOption
+            }
+
+            /**
+             * Sets an [Icon] for use in the companion userStyle selection UI. This gets sent to the
+             * companion over bluetooth and should be small (ideally a few kb in size).
+             */
+            fun setIcon(icon: Icon) = apply { iconProvider = { icon } }
+
+            /**
+             * Sets a provider of an [Icon] for use in the companion userStyle selection UI. This
+             * gets lazily evaluated and is sent to the companion over bluetooth and should be small
+             * (ideally a few kb in size). Note this is not guaranteed to be called on the calling
+             * thread. Note it will be called shortly after watch face initialization completes.
+             */
+            fun setIcon(iconProvider: () -> Icon?) = apply { this.iconProvider = iconProvider }
+
+            /**
+             * Sets optional data for an on watch face editor, this will not be sent to the
+             * companion and its contents may be used in preference to other fields by an on watch
+             * face editor.
+             */
+            fun setWatchFaceEditorData(watchFaceEditorData: WatchFaceEditorData) = apply {
+                this.watchFaceEditorData = watchFaceEditorData
+            }
+
+            /** Constructs the [ColorUserStyleSetting]. */
+            fun build() =
+                ColorUserStyleSetting(
+                    id,
+                    displayName,
+                    description,
+                    iconProvider,
+                    watchFaceEditorData,
+                    options,
+                    affectsWatchFaceLayers,
+                    options.indexOf(defaultOption)
+                )
+        }
+
+        internal constructor(
+            id: Id,
+            displayName: DisplayText,
+            description: DisplayText,
+            iconProvider: () -> Icon?,
+            watchFaceEditorData: WatchFaceEditorData?,
+            options: List<ColorOption>,
+            affectsWatchFaceLayers: Collection<WatchFaceLayer>,
+            defaultOptionIndex: Int
+        ) : super(
+            id,
+            displayName,
+            description,
+            iconProvider,
+            watchFaceEditorData,
+            options,
+            defaultOptionIndex,
+            affectsWatchFaceLayers
+        )
+
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        override fun toWireFormat(): UserStyleSettingWireFormat =
+            ColorUserStyleSettingWireFormat(
+                id.value,
+                displayName,
+                description,
+                icon,
+                getWireFormatOptionsList(),
+                defaultOptionIndex,
+                affectedWatchFaceLayers.map { it.ordinal },
+                watchFaceEditorData?.toWireFormat()
+            )
+
+        internal constructor(wireFormat: ColorUserStyleSettingWireFormat) : super(wireFormat)
+
+        /**
+         * Represents choice within a [ColorUserStyleSetting], these must be enumerated up front.
+         */
+        @RequiresApi(34)
+        public class ColorOption : Option {
+            /** Backing field for [displayName]. */
+            override val displayNameInternal: DisplayText
+
+            /**
+             * Localized human readable name for the setting, used in the editor style selection UI.
+             * This should be short (ideally < 20 characters).
+             */
+            public val displayName: CharSequence
+                get() = displayNameInternal.toCharSequence()
+
+            /** Backing field for [screenReaderName]. */
+            final override var screenReaderNameInternal: DisplayText
+
+            /**
+             * Optional localized human readable name for the setting, used by screen readers. This
+             * should be more descriptive than [displayName]. Note prior to android T this is
+             * ignored by companion editors.
+             */
+            public val screenReaderName: CharSequence
+                get() = screenReaderNameInternal.toCharSequence()
+
+            /**
+             * The colors for this option. The colors should be listed in order of decreasing
+             * importance. The number of provided colors must be the same for all [ColorOption]s in
+             * the list. The number of colors specified is up to the user, but 1 or 3 are common
+             * choices.
+             */
+            @ColorInt public val colors: List<Int>
+
+            /**
+             * Optional data for an on watch face editor, this will not be sent to the companion and
+             * its contents may be used in preference to other fields by an on watch face editor.
+             */
+            public var watchFaceEditorData: WatchFaceEditorData?
+                internal set
+
+            /** A Builder for [ColorOption]. */
+            class Builder
+            private constructor(
+                private val id: Id,
+                private val displayName: DisplayText,
+                private val screenReaderName: DisplayText,
+                @ColorInt private val colors: List<Int>
+            ) {
+                private var watchFaceEditorData: WatchFaceEditorData? = null
+
+                /**
+                 * Constructs a builder for [ColorOption].
+                 *
+                 * @param id [Id] for the [ColorOption], must be unique within the parent
+                 *   [ListUserStyleSetting].
+                 * @param resources The [Resources] from which [displayNameResourceId] and
+                 *   [screenReaderNameResourceId] are loaded.
+                 * @param displayNameResourceId String resource id for a human readable name for the
+                 *   [ColorOption], used in the userStyle selection UI.
+                 * @param screenReaderNameResourceId String resource id for a human readable name
+                 *   for the [ColorOption], used by screen readers. This should be more descriptive
+                 *   than [displayName].
+                 * @param colors: Array<Int> The colors for this option. The colors should be listed
+                 *   in order of decreasing importance. The number of provided colors must be the
+                 *   same for all [ColorOption]s in the list. The number of colors specified is up
+                 *   to the user, but 1 or 3 are comon choices.
+                 */
+                constructor(
+                    id: Id,
+                    resources: Resources,
+                    @StringRes displayNameResourceId: Int,
+                    @StringRes screenReaderNameResourceId: Int,
+                    @ColorInt colors: List<Int>
+                ) : this(
+                    id,
+                    DisplayText.ResourceDisplayTextWithIndex(resources, displayNameResourceId),
+                    DisplayText.ResourceDisplayTextWithIndex(resources, screenReaderNameResourceId),
+                    colors
+                )
+
+                /**
+                 * Constructs a builder for [ColorOption].
+                 *
+                 * @param id [Id] for the [ColorOption], must be unique within the parent
+                 *   [ListUserStyleSetting].
+                 * @param displayName Human readable name for the [ColorOption], used in the
+                 *   userStyle selection UI.
+                 * @param screenReaderName Human readable name for the [ColorOption], used by screen
+                 *   readers. This should be more descriptive than [displayName].
+                 * @param colors: Array<Int> The colors for this option. The colors should be listed
+                 *   in order of decreasing importance. The number of provided colors must be the
+                 *   same for all [ColorOption]s in the list. The number of colors specified is up
+                 *   to the user, but 1 or 3 are common choices.
+                 */
+                @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+                constructor(
+                    id: Id,
+                    displayName: CharSequence,
+                    screenReaderName: CharSequence,
+                    @ColorInt colors: List<Int>
+                ) : this(
+                    id,
+                    DisplayText.CharSequenceDisplayText(displayName),
+                    DisplayText.CharSequenceDisplayText(screenReaderName),
+                    colors
+                )
+
+                /**
+                 * Sets optional data for an on watch face editor, this will not be sent to the
+                 * companion and its contents may be used in preference to other fields by an on
+                 * watch face editor.
+                 */
+                fun setWatchFaceEditorData(watchFaceEditorData: WatchFaceEditorData) = apply {
+                    this.watchFaceEditorData = watchFaceEditorData
+                }
+
+                /** Constructs the [ColorOption]. */
+                fun build() =
+                    ColorOption(id, displayName, screenReaderName, colors, watchFaceEditorData)
+            }
+
+            internal constructor(
+                id: Id,
+                displayName: DisplayText,
+                screenReaderName: DisplayText,
+                @ColorInt colors: List<Int>,
+                watchFaceEditorData: WatchFaceEditorData?,
+            ) : super(id) {
+                displayNameInternal = displayName
+                screenReaderNameInternal = screenReaderName
+                this.colors = colors
+                this.watchFaceEditorData = watchFaceEditorData
+            }
+
+            internal constructor(
+                wireFormat: ColorOptionWireFormat
+            ) : super(Id(wireFormat.mId), ArrayList()) {
+                displayNameInternal = DisplayText.CharSequenceDisplayText(wireFormat.mDisplayName)
+                screenReaderNameInternal =
+                    DisplayText.CharSequenceDisplayText(wireFormat.mScreenReaderName)
+                colors = wireFormat.mColors
+                watchFaceEditorData =
+                    wireFormat.mOnWatchFaceEditorBundle?.let { WatchFaceEditorData(it) }
+            }
+
+            internal override fun getUserStyleSettingClass(): Class<out UserStyleSetting> =
+                ColorUserStyleSetting::class.java
+
+            internal override fun estimateWireSizeInBytesAndValidateIconDimensions(
+                context: Context,
+                @Px maxWidth: Int,
+                @Px maxHeight: Int
+            ): Int {
+                var sizeEstimate = id.value.size + displayName.length
+                screenReaderName.let { sizeEstimate + it.length }
+                sizeEstimate += colors.size * 4
+                return sizeEstimate
+            }
+
+            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+            override fun toWireFormat(): OptionWireFormat =
+                ColorOptionWireFormat(
+                    id.value,
+                    displayName,
+                    screenReaderName,
+                    colors.toList(),
+                    watchFaceEditorData?.toWireFormat()
+                )
+
+            override fun write(dos: DataOutputStream) {
+                dos.write(id.value)
+                displayNameInternal.write(dos)
+                screenReaderNameInternal.write(dos)
+                dos.write(colors.size)
+                for (color in colors) {
+                    dos.write(color)
+                }
+                watchFaceEditorData?.write(dos)
             }
         }
     }

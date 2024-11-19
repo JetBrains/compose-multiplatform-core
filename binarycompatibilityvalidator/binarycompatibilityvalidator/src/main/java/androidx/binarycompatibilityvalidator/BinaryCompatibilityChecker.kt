@@ -19,6 +19,7 @@
 
 package androidx.binarycompatibilityvalidator
 
+import java.io.File
 import org.jetbrains.kotlin.library.abi.AbiClass
 import org.jetbrains.kotlin.library.abi.AbiClassifierReference.ClassReference
 import org.jetbrains.kotlin.library.abi.AbiClassifierReference.TypeParameterReference
@@ -50,20 +51,27 @@ class BinaryCompatibilityChecker(
         oldLibraryAbi.allDeclarations().associateBy { it.asTypeString() }
     }
 
-    fun checkBinariesAreCompatible() {
-        newLibraryAbi.checkIsBinaryCompatibleWith(oldLibraryAbi)
+    private fun checkBinariesAreCompatible(
+        errors: CompatibilityErrors,
+        validate: Boolean
+    ): CompatibilityErrors {
+        return newLibraryAbi.checkIsBinaryCompatibleWith(oldLibraryAbi, errors, validate)
     }
 
-    private fun LibraryAbi.checkIsBinaryCompatibleWith(olderLibraryAbi: LibraryAbi) {
-        val errors = CompatibilityErrors()
+    private fun LibraryAbi.checkIsBinaryCompatibleWith(
+        olderLibraryAbi: LibraryAbi,
+        errors: CompatibilityErrors,
+        validate: Boolean
+    ): CompatibilityErrors {
         topLevelDeclarations.isBinaryCompatibleWith(
             olderLibraryAbi.topLevelDeclarations,
             uniqueName,
             errors
         )
-        if (errors.isNotEmpty()) {
+        if (validate && errors.isNotEmpty()) {
             throw ValidationException(errors.toString())
         }
+        return errors
     }
 
     private fun AbiDeclarationContainer.isBinaryCompatibleWith(
@@ -102,7 +110,7 @@ class BinaryCompatibilityChecker(
         if (this::class.java != oldDeclaration::class.java) {
             errors.add(
                 "type changed from ${this::class.simpleName} to " +
-                    "${oldDeclaration::class.simpleName} for $qualifiedName"
+                    "${oldDeclaration::class.simpleName} for $qualifiedName",
             )
             return
         }
@@ -314,6 +322,11 @@ class BinaryCompatibilityChecker(
                 modality == AbiModality.FINAL &&
                     kind == AbiPropertyKind.VAR &&
                     oldProperty.kind == AbiPropertyKind.VAL -> Unit
+                // changing var to val is allowed as long as the setter was private / internal (null
+                // in dump)
+                oldProperty.kind == AbiPropertyKind.VAR &&
+                    kind == AbiPropertyKind.VAL &&
+                    oldProperty.setter == null -> Unit
                 else ->
                     errors.add("kind changed from ${oldProperty.kind} to $kind for $qualifiedName")
             }
@@ -338,18 +351,42 @@ class BinaryCompatibilityChecker(
     companion object {
         fun checkAllBinariesAreCompatible(
             newLibraries: Map<String, LibraryAbi>,
-            oldLibraries: Map<String, LibraryAbi>
-        ) {
+            oldLibraries: Map<String, LibraryAbi>,
+            baselines: Set<String> = emptySet(),
+            validate: Boolean = true
+        ): List<CompatibilityError> {
             val removedTargets = oldLibraries.keys - newLibraries.keys
             if (removedTargets.isNotEmpty()) {
-                throw ValidationException("Removed targets [${removedTargets.joinToString(", ")}]")
+                val errors =
+                    removedTargets.flatMap {
+                        CompatibilityErrors(baselines, it).apply { add("Target was removed") }
+                    }
+                if (validate) {
+                    throw ValidationException(errors.toString())
+                }
+                return errors
             }
-            oldLibraries.keys.forEach { target ->
+            return oldLibraries.keys.flatMap { target ->
                 val newLib = newLibraries[target]!!
                 val oldLib = oldLibraries[target]!!
-                BinaryCompatibilityChecker(newLib, oldLib).checkBinariesAreCompatible()
+                val errors = CompatibilityErrors(baselines, target)
+                BinaryCompatibilityChecker(newLib, oldLib)
+                    .checkBinariesAreCompatible(errors, validate)
             }
         }
+
+        fun checkAllBinariesAreCompatible(
+            newLibraries: Map<String, LibraryAbi>,
+            oldLibraries: Map<String, LibraryAbi>,
+            baselineFile: File?,
+            validate: Boolean = true
+        ) =
+            checkAllBinariesAreCompatible(
+                newLibraries,
+                oldLibraries,
+                baselineFile?.asBaselineErrors() ?: emptySet(),
+                validate
+            )
     }
 }
 
@@ -598,20 +635,46 @@ private fun <T> List<T>.isBinaryCompatibleWith(
     }
 }
 
-internal class CompatibilityErrors() : MutableList<CompatibilityError> by mutableListOf() {
+class CompatibilityErrors(private val baselines: Set<String>, val target: String) :
+    MutableList<CompatibilityError> by mutableListOf() {
     fun add(
         message: String,
         severity: CompatibilityErrorSeverity = CompatibilityErrorSeverity.ERROR
-    ) = add(CompatibilityError(message, severity))
+    ) {
+        val error = CompatibilityError(message, target, severity)
+        if (baselines.contains(error.toString())) {
+            return
+        }
+        add(error)
+    }
 
     override fun toString(): String = joinToString("\n")
 }
 
-internal data class CompatibilityError(
-    val message: String,
-    val severity: CompatibilityErrorSeverity
-)
+data class CompatibilityError(
+    private val message: String,
+    val target: String,
+    val severity: CompatibilityErrorSeverity,
+) {
+    override fun toString(): String {
+        return "[$target]: $message"
+    }
+}
 
 enum class CompatibilityErrorSeverity() {
     ERROR
 }
+
+private fun File.asBaselineErrors(): Set<String> =
+    readLines().toMutableList().let {
+        val formatVersion =
+            try {
+                it.removeFirst().split(":").last().trim()
+            } catch (e: Exception) {
+                throw RuntimeException("Failed to parse baseline version from '${this.path}'")
+            }
+        return when (formatVersion) {
+            "1.0" -> it.toSet()
+            else -> throw RuntimeException("Unrecognized baseline format: '$formatVersion'")
+        }
+    }

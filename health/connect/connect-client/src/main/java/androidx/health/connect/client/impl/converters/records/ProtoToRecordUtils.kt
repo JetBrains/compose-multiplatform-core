@@ -22,11 +22,13 @@ import androidx.health.connect.client.records.ExerciseLap
 import androidx.health.connect.client.records.ExerciseRoute
 import androidx.health.connect.client.records.ExerciseSegment
 import androidx.health.connect.client.records.ExerciseSegment.Companion.EXERCISE_SEGMENT_TYPE_UNKNOWN
+import androidx.health.connect.client.records.SkinTemperatureRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.SleepSessionRecord.Companion.STAGE_TYPE_STRING_TO_INT_MAP
 import androidx.health.connect.client.records.metadata.DataOrigin
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
+import androidx.health.connect.client.units.TemperatureDelta
 import androidx.health.connect.client.units.meters
 import androidx.health.platform.client.proto.DataProto
 import androidx.health.platform.client.proto.DataProto.DataPointOrBuilder
@@ -111,6 +113,15 @@ internal fun DataProto.Device.toDevice(): Device {
         model = if (hasModel()) model else null,
         type = DEVICE_TYPE_STRING_TO_INT_MAP.getOrDefault(type, Device.TYPE_UNKNOWN)
     )
+}
+
+internal fun DataProto.DataPoint.SubTypeDataList.toDeltasList(): List<SkinTemperatureRecord.Delta> {
+    return valuesList.map {
+        SkinTemperatureRecord.Delta(
+            time = Instant.ofEpochMilli(it.startTimeMillis),
+            delta = TemperatureDelta.celsius(it.valuesMap["delta"]?.doubleVal ?: 0.0),
+        )
+    }
 }
 
 internal fun DataProto.DataPoint.SubTypeDataList.toStageList(): List<SleepSessionRecord.Stage> {

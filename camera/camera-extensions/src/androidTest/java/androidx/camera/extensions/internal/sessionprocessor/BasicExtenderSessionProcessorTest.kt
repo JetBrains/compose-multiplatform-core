@@ -28,8 +28,6 @@ import android.media.Image
 import android.media.ImageReader
 import android.media.ImageWriter
 import android.os.Build
-import android.os.Handler
-import android.os.HandlerThread
 import android.util.Pair
 import android.util.Size
 import android.view.Surface
@@ -758,18 +756,8 @@ class BasicExtenderSessionProcessorTest(
         val height = 480
         val maxImages = 2
         val cameraInfo = cameraProvider.availableCameraInfos[0]
-        val handlerThread = HandlerThread("CameraX-AutoDrainThread")
-        handlerThread.start()
-        val handler = Handler(handlerThread.looper)
         val surfaceTextureHolder =
-            SurfaceTextureProvider.createAutoDrainingSurfaceTextureAsync(
-                    CameraXExecutors.newHandlerExecutor(handler),
-                    width,
-                    height,
-                    null
-                ) {
-                    handlerThread.quitSafely()
-                }
+            SurfaceTextureProvider.createAutoDrainingSurfaceTextureAsync(width, height, null)
                 .await()
         val previewOutputSurface =
             OutputSurface.create(

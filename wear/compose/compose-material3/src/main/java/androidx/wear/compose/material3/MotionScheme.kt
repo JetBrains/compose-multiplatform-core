@@ -36,9 +36,9 @@ interface MotionScheme {
     /**
      * A default spatial motion [FiniteAnimationSpec].
      *
-     * This motion spec is designed to be applied to animations that may change the shape or bounds
-     * of the component. For color or alpha animations use the `effects` equivalent which ensures a
-     * "non-spatial" motion.
+     * This motion spec is designed to be applied to animations that can overshoot their targets
+     * - such as shape or bounds animations. For color, alpha or other animations which have strict
+     *   limits use the `effects` equivalent.
      *
      * [T] is the generic data type that will be animated by the system, as long as the appropriate
      * [TwoWayConverter] for converting the data to and from an [AnimationVector] is supplied.
@@ -48,9 +48,9 @@ interface MotionScheme {
     /**
      * A fast spatial motion [FiniteAnimationSpec].
      *
-     * This motion spec is designed to be applied to animations that may change the shape or bounds
-     * of the component. For color or alpha animations use the `effects` equivalent which ensures a
-     * "non-spatial" motion.
+     * This motion spec is designed to be applied to animations that can overshoot their targets
+     * - such as shape or bounds animations. For color, alpha or other animations which have strict
+     *   limits use the `effects` equivalent.
      *
      * [T] is the generic data type that will be animated by the system, as long as the appropriate
      * [TwoWayConverter] for converting the data to and from an [AnimationVector] is supplied.
@@ -60,9 +60,9 @@ interface MotionScheme {
     /**
      * A slow spatial motion [FiniteAnimationSpec].
      *
-     * This motion spec is designed to be applied to animations that may change the shape or bounds
-     * of the component. For color or alpha animations use the `effects` equivalent which ensures a
-     * "non-spatial" motion.
+     * This motion spec is designed to be applied to animations that can overshoot their targets
+     * - such as shape or bounds animations. For color, alpha or other animations which have strict
+     *   limits use the `effects` equivalent.
      *
      * [T] is the generic data type that will be animated by the system, as long as the appropriate
      * [TwoWayConverter] for converting the data to and from an [AnimationVector] is supplied.
@@ -72,8 +72,9 @@ interface MotionScheme {
     /**
      * A default effects motion [FiniteAnimationSpec].
      *
-     * This motion spec is designed to be applied to animations that do not change the shape or
-     * bounds of the component. For example, color animation.
+     * This motion spec is designed to be applied to animations that have strict limits and which
+     * shouldn't overshoot their targets - such as color or alpha animations. For shape, bounds or
+     * other animations which don't have strict limits use the 'spatial` equivalent.
      *
      * [T] is the generic data type that will be animated by the system, as long as the appropriate
      * [TwoWayConverter] for converting the data to and from an [AnimationVector] is supplied.
@@ -83,8 +84,9 @@ interface MotionScheme {
     /**
      * A fast effects motion [FiniteAnimationSpec].
      *
-     * This motion spec is designed to be applied to animations that do not change the shape or
-     * bounds of the component. For example, color animation.
+     * This motion spec is designed to be applied to animations that have strict limits and which
+     * shouldn't overshoot their targets - such as color or alpha animations. For shape, bounds or
+     * other animations which don't have strict limits use the 'spatial` equivalent.
      *
      * [T] is the generic data type that will be animated by the system, as long as the appropriate
      * [TwoWayConverter] for converting the data to and from an [AnimationVector] is supplied.
@@ -94,8 +96,9 @@ interface MotionScheme {
     /**
      * A slow effects motion [FiniteAnimationSpec].
      *
-     * This motion spec is designed to be applied to animations that do not change the shape or
-     * bounds of the component. For example, color animation.
+     * This motion spec is designed to be applied to animations that have strict limits and which
+     * shouldn't overshoot their targets - such as color or alpha animations. For shape, bounds or
+     * other animations which don't have strict limits use the 'spatial` equivalent.
      *
      * [T] is the generic data type that will be animated by the system, as long as the appropriate
      * [TwoWayConverter] for converting the data to and from an [AnimationVector] is supplied.

@@ -538,4 +538,37 @@ class EagerConfigurationIssueTest :
 
         check(input).expect(expected)
     }
+
+    @Test
+    fun `Test passing Configuration to ConfigurableFileCollection`() {
+        check(
+                kotlin(
+                    """
+                import java.io.File
+                import org.gradle.api.artifacts.Configuration
+                import org.gradle.api.file.ConfigurableFileCollection
+
+                fun configure(fileCollection: ConfigurableFileCollection, configuration: Configuration) {
+                    val file = File("path")
+                    fileCollection.from(configuration)
+                    fileCollection.from(configuration, file)
+                    fileCollection.from(file)
+                }
+            """
+                        .trimIndent()
+                )
+            )
+            .expect(
+                """
+                src/test.kt:7: Error: Passing Configuration to ConfigurableFileCollection.from results in eager resolution of this configuration. Instead use project.files(configuration) or configuration.incoming.artifactView {}.files to wrap the configuration making it lazy. [EagerGradleConfiguration]
+                    fileCollection.from(configuration)
+                                   ~~~~
+                src/test.kt:8: Error: Passing Configuration to ConfigurableFileCollection.from results in eager resolution of this configuration. Instead use project.files(configuration) or configuration.incoming.artifactView {}.files to wrap the configuration making it lazy. [EagerGradleConfiguration]
+                    fileCollection.from(configuration, file)
+                                   ~~~~
+                2 errors, 0 warnings
+            """
+                    .trimIndent()
+            )
+    }
 }

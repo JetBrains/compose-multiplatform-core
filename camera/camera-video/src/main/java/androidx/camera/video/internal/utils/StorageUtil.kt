@@ -37,6 +37,7 @@ public object StorageUtil {
      *
      * @param file The file to check.
      * @return The available bytes.
+     * @throws IllegalArgumentException if the file system access fails.
      */
     @JvmStatic
     public fun getAvailableBytes(file: File): Long {
@@ -48,6 +49,7 @@ public object StorageUtil {
      *
      * @param path The file path to check.
      * @return The available bytes.
+     * @throws IllegalArgumentException if the file system access fails.
      */
     @JvmStatic
     public fun getAvailableBytes(path: String): Long {
@@ -60,6 +62,7 @@ public object StorageUtil {
      * @param uri The MediaStore URI to check.
      * @return The available bytes for the storage associated with the URI. If the URI points to an
      *   unknown volume, returns [Long.MAX_VALUE].
+     * @throws IllegalArgumentException if the file system access fails.
      */
     @JvmStatic
     public fun getAvailableBytesForMediaStoreUri(uri: Uri): Long {

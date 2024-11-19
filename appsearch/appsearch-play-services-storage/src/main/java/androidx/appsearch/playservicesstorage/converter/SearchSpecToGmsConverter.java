@@ -17,7 +17,9 @@
 package androidx.appsearch.playservicesstorage.converter;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.Features;
 import androidx.appsearch.app.SearchSpec;
 import androidx.core.util.Preconditions;
@@ -35,6 +37,7 @@ public final class SearchSpecToGmsConverter {
 
     /** Translates from Jetpack to Gms version of {@link SearchSpec}. */
     @NonNull
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public static com.google.android.gms.appsearch.SearchSpec toGmsSearchSpec(
             @NonNull SearchSpec jetpackSearchSpec) {
         Preconditions.checkNotNull(jetpackSearchSpec);
@@ -120,6 +123,13 @@ public final class SearchSpecToGmsConverter {
             throw new UnsupportedOperationException(
                     Features.SEARCH_SPEC_ADD_INFORMATIONAL_RANKING_EXPRESSIONS
                             + " are not available on this AppSearch implementation.");
+        }
+
+        if (!jetpackSearchSpec.getFilterDocumentIds().isEmpty()) {
+            // TODO(b/367464836): Remove this once document id filters are available.
+            throw new UnsupportedOperationException(
+                    Features.SEARCH_SPEC_ADD_FILTER_DOCUMENT_IDS
+                            + " is not available on this AppSearch implementation.");
         }
 
         return gmsBuilder.build();

@@ -98,6 +98,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers
+import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.Mockito
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
@@ -110,6 +111,7 @@ import org.robolectric.util.ReflectionHelpers
 
 private const val DEFAULT_CAMERA_ID = "0"
 private const val EXTERNAL_CAMERA_ID = "0-external"
+private const val EXTERNAL_INT_CAMERA_ID = "101"
 private const val SENSOR_ORIENTATION_90 = 90
 private const val STREAM_USE_CASE_OVERRIDE = 3L
 private val LANDSCAPE_PIXEL_ARRAY_SIZE = Size(4032, 3024)
@@ -118,6 +120,7 @@ private val PREVIEW_SIZE = Size(1280, 720)
 private val RECORD_SIZE = Size(3840, 2160)
 private val MAXIMUM_SIZE = Size(4032, 3024)
 private val LEGACY_VIDEO_MAXIMUM_SIZE = Size(1920, 1080)
+private val VIDEO_MAXIMUM_SIZE = Size(3840, 2160)
 private val DEFAULT_SUPPORTED_SIZES =
     arrayOf(
         Size(4032, 3024), // 4:3
@@ -153,6 +156,7 @@ private val MAXIMUM_RESOLUTION_HIGH_RESOLUTION_SUPPORTED_SIZES =
 @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class SupportedSurfaceCombinationTest {
     private val mockCamcorderProfileHelper = Mockito.mock(CamcorderProfileHelper::class.java)
+    private val mockEmptyCamcorderProfileHelper = Mockito.mock(CamcorderProfileHelper::class.java)
     private val mockCamcorderProfile = Mockito.mock(CamcorderProfile::class.java)
     private var cameraManagerCompat: CameraManagerCompat? = null
     private val profileUhd =
@@ -177,19 +181,14 @@ class SupportedSurfaceCombinationTest {
         val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         shadowOf(windowManager.defaultDisplay).setRealWidth(DISPLAY_SIZE.width)
         shadowOf(windowManager.defaultDisplay).setRealHeight(DISPLAY_SIZE.height)
-        Mockito.`when`(
-                mockCamcorderProfileHelper.hasProfile(
-                    ArgumentMatchers.anyInt(),
-                    ArgumentMatchers.anyInt()
-                )
-            )
-            .thenReturn(true)
+        Mockito.`when`(mockCamcorderProfileHelper.hasProfile(anyInt(), anyInt())).thenReturn(true)
         ReflectionUtils.setVariableValueInObject(mockCamcorderProfile, "videoFrameWidth", 3840)
         ReflectionUtils.setVariableValueInObject(mockCamcorderProfile, "videoFrameHeight", 2160)
-        Mockito.`when`(
-                mockCamcorderProfileHelper[ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt()]
-            )
+        Mockito.`when`(mockCamcorderProfileHelper[anyInt(), anyInt()])
             .thenReturn(mockCamcorderProfile)
+        Mockito.`when`(mockEmptyCamcorderProfileHelper.hasProfile(anyInt(), anyInt()))
+            .thenReturn(false)
+        Mockito.`when`(mockEmptyCamcorderProfileHelper[anyInt(), anyInt()]).thenReturn(null)
     }
 
     @After
@@ -2958,6 +2957,24 @@ class SupportedSurfaceCombinationTest {
                 EXTERNAL_CAMERA_ID,
                 cameraManagerCompat!!,
                 mockCamcorderProfileHelper
+            )
+        // Checks the determined RECORD size
+        assertThat(supportedSurfaceCombination.mSurfaceSizeDefinition.recordSize)
+            .isEqualTo(LEGACY_VIDEO_MAXIMUM_SIZE)
+    }
+
+    @Test
+    fun determineRecordSizeFromStreamConfigurationMap_intExternalCameraId() {
+        // Setup camera with external integer camera Id
+        setupCameraAndInitCameraX(
+            cameraId = EXTERNAL_INT_CAMERA_ID,
+        )
+        val supportedSurfaceCombination =
+            SupportedSurfaceCombination(
+                context,
+                EXTERNAL_INT_CAMERA_ID,
+                cameraManagerCompat!!,
+                mockEmptyCamcorderProfileHelper
             )
         // Checks the determined RECORD size
         assertThat(supportedSurfaceCombination.mSurfaceSizeDefinition.recordSize)

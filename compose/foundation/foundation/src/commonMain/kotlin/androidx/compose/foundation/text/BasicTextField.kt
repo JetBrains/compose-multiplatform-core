@@ -312,6 +312,10 @@ internal fun BasicTextField(
 
     DisposableEffect(textFieldSelectionState) { onDispose { textFieldSelectionState.dispose() } }
 
+    val handwritingEnabled =
+        !isPassword &&
+            keyboardOptions.keyboardType != KeyboardType.Password &&
+            keyboardOptions.keyboardType != KeyboardType.NumberPassword
     val decorationModifiers =
         modifier
             .then(
@@ -331,17 +335,13 @@ internal fun BasicTextField(
                     stylusHandwritingTrigger = stylusHandwritingTrigger
                 )
             )
-            .stylusHandwriting(enabled) {
+            .stylusHandwriting(enabled, handwritingEnabled) {
                 // If this is a password field, we can't trigger handwriting.
                 // The expected behavior is 1) request focus 2) show software keyboard.
                 // Note: TextField will show software keyboard automatically when it
                 // gain focus. 3) show a toast message telling that handwriting is not
                 // supported for password fields. TODO(b/335294152)
-                if (
-                    !isPassword &&
-                        keyboardOptions.keyboardType != KeyboardType.Password &&
-                        keyboardOptions.keyboardType != KeyboardType.NumberPassword
-                ) {
+                if (handwritingEnabled) {
                     // Send the handwriting start signal to platform.
                     // The editor should send the signal when it is focused or is about
                     // to gain focus, Here are more details:

@@ -16,6 +16,7 @@
 
 package androidx.lint.gradle
 
+import com.android.tools.lint.checks.infrastructure.TestFiles.java
 import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 
 /**
@@ -24,6 +25,24 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
  */
 internal val STUBS =
     arrayOf(
+        kotlin(
+            """
+                package org.gradle.api.artifacts
+
+                interface Configuration
+            """
+                .trimIndent()
+        ),
+        java(
+            """
+                package org.gradle.api.file;
+
+                interface ConfigurableFileCollection {
+                    ConfigurableFileCollection from(Object... paths);
+                }
+            """
+                .trimIndent()
+        ),
         kotlin(
             """
                 package org.gradle.api.tasks

@@ -370,6 +370,22 @@ class VideoRecordingTest(
     }
 
     @Test
+    fun getResolutionInfo_shouldMatchRecordedVideoResolution() {
+        // Arrange.
+        checkAndBindUseCases(preview, videoCapture)
+
+        // Act.
+        val result = recordingSession.createRecording().recordAndVerify()
+
+        // Assert: the resolution of the video file should match the resolution calculated by
+        // rotating the cropRect specified in the ResolutionInfo.
+        val resolutionInfo = videoCapture.resolutionInfo!!
+        val expectedResolution =
+            rotateSize(rectToSize(resolutionInfo.cropRect), resolutionInfo.rotationDegrees)
+        verifyVideoResolution(context, result.file, expectedResolution)
+    }
+
+    @Test
     fun stopRecording_when_useCaseUnbind() {
         assumeStopCodecAfterSurfaceRemovalCrashMediaServerQuirk()
 

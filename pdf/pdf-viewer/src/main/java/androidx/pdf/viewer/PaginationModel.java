@@ -71,6 +71,9 @@ public class PaginationModel implements Parcelable {
     /** The maximum number of pages this model can accommodate. */
     private int mMaxPages = -1;
 
+    /** The page centered in the view. */
+    private int mMidPage = -1;
+
     /** The Dimensions of each page in the list. */
     private Dimensions[] mPages;
 
@@ -264,12 +267,14 @@ public class PaginationModel implements Parcelable {
         int bottomResult = Collections.binarySearch(endList, intervalPx.getLast());
         int rangeEnd = Math.abs(bottomResult + 1) - 1; // Before insertion point.
 
+        int midPoint = (intervalPx.getFirst() + intervalPx.getLast()) / 2;
+        int midResult = Collections.binarySearch(mPageTops, midPoint);
+
+        mMidPage = Math.max(Math.abs(midResult + 1) - 1, 0); // Before insertion point.
+
         if (rangeEnd < rangeStart) {
             // No page is entirely visible.
-            int midPoint = (intervalPx.getFirst() + intervalPx.getLast()) / 2;
-            int midResult = Collections.binarySearch(mPageTops, midPoint);
-            int page = Math.max(Math.abs(midResult + 1) - 1, 0); // Before insertion point.
-            return new Range(page, page);
+            return new Range(mMidPage, mMidPage);
         }
 
         return new Range(rangeStart, rangeEnd);
@@ -350,6 +355,11 @@ public class PaginationModel implements Parcelable {
     /** Returns the number of pages known to this model. */
     public int getSize() {
         return mSize;
+    }
+
+    /** Returns the centered page */
+    public int getMidPage() {
+        return mMidPage;
     }
 
     /**

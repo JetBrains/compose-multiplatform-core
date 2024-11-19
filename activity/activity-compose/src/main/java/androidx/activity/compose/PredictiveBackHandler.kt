@@ -140,10 +140,11 @@ private class PredictiveBackHandlerCallback(
     var currentOnBack: suspend (progress: Flow<BackEventCompat>) -> Unit,
 ) : OnBackPressedCallback(enabled) {
     private var onBackInstance: OnBackInstance? = null
+    private var isActive = false
 
     fun setIsEnabled(enabled: Boolean) {
         // We are disabling a callback that was enabled.
-        if (!enabled && isEnabled) {
+        if (!enabled && !isActive && isEnabled) {
             onBackInstance?.cancel()
         }
         isEnabled = enabled
@@ -158,6 +159,7 @@ private class PredictiveBackHandlerCallback(
         if (isEnabled) {
             onBackInstance = OnBackInstance(onBackScope, true, currentOnBack, this)
         }
+        isActive = true
     }
 
     override fun handleOnBackProgressed(backEvent: BackEventCompat) {
@@ -184,6 +186,7 @@ private class PredictiveBackHandlerCallback(
         // but let the job complete normally
         onBackInstance?.close()
         onBackInstance?.isPredictiveBack = false
+        isActive = false
     }
 
     override fun handleOnBackCancelled() {
@@ -191,5 +194,6 @@ private class PredictiveBackHandlerCallback(
         // cancel will purge the channel of any sent events that are yet to be received
         onBackInstance?.cancel()
         onBackInstance?.isPredictiveBack = false
+        isActive = false
     }
 }

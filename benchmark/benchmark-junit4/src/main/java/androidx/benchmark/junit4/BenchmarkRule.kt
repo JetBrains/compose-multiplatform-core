@@ -317,6 +317,13 @@ private constructor(
 public inline fun BenchmarkRule.measureRepeated(crossinline block: BenchmarkRule.Scope.() -> Unit) {
     // Note: this is an extension function to discourage calling from Java.
 
+    if (Arguments.throwOnMainThreadMeasureRepeated) {
+        check(Looper.myLooper() != Looper.getMainLooper()) {
+            "Cannot invoke measureRepeated from the main thread. Instead use" +
+                " measureRepeatedOnMainThread()"
+        }
+    }
+
     // Extract members to locals, to ensure we check #applied, and we don't hit accessors
     val localState = getState()
     val localScope = scope

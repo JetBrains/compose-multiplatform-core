@@ -76,13 +76,13 @@ internal fun rememberTransformingLazyColumnMeasurePolicy(
             val measuredItemProvider = MeasuredItemProvider { index, offset, scrollProgress ->
                 val placeables = measure(index, childConstraints)
                 // TODO(artemiy): Add support for multiple items.
-                val placeable = placeables.last()
+                val placeable = placeables.lastOrNull()
                 TransformingLazyColumnMeasuredItem(
                     index = index,
                     placeable = placeable,
                     offset = offset,
                     containerConstraints = containerConstraints,
-                    scrollProgress = scrollProgress(placeable.height),
+                    scrollProgress = scrollProgress(placeable?.height ?: 0),
                     horizontalAlignment = horizontalAlignment,
                     layoutDirection = layoutDirection,
                     key = itemProvider.getKey(index),

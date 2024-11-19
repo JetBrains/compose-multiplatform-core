@@ -18,23 +18,15 @@ package androidx.compose.foundation.text
 
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
-import kotlin.jvm.JvmInline
 
 /**
- * Represents the colors used for text selection by text and text field components.
+ * Returns the color used to indicate Autofill has been performed on fillable components.
  *
- * See [LocalAutofillHighlight] to provide new values for this throughout the hierarchy.
- *
- * @property autofillHighlightColor the color used to draw the background behind autofilled
- *   elements.
+ * See [LocalAutofillHighlightColor] to provide new values for this throughout the hierarchy.
  */
-@JvmInline
-expect value class AutofillHighlight(val autofillHighlightColor: Color) {
-    companion object {
-        /** Default instance of [AutofillHighlight]. */
-        val Default: AutofillHighlight
-    }
-}
+internal expect fun autofillHighlightColor(): Color
 
-/** CompositionLocal used to change the [AutofillHighlight] used by components in the hierarchy. */
-val LocalAutofillHighlight = compositionLocalOf { AutofillHighlight.Default }
+/**
+ * CompositionLocal used to change the [autofillHighlightColor] used by components in the hierarchy.
+ */
+val LocalAutofillHighlightColor = compositionLocalOf { autofillHighlightColor() }

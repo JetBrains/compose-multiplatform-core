@@ -256,8 +256,8 @@ package androidx.compose.foundation {
     method public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.foundation.OverscrollFactory?> getLocalOverscrollFactory();
     method public static androidx.compose.ui.Modifier overscroll(androidx.compose.ui.Modifier, androidx.compose.foundation.OverscrollEffect? overscrollEffect);
     method @androidx.compose.runtime.Composable public static androidx.compose.foundation.OverscrollEffect? rememberOverscrollEffect();
-    method @androidx.compose.runtime.Stable public static androidx.compose.foundation.OverscrollEffect withoutDrawing(androidx.compose.foundation.OverscrollEffect);
     method @androidx.compose.runtime.Stable public static androidx.compose.foundation.OverscrollEffect withoutEventHandling(androidx.compose.foundation.OverscrollEffect);
+    method @androidx.compose.runtime.Stable public static androidx.compose.foundation.OverscrollEffect withoutVisualEffect(androidx.compose.foundation.OverscrollEffect);
     property public static final androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.foundation.OverscrollFactory?> LocalOverscrollFactory;
   }
 
@@ -1695,21 +1695,9 @@ package androidx.compose.foundation.text {
     field public static final androidx.compose.foundation.text.AutoSizeDefaults INSTANCE;
   }
 
-  @kotlin.jvm.JvmInline public final value class AutofillHighlight {
-    ctor public AutofillHighlight(long autofillHighlightColor);
-    method public long getAutofillHighlightColor();
-    property public final long autofillHighlightColor;
-    field public static final androidx.compose.foundation.text.AutofillHighlight.Companion Companion;
-  }
-
-  public static final class AutofillHighlight.Companion {
-    method public long getDefault();
-    property public final long Default;
-  }
-
   public final class AutofillHighlightKt {
-    method public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.foundation.text.AutofillHighlight> getLocalAutofillHighlight();
-    property public static final androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.foundation.text.AutofillHighlight> LocalAutofillHighlight;
+    method public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.graphics.Color> getLocalAutofillHighlightColor();
+    property public static final androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.graphics.Color> LocalAutofillHighlightColor;
   }
 
   public final class BasicSecureTextFieldKt {

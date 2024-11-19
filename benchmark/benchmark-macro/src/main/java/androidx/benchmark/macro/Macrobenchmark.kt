@@ -34,6 +34,7 @@ import androidx.benchmark.ResultWriter
 import androidx.benchmark.Shell
 import androidx.benchmark.checkAndGetSuppressionState
 import androidx.benchmark.conditionalError
+import androidx.benchmark.createInsightSummaries
 import androidx.benchmark.inMemoryTrace
 import androidx.benchmark.json.BenchmarkData
 import androidx.benchmark.macro.MacrobenchmarkScope.KillFlushMode
@@ -308,20 +309,6 @@ private fun macrobenchmark(
             }
         }
     }
-    /*
-    val tracePaths = mutableListOf<String>()
-    val profilerResults = mutableListOf<Profiler.ResultFile>()
-    val measurementsList = mutableListOf<List<Metric.Measurement>>()
-    val insightsList = mutableListOf<List<AndroidStartupMetric.SlowStartReason>>()
-
-    iterationResults.forEach {
-        tracePaths += it.tracePaths
-        profilerResults += it.profilerResults
-        measurementsList += it.measurements
-        insightsList += it.insights
-    }
-
-     */
 
     // Merge measurements
     val measurements = iterationResults.map { it.measurements }.mergeMultiIterResults()
@@ -342,11 +329,7 @@ private fun macrobenchmark(
             warningMessage = warningMessage,
             testName = uniqueName,
             measurements = measurements,
-            insights =
-                createInsightsIdeSummary(
-                    experimentalConfig?.startupInsightsConfig,
-                    iterationResults
-                ),
+            insightSummaries = iterationResults.flatMap { it.insights }.createInsightSummaries(),
             iterationTracePaths = iterationTracePaths,
             profilerResults = profilerResults,
             useTreeDisplayFormat = experimentalConfig?.startupInsightsConfig?.isEnabled == true

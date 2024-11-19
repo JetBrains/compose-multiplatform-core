@@ -74,13 +74,7 @@ class PojoIndexAdapter(
                         name = indexVar,
                         typeName = XTypeName.PRIMITIVE_INT,
                         assignExpr =
-                            XCodeBlock.of(
-                                scope.language,
-                                "%M(%L, %S)",
-                                packageMember,
-                                cursorVarName,
-                                it.columnName
-                            )
+                            XCodeBlock.of("%M(%L, %S)", packageMember, cursorVarName, it.columnName)
                     )
                 }
                 ColumnIndexVar(it.columnName, indexVar)

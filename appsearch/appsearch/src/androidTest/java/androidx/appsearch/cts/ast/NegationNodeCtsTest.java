@@ -39,6 +39,15 @@ public class NegationNodeCtsTest {
     public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
 
     @Test
+    public void testEquals_identical() {
+        NegationNode nodeOne = new NegationNode(new TextNode("foo"));
+        NegationNode nodeTwo = new NegationNode(new TextNode("foo"));
+
+        assertThat(nodeOne).isEqualTo(nodeTwo);
+        assertThat(nodeOne.hashCode()).isEqualTo(nodeTwo.hashCode());
+    }
+
+    @Test
     public void testSetChildren_throwsOnNullNode() {
         TextNode textNode = new TextNode("foo");
 

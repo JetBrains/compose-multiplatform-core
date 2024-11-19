@@ -71,6 +71,7 @@ android {
 androidx {
     name = "Camera Lifecycle"
     type = LibraryType.PUBLISHED_LIBRARY
+    samples(project(":camera:camera-lifecycle:camera-lifecycle-samples"))
     inceptionYear = "2019"
     description = "Lifecycle components for the Jetpack Camera Library, a library providing a " +
             "consistent and reliable camera foundation that enables great camera driven " +

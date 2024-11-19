@@ -113,7 +113,7 @@ actual class ModalBottomSheetProperties(
     ) : this(
         securePolicy = SecureFlagPolicy.Inherit,
         shouldDismissOnBackPress = shouldDismissOnBackPress,
-        isAppearanceLightStatusBars = isAppearanceLightNavigationBars,
+        isAppearanceLightStatusBars = isAppearanceLightStatusBars,
         isAppearanceLightNavigationBars = isAppearanceLightNavigationBars
     )
 

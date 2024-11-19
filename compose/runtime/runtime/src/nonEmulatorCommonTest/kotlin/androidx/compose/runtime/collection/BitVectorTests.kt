@@ -50,10 +50,36 @@ class BitVectorTests {
 
     @Test
     fun canSetARange() {
-        val vector = BitVector()
-        vector.setRange(2, 30)
-        for (bit in 0 until vector.size) {
-            assertEquals(bit in 2 until 30, vector[bit])
+        val ranges =
+            listOf(
+                // Empty or inverted ranges
+                0 to 0,
+                66 to 66,
+                130 to 130,
+                4 to 2,
+                66 to 60,
+                130 to 128,
+                // 1 item ranges
+                5 to 6,
+                71 to 72,
+                132 to 132,
+                // Larger ranges that fit in a single word
+                2 to 30,
+                70 to 83,
+                130 to 150,
+                // Larger ranges that cross word boundaries
+                60 to 80,
+                120 to 140,
+                60 to 140
+            )
+
+        for (range in ranges) {
+            val vector = BitVector()
+            val (start, end) = range
+            vector.setRange(start, end)
+            for (bit in 0 until vector.size) {
+                assertEquals(bit in start until end, vector[bit])
+            }
         }
     }
 
@@ -62,27 +88,87 @@ class BitVectorTests {
         val vector = BitVector()
         vector.setRange(2, 5)
         vector.setRange(10, 12)
+        vector.setRange(80, 82)
+        vector.setRange(130, 132)
+        vector.setRange(260, 262)
+        vector.setRange(1030, 1032)
+
         val received = mutableListOf<Int>()
         var current = vector.nextSet(0)
         while (current < vector.size) {
             received.add(current)
             current = vector.nextSet(current + 1)
         }
-        assertEquals(listOf(2, 3, 4, 10, 11), received)
+
+        assertEquals(listOf(2, 3, 4, 10, 11, 80, 81, 130, 131, 260, 261, 1030, 1031), received)
     }
 
     @Test
     fun canFindTheNextClearBit() {
-        val max = 15
         val vector = BitVector()
         vector.setRange(2, 5)
         vector.setRange(10, 12)
+
+        var max = 15
         val received = mutableListOf<Int>()
         var current = vector.nextClear(0)
         while (current < max) {
             received.add(current)
             current = vector.nextClear(current + 1)
         }
+
         assertEquals(listOf(0, 1, 5, 6, 7, 8, 9, 12, 13, 14), received)
+
+        received.clear()
+        val vector2 = BitVector()
+        vector2.setRange(70, 72)
+
+        max = 74
+        current = vector2.nextClear(64)
+        while (current < max) {
+            received.add(current)
+            current = vector2.nextClear(current + 1)
+        }
+
+        assertEquals(listOf(64, 65, 66, 67, 68, 69, 72, 73), received)
+
+        received.clear()
+        val vector3 = BitVector()
+        vector3.setRange(128, 130)
+
+        max = 132
+        current = vector3.nextClear(126)
+        while (current < max) {
+            received.add(current)
+            current = vector3.nextClear(current + 1)
+        }
+
+        assertEquals(listOf(126, 127, 130, 131), received)
+
+        received.clear()
+        val vector4 = BitVector()
+        vector4.setRange(0, 256)
+
+        max = 260
+        current = vector4.nextClear(0)
+        while (current < max) {
+            received.add(current)
+            current = vector4.nextClear(current + 1)
+        }
+
+        assertTrue(received.isEmpty())
+
+        received.clear()
+        val vector5 = BitVector()
+        vector5.setRange(384, 512)
+
+        max = 260
+        current = vector5.nextClear(256)
+        while (current < max) {
+            received.add(current)
+            current = vector5.nextClear(current + 1)
+        }
+
+        assertEquals(listOf(256, 257, 258, 259), received)
     }
 }

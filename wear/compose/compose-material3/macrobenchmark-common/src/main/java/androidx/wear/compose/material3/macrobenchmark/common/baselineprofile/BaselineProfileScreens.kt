@@ -16,11 +16,18 @@
 
 package androidx.wear.compose.material3.macrobenchmark.common.baselineprofile
 
+import android.os.Build
+import androidx.wear.compose.material3.macrobenchmark.common.MacrobenchmarkScreen
+
 val BaselineProfileScreens =
     listOf(
         AlertDialogScreen,
         TextToggleButtonScreen,
-        AnimatedTextScreen,
+        *(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            arrayOf(AnimatedTextScreen)
+        } else {
+            emptyArray<MacrobenchmarkScreen>()
+        }),
         ButtonGroupScreen,
         ButtonScreen,
         CardScreen,

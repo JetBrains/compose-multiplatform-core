@@ -119,8 +119,11 @@ public final class AspectRatioStrategy {
      * to bind {@link UseCase}s with the AspectRatioStrategy specified in the
      * {@link ResolutionSelector}.
      *
-     * @param preferredAspectRatio the preferred aspect ratio to select first.
-     * @param fallbackRule the rule to follow when the preferred aspect ratio is not available.
+     * @param preferredAspectRatio the preferred aspect ratio to select first which can be either
+     * {@link AspectRatio#RATIO_4_3} or {@link AspectRatio#RATIO_16_9}.
+     * @param fallbackRule the rule to follow when the preferred aspect ratio is unavailable.
+     *                     This can be either {@link AspectRatioStrategy#FALLBACK_RULE_AUTO} or
+     *                     {@link AspectRatioStrategy#FALLBACK_RULE_NONE}.
      */
     public AspectRatioStrategy(@AspectRatio.Ratio int preferredAspectRatio,
             @AspectRatioFallbackRule int fallbackRule) {

@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import androidx.build.KotlinTarget
 import androidx.build.Publish
 import androidx.build.LibraryType
 
@@ -41,4 +43,5 @@ androidx {
     inceptionYear = "2023"
     description = "Contains samples of APIs included in the graphics-core Androidx library"
     mavenVersion = LibraryVersions.GRAPHICS_CORE
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

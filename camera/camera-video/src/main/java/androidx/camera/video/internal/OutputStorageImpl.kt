@@ -16,6 +16,7 @@
 
 package androidx.camera.video.internal
 
+import androidx.camera.core.Logger
 import androidx.camera.video.FileDescriptorOutputOptions
 import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.MediaStoreOutputOptions
@@ -37,17 +38,22 @@ public class OutputStorageImpl(private val outputOptions: OutputOptions) : Outpu
      * Gets the available bytes for the storage associated with the [outputOptions].
      *
      * @return The available space in bytes or [Long.MAX_VALUE] if the [outputOptions] is a
-     *   [FileDescriptorOutputOptions].
+     *   [FileDescriptorOutputOptions] or it fails to access the available space.
      * @throws AssertionError if the [outputOptions] type is unknown.
      */
     override fun getAvailableBytes(): Long =
-        when (outputOptions) {
-            is FileOutputOptions -> getAvailableBytes(outputOptions.file.path)
-            is MediaStoreOutputOptions ->
-                getAvailableBytesForMediaStoreUri(outputOptions.collectionUri)
-            // There's no way to get the storage space associated with a FileDescriptor.
-            is FileDescriptorOutputOptions -> Long.MAX_VALUE
-            else -> throw AssertionError("Unknown OutputOptions: $outputOptions")
+        try {
+            when (outputOptions) {
+                is FileOutputOptions -> getAvailableBytes(outputOptions.file.parentFile!!)
+                is MediaStoreOutputOptions ->
+                    getAvailableBytesForMediaStoreUri(outputOptions.collectionUri)
+                // There's no way to get the storage space associated with a FileDescriptor.
+                is FileDescriptorOutputOptions -> Long.MAX_VALUE
+                else -> throw AssertionError("Unknown OutputOptions: $outputOptions")
+            }
+        } catch (e: RuntimeException) {
+            Logger.w(TAG, "Fail to access the available bytes.", e)
+            Long.MAX_VALUE
         }
 
     private companion object {

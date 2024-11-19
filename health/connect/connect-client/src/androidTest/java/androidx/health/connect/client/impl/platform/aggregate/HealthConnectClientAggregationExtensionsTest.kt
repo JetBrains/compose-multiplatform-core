@@ -18,13 +18,13 @@ package androidx.health.connect.client.impl.platform.aggregate
 
 import android.annotation.TargetApi
 import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.ext.SdkExtensions
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.impl.HealthConnectClientUpsideDownImpl
-import androidx.health.connect.client.impl.converters.datatype.RECORDS_CLASS_NAME_MAP
-import androidx.health.connect.client.permission.HealthPermission.Companion.PERMISSION_PREFIX
+import androidx.health.connect.client.impl.platform.records.SDK_TO_PLATFORM_RECORD_CLASS
+import androidx.health.connect.client.impl.platform.records.SDK_TO_PLATFORM_RECORD_CLASS_EXT_13
+import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.BloodPressureRecord
 import androidx.health.connect.client.records.CyclingPedalingCadenceRecord
 import androidx.health.connect.client.records.NutritionRecord
@@ -70,25 +70,40 @@ class HealthConnectClientAggregationExtensionsTest {
     private companion object {
         private val START_TIME =
             LocalDate.now().minusDays(5).atStartOfDay().toInstant(ZoneOffset.UTC)
+
+        fun getAllRecordPermissions(): Array<String> {
+            val permissions: HashSet<String> = HashSet()
+
+            for (recordType in SDK_TO_PLATFORM_RECORD_CLASS.keys) {
+                permissions.add(HealthPermission.getReadPermission(recordType))
+                permissions.add(HealthPermission.getWritePermission(recordType))
+            }
+
+            if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >= 13) {
+                for (recordType in SDK_TO_PLATFORM_RECORD_CLASS_EXT_13.keys) {
+                    permissions.add(HealthPermission.getReadPermission(recordType))
+                    permissions.add(HealthPermission.getWritePermission(recordType))
+                }
+            }
+
+            return permissions.toTypedArray()
+        }
     }
 
-    private val allHealthPermissions =
-        context.packageManager
-            .getPackageInfo(
-                context.packageName,
-                PackageManager.PackageInfoFlags.of(PackageManager.GET_PERMISSIONS.toLong())
-            )
-            .requestedPermissions!!
-            .filter { it.startsWith(PERMISSION_PREFIX) }
-            .toTypedArray()
-
     @get:Rule
-    val grantPermissionRule: GrantPermissionRule = GrantPermissionRule.grant(*allHealthPermissions)
+    val grantPermissionRule: GrantPermissionRule =
+        GrantPermissionRule.grant(*getAllRecordPermissions())
 
     @After
     fun tearDown() = runTest {
-        for (recordType in RECORDS_CLASS_NAME_MAP.keys) {
+        for (recordType in SDK_TO_PLATFORM_RECORD_CLASS.keys) {
             healthConnectClient.deleteRecords(recordType, TimeRangeFilter.none())
+        }
+
+        if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >= 13) {
+            for (recordType in SDK_TO_PLATFORM_RECORD_CLASS_EXT_13.keys) {
+                healthConnectClient.deleteRecords(recordType, TimeRangeFilter.none())
+            }
         }
     }
 

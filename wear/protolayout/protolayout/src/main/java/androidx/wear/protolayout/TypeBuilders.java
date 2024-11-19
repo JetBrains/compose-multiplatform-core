@@ -33,6 +33,8 @@ import androidx.wear.protolayout.expression.RequiresSchemaVersion;
 import androidx.wear.protolayout.proto.AlignmentProto;
 import androidx.wear.protolayout.proto.TypesProto;
 
+import java.util.Objects;
+
 /** Builders for extensible primitive types used by layout elements. */
 public final class TypeBuilders {
     private TypeBuilders() {}
@@ -81,6 +83,34 @@ public final class TypeBuilders {
         @NonNull
         static StringLayoutConstraint fromProto(@NonNull TypesProto.StringProp proto) {
             return new StringLayoutConstraint(proto, null);
+        }
+
+        @Override
+        public boolean equals(@Nullable Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof StringLayoutConstraint)) {
+                return false;
+            }
+            StringLayoutConstraint other = (StringLayoutConstraint) o;
+            return this.getPatternForLayout().equals(other.getPatternForLayout())
+                    && getAlignment() == other.getAlignment();
+        }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return "StringLayoutConstraint(patternForLayout="
+                    + getPatternForLayout()
+                    + ", alignment="
+                    + getAlignment()
+                    + ")";
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(getPatternForLayout(), getAlignment());
         }
 
         /** Builder for {@link StringLayoutConstraint}. */

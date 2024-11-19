@@ -198,6 +198,9 @@ package androidx.wear.protolayout {
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static androidx.wear.protolayout.DimensionBuilders.WrappedDimensionProp wrap();
   }
 
+  @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=500) public static interface DimensionBuilders.AngularDimension {
+  }
+
   @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static final class DimensionBuilders.AngularLayoutConstraint {
     method public int getAngularAlignment();
     method @Dimension(unit=androidx.annotation.Dimension.DP) public float getValue();
@@ -221,7 +224,7 @@ package androidx.wear.protolayout {
   @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static interface DimensionBuilders.ContainerDimension {
   }
 
-  @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static final class DimensionBuilders.DegreesProp {
+  @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static final class DimensionBuilders.DegreesProp implements androidx.wear.protolayout.DimensionBuilders.AngularDimension {
     method public androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat? getDynamicValue();
     method public float getValue();
   }
@@ -234,7 +237,7 @@ package androidx.wear.protolayout {
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.DimensionBuilders.DegreesProp.Builder setValue(float);
   }
 
-  @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static final class DimensionBuilders.DpProp implements androidx.wear.protolayout.DimensionBuilders.ContainerDimension androidx.wear.protolayout.DimensionBuilders.ExtensionDimension androidx.wear.protolayout.DimensionBuilders.ImageDimension androidx.wear.protolayout.DimensionBuilders.PivotDimension androidx.wear.protolayout.DimensionBuilders.SpacerDimension {
+  @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static final class DimensionBuilders.DpProp implements androidx.wear.protolayout.DimensionBuilders.AngularDimension androidx.wear.protolayout.DimensionBuilders.ContainerDimension androidx.wear.protolayout.DimensionBuilders.ExtensionDimension androidx.wear.protolayout.DimensionBuilders.ImageDimension androidx.wear.protolayout.DimensionBuilders.PivotDimension androidx.wear.protolayout.DimensionBuilders.SpacerDimension {
     method public androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat? getDynamicValue();
     method @Dimension(unit=androidx.annotation.Dimension.DP) public float getValue();
   }
@@ -466,6 +469,7 @@ package androidx.wear.protolayout {
   }
 
   @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static final class LayoutElementBuilders.ArcSpacer implements androidx.wear.protolayout.LayoutElementBuilders.ArcLayoutElement {
+    method public androidx.wear.protolayout.DimensionBuilders.AngularDimension? getAngularLength();
     method public androidx.wear.protolayout.DimensionBuilders.DegreesProp? getLength();
     method public androidx.wear.protolayout.ModifiersBuilders.ArcModifiers? getModifiers();
     method public androidx.wear.protolayout.DimensionBuilders.DpProp? getThickness();
@@ -474,6 +478,7 @@ package androidx.wear.protolayout {
   public static final class LayoutElementBuilders.ArcSpacer.Builder {
     ctor public LayoutElementBuilders.ArcSpacer.Builder();
     method public androidx.wear.protolayout.LayoutElementBuilders.ArcSpacer build();
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=500) public androidx.wear.protolayout.LayoutElementBuilders.ArcSpacer.Builder setAngularLength(androidx.wear.protolayout.DimensionBuilders.AngularDimension);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.LayoutElementBuilders.ArcSpacer.Builder setLength(androidx.wear.protolayout.DimensionBuilders.DegreesProp);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.LayoutElementBuilders.ArcSpacer.Builder setModifiers(androidx.wear.protolayout.ModifiersBuilders.ArcModifiers);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.LayoutElementBuilders.ArcSpacer.Builder setThickness(androidx.wear.protolayout.DimensionBuilders.DpProp);
@@ -1472,6 +1477,29 @@ package androidx.wear.protolayout {
     method public androidx.wear.protolayout.TypeBuilders.StringProp build();
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public androidx.wear.protolayout.TypeBuilders.StringProp.Builder setDynamicValue(androidx.wear.protolayout.expression.DynamicBuilders.DynamicString);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.TypeBuilders.StringProp.Builder setValue(String);
+  }
+
+}
+
+package androidx.wear.protolayout.types {
+
+  public final class LayoutString {
+    ctor public LayoutString(String staticValue);
+    ctor @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public LayoutString(String staticValue, androidx.wear.protolayout.expression.DynamicBuilders.DynamicString dynamicValue, androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint layoutConstraint);
+    method public androidx.wear.protolayout.expression.DynamicBuilders.DynamicString? getDynamicValue();
+    method public androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint? getLayoutConstraint();
+    method public String getStaticValue();
+    property public final androidx.wear.protolayout.expression.DynamicBuilders.DynamicString? dynamicValue;
+    property public final androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint? layoutConstraint;
+    property public final String staticValue;
+  }
+
+  public final class LayoutStringKt {
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint asLayoutConstraint(String, optional int alignment);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.types.LayoutString asLayoutString(androidx.wear.protolayout.expression.DynamicBuilders.DynamicString, String staticValue, androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint layoutConstraint);
+    method public static androidx.wear.protolayout.types.LayoutString getLayoutString(String);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint stringLayoutConstraint(String longestPattern);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint stringLayoutConstraint(String longestPattern, optional int alignment);
   }
 
 }

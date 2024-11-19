@@ -16,6 +16,7 @@
 
 package androidx.wear.compose.material3.macrobenchmark.common.baselineprofile
 
+import android.os.SystemClock
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -75,6 +76,7 @@ val ConfirmationScreen =
                         }
                         .click()
                     device.waitForIdle()
+                    SystemClock.sleep(DurationMillis)
                 }
                 device.wait(
                     Until.findObject(By.desc(numberedContentDescription(0))),
@@ -109,7 +111,8 @@ private fun Confirmation(showConfirmation: MutableState<Boolean>) {
     Confirmation(
         show = showConfirmation.value,
         onDismissRequest = { showConfirmation.value = false },
-        curvedText = ConfirmationDefaults.curvedText("Confirmed")
+        curvedText = ConfirmationDefaults.curvedText("Confirmed"),
+        durationMillis = DurationMillis
     ) {
         Icon(
             painterResource(R.drawable.ic_favorite_rounded),
@@ -125,6 +128,7 @@ fun LongTextConfirmation(showConfirmation: MutableState<Boolean>) {
         show = showConfirmation.value,
         onDismissRequest = { showConfirmation.value = false },
         text = { Text(text = "Your message has been sent") },
+        durationMillis = DurationMillis
     ) {
         Icon(
             painterResource(R.drawable.ic_favorite_rounded),
@@ -138,7 +142,8 @@ fun LongTextConfirmation(showConfirmation: MutableState<Boolean>) {
 fun SuccessConfirmation(showConfirmation: MutableState<Boolean>) {
     SuccessConfirmation(
         show = showConfirmation.value,
-        onDismissRequest = { showConfirmation.value = false }
+        onDismissRequest = { showConfirmation.value = false },
+        durationMillis = DurationMillis
     )
 }
 
@@ -146,6 +151,9 @@ fun SuccessConfirmation(showConfirmation: MutableState<Boolean>) {
 fun FailureConfirmation(showConfirmation: MutableState<Boolean>) {
     FailureConfirmation(
         show = showConfirmation.value,
-        onDismissRequest = { showConfirmation.value = false }
+        onDismissRequest = { showConfirmation.value = false },
+        durationMillis = DurationMillis
     )
 }
+
+private const val DurationMillis = 2_000L

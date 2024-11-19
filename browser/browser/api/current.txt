@@ -1,7 +1,22 @@
 // Signature format: 4.0
 package androidx.browser.auth {
 
+  public final class AuthTabColorSchemeParams {
+    method @ColorInt public Integer? getNavigationBarColor();
+    method @ColorInt public Integer? getNavigationBarDividerColor();
+    method @ColorInt public Integer? getToolbarColor();
+  }
+
+  public static final class AuthTabColorSchemeParams.Builder {
+    ctor public AuthTabColorSchemeParams.Builder();
+    method public androidx.browser.auth.AuthTabColorSchemeParams build();
+    method public androidx.browser.auth.AuthTabColorSchemeParams.Builder setNavigationBarColor(@ColorInt int);
+    method public androidx.browser.auth.AuthTabColorSchemeParams.Builder setNavigationBarDividerColor(@ColorInt int);
+    method public androidx.browser.auth.AuthTabColorSchemeParams.Builder setToolbarColor(@ColorInt int);
+  }
+
   @SuppressCompatibility @androidx.browser.auth.ExperimentalAuthTab public class AuthTabIntent {
+    method public static androidx.browser.auth.AuthTabColorSchemeParams getColorSchemeParams(android.content.Intent, @IntRange(from=androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_LIGHT, to=androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_DARK) int);
     method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalEphemeralBrowsing public boolean isEphemeralBrowsingEnabled();
     method public void launch(androidx.activity.result.ActivityResultLauncher<android.content.Intent!>, android.net.Uri, String);
     method public void launch(androidx.activity.result.ActivityResultLauncher<android.content.Intent!>, android.net.Uri, String, String);
@@ -26,6 +41,9 @@ package androidx.browser.auth {
   public static final class AuthTabIntent.Builder {
     ctor public AuthTabIntent.Builder();
     method public androidx.browser.auth.AuthTabIntent build();
+    method public androidx.browser.auth.AuthTabIntent.Builder setColorScheme(@IntRange(from=androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_SYSTEM, to=androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_DARK) int);
+    method public androidx.browser.auth.AuthTabIntent.Builder setColorSchemeParams(@IntRange(from=androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_LIGHT, to=androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_DARK) int, androidx.browser.auth.AuthTabColorSchemeParams);
+    method public androidx.browser.auth.AuthTabIntent.Builder setDefaultColorSchemeParams(androidx.browser.auth.AuthTabColorSchemeParams);
     method @SuppressCompatibility @androidx.browser.customtabs.ExperimentalEphemeralBrowsing public androidx.browser.auth.AuthTabIntent.Builder setEphemeralBrowsingEnabled(boolean);
   }
 

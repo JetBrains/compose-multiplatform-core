@@ -23,7 +23,7 @@ import java.net.URLEncoder
 import java.util.zip.Deflater
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class TraceDeepLink(
+data class TraceDeepLink(
     /** Output relative path of trace file */
     private val outputRelativePath: String,
     private val selectionParams: SelectionParams?
@@ -46,7 +46,7 @@ class TraceDeepLink(
             }
         }
 
-    class SelectionParams(
+    data class SelectionParams(
         val pid: Long,
         val tid: Long?,
         val ts: Long,

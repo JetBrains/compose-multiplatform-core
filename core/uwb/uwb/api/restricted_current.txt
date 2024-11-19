@@ -110,6 +110,12 @@ package androidx.core.uwb {
     property public abstract androidx.core.uwb.UwbDevice device;
   }
 
+  public static final class RangingResult.RangingResultInitialized extends androidx.core.uwb.RangingResult {
+    ctor public RangingResult.RangingResultInitialized(androidx.core.uwb.UwbDevice device);
+    method public androidx.core.uwb.UwbDevice getDevice();
+    property public androidx.core.uwb.UwbDevice device;
+  }
+
   public static final class RangingResult.RangingResultPeerDisconnected extends androidx.core.uwb.RangingResult {
     ctor public RangingResult.RangingResultPeerDisconnected(androidx.core.uwb.UwbDevice device);
     method public androidx.core.uwb.UwbDevice getDevice();

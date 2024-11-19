@@ -26,11 +26,8 @@ import androidx.build.checkapi.getRequiredCompatibilityApiLocation
 import androidx.build.java.JavaCompileInputs
 import androidx.build.uptodatedness.cacheEvenIfNoOutputs
 import androidx.build.version
-import com.android.build.api.attributes.BuildTypeAttr
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
-import org.gradle.api.artifacts.type.ArtifactTypeDefinition
-import org.gradle.api.attributes.Usage
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
@@ -41,31 +38,13 @@ object MetalavaTasks {
     fun setupProject(
         project: Project,
         javaCompileInputs: JavaCompileInputs,
+        generateApiDependencies: Configuration,
         extension: AndroidXExtension,
         androidManifest: Provider<RegularFile>?,
         baselinesApiLocation: ApiBaselinesLocation,
         builtApiLocation: ApiLocation,
         outputApiLocations: List<ApiLocation>
     ) {
-        val generateApiDependencies =
-            project.configurations.create("GenerateApiDependencies") {
-                it.isCanBeConsumed = false
-                it.isTransitive = false
-                it.attributes.attribute(
-                    BuildTypeAttr.ATTRIBUTE,
-                    project.objects.named(BuildTypeAttr::class.java, "debug")
-                )
-                it.attributes.attribute(
-                    Usage.USAGE_ATTRIBUTE,
-                    project.objects.named(Usage::class.java, Usage.JAVA_API)
-                )
-                it.attributes.attribute(
-                    ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE,
-                    ArtifactTypeDefinition.JAR_TYPE
-                )
-            }
-        project.dependencies.add(generateApiDependencies.name, project.project(project.path))
-
         val metalavaClasspath = project.getMetalavaClasspath()
         val version = project.version()
 

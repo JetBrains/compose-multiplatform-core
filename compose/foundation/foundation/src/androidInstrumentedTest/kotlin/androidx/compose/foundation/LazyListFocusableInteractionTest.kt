@@ -23,6 +23,7 @@ import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,9 +39,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection.Companion.Down
 import androidx.compose.ui.focus.FocusDirection.Companion.Next
 import androidx.compose.ui.focus.FocusDirection.Companion.Previous
+import androidx.compose.ui.focus.FocusDirection.Companion.Right
 import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
@@ -554,6 +559,75 @@ class LazyListFocusableInteractionTest(
         rule.onNodeWithTag("finalFocusable").assertIsDisplayed()
         rule.runOnIdle { assertThat(scrollState.firstVisibleItemIndex).isEqualTo(1) }
         rule.runOnIdle { assertThat(scrollState.firstVisibleItemScrollOffset).isEqualTo(0) }
+    }
+
+    @Test
+    fun moveOutFromBoundaryItem_nextItemStartsNewFocusTransactionUsingLaunchedEffect() {
+        // Arrange.
+        val itemSize = with(rule.density) { 100.toDp() }
+        rule.setContentForTest {
+            val finalFocusableRequester = remember { FocusRequester() }
+            Row {
+                ScrollableRowOrColumn(size = itemSize * 2) {
+                    item { TestFocusable(itemSize, tag = "1") }
+                    item { TestFocusable(itemSize, tag = "2") }
+                    item {
+                        TestFocusable(itemSize, tag = "3")
+                        LaunchedEffect(Unit) { finalFocusableRequester.requestFocus() }
+                    }
+                }
+                Box(
+                    Modifier.size(itemSize)
+                        .focusRequester(finalFocusableRequester)
+                        .testTag("finalFocusable")
+                        .focusable()
+                )
+            }
+        }
+        requestFocus("2")
+
+        // Act.
+        rule.runOnIdle { focusManager.moveFocus(Next) }
+
+        // Assert.
+        rule.onNodeWithTag("finalFocusable").assertIsFocused()
+    }
+
+    @Test
+    fun moveOutFromBoundaryItem_rightDownStartsNewFocusTransactionUsingLaunchedEffect() {
+        // Arrange.
+        val itemSize = with(rule.density) { 100.toDp() }
+        val direction =
+            when (orientation) {
+                Vertical -> Down
+                else -> Right
+            }
+        rule.setContentForTest {
+            val focusRequester = remember { FocusRequester() }
+            Row {
+                ScrollableRowOrColumn(size = itemSize * 2) {
+                    item { TestFocusable(itemSize, tag = "1") }
+                    item { TestFocusable(itemSize, tag = "2") }
+                    item {
+                        TestFocusable(itemSize, tag = "3")
+                        LaunchedEffect(Unit) { focusRequester.requestFocus() }
+                    }
+                }
+                Box(
+                    Modifier.size(itemSize)
+                        .focusRequester(focusRequester)
+                        .testTag("finalFocusable")
+                        .focusable()
+                )
+            }
+        }
+        requestFocus("2")
+
+        // Act.
+        rule.runOnIdle { focusManager.moveFocus(direction) }
+
+        // Assert.
+        rule.onNodeWithTag("finalFocusable").assertIsFocused()
     }
 
     private fun ComposeContentTestRule.setContentForTest(composable: @Composable () -> Unit) {

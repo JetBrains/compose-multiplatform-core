@@ -406,50 +406,44 @@ private fun ThreePaneScaffoldMotionScopeImpl.updateMotions(
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private val mockEnterFromLeftTransition =
-    slideInHorizontally(mockPaneScaffoldMotionScope.animationSpecs.offsetAnimationSpec) {
+    slideInHorizontally(PaneMotionDefaults.OffsetAnimationSpec) {
         mockPaneScaffoldMotionScope.slideInFromLeftOffset
     }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private val mockEnterFromRightTransition =
-    slideInHorizontally(mockPaneScaffoldMotionScope.animationSpecs.offsetAnimationSpec) {
+    slideInHorizontally(PaneMotionDefaults.OffsetAnimationSpec) {
         mockPaneScaffoldMotionScope.slideInFromRightOffset
     }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private val mockEnterFromLeftDelayedTransition =
-    slideInHorizontally(mockPaneScaffoldMotionScope.delayedAnimationSpecs.offsetAnimationSpec) {
+    slideInHorizontally(PaneMotionDefaults.DelayedOffsetAnimationSpec) {
         mockPaneScaffoldMotionScope.slideInFromLeftOffset
     }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private val mockEnterFromRightDelayedTransition =
-    slideInHorizontally(mockPaneScaffoldMotionScope.delayedAnimationSpecs.offsetAnimationSpec) {
+    slideInHorizontally(PaneMotionDefaults.DelayedOffsetAnimationSpec) {
         mockPaneScaffoldMotionScope.slideInFromRightOffset
     }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private val mockExitToLeftTransition =
-    slideOutHorizontally(mockPaneScaffoldMotionScope.animationSpecs.offsetAnimationSpec) {
+    slideOutHorizontally(PaneMotionDefaults.OffsetAnimationSpec) {
         mockPaneScaffoldMotionScope.slideOutToLeftOffset
     }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private val mockExitToRightTransition =
-    slideOutHorizontally(mockPaneScaffoldMotionScope.animationSpecs.offsetAnimationSpec) {
+    slideOutHorizontally(PaneMotionDefaults.OffsetAnimationSpec) {
         mockPaneScaffoldMotionScope.slideOutToRightOffset
     }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private val mockEnterWithExpandTransition =
-    expandHorizontally(
-        mockPaneScaffoldMotionScope.animationSpecs.sizeAnimationSpec,
-        Alignment.CenterHorizontally
-    )
+    expandHorizontally(PaneMotionDefaults.SizeAnimationSpec, Alignment.CenterHorizontally)
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 private val mockExitWithShrinkTransition =
-    shrinkHorizontally(
-        mockPaneScaffoldMotionScope.animationSpecs.sizeAnimationSpec,
-        Alignment.CenterHorizontally
-    )
+    shrinkHorizontally(PaneMotionDefaults.SizeAnimationSpec, Alignment.CenterHorizontally)

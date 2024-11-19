@@ -162,6 +162,12 @@ internal constructor(
         @FloatRange(from = -0.5, to = 0.5) currentPageOffsetFraction: Float = 0f
     ) : this(currentPage, currentPageOffsetFraction, null)
 
+    internal var hasLookaheadOccurred: Boolean = false
+        private set
+
+    internal var approachLayoutInfo: PagerMeasureResult? = null
+        private set
+
     /**
      * The total amount of pages present in this pager. The source of this data should be
      * observable.
@@ -247,13 +253,32 @@ internal constructor(
         }
 
         /** Apply the scroll delta */
-        val scrolledLayoutInfo =
+        var scrolledLayoutInfo =
             pagerLayoutInfoState.value.copyWithScrollDeltaWithoutRemeasure(
                 delta = -scrollDelta.toInt()
             )
+        if (scrolledLayoutInfo != null && this.approachLayoutInfo != null) {
+            // if we were able to scroll the lookahead layout info without remeasure, lets
+            // try to do the same for post lookahead layout info (sometimes they diverge).
+            val scrolledApproachLayoutInfo =
+                approachLayoutInfo?.copyWithScrollDeltaWithoutRemeasure(
+                    delta = -scrollDelta.toInt(),
+                )
+            if (scrolledApproachLayoutInfo != null) {
+                // we can apply scroll delta for both phases without remeasure
+                approachLayoutInfo = scrolledApproachLayoutInfo
+            } else {
+                // we can't apply scroll delta for post lookahead, so we have to remeasure
+                scrolledLayoutInfo = null
+            }
+        }
         if (scrolledLayoutInfo != null) {
             debugLog { "Will Apply Without Remeasure" }
-            applyMeasureResult(result = scrolledLayoutInfo, visibleItemsStayedTheSame = true)
+            applyMeasureResult(
+                result = scrolledLayoutInfo,
+                isLookingAhead = hasLookaheadOccurred,
+                visibleItemsStayedTheSame = true
+            )
             // we don't need to remeasure, so we only trigger re-placement:
             placementScopeInvalidator.invalidateScope()
             layoutWithoutMeasurement++
@@ -642,24 +667,36 @@ internal constructor(
     /** Updates the state with the new calculated scroll position and consumed scroll. */
     internal fun applyMeasureResult(
         result: PagerMeasureResult,
+        isLookingAhead: Boolean,
         visibleItemsStayedTheSame: Boolean = false
     ) {
-        debugLog { "Applying Measure Result" }
-        if (visibleItemsStayedTheSame) {
-            scrollPosition.updateCurrentPageOffsetFraction(result.currentPageOffsetFraction)
+        if (!isLookingAhead && hasLookaheadOccurred) {
+            debugLog { "Applying Approach Measure Result" }
+            // If there was already a lookahead pass, record this result as Approach result
+            approachLayoutInfo = result
         } else {
-            scrollPosition.updateFromMeasureResult(result)
-            cancelPrefetchIfVisibleItemsChanged(result)
+            debugLog { "Applying Measure Result" }
+            if (isLookingAhead) {
+                hasLookaheadOccurred = true
+            }
+            if (visibleItemsStayedTheSame) {
+                scrollPosition.updateCurrentPageOffsetFraction(result.currentPageOffsetFraction)
+            } else {
+                scrollPosition.updateFromMeasureResult(result)
+                cancelPrefetchIfVisibleItemsChanged(result)
+            }
+            pagerLayoutInfoState.value = result
+            canScrollForward = result.canScrollForward
+            canScrollBackward = result.canScrollBackward
+            result.firstVisiblePage?.let { firstVisiblePage = it.index }
+            firstVisiblePageOffset = result.firstVisiblePageScrollOffset
+            tryRunPrefetch(result)
+            maxScrollOffset = result.calculateNewMaxScrollOffset(pageCount)
+            minScrollOffset = result.calculateNewMinScrollOffset(pageCount)
+            debugLog {
+                "Finished Applying Measure Result" + "\nNew maxScrollOffset=$maxScrollOffset"
+            }
         }
-        pagerLayoutInfoState.value = result
-        canScrollForward = result.canScrollForward
-        canScrollBackward = result.canScrollBackward
-        result.firstVisiblePage?.let { firstVisiblePage = it.index }
-        firstVisiblePageOffset = result.firstVisiblePageScrollOffset
-        tryRunPrefetch(result)
-        maxScrollOffset = result.calculateNewMaxScrollOffset(pageCount)
-        minScrollOffset = result.calculateNewMinScrollOffset(pageCount)
-        debugLog { "Finished Applying Measure Result" + "\nNew maxScrollOffset=$maxScrollOffset" }
     }
 
     private fun tryRunPrefetch(result: PagerMeasureResult) =

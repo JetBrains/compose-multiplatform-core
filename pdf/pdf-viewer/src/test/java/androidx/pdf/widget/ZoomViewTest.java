@@ -220,7 +220,7 @@ public class ZoomViewTest {
         assertThat(mZoomview.getViewportHeight()).isEqualTo(100);
 
         // Zoom out to fit increased content height inside decreased ZoomView height
-        assertThat(mZoomview.zoomScroll().get()).isEqualTo(new ZoomScroll(0.5f, -75, 25, true));
+        assertThat(mZoomview.zoomScroll().get()).isEqualTo(new ZoomScroll(0.375f, -81, 6, true));
     }
 
     @Test

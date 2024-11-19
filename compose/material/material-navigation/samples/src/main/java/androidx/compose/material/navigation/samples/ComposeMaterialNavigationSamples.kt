@@ -16,6 +16,7 @@
 
 package androidx.compose.material.navigation.samples
 
+import androidx.annotation.Sampled
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,6 +39,7 @@ private object Destinations {
     const val Sheet = "SHEET"
 }
 
+@Sampled
 @Composable
 fun BottomSheetNavDemo() {
     val bottomSheetNavigator = rememberBottomSheetNavigator()

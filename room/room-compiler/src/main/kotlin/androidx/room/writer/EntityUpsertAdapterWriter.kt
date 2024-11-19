@@ -49,7 +49,6 @@ class EntityUpsertAdapterWriter private constructor(val tableName: String, val p
             EntityUpdateAdapterWriter.create(entity, "")
                 .createAnonymous(typeWriter, dbProperty.name, useDriverApi)
         return XCodeBlock.ofNewInstance(
-            language = typeWriter.codeLanguage,
             typeName = upsertAdapter,
             argsFormat = "%L, %L",
             args = arrayOf(insertHelper, updateHelper)

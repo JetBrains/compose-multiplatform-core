@@ -28,6 +28,7 @@ import androidx.core.util.Preconditions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * {@link Node} that represents logical OR of nodes.
@@ -133,5 +134,18 @@ public final class OrNode implements Node{
     @Override
     public String toString() {
         return "(" + TextUtils.join(" OR ", mChildren) + ")";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        OrNode orNode = (OrNode) o;
+        return Objects.equals(mChildren, orNode.mChildren);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(mChildren);
     }
 }

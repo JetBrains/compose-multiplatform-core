@@ -40,6 +40,23 @@ public class PropertyRestrictNodeTest {
     public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
 
     @Test
+    public void testEquals_identical() {
+        PropertyPath propertyPathOne = new PropertyPath("example.property.segment");
+        TextNode textNodeOne = new TextNode("foo");
+        PropertyRestrictNode propertyRestrictNodeOne =
+                new PropertyRestrictNode(propertyPathOne, textNodeOne);
+
+        PropertyPath propertyPathTwo = new PropertyPath("example.property.segment");
+        TextNode textNodeTwo = new TextNode("foo");
+        PropertyRestrictNode propertyRestrictNodeTwo =
+                new PropertyRestrictNode(propertyPathTwo, textNodeTwo);
+
+        assertThat(propertyRestrictNodeOne).isEqualTo(propertyRestrictNodeTwo);
+        assertThat(propertyRestrictNodeOne.hashCode())
+                .isEqualTo(propertyRestrictNodeTwo.hashCode());
+    }
+
+    @Test
     public void testConstructor_takesPropertyPath() {
         List<PropertyPath.PathSegment> pathSegmentList =
                 List.of(PropertyPath.PathSegment.create("example"),

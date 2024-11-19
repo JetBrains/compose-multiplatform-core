@@ -130,7 +130,7 @@ import androidx.wear.protolayout.proto.ColorProto.ColorStop;
 import androidx.wear.protolayout.proto.ColorProto.SweepGradient;
 import androidx.wear.protolayout.proto.DimensionProto;
 import androidx.wear.protolayout.proto.DimensionProto.ArcLineLength;
-import androidx.wear.protolayout.proto.DimensionProto.ArcSpacerLength;
+import androidx.wear.protolayout.proto.DimensionProto.AngularDimension;
 import androidx.wear.protolayout.proto.DimensionProto.BoundingBoxRatio;
 import androidx.wear.protolayout.proto.DimensionProto.ContainerDimension;
 import androidx.wear.protolayout.proto.DimensionProto.DegreesProp;
@@ -2360,8 +2360,8 @@ public class ProtoLayoutInflaterTest {
 
     @Test
     public void inflate_arc_withMaxAngleAndWeights() {
-        ArcSpacerLength spacerLength =
-                ArcSpacerLength.newBuilder()
+        AngularDimension spacerLength =
+                AngularDimension.newBuilder()
                         .setExpandedAngularDimension(expandAngular(1.0f))
                         .build();
         ArcLineLength lineLength =

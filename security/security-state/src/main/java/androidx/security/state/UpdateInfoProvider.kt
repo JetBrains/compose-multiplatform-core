@@ -22,7 +22,7 @@ import android.content.Context
 import android.database.Cursor
 import android.database.MatrixCursor
 import android.net.Uri
-import com.google.gson.Gson
+import kotlinx.serialization.json.Json
 
 /**
  * A content provider for managing and serving update information for system components. This class
@@ -179,7 +179,11 @@ public open class UpdateInfoProvider(
         val sharedPreferences = context.getSharedPreferences(updateInfoPrefs, Context.MODE_PRIVATE)
         val editor = sharedPreferences?.edit()
         val key = getKeyForUpdateInfo(updateInfo)
-        val json = Gson().toJson(updateInfo)
+        val json =
+            Json.encodeToString(
+                SerializableUpdateInfo.serializer(),
+                updateInfo.toSerializableUpdateInfo()
+            )
         editor?.putString(key, json)
         editor?.apply()
     }
@@ -218,7 +222,8 @@ public open class UpdateInfoProvider(
         for ((_, value) in allEntries) {
             val json = value as? String
             if (json != null) {
-                val updateInfo: UpdateInfo = Gson().fromJson(json, UpdateInfo::class.java)
+                val serializableUpdateInfo: SerializableUpdateInfo = Json.decodeFromString(json)
+                val updateInfo: UpdateInfo = serializableUpdateInfo.toUpdateInfo()
                 allUpdates.add(updateInfo)
             }
         }

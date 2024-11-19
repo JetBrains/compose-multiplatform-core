@@ -43,7 +43,6 @@ class ImmutableMapQueryResultAdapter(
                     ),
                 assignExpr =
                     XCodeBlock.of(
-                        language = language,
                         format = "%T.copyOf(%L)",
                         GuavaTypeNames.IMMUTABLE_MAP,
                         mapVarName

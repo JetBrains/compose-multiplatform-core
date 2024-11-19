@@ -1,5 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.8.0-alpha06" type="baseline" client="gradle" dependencies="false" name="AGP (8.8.0-alpha06)" variant="all" version="8.8.0-alpha06">
+<issues format="6" by="lint 8.8.0-alpha08" type="baseline" client="gradle" dependencies="false" name="AGP (8.8.0-alpha08)" variant="all" version="8.8.0-alpha08">
+
+    <issue
+        id="WrongConstant"
+        message="Must be one or more of: MediaSession.FLAG_HANDLES_MEDIA_BUTTONS, MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS"
+        errorLine1="    public static final int FLAG_HANDLES_MEDIA_BUTTONS = 1 &lt;&lt; 0;"
+        errorLine2="                                                         ~">
+        <location
+            file="src/main/java/android/support/v4/media/session/MediaSessionCompat.java"/>
+    </issue>
+
+    <issue
+        id="WrongConstant"
+        message="Must be one or more of: MediaSession.FLAG_HANDLES_MEDIA_BUTTONS, MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS"
+        errorLine1="    public static final int FLAG_HANDLES_TRANSPORT_CONTROLS = 1 &lt;&lt; 1;"
+        errorLine2="                                                              ~">
+        <location
+            file="src/main/java/android/support/v4/media/session/MediaSessionCompat.java"/>
+    </issue>
+
+    <issue
+        id="WrongConstant"
+        message="Must be one or more of: MediaSession.FLAG_HANDLES_MEDIA_BUTTONS, MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS"
+        errorLine1="    public static final int FLAG_HANDLES_TRANSPORT_CONTROLS = 1 &lt;&lt; 1;"
+        errorLine2="                                                                   ~">
+        <location
+            file="src/main/java/android/support/v4/media/session/MediaSessionCompat.java"/>
+    </issue>
 
     <issue
         id="WrongConstant"

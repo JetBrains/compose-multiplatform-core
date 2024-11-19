@@ -18,6 +18,7 @@ package androidx.room.solver.types
 
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.processing.XNullability
 import androidx.room.compiler.processing.XType
 import androidx.room.ext.ExceptionTypeNames
@@ -76,19 +77,18 @@ class RequireNotNullTypeConverter(
         return inputVarName
     }
 
-    private fun XCodeBlock.Builder.addIllegalStateException() {
+    private fun XCodeBlock.Builder.addIllegalStateException() = applyTo { language ->
         val typeName = from.asTypeName().copy(nullable = false).toString(language)
-        val exceptionClassName =
-            when (language) {
-                CodeLanguage.JAVA -> ExceptionTypeNames.JAVA_ILLEGAL_STATE_EXCEPTION
-                CodeLanguage.KOTLIN -> ExceptionTypeNames.KOTLIN_ILLEGAL_STATE_EXCEPTION
-            }
         val message = "Expected NON-NULL '$typeName', but it was NULL."
         when (language) {
             CodeLanguage.JAVA -> {
                 addStatement(
                     "throw %L",
-                    XCodeBlock.ofNewInstance(language, exceptionClassName, "%S", message)
+                    XCodeBlock.ofNewInstance(
+                        ExceptionTypeNames.JAVA_ILLEGAL_STATE_EXCEPTION,
+                        "%S",
+                        message
+                    )
                 )
             }
             CodeLanguage.KOTLIN -> {

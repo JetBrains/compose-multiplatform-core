@@ -16,24 +16,31 @@
 
 package androidx.compose.foundation.text.input
 
+import android.os.Build
+import android.view.View
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.text.assertNoStylusHoverIcon
+import androidx.compose.foundation.text.assertStylusHandwritingHoverIcon
 import androidx.compose.foundation.text.handwriting.HandwritingBoundsVerticalOffset
 import androidx.compose.foundation.text.handwriting.handwritingDetector
 import androidx.compose.foundation.text.handwriting.isStylusHandwritingSupported
 import androidx.compose.foundation.text.performStylusClick
 import androidx.compose.foundation.text.performStylusHandwriting
+import androidx.compose.foundation.text.performStylusInput
 import androidx.compose.foundation.text.performStylusLongClick
 import androidx.compose.foundation.text.performStylusLongPressAndDrag
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assume
 import org.junit.Before
@@ -56,6 +63,8 @@ internal class HandwritingDetectorTest {
 
     private var callbackCount = 0
 
+    private lateinit var ownerView: View
+
     @Before
     fun setup() {
         // Test is only meaningful when stylus handwriting is supported.
@@ -66,6 +75,8 @@ internal class HandwritingDetectorTest {
         callbackCount = 0
 
         rule.setContent {
+            ownerView = LocalView.current
+
             Column(Modifier.safeContentPadding()) {
                 Spacer(
                     modifier =
@@ -134,6 +145,25 @@ internal class HandwritingDetectorTest {
         rule.onNodeWithTag(detectorTag).performStylusLongPressAndDrag()
 
         assertHandwritingDelegationNotPrepared()
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun detector_hover_showsHandwritingIcon() {
+        // No stylus icon shown before hover starts
+        rule.runOnIdle { assertNoStylusHoverIcon(ownerView) }
+
+        // This spacer is within the extended handwriting bounds of the detector, so icon is shown
+        rule.onNodeWithTag(insideSpacerTag).performStylusInput { hoverEnter(center) }
+        rule.runOnIdle { assertStylusHandwritingHoverIcon(ownerView) }
+
+        // This is within the detector, so icon is shown
+        rule.onNodeWithTag(detectorTag).performStylusInput { hoverMoveTo(center) }
+        rule.runOnIdle { assertStylusHandwritingHoverIcon(ownerView) }
+
+        // This spacer is outside the extended handwriting bounds of the detector, so no icon shown
+        rule.onNodeWithTag(outsideSpacerTag).performStylusInput { hoverMoveTo(center) }
+        rule.runOnIdle { assertNoStylusHoverIcon(ownerView) }
     }
 
     private fun assertHandwritingDelegationPrepared() {

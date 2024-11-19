@@ -1,0 +1,59 @@
+// Signature format: 4.0
+package androidx.navigation3 {
+
+  public final class AnimatedNavDisplay {
+    method public java.util.Map<java.lang.String,java.lang.Object> isDialog(boolean boolean);
+    method public java.util.Map<java.lang.String,java.lang.Object> transition(androidx.compose.animation.EnterTransition? enter, androidx.compose.animation.ExitTransition? exit);
+    field public static final androidx.navigation3.AnimatedNavDisplay INSTANCE;
+  }
+
+  public final class AnimatedNavDisplay_androidKt {
+    method @androidx.compose.runtime.Composable public static <T> void AnimatedNavDisplay(java.util.List<? extends T> backstack, androidx.navigation3.NavWrapperManager wrapperManager, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.ui.Alignment contentAlignment, optional androidx.compose.animation.SizeTransform? sizeTransform, optional kotlin.jvm.functions.Function0<kotlin.Unit> onBack, kotlin.jvm.functions.Function1<? super T,? extends androidx.navigation3.Record<? extends T>> recordProvider);
+  }
+
+  public interface NavContentWrapper {
+    method public default void WrapBackStack(java.util.List<?> backStack);
+    method public <T> void WrapContent(androidx.navigation3.Record<T> record);
+  }
+
+  public final class NavDisplay {
+    method public java.util.Map<java.lang.String,java.lang.Object> isDialog(boolean boolean);
+    field public static final androidx.navigation3.NavDisplay INSTANCE;
+  }
+
+  public final class NavDisplay_androidKt {
+    method @androidx.compose.runtime.Composable public static <T> void NavDisplay(java.util.List<? extends T> backstack, androidx.navigation3.NavWrapperManager wrapperManager, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit> onBack, kotlin.jvm.functions.Function1<? super T,? extends androidx.navigation3.Record<? extends T>> recordProvider);
+  }
+
+  public final class NavWrapperManager {
+    ctor public NavWrapperManager(java.util.List<? extends androidx.navigation3.NavContentWrapper> navContentWrappers);
+    method public <T> void ContentForRecord(androidx.navigation3.Record<T> record);
+    method public void PrepareBackStack(java.util.List<?> backStack);
+  }
+
+  public final class NavWrapperManagerKt {
+    method public static androidx.navigation3.NavWrapperManager rememberNavWrapperManager(java.util.List<? extends androidx.navigation3.NavContentWrapper> navContentWrappers);
+  }
+
+  public final class Record<T> {
+    ctor public Record(T key, optional java.util.Map<java.lang.String,?> featureMap, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> content);
+    method public kotlin.jvm.functions.Function1<T,kotlin.Unit> getContent();
+    method public java.util.Map<java.lang.String,java.lang.Object> getFeatureMap();
+    method public T getKey();
+    property public final kotlin.jvm.functions.Function1<T,kotlin.Unit> content;
+    property public final java.util.Map<java.lang.String,java.lang.Object> featureMap;
+    property public final T key;
+  }
+
+  public final class SaveableStateNavContentWrapper implements androidx.navigation3.NavContentWrapper {
+    ctor public SaveableStateNavContentWrapper();
+    method public <T> void WrapContent(androidx.navigation3.Record<T> record);
+  }
+
+  public final class SavedStateNavContentWrapper implements androidx.navigation3.NavContentWrapper {
+    method @androidx.compose.runtime.Composable public <T> void WrapContent(androidx.navigation3.Record<T> record);
+    field public static final androidx.navigation3.SavedStateNavContentWrapper INSTANCE;
+  }
+
+}
+

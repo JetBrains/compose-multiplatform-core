@@ -24,6 +24,8 @@ import androidx.appsearch.flags.FlaggedApi;
 import androidx.appsearch.flags.Flags;
 import androidx.core.util.Preconditions;
 
+import java.util.Objects;
+
 /**
  * {@link FunctionNode} that represents the semanticSearch function.
  *
@@ -296,5 +298,20 @@ public final class SemanticSearchNode implements FunctionNode {
                 return "\"EUCLIDEAN\"";
         }
         throw new IllegalStateException("Invalid Metric Type");
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SemanticSearchNode that = (SemanticSearchNode) o;
+        return mVectorIndex == that.mVectorIndex && Float.compare(mLowerBound,
+                that.mLowerBound) == 0 && Float.compare(mUpperBound, that.mUpperBound) == 0
+                && mDistanceMetric == that.mDistanceMetric;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(mVectorIndex, mLowerBound, mUpperBound, mDistanceMetric);
     }
 }

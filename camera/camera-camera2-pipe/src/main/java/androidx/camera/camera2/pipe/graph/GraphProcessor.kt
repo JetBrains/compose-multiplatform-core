@@ -94,6 +94,9 @@ internal interface GraphProcessor {
      * [GraphProcessor] is closed will immediately be aborted.
      */
     fun close()
+
+    /** Update [CameraGraph.Parameters] changes to current repeating request. */
+    fun updateParameters(parameters: Map<*, Any?>)
 }
 
 /** The graph processor handles *cross-session* state, such as the most recent repeating request. */
@@ -106,7 +109,7 @@ constructor(
     private val cameraGraphConfig: CameraGraph.Config,
     graphState3A: GraphState3A,
     graphListener3A: Listener3A,
-    @ForCameraGraph graphListeners: List<@JvmSuppressWildcards Request.Listener>
+    @ForCameraGraph graphListeners: List<@JvmSuppressWildcards Request.Listener>,
 ) : GraphProcessor, GraphListener {
     private val graphLoop: GraphLoop
 
@@ -233,4 +236,8 @@ constructor(
     }
 
     override fun toString(): String = "GraphProcessor(cameraGraph: $cameraGraphId)"
+
+    override fun updateParameters(parameters: Map<*, Any?>) {
+        graphLoop.graphParameters = parameters
+    }
 }

@@ -49,6 +49,10 @@ import kotlinx.coroutines.flow.collectLatest
  * Dialogs provide important prompts in a user flow. They can require an action, communicate
  * information, or help users accomplish a task.
  *
+ * The caller should consider whether timeText or scrollIndicator are needed on this dialog, in this
+ * case they should provide that in their content by using ScreenScaffold (with suitable scrollState
+ * if that's required).
+ *
  * @param show A boolean value that determines whether the dialog should be displayed.
  * @param onDismissRequest A lambda function to be called when the dialog is dismissed by swiping
  *   right.
@@ -109,42 +113,38 @@ fun Dialog(
             val contentAlpha by animateContentAlpha(transition)
             val scale by animateDialogScale(transition)
 
-            ScreenScaffold(
-                modifier = modifier,
-            ) {
-                SwipeToDismissBox(
-                    state = swipeToDismissBoxState,
-                    modifier =
-                        Modifier.graphicsLayer(
-                            alpha = contentAlpha,
-                            scaleX = scale,
-                            scaleY = scale,
-                        ),
-                    onDismissed = {
-                        onDismissRequest()
-                        // Reset state for the next time this dialog is shown.
-                        transitionState = MutableTransitionState(DialogVisibility.Hide)
-                    }
-                ) { isBackground ->
-                    if (!isBackground) {
-                        Box(
-                            modifier =
-                                Modifier.matchParentSize()
-                                    .background(MaterialTheme.colorScheme.background)
-                        ) {
-                            content()
-                        }
+            SwipeToDismissBox(
+                state = swipeToDismissBoxState,
+                modifier =
+                    modifier.graphicsLayer {
+                        alpha = contentAlpha
+                        scaleX = scale
+                        scaleY = scale
+                    },
+                onDismissed = {
+                    onDismissRequest()
+                    // Reset state for the next time this dialog is shown.
+                    transitionState = MutableTransitionState(DialogVisibility.Hide)
+                }
+            ) { isBackground ->
+                if (!isBackground) {
+                    Box(
+                        modifier =
+                            Modifier.matchParentSize()
+                                .background(MaterialTheme.colorScheme.background)
+                    ) {
+                        content()
                     }
                 }
             }
-            LaunchedEffect(show) {
-                if (show) {
-                    // a) Fade out previous screen contents b) Scale down dialog contents from 125%
-                    transitionState.targetState = DialogVisibility.Display
-                } else {
-                    // a) Fade out dialog contents b) Scale up dialog contents.
-                    transitionState.targetState = DialogVisibility.Hide
-                }
+        }
+        LaunchedEffect(show) {
+            if (show) {
+                // a) Fade out previous screen contents b) Scale down dialog contents from 125%
+                transitionState.targetState = DialogVisibility.Display
+            } else {
+                // a) Fade out dialog contents b) Scale up dialog contents.
+                transitionState.targetState = DialogVisibility.Hide
             }
         }
     }

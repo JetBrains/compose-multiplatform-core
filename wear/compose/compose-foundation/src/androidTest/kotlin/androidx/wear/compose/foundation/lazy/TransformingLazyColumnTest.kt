@@ -393,6 +393,19 @@ class TransformingLazyColumnTest {
         testTransformingLazyColumnRotary(false, 0)
     }
 
+    @Test
+    fun supportsEmptyItems() {
+        rule.setContent {
+            TransformingLazyColumn(
+                state = rememberTransformingLazyColumnState(),
+                modifier = Modifier.testTag(lazyListTag),
+            ) {
+                items(10) {}
+            }
+        }
+        rule.onNodeWithTag(lazyListTag).assertIsDisplayed()
+    }
+
     @OptIn(ExperimentalTestApi::class)
     private fun testTransformingLazyColumnRotary(
         userScrollEnabled: Boolean,

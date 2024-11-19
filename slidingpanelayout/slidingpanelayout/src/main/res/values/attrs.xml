@@ -19,6 +19,7 @@
         <attr name="isOverlappingEnabled" format="boolean"/>
         <attr name="isUserResizingEnabled" format="boolean"/>
         <attr name="userResizingDividerDrawable" format="reference"/>
+        <attr name="userResizingDividerTint" format="color"/>
         <attr name="isChildClippingToResizeDividerEnabled" format="boolean"/>
         <attr name="userResizeBehavior" format="enum">
             <enum name="relayoutWhenComplete" value="0"/>

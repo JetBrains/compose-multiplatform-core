@@ -38,7 +38,6 @@ class GuavaOptionalQueryResultAdapter(
                 typeName = GuavaTypeNames.OPTIONAL.parametrizedBy(typeArg.asTypeName()),
                 assignExpr =
                     XCodeBlock.of(
-                        language = language,
                         format = "%T.fromNullable(%L)",
                         GuavaTypeNames.OPTIONAL,
                         valueVarName

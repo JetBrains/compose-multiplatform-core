@@ -42,7 +42,6 @@ import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.compat.CameraPipeKeys
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
-import androidx.camera.camera2.pipe.integration.adapter.EncoderProfilesProviderAdapter
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.adapter.SupportedSurfaceCombination
 import androidx.camera.camera2.pipe.integration.adapter.ZslControl
@@ -52,6 +51,7 @@ import androidx.camera.camera2.pipe.integration.compat.quirk.CloseCameraDeviceOn
 import androidx.camera.camera2.pipe.integration.compat.quirk.CloseCaptureSessionOnDisconnectQuirk
 import androidx.camera.camera2.pipe.integration.compat.quirk.CloseCaptureSessionOnVideoQuirk
 import androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks
+import androidx.camera.camera2.pipe.integration.compat.quirk.DisableAbortCapturesOnStopQuirk
 import androidx.camera.camera2.pipe.integration.compat.quirk.DisableAbortCapturesOnStopWithSessionProcessorQuirk
 import androidx.camera.camera2.pipe.integration.compat.quirk.FinalizeSessionOnCloseQuirk
 import androidx.camera.camera2.pipe.integration.compat.quirk.QuickSuccessiveImageCaptureFailsRepeatingRequestQuirk
@@ -76,6 +76,7 @@ import androidx.camera.core.impl.CameraInternal
 import androidx.camera.core.impl.CameraMode
 import androidx.camera.core.impl.CaptureConfig
 import androidx.camera.core.impl.DeferrableSurface
+import androidx.camera.core.impl.EncoderProfilesProvider
 import androidx.camera.core.impl.MutableOptionsBundle
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.SessionConfig.OutputConfig.SURFACE_GROUP_ID_NONE
@@ -140,6 +141,7 @@ constructor(
     private val useCaseThreads: Provider<UseCaseThreads>,
     private val cameraInfoInternal: Provider<CameraInfoInternal>,
     private val templateParamsOverride: TemplateParamsOverride,
+    private val encoderProfilesProvider: EncoderProfilesProvider,
     context: Context,
     cameraProperties: CameraProperties,
     displayInfoManager: DisplayInfoManager,
@@ -177,11 +179,7 @@ constructor(
     }
 
     private val supportedSurfaceCombination by lazy {
-        SupportedSurfaceCombination(
-            context,
-            cameraProperties.metadata,
-            EncoderProfilesProviderAdapter(cameraConfig.cameraId.value, cameraQuirks.quirks)
-        )
+        SupportedSurfaceCombination(context, cameraProperties.metadata, encoderProfilesProvider)
     }
 
     private val dynamicRangeResolver = DynamicRangeResolver(cameraProperties.metadata)
@@ -1102,6 +1100,7 @@ constructor(
                         DeviceQuirks[
                             DisableAbortCapturesOnStopWithSessionProcessorQuirk::class.java] !=
                             null -> false
+                    DeviceQuirks[DisableAbortCapturesOnStopQuirk::class.java] != null -> false
                     /** @see [CameraGraph.Flags.abortCapturesOnStop] */
                     Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> true
                     else -> false

@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import androidx.wear.compose.foundation.ActiveFocusListener
+import androidx.wear.compose.foundation.LocalReduceMotion
 import androidx.wear.compose.foundation.ScrollInfoProvider
 import androidx.wear.compose.foundation.pager.HorizontalPager
 import androidx.wear.compose.foundation.pager.PagerDefaults
@@ -378,6 +379,7 @@ private fun AnimatedPageContent(
     contentScrimColor: Color,
     content: @Composable () -> Unit
 ) {
+    val isReduceMotionEnabled = LocalReduceMotion.current.enabled()
     val isRtlEnabled = LocalLayoutDirection.current == LayoutDirection.Rtl
     val isCurrentPage: Boolean = page == pagerState.currentPage
     val pageTransitionFraction =
@@ -387,33 +389,31 @@ private fun AnimatedPageContent(
             // interpolate left or right pages in opposite direction
             1 - pagerState.currentPageOffsetFraction.absoluteValue
         }
-    Box(
-        modifier =
+    val graphicsLayerModifier =
+        if (isReduceMotionEnabled) Modifier
+        else
             Modifier.graphicsLayer {
-                    val pivotFractionX by derivedStateOf {
-                        val direction = if (isRtlEnabled) -1 else 1
-                        val isSwipingRightToLeft =
-                            direction * pagerState.currentPageOffsetFraction > 0
-                        val isSwipingLeftToRight =
-                            direction * pagerState.currentPageOffsetFraction < 0
-                        val shouldAnchorRight =
-                            (isSwipingRightToLeft && isCurrentPage) ||
-                                (isSwipingLeftToRight && !isCurrentPage)
-                        if (shouldAnchorRight) 1f else 0f
-                    }
-                    transformOrigin =
-                        if (orientation == Orientation.Horizontal) {
-                            TransformOrigin(pivotFractionX, 0.5f)
-                        } else {
-                            // Flip X and Y for vertical pager
-                            TransformOrigin(0.5f, pivotFractionX)
-                        }
-                    val scale = lerp(start = 1f, stop = 0.55f, fraction = pageTransitionFraction)
-                    scaleX = scale
-                    scaleY = scale
+                val pivotFractionX by derivedStateOf {
+                    val direction = if (isRtlEnabled) -1 else 1
+                    val isSwipingRightToLeft = direction * pagerState.currentPageOffsetFraction > 0
+                    val isSwipingLeftToRight = direction * pagerState.currentPageOffsetFraction < 0
+                    val shouldAnchorRight =
+                        (isSwipingRightToLeft && isCurrentPage) ||
+                            (isSwipingLeftToRight && !isCurrentPage)
+                    if (shouldAnchorRight) 1f else 0f
                 }
-                .clip(CircleShape)
-    ) {
+                transformOrigin =
+                    if (orientation == Orientation.Horizontal) {
+                        TransformOrigin(pivotFractionX, 0.5f)
+                    } else {
+                        // Flip X and Y for vertical pager
+                        TransformOrigin(0.5f, pivotFractionX)
+                    }
+                val scale = lerp(start = 1f, stop = 0.55f, fraction = pageTransitionFraction)
+                scaleX = scale
+                scaleY = scale
+            }
+    Box(modifier = graphicsLayerModifier.clip(CircleShape)) {
         content()
 
         if (contentScrimColor.isSpecified) {

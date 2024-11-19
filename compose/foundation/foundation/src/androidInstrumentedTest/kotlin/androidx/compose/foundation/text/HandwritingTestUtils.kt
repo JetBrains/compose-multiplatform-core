@@ -16,8 +16,12 @@
 
 package androidx.compose.foundation.text
 
+import android.os.Build
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.PointerIcon
+import android.view.View
+import androidx.annotation.RequiresApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.ViewRootForTest
@@ -33,6 +37,7 @@ import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.toOffset
 import androidx.core.view.InputDeviceCompat
 import androidx.test.platform.app.InstrumentationRegistry
+import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
 
 // We don't have StylusInjectionScope at the moment. This is a simplified implementation for
@@ -99,53 +104,44 @@ internal class HandwritingTestStylusInjectScope(semanticsNode: SemanticsNode) :
         sendTouchEvent(MotionEvent.ACTION_CANCEL)
     }
 
+    fun hoverEnter(position: Offset = lastPosition, delayMillis: Long = eventPeriodMillis) {
+        advanceEventTime(delayMillis)
+        lastPosition = localToRoot(position)
+        sendTouchEvent(MotionEvent.ACTION_HOVER_ENTER)
+    }
+
+    fun hoverMoveTo(position: Offset, delayMillis: Long = eventPeriodMillis) {
+        advanceEventTime(delayMillis)
+        lastPosition = localToRoot(position)
+        sendTouchEvent(MotionEvent.ACTION_HOVER_MOVE)
+    }
+
+    fun hoverExit(position: Offset = lastPosition, delayMillis: Long = eventPeriodMillis) {
+        advanceEventTime(delayMillis)
+        lastPosition = localToRoot(position)
+        sendTouchEvent(MotionEvent.ACTION_HOVER_EXIT)
+    }
+
     private fun sendTouchEvent(action: Int) {
-        val motionEvent =
-            MotionEvent.obtain(
-                /* downTime = */ downTime,
-                /* eventTime = */ currentTime,
-                /* action = */ action,
-                /* pointerCount = */ 1,
-                /* pointerProperties = */ arrayOf(
-                    MotionEvent.PointerProperties().apply {
-                        id = 0
-                        toolType = MotionEvent.TOOL_TYPE_STYLUS
-                    }
-                ),
-                /* pointerCoords = */ arrayOf(
-                    MotionEvent.PointerCoords().apply {
-                        val startOffset = lastPosition
+        val startOffset = lastPosition
 
-                        // Allows for non-valid numbers/Offsets to be passed along to Compose to
-                        // test if it handles them properly (versus breaking here and we not knowing
-                        // if Compose properly handles these values).
-                        x =
-                            if (startOffset.isValid()) {
-                                startOffset.x
-                            } else {
-                                Float.NaN
-                            }
-
-                        y =
-                            if (startOffset.isValid()) {
-                                startOffset.y
-                            } else {
-                                Float.NaN
-                            }
-                    }
-                ),
-                /* metaState = */ 0,
-                /* buttonState = */ 0,
-                /* xPrecision = */ 1f,
-                /* yPrecision = */ 1f,
-                /* deviceId = */ 0,
-                /* edgeFlags = */ 0,
-                /* source = */ InputDeviceCompat.SOURCE_TOUCHSCREEN,
-                /* flags = */ 0
-            )
-
+        // Allows for non-valid numbers/Offsets to be passed along to Compose to
+        // test if it handles them properly (versus breaking here and we not knowing
+        // if Compose properly handles these values).
+        val x =
+            if (startOffset.isValid()) {
+                startOffset.x
+            } else {
+                Float.NaN
+            }
+        val y =
+            if (startOffset.isValid()) {
+                startOffset.y
+            } else {
+                Float.NaN
+            }
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            root.view.dispatchTouchEvent(motionEvent)
+            root.view.dispatchTouchEvent(obtainMotionEvent(downTime, currentTime, action, x, y))
         }
     }
 }
@@ -186,8 +182,8 @@ internal fun SemanticsNodeInteraction.performStylusLongPressAndDrag() {
     }
 }
 
-private fun SemanticsNodeInteraction.performStylusInput(
-    block: TouchInjectionScope.() -> Unit
+internal fun SemanticsNodeInteraction.performStylusInput(
+    block: HandwritingTestStylusInjectScope.() -> Unit
 ): SemanticsNodeInteraction {
     @OptIn(ExperimentalTestApi::class) invokeGlobalAssertions()
     tryPerformAccessibilityChecks()
@@ -196,3 +192,44 @@ private fun SemanticsNodeInteraction.performStylusInput(
     block.invoke(stylusInjectionScope)
     return this
 }
+
+@RequiresApi(Build.VERSION_CODES.N)
+internal fun assertNoStylusHoverIcon(view: View) {
+    val event = obtainMotionEvent(0L, 0L, MotionEvent.ACTION_HOVER_MOVE, 0f, 0f)
+    assertThat(view.onResolvePointerIcon(event, 0)).isNull()
+}
+
+@RequiresApi(Build.VERSION_CODES.N)
+internal fun assertStylusHandwritingHoverIcon(view: View) {
+    val event = obtainMotionEvent(0L, 0L, MotionEvent.ACTION_HOVER_MOVE, 0f, 0f)
+    assertThat(view.onResolvePointerIcon(event, 0))
+        .isEqualTo(PointerIcon.getSystemIcon(view.context, PointerIcon.TYPE_HANDWRITING))
+}
+
+private fun obtainMotionEvent(downTime: Long, eventTime: Long, action: Int, x: Float, y: Float) =
+    MotionEvent.obtain(
+        downTime,
+        eventTime,
+        action,
+        /* pointerCount= */ 1,
+        /* pointerProperties= */ arrayOf(
+            MotionEvent.PointerProperties().apply {
+                id = 0
+                toolType = MotionEvent.TOOL_TYPE_STYLUS
+            }
+        ),
+        /* pointerCoords= */ arrayOf(
+            MotionEvent.PointerCoords().apply {
+                this.x = x
+                this.y = y
+            }
+        ),
+        /* metaState= */ 0,
+        /* buttonState= */ 0,
+        /* xPrecision= */ 1f,
+        /* yPrecision= */ 1f,
+        /* deviceId= */ 0,
+        /* edgeFlags= */ 0,
+        /* source= */ InputDeviceCompat.SOURCE_STYLUS,
+        /* flags= */ 0
+    )

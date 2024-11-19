@@ -57,4 +57,6 @@
     <string name="range_end">"Range end"</string>
     <!-- Accessibility pane title for a snackbar -->
     <string name="snackbar_pane_title">Alert</string>
+    <!-- Item on toolbar menu. This action is used to request autofill. -->
+    <string name="autofill">Autofill</string>
 </resources>

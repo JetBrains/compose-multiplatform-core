@@ -16,9 +16,7 @@
 
 package androidx.core.telecom.test.utils
 
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Intent
 import android.media.AudioManager
 import android.net.Uri
 import android.os.Build
@@ -49,6 +47,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -414,8 +413,12 @@ class TestCallCallbackListener(private val scope: CoroutineScope) : ITestAppCont
     private val callAddedFlow: MutableSharedFlow<Pair<Int, String>> = MutableSharedFlow(replay = 1)
     private val isMutedFlow: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
+    companion object {
+        private val TAG: String = TestCallCallbackListener::class.java.simpleName.toString()
+    }
+
     override fun onGlobalMuteStateChanged(isMuted: Boolean) {
-        Log.i("TestCallCallbackListener", "onGlobalMuteStateChanged: isMuted: $isMuted")
+        Log.i(TAG, "onGlobalMuteStateChanged: isMuted: $isMuted")
         scope.launch { isMutedFlow.emit(isMuted) }
     }
 
@@ -463,9 +466,19 @@ class TestCallCallbackListener(private val scope: CoroutineScope) : ITestAppCont
         assertEquals("<LOCAL CALL SILENCE> never received", expectedState, result?.second)
     }
 
-    suspend fun waitForGlobalMuteState(isMuted: Boolean) {
-        val result = withTimeoutOrNull(5000) { isMutedFlow.filter { it == isMuted }.first() }
-        assertEquals("Global mute state never reached the expected state", isMuted, result)
+    suspend fun waitForGlobalMuteState(isMuted: Boolean, id: String = "") {
+        Log.i(TAG, "waitForGlobalMuteState: v=[$isMuted], id=[$id]")
+        val result =
+            withTimeoutOrNull(5000) {
+                isMutedFlow
+                    .filter {
+                        Log.i(TAG, "it=[$isMuted], isMuted=[$isMuted]")
+                        it == isMuted
+                    }
+                    .firstOrNull()
+            }
+        Log.i(TAG, "asserting id=[$id], result=$result")
+        assertEquals("Global Mute State {$id} never reached the expected state", isMuted, result)
     }
 
     suspend fun waitForKickParticipant(callId: String, expectedParticipant: Participant?) {
@@ -476,29 +489,5 @@ class TestCallCallbackListener(private val scope: CoroutineScope) : ITestAppCont
                     .first()
             }
         assertEquals("kick participant action never received", expectedParticipant, result?.second)
-    }
-}
-
-class TestMuteStateReceiver(private val scope: CoroutineScope) : BroadcastReceiver() {
-    private val isMutedFlow: MutableStateFlow<Boolean> = MutableStateFlow(false)
-
-    suspend fun waitForGlobalMuteState(isMuted: Boolean, id: String = "") {
-        val result =
-            withTimeoutOrNull(5000) {
-                isMutedFlow
-                    .filter {
-                        Log.i("TestMuteStateReceiver", "received $isMuted")
-                        it == isMuted
-                    }
-                    .first()
-            }
-        assertEquals("Global Mute State {$id} never reached the expected state", isMuted, result)
-    }
-
-    override fun onReceive(context: Context, intent: Intent) {
-        if (AudioManager.ACTION_MICROPHONE_MUTE_CHANGED == intent.action) {
-            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            scope.launch { isMutedFlow.emit(audioManager.isMicrophoneMute) }
-        }
     }
 }

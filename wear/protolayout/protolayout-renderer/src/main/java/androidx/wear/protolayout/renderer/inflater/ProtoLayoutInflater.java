@@ -109,7 +109,7 @@ import androidx.wear.protolayout.proto.AlignmentProto.VerticalAlignment;
 import androidx.wear.protolayout.proto.AlignmentProto.VerticalAlignmentProp;
 import androidx.wear.protolayout.proto.ColorProto.ColorProp;
 import androidx.wear.protolayout.proto.DimensionProto.ArcLineLength;
-import androidx.wear.protolayout.proto.DimensionProto.ArcSpacerLength;
+import androidx.wear.protolayout.proto.DimensionProto.AngularDimension;
 import androidx.wear.protolayout.proto.DimensionProto.ContainerDimension;
 import androidx.wear.protolayout.proto.DimensionProto.ContainerDimension.InnerCase;
 import androidx.wear.protolayout.proto.DimensionProto.DegreesProp;
@@ -2756,7 +2756,7 @@ public final class ProtoLayoutInflater {
                 new ArcLayout.LayoutParams(generateDefaultLayoutParams());
 
         if (spacer.hasAngularLength()) {
-            final ArcSpacerLength angularLength = spacer.getAngularLength();
+            final AngularDimension angularLength = spacer.getAngularLength();
             switch (angularLength.getInnerCase()) {
                 case DEGREES:
                     lengthDegrees = max(0, angularLength.getDegrees().getValue());
@@ -2787,6 +2787,10 @@ public final class ProtoLayoutInflater {
                                         .getParentProperties()
                                         .applyPendingChildLayoutParams(layoutParams));
                     }
+
+                case DP:
+                    // TODO: b/377325905 - ArcSpacer accepts Dp length.
+                    break;
 
                 case INNER_NOT_SET:
                     break;

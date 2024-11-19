@@ -139,7 +139,7 @@ class SupportedSurfaceCombinationTest {
     private val previewSize = Size(1280, 720)
     private val recordSize = Size(3840, 2160)
     private val maximumSize = Size(4032, 3024)
-    private val legacyVideoMaximumVideoSize = Size(1920, 1080)
+    private val legacyVideoMaximumSize = Size(1920, 1080)
     private val mod16Size = Size(960, 544)
     private val profileUhd =
         EncoderProfilesUtil.createFakeEncoderProfilesProxy(recordSize.width, recordSize.height)
@@ -186,6 +186,7 @@ class SupportedSurfaceCombinationTest {
     private val mockEncoderProfilesAdapter: EncoderProfilesProviderAdapter = mock()
     private val mockEncoderProfilesProxy: EncoderProfilesProxy = mock()
     private val mockVideoProfileProxy: VideoProfileProxy = mock()
+    private val mockEmptyEncoderProfilesAdapter: EncoderProfilesProviderAdapter = mock()
 
     @Before
     fun setUp() {
@@ -198,6 +199,9 @@ class SupportedSurfaceCombinationTest {
         whenever(mockEncoderProfilesProxy.videoProfiles).thenReturn(listOf(mockVideoProfileProxy))
         whenever(mockEncoderProfilesAdapter.getAll(ArgumentMatchers.anyInt()))
             .thenReturn(mockEncoderProfilesProxy)
+        whenever(mockEmptyEncoderProfilesAdapter.hasProfile(ArgumentMatchers.anyInt()))
+            .thenReturn(false)
+        whenever(mockEmptyEncoderProfilesAdapter.getAll(ArgumentMatchers.anyInt())).thenReturn(null)
         cameraCoordinator = FakeCameraCoordinator()
     }
 
@@ -3033,7 +3037,23 @@ class SupportedSurfaceCombinationTest {
 
         // Checks the determined RECORD size
         assertThat(supportedSurfaceCombination.surfaceSizeDefinition.recordSize)
-            .isEqualTo(legacyVideoMaximumVideoSize)
+            .isEqualTo(legacyVideoMaximumSize)
+    }
+
+    @Test
+    fun determineRecordSizeFromStreamConfigurationMap_intExternalCameraId() {
+        // Setup camera with external integer camera Id
+        setupCamera(cameraId = CameraId("101"))
+        val supportedSurfaceCombination =
+            SupportedSurfaceCombination(
+                context,
+                fakeCameraMetadata,
+                mockEmptyEncoderProfilesAdapter
+            )
+
+        // Checks the determined RECORD size
+        assertThat(supportedSurfaceCombination.surfaceSizeDefinition.recordSize)
+            .isEqualTo(legacyVideoMaximumSize)
     }
 
     @Test

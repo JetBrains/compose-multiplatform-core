@@ -30,6 +30,8 @@ import androidx.core.telecom.internal.CapabilityExchangeRepository
 import androidx.core.telecom.util.ExperimentalAppActions
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.onCompletion
@@ -176,7 +178,16 @@ internal class ExtensionInitializationScopeImpl(
         Log.i(LOG_TAG, "handleCapabilityExchangeEvent: received CE request, v=#$version")
         // Create a child scope for setting up and running the extensions so that we can cancel
         // the child scope when the remote ICS disconnects without affecting the parent scope.
-        val connectionScope = CoroutineScope(coroutineContext)
+        val connectionScope = CoroutineScope(coroutineContext + SupervisorJob())
+        capExchange
+            .asBinder()
+            .linkToDeath(
+                {
+                    Log.i(LOG_TAG, "handleCapabilityExchangeEvent: remote died, cleaning scope")
+                    connectionScope.cancel("remote process died")
+                },
+                0 /* flags */
+            )
         // Create a new repository for each new connection
         val callbackRepository = CapabilityExchangeRepository(connectionScope)
         val capabilities = extensionCreators.map { it.invoke(callbackRepository) }

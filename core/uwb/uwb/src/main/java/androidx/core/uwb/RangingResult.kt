@@ -33,4 +33,7 @@ public abstract class RangingResult internal constructor() {
 
     /** A ranging result with peer disconnected status update. */
     public class RangingResultPeerDisconnected(override val device: UwbDevice) : RangingResult()
+
+    /** A ranging result when a ranging session is initialized with peer device. */
+    public class RangingResultInitialized(override val device: UwbDevice) : RangingResult()
 }

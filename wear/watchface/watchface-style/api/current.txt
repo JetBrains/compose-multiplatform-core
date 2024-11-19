@@ -138,6 +138,34 @@ package androidx.wear.watchface.style {
     method public androidx.wear.watchface.style.UserStyleSetting.BooleanUserStyleSetting.Builder setWatchFaceEditorData(androidx.wear.watchface.style.UserStyleSetting.WatchFaceEditorData watchFaceEditorData);
   }
 
+  @RequiresApi(34) public static final class UserStyleSetting.ColorUserStyleSetting extends androidx.wear.watchface.style.UserStyleSetting {
+  }
+
+  public static final class UserStyleSetting.ColorUserStyleSetting.Builder {
+    method public androidx.wear.watchface.style.UserStyleSetting.ColorUserStyleSetting build();
+    method public androidx.wear.watchface.style.UserStyleSetting.ColorUserStyleSetting.Builder setDefaultOption(androidx.wear.watchface.style.UserStyleSetting.ColorUserStyleSetting.ColorOption defaultOption);
+    method public androidx.wear.watchface.style.UserStyleSetting.ColorUserStyleSetting.Builder setIcon(android.graphics.drawable.Icon icon);
+    method public androidx.wear.watchface.style.UserStyleSetting.ColorUserStyleSetting.Builder setIcon(kotlin.jvm.functions.Function0<android.graphics.drawable.Icon?> iconProvider);
+    method public androidx.wear.watchface.style.UserStyleSetting.ColorUserStyleSetting.Builder setWatchFaceEditorData(androidx.wear.watchface.style.UserStyleSetting.WatchFaceEditorData watchFaceEditorData);
+  }
+
+  @RequiresApi(34) public static final class UserStyleSetting.ColorUserStyleSetting.ColorOption extends androidx.wear.watchface.style.UserStyleSetting.Option {
+    method public java.util.List<java.lang.Integer> getColors();
+    method public CharSequence getDisplayName();
+    method public CharSequence getScreenReaderName();
+    method public androidx.wear.watchface.style.UserStyleSetting.WatchFaceEditorData? getWatchFaceEditorData();
+    property @ColorInt public final java.util.List<java.lang.Integer> colors;
+    property public final CharSequence displayName;
+    property public final CharSequence screenReaderName;
+    property public final androidx.wear.watchface.style.UserStyleSetting.WatchFaceEditorData? watchFaceEditorData;
+  }
+
+  public static final class UserStyleSetting.ColorUserStyleSetting.ColorOption.Builder {
+    ctor public UserStyleSetting.ColorUserStyleSetting.ColorOption.Builder(androidx.wear.watchface.style.UserStyleSetting.Option.Id id, android.content.res.Resources resources, @StringRes int displayNameResourceId, @StringRes int screenReaderNameResourceId, @ColorInt java.util.List<java.lang.Integer> colors);
+    method public androidx.wear.watchface.style.UserStyleSetting.ColorUserStyleSetting.ColorOption build();
+    method public androidx.wear.watchface.style.UserStyleSetting.ColorUserStyleSetting.ColorOption.Builder setWatchFaceEditorData(androidx.wear.watchface.style.UserStyleSetting.WatchFaceEditorData watchFaceEditorData);
+  }
+
   public static final class UserStyleSetting.Companion {
   }
 

@@ -16,36 +16,38 @@
 
 package androidx.room.compiler.codegen.kotlin
 
-import androidx.room.compiler.codegen.KFunSpec
 import androidx.room.compiler.codegen.KPropertySpec
 import androidx.room.compiler.codegen.KPropertySpecBuilder
 import androidx.room.compiler.codegen.XAnnotationSpec
 import androidx.room.compiler.codegen.XCodeBlock
 import androidx.room.compiler.codegen.XPropertySpec
+import androidx.room.compiler.codegen.XSpec
+import androidx.room.compiler.codegen.XTypeName
+import androidx.room.compiler.codegen.impl.XAnnotationSpecImpl
+import androidx.room.compiler.codegen.impl.XCodeBlockImpl
 
-internal class KotlinPropertySpec(internal val actual: KPropertySpec) :
-    KotlinLang(), XPropertySpec {
+internal class KotlinPropertySpec(
+    override val name: String,
+    override val type: XTypeName,
+    internal val actual: KPropertySpec
+) : XSpec(), XPropertySpec {
 
-    override val name: String = actual.name
-
-    internal class Builder(internal val actual: KPropertySpecBuilder) :
-        KotlinLang(), XPropertySpec.Builder {
+    internal class Builder(
+        private val name: String,
+        private val type: XTypeName,
+        internal val actual: KPropertySpecBuilder
+    ) : XSpec.Builder(), XPropertySpec.Builder {
 
         override fun addAnnotation(annotation: XAnnotationSpec) = apply {
-            require(annotation is KotlinAnnotationSpec)
-            actual.addAnnotation(annotation.actual)
+            require(annotation is XAnnotationSpecImpl)
+            actual.addAnnotation(annotation.kotlin.actual)
         }
 
         override fun initializer(initExpr: XCodeBlock) = apply {
-            require(initExpr is KotlinCodeBlock)
-            actual.initializer(initExpr.actual)
+            require(initExpr is XCodeBlockImpl)
+            actual.initializer(initExpr.kotlin.actual)
         }
 
-        override fun getter(code: XCodeBlock) = apply {
-            require(code is KotlinCodeBlock)
-            actual.getter(KFunSpec.getterBuilder().addCode(code.actual).build())
-        }
-
-        override fun build() = KotlinPropertySpec(actual.build())
+        override fun build() = KotlinPropertySpec(name, type, actual.build())
     }
 }
