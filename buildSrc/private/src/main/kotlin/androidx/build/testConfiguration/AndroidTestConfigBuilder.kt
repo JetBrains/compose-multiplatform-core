@@ -128,12 +128,16 @@ class ConfigBuilder {
                 InstrumentationArg("androidx.benchmark.output.payload.testApkSha256", testApkSha256)
             )
             if (isMacrobenchmark) {
-                instrumentationArgsList.add(
-                    InstrumentationArg(
-                        "androidx.benchmark.output.payload.appApkSha256",
-                        checkNotNull(appApkSha256) {
-                            "app apk sha should be provided for macrobenchmarks."
-                        }
+                instrumentationArgsList.addAll(
+                    listOf(
+                        InstrumentationArg(
+                            "androidx.benchmark.output.payload.appApkSha256",
+                            checkNotNull(appApkSha256) {
+                                "app apk sha should be provided for macrobenchmarks."
+                            }
+                        ),
+                        // suppress BaselineProfileRule in CI to save time
+                        InstrumentationArg("androidx.benchmark.enabledRules", "Macrobenchmark")
                     )
                 )
             }

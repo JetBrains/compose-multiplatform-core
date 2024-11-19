@@ -16,6 +16,7 @@
 
 package androidx.room.compiler.processing.ksp
 
+import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.processing.XAnnotated
 import androidx.room.compiler.processing.XMemberContainer
 import androidx.room.compiler.processing.XType
@@ -36,8 +37,11 @@ internal class KspTypeParameterElement(
         get() = declaration.name.asString()
 
     override val typeVariableName: TypeVariableName by lazy {
-        TypeVariableName.get(name, *bounds.map { it.typeName }.toTypedArray())
+        asTypeVariableName().java as TypeVariableName
     }
+
+    override fun asTypeVariableName() =
+        XTypeName.getTypeVariableName(name, bounds.map { it.asTypeName() })
 
     override val enclosingElement: KspMemberContainer by lazy {
         declaration.requireEnclosingMemberContainer(env)

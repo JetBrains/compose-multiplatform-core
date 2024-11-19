@@ -39,6 +39,7 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -56,7 +57,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
-private val listCats =
+internal val listCats =
     listOf(
         Cat("YT", "", R.drawable.yt_profile),
         Cat("Waffle", "", R.drawable.waffle),
@@ -74,9 +75,9 @@ private val shapeForSharedElement = RoundedCornerShape(16.dp)
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Preview
 @Composable
-private fun AnimatedVisibilitySharedElementExample() {
+fun SharedElementInLazyStaggeredGridDemo() {
     var selectedCat by remember { mutableStateOf<Cat?>(null) }
-
+    val state = rememberLazyStaggeredGridState(0)
     SharedTransitionLayout(modifier = Modifier.fillMaxSize()) {
         AnimatedContent(selectedCat) {
             if (it == null) {
@@ -85,6 +86,7 @@ private fun AnimatedVisibilitySharedElementExample() {
                         Modifier.fillMaxSize()
                             .background(Color.LightGray.copy(alpha = 0.5f))
                             .drawWithContent { drawContent() },
+                    state = state,
                     columns = StaggeredGridCells.Adaptive(150.dp),
                     verticalItemSpacing = 8.dp,
                     horizontalArrangement = Arrangement.run { spacedBy(8.dp) }

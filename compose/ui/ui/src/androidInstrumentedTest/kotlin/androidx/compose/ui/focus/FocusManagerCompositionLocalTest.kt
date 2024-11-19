@@ -33,6 +33,7 @@ import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import org.junit.Ignore
 import org.junit.Rule
@@ -48,6 +49,7 @@ class FocusManagerCompositionLocalTest {
     private lateinit var inputModeManager: InputModeManager
     private val focusStates = mutableListOf<FocusState>()
 
+    @SdkSuppress(minSdkVersion = 28)
     @Test
     fun clearFocus_singleLayout_focusIsRestoredAfterClear() {
         // Arrange.
@@ -164,6 +166,7 @@ class FocusManagerCompositionLocalTest {
         }
     }
 
+    @SdkSuppress(minSdkVersion = 28)
     @Test
     fun releaseFocus_whenOwnerFocusIsCleared() {
         // Arrange.
@@ -236,6 +239,7 @@ class FocusManagerCompositionLocalTest {
         }
     }
 
+    @SdkSuppress(minSdkVersion = 28)
     @Test
     fun clearFocus_whenRootIsActiveParent() {
         // Arrange.
@@ -301,6 +305,7 @@ class FocusManagerCompositionLocalTest {
         }
     }
 
+    @SdkSuppress(minSdkVersion = 28)
     @Test
     fun clearFocus_forced_whenHierarchyHasCapturedFocus() {
         // Arrange.

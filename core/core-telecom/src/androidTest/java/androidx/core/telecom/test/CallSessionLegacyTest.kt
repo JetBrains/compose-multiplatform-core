@@ -40,7 +40,10 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -53,6 +56,72 @@ class CallSessionLegacyTest : BaseTelecomTest() {
     @After
     fun tearDown() {
         CallEndpointUuidTracker.endSession(mSessionId)
+    }
+
+    /**
+     * Verify that if the MAC address is not set for the [CallEndpointCompat], the name is used
+     * instead to determine if the two devices are the same
+     */
+    @SdkSuppress(minSdkVersion = VERSION_CODES.P)
+    @SmallTest
+    @Test
+    fun testMatchingOnEndpointName() {
+        setUpBackwardsCompatTest()
+        runBlocking {
+            // Represent a BluetoothDevice since the object cannot be mocked
+            val btDeviceName = "Pixel Buds"
+            val btDeviceAddress = "abcd"
+            // Mirror the platform CallEndpointCompat that is created in the jetpack layer
+            val endpoint =
+                CallEndpointCompat(
+                    btDeviceName,
+                    CallEndpointCompat.TYPE_BLUETOOTH,
+                    ParcelUuid.fromString(UUID.randomUUID().toString())
+                )
+            // verify the matching function evaluates that as equal even though the MAC
+            // address was not set in the CallEndpointCompat
+            assertTrue(
+                CallSessionLegacy.Api28PlusImpl.bluetoothDeviceMatchesEndpoint(
+                    btName = btDeviceName,
+                    btAddress = btDeviceAddress,
+                    endpoint
+                )
+            )
+        }
+    }
+
+    /**
+     * Verify that if the MAC address is populated for two devices but the name is the same, the
+     * devices are not equal
+     */
+    @SdkSuppress(minSdkVersion = VERSION_CODES.P)
+    @SmallTest
+    @Test
+    fun testMatchingOnEndpointNameWithDifferentAddresses() {
+        setUpBackwardsCompatTest()
+        runBlocking {
+            // Represent a BluetoothDevice since the object cannot be mocked
+            val btDeviceName = "Pixel Buds"
+            val btDeviceAddress = "abcd"
+            // create an endpoint with the same name but DIFFERENT MAC addresses
+            val endpoint =
+                CallEndpointCompat(
+                    btDeviceName,
+                    CallEndpointCompat.TYPE_BLUETOOTH,
+                    ParcelUuid.fromString(UUID.randomUUID().toString())
+                )
+            endpoint.mMackAddress = "1234"
+            // assert different MAC addresses
+            assertNotEquals(btDeviceAddress, endpoint.mMackAddress)
+            // assert the endpoints do not match
+            assertFalse(
+                CallSessionLegacy.Api28PlusImpl.bluetoothDeviceMatchesEndpoint(
+                    btName = btDeviceName,
+                    btAddress = btDeviceAddress,
+                    endpoint
+                )
+            )
+        }
     }
 
     /**

@@ -70,4 +70,11 @@ public interface LimitConfig {
      * from being overwhelmed by a single app.
      */
     int getMaxSuggestionCount();
+
+
+    /**
+     * Returns the maximum number of {@link android.os.ParcelFileDescriptor} that a single app could
+     * open for read and write blob from AppSearch.
+     */
+    int getMaxOpenBlobCount();
 }

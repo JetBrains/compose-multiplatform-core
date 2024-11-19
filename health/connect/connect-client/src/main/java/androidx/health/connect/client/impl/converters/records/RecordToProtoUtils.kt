@@ -23,6 +23,7 @@ import androidx.health.connect.client.records.ExerciseRoute
 import androidx.health.connect.client.records.ExerciseSegment
 import androidx.health.connect.client.records.InstantaneousRecord
 import androidx.health.connect.client.records.IntervalRecord
+import androidx.health.connect.client.records.SkinTemperatureRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.DeviceTypes
@@ -89,6 +90,14 @@ internal fun Device.toProto(): DataProto.Device {
             obj.model?.let { setModel(it) }
             setType(DEVICE_TYPE_INT_TO_STRING_MAP.getOrDefault(obj.type, DeviceTypes.UNKNOWN))
         }
+        .build()
+}
+
+internal fun SkinTemperatureRecord.Delta.toProto(): DataProto.SubTypeDataValue {
+    return DataProto.SubTypeDataValue.newBuilder()
+        .setStartTimeMillis(time.toEpochMilli())
+        .setEndTimeMillis(time.toEpochMilli())
+        .putValues("delta", doubleVal(delta.inCelsius))
         .build()
 }
 

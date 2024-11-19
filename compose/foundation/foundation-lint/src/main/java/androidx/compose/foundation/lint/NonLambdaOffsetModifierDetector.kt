@@ -166,10 +166,8 @@ private fun UDeclaration.isDelegateOfState(): Boolean {
     val ktProperty = localVariable?.sourcePsi as? KtProperty ?: return false
     val delegateExpression =
         ktProperty.delegate?.expression.toUElement() as? UExpression ?: return false
-    val cleanCallExpression =
-        (delegateExpression.skipParenthesizedExprDown() as? UCallExpression) ?: return false
-
-    return cleanCallExpression.returnType?.inheritsFrom(Names.Runtime.State) ?: false
+    val expressionType = delegateExpression.skipParenthesizedExprDown().getExpressionType()
+    return expressionType?.inheritsFrom(Names.Runtime.State) ?: false
 }
 
 private val ModifierClassifier = KmClassifier.Class(Names.Ui.Modifier.kmClassName)

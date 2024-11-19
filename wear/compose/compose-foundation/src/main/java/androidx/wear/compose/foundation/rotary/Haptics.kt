@@ -20,7 +20,10 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
+import android.view.InputDevice
+import android.view.ScrollFeedbackProvider
 import android.view.View
+import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.runtime.Composable
@@ -29,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalView
 import com.google.wear.input.WearHapticFeedbackConstants
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
@@ -43,13 +47,13 @@ import kotlinx.coroutines.withContext
 internal interface RotaryHapticHandler {
 
     /** Handles haptics when scroll is used */
-    fun handleScrollHaptic(timestamp: Long, deltaInPixels: Float)
+    fun handleScrollHaptic(timestamp: Long, deltaInPixels: Float, inputDeviceId: Int, axis: Int)
 
     /** Handles haptics when scroll with snap is used */
-    fun handleSnapHaptic(timestamp: Long, deltaInPixels: Float)
+    fun handleSnapHaptic(timestamp: Long, deltaInPixels: Float, inputDeviceId: Int, axis: Int)
 
     /** Handles haptics when edge of the list is reached */
-    fun handleLimitHaptic(isStart: Boolean)
+    fun handleLimitHaptic(isStart: Boolean, inputDeviceId: Int, axis: Int)
 }
 
 @Composable
@@ -58,11 +62,10 @@ internal fun rememberRotaryHapticHandler(
     hapticsEnabled: Boolean
 ): RotaryHapticHandler =
     if (hapticsEnabled) {
-        // TODO(b/319103162): Add platform haptics once AndroidX updates to Android VanillaIceCream
-        rememberCustomRotaryHapticHandler(scrollableState)
-    } else {
-        rememberDisabledRotaryHapticHandler()
-    }
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+            rememberCustomRotaryHapticHandler(scrollableState)
+        else rememberPlatformRotaryHapticHandler(scrollableState)
+    } else rememberDisabledRotaryHapticHandler()
 
 /**
  * Remembers custom rotary haptic handler.
@@ -178,9 +181,14 @@ private class CustomRotaryHapticHandler(
     private var currScrollPosition = 0f
     private var prevHapticsPosition = 0f
 
-    override fun handleScrollHaptic(timestamp: Long, deltaInPixels: Float) {
+    override fun handleScrollHaptic(
+        timestamp: Long,
+        deltaInPixels: Float,
+        inputDeviceId: Int,
+        axis: Int
+    ) {
         if (scrollableState.reachedTheLimit(deltaInPixels)) {
-            handleLimitHaptic(scrollableState.canScrollBackward)
+            handleLimitHaptic(scrollableState.canScrollBackward, inputDeviceId, axis)
         } else {
             overscrollHapticTriggered = false
             currScrollPosition += deltaInPixels
@@ -193,16 +201,21 @@ private class CustomRotaryHapticHandler(
         }
     }
 
-    override fun handleSnapHaptic(timestamp: Long, deltaInPixels: Float) {
+    override fun handleSnapHaptic(
+        timestamp: Long,
+        deltaInPixels: Float,
+        inputDeviceId: Int,
+        axis: Int
+    ) {
         if (scrollableState.reachedTheLimit(deltaInPixels)) {
-            handleLimitHaptic(scrollableState.canScrollBackward)
+            handleLimitHaptic(scrollableState.canScrollBackward, inputDeviceId, axis)
         } else {
             overscrollHapticTriggered = false
             hapticsChannel.trySend(RotaryHapticsType.ScrollItemFocus)
         }
     }
 
-    override fun handleLimitHaptic(isStart: Boolean) {
+    override fun handleLimitHaptic(isStart: Boolean, inputDeviceId: Int, axis: Int) {
         if (!overscrollHapticTriggered) {
             hapticsChannel.trySend(RotaryHapticsType.ScrollLimit)
             overscrollHapticTriggered = true
@@ -240,17 +253,82 @@ internal value class RotaryHapticsType(private val type: Int) {
 @Composable
 private fun rememberDisabledRotaryHapticHandler(): RotaryHapticHandler = remember {
     object : RotaryHapticHandler {
-        override fun handleScrollHaptic(timestamp: Long, deltaInPixels: Float) {
+        override fun handleScrollHaptic(
+            timestamp: Long,
+            deltaInPixels: Float,
+            inputDeviceId: Int,
+            axis: Int
+        ) {
             // Do nothing
         }
 
-        override fun handleSnapHaptic(timestamp: Long, deltaInPixels: Float) {
+        override fun handleSnapHaptic(
+            timestamp: Long,
+            deltaInPixels: Float,
+            inputDeviceId: Int,
+            axis: Int
+        ) {
             // Do nothing
         }
 
-        override fun handleLimitHaptic(isStart: Boolean) {
+        override fun handleLimitHaptic(isStart: Boolean, inputDeviceId: Int, axis: Int) {
             // Do nothing
         }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+@Composable
+private fun rememberPlatformRotaryHapticHandler(
+    scrollableState: ScrollableState,
+): RotaryHapticHandler {
+    val view = LocalView.current
+    return remember(scrollableState, view) {
+        PlatformRotaryHapticHandler(scrollableState, ScrollFeedbackProvider.createProvider(view))
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+@VisibleForTesting
+internal class PlatformRotaryHapticHandler(
+    private val scrollableState: ScrollableState,
+    private val scrollFeedbackProvider: ScrollFeedbackProvider,
+) : RotaryHapticHandler {
+
+    override fun handleScrollHaptic(
+        timestamp: Long,
+        deltaInPixels: Float,
+        inputDeviceId: Int,
+        axis: Int
+    ) {
+        if (scrollableState.reachedTheLimit(deltaInPixels)) {
+            handleLimitHaptic(scrollableState.canScrollBackward, inputDeviceId, axis)
+        } else {
+            scrollFeedbackProvider.onScrollProgress(
+                inputDeviceId,
+                InputDevice.SOURCE_ROTARY_ENCODER,
+                axis,
+                deltaInPixels.roundToInt()
+            )
+        }
+    }
+
+    override fun handleSnapHaptic(
+        timestamp: Long,
+        deltaInPixels: Float,
+        inputDeviceId: Int,
+        axis: Int
+    ) {
+        scrollFeedbackProvider.onSnapToItem(inputDeviceId, InputDevice.SOURCE_ROTARY_ENCODER, axis)
+    }
+
+    override fun handleLimitHaptic(isStart: Boolean, inputDeviceId: Int, axis: Int) {
+        scrollFeedbackProvider.onScrollLimit(
+            inputDeviceId,
+            InputDevice.SOURCE_ROTARY_ENCODER,
+            axis,
+            isStart
+        )
     }
 }
 

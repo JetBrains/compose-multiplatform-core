@@ -548,7 +548,7 @@ constructor(
 
 /** Helper function for component typography tokens. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-private fun Typography.fromToken(value: TypographyKeyTokens): TextStyle {
+internal fun Typography.fromToken(value: TypographyKeyTokens): TextStyle {
     return when (value) {
         TypographyKeyTokens.DisplayLarge -> displayLarge
         TypographyKeyTokens.DisplayMedium -> displayMedium

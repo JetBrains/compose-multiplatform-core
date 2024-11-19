@@ -76,9 +76,9 @@ internal fun FocusTargetNode.pinFocusedChild(): PinnedHandle? {
  * group, it stores a reference to the item that was previously focused. Then when focus re-enters
  * this focus group, it restores focus to the previously focused item.
  *
- * @param fallback A [FocusRequester] that is used when focus restoration fails to allow customizing
- *   the initially focused item. The default value of [FocusRequester.Default] chooses the default
- *   focusable item.
+ * @param fallback A [FocusRequester] that is used when focus restoration fails to restore the
+ *   initially focused item. For example, this might happen if the item is not available to be
+ *   focused. The default value of [FocusRequester.Default] chooses the default focusable item.
  * @sample androidx.compose.ui.samples.FocusRestorerSample
  * @sample androidx.compose.ui.samples.FocusRestorerCustomFallbackSample
  */

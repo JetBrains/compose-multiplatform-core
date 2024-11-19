@@ -24,7 +24,6 @@ import androidx.core.telecom.internal.ParticipantActionsRemote
 import androidx.core.telecom.internal.ParticipantStateListener
 import androidx.core.telecom.util.ExperimentalAppActions
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,6 +33,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 /** Repository containing the callbacks associated with the Participant extension state changes */
 @ExperimentalAppActions
@@ -179,7 +179,7 @@ internal class ParticipantExtensionRemoteImpl(
     private suspend fun connectActionsToRemote(
         negotiatedCapability: Capability,
         remote: CapabilityExchangeListenerRemote
-    ): ParticipantActionsRemote? = suspendCoroutine { continuation ->
+    ): ParticipantActionsRemote? = suspendCancellableCoroutine { continuation ->
         val participantStateListener =
             ParticipantStateListener(
                 updateParticipants = { newParticipants ->

@@ -67,11 +67,12 @@ message ArcLineLength {
   }
 }
 
-// The length of an ArcSpacer.
-message ArcSpacerLength {
+// The length of an arc element.
+message AngularDimension {
   oneof inner {
     DegreesProp degrees = 1;
     ExpandedAngularDimensionProp expanded_angular_dimension = 2;
+    DpProp dp = 3;
   }
 }
 

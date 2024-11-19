@@ -211,8 +211,8 @@ class PredictiveBackHandlerTestApi {
         // but since we idle here, we can cancel the callback channel and keep from completing
         rule.runOnIdle { assertThat(started).isTrue() }
         dispatcher.api34Complete()
-        rule.runOnIdle { assertThat(result).isEmpty() }
-        rule.runOnIdle { assertThat(cancelled).isTrue() }
+        rule.runOnIdle { assertThat(result).isEqualTo(listOf("onBack")) }
+        rule.runOnIdle { assertThat(cancelled).isFalse() }
     }
 
     fun testPredictiveBackHandlerDisabledAfterStart() {

@@ -39,17 +39,17 @@ class ArtMetricTest {
             apiLevel = 35,
             artMainlineVersion = null, // unknown, but not important on 35
             expectedJit = SubMetric(177, 433.488508),
-            expectedClassInit = SubMetric(2013, 147.052337),
+            expectedClassLoad = SubMetric(2013, 147.052337),
             expectedClassVerify = SubMetric(0, 0.0)
         )
 
     @Test
-    fun filterOutClassInit() =
+    fun filterOutClassLoad() =
         verifyArtMetrics(
             apiLevel = 31,
-            artMainlineVersion = DeviceInfo.ART_MAINLINE_MIN_VERSION_CLASS_INIT_TRACING - 1,
+            artMainlineVersion = DeviceInfo.ART_MAINLINE_MIN_VERSION_CLASS_LOAD_TRACING - 1,
             expectedJit = SubMetric(177, 433.488508),
-            expectedClassInit = null, // drops class init
+            expectedClassLoad = null, // drops class load
             expectedClassVerify = SubMetric(0, 0.0)
         )
 
@@ -57,9 +57,9 @@ class ArtMetricTest {
     fun oldVersionMainline() =
         verifyArtMetrics(
             apiLevel = 31,
-            artMainlineVersion = DeviceInfo.ART_MAINLINE_MIN_VERSION_CLASS_INIT_TRACING,
+            artMainlineVersion = DeviceInfo.ART_MAINLINE_MIN_VERSION_CLASS_LOAD_TRACING,
             expectedJit = SubMetric(177, 433.488508),
-            expectedClassInit = SubMetric(2013, 147.052337),
+            expectedClassLoad = SubMetric(2013, 147.052337),
             expectedClassVerify = SubMetric(0, 0.0)
         )
 
@@ -68,7 +68,7 @@ class ArtMetricTest {
             apiLevel: Int,
             artMainlineVersion: Long?,
             expectedJit: SubMetric,
-            expectedClassInit: SubMetric?,
+            expectedClassLoad: SubMetric?,
             expectedClassVerify: SubMetric
         ) {
             val tracePath =
@@ -107,12 +107,12 @@ class ArtMetricTest {
                     Metric.Measurement("artVerifyClassSumMs", expectedClassVerify.sum),
                     Metric.Measurement("artVerifyClassCount", expectedClassVerify.count.toDouble()),
                 ) +
-                    if (expectedClassInit != null) {
+                    if (expectedClassLoad != null) {
                         listOf(
-                            Metric.Measurement("artClassInitSumMs", expectedClassInit.sum),
+                            Metric.Measurement("artClassLoadSumMs", expectedClassLoad.sum),
                             Metric.Measurement(
-                                "artClassInitCount",
-                                expectedClassInit.count.toDouble()
+                                "artClassLoadCount",
+                                expectedClassLoad.count.toDouble()
                             ),
                         )
                     } else {

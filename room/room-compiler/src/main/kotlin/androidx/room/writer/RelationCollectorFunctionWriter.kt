@@ -18,8 +18,10 @@ package androidx.room.writer
 
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.codegen.XFunSpec
 import androidx.room.compiler.codegen.XMemberName.Companion.packageMember
+import androidx.room.compiler.codegen.XName
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.ext.AndroidTypeNames
 import androidx.room.ext.CollectionTypeNames
@@ -85,14 +87,14 @@ class RelationCollectorFunctionWriter(
             beginControlFlow(
                     "if (%L > %L)",
                     if (usingLongSparseArray) {
-                        XCodeBlock.of(language, "%L.size()", PARAM_MAP_VARIABLE)
+                        XCodeBlock.of("%L.size()", PARAM_MAP_VARIABLE)
                     } else {
-                        CollectionsSizeExprCode(language, PARAM_MAP_VARIABLE)
+                        CollectionsSizeExprCode(PARAM_MAP_VARIABLE)
                     },
                     if (useDriverApi) {
                         "999"
                     } else {
-                        XCodeBlock.of(language, "%T.MAX_BIND_PARAMETER_CNT", RoomTypeNames.ROOM_DB)
+                        XCodeBlock.of("%T.MAX_BIND_PARAMETER_CNT", RoomTypeNames.ROOM_DB)
                     }
                 )
                 .apply {
@@ -105,9 +107,9 @@ class RelationCollectorFunctionWriter(
         }
         builder.apply {
             if (useDriverApi) {
-                addParameter(SQLiteDriverTypeNames.CONNECTION, PARAM_CONNECTION_VARIABLE)
+                addParameter(PARAM_CONNECTION_VARIABLE, SQLiteDriverTypeNames.CONNECTION)
             }
-            addParameter(collector.mapTypeName, PARAM_MAP_VARIABLE)
+            addParameter(PARAM_MAP_VARIABLE, collector.mapTypeName)
             addCode(scope.generate())
         }
     }
@@ -141,7 +143,6 @@ class RelationCollectorFunctionWriter(
                 typeName = AndroidTypeNames.CURSOR,
                 assignExpr =
                     XCodeBlock.of(
-                        language,
                         "%M(%N, %L, %L, %L)",
                         RoomMemberNames.DB_UTIL_QUERY,
                         DaoWriter.DB_PROPERTY_NAME,
@@ -244,7 +245,7 @@ class RelationCollectorFunctionWriter(
                 addLocalVariable(
                     name = KEY_SET_VARIABLE,
                     typeName = keySetType,
-                    assignExpr = MapKeySetExprCode(language, PARAM_MAP_VARIABLE)
+                    assignExpr = MapKeySetExprCode(PARAM_MAP_VARIABLE)
                 )
                 beginControlFlow("if (%L.isEmpty())", KEY_SET_VARIABLE)
             }
@@ -262,10 +263,9 @@ class RelationCollectorFunctionWriter(
                     usingLongSparseArray -> it.packageMember("recursiveFetchLongSparseArray")
                     usingArrayMap -> it.packageMember("recursiveFetchArrayMap")
                     else ->
-                        when (language) {
-                            CodeLanguage.JAVA -> it.packageMember("recursiveFetchHashMap")
-                            CodeLanguage.KOTLIN -> it.packageMember("recursiveFetchMap")
-                        }
+                        it.packageMember(
+                            XName.of(java = "recursiveFetchHashMap", kotlin = "recursiveFetchMap")
+                        )
                 }
             }
         val paramName = scope.getTmpVar("_tmpMap")
@@ -287,17 +287,16 @@ class RelationCollectorFunctionWriter(
                             val recursiveCall =
                                 if (useDriverApi) {
                                     XCodeBlock.of(
-                                        language,
                                         "%L(%L, %L)",
                                         methodName,
                                         PARAM_CONNECTION_VARIABLE,
                                         paramName
                                     )
                                 } else {
-                                    XCodeBlock.of(language, "%L(%L)", methodName, paramName)
+                                    XCodeBlock.of("%L(%L)", methodName, paramName)
                                 }
                             addStatement("%L", recursiveCall)
-                            if (language == CodeLanguage.JAVA) {
+                            applyTo(CodeLanguage.JAVA) {
                                 addStatement("return %T.INSTANCE", KotlinTypeNames.UNIT)
                             }
                         }

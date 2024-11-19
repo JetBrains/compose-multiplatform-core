@@ -161,6 +161,7 @@ package androidx.camera.video {
     method public androidx.camera.core.DynamicRange getDynamicRange();
     method public int getMirrorMode();
     method public T getOutput();
+    method public androidx.camera.core.ResolutionInfo? getResolutionInfo();
     method public android.util.Range<java.lang.Integer!> getTargetFrameRate();
     method public int getTargetRotation();
     method public boolean isVideoStabilizationEnabled();

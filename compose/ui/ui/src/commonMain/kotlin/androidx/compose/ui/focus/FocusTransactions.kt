@@ -30,23 +30,6 @@ import androidx.compose.ui.node.Nodes.FocusTarget
 import androidx.compose.ui.node.nearestAncestor
 import androidx.compose.ui.node.observeReads
 import androidx.compose.ui.node.requireOwner
-import androidx.compose.ui.util.trace
-
-internal fun FocusTargetNode.requestFocus(focusDirection: FocusDirection): Boolean? {
-    trace("FocusTransactions:requestFocus") {
-        if (!fetchFocusProperties().canFocus) return false
-        return requireTransactionManager().withNewTransaction(
-            onCancelled = { if (node.isAttached) dispatchFocusCallbacks() }
-        ) {
-            when (performCustomRequestFocus(focusDirection)) {
-                None -> performRequestFocus()
-                Redirected -> true
-                Cancelled,
-                RedirectCancelled -> null
-            }
-        }
-    }
-}
 
 /**
  * This function performs the request focus action.
@@ -298,7 +281,7 @@ private fun FocusTargetNode.performCustomEnter(
 ): CustomDestinationResult {
     fetchCustomEnter(focusDirection) {
         if (it === Cancel) return Cancelled else if (it === Redirect) return Redirected
-        return if (it.focus()) Redirected else RedirectCancelled
+        return if (it.requestFocus()) Redirected else RedirectCancelled
     }
     return None
 }
@@ -308,7 +291,7 @@ private fun FocusTargetNode.performCustomExit(
 ): CustomDestinationResult {
     fetchCustomExit(focusDirection) {
         if (it === Cancel) return Cancelled else if (it === Redirect) return Redirected
-        return if (it.focus()) Redirected else RedirectCancelled
+        return if (it.requestFocus()) Redirected else RedirectCancelled
     }
     return None
 }

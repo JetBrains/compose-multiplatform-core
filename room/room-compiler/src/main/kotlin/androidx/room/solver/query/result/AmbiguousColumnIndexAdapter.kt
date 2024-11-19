@@ -56,7 +56,6 @@ class AmbiguousColumnIndexAdapter(
                     )
                 val rowMappings =
                     DoubleArrayLiteral(
-                        language = language,
                         type = XTypeName.PRIMITIVE_INT,
                         rowSize = cursorIndices.size,
                         columnSizeProducer = { i -> cursorIndices[i].size },
@@ -74,7 +73,6 @@ class AmbiguousColumnIndexAdapter(
                 // an array literal.
                 val rowMappings =
                     DoubleArrayLiteral(
-                        language = language,
                         type = CommonTypeNames.STRING,
                         rowSize = mappings.size,
                         columnSizeProducer = { i -> mappings[i].usedColumns.size },
@@ -86,7 +84,6 @@ class AmbiguousColumnIndexAdapter(
                         XTypeName.getArrayName(XTypeName.getArrayName(XTypeName.PRIMITIVE_INT)),
                     assignExpr =
                         XCodeBlock.of(
-                            language,
                             "%T.resolve(%L.getColumnNames(), %L)",
                             RoomTypeNames.AMBIGUOUS_COLUMN_RESOLVER,
                             cursorVarName,

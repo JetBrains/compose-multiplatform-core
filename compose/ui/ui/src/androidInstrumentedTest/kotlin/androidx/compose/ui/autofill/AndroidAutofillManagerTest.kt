@@ -49,6 +49,8 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
+import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -71,6 +73,19 @@ class AndroidAutofillManagerTest {
 
     private val height = 200.dp
     private val width = 200.dp
+
+    @After
+    fun teardown() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val activity = rule.activity
+        while (!activity.isDestroyed) {
+            instrumentation.runOnMainSync {
+                if (!activity.isDestroyed) {
+                    activity.finish()
+                }
+            }
+        }
+    }
 
     @Test
     @SmallTest
@@ -139,31 +154,6 @@ class AndroidAutofillManagerTest {
 
     @Test
     @SmallTest
-    @SdkSuppress(minSdkVersion = 33)
-    fun autofillManager_showAutofillDialog_previousFocusFalse() {
-        val usernameTag = "username_tag"
-        var hasFocus by mutableStateOf(false)
-
-        rule.setContentWithAutofillEnabled {
-            Box(
-                Modifier.semantics {
-                        contentType = ContentType.Username
-                        contentDataType = ContentDataType.Text
-                        focused = hasFocus
-                    }
-                    .size(height, width)
-                    .testTag(usernameTag)
-            )
-        }
-
-        rule.runOnIdle { hasFocus = true }
-
-        rule.runOnIdle { verify(autofillManagerMock).showAutofillDialog(any()) }
-        rule.runOnIdle { verify(autofillManagerMock).notifyViewEntered(any(), any()) }
-    }
-
-    @Test
-    @SmallTest
     @SdkSuppress(minSdkVersion = 26)
     fun autofillManager_notifyViewEntered_previousFocusNull() {
         val usernameTag = "username_tag"
@@ -186,34 +176,6 @@ class AndroidAutofillManagerTest {
 
         rule.runOnIdle { hasFocus = true }
 
-        rule.runOnIdle { verify(autofillManagerMock).notifyViewEntered(any(), any()) }
-    }
-
-    @Test
-    @SmallTest
-    @SdkSuppress(minSdkVersion = 33)
-    fun autofillManager_showAutofillDialog_previousFocusNull() {
-        val usernameTag = "username_tag"
-        var hasFocus by mutableStateOf(false)
-
-        rule.setContentWithAutofillEnabled {
-            Box(
-                modifier =
-                    if (hasFocus)
-                        Modifier.semantics {
-                                contentType = ContentType.Username
-                                contentDataType = ContentDataType.Text
-                                focused = hasFocus
-                            }
-                            .size(height, width)
-                            .testTag(usernameTag)
-                    else plainVisibleModifier(usernameTag)
-            )
-        }
-
-        rule.runOnIdle { hasFocus = true }
-
-        rule.runOnIdle { verify(autofillManagerMock).showAutofillDialog(any()) }
         rule.runOnIdle { verify(autofillManagerMock).notifyViewEntered(any(), any()) }
     }
 

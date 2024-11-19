@@ -18,7 +18,8 @@
 
 package androidx.paging.internal
 
-import kotlin.native.internal.createCleaner
+import kotlin.experimental.ExperimentalNativeApi
+import kotlin.native.ref.createCleaner
 import kotlinx.atomicfu.AtomicBoolean as AtomicFuAtomicBoolean
 import kotlinx.atomicfu.AtomicInt as AtomicFuAtomicInt
 import kotlinx.atomicfu.atomic
@@ -48,7 +49,7 @@ internal actual class ReentrantLock actual constructor() {
     private val resources = Resources()
 
     @Suppress("unused") // The returned Cleaner must be assigned to a property
-    @ExperimentalStdlibApi
+    @ExperimentalNativeApi
     private val cleaner = createCleaner(resources, Resources::destroy)
 
     actual fun lock() {

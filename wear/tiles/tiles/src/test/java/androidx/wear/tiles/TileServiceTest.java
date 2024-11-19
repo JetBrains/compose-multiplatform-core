@@ -65,6 +65,7 @@ import com.google.common.truth.Expect;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -157,7 +158,11 @@ public class TileServiceTest {
                 mTestContext.getSharedPreferences(SHARED_PREF_NAME, Context.MODE_PRIVATE);
         assertThat(mSharedPreferences.getAll()).isEmpty();
         sFakeTimeSourceClock.setCurrentTimestampMs(TIMESTAMP_MS);
-        TileService.setUseWearSdkImpl(false);
+    }
+
+    @After
+    public void tearDown() {
+        TileService.setUseWearSdkImpl(null); // Reset WearSdk detection
     }
 
     @Test
@@ -498,9 +503,7 @@ public class TileServiceTest {
     }
 
     @Test
-    public void getActiveTilesAsync_useWearSdkImplTrue_doNotAddTileToSharedPref()
-            throws Exception {
-        setUseWearSdkImpl(true);
+    public void getActiveTilesAsync_useWearSdkImplTrue_doNotAddTileToSharedPref() throws Exception {
         assertTrue(mSharedPreferences.getAll().isEmpty());
 
         mTileProviderServiceStub.onTileRemoveEvent(
@@ -516,9 +519,9 @@ public class TileServiceTest {
     }
 
     @Test
-    public void getActiveTilesAsync_useWearSdkImplTrue_doNotChangeSharedPref()
-            throws Exception {
+    public void getActiveTilesAsync_useWearSdkImplTrue_doNotChangeSharedPref() throws Exception {
         setUseWearSdkImpl(true);
+
         mSharedPreferences.edit().putLong(FAKE_TILE_IDENTIFIER_1, TIMESTAMP_MS).commit();
         assertTrue(mSharedPreferences.contains(FAKE_TILE_IDENTIFIER_1));
 

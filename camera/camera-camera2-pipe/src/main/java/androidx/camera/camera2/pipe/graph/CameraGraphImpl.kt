@@ -34,6 +34,7 @@ import androidx.camera.camera2.pipe.core.Token
 import androidx.camera.camera2.pipe.core.acquireToken
 import androidx.camera.camera2.pipe.core.acquireTokenAndSuspend
 import androidx.camera.camera2.pipe.core.tryAcquireToken
+import androidx.camera.camera2.pipe.internal.CameraGraphParametersImpl
 import androidx.camera.camera2.pipe.internal.FrameCaptureQueue
 import androidx.camera.camera2.pipe.internal.FrameDistributor
 import javax.inject.Inject
@@ -65,14 +66,11 @@ constructor(
     private val frameCaptureQueue: FrameCaptureQueue,
     private val audioRestrictionController: AudioRestrictionController,
     override val id: CameraGraphId,
-    override val parameters: CameraGraph.Parameters,
+    override val parameters: CameraGraphParametersImpl,
     private val sessionLock: SessionLock
 ) : CameraGraph {
     private val controller3A = Controller3A(graphProcessor, metadata, graphState3A, listener3A)
     private val closed = atomic(false)
-
-    // TODO(amycao): b/354899829 CameraGraph.Session#close() should build and update repeating
-    // request
 
     init {
         // Log out the configuration of the camera graph when it is created.
@@ -185,7 +183,7 @@ constructor(
     }
 
     private fun createSessionFromToken(token: Token) =
-        CameraGraphSessionImpl(token, graphProcessor, controller3A, frameCaptureQueue)
+        CameraGraphSessionImpl(token, graphProcessor, controller3A, frameCaptureQueue, parameters)
 
     override fun setSurface(stream: StreamId, surface: Surface?) {
         Debug.traceStart { "$stream#setSurface" }
@@ -247,10 +245,17 @@ internal class SessionLock @Inject constructor() {
                 // this will force the execution to switch to the provided scope after ensuring the
                 // lock is acquired or in the queue. This guarantees exclusion, ordering, and
                 // execution within the correct scope.
-                val token = mutex.acquireTokenAndSuspend()
-                action(token)
+                mutex.acquireTokenAndSuspend().use { token -> action(token) }
             }
         result.invokeOnCompletion { childJob.complete() }
         return result
+    }
+
+    private suspend fun <T> Token.use(block: suspend (Token) -> T): T {
+        try {
+            return block(this)
+        } finally {
+            this.release()
+        }
     }
 }

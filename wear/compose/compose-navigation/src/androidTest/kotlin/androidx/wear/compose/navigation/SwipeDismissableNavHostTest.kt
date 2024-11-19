@@ -15,6 +15,9 @@
  */
 package androidx.wear.compose.navigation
 
+import android.os.Build
+import android.window.BackEvent
+import androidx.activity.BackEventCompat
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.OnBackPressedDispatcherOwner
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
@@ -52,9 +55,9 @@ import androidx.lifecycle.testing.TestLifecycleOwner
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.testing.TestNavHostController
+import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.CompactChip
-import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.ToggleButton
 import com.google.common.truth.Truth.assertThat
@@ -64,16 +67,18 @@ import org.junit.Test
 class SwipeDismissableNavHostTest {
     @get:Rule val rule = createComposeRule()
 
+    private lateinit var backPressedDispatcher: OnBackPressedDispatcher
+
     @Test
     fun supports_testtag() {
-        rule.setContentWithTheme { SwipeDismissWithNavigation() }
+        rule.setContentWithBackPressedDispatcher { SwipeDismissWithNavigation() }
 
         rule.onNodeWithTag(TEST_TAG).assertExists()
     }
 
     @Test
     fun navigates_to_next_level() {
-        rule.setContentWithTheme { SwipeDismissWithNavigation() }
+        rule.setContentWithBackPressedDispatcher { SwipeDismissWithNavigation() }
 
         // Click to move to next destination.
         rule.onNodeWithText(START).performClick()
@@ -83,8 +88,10 @@ class SwipeDismissableNavHostTest {
     }
 
     @Test
+    @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     fun navigates_back_to_previous_level_after_swipe() {
-        rule.setContentWithTheme { SwipeDismissWithNavigation() }
+
+        rule.setContentWithBackPressedDispatcher { SwipeDismissWithNavigation() }
 
         // Click to move to next destination then swipe to dismiss.
         rule.onNodeWithText(START).performClick()
@@ -95,8 +102,11 @@ class SwipeDismissableNavHostTest {
     }
 
     @Test
+    @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     fun does_not_navigate_back_to_previous_level_when_swipe_disabled() {
-        rule.setContentWithTheme { SwipeDismissWithNavigation(userSwipeEnabled = false) }
+        rule.setContentWithBackPressedDispatcher {
+            SwipeDismissWithNavigation(userSwipeEnabled = false)
+        }
 
         // Click to move to next destination then swipe to dismiss.
         rule.onNodeWithText(START).performClick()
@@ -109,24 +119,17 @@ class SwipeDismissableNavHostTest {
 
     @Test
     fun navigates_back_to_previous_level_with_back_button() {
-        val onBackPressedDispatcher = OnBackPressedDispatcher()
-        val dispatcherOwner =
-            object : OnBackPressedDispatcherOwner, LifecycleOwner by TestLifecycleOwner() {
-                override val onBackPressedDispatcher = onBackPressedDispatcher
-            }
         lateinit var navController: NavHostController
 
-        rule.setContentWithTheme {
-            CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides dispatcherOwner) {
-                navController = rememberSwipeDismissableNavController()
-                SwipeDismissWithNavigation(navController)
-            }
+        rule.setContentWithBackPressedDispatcher {
+            navController = rememberSwipeDismissableNavController()
+            SwipeDismissWithNavigation(navController)
         }
         // Move to next destination.
         rule.onNodeWithText(START).performClick()
 
         // Now trigger the back button
-        rule.runOnIdle { onBackPressedDispatcher.onBackPressed() }
+        rule.runOnIdle { backPressedDispatcher.onBackPressed() }
         rule.waitForIdle()
 
         // Should now display "start".
@@ -136,7 +139,7 @@ class SwipeDismissableNavHostTest {
 
     @Test
     fun hides_previous_level_when_not_swiping() {
-        rule.setContentWithTheme { SwipeDismissWithNavigation() }
+        rule.setContentWithBackPressedDispatcher { SwipeDismissWithNavigation() }
 
         // Click to move to next destination then swipe to dismiss.
         rule.onNodeWithText(START).performClick()
@@ -147,12 +150,15 @@ class SwipeDismissableNavHostTest {
 
     @ExperimentalTestApi
     @Test
+    @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     fun displays_previous_screen_during_swipe_gesture() {
-        rule.setContentWithTheme { WithTouchSlop(0f) { SwipeDismissWithNavigation() } }
+        rule.setContentWithBackPressedDispatcher {
+            WithTouchSlop(0f) { SwipeDismissWithNavigation() }
+        }
 
         // Click to move to next destination.
         rule.onNodeWithText(START).performClick()
-        // Click and drag to being a swipe gesture, but do not release the finger.
+        // Click and drag to begin a swipe gesture, but do not release the finger.
         rule
             .onNodeWithTag(TEST_TAG)
             .performTouchInput({
@@ -165,9 +171,46 @@ class SwipeDismissableNavHostTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    fun does_not_navigate_back_to_previous_level_after_swipe_api_35() {
+
+        rule.setContentWithBackPressedDispatcher { SwipeDismissWithNavigation() }
+
+        // Click to move to next destination then swipe to dismiss.
+        rule.onNodeWithText(START).performClick()
+        rule.onNodeWithTag(TEST_TAG).performTouchInput { swipeRight() }
+
+        // Should now display "start".
+        rule.onNodeWithText(START).assertDoesNotExist()
+    }
+
+    @ExperimentalTestApi
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    fun displays_previous_screen_during_predictive_back_api_35() {
+
+        rule.setContentWithBackPressedDispatcher { SwipeDismissWithNavigation() }
+
+        // Click to move to next destination.
+        rule.onNodeWithText(START).performClick()
+        // Click and drag to begin a back event gesture, but do not release the finger.
+        rule.runOnIdle {
+            backPressedDispatcher.dispatchOnBackStarted(
+                BackEventCompat(0.1F, 0.1F, 0.1F, BackEvent.EDGE_LEFT)
+            )
+            backPressedDispatcher.dispatchOnBackProgressed(
+                BackEventCompat(0.1F, 0.1F, 0.5F, BackEvent.EDGE_LEFT)
+            )
+        }
+
+        // As the finger is still 'down', the background should be visible.
+        rule.onNodeWithText(START).assertExists()
+    }
+
+    @Test
     fun destinations_keep_saved_state() {
         val screenId = mutableStateOf(START)
-        rule.setContentWithTheme {
+        rule.setContentWithBackPressedDispatcher {
             val holder = rememberSaveableStateHolder()
             holder.SaveableStateProvider(screenId) {
                 val navController = rememberSwipeDismissableNavController()
@@ -208,16 +251,14 @@ class SwipeDismissableNavHostTest {
 
         rule.onNodeWithText("Off").performClick()
         rule.onNodeWithText("Go").performClick()
-        rule.waitForIdle()
-        rule.onNodeWithTag(TEST_TAG).performTouchInput({ swipeRight() })
-        rule.waitForIdle()
+        goBack()
         rule.onNodeWithText("On").assertExists()
     }
 
     @Test
     fun remembers_saved_state_on_two_screens() {
         val screenId = mutableStateOf(START)
-        rule.setContentWithTheme {
+        rule.setContentWithBackPressedDispatcher {
             val holder = rememberSaveableStateHolder()
             val navController = rememberSwipeDismissableNavController()
             SwipeDismissableNavHost(
@@ -283,10 +324,10 @@ class SwipeDismissableNavHostTest {
         rule.onNodeWithText("Jump").performClick()
         rule.waitForIdle()
         rule.onNodeWithText("Off").assertExists()
-        rule.onNodeWithTag(TEST_TAG).performTouchInput({ swipeRight() })
+        goBack()
         // Next screen should still display the incremented counter.
         rule.onNodeWithText("1").assertExists()
-        rule.onNodeWithTag(TEST_TAG).performTouchInput({ swipeRight() })
+        goBack()
         // Start screen should still display 'On'
         rule.waitForIdle()
         rule.onNodeWithText("On").assertExists()
@@ -300,7 +341,7 @@ class SwipeDismissableNavHostTest {
     fun updates_lifecycle_for_initial_destination() {
         lateinit var navController: NavHostController
         rule.mainClock.autoAdvance = false
-        rule.setContentWithTheme {
+        rule.setContentWithBackPressedDispatcher {
             navController = rememberSwipeDismissableNavController()
             SwipeDismissWithNavigation(navController)
         }
@@ -315,7 +356,7 @@ class SwipeDismissableNavHostTest {
     @Test
     fun updates_lifecycle_after_navigation() {
         lateinit var navController: NavHostController
-        rule.setContentWithTheme {
+        rule.setContentWithBackPressedDispatcher {
             navController = rememberSwipeDismissableNavController()
             SwipeDismissWithNavigation(navController)
         }
@@ -332,7 +373,7 @@ class SwipeDismissableNavHostTest {
     @Test
     fun updates_lifecycle_after_navigation_and_swipe_back() {
         lateinit var navController: NavHostController
-        rule.setContentWithTheme {
+        rule.setContentWithBackPressedDispatcher {
             navController = rememberSwipeDismissableNavController()
             SwipeDismissWithNavigation(navController)
         }
@@ -350,7 +391,7 @@ class SwipeDismissableNavHostTest {
     @Test
     fun updates_lifecycle_after_popping_back_stack() {
         lateinit var navController: NavHostController
-        rule.setContentWithTheme {
+        rule.setContentWithBackPressedDispatcher {
             navController = rememberSwipeDismissableNavController()
             SwipeDismissWithNavigation(navController)
         }
@@ -370,7 +411,7 @@ class SwipeDismissableNavHostTest {
     fun provides_access_to_current_backstack_entry_state() {
         lateinit var navController: NavHostController
         lateinit var backStackEntry: State<NavBackStackEntry?>
-        rule.setContentWithTheme {
+        rule.setContentWithBackPressedDispatcher {
             navController = rememberSwipeDismissableNavController()
             backStackEntry = navController.currentBackStackEntryAsState()
             SwipeDismissWithNavigation(navController)
@@ -385,7 +426,7 @@ class SwipeDismissableNavHostTest {
     fun testNavHostController_starts_at_default_destination() {
         lateinit var navController: TestNavHostController
 
-        rule.setContentWithTheme {
+        rule.setContentWithBackPressedDispatcher {
             navController = TestNavHostController(LocalContext.current)
             navController.navigatorProvider.addNavigator(WearNavigator())
 
@@ -399,7 +440,7 @@ class SwipeDismissableNavHostTest {
     fun testNavHostController_sets_current_destination() {
         lateinit var navController: TestNavHostController
 
-        rule.setContentWithTheme {
+        rule.setContentWithBackPressedDispatcher {
             navController = TestNavHostController(LocalContext.current)
             navController.navigatorProvider.addNavigator(WearNavigator())
 
@@ -436,10 +477,32 @@ class SwipeDismissableNavHostTest {
             }
         }
     }
-}
 
-fun ComposeContentTestRule.setContentWithTheme(composable: @Composable () -> Unit) {
-    setContent { MaterialTheme { composable() } }
+    /**
+     * Depending on API level, either swipes right on the view with TEST_TAG, or presses back button
+     */
+    private fun goBack() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            rule.runOnIdle { backPressedDispatcher.onBackPressed() }
+        } else {
+            rule.onNodeWithTag(TEST_TAG).performTouchInput { swipeRight() }
+        }
+    }
+
+    private fun ComposeContentTestRule.setContentWithBackPressedDispatcher(
+        composable: @Composable () -> Unit
+    ) {
+        backPressedDispatcher = OnBackPressedDispatcher()
+        val dispatcherOwner =
+            object : OnBackPressedDispatcherOwner, LifecycleOwner by TestLifecycleOwner() {
+                override val onBackPressedDispatcher = backPressedDispatcher
+            }
+        setContent {
+            CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides dispatcherOwner) {
+                composable()
+            }
+        }
+    }
 }
 
 private const val NEXT = "next"

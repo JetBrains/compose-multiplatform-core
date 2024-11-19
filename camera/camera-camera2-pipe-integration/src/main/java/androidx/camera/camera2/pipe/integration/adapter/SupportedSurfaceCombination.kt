@@ -44,7 +44,7 @@ import androidx.camera.camera2.pipe.integration.internal.StreamUseCaseUtil
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.impl.AttachedSurfaceInfo
 import androidx.camera.core.impl.CameraMode
-import androidx.camera.core.impl.EncoderProfilesProxy
+import androidx.camera.core.impl.EncoderProfilesProvider
 import androidx.camera.core.impl.ImageFormatConstants
 import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.SurfaceCombination
@@ -79,7 +79,7 @@ import kotlin.math.min
 public class SupportedSurfaceCombination(
     context: Context,
     private val cameraMetadata: CameraMetadata,
-    private val encoderProfilesProviderAdapter: EncoderProfilesProviderAdapter
+    private val encoderProfilesProvider: EncoderProfilesProvider
 ) {
     private val cameraId = cameraMetadata.camera.value
     private val hardwareLevel =
@@ -131,10 +131,6 @@ public class SupportedSurfaceCombination(
             generate10BitSupportedCombinationList()
         }
 
-        if (isUltraHdrSupported()) {
-            generateUltraHdrSupportedCombinationList()
-        }
-
         if (isPreviewStabilizationSupported) {
             generatePreviewStabilizationSupportedCombinationList()
         }
@@ -164,11 +160,6 @@ public class SupportedSurfaceCombination(
         }
     }
 
-    private fun isUltraHdrSupported(): Boolean {
-        return getStreamConfigurationMapCompat().getOutputFormats()?.contains(ImageFormat.JPEG_R)
-            ?: false
-    }
-
     private fun getOrderedSupportedStreamUseCaseSurfaceConfigList(
         featureSettings: FeatureSettings,
         surfaceConfigList: List<SurfaceConfig?>?
@@ -195,6 +186,9 @@ public class SupportedSurfaceCombination(
         }
         var supportedSurfaceCombinations: MutableList<SurfaceCombination> = mutableListOf()
         if (featureSettings.isUltraHdrOn) {
+            if (surfaceCombinationsUltraHdr.isEmpty()) {
+                generateUltraHdrSupportedCombinationList()
+            }
             // For Ultra HDR output, only the default camera mode is currently supported.
             if (featureSettings.cameraMode == CameraMode.DEFAULT) {
                 supportedSurfaceCombinations.addAll(surfaceCombinationsUltraHdr)
@@ -1403,18 +1397,21 @@ public class SupportedSurfaceCombination(
     private fun getRecordSize(): Size {
         try {
             this.cameraId.toInt()
+
+            val recordSize = getRecordSizeFromCamcorderProfile()
+            if (recordSize != null) {
+                return recordSize
+            }
         } catch (e: NumberFormatException) {
-            // The camera Id is not an integer because the camera may be a removable device. Use
-            // StreamConfigurationMap to determine the RECORD size.
-            return getRecordSizeFromStreamConfigurationMapCompat()
+            // The camera Id is not an integer. The camera may be a removable device.
         }
-        var profiles: EncoderProfilesProxy? = null
-        if (encoderProfilesProviderAdapter.hasProfile(CamcorderProfile.QUALITY_HIGH)) {
-            profiles = encoderProfilesProviderAdapter.getAll(CamcorderProfile.QUALITY_HIGH)
+        // Use StreamConfigurationMap to determine the RECORD size.
+        val recordSize = getRecordSizeFromStreamConfigurationMapCompat()
+        if (recordSize != null) {
+            return recordSize
         }
-        return if (profiles != null && profiles.videoProfiles.isNotEmpty()) {
-            Size(profiles.videoProfiles[0].width, profiles.videoProfiles[0].height)
-        } else getRecordSizeByHasProfile()
+
+        return RESOLUTION_480P
     }
 
     /** Obtains the stream configuration map from camera meta data. */
@@ -1426,52 +1423,57 @@ public class SupportedSurfaceCombination(
     }
 
     /**
-     * Return the maximum supported video size for cameras using data from the stream configuration
+     * Returns the maximum supported video size for cameras using data from the stream configuration
      * map.
      *
-     * @return Maximum supported video size.
+     * @return Maximum supported video size or null if none are found.
      */
-    private fun getRecordSizeFromStreamConfigurationMapCompat(): Size {
+    private fun getRecordSizeFromStreamConfigurationMapCompat(): Size? {
         val map = streamConfigurationMapCompat.toStreamConfigurationMap()
-        val videoSizeArr = map?.getOutputSizes(MediaRecorder::class.java) ?: return RESOLUTION_480P
+        val videoSizeArr =
+            runCatching {
+                    // b/378508360: try-catch to workaround the exception when using
+                    // StreamConfigurationMap provided by Robolectric.
+                    map?.getOutputSizes(MediaRecorder::class.java)
+                }
+                .getOrNull() ?: return null
         Arrays.sort(videoSizeArr, CompareSizesByArea(true))
         for (size in videoSizeArr) {
-            // Returns the largest supported size under 1080P
             if (size.width <= RESOLUTION_1080P.width && size.height <= RESOLUTION_1080P.height) {
                 return size
             }
         }
-        return RESOLUTION_480P
+        return null
     }
 
     /**
-     * Return the maximum supported video size for cameras by [CamcorderProfile.hasProfile].
+     * Returns the maximum supported video size for cameras by [CamcorderProfile.hasProfile].
      *
-     * @return Maximum supported video size.
+     * @return Maximum supported video size or null if none are found.
      */
-    private fun getRecordSizeByHasProfile(): Size {
-        var recordSize: Size = RESOLUTION_480P
-        var profiles: EncoderProfilesProxy? = null
+    private fun getRecordSizeFromCamcorderProfile(): Size? {
+        val qualities =
+            listOf(
+                CamcorderProfile.QUALITY_HIGH,
+                CamcorderProfile.QUALITY_8KUHD,
+                CamcorderProfile.QUALITY_4KDCI,
+                CamcorderProfile.QUALITY_2160P,
+                CamcorderProfile.QUALITY_2K,
+                CamcorderProfile.QUALITY_1080P,
+                CamcorderProfile.QUALITY_720P,
+                CamcorderProfile.QUALITY_480P
+            )
 
-        // Check whether 4KDCI, 2160P, 2K, 1080P, 720P, 480P (sorted by size) are supported by
-        // EncoderProfiles
-        if (encoderProfilesProviderAdapter.hasProfile(CamcorderProfile.QUALITY_4KDCI)) {
-            profiles = encoderProfilesProviderAdapter.getAll(CamcorderProfile.QUALITY_4KDCI)
-        } else if (encoderProfilesProviderAdapter.hasProfile(CamcorderProfile.QUALITY_2160P)) {
-            profiles = encoderProfilesProviderAdapter.getAll(CamcorderProfile.QUALITY_2160P)
-        } else if (encoderProfilesProviderAdapter.hasProfile(CamcorderProfile.QUALITY_2K)) {
-            profiles = encoderProfilesProviderAdapter.getAll(CamcorderProfile.QUALITY_2K)
-        } else if (encoderProfilesProviderAdapter.hasProfile(CamcorderProfile.QUALITY_1080P)) {
-            profiles = encoderProfilesProviderAdapter.getAll(CamcorderProfile.QUALITY_1080P)
-        } else if (encoderProfilesProviderAdapter.hasProfile(CamcorderProfile.QUALITY_720P)) {
-            profiles = encoderProfilesProviderAdapter.getAll(CamcorderProfile.QUALITY_720P)
-        } else if (encoderProfilesProviderAdapter.hasProfile(CamcorderProfile.QUALITY_480P)) {
-            profiles = encoderProfilesProviderAdapter.getAll(CamcorderProfile.QUALITY_480P)
+        for (quality in qualities) {
+            if (encoderProfilesProvider.hasProfile(quality)) {
+                val profiles = encoderProfilesProvider.getAll(quality)
+                if (profiles != null && profiles.videoProfiles.isNotEmpty()) {
+                    return profiles.videoProfiles[0]!!.let { Size(it.width, it.height) }
+                }
+            }
         }
-        if (profiles != null && profiles.videoProfiles.isNotEmpty()) {
-            recordSize = Size(profiles.videoProfiles[0].width, profiles.videoProfiles[0].height)
-        }
-        return recordSize
+
+        return null
     }
 
     /**
@@ -1517,16 +1519,24 @@ public class SupportedSurfaceCombination(
         highResolutionIncluded: Boolean
     ): Size? {
         val outputSizes: Array<Size>? =
-            if (imageFormat == ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE) {
-                // This is a little tricky that 0x22 that is internal defined in
-                // StreamConfigurationMap.java to be equal to ImageFormat.PRIVATE that is public
-                // after Android level 23 but not public in Android L. Use {@link SurfaceTexture}
-                // or {@link MediaCodec} will finally mapped to 0x22 in StreamConfigurationMap to
-                // retrieve the output sizes information.
-                map?.getOutputSizes(SurfaceTexture::class.java)
-            } else {
-                map?.getOutputSizes(imageFormat)
-            }
+            runCatching {
+                    // b/378508360: try-catch to workaround the exception when using
+                    // StreamConfigurationMap provided by Robolectric.
+                    if (imageFormat == ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE) {
+                        // This is a little tricky that 0x22 that is internal defined in
+                        // StreamConfigurationMap.java to be equal to ImageFormat.PRIVATE that is
+                        // public
+                        // after Android level 23 but not public in Android L. Use {@link
+                        // SurfaceTexture}
+                        // or {@link MediaCodec} will finally mapped to 0x22 in
+                        // StreamConfigurationMap to
+                        // retrieve the output sizes information.
+                        map?.getOutputSizes(SurfaceTexture::class.java)
+                    } else {
+                        map?.getOutputSizes(imageFormat)
+                    }
+                }
+                .getOrNull()
         if (outputSizes.isNullOrEmpty()) {
             return null
         }

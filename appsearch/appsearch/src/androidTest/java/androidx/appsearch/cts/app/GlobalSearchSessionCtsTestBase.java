@@ -48,6 +48,8 @@ import androidx.appsearch.app.SearchResults;
 import androidx.appsearch.app.SearchSpec;
 import androidx.appsearch.app.SetSchemaRequest;
 import androidx.appsearch.exceptions.AppSearchException;
+import androidx.appsearch.flags.Flags;
+import androidx.appsearch.flags.RequiresFlagsEnabled;
 import androidx.appsearch.observer.DocumentChangeInfo;
 import androidx.appsearch.observer.ObserverSpec;
 import androidx.appsearch.observer.SchemaChangeInfo;
@@ -695,6 +697,79 @@ public abstract class GlobalSearchSessionCtsTestBase {
                         .setSubject("testPut example")
                         .build();
         assertThat(documents).containsExactly(expected1, expected2);
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SEARCH_SPEC_FILTER_DOCUMENT_IDS)
+    public void testGlobalQuery_documentIdFilter() throws Exception {
+        assumeTrue(mDb1.getFeatures().isFeatureSupported(
+                Features.SEARCH_SPEC_ADD_FILTER_DOCUMENT_IDS));
+
+        // Schema registration
+        mDb1.setSchemaAsync(new SetSchemaRequest.Builder()
+                .addSchemas(AppSearchEmail.SCHEMA).build()).get();
+        mDb2.setSchemaAsync(new SetSchemaRequest.Builder()
+                .addSchemas(AppSearchEmail.SCHEMA).build()).get();
+
+        // Index 3 documents to db1.
+        AppSearchEmail email1_db1 =
+                new AppSearchEmail.Builder("namespace", "id1")
+                        .setFrom("from@example.com")
+                        .setTo("to1@example.com", "to2@example.com")
+                        .setSubject("testPut example")
+                        .setBody("I am from database 1")
+                        .build();
+        AppSearchEmail email2_db1 =
+                new AppSearchEmail.Builder("namespace", "id2")
+                        .setFrom("from@example.com")
+                        .setTo("to1@example.com", "to2@example.com")
+                        .setSubject("testPut example")
+                        .setBody("I am from database 1")
+                        .build();
+        AppSearchEmail email3_db1 =
+                new AppSearchEmail.Builder("namespace", "id3")
+                        .setFrom("from@example.com")
+                        .setTo("to1@example.com", "to2@example.com")
+                        .setSubject("testPut example")
+                        .setBody("I am from database 1")
+                        .build();
+        checkIsBatchResultSuccess(mDb1.putAsync(
+                new PutDocumentsRequest.Builder()
+                        .addGenericDocuments(email1_db1, email2_db1, email3_db1).build()));
+
+        // Index the similar 3 documents with the same ids but with different body values to db2.
+        AppSearchEmail email1_db2 =
+                new AppSearchEmail.Builder("namespace", "id1")
+                        .setFrom("from@example.com")
+                        .setTo("to1@example.com", "to2@example.com")
+                        .setSubject("testPut example")
+                        .setBody("I am from database 2")
+                        .build();
+        AppSearchEmail email2_db2 =
+                new AppSearchEmail.Builder("namespace", "id2")
+                        .setFrom("from@example.com")
+                        .setTo("to1@example.com", "to2@example.com")
+                        .setSubject("testPut example")
+                        .setBody("I am from database 2")
+                        .build();
+        AppSearchEmail email3_db2 =
+                new AppSearchEmail.Builder("namespace", "id3")
+                        .setFrom("from@example.com")
+                        .setTo("to1@example.com", "to2@example.com")
+                        .setSubject("testPut example")
+                        .setBody("I am from database 2")
+                        .build();
+        checkIsBatchResultSuccess(mDb2.putAsync(
+                new PutDocumentsRequest.Builder()
+                        .addGenericDocuments(email1_db2, email2_db2, email3_db2).build()));
+
+        // Query for "id1", which should return the documents with "id1" from both of the databases.
+        List<GenericDocument> documents =
+                snapshotResults("example", new SearchSpec.Builder()
+                        .addFilterDocumentIds(ImmutableSet.of("id1"))
+                        .setTermMatch(SearchSpec.TERM_MATCH_EXACT_ONLY)
+                        .build());
+        assertThat(documents).containsExactly(email1_db1, email1_db2);
     }
 
     @Test

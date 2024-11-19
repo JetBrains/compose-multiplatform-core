@@ -185,6 +185,8 @@ private fun Project.configureComponentPublishing(
             }
         }
         publications.withType(MavenPublication::class.java).configureEach { publication ->
+            // Used to add buildId to Gradle module metadata set below
+            publication.withBuildIdentifier()
             val isKmpAnchor = (publication.name == KMP_ANCHOR_PUBLICATION_NAME)
             val pomPlatform = androidxKmpExtension.defaultPlatform
             // b/297355397 If a kmp project has Android as the default platform, there might
@@ -265,7 +267,7 @@ private fun Project.configureComponentPublishing(
         }
     }
 
-    // Workaround for https://github.com/gradle/gradle/issues/11717
+    // Workaround for https://github.com/gradle/gradle/issues/31218
     project.tasks.withType(GenerateModuleMetadata::class.java).configureEach { task ->
         task.doLast {
             val metadata = task.outputFile.asFile.get()

@@ -20,3 +20,4 @@ import androidx.compose.foundation.implementedInJetBrainsFork
 import androidx.compose.ui.input.pointer.PointerIcon
 
 internal actual val textPointerIcon: PointerIcon = implementedInJetBrainsFork()
+internal actual val handwritingPointerIcon: PointerIcon = implementedInJetBrainsFork()

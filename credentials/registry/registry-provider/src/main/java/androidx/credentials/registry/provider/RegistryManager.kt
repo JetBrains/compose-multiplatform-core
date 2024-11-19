@@ -44,10 +44,13 @@ public abstract class RegistryManager internal constructor() {
          * when the user selects a credential that belongs to your application. Your activity will
          * be launched and you should use the
          * [androidx.credentials.provider.PendingIntentHandler.retrieveProviderGetCredentialRequest]
-         * API to retrieve information about the user selection and the verifier request contained
-         * in [androidx.credentials.provider.ProviderGetCredentialRequest]. Next, perform the
-         * necessary steps (e.g. consent collection, credential lookup) to generate a response for
-         * the given request. Pass the result back using one of the
+         * API to retrieve information about the user selection (you can do this through
+         * [androidx.credentials.registry.provider.selectedEntryId]), the verifier request, and
+         * other caller app information contained in
+         * [androidx.credentials.provider.ProviderGetCredentialRequest].
+         *
+         * Next, perform the necessary steps (e.g. consent collection, credential lookup) to
+         * generate a response for the given request. Pass the result back using one of the
          * [androidx.credentials.provider.PendingIntentHandler.setGetCredentialResponse] and
          * [androidx.credentials.provider.PendingIntentHandler.setGetCredentialException] APIs.
          */

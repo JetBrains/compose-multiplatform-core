@@ -18,11 +18,14 @@ package androidx.benchmark.macro
 
 import android.os.Build
 import android.util.Log
+import androidx.benchmark.Arguments
 import androidx.benchmark.ExperimentalBenchmarkConfigApi
 import androidx.benchmark.ExperimentalConfig
+import androidx.benchmark.Insight
+import androidx.benchmark.Outputs
 import androidx.benchmark.Profiler
-import androidx.benchmark.TraceDeepLink
 import androidx.benchmark.inMemoryTrace
+import androidx.benchmark.macro.perfetto.queryStartupInsights
 import androidx.benchmark.perfetto.PerfettoCapture
 import androidx.benchmark.perfetto.PerfettoCaptureWrapper
 import androidx.benchmark.perfetto.PerfettoConfig
@@ -32,8 +35,6 @@ import androidx.benchmark.perfetto.UiState
 import androidx.benchmark.perfetto.appendUiState
 import androidx.tracing.trace
 import java.io.File
-import perfetto.protos.AndroidStartupMetric
-import perfetto.protos.TraceMetrics
 
 /** A Profiler being used during a Macro Benchmark Phase. */
 internal interface PhaseProfiler {
@@ -59,8 +60,7 @@ internal data class IterationResult(
     val tracePath: String,
     val profilerResultFiles: List<Profiler.ResultFile>,
     val measurements: List<Metric.Measurement>,
-    val insights: List<AndroidStartupMetric.SlowStartReason>,
-    val defaultStartupInsightSelectionParams: TraceDeepLink.SelectionParams?,
+    val insights: List<Insight>
 )
 
 /** Run a Macrobenchmark Phase and collect a list of [IterationResult]. */
@@ -90,7 +90,7 @@ internal fun PerfettoTraceProcessor.runPhase(
     try {
         // Configure metrics in the Phase.
         metrics.forEach { it.configure(captureInfo) }
-        return List<IterationResult>(iterations) { iteration ->
+        return List(iterations) { iteration ->
             // Wake the device to ensure it stays awake with large iteration count
             inMemoryTrace("wake device") { scope.device.wakeUp() }
 
@@ -162,8 +162,6 @@ internal fun PerfettoTraceProcessor.runPhase(
                 IterationResult(
                     tracePath = tracePath,
                     profilerResultFiles = profilerResultFiles,
-
-                    // Extracts the metrics using the perfetto trace processor
                     measurements =
                         inMemoryTrace("extract metrics") {
                             metrics
@@ -173,24 +171,17 @@ internal fun PerfettoTraceProcessor.runPhase(
                                 .reduceOrNull() { sum, element -> sum.merge(element) }
                                 ?: emptyList()
                         },
-
-                    // Extracts the insights using the perfetto trace processor
                     insights =
                         if (experimentalConfig?.startupInsightsConfig?.isEnabled == true) {
-                            inMemoryTrace("extract insights") {
-                                TraceMetrics.ADAPTER.decode(
-                                        queryMetricsProtoBinary(listOf("android_startup"))
-                                    )
-                                    .android_startup
-                                    ?.startup
-                                    ?.flatMap { it.slow_start_reason_with_details } ?: emptyList()
-                            }
-                        } else emptyList(),
-
-                    // Extracts a default startup selection param for deep link construction
-                    // Eventually, this should be removed in favor of extracting info from insights
-                    defaultStartupInsightSelectionParams =
-                        extractStartupSliceSelectionParams(packageName = packageName)
+                            queryStartupInsights(
+                                helpUrlBase = Arguments.startupInsightsHelpUrlBase,
+                                traceOutputRelativePath = Outputs.relativePathFor(tracePath),
+                                iteration = iteration,
+                                packageName = packageName
+                            )
+                        } else {
+                            emptyList()
+                        }
                 )
             }
         }

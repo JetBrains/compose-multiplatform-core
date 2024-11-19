@@ -18,6 +18,7 @@ package androidx.compose.material3.adaptive.layout
 
 import androidx.annotation.FloatRange
 import androidx.compose.animation.core.Transition
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.LookaheadScope
@@ -84,6 +85,23 @@ sealed interface PaneScaffoldScope {
      * @see PaneScaffoldDirective.defaultPanePreferredWidth
      */
     fun Modifier.preferredWidth(width: Dp): Modifier
+
+    /**
+     * The modifier that should be applied on a drag handle composable so the drag handle can be
+     * dragged and operate on the provided [PaneExpansionState] properly. This modifier also sets up
+     * other behaviors a pane expansion drag handle is supposed to perform, like excluding system
+     * gestures and ensuring minimum touch target size.
+     *
+     * See usage samples at:
+     *
+     * @sample androidx.compose.material3.adaptive.samples.PaneExpansionDragHandleSample
+     */
+    @ExperimentalMaterial3AdaptiveApi
+    fun Modifier.paneExpansionDraggable(
+        state: PaneExpansionState,
+        minTouchTargetSize: Dp,
+        interactionSource: MutableInteractionSource
+    ): Modifier
 }
 
 /**

@@ -24,15 +24,16 @@ import androidx.annotation.StringDef
 import androidx.security.state.SecurityStateManager.Companion.KEY_KERNEL_VERSION
 import androidx.security.state.SecurityStateManager.Companion.KEY_SYSTEM_SPL
 import androidx.security.state.SecurityStateManager.Companion.KEY_VENDOR_SPL
-import com.google.gson.Gson
-import com.google.gson.JsonSyntaxException
-import com.google.gson.annotations.SerializedName
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.regex.Pattern
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
 
 /**
  * Provides methods to access and manage security state information for various components within a
@@ -308,20 +309,21 @@ constructor(
         public fun getBuildVersion(): Int = buildVersion
     }
 
+    @Serializable
     private data class VulnerabilityReport(
         /* Key is the SPL date yyyy-MM-dd */
-        @SerializedName("vulnerabilities")
         val vulnerabilities: Map<String, List<VulnerabilityGroup>>,
 
         /* Key is the SPL date yyyy-MM-dd, values are kernel versions */
-        @SerializedName("kernel_lts_versions") val kernelLtsVersions: Map<String, List<String>>
+        @SerialName("kernel_lts_versions") val kernelLtsVersions: Map<String, List<String>>
     )
 
+    @Serializable
     private data class VulnerabilityGroup(
-        @SerializedName("cve_identifiers") val cveIdentifiers: List<String>,
-        @SerializedName("asb_identifiers") val asbIdentifiers: List<String>,
-        @SerializedName("severity") val severity: String,
-        @SerializedName("components") val components: List<String>
+        @SerialName("cve_identifiers") val cveIdentifiers: List<String>,
+        @SerialName("asb_identifiers") val asbIdentifiers: List<String>,
+        val severity: String,
+        val components: List<String>
     )
 
     /**
@@ -354,8 +356,9 @@ constructor(
         val result: VulnerabilityReport
 
         try {
-            result = Gson().fromJson(jsonString, VulnerabilityReport::class.java)
-        } catch (e: JsonSyntaxException) {
+            val json = Json { ignoreUnknownKeys = true }
+            result = json.decodeFromString<VulnerabilityReport>(jsonString)
+        } catch (e: SerializationException) {
             throw IllegalArgumentException("Malformed JSON input: ${e.message}")
         }
 
@@ -794,7 +797,6 @@ constructor(
 
         val updates = mutableListOf<UpdateInfo>()
         val contentResolver = context.contentResolver
-        val gson = Gson()
 
         updateInfoProviders.forEach { providerUri ->
             val cursor = contentResolver.query(providerUri, arrayOf("json"), null, null, null)
@@ -802,7 +804,9 @@ constructor(
                 while (it.moveToNext()) {
                     val json = it.getString(it.getColumnIndexOrThrow("json"))
                     try {
-                        val updateInfo = gson.fromJson(json, UpdateInfo::class.java) ?: continue
+                        val serializableUpdateInfo =
+                            Json.decodeFromString<SerializableUpdateInfo>(json)
+                        val updateInfo: UpdateInfo = serializableUpdateInfo.toUpdateInfo()
                         val component = updateInfo.component
                         val deviceSpl = getDeviceSecurityPatchLevel(component)
 

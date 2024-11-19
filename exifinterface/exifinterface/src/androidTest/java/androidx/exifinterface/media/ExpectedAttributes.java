@@ -151,13 +151,15 @@ final class ExpectedAttributes {
                     .setXmpOffsetAndLength(1809, 13197)
                     .build();
 
-    /** Expected attributes for {@link R.raw#png_with_exif_byte_order_ii}. */
-    public static final ExpectedAttributes PNG_WITH_EXIF_BYTE_ORDER_II =
+    /** Expected attributes for {@link R.raw#png_with_exif_and_xmp_byte_order_ii}. */
+    public static final ExpectedAttributes PNG_WITH_EXIF_AND_XMP_BYTE_ORDER_II =
             JPEG_WITH_EXIF_BYTE_ORDER_II
                     .buildUpon()
                     .setThumbnailOffset(212271)
                     .setMakeOffset(211525)
                     .setFocalLength("41/10")
+                    // TODO: b/332793608 - Add expected XMP values and offset/length when
+                    //  ExifInterface can parse the iTXt chunk.
                     .build();
 
     /** Expected attributes for {@link R.raw#webp_with_exif}. */

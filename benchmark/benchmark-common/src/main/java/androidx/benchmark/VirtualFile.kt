@@ -333,15 +333,17 @@ private class RootState(val sessionRooted: Boolean, val suAvailable: Boolean) {
         fun check() =
             RootState(
                 sessionRooted =
-                    uiAutomation
-                        .executeShellCommand("id")
-                        .fullyReadInputStream()
-                        .contains("uid=0(root)"),
+                    DeviceInfo.isRooted &&
+                        uiAutomation
+                            .executeShellCommand("id")
+                            .fullyReadInputStream()
+                            .contains("uid=0(root)"),
                 suAvailable =
-                    uiAutomation
-                        .executeShellCommand("su root id")
-                        .fullyReadInputStream()
-                        .contains("uid=0(root)")
+                    DeviceInfo.isRooted &&
+                        uiAutomation
+                            .executeShellCommand("su root id")
+                            .fullyReadInputStream()
+                            .contains("uid=0(root)")
             )
     }
 

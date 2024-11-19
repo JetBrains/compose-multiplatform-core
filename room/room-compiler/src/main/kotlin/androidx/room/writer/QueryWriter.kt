@@ -18,6 +18,7 @@ package androidx.room.writer
 
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.codegen.XMemberName.Companion.packageMember
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.ext.CommonTypeNames
@@ -72,16 +73,18 @@ class QueryWriter(
         scope.builder.apply {
             if (varargParams.isNotEmpty()) {
                 val stringBuilderVar = scope.getTmpVar("_stringBuilder")
-                val stringBuilderTypeName =
-                    when (language) {
-                        CodeLanguage.JAVA -> CommonTypeNames.STRING_BUILDER
-                        CodeLanguage.KOTLIN -> KotlinTypeNames.STRING_BUILDER
-                    }
-                addLocalVariable(
-                    name = stringBuilderVar,
-                    typeName = stringBuilderTypeName,
-                    assignExpr = XCodeBlock.ofNewInstance(language, stringBuilderTypeName)
-                )
+                applyTo { language ->
+                    val stringBuilderType =
+                        when (language) {
+                            CodeLanguage.JAVA -> CommonTypeNames.STRING_BUILDER
+                            CodeLanguage.KOTLIN -> KotlinTypeNames.STRING_BUILDER
+                        }
+                    addLocalVariable(
+                        name = stringBuilderVar,
+                        typeName = stringBuilderType,
+                        assignExpr = XCodeBlock.ofNewInstance(stringBuilderType)
+                    )
+                }
                 query.sections.forEach { section ->
                     when (section) {
                         is Section.Text ->
@@ -136,7 +139,6 @@ class QueryWriter(
                         typeName = RoomTypeNames.ROOM_SQL_QUERY,
                         assignExpr =
                             XCodeBlock.of(
-                                language,
                                 "%M(%L, %L)",
                                 RoomMemberNames.ROOM_SQL_QUERY_ACQUIRE,
                                 outSqlQueryName,
@@ -157,7 +159,6 @@ class QueryWriter(
                         typeName = RoomTypeNames.ROOM_SQL_QUERY,
                         assignExpr =
                             XCodeBlock.of(
-                                language,
                                 "%M(%L, %L)",
                                 RoomMemberNames.ROOM_SQL_QUERY_ACQUIRE,
                                 outSqlQueryName,
@@ -184,7 +185,7 @@ class QueryWriter(
                 name = argIndex,
                 typeName = XTypeName.PRIMITIVE_INT,
                 isMutable = true,
-                assignExpr = XCodeBlock.of(language, "%L", 1)
+                assignExpr = XCodeBlock.of("%L", 1)
             )
             // # of bindings with 1 placeholder
             var constInputs = 0

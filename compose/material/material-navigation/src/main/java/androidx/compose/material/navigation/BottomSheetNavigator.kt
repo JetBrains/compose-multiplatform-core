@@ -63,7 +63,11 @@ public class BottomSheetNavigatorSheetState(private val sheetState: ModalBottomS
         get() = sheetState.targetValue
 }
 
-/** Create and remember a [BottomSheetNavigator] */
+/**
+ * Create and remember a [BottomSheetNavigator].
+ *
+ * @param animationSpec The default animation that will be used to animate to a new state.
+ */
 @Composable
 public fun rememberBottomSheetNavigator(
     animationSpec: AnimationSpec<Float> = SpringSpec()
@@ -86,11 +90,9 @@ public fun rememberBottomSheetNavigator(
  *
  * When the sheet is dismissed by the user, the [state]'s [NavigatorState.backStack] will be popped.
  *
- * The primary constructor is not intended for public use. Please refer to
- * [rememberBottomSheetNavigator] instead.
- *
  * @param sheetState The [ModalBottomSheetState] that the [BottomSheetNavigator] will use to drive
  *   the sheet state
+ * @see rememberBottomSheetNavigator()
  */
 @Navigator.Name("bottomSheet")
 public class BottomSheetNavigator(internal val sheetState: ModalBottomSheetState) :
@@ -205,7 +207,12 @@ public class BottomSheetNavigator(internal val sheetState: ModalBottomSheetState
         state.popWithTransition(popUpTo, savedState)
     }
 
-    /** [NavDestination] specific to [BottomSheetNavigator] */
+    /**
+     * [NavDestination] specific to [BottomSheetNavigator].
+     *
+     * @param navigator The navigator used to navigate to this destination
+     * @param content The content to be displayed for this destination
+     */
     @NavDestination.ClassType(Composable::class)
     public class Destination(
         navigator: BottomSheetNavigator,

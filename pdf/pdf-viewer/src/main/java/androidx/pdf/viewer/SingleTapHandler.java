@@ -83,6 +83,7 @@ public class SingleTapHandler {
         }
 
         handleSelection();
+        mFindInFileView.handleSingleTapEvent();
 
         Point point = new Point((int) event.getX(), (int) event.getY());
         handleExternalLink(point, pageMosaicView);
@@ -94,8 +95,7 @@ public class SingleTapHandler {
     }
 
     private void handleSelection() {
-        boolean hadSelection =
-                mPdfSelectionModel != null && mPdfSelectionModel.selection().get() != null;
+        boolean hadSelection = mPdfSelectionModel.selection().get() != null;
         if (hadSelection) {
             mPdfSelectionModel.setSelection(null);
         }

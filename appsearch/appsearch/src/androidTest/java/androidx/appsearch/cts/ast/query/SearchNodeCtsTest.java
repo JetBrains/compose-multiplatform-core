@@ -42,6 +42,17 @@ public class SearchNodeCtsTest {
     public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
 
     @Test
+    public void testEquals_identical() {
+        SearchNode searchNodeOne = new SearchNode(
+                new TextNode("foo"), List.of(new PropertyPath("example.property.path")));
+        SearchNode searchNodeTwo = new SearchNode(
+                new TextNode("foo"), List.of(new PropertyPath("example.property.path")));
+
+        assertThat(searchNodeOne).isEqualTo(searchNodeTwo);
+        assertThat(searchNodeOne.hashCode()).isEqualTo(searchNodeTwo.hashCode());
+    }
+
+    @Test
     public void testConstructor_defaultValues() {
         TextNode node = new TextNode("foo");
         SearchNode searchNode = new SearchNode(node);

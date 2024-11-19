@@ -24,6 +24,8 @@ import androidx.appsearch.flags.FlaggedApi;
 import androidx.appsearch.flags.Flags;
 import androidx.core.util.Preconditions;
 
+import java.util.Objects;
+
 /**
  * {@link FunctionNode} representing the `hasProperty` query function.
  *
@@ -83,5 +85,18 @@ public final class HasPropertyNode implements FunctionNode {
     @Override
     public String toString() {
         return FunctionNode.FUNCTION_NAME_HAS_PROPERTY + "(\"" + mProperty + "\")";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        HasPropertyNode that = (HasPropertyNode) o;
+        return Objects.equals(mProperty, that.mProperty);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(mProperty);
     }
 }

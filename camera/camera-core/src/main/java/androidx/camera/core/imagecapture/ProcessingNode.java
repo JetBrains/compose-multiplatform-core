@@ -17,6 +17,7 @@
 package androidx.camera.core.imagecapture;
 
 import static android.graphics.ImageFormat.JPEG;
+import static android.graphics.ImageFormat.JPEG_R;
 import static android.graphics.ImageFormat.RAW_SENSOR;
 import static android.graphics.ImageFormat.YUV_420_888;
 
@@ -222,16 +223,16 @@ public class ProcessingNode implements Node<ProcessingNode.In, Void> {
 
     @WorkerThread
     void processPostviewInputPacket(@NonNull InputPacket inputPacket) {
-        List<Integer> outputFormats = mInputEdge.getOutputFormats();
-        checkArgument(!outputFormats.isEmpty());
-
-        int format = outputFormats.get(0);
-        checkArgument(format == YUV_420_888 || format == JPEG,
-                String.format("Postview only support YUV and JPEG output formats. "
-                        + "Output format: %s", format));
         ProcessingRequest request = inputPacket.getProcessingRequest();
         try {
             Packet<ImageProxy> image = mInput2Packet.apply(inputPacket);
+            int imageFormat = image.getFormat();
+            checkArgument(
+                    imageFormat == YUV_420_888 || imageFormat == JPEG || imageFormat == JPEG_R,
+                    String.format(
+                            "Postview only supports to convert YUV, JPEG and JPEG_R format image "
+                                    + "to the postview output bitmap. Image format: %s",
+                            imageFormat));
             Bitmap bitmap = mImage2Bitmap.apply(image);
             mainThreadExecutor().execute(() -> request.onPostviewBitmapAvailable(bitmap));
         } catch (Exception e) {

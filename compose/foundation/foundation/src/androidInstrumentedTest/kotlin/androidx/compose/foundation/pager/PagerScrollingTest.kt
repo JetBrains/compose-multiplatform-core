@@ -50,7 +50,8 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     initialPage = 5,
                     modifier = Modifier.fillMaxSize(),
                     orientation = it.orientation,
-                    pageSpacing = it.pageSpacing
+                    pageSpacing = it.pageSpacing,
+                    useLookahead = it.useLookahead
                 )
             }
 
@@ -98,6 +99,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     modifier = Modifier.fillMaxSize(),
                     orientation = it.orientation,
                     pageSpacing = it.pageSpacing,
+                    useLookahead = it.useLookahead,
                     layoutDirection = it.layoutDirection
                 )
             }
@@ -151,7 +153,8 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     modifier = Modifier.fillMaxSize(),
                     snapPositionalThreshold = 0.2f,
                     orientation = it.orientation,
-                    pageSpacing = it.pageSpacing
+                    pageSpacing = it.pageSpacing,
+                    useLookahead = it.useLookahead
                 )
             }
 
@@ -201,7 +204,8 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     modifier = Modifier.fillMaxSize(),
                     snapPositionalThreshold = 0.8f,
                     orientation = it.orientation,
-                    pageSpacing = it.pageSpacing
+                    pageSpacing = it.pageSpacing,
+                    useLookahead = it.useLookahead
                 )
             }
 
@@ -251,7 +255,8 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     modifier = Modifier.fillMaxSize(),
                     pageSize = PageSize.Fixed(200.dp),
                     orientation = it.orientation,
-                    pageSpacing = it.pageSpacing
+                    pageSpacing = it.pageSpacing,
+                    useLookahead = it.useLookahead
                 )
             }
 
@@ -298,7 +303,8 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     modifier = Modifier.size(125.dp),
                     pageSize = PageSize.Fixed(50.dp),
                     orientation = it.orientation,
-                    pageSpacing = it.pageSpacing
+                    pageSpacing = it.pageSpacing,
+                    useLookahead = it.useLookahead
                 )
             }
 
@@ -332,7 +338,8 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     initialPage = 5,
                     modifier = Modifier.fillMaxSize(),
                     orientation = it.orientation,
-                    pageSpacing = it.pageSpacing
+                    pageSpacing = it.pageSpacing,
+                    useLookahead = it.useLookahead
                 )
             }
 
@@ -380,7 +387,8 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     modifier = Modifier.fillMaxSize(),
                     snapPositionalThreshold = 0.2f,
                     orientation = it.orientation,
-                    pageSpacing = it.pageSpacing
+                    pageSpacing = it.pageSpacing,
+                    useLookahead = it.useLookahead
                 )
             }
 
@@ -426,7 +434,8 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                 ParameterizedPager(
                     modifier = Modifier.fillMaxSize(),
                     orientation = it.orientation,
-                    pageSpacing = it.pageSpacing
+                    pageSpacing = it.pageSpacing,
+                    useLookahead = it.useLookahead
                 )
             }
 
@@ -482,7 +491,8 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     modifier = Modifier.fillMaxSize(),
                     initialPage = DefaultPageCount - 1,
                     orientation = it.orientation,
-                    pageSpacing = it.pageSpacing
+                    pageSpacing = it.pageSpacing,
+                    useLookahead = it.useLookahead
                 )
             }
             forEachParameter(ParamsToTest) { param ->
@@ -538,7 +548,8 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     modifier = Modifier.fillMaxSize(),
                     pageSize = PageSize.Fixed(200.dp),
                     orientation = it.orientation,
-                    pageSpacing = it.pageSpacing
+                    pageSpacing = it.pageSpacing,
+                    useLookahead = it.useLookahead
                 )
             }
 
@@ -585,7 +596,8 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     modifier = Modifier.fillMaxSize(),
                     snapPositionalThreshold = 0.8f,
                     orientation = it.orientation,
-                    pageSpacing = it.pageSpacing
+                    pageSpacing = it.pageSpacing,
+                    useLookahead = it.useLookahead
                 )
             }
 
@@ -634,7 +646,8 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     initialPage = 5,
                     modifier = Modifier.fillMaxSize(),
                     orientation = it.orientation,
-                    pageSpacing = it.pageSpacing
+                    pageSpacing = it.pageSpacing,
+                    useLookahead = it.useLookahead
                 )
             }
             forEachParameter(ParamsToTest) { param ->
@@ -682,7 +695,8 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     initialPage = 5,
                     modifier = Modifier.fillMaxSize(),
                     orientation = it.orientation,
-                    pageSpacing = it.pageSpacing
+                    pageSpacing = it.pageSpacing,
+                    useLookahead = it.useLookahead
                 )
             }
             forEachParameter(ParamsToTest) { param ->
@@ -733,6 +747,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     pageSpacing = it.pageSpacing,
                     contentPadding = it.mainAxisContentPadding,
                     snapPosition = it.snapPosition.first,
+                    useLookahead = it.useLookahead,
                     pageSize = PageSize.Fixed(200.dp)
                 )
             }
@@ -804,7 +819,8 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     initialPage = 5,
                     modifier = Modifier.fillMaxSize(),
                     orientation = it.orientation,
-                    pageSpacing = it.pageSpacing
+                    pageSpacing = it.pageSpacing,
+                    useLookahead = it.useLookahead,
                 )
             }
             forEachParameter(ParamsToTest) { param ->
@@ -851,7 +867,8 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     pageCount = { 100 },
                     snappingPage = PagerSnapDistance.atMost(3),
                     orientation = it.orientation,
-                    pageSpacing = it.pageSpacing
+                    pageSpacing = it.pageSpacing,
+                    useLookahead = it.useLookahead
                 )
             }
 
@@ -906,7 +923,8 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     pageCount = { 100 },
                     snappingPage = PagerSnapDistance.atMost(3),
                     orientation = it.orientation,
-                    pageSpacing = it.pageSpacing
+                    pageSpacing = it.pageSpacing,
+                    useLookahead = it.useLookahead
                 )
             }
 
@@ -958,6 +976,7 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                     modifier = Modifier.fillMaxSize(),
                     orientation = it.orientation,
                     pageSpacing = it.pageSpacing,
+                    useLookahead = it.useLookahead,
                     contentPadding = PaddingValues(1.dp)
                 )
             }
@@ -1004,6 +1023,14 @@ class PagerScrollingTest : SingleParamBasePagerTest() {
                         add(SingleParamConfig(orientation = orientation, pageSpacing = pageSpacing))
                     }
                 }
+                // Add a config to use lookahead
+                add(
+                    SingleParamConfig(
+                        orientation = TestOrientation[0],
+                        pageSpacing = TestPageSpacing[0],
+                        useLookahead = true
+                    )
+                )
             }
     }
 }

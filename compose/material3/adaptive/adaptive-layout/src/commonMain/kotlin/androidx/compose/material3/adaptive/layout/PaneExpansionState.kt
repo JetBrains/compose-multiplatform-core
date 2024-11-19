@@ -199,7 +199,7 @@ internal constructor(
     // TODO(conradchen): Handle state change during dragging and settling
     data: PaneExpansionStateData = PaneExpansionStateData(),
     anchors: List<PaneExpansionAnchor> = emptyList()
-) : DraggableState {
+) {
 
     internal val firstPaneWidth
         get() =
@@ -261,7 +261,7 @@ internal constructor(
 
     private val dragScope =
         object : DragScope, ScrollScope {
-            override fun dragBy(pixels: Float): Unit = dispatchRawDelta(pixels)
+            override fun dragBy(pixels: Float): Unit = draggableState.dispatchRawDelta(pixels)
 
             override fun scrollBy(pixels: Float): Float { // To support fling
                 val offsetBeforeDrag = currentDraggingOffset
@@ -273,25 +273,30 @@ internal constructor(
 
     private val dragMutex = MutatorMutex()
 
+    internal val draggableState: DraggableState =
+        object : DraggableState {
+            override fun dispatchRawDelta(delta: Float) {
+                if (currentMeasuredDraggingOffset == Unspecified) {
+                    return
+                }
+                currentDraggingOffset = (currentMeasuredDraggingOffset + delta).toInt()
+            }
+
+            override suspend fun drag(
+                dragPriority: MutatePriority,
+                block: suspend DragScope.() -> Unit
+            ) = coroutineScope {
+                isDragging = true
+                dragMutex.mutateWith(dragScope, dragPriority, block)
+                isDragging = false
+            }
+        }
+
     /** Returns `true` if none of [firstPaneWidth] or [firstPaneProportion] has been set. */
     fun isUnspecified(): Boolean =
         firstPaneWidth == Unspecified &&
             firstPaneProportion.isNaN() &&
             currentDraggingOffset == Unspecified
-
-    override fun dispatchRawDelta(delta: Float) {
-        if (currentMeasuredDraggingOffset == Unspecified) {
-            return
-        }
-        currentDraggingOffset = (currentMeasuredDraggingOffset + delta).toInt()
-    }
-
-    override suspend fun drag(dragPriority: MutatePriority, block: suspend DragScope.() -> Unit) =
-        coroutineScope {
-            isDragging = true
-            dragMutex.mutateWith(dragScope, dragPriority, block)
-            isDragging = false
-        }
 
     /**
      * Set the width of the first expanded pane in the layout. When the set value gets applied, it
@@ -543,6 +548,18 @@ sealed class PaneExpansionAnchor private constructor() {
         internal const val OffsetType = 2
     }
 }
+
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@Composable
+internal fun rememberDefaultPaneExpansionState(
+    keyProvider: () -> PaneExpansionStateKeyProvider,
+    mutable: Boolean
+): PaneExpansionState =
+    if (mutable) {
+        rememberPaneExpansionState(keyProvider())
+    } else {
+        remember { PaneExpansionState() } // Use a stub impl to avoid performance overhead
+    }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @VisibleForTesting

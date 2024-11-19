@@ -1,11 +1,15 @@
 // Klib ABI Dump
-// Targets: [iosArm64, iosSimulatorArm64, iosX64, linuxArm64, linuxX64, macosArm64, macosX64, tvosArm64, tvosSimulatorArm64, tvosX64, watchosArm32, watchosArm64, watchosSimulatorArm64, watchosX64]
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, linuxArm64, linuxX64, macosArm64, macosX64, tvosArm64, tvosSimulatorArm64, tvosX64, watchosArm32, watchosArm64, watchosDeviceArm64, watchosSimulatorArm64, watchosX64]
 // Rendering settings:
 // - Signature version: 2
 // - Show manifest properties: true
 // - Show declarations: true
 
 // Library unique name: <androidx.datastore:datastore-core>
+abstract interface <#A: kotlin/Any?> androidx.datastore.core/CurrentDataProviderStore : androidx.datastore.core/DataStore<#A> { // androidx.datastore.core/CurrentDataProviderStore|null[0]
+    abstract suspend fun currentData(): #A // androidx.datastore.core/CurrentDataProviderStore.currentData|currentData(){}[0]
+}
+
 abstract interface <#A: kotlin/Any?> androidx.datastore.core/DataMigration { // androidx.datastore.core/DataMigration|null[0]
     abstract suspend fun cleanUp() // androidx.datastore.core/DataMigration.cleanUp|cleanUp(){}[0]
     abstract suspend fun migrate(#A): #A // androidx.datastore.core/DataMigration.migrate|migrate(1:0){}[0]

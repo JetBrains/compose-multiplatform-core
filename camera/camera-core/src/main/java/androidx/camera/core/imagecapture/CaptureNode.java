@@ -186,12 +186,13 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
         setOnImageAvailableListener(wrappedImageReader);
 
         // Postview
-        if (inputEdge.getPostviewSize() != null) {
+        PostviewSettings postviewSettings = inputEdge.getPostviewSettings();
+        if (postviewSettings != null) {
             ImageReaderProxy postviewImageReader =
                     createImageReaderProxy(inputEdge.getImageReaderProxyProvider(),
-                            inputEdge.getPostviewSize().getWidth(),
-                            inputEdge.getPostviewSize().getHeight(),
-                            inputEdge.getPostviewImageFormat());
+                            postviewSettings.getResolution().getWidth(),
+                            postviewSettings.getResolution().getHeight(),
+                            postviewSettings.getInputFormat());
             postviewImageReader.setOnImageAvailableListener(imageReader -> {
                 try {
                     ImageProxy image = imageReader.acquireLatestImage();
@@ -204,9 +205,8 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
             }, mainThreadExecutor());
 
             mSafeCloseImageReaderForPostview = new SafeCloseImageReaderProxy(postviewImageReader);
-            inputEdge.setPostviewSurface(
-                    postviewImageReader.getSurface(),
-                    inputEdge.getPostviewSize(), inputEdge.getPostviewImageFormat());
+            inputEdge.setPostviewSurface(postviewImageReader.getSurface(),
+                    postviewSettings.getResolution(), postviewSettings.getInputFormat());
         }
 
         // Simultaneous capture RAW + JPEG
@@ -497,15 +497,10 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
         abstract ImageReaderProxyProvider getImageReaderProxyProvider();
 
         /**
-         * The size of the postview. Postview is configured if not null.
+         * The settings of the postview. Postview is configured if not null.
          */
         @Nullable
-        abstract Size getPostviewSize();
-
-        /**
-         * The image format of the postview.
-         */
-        abstract int getPostviewImageFormat();
+        abstract PostviewSettings getPostviewSettings();
 
         /**
          * Edge that accepts {@link ProcessingRequest}.
@@ -592,8 +587,7 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
                 boolean isVirtualCamera,
                 @Nullable ImageReaderProxyProvider imageReaderProxyProvider) {
             return new AutoValue_CaptureNode_In(size, inputFormat, outputFormats, isVirtualCamera,
-                    imageReaderProxyProvider, null, ImageFormat.YUV_420_888,
-                    new Edge<>(), new Edge<>());
+                    imageReaderProxyProvider, null, new Edge<>(), new Edge<>());
         }
 
         @NonNull
@@ -603,10 +597,9 @@ class CaptureNode implements Node<CaptureNode.In, ProcessingNode.In> {
                 @NonNull List<Integer> outputFormats,
                 boolean isVirtualCamera,
                 @Nullable ImageReaderProxyProvider imageReaderProxyProvider,
-                @Nullable Size postviewSize, int postviewImageFormat) {
+                @Nullable PostviewSettings postviewSettings) {
             return new AutoValue_CaptureNode_In(size, inputFormat, outputFormats, isVirtualCamera,
-                    imageReaderProxyProvider, postviewSize, postviewImageFormat,
-                    new Edge<>(), new Edge<>());
+                    imageReaderProxyProvider, postviewSettings, new Edge<>(), new Edge<>());
         }
     }
 }

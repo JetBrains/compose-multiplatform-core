@@ -27,7 +27,7 @@ import com.android.build.api.AndroidPluginVersion
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.ComponentIdentity
 import com.android.build.api.variant.HasUnitTest
-import com.google.devtools.ksp.gradle.KspTaskJvm
+import com.google.devtools.ksp.gradle.KspTask
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.compile.JavaCompile
@@ -205,7 +205,7 @@ internal class AndroidPluginIntegration(private val common: CommonIntegration) {
         argumentProviderFactory: (Task) -> RoomArgumentProvider
     ) =
         project.plugins.withId("com.google.devtools.ksp") {
-            project.tasks.withType(KspTaskJvm::class.java).configureEach { task ->
+            project.tasks.withType(KspTask::class.java).configureEach { task ->
                 if (androidVariantsTaskNames.isKspTaskJvm(task.name)) {
                     val argProvider = argumentProviderFactory.invoke(task)
                     task.commandLineArgumentProviders.add(argProvider)

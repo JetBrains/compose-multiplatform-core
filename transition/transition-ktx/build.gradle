@@ -49,4 +49,5 @@ androidx {
 
 android {
     namespace "androidx.transition.ktx"
+    compileSdk 35
 }

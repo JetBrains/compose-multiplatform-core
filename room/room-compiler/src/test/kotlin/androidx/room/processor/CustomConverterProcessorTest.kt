@@ -25,7 +25,7 @@ import androidx.room.compiler.codegen.XFunSpec
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.XTypeSpec
 import androidx.room.compiler.codegen.compat.XConverters.applyToJavaPoet
-import androidx.room.compiler.codegen.compat.XConverters.applyToKotlinPoet
+import androidx.room.compiler.codegen.compat.XConverters.toString
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
 import androidx.room.ext.CommonTypeNames
@@ -251,10 +251,10 @@ class CustomConverterProcessorTest {
             Source.java(
                 extendingClassName.canonicalName,
                 "package foo.bar;\n" +
-                    XTypeSpec.classBuilder(CodeLanguage.JAVA, extendingClassName)
+                    XTypeSpec.classBuilder(extendingClassName)
                         .apply { superclass(CONVERTER.parametrizedBy(STRING, XTypeName.BOXED_INT)) }
                         .build()
-                        .toString()
+                        .toString(CodeLanguage.JAVA)
             )
         runProcessorTestWithK1(sources = listOf(baseConverter, extendingClass)) { invocation ->
             val element =
@@ -365,21 +365,18 @@ class CustomConverterProcessorTest {
         duplicate: Boolean = false
     ): Source {
         val code =
-            XTypeSpec.classBuilder(CodeLanguage.JAVA, CONVERTER, isOpen = true)
+            XTypeSpec.classBuilder(CONVERTER, isOpen = true)
                 .apply {
                     setVisibility(VisibilityModifier.PUBLIC)
                     fun buildMethod(name: String) =
-                        XFunSpec.builder(CodeLanguage.JAVA, name, VisibilityModifier.PUBLIC)
+                        XFunSpec.builder(name, VisibilityModifier.PUBLIC)
+                            .addAnnotation(
+                                XAnnotationSpec.builder(RoomAnnotationTypeNames.TYPE_CONVERTER)
+                                    .build()
+                            )
+                            .returns(to)
+                            .addParameter("input", from)
                             .apply {
-                                addAnnotation(
-                                    XAnnotationSpec.builder(
-                                            CodeLanguage.JAVA,
-                                            RoomAnnotationTypeNames.TYPE_CONVERTER
-                                        )
-                                        .build()
-                                )
-                                returns(to)
-                                addParameter(from, "input")
                                 if (to.isPrimitive) {
                                     addStatement("return 0")
                                 } else {
@@ -393,9 +390,8 @@ class CustomConverterProcessorTest {
                     }
                 }
                 .applyToJavaPoet { addTypeVariables(typeVariables) }
-                .applyToKotlinPoet { error("Test converter shouldn't be generated in Kotlin") }
                 .build()
-                .toString()
+                .toString(CodeLanguage.JAVA)
         return Source.java(CONVERTER.canonicalName, "package ${CONVERTER.packageName};\n$code")
     }
 

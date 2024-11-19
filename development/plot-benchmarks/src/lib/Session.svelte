@@ -114,7 +114,7 @@
     session = new Session(fileEntries);
     mapper = buildMapper($buckets);
     metrics = Transforms.buildMetrics(session, $suppressed, $suppressedMetrics);
-    showControls = metrics.sampled && metrics.sampled.length > 0;
+    showControls = Array.isArray(metrics.sampled) && metrics.sampled.length > 0;
     activeSeries = service.pSeries(metrics, $active);
     series = ChartDataTransforms.mapToSeries(
       metrics,
@@ -145,16 +145,19 @@
   }
 
   async function handleFileDragDrop(event: DragEvent) {
-    const items = [...event.dataTransfer.items];
+    const items = [...event.dataTransfer?.items || []];
     if (items) {
       let newFiles = await Promise.all(
         items
           .filter(
-            (item) =>
-              item.kind === "file" && item.getAsFile().name.endsWith(".json")
+            (item) => {
+              const file = item.getAsFile()
+              return item.kind === "file" && file && file.name.endsWith(".json")
+            }
           )
           .map(async (item) => {
-            const file = item.getAsFile();
+            // At this point, we know the file had some JSON content.
+            const file = item.getAsFile()!!;
             const benchmarks = await readBenchmarks(file);
             const entry: FileMetadata = {
               enabled: true,
@@ -230,7 +233,7 @@
   {/if}
 
   {#await activeSeries}
-    <article aria-busy="true" />
+    <article aria-busy="true"></article>
   {:then chartData}
     {#if chartData.length > 0}
       <Chart

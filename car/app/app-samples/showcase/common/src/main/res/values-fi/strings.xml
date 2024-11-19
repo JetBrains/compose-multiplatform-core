@@ -321,6 +321,8 @@
     <string name="secondary_actions_test_subtitle" msgid="6985282813402073703">"Voit valita vain toissijaisen toiminnon"</string>
     <string name="decoration_test_title" msgid="8450127046762442244">"Kuviotesti"</string>
     <string name="secondary_actions_decoration_test_title" msgid="6282873404859209490">"Toissijaiset toiminnot ja kuvio"</string>
+    <!-- no translation found for secondary_actions_decoration_test_title_long (3700606949229899169) -->
+    <skip />
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"Voit valita myös rivin"</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"Toissijainen toiminto on valittu"</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"Rivin ensisijainen toiminto on valittu"</string>

@@ -106,6 +106,9 @@ internal class StyleConfigFragment : Fragment(), ClickListener {
                 }
                 booleanStyle.visibility = View.VISIBLE
             }
+            is UserStyleSetting.ColorUserStyleSetting -> {
+                // Not supported, ignore.
+            }
             is ListUserStyleSetting -> {
                 styleOptionsList.adapter =
                     ListStyleSettingViewAdapter(

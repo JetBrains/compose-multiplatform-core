@@ -16,13 +16,18 @@
 
 package androidx.compose.ui.focus
 
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusStateImpl.Active
 import androidx.compose.ui.focus.FocusStateImpl.ActiveParent
 import androidx.compose.ui.focus.FocusStateImpl.Captured
 import androidx.compose.ui.focus.FocusStateImpl.Inactive
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
@@ -634,5 +639,55 @@ class RequestFocusTest {
             assertThat(parentFocusState).isEqualTo(ActiveParent)
             assertThat(focusState).isEqualTo(Active)
         }
+    }
+
+    @Test
+    fun requestFocusWithDirection() {
+        val requester1 = FocusRequester()
+        val requester2 = FocusRequester()
+        var focusDirection: FocusDirection? = null
+        rule.setContent {
+            Box(Modifier.fillMaxSize()) {
+                Box(
+                    Modifier.size(10.dp)
+                        .align(Alignment.TopCenter)
+                        .focusProperties { onEnter = { focusDirection = requestedFocusDirection } }
+                        .focusGroup()
+                ) {
+                    Box(Modifier.focusRequester(requester1).focusTarget().size(10.dp))
+                }
+                Box(
+                    Modifier.size(10.dp)
+                        .align(Alignment.BottomCenter)
+                        .focusProperties { onEnter = { focusDirection = requestedFocusDirection } }
+                        .focusGroup()
+                ) {
+                    Box(Modifier.focusRequester(requester2).focusTarget().size(10.dp))
+                }
+            }
+        }
+
+        rule.runOnIdle { requester1.requestFocus(FocusDirection.Up) }
+        rule.runOnIdle {
+            assertThat(focusDirection).isEqualTo(FocusDirection.Up)
+            requester2.requestFocus(FocusDirection.Left)
+        }
+        rule.runOnIdle {
+            assertThat(focusDirection).isEqualTo(FocusDirection.Left)
+            requester1.requestFocus(FocusDirection.Right)
+        }
+        rule.runOnIdle {
+            assertThat(focusDirection).isEqualTo(FocusDirection.Right)
+            requester2.requestFocus(FocusDirection.Down)
+        }
+        rule.runOnIdle {
+            assertThat(focusDirection).isEqualTo(FocusDirection.Down)
+            requester1.requestFocus(FocusDirection.Enter)
+        }
+        rule.runOnIdle {
+            assertThat(focusDirection).isEqualTo(FocusDirection.Enter)
+            requester2.requestFocus(FocusDirection.Exit)
+        }
+        rule.runOnIdle { assertThat(focusDirection).isEqualTo(FocusDirection.Exit) }
     }
 }

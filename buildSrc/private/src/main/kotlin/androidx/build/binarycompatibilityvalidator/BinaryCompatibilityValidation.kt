@@ -60,12 +60,14 @@ private const val CHECK_RELEASE_NAME = "checkAbiRelease"
 private const val UPDATE_NAME = "updateAbi"
 private const val EXTRACT_NAME = "extractAbi"
 private const val EXTRACT_RELEASE_NAME = "extractAbiRelease"
+private const val IGNORE_CHANGES_NAME = "ignoreAbiChanges"
 
 private const val KLIB_DUMPS_DIRECTORY = "klib"
 private const val KLIB_MERGE_DIRECTORY = "merged"
 private const val KLIB_EXTRACTED_DIRECTORY = "extracted"
 private const val NATIVE_SUFFIX = "native"
 internal const val CURRENT_API_FILE_NAME = "current.txt"
+private const val IGNORE_FILE_NAME = "current.ignore"
 private const val ABI_GROUP_NAME = "abi"
 
 class BinaryCompatibilityValidation(
@@ -104,6 +106,7 @@ class BinaryCompatibilityValidation(
         }
         val projectVersion: Version = project.version()
         val projectAbiDir = project.getBcvFileDirectory().dir(NATIVE_SUFFIX)
+        val currentIgnoreFile = projectAbiDir.file(IGNORE_FILE_NAME)
         val buildAbiDir = project.getBuiltBcvFileDirectory().map { it.dir(NATIVE_SUFFIX) }
 
         val klibDumpDir = project.layout.buildDirectory.dir(KLIB_DUMPS_DIRECTORY)
@@ -128,7 +131,8 @@ class BinaryCompatibilityValidation(
             project.checkKlibAbiReleaseTask(
                 generatedAndMergedApiFile,
                 projectAbiDir,
-                klibExtractedFileDir
+                klibExtractedFileDir,
+                currentIgnoreFile
             )
 
         updateKlibAbi.configure { update ->
@@ -164,7 +168,8 @@ class BinaryCompatibilityValidation(
     private fun Project.checkKlibAbiReleaseTask(
         mergedApiFile: Provider<RegularFileProperty>,
         klibApiDir: Directory,
-        klibExtractDir: Provider<Directory>
+        klibExtractDir: Provider<Directory>,
+        ignoreFile: RegularFile,
     ) =
         project.getRequiredCompatibilityAbiLocation(NATIVE_SUFFIX)?.let { requiredCompatFile ->
             val extractReleaseTask =
@@ -181,6 +186,13 @@ class BinaryCompatibilityValidation(
                     it.outputAbiFile.set(klibExtractDir.map { it.file(requiredCompatFile.name) })
                     (it as DefaultTask).group = ABI_GROUP_NAME
                 }
+            project.tasks.register(IGNORE_CHANGES_NAME, IgnoreAbiChangesTask::class.java) {
+                it.currentApiDump.set(mergedApiFile.map { fileProperty -> fileProperty.get() })
+                it.previousApiDump.set(
+                    extractReleaseTask.map { extract -> extract.outputAbiFile.get() }
+                )
+                it.ignoreFile.set(ignoreFile)
+            }
             project.tasks
                 .register(CHECK_RELEASE_NAME, CheckAbiIsCompatibleTask::class.java) {
                     it.currentApiDump.set(mergedApiFile.map { fileProperty -> fileProperty.get() })
@@ -192,6 +204,7 @@ class BinaryCompatibilityValidation(
                         extractReleaseTask.map { extract ->
                             extract.outputAbiFile.get().asFile.nameWithoutExtension
                         }
+                    it.ignoreFile.set(ignoreFile)
                     it.group = ABI_GROUP_NAME
                 }
                 .also { checkRelease ->
@@ -301,6 +314,7 @@ class BinaryCompatibilityValidation(
                 GENERATE_NAME.appendCapitalized(target.targetName),
                 KotlinKlibAbiBuildTask::class.java
             ) {
+                it.nonPublicMarkers.addAll(nonPublicMarkers)
                 it.target.set(target)
                 it.klibFile.from(compilation.output.classesDirs)
                 it.signatureVersion.set(KlibSignatureVersion.LATEST)
@@ -325,5 +339,69 @@ private fun KotlinMultiplatformExtension.nativeTargets() =
 
 private fun KotlinNativeTarget.klibTargetName(): String =
     KlibTarget(targetName, konanTargetNameMapping[konanTarget.name]!!).toString()
+
+// Not ideal to have a list instead of a pattern to match but this is all the API supports right now
+private val nonPublicMarkers =
+    setOf(
+        "androidx.annotation.Experimental",
+        "androidx.benchmark.BenchmarkState.Companion.ExperimentalExternalReport",
+        "androidx.benchmark.ExperimentalBenchmarkConfigApi",
+        "androidx.benchmark.ExperimentalBenchmarkStateApi",
+        "androidx.benchmark.ExperimentalBlackHoleApi",
+        "androidx.benchmark.macro.ExperimentalMacrobenchmarkApi",
+        "androidx.benchmark.macro.ExperimentalMetricApi",
+        "androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi",
+        "androidx.benchmark.perfetto.ExperimentalPerfettoTraceProcessorApi",
+        "androidx.camera.core.ExperimentalUseCaseApi",
+        "androidx.car.app.annotations.ExperimentalCarApi",
+        "androidx.compose.animation.ExperimentalAnimationApi",
+        "androidx.compose.animation.ExperimentalSharedTransitionApi",
+        "androidx.compose.animation.core.ExperimentalAnimatableApi",
+        "androidx.compose.animation.core.ExperimentalAnimationSpecApi",
+        "androidx.compose.animation.core.ExperimentalTransitionApi",
+        "androidx.compose.animation.core.InternalAnimationApi",
+        "androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi",
+        "androidx.compose.foundation.gestures.ExperimentalTapGestureDetectorBehaviorApi",
+        "androidx.compose.foundation.ExperimentalFoundationApi",
+        "androidx.compose.foundation.InternalFoundationApi",
+        "androidx.compose.foundation.layout.ExperimentalLayoutApi",
+        "androidx.compose.material.ExperimentalMaterialApi",
+        "androidx.compose.runtime.ExperimentalComposeApi",
+        "androidx.compose.runtime.ExperimentalComposeRuntimeApi",
+        "androidx.compose.runtime.InternalComposeApi",
+        "androidx.compose.runtime.InternalComposeTracingApi",
+        "androidx.compose.ui.ExperimentalComposeUiApi",
+        "androidx.compose.ui.InternalComposeUiApi",
+        "androidx.compose.ui.input.pointer.util.ExperimentalVelocityTrackerApi",
+        "androidx.compose.ui.node.InternalCoreApi",
+        "androidx.compose.ui.test.ExperimentalTestApi",
+        "androidx.compose.ui.test.InternalTestApi",
+        "androidx.compose.ui.text.ExperimentalTextApi",
+        "androidx.compose.ui.text.InternalTextApi",
+        "androidx.compose.ui.unit.ExperimentalUnitApi",
+        "androidx.constraintlayout.compose.ExperimentalMotionApi",
+        "androidx.core.telecom.util.ExperimentalAppActions",
+        "androidx.credentials.ExperimentalDigitalCredentialApi",
+        "androidx.glance.ExperimentalGlanceApi",
+        "androidx.glance.appwidget.ExperimentalGlanceRemoteViewsApi",
+        "androidx.health.connect.client.ExperimentalDeduplicationApi",
+        "androidx.health.connect.client.feature.ExperimentalFeatureAvailabilityApi",
+        "androidx.ink.authoring.ExperimentalLatencyDataApi",
+        "androidx.ink.brush.ExperimentalInkCustomBrushApi",
+        "androidx.lifecycle.viewmodel.compose.SavedStateHandleSaveableApi",
+        "androidx.paging.ExperimentalPagingApi",
+        "androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.RegisterSourceOptIn",
+        "androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext8OptIn",
+        "androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext10OptIn",
+        "androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext11OptIn",
+        "androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext12OptIn",
+        "androidx.privacysandbox.ui.core.ExperimentalFeatures.DelegatingAdapterApi",
+        "androidx.room.ExperimentalRoomApi",
+        "androidx.room.compiler.processing.ExperimentalProcessingApi",
+        "androidx.tv.foundation.ExperimentalTvFoundationApi",
+        "androidx.wear.compose.foundation.ExperimentalWearFoundationApi",
+        "androidx.wear.compose.material.ExperimentalWearMaterialApi",
+        "androidx.window.core.ExperimentalWindowApi",
+    )
 
 const val NEW_ISSUE_URL = "https://b.corp.google.com/issues/new?component=1102332"

@@ -71,12 +71,12 @@ import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.Pair;
 import android.util.Range;
 import android.util.Rational;
 import android.view.Display;
 import android.view.GestureDetector;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -113,7 +113,6 @@ import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.DisplayOrientedMeteringPointFactory;
 import androidx.camera.core.DynamicRange;
-import androidx.camera.core.ExperimentalImageCaptureOutputFormat;
 import androidx.camera.core.ExperimentalLensFacing;
 import androidx.camera.core.ExposureState;
 import androidx.camera.core.FocusMeteringAction;
@@ -131,9 +130,11 @@ import androidx.camera.core.UseCaseGroup;
 import androidx.camera.core.ViewPort;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.Quirks;
+import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.utils.AspectRatioUtil;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.testing.impl.StreamSharingForceEnabledEffect;
 import androidx.camera.video.ExperimentalPersistentRecording;
 import androidx.camera.video.FileOutputOptions;
 import androidx.camera.video.MediaStoreOutputOptions;
@@ -167,10 +168,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -189,12 +192,16 @@ import java.util.concurrent.atomic.AtomicLong;
  * lifecycle events are handled internally by CameraX.
  */
 @SuppressLint("NullAnnotationGroup")
-@OptIn(markerClass = ExperimentalImageCaptureOutputFormat.class)
 public class CameraXActivity extends AppCompatActivity {
     private static final String TAG = "CameraXActivity";
     private static final String[] REQUIRED_PERMISSIONS;
     private static final List<DynamicRangeUiData> DYNAMIC_RANGE_UI_DATA = new ArrayList<>();
-    private static final List<Pair<Range<Integer>, String>> FPS_OPTIONS = new ArrayList<>();
+
+    // StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED is not public
+    @SuppressLint("RestrictedApiAndroidX")
+    private static final Range<Integer> FPS_UNSPECIFIED = StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED;
+    private static final Map<Integer, Range<Integer>> ID_TO_FPS_RANGE_MAP = new HashMap<>();
+    private static final Map<Integer, Integer> ID_TO_ASPECT_RATIO_MAP = new HashMap<>();
 
     static {
         // From Android T, skips the permission check of WRITE_EXTERNAL_STORAGE since it won't be
@@ -245,10 +252,14 @@ public class CameraXActivity extends AppCompatActivity {
         //  `CameraInfo.getSupportedFrameRateRanges()`, but we may want to try unsupported cases too
         //  sometimes for testing, so the unsupported ones still should be options (perhaps greyed
         //  out or struck-through).
-        FPS_OPTIONS.add(new Pair<>(new Range<>(0, 0), "Unspecified"));
-        FPS_OPTIONS.add(new Pair<>(new Range<>(15, 15), "15"));
-        FPS_OPTIONS.add(new Pair<>(new Range<>(30, 30), "30"));
-        FPS_OPTIONS.add(new Pair<>(new Range<>(60, 60), "60"));
+        ID_TO_FPS_RANGE_MAP.put(R.id.fps_unspecified, FPS_UNSPECIFIED);
+        ID_TO_FPS_RANGE_MAP.put(R.id.fps_15, new Range<>(15, 15));
+        ID_TO_FPS_RANGE_MAP.put(R.id.fps_30, new Range<>(30, 30));
+        ID_TO_FPS_RANGE_MAP.put(R.id.fps_60, new Range<>(60, 60));
+
+        ID_TO_ASPECT_RATIO_MAP.put(R.id.aspect_ratio_default, AspectRatio.RATIO_DEFAULT);
+        ID_TO_ASPECT_RATIO_MAP.put(R.id.aspect_ratio_4_3, AspectRatio.RATIO_4_3);
+        ID_TO_ASPECT_RATIO_MAP.put(R.id.aspect_ratio_16_9, AspectRatio.RATIO_16_9);
     }
 
     //Use this activity title when Camera Pipe configuration is used by core test app
@@ -366,7 +377,6 @@ public class CameraXActivity extends AppCompatActivity {
     private Button mZoomIn2XToggle;
     private Button mZoomResetToggle;
     private Button mButtonImageOutputFormat;
-    private Button mButtonFps;
     private Toast mEvToast = null;
     private Toast mPSToast = null;
     private ToggleButton mPreviewStabilizationToggle;
@@ -383,7 +393,9 @@ public class CameraXActivity extends AppCompatActivity {
     private final Set<DynamicRange> mSelectableDynamicRanges = new HashSet<>();
     private int mVideoMirrorMode = MIRROR_MODE_ON_FRONT_ONLY;
     private boolean mIsPreviewStabilizationOn = false;
-    private int mFpsMenuId = 0;
+    private Range<Integer> mFpsRange = FPS_UNSPECIFIED;
+    private boolean mForceEnableStreamSharing;
+    private boolean mDisableViewPort;
 
     SessionMediaUriSet mSessionImagesUriSet = new SessionMediaUriSet();
     SessionMediaUriSet mSessionVideosUriSet = new SessionMediaUriSet();
@@ -1290,7 +1302,6 @@ public class CameraXActivity extends AppCompatActivity {
         mZoomSeekBar.setVisibility(View.GONE);
         mZoomRatioLabel.setVisibility(View.GONE);
         mTextView.setVisibility(View.GONE);
-        mButtonFps.setVisibility(View.GONE);
 
         if (testCase.equals(PREVIEW_TEST_CASE) || testCase.equals(SWITCH_TEST_CASE)) {
             mTorchButton.setVisibility(View.GONE);
@@ -1403,10 +1414,11 @@ public class CameraXActivity extends AppCompatActivity {
         mPlusEV.setEnabled(isExposureCompensationSupported());
         mDecEV.setEnabled(isExposureCompensationSupported());
         mZoomIn2XToggle.setEnabled(is2XZoomSupported());
-        mButtonFps.setEnabled(mPreviewToggle.isChecked() || mVideoToggle.isChecked());
 
         // this function may make some view visible again, so need to update for E2E tests again
         updateAppUIForE2ETest();
+
+        invalidateOptionsMenu();
     }
 
     // Set or reset content description for e2e testing.
@@ -1607,42 +1619,6 @@ public class CameraXActivity extends AppCompatActivity {
                 findViewById(R.id.video_mute),
                 (newState) -> updateDynamicRangeUiState()
         );
-        mButtonFps = findViewById(R.id.fps);
-        if (mFpsMenuId == 0) {
-            mButtonFps.setText("FPS\nUnsp.");
-        } else {
-            mButtonFps.setText("FPS\n" + FPS_OPTIONS.get(mFpsMenuId).second);
-        }
-        mButtonFps.setOnClickListener(view -> {
-            PopupMenu popup = new PopupMenu(this, view);
-            Menu menu = popup.getMenu();
-
-            for (int i = 0; i < FPS_OPTIONS.size(); i++) {
-                menu.add(0, i, Menu.NONE, FPS_OPTIONS.get(i).second);
-            }
-
-            menu.findItem(mFpsMenuId).setChecked(true);
-
-            // Make menu single checkable
-            menu.setGroupCheckable(0, true, true);
-
-            popup.setOnMenuItemClickListener(item -> {
-                int itemId = item.getItemId();
-                if (itemId != mFpsMenuId) {
-                    mFpsMenuId = itemId;
-                    if (mFpsMenuId == 0) {
-                        mButtonFps.setText("FPS\nUnsp.");
-                    } else {
-                        mButtonFps.setText("FPS\n" + FPS_OPTIONS.get(mFpsMenuId).second);
-                    }
-                    // FPS changed, rebind UseCases
-                    tryBindUseCases();
-                }
-                return true;
-            });
-
-            popup.show();
-        });
 
         setUpButtonEvents();
         setupViewFinderGestureControls();
@@ -1758,6 +1734,83 @@ public class CameraXActivity extends AppCompatActivity {
         });
 
         setupPermissions();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.actionbar_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        updateMenuItems(menu);
+        return true;
+    }
+
+    private void updateMenuItems(Menu menu) {
+        menu.findItem(requireNonNull(getKeyByValue(ID_TO_FPS_RANGE_MAP, mFpsRange))).setChecked(
+                true);
+        menu.findItem(R.id.fps).setEnabled(mPreviewToggle.isChecked() || mVideoToggle.isChecked());
+
+        menu.findItem(requireNonNull(
+                getKeyByValue(ID_TO_ASPECT_RATIO_MAP, mTargetAspectRatio))).setChecked(true);
+
+        menu.findItem(R.id.stream_sharing).setChecked(mForceEnableStreamSharing);
+        // StreamSharing requires both Preview & VideoCapture use cases in core-test-app
+        // (since ImageCapture can't be added due to lack of effect)
+        menu.findItem(R.id.stream_sharing).setEnabled(
+                mPreviewToggle.isChecked() && mVideoToggle.isChecked());
+
+        menu.findItem(R.id.view_port).setChecked(mDisableViewPort);
+    }
+
+    private static <T, E> T getKeyByValue(Map<T, E> map, E value) {
+        for (Map.Entry<T, E> entry : map.entrySet()) {
+            if (Objects.equals(value, entry.getValue())) {
+                return entry.getKey();
+            }
+        }
+        return null; // No key found for the given value
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        // Handle item selection.
+        Log.d(TAG, "onOptionsItemSelected: item = " + item);
+
+        int groupId = item.getGroupId();
+        int itemId = item.getItemId();
+
+        if (groupId == R.id.fps_group) {
+            if (ID_TO_FPS_RANGE_MAP.containsKey(itemId)) {
+                mFpsRange = ID_TO_FPS_RANGE_MAP.get(itemId);
+            } else {
+                Log.e(TAG, "Unknown item " + item.getTitle());
+                return super.onOptionsItemSelected(item);
+            }
+        } else if (groupId == R.id.aspect_ratio_group) {
+            if (ID_TO_ASPECT_RATIO_MAP.containsKey(itemId)) {
+                mTargetAspectRatio = requireNonNull(ID_TO_ASPECT_RATIO_MAP.get(itemId));
+            } else {
+                Log.e(TAG, "Unknown item " + item.getTitle());
+                return super.onOptionsItemSelected(item);
+            }
+        } else if (itemId == R.id.stream_sharing) {
+            mForceEnableStreamSharing = !mForceEnableStreamSharing;
+        } else if (itemId == R.id.view_port) {
+            mDisableViewPort = !mDisableViewPort;
+        } else {
+            Log.d(TAG, "Not handling item " + item.getTitle());
+            return super.onOptionsItemSelected(item);
+        }
+
+        item.setChecked(!item.isChecked());
+
+        // Some configuration option may be changed, rebind UseCases
+        tryBindUseCases();
+
+        return super.onOptionsItemSelected(item);
     }
 
     /**
@@ -1962,7 +2015,7 @@ public class CameraXActivity extends AppCompatActivity {
                     .setPreviewStabilizationEnabled(mIsPreviewStabilizationOn)
                     .setDynamicRange(
                             mVideoToggle.isChecked() ? DynamicRange.UNSPECIFIED : mDynamicRange)
-                    .setTargetFrameRate(FPS_OPTIONS.get(mFpsMenuId).first)
+                    .setTargetFrameRate(mFpsRange)
                     .build();
             resetViewIdlingResource();
             // Use the listener of the future to make sure the Preview setup the new surface.
@@ -1989,6 +2042,7 @@ public class CameraXActivity extends AppCompatActivity {
         if (mAnalysisToggle.isChecked()) {
             ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
                     .setTargetName("ImageAnalysis")
+                    .setTargetAspectRatio(mTargetAspectRatio)
                     .build();
             useCases.add(imageAnalysis);
             // Make the analysis idling resource non-idle, until the required frames received.
@@ -2007,11 +2061,11 @@ public class CameraXActivity extends AppCompatActivity {
                 if (mVideoQuality != QUALITY_AUTO) {
                     builder.setQualitySelector(QualitySelector.from(mVideoQuality));
                 }
-                mRecorder = builder.build();
+                mRecorder = builder.setAspectRatio(mTargetAspectRatio).build();
                 mVideoCapture = new VideoCapture.Builder<>(mRecorder)
                         .setMirrorMode(mVideoMirrorMode)
                         .setDynamicRange(mDynamicRange)
-                        .setTargetFrameRate(FPS_OPTIONS.get(mFpsMenuId).first)
+                        .setTargetFrameRate(mFpsRange)
                         .build();
             }
             useCases.add(mVideoCapture);
@@ -2124,15 +2178,29 @@ public class CameraXActivity extends AppCompatActivity {
      * Binds use cases to the current lifecycle.
      */
     private Camera bindToLifecycleSafely(List<UseCase> useCases) {
-        ViewPort viewPort = new ViewPort.Builder(new Rational(mViewFinder.getWidth(),
-                mViewFinder.getHeight()),
-                mViewFinder.getDisplay().getRotation())
-                .setScaleType(ViewPort.FILL_CENTER).build();
-        UseCaseGroup.Builder useCaseGroupBuilder = new UseCaseGroup.Builder().setViewPort(
-                viewPort);
+        Log.d(TAG, "bindToLifecycleSafely: mDisableViewPort = " + mDisableViewPort
+                + ", mForceEnableStreamSharing = " + mForceEnableStreamSharing);
+
+        UseCaseGroup.Builder useCaseGroupBuilder = new UseCaseGroup.Builder();
         for (UseCase useCase : useCases) {
             useCaseGroupBuilder.addUseCase(useCase);
         }
+
+        if (!mDisableViewPort) {
+            ViewPort viewPort = new ViewPort.Builder(new Rational(mViewFinder.getWidth(),
+                    mViewFinder.getHeight()),
+                    mViewFinder.getDisplay().getRotation())
+                    .setScaleType(ViewPort.FILL_CENTER).build();
+            useCaseGroupBuilder.setViewPort(viewPort);
+        }
+
+        // Force-enable stream sharing
+        if (mForceEnableStreamSharing) {
+            @SuppressLint("RestrictedApiAndroidX")
+            StreamSharingForceEnabledEffect effect = new StreamSharingForceEnabledEffect();
+            useCaseGroupBuilder.addEffect(effect);
+        }
+
         mCamera = mCameraProvider.bindToLifecycle(this, mCurrentCameraSelector,
                 useCaseGroupBuilder.build());
         setupZoomSeeker();

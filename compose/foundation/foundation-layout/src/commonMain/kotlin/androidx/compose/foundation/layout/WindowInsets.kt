@@ -637,32 +637,39 @@ private class InsetsPaddingValues(val insets: WindowInsets, private val density:
 
 /** An insets type representing the window of a caption bar. */
 expect val WindowInsets.Companion.captionBar: WindowInsets
+    @Composable get
 
 /** This [WindowInsets] represents the area with the display cutout (e.g. for camera). */
 expect val WindowInsets.Companion.displayCutout: WindowInsets
+    @Composable get
 
 /** An insets type representing the window of the software keyboard. */
 expect val WindowInsets.Companion.ime: WindowInsets
+    @Composable get
 
 /**
  * These insets represent the space where system gestures have priority over application gestures.
  */
 expect val WindowInsets.Companion.mandatorySystemGestures: WindowInsets
+    @Composable get
 
 /**
  * These insets represent where system UI places navigation bars. Interactive UI should avoid the
  * navigation bars area.
  */
 expect val WindowInsets.Companion.navigationBars: WindowInsets
+    @Composable get
 
 /** These insets represent status bar. */
 expect val WindowInsets.Companion.statusBars: WindowInsets
+    @Composable get
 
 /**
  * These insets represent all system bars. Includes [statusBars], [captionBar] as well as
  * [navigationBars], but not [ime].
  */
 expect val WindowInsets.Companion.systemBars: WindowInsets
+    @Composable get
 
 /**
  * The [systemGestures] insets represent the area of a window where system gestures have priority
@@ -670,27 +677,33 @@ expect val WindowInsets.Companion.systemBars: WindowInsets
  * reserved for touch-only gestures.
  */
 expect val WindowInsets.Companion.systemGestures: WindowInsets
+    @Composable get
 
 /** Returns the tappable element insets. */
 expect val WindowInsets.Companion.tappableElement: WindowInsets
+    @Composable get
 
 /** The insets for the curved areas in a waterfall display. */
 expect val WindowInsets.Companion.waterfall: WindowInsets
+    @Composable get
 
 /**
  * The insets that include areas where content may be covered by other drawn content. This includes
  * all [systemBars], [displayCutout], and [ime].
  */
 expect val WindowInsets.Companion.safeDrawing: WindowInsets
+    @Composable get
 
 /**
  * The insets that include areas where gestures may be confused with other input, including
  * [systemGestures], [mandatorySystemGestures], [waterfall], and [tappableElement].
  */
 expect val WindowInsets.Companion.safeGestures: WindowInsets
+    @Composable get
 
 /**
  * The insets that include all areas that may be drawn over or have gesture confusion, including
  * everything in [safeDrawing] and [safeGestures].
  */
 expect val WindowInsets.Companion.safeContent: WindowInsets
+    @Composable get

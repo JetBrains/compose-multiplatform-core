@@ -33,14 +33,14 @@ plugins {
 BundleInsideHelper.forInsideLintJar(project)
 
 dependencies {
-    compileOnly(libs.androidLintPrevApi)
+    compileOnly(libs.androidLintApiPrevAnalysis)
     compileOnly(libs.kotlinStdlib)
     bundleInside(project(":compose:lint:common"))
 
     testImplementation(project(":compose:lint:common-test"))
     testImplementation(libs.kotlinStdlib)
-    testImplementation(libs.androidLintPrev)
-    testImplementation(libs.androidLintPrevTests)
+    testImplementation(libs.androidLintPrevAnalysis)
+    testImplementation(libs.androidLintTestsPrevAnalysis)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
 }

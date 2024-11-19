@@ -28,6 +28,7 @@ import androidx.build.checkapi.configureProjectForApiTasks
 import androidx.build.docs.CheckTipOfTreeDocsTask.Companion.setUpCheckDocsTask
 import androidx.build.gitclient.getHeadShaProvider
 import androidx.build.gradle.isRoot
+import androidx.build.kythe.configureProjectForKzipTasks
 import androidx.build.license.addLicensesToPublishedArtifacts
 import androidx.build.resources.CopyPublicResourcesDirTask
 import androidx.build.resources.configurePublicResourcesStub
@@ -694,6 +695,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
         project.disableStrictVersionConstraints()
 
         project.configureProjectForApiTasks(AndroidMultiplatformApiTaskConfig, androidXExtension)
+        project.configureProjectForKzipTasks(AndroidMultiplatformApiTaskConfig, androidXExtension)
 
         kotlinMultiplatformAndroidComponentsExtension.onVariant { it.configureTests() }
 
@@ -849,6 +851,11 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
                 // are:
                 //   - net.java.dev.jna:jna:5.5.0
                 excludes.add("/META-INF/LGPL2.1")
+
+                // AGP is unable to merge these and multiple artifacts ship this files
+                // e.g. org/jspecify/jspecify/1.0.0/jspecify-1.0.0.jar
+                //      org/bouncycastle/bcprov-jdk18on/1.78.1/bcprov-jdk18on-1.78.1.jar
+                pickFirsts.add("META-INF/versions/9/OSGI-INF/MANIFEST.MF")
             }
         }
     }
@@ -933,6 +940,10 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
                     LibraryApiTaskConfig(variant),
                     androidXExtension
                 )
+                project.configureProjectForKzipTasks(
+                    LibraryApiTaskConfig(variant),
+                    androidXExtension
+                )
             }
             if (variant.name == DEFAULT_PUBLISH_CONFIG) {
                 project.configureSourceJarForAndroid(variant, androidXExtension.samplesProjects)
@@ -973,23 +984,13 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
         SdkResourceGenerator.generateForHostTest(project)
     }
 
-    private fun getDefaultTargetJavaVersion(
-        libraryType: LibraryType,
-        projectName: String? = null,
-        targetName: String? = null
-    ): JavaVersion {
-        return when {
-            // TODO(b/353328300): Move room-compiler-processing to Java 17 once Dagger is ready.
-            projectName != null && projectName.contains("room-compiler-processing") -> VERSION_11
-            projectName != null && projectName.contains("desktop") -> VERSION_11
-            targetName != null && (targetName == "desktop" || targetName == "jvmStubs") ->
-                VERSION_11
-            libraryType.compilationTarget == CompilationTarget.HOST -> VERSION_17
-            else -> VERSION_1_8
-        }
-    }
-
     private fun configureWithJavaPlugin(project: Project, androidXExtension: AndroidXExtension) {
+        if (
+            project.multiplatformExtension != null &&
+                !project.multiplatformExtension!!.hasJvmTarget()
+        ) {
+            return
+        }
         project.configureErrorProneForJava()
 
         // Force Java 1.8 source- and target-compatibility for all Java libraries.
@@ -1029,19 +1030,8 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
             }
 
         project.configureProjectForApiTasks(apiTaskConfig, androidXExtension)
+        project.configureProjectForKzipTasks(apiTaskConfig, androidXExtension)
         project.setUpCheckDocsTask(androidXExtension)
-
-        project.afterEvaluate {
-            if (androidXExtension.shouldRelease()) {
-                project.extra.set("publish", true)
-            }
-        }
-
-        // Workaround for b/120487939 wherein Gradle's default resolution strategy prefers external
-        // modules with lower versions over local projects with higher versions.
-        project.configurations.configureEach { configuration ->
-            configuration.resolutionStrategy.preferProjectModules()
-        }
 
         if (project.multiplatformExtension == null) {
             project.addToBuildOnServer("jar")
@@ -1457,6 +1447,21 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
     }
 }
 
+internal fun getDefaultTargetJavaVersion(
+    libraryType: LibraryType,
+    projectName: String? = null,
+    targetName: String? = null
+): JavaVersion {
+    return when {
+        // TODO(b/353328300): Move room-compiler-processing to Java 17 once Dagger is ready.
+        projectName != null && projectName.contains("room-compiler-processing") -> VERSION_11
+        projectName != null && projectName.contains("desktop") -> VERSION_11
+        targetName != null && (targetName == "desktop" || targetName == "jvmStubs") -> VERSION_11
+        libraryType.compilationTarget == CompilationTarget.HOST -> VERSION_17
+        else -> VERSION_1_8
+    }
+}
+
 private fun Project.validateLintVersionTestExists(androidXExtension: AndroidXExtension) {
     if (!androidXExtension.type.isLint()) {
         return
@@ -1658,6 +1663,9 @@ fun Project.workaroundPrebuiltTakingPrecedenceOverProject() {
 }
 
 private fun Project.configureUnzipChromeBuildService() {
+    if (ProjectLayoutType.isPlayground(this)) {
+        return
+    }
     gradle.sharedServices.registerIfAbsent("unzipChrome", UnzipChromeBuildService::class.java) {
         it.parameters.browserDir.set(File(getPrebuiltsRoot(), "androidx/chrome-for-testing/"))
         it.parameters.unzipToDir.set(getOutDirectory().resolve("chrome-bin"))
@@ -1707,6 +1715,9 @@ internal fun Project.hasAndroidMultiplatformPlugin(): Boolean =
 
 internal fun KotlinMultiplatformExtension.hasJavaEnabled(): Boolean =
     targets.withType(KotlinJvmTarget::class.java).singleOrNull()?.withJavaEnabled ?: false
+
+internal fun KotlinMultiplatformExtension.hasJvmTarget(): Boolean =
+    targets.withType(KotlinJvmTarget::class.java).isEmpty().not()
 
 internal fun String.camelCase() = replaceFirstChar {
     if (it.isLowerCase()) it.titlecase() else it.toString()

@@ -548,6 +548,54 @@ src/test/test.kt:19: $WarningMessage
     }
 
     @Test
+    fun nonLambdaOffset_usingDelegatedStateVariable_fullyQualified_shouldWarn() {
+        lint()
+            .files(
+                kotlin(
+                    """
+            package test
+
+            import androidx.compose.foundation.layout.absoluteOffset
+            import androidx.compose.foundation.layout.offset
+            import androidx.compose.runtime.Composable
+            import androidx.compose.runtime.getValue
+            import androidx.compose.runtime.mutableStateOf
+            import androidx.compose.ui.Modifier
+            import androidx.compose.ui.unit.dp
+
+            @Composable
+            fun ComposableFunction() {
+                // Fully qualified usage of remember
+                val offsetStateful by androidx.compose.runtime.remember { mutableStateOf(0.dp) }
+                val yAxis = 10.dp
+
+                Modifier.offset(offsetStateful.value, yAxis)
+                Modifier.absoluteOffset(0.dp, offsetStateful.value)
+            }
+        """
+                ),
+                Stubs.Modifier,
+                Stubs.Dp,
+                Stubs.Remember,
+                Stubs.Composable,
+                Stubs.SnapshotState,
+                OffsetStub
+            )
+            .run()
+            .expect(
+                """
+src/test/test.kt:18: $WarningMessage
+                Modifier.offset(offsetStateful.value, yAxis)
+                         ~~~~~~
+src/test/test.kt:19: $WarningMessage
+                Modifier.absoluteOffset(0.dp, offsetStateful.value)
+                         ~~~~~~~~~~~~~~
+0 errors, 2 warnings
+            """
+            )
+    }
+
+    @Test
     fun nonLambdaOffset_usingStateReceiver_shouldWarn() {
         lint()
             .files(

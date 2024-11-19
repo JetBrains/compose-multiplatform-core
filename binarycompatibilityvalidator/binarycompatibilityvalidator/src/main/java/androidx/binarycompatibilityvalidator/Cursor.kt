@@ -81,5 +81,5 @@ private constructor(private val lines: List<String>, rowIndex: Int = 0, columnIn
     }
 }
 
-private val validIdentifierRegex = Regex("^[a-zA-Z_][a-zA-Z0-9_]+")
+private val validIdentifierRegex = Regex("^\\$?[a-zA-Z_][a-zA-Z0-9_]+")
 private val wordRegex = Regex("[a-zA-Z]+")

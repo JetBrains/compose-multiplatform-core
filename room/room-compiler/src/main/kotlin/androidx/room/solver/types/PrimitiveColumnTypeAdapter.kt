@@ -26,6 +26,7 @@ import androidx.room.compiler.codegen.XTypeName.Companion.PRIMITIVE_FLOAT
 import androidx.room.compiler.codegen.XTypeName.Companion.PRIMITIVE_INT
 import androidx.room.compiler.codegen.XTypeName.Companion.PRIMITIVE_LONG
 import androidx.room.compiler.codegen.XTypeName.Companion.PRIMITIVE_SHORT
+import androidx.room.compiler.codegen.buildCodeBlock
 import androidx.room.compiler.processing.XProcessingEnv
 import androidx.room.compiler.processing.XType
 import androidx.room.parser.SQLTypeAffinity
@@ -99,22 +100,21 @@ class PrimitiveColumnTypeAdapter(
                 Primitive.FLOAT -> "toDouble"
                 else -> null
             }
-        val valueExpr =
-            when (scope.language) {
-                CodeLanguage.JAVA -> {
-                    // For Java, with the language's primitive type casting, value variable can be
-                    // used as bind argument directly.
-                    XCodeBlock.of(scope.language, "%L", valueVarName)
-                }
+        val valueExpr = buildCodeBlock { language ->
+            when (language) {
+                // For Java, with the language's primitive type casting, value variable can be
+                // used as bind argument directly.
+                CodeLanguage.JAVA -> add("%L", valueVarName)
+                // For Kotlin, a converter function is emitted when a cast is needed.
                 CodeLanguage.KOTLIN -> {
-                    // For Kotlin, a converter function is emitted when a cast is needed.
                     if (castFunction != null) {
-                        XCodeBlock.of(scope.language, "%L.%L()", valueVarName, castFunction)
+                        add("%L.%L()", valueVarName, castFunction)
                     } else {
-                        XCodeBlock.of(scope.language, "%L", valueVarName)
+                        add("%L", valueVarName)
                     }
                 }
             }
+        }
         scope.builder.addStatement("%L.%L(%L, %L)", stmtName, stmtSetter, indexVarName, valueExpr)
     }
 
@@ -128,7 +128,6 @@ class PrimitiveColumnTypeAdapter(
             "%L = %L",
             outVarName,
             XCodeBlock.of(
-                    scope.language,
                     "%L.%L(%L)",
                     cursorVarName,
                     if (scope.useDriverApi) stmtGetter else cursorGetter,
@@ -153,14 +152,12 @@ class PrimitiveColumnTypeAdapter(
                                 else -> null
                             }
                         } ?: return@let it
-                    when (it.language) {
-                        // For Java a cast will suffice
-                        CodeLanguage.JAVA -> {
-                            XCodeBlock.ofCast(it.language, out.asTypeName(), it)
-                        }
-                        // For Kotlin a converter function is emitted
-                        CodeLanguage.KOTLIN -> {
-                            XCodeBlock.of(it.language, "%L.%L()", it, castFunction)
+                    buildCodeBlock { language ->
+                        when (language) {
+                            // For Java a cast will suffice
+                            CodeLanguage.JAVA -> add(XCodeBlock.ofCast(out.asTypeName(), it))
+                            // For Kotlin a converter function is emitted
+                            CodeLanguage.KOTLIN -> add(XCodeBlock.of("%L.%L()", it, castFunction))
                         }
                     }
                 }

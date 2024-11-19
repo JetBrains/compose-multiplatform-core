@@ -22,26 +22,30 @@ import androidx.compose.runtime.implementedInJetBrainsFork
 
 actual typealias SnapshotId = Long
 
-actual const val SnapshotIdZero: SnapshotId = 0L
-actual const val SnapshotIdMax: SnapshotId = Long.MAX_VALUE
-actual const val SnapshotIdSize: Int = Long.SIZE_BITS
-actual const val SnapshotIdInvalidValue: SnapshotId = -1
+internal actual const val SnapshotIdZero: SnapshotId = 0L
+internal actual const val SnapshotIdMax: SnapshotId = Long.MAX_VALUE
+internal actual const val SnapshotIdSize: Int = Long.SIZE_BITS
+internal actual const val SnapshotIdInvalidValue: SnapshotId = -1
 
-actual operator fun SnapshotId.compareTo(other: SnapshotId): Int = implementedInJetBrainsFork()
+internal actual operator fun SnapshotId.compareTo(other: SnapshotId): Int =
+    implementedInJetBrainsFork()
 
-actual operator fun SnapshotId.compareTo(other: Int): Int = implementedInJetBrainsFork()
+internal actual operator fun SnapshotId.compareTo(other: Int): Int = implementedInJetBrainsFork()
 
-actual operator fun SnapshotId.plus(other: Int): SnapshotId = implementedInJetBrainsFork()
+internal actual operator fun SnapshotId.plus(other: Int): SnapshotId = implementedInJetBrainsFork()
 
-actual operator fun SnapshotId.minus(other: SnapshotId): SnapshotId = implementedInJetBrainsFork()
+internal actual operator fun SnapshotId.minus(other: SnapshotId): SnapshotId =
+    implementedInJetBrainsFork()
 
-actual operator fun SnapshotId.minus(other: Int): SnapshotId = implementedInJetBrainsFork()
+internal actual operator fun SnapshotId.minus(other: Int): SnapshotId = implementedInJetBrainsFork()
 
-actual operator fun SnapshotId.div(other: Int): SnapshotId = implementedInJetBrainsFork()
+internal actual operator fun SnapshotId.div(other: Int): SnapshotId = implementedInJetBrainsFork()
 
-actual operator fun SnapshotId.times(other: Int): SnapshotId = implementedInJetBrainsFork()
+internal actual operator fun SnapshotId.times(other: Int): SnapshotId = implementedInJetBrainsFork()
 
 actual fun SnapshotId.toInt(): Int = implementedInJetBrainsFork()
+
+actual fun SnapshotId.toLong(): Long = implementedInJetBrainsFork()
 
 actual typealias SnapshotIdArray = LongArray
 

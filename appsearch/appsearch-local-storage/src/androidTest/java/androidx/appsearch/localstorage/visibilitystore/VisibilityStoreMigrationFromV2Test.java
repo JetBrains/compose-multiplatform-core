@@ -30,6 +30,7 @@ import androidx.appsearch.app.PackageIdentifier;
 import androidx.appsearch.app.SetSchemaRequest;
 import androidx.appsearch.app.VisibilityPermissionConfig;
 import androidx.appsearch.exceptions.AppSearchException;
+import androidx.appsearch.localstorage.AppSearchConfig;
 import androidx.appsearch.localstorage.AppSearchConfigImpl;
 import androidx.appsearch.localstorage.AppSearchImpl;
 import androidx.appsearch.localstorage.LocalStorageIcingOptionsConfig;
@@ -60,6 +61,8 @@ public class VisibilityStoreMigrationFromV2Test {
     @Rule
     public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
     private File mFile;
+    private AppSearchConfig mConfig = new AppSearchConfigImpl(new UnlimitedLimitConfig(),
+            new LocalStorageIcingOptionsConfig());
 
     @Before
     public void setUp() throws Exception {
@@ -86,9 +89,10 @@ public class VisibilityStoreMigrationFromV2Test {
 
         // Create AppSearchImpl with visibility document version 2;
         AppSearchImpl appSearchImplInV2 = AppSearchImpl.create(mFile,
-                new AppSearchConfigImpl(new UnlimitedLimitConfig(),
-                        new LocalStorageIcingOptionsConfig()), /*initStatsBuilder=*/ null,
+                mConfig,
+                /*initStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
 
         // Erase overlay schemas since it doesn't exist in released V2 schema.
@@ -160,9 +164,10 @@ public class VisibilityStoreMigrationFromV2Test {
         // Persist to disk and re-open the AppSearchImpl
         appSearchImplInV2.close();
         AppSearchImpl appSearchImpl = AppSearchImpl.create(mFile,
-                new AppSearchConfigImpl(new UnlimitedLimitConfig(),
-                        new LocalStorageIcingOptionsConfig()), /*initStatsBuilder=*/ null,
+                mConfig,
+                /*initStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
 
         InternalVisibilityConfig actualConfig =

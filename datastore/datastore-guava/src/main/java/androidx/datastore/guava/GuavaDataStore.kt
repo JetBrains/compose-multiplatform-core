@@ -18,8 +18,8 @@ package androidx.datastore.guava
 
 import android.content.Context
 import androidx.concurrent.futures.SuspendToFutureAdapter.launchFuture
+import androidx.datastore.core.CurrentDataProviderStore
 import androidx.datastore.core.DataMigration
-import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.Serializer
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
@@ -34,7 +34,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.flow.first
 
 /**
  * The class that wraps around [DataStore] to provide an interface that returns [ListenableFuture]s
@@ -43,7 +42,7 @@ import kotlinx.coroutines.flow.first
 public class GuavaDataStore<T : Any>
 internal constructor(
     /** The delegate DataStore. */
-    private val dataStore: DataStore<T>,
+    private val dataStore: CurrentDataProviderStore<T>,
     /** The [CoroutineContext] that holds a dispatcher. */
     private val coroutineContext: CoroutineContext,
 ) {
@@ -52,7 +51,7 @@ internal constructor(
      * ongoing updates.
      */
     public fun getDataAsync(): ListenableFuture<T> {
-        return launchFuture(coroutineContext) { dataStore.data.first() }
+        return launchFuture(coroutineContext) { dataStore.currentData() }
     }
 
     /**
@@ -156,7 +155,10 @@ internal constructor(
                     corruptionHandler = corruptionHandler,
                     migrations = dataMigrations,
                     scope = CoroutineScope(coroutineDispatcher),
-                ),
+                ) as? CurrentDataProviderStore
+                    ?: error(
+                        "Unexpected DataStore object that does not implement CurrentDataStore"
+                    ),
                 coroutineDispatcher,
             )
     }

@@ -238,16 +238,32 @@ public open class NavGraph(navGraphNavigator: Navigator<out NavGraph>) :
      * Searches all children and parents recursively.
      *
      * Does not revisit graphs (whether it's a child or parent) if it has already been visited.
+     *
+     * @param resId the [NavDestination.id]
+     * @param lastVisited the previously visited node
+     * @param searchChildren searches the graph's children for the node when true
+     * @param matchingDest an optional NavDestination that the node should match with. This is
+     *   because [resId] is only unique to a local graph. Nodes in sibling graphs can have the same
+     *   id.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun findNodeComprehensive(
         @IdRes resId: Int,
         lastVisited: NavDestination?,
-        searchChildren: Boolean
+        searchChildren: Boolean,
+        matchingDest: NavDestination? = null,
     ): NavDestination? {
         // first search direct children
         var destination = nodes[resId]
-        if (destination != null) return destination
+        when {
+            matchingDest != null ->
+                // check parent in case of duplicated destinations to ensure it finds the correct
+                // nested destination
+                if (destination == matchingDest && destination.parent == matchingDest.parent)
+                    return destination
+                else destination = null
+            else -> if (destination != null) return destination
+        }
 
         if (searchChildren) {
             // then dfs through children. Avoid re-visiting children that were recursing up this
@@ -255,7 +271,7 @@ public open class NavGraph(navGraphNavigator: Navigator<out NavGraph>) :
             destination =
                 nodes.valueIterator().asSequence().firstNotNullOfOrNull { child ->
                     if (child is NavGraph && child != lastVisited) {
-                        child.findNodeComprehensive(resId, this, true)
+                        child.findNodeComprehensive(resId, this, true, matchingDest)
                     } else null
                 }
         }
@@ -264,7 +280,7 @@ public open class NavGraph(navGraphNavigator: Navigator<out NavGraph>) :
         // this way.
         return destination
             ?: if (parent != null && parent != lastVisited) {
-                parent!!.findNodeComprehensive(resId, this, searchChildren)
+                parent!!.findNodeComprehensive(resId, this, searchChildren, matchingDest)
             } else null
     }
 

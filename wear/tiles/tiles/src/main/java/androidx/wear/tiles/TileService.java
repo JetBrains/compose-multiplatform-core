@@ -32,7 +32,6 @@ import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
-import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.concurrent.futures.ResolvableFuture;
@@ -668,16 +667,16 @@ public abstract class TileService extends Service {
 
     private static void setUseWearSdkImpl(Context context) {
         if (context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WATCH)
-                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+                && !"robolectric".equalsIgnoreCase(Build.FINGERPRINT)) {
             sUseWearSdkImpl = (Sdk.getWearManager(context, TilesManager.class) != null);
             return;
         }
         sUseWearSdkImpl = false;
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @VisibleForTesting
-    public static void setUseWearSdkImpl(boolean value) {
+    static void setUseWearSdkImpl(@Nullable Boolean value) {
         sUseWearSdkImpl = value;
     }
 
@@ -700,22 +699,22 @@ public abstract class TileService extends Service {
 
                                     @Override
                                     public void onError(@NonNull Exception error) {
-                                        completer.setException(error.getCause());
+                                        completer.setException(error);
                                     }
                                 });
                         return "getActiveTilesAsync";
                     });
         }
-    }
 
-    private static List<ActiveTileIdentifier> tileInstanceToActiveTileIdentifier(
-            @NonNull List<TileInstance> tileInstanceList) {
-        return tileInstanceList.stream()
-                .map(
-                        i ->
-                                new ActiveTileIdentifier(
-                                        i.getTileProvider().getComponentName(), i.getId()))
-                .collect(Collectors.toList());
+        private static List<ActiveTileIdentifier> tileInstanceToActiveTileIdentifier(
+                @NonNull List<TileInstance> tileInstanceList) {
+            return tileInstanceList.stream()
+                    .map(
+                            i ->
+                                    new ActiveTileIdentifier(
+                                            i.getTileProvider().getComponentName(), i.getId()))
+                    .collect(Collectors.toList());
+        }
     }
 
     /**

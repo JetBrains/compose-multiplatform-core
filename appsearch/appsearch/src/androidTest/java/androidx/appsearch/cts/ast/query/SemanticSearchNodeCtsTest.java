@@ -36,6 +36,17 @@ public class SemanticSearchNodeCtsTest {
     public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
 
     @Test
+    public void testEquals_identical() {
+        SemanticSearchNode semanticSearchNodeOne = new SemanticSearchNode(0, -1.5f, 3,
+                SearchSpec.EMBEDDING_SEARCH_METRIC_TYPE_DOT_PRODUCT);
+        SemanticSearchNode semanticSearchNodeTwo = new SemanticSearchNode(0, -1.5f, 3,
+                SearchSpec.EMBEDDING_SEARCH_METRIC_TYPE_DOT_PRODUCT);
+
+        assertThat(semanticSearchNodeOne).isEqualTo(semanticSearchNodeTwo);
+        assertThat(semanticSearchNodeOne.hashCode()).isEqualTo(semanticSearchNodeTwo.hashCode());
+    }
+
+    @Test
     public void testConstructor_throwsOnNegativeIndex() {
         assertThrows(IllegalArgumentException.class, () -> new SemanticSearchNode(-1));
     }

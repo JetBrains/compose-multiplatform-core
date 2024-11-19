@@ -31,7 +31,6 @@ import androidx.room.compiler.processing.testcode.MainAnnotation
 import androidx.room.compiler.processing.testcode.OtherAnnotation
 import androidx.room.compiler.processing.testcode.RepeatableJavaAnnotation
 import androidx.room.compiler.processing.testcode.TestSuppressWarnings
-import androidx.room.compiler.processing.util.KOTLINC_LANGUAGE_1_9_ARGS
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
 import androidx.room.compiler.processing.util.compileFiles
@@ -430,9 +429,7 @@ class XAnnotationBoxTest(private val preCompiled: Boolean) {
             """
                     .trimIndent()
             )
-        // https://github.com/google/ksp/issues/2077
-        runTest(sources = listOf(kotlinSrc, javaSrc), kotlincArgs = KOTLINC_LANGUAGE_1_9_ARGS) {
-            invocation ->
+        runTest(sources = listOf(kotlinSrc, javaSrc)) { invocation ->
             listOf("KotlinClass", "JavaClass")
                 .map { invocation.processingEnv.requireTypeElement(it) }
                 .forEach { typeElement ->

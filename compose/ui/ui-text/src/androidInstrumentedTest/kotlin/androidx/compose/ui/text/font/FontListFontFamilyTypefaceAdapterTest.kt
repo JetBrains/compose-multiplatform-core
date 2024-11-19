@@ -24,6 +24,8 @@ import androidx.compose.ui.text.font.testutils.AsyncFauxFont
 import androidx.compose.ui.text.font.testutils.AsyncTestTypefaceLoader
 import androidx.compose.ui.text.font.testutils.BlockingFauxFont
 import androidx.compose.ui.text.font.testutils.OptionalFauxFont
+import androidx.compose.ui.text.font.testutils.ThrowingFauxFont
+import androidx.compose.ui.text.font.testutils.ThrowingTypefaceLoader
 import androidx.compose.ui.text.matchers.assertThat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
@@ -673,6 +675,18 @@ class FontListFontFamilyTypefaceAdapterTest {
         val typefaceResult = runBlocking { result.await() }
         assertThat(typefaceResult).isImmutableTypefaceOf(Typeface.DEFAULT)
         assertThat(typefaceResult!!.cacheable).isFalse()
+    }
+
+    @Test
+    fun throwingFont_doesntThrow() {
+        val typefaceLoader = ThrowingTypefaceLoader {
+            throw IllegalStateException("Always fails to load")
+        }
+        val throwingFont = ThrowingFauxFont(typefaceLoader)
+        val fontFamily = FontFamily(throwingFont)
+        val result =
+            subject.resolve(fontFamily.toTypefaceRequest(), fontLoader, {}, { Typeface.SERIF })
+        assertThat(result).isImmutableTypefaceOf(Typeface.SERIF)
     }
 
     private fun requestAndCompleteOnRealDispatcher() {

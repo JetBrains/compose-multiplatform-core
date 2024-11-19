@@ -88,6 +88,8 @@ public class AlwaysSupportedFeatures implements Features {
             case Features.SEARCH_SPEC_ADD_INFORMATIONAL_RANKING_EXPRESSIONS:
                 // fall through
             case Features.BLOB_STORAGE:
+                // fall through
+            case Features.SEARCH_SPEC_ADD_FILTER_DOCUMENT_IDS:
                 return true;
             default:
                 return false;

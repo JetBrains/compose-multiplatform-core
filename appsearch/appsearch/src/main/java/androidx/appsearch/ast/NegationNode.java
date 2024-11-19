@@ -25,6 +25,7 @@ import androidx.core.util.Preconditions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * {@link Node} that stores a child node to be logically negated with a negative sign ("-")
@@ -117,5 +118,18 @@ public final class NegationNode implements Node{
     @Override
     public String toString() {
         return "NOT " + getChild();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        NegationNode that = (NegationNode) o;
+        return Objects.equals(mChildren, that.mChildren);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(mChildren);
     }
 }

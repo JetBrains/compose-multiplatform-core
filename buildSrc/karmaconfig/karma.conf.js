@@ -5,7 +5,10 @@ var testTimeoutInMs = 1000 * 30
 // is reported.
 var browserDisconnectTimeoutInMs = testTimeoutInMs + 5000
 config.set({
-    browserDisconnectTimeout: browserDisconnectTimeoutInMs
+  // https://karma-runner.github.io/6.4/config/configuration-file.html
+    browserDisconnectTimeout: browserDisconnectTimeoutInMs,
+    processKillTimeout: testTimeoutInMs,
+    concurrency: 10
 })
 config.set({
   client: {

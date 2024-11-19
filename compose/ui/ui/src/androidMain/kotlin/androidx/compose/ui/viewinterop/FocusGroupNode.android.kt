@@ -58,11 +58,12 @@ private class FocusTargetPropertiesNode : Modifier.Node(), FocusPropertiesModifi
 }
 
 private class FocusGroupPropertiesNode :
-    Modifier.Node(),
-    FocusPropertiesModifierNode,
-    ViewTreeObserver.OnGlobalFocusChangeListener,
-    View.OnAttachStateChangeListener {
+    Modifier.Node(), FocusPropertiesModifierNode, ViewTreeObserver.OnGlobalFocusChangeListener {
     var focusedChild: View? = null
+    // ViewTreeObserver used during onAttach() -- used to make sure to remove the listener
+    // from the global ViewTreeObserver even if the ComposeView has already been removed from
+    // the hierarchy before onDetach() is called.
+    var attachedViewTreeObserver: ViewTreeObserver? = null
 
     val onEnter: FocusEnterExitScope.() -> Unit = {
         // If this requestFocus is triggered by the embedded view getting focus,
@@ -182,21 +183,20 @@ private class FocusGroupPropertiesNode :
 
     override fun onAttach() {
         super.onAttach()
-        getEmbeddedView().addOnAttachStateChangeListener(this)
+        val viewTreeObserver = requireView().viewTreeObserver
+        attachedViewTreeObserver = viewTreeObserver
+        viewTreeObserver.addOnGlobalFocusChangeListener(this)
     }
 
     override fun onDetach() {
-        getEmbeddedView().removeOnAttachStateChangeListener(this)
+        val viewTreeObserver = attachedViewTreeObserver
+        if (viewTreeObserver != null && viewTreeObserver.isAlive) {
+            viewTreeObserver.removeOnGlobalFocusChangeListener(this)
+        }
+        attachedViewTreeObserver = null
+        requireView().viewTreeObserver.removeOnGlobalFocusChangeListener(this)
         focusedChild = null
         super.onDetach()
-    }
-
-    override fun onViewAttachedToWindow(v: View) {
-        v.viewTreeObserver.addOnGlobalFocusChangeListener(this)
-    }
-
-    override fun onViewDetachedFromWindow(v: View) {
-        v.viewTreeObserver.removeOnGlobalFocusChangeListener(this)
     }
 }
 

@@ -83,6 +83,7 @@ import androidx.core.view.accessibility.AccessibilityNodeProviderCompat;
 import androidx.core.view.accessibility.AccessibilityViewCommand;
 import androidx.core.view.autofill.AutofillIdCompat;
 import androidx.core.view.contentcapture.ContentCaptureSessionCompat;
+import androidx.core.viewtree.ViewTree;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -2837,6 +2838,21 @@ public class ViewCompat {
             return null;
         }
         return sTransitionNameMap.get(view);
+    }
+
+    /**
+     * Convenience method to add {@code overlay} to {@code overlayHost}'s
+     * {@link View#getOverlay() overlay} and assign the
+     * {@link ViewTree#setViewTreeDisjointParent(View, ViewParent) disjointParent} in the
+     * overlay hierarchy.
+     *
+     * @param overlayHost The view to add an overlay to
+     * @param overlay The view to overlay onto {@code overlayHost}
+     * @see android.view.ViewGroupOverlay#add(View)
+     */
+    public static void addOverlayView(@NonNull ViewGroup overlayHost, @NonNull View overlay) {
+        overlayHost.getOverlay().add(overlay);
+        ViewTree.setViewTreeDisjointParent((View) overlay.getParent(), overlayHost);
     }
 
     /**

@@ -171,6 +171,8 @@ public class WindowInsetsCompat {
             wic.setRootWindowInsets(ViewCompat.getRootWindowInsets(view));
             // Pass in the root view which allows the WIC to make of a copy of it's visible bounds
             wic.copyRootViewBounds(view.getRootView());
+            // Take System UI visibility into account while computing system bar insets
+            wic.setSystemUiVisibility(view.getWindowSystemUiVisibility());
         }
         return wic;
     }
@@ -863,6 +865,9 @@ public class WindowInsetsCompat {
         void copyRootViewBounds(@NonNull View rootView) {
         }
 
+        void setSystemUiVisibility(int systemUiVisibility) {
+        }
+
         void copyWindowDataInto(@NonNull WindowInsetsCompat other) {
         }
 
@@ -876,6 +881,8 @@ public class WindowInsetsCompat {
     @RequiresApi(20)
     private static class Impl20 extends Impl {
 
+        private static final int SYSTEM_BAR_VISIBILITY_MASK =
+                View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
         private static boolean sVisibleRectReflectionFetched = false;
         private static Method sGetViewRootImplMethod;
         private static Class<?> sAttachInfoClass;
@@ -893,6 +900,8 @@ public class WindowInsetsCompat {
 
         private WindowInsetsCompat mRootWindowInsets;
         Insets mRootViewVisibleInsets;
+
+        int mSystemUiVisibility;
 
         Impl20(@NonNull WindowInsetsCompat host, @NonNull WindowInsets insets) {
             super(host);
@@ -956,6 +965,8 @@ public class WindowInsetsCompat {
                         final Insets rootStable = getRootStableInsets();
                         return Insets.of(0,
                                 Math.max(rootStable.top, getSystemWindowInsets().top), 0, 0);
+                    } else if ((mSystemUiVisibility & View.SYSTEM_UI_FLAG_FULLSCREEN) != 0) {
+                        return Insets.NONE;
                     } else {
                         return Insets.of(0, getSystemWindowInsets().top, 0, 0);
                     }
@@ -970,6 +981,8 @@ public class WindowInsetsCompat {
                                 Math.max(rootStable.right, stable.right),
                                 Math.max(rootStable.bottom, stable.bottom)
                         );
+                    } else if ((mSystemUiVisibility & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) != 0) {
+                        return Insets.NONE;
                     } else {
                         final Insets systemWindow = getSystemWindowInsets();
                         final Insets rootStable = mRootWindowInsets != null
@@ -1085,6 +1098,7 @@ public class WindowInsetsCompat {
         void copyWindowDataInto(@NonNull WindowInsetsCompat other) {
             other.setRootWindowInsets(mRootWindowInsets);
             other.setRootViewData(mRootViewVisibleInsets);
+            other.setSystemUiVisibility(mSystemUiVisibility);
         }
 
         @Override
@@ -1115,6 +1129,10 @@ public class WindowInsetsCompat {
             setRootViewData(visibleInsets);
         }
 
+        @Override
+        void setSystemUiVisibility(int systemUiVisibility) {
+            mSystemUiVisibility = systemUiVisibility;
+        }
 
         /**
          * Attempt to get a copy of the visible rect from this rootView's AttachInfo.
@@ -1186,7 +1204,12 @@ public class WindowInsetsCompat {
         public boolean equals(Object o) {
             if (!super.equals(o)) return false;
             Impl20 impl20 = (Impl20) o;
-            return Objects.equals(mRootViewVisibleInsets, impl20.mRootViewVisibleInsets);
+            return Objects.equals(mRootViewVisibleInsets, impl20.mRootViewVisibleInsets)
+                    && systemBarVisibilityEquals(mSystemUiVisibility, impl20.mSystemUiVisibility);
+        }
+
+        static boolean systemBarVisibilityEquals(int vis1, int vis2) {
+            return (SYSTEM_BAR_VISIBILITY_MASK & vis1) == (SYSTEM_BAR_VISIBILITY_MASK & vis2);
         }
     }
 
@@ -1269,7 +1292,9 @@ public class WindowInsetsCompat {
             Impl28 otherImpl28 = (Impl28) o;
             // On API 28+ we can rely on WindowInsets.equals()
             return Objects.equals(mPlatformInsets, otherImpl28.mPlatformInsets)
-                    && Objects.equals(mRootViewVisibleInsets, otherImpl28.mRootViewVisibleInsets);
+                    && Objects.equals(mRootViewVisibleInsets, otherImpl28.mRootViewVisibleInsets)
+                    && systemBarVisibilityEquals(
+                            mSystemUiVisibility, otherImpl28.mSystemUiVisibility);
         }
 
         @Override
@@ -2110,6 +2135,10 @@ public class WindowInsetsCompat {
 
     void copyRootViewBounds(@NonNull View rootView) {
         mImpl.copyRootViewBounds(rootView);
+    }
+
+    void setSystemUiVisibility(int systemUiVisibility) {
+        mImpl.setSystemUiVisibility(systemUiVisibility);
     }
 
     @SuppressWarnings("JavaReflectionMemberAccess") // Reflection on private field

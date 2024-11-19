@@ -43,13 +43,13 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
     override fun createUastHandler(context: JavaContext): UElementHandler =
         object : UElementHandler() {
             override fun visitCallExpression(node: UCallExpression) {
+                checkForConfigurationToConfigurableFileCollection(node)
                 val methodName = node.methodName
                 val (containingClassName, replacementMethod, issue) =
                     REPLACEMENTS[methodName] ?: return
                 val containingClass = (node.receiverType as? PsiClassType)?.resolve() ?: return
                 // Check that the called method is from the expected class (or a child class) and
-                // not an
-                // unrelated method with the same name).
+                // not an unrelated method with the same name).
                 if (!containingClass.isInstanceOf(containingClassName)) return
 
                 val fix =
@@ -77,6 +77,35 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
                         .scope(node)
                 context.report(incident)
             }
+
+            private fun checkForConfigurationToConfigurableFileCollection(node: UCallExpression) {
+                if (node.methodName != "from") return
+                val containingClass = (node.receiverType as? PsiClassType)?.resolve() ?: return
+                // Check that the called method is from the expected class (or a child class) and
+                // not an unrelated method with the same name).
+                if (!containingClass.isInstanceOf(CONFIGURABLE_FILE_COLLECTION)) return
+                val hasConfigurationParameter =
+                    node.valueArguments.any { parameter ->
+                        val parameterType =
+                            (parameter.getExpressionType() as? PsiClassType)?.resolve()
+                                ?: return@any false
+                        parameterType.isInstanceOf(CONFIGURATION)
+                    }
+                if (!hasConfigurationParameter) return
+                val incident =
+                    Incident(context)
+                        .issue(EAGER_CONFIGURATION_ISSUE)
+                        .location(context.getNameLocation(node))
+                        .message(
+                            "Passing Configuration to ConfigurableFileCollection.from " +
+                                "results in eager resolution of this configuration. Instead use " +
+                                "project.files(configuration) or " +
+                                "configuration.incoming.artifactView {}.files to wrap the " +
+                                "configuration making it lazy."
+                        )
+                        .scope(node)
+                context.report(incident)
+            }
         }
 
     /** Checks if the class is [qualifiedName] or has [qualifiedName] as a super type. */
@@ -85,6 +114,9 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
         qualifiedName == this.qualifiedName || supers.any { it.isInstanceOf(qualifiedName) }
 
     companion object {
+        private const val CONFIGURATION = "org.gradle.api.artifacts.Configuration"
+        private const val CONFIGURABLE_FILE_COLLECTION =
+            "org.gradle.api.file.ConfigurableFileCollection"
         private const val PROJECT = "org.gradle.api.Project"
         private const val TASK_CONTAINER = "org.gradle.api.tasks.TaskContainer"
         private const val TASK_PROVIDER = "org.gradle.api.tasks.TaskProvider"

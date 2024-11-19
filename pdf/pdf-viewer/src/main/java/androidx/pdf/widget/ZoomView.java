@@ -212,8 +212,8 @@ public class ZoomView extends GestureTrackingView implements ZoomScrollRestorer 
     private int mContentResizedModeX = ContentResizedMode.KEEP_SAME_ABSOLUTE;
     private int mContentResizedModeY = ContentResizedMode.KEEP_SAME_ABSOLUTE;
     private int mContentResizedModeZoom = ContentResizedMode.KEEP_SAME_ABSOLUTE;
-    private boolean mOverrideMinZoomToFit = false;
-    private boolean mOverrideMaxZoomToFit = false;
+    private boolean mOverrideMinZoomToFit = true;
+    private boolean mOverrideMaxZoomToFit = true;
 
     /** The last stable zoom: we only re-draw bitmaps at stable zoom (not during a gesture). */
     private float mStableZoom;

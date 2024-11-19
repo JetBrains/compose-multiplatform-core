@@ -35,12 +35,7 @@ class ImmutableListQueryResultAdapter(
             addLocalVariable(
                 name = immutableListBuilderName,
                 typeName = immutableListBuilderType,
-                assignExpr =
-                    XCodeBlock.of(
-                        language = language,
-                        "%T.builder()",
-                        GuavaTypeNames.IMMUTABLE_LIST
-                    )
+                assignExpr = XCodeBlock.of("%T.builder()", GuavaTypeNames.IMMUTABLE_LIST)
             )
 
             val tmpVarName = scope.getTmpVar("_item")

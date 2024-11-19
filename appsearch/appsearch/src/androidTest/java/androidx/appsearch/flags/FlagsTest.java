@@ -153,4 +153,10 @@ public class FlagsTest {
                 .isEqualTo(
                         "com.android.appsearch.flags.enable_additional_builder_copy_constructors");
     }
+
+    @Test
+    public void testFlagValue_enableSearchSpecFilterDocumentIds() {
+        assertThat(Flags.FLAG_ENABLE_SEARCH_SPEC_FILTER_DOCUMENT_IDS).isEqualTo(
+                "com.android.appsearch.flags.enable_search_spec_filter_document_ids");
+    }
 }

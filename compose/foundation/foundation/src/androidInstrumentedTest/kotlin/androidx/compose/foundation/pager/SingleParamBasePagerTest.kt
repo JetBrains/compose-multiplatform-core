@@ -99,53 +99,56 @@ open class SingleParamBasePagerTest {
         snapPosition: SnapPosition = SnapPosition.Start,
         flingBehavior: TargetedFlingBehavior? = null,
         layoutDirection: LayoutDirection = LayoutDirection.Ltr,
+        useLookahead: Boolean = false,
         pageContent: @Composable PagerScope.(page: Int) -> Unit = { page ->
             Page(index = page, orientation = orientation)
         }
     ) {
-        val state =
-            rememberPagerState(initialPage, initialPageOffsetFraction, pageCount).also {
-                pagerState = it
-            }
-        composeView = LocalView.current
-        focusManager = LocalFocusManager.current
+        ConfigurableLookaheadScope(useLookahead) {
+            val state =
+                rememberPagerState(initialPage, initialPageOffsetFraction, pageCount).also {
+                    pagerState = it
+                }
+            composeView = LocalView.current
+            focusManager = LocalFocusManager.current
 
-        CompositionLocalProvider(
-            LocalLayoutDirection provides layoutDirection,
-            LocalOverscrollFactory provides null
-        ) {
-            val resolvedFlingBehavior =
-                flingBehavior
-                    ?: PagerDefaults.flingBehavior(
+            CompositionLocalProvider(
+                LocalLayoutDirection provides layoutDirection,
+                LocalOverscrollFactory provides null
+            ) {
+                val resolvedFlingBehavior =
+                    flingBehavior
+                        ?: PagerDefaults.flingBehavior(
+                            state = state,
+                            pagerSnapDistance = snappingPage,
+                            snapPositionalThreshold = snapPositionalThreshold
+                        )
+
+                scope = rememberCoroutineScope()
+                Box(modifier = Modifier.fillMaxSize().nestedScroll(nestedScrollConnection)) {
+                    HorizontalOrVerticalPager(
                         state = state,
-                        pagerSnapDistance = snappingPage,
-                        snapPositionalThreshold = snapPositionalThreshold
+                        beyondViewportPageCount = beyondViewportPageCount,
+                        orientation = orientation,
+                        modifier =
+                            modifier.testTag(PagerTestTag).onSizeChanged {
+                                pagerSize =
+                                    if (orientation == Orientation.Vertical) it.height else it.width
+                            },
+                        pageSize = pageSize,
+                        userScrollEnabled = userScrollEnabled,
+                        reverseLayout = reverseLayout,
+                        flingBehavior = resolvedFlingBehavior,
+                        pageSpacing = pageSpacing,
+                        contentPadding = contentPadding,
+                        pageContent = pageContent,
+                        snapPosition = snapPosition,
+                        key = key
                     )
-
-            scope = rememberCoroutineScope()
-            Box(modifier = Modifier.fillMaxSize().nestedScroll(nestedScrollConnection)) {
-                HorizontalOrVerticalPager(
-                    state = state,
-                    beyondViewportPageCount = beyondViewportPageCount,
-                    orientation = orientation,
-                    modifier =
-                        modifier.testTag(PagerTestTag).onSizeChanged {
-                            pagerSize =
-                                if (orientation == Orientation.Vertical) it.height else it.width
-                        },
-                    pageSize = pageSize,
-                    userScrollEnabled = userScrollEnabled,
-                    reverseLayout = reverseLayout,
-                    flingBehavior = resolvedFlingBehavior,
-                    pageSpacing = pageSpacing,
-                    contentPadding = contentPadding,
-                    pageContent = pageContent,
-                    snapPosition = snapPosition,
-                    key = key
-                )
+                }
             }
+            additionalContent()
         }
-        additionalContent()
     }
 
     @Composable
@@ -281,6 +284,7 @@ data class SingleParamConfig(
     val mainAxisContentPadding: PaddingValues = PaddingValues(0.dp),
     val beyondViewportPageCount: Int = 0,
     val snapPosition: Pair<SnapPosition, String> = SnapPosition.Start to "Start",
+    var useLookahead: Boolean = false
 ) {
     fun TouchInjectionScope.swipeWithVelocityAcrossMainAxis(velocity: Float, delta: Float? = null) {
         val end =

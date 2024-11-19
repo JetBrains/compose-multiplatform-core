@@ -29,6 +29,7 @@ import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.integration.adapter.CameraControlAdapter
 import androidx.camera.camera2.pipe.integration.adapter.CameraInfoAdapter
 import androidx.camera.camera2.pipe.integration.adapter.CameraInternalAdapter
+import androidx.camera.camera2.pipe.integration.adapter.EncoderProfilesProviderAdapter
 import androidx.camera.camera2.pipe.integration.adapter.ZslControl
 import androidx.camera.camera2.pipe.integration.adapter.ZslControlImpl
 import androidx.camera.camera2.pipe.integration.adapter.ZslControlNoOpImpl
@@ -55,6 +56,7 @@ import androidx.camera.core.impl.CameraControlInternal
 import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.CameraInternal
 import androidx.camera.core.impl.CameraThreadConfig
+import androidx.camera.core.impl.EncoderProfilesProvider
 import androidx.camera.core.impl.Quirks
 import dagger.Binds
 import dagger.Module
@@ -162,6 +164,15 @@ public abstract class CameraModule {
             } else {
                 return ZslControlNoOpImpl()
             }
+        }
+
+        @CameraScope
+        @Provides
+        public fun provideEncoderProfilesProvider(
+            @Named("CameraId") cameraIdString: String,
+            cameraQuirks: CameraQuirks
+        ): EncoderProfilesProvider {
+            return EncoderProfilesProviderAdapter(cameraIdString, cameraQuirks.quirks)
         }
     }
 

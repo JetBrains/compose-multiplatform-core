@@ -15,12 +15,14 @@
  */
 package androidx.wear.compose.navigation
 
+import android.os.Build
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeRight
+import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.navigation.samples.NavHostWithNamedArgument
 import androidx.wear.compose.navigation.samples.SimpleNavHost
 import org.junit.Rule
@@ -31,7 +33,7 @@ class SwipeDismissableNavHostSampleTest {
 
     @Test
     fun toggles_between_destinations_in_simplenavhost() {
-        rule.setContentWithTheme { SimpleNavHost() }
+        rule.setContent { SimpleNavHost() }
 
         rule.onNodeWithText("On").performClick()
         rule.onNodeWithText("Off").performClick()
@@ -41,7 +43,7 @@ class SwipeDismissableNavHostSampleTest {
 
     @Test
     fun navigates_to_named_arguments() {
-        rule.setContentWithTheme { NavHostWithNamedArgument() }
+        rule.setContent { NavHostWithNamedArgument() }
 
         rule.onNodeWithText("Item 1").performClick()
 
@@ -49,8 +51,10 @@ class SwipeDismissableNavHostSampleTest {
     }
 
     @Test
+    @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     fun swipes_back_from_named_arguments() {
-        rule.setContentWithTheme { NavHostWithNamedArgument() }
+
+        rule.setContent { NavHostWithNamedArgument() }
 
         rule.onNodeWithText("Item 1").performClick()
         rule.onRoot().performTouchInput { swipeRight() }

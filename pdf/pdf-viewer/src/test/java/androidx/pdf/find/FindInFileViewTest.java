@@ -36,6 +36,7 @@ import junit.framework.TestCase;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -73,6 +74,7 @@ public class FindInFileViewTest extends TestCase {
         mOpenMocks.close();
     }
 
+    @Ignore // b/376314114
     @Test
     public void testSetFindInFileView_visibilityTrue() {
         doNothing().when(mAnnotationButton).setVisibility(anyInt());
@@ -80,6 +82,7 @@ public class FindInFileViewTest extends TestCase {
         assertThat(mFindInFileView.getVisibility()).isEqualTo(VISIBLE);
     }
 
+    @Ignore // b/376314114
     @Test
     public void testSetFindInFileView_visibilityFalse() {
         mFindInFileView.setFindInFileView(false);

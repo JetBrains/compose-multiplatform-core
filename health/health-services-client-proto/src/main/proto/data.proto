@@ -224,13 +224,15 @@ message ExerciseConfig {
   repeated BatchingMode batching_mode_overrides = 11 [packed = true];
   repeated ExerciseEventType exercise_event_types = 12 [packed = true];
   repeated DebouncedGoal debounced_goals = 15;
-  reserved 9, 13, 14, 16 to max;
+  reserved 9, 13, 14, 16, 17, 18, 19;
+  reserved 20 to max; // Next ID
 }
 
 message ExerciseInfo {
   optional ExerciseTrackedStatus exercise_tracked_status = 1;
   optional ExerciseType exercise_type = 2;
-  reserved 3 to max;  // Next ID
+  reserved 3;
+  reserved 4 to max;  // Next ID
 }
 
 message ExerciseGoal {
@@ -490,7 +492,8 @@ message ExerciseUpdate {
   optional ExerciseEndReason exercise_end_reason = 11;
   repeated DebouncedGoal latest_achieved_debounced_goals = 13;
 
-  reserved 12, 14 to max;
+  reserved 12, 14;
+  reserved 15 to max;  // Next ID
 }
 
 enum ExerciseEndReason {
@@ -561,7 +564,8 @@ message MilestoneMarkerSummary {
 message WarmUpConfig {
   optional ExerciseType exercise_type = 1;
   repeated DataType data_types = 2;
-  reserved 3 to max;  // Next ID
+  reserved 3, 4, 5, 6;
+  reserved 7 to max;  // Next ID
 }
 
 message PassiveGoal {

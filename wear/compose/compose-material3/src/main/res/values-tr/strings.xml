@@ -37,7 +37,7 @@
     <string name="wear_m3c_date_picker_month" msgid="5962969526377479136">"Ay"</string>
     <string name="wear_m3c_date_picker_year" msgid="4697690064312147449">"Yıl"</string>
     <string name="wear_m3c_picker_confirm_button_content_description" msgid="8440144719909288057">"Onayla"</string>
-    <string name="wear_m3c_picker_next_button_content_description" msgid="3346011303652897029">"Sonraki"</string>
+    <string name="wear_m3c_picker_next_button_content_description" msgid="3346011303652897029">"İleri"</string>
     <string name="wear_m3c_slider_decrease_content_description" msgid="8242572466064289486">"Azalt"</string>
     <string name="wear_m3c_slider_increase_content_description" msgid="3329631766954416834">"Artır"</string>
     <string name="wear_m3c_stepper_decrease_content_description" msgid="6939134411425530620">"Azalt"</string>

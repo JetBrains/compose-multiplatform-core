@@ -97,7 +97,7 @@ class AutoClosingDatabaseTest {
 
         delay(100) // Let db auto close
 
-        db.invalidationTracker.notifyObserversByTableNames("user")
+        db.invalidationTracker.notifyObserversByTableNames(setOf("user"))
 
         executorRule.drainTasks(1, TimeUnit.SECONDS)
         assertThat(invalidationCount.get()).isEqualTo(2)

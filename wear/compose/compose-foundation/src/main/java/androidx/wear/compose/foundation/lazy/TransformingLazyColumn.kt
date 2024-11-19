@@ -31,12 +31,16 @@ import androidx.compose.foundation.lazy.layout.LazyLayoutIntervalContent
 import androidx.compose.foundation.lazy.layout.LazyLayoutItemProvider
 import androidx.compose.foundation.lazy.layout.getDefaultLazyLayoutKey
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ProvidableCompositionLocal
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.IntrinsicMeasureScope
@@ -149,6 +153,14 @@ fun TransformingLazyColumn(
     )
 }
 
+/**
+ * Composition local for components that need to be able to react to being inside a
+ * [TransformingLazyColumn]'s item.
+ */
+val LocalTransformingLazyColumnItemScope:
+    ProvidableCompositionLocal<TransformingLazyColumnItemScope?> =
+    compositionLocalOf(structuralEqualityPolicy()) { null }
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun TransformingLazyColumnImpl(
@@ -250,8 +262,10 @@ internal class TransformingLazyColumnItemProvider(
     override fun Item(index: Int, key: Any) {
         val itemScope =
             remember(index) { TransformingLazyColumnItemScopeImpl(index, state = state) }
-        intervalContent.withInterval(index) { localIndex, content ->
-            content.item(itemScope, localIndex)
+        CompositionLocalProvider(LocalTransformingLazyColumnItemScope provides itemScope) {
+            intervalContent.withInterval(index) { localIndex, content ->
+                content.item(itemScope, localIndex)
+            }
         }
     }
 

@@ -18,7 +18,6 @@ package androidx.room.compiler.processing
 
 import androidx.kruth.assertThat
 import androidx.room.compiler.processing.util.CompilationTestCapabilities
-import androidx.room.compiler.processing.util.KOTLINC_LANGUAGE_1_9_ARGS
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.compileFiles
 import androidx.room.compiler.processing.util.runKaptTest
@@ -142,8 +141,6 @@ class InternalModifierTest {
         runKspTest(
             sources = listOf(source),
             classpath = classpath,
-            // https://github.com/google/ksp/issues/1640
-            kotlincArguments = KOTLINC_LANGUAGE_1_9_ARGS,
             config = config,
         ) { invocation ->
             kspResult = traverse(invocation.processingEnv)

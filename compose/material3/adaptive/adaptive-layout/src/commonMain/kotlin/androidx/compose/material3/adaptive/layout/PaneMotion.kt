@@ -22,14 +22,15 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.AnimationVector
 import androidx.compose.animation.core.AnimationVector4D
 import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.TwoWayConverter
 import androidx.compose.animation.core.VectorizedFiniteAnimationSpec
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -48,19 +49,6 @@ import kotlin.math.min
 @Suppress("PrimitiveInCollection") // No way to get underlying Long of IntSize or IntOffset
 @ExperimentalMaterial3AdaptiveApi
 sealed interface PaneScaffoldMotionScope {
-    /**
-     * The animation specs of the associated pane to the scope. [AnimatedPane] will use this value
-     * to perform pane animations during scaffold state changes.
-     */
-    val animationSpecs: PaneAnimationSpecs
-
-    /**
-     * The delayed animation specs of the associated pane to the scope. [AnimatedPane] will use this
-     * value to perform pane animations during scaffold state changes when an animation needs to be
-     * played with a delay.
-     */
-    val delayedAnimationSpecs: PaneAnimationSpecs
-
     /**
      * The scaffold's current size. Note that the value of the field will only be updated during
      * measurement of the scaffold and before the first measurement the value will be
@@ -84,50 +72,87 @@ sealed interface PaneScaffoldMotionScope {
      * happening.
      */
     val paneMotionDataList: List<PaneMotionData>
+
+    /**
+     * A convenient function to get the given [PaneMotion]'s [EnterTransition] under the context of
+     * the current [PaneScaffoldMotionScope].
+     *
+     * @see [PaneMotion.enterTransition]
+     */
+    val PaneMotion.enterTransition
+        get() = with(this) { this@PaneScaffoldMotionScope.enterTransition }
+
+    /**
+     * A convenient function to get the given [PaneMotion]'s [EnterTransition] under the context of
+     * the current [PaneScaffoldMotionScope].
+     *
+     * @see [PaneMotion.exitTransition]
+     */
+    val PaneMotion.exitTransition
+        get() = with(this) { this@PaneScaffoldMotionScope.exitTransition }
 }
 
-/**
- * This class specifies animation specs to use in pane motions for different type of animations like
- * position, size, or bounds animations.
- *
- * @param boundsAnimationSpec the [FiniteAnimationSpec] used to animate panes' bounds when the
- *   specified pane motion is [PaneMotion.AnimateBounds].
- */
+/** The default settings of pane motions. */
 @ExperimentalMaterial3AdaptiveApi
-@Immutable
-class PaneAnimationSpecs(
-    val boundsAnimationSpec: FiniteAnimationSpec<IntRect>,
-) {
-    /**
-     * The [FiniteAnimationSpec] used to animate panes' positions when the specified pane motion is
-     * sliding in or out without size change. The spec will be derived from the provided
-     * [boundsAnimationSpec] the using the corresponding top-left coordinates.
-     */
-    val offsetAnimationSpec: FiniteAnimationSpec<IntOffset> =
-        DerivedOffsetAnimationSpec(boundsAnimationSpec)
+object PaneMotionDefaults {
+    private val IntRectVisibilityThreshold = IntRect(1, 1, 1, 1)
 
     /**
-     * The [FiniteAnimationSpec] used to animate panes' sizes when the specified pane motion is
-     * expanding or shrinking without position change. The spec will be derived from the provided
-     * [boundsAnimationSpec] by using the corresponding sizes.
+     * The default [FiniteAnimationSpec] used to animate panes. Note that the animation spec is
+     * based on bounds animation - in a situation to animate offset or size independently,
+     * developers can use the derived [OffsetAnimationSpec] and [SizeAnimationSpec].
      */
-    val sizeAnimationSpec: FiniteAnimationSpec<IntSize> =
-        DerivedSizeAnimationSpec(boundsAnimationSpec)
+    val AnimationSpec: FiniteAnimationSpec<IntRect> =
+        spring(
+            dampingRatio = 0.8f,
+            stiffness = 380f,
+            visibilityThreshold = IntRectVisibilityThreshold
+        )
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is PaneAnimationSpecs) return false
-        if (boundsAnimationSpec != other.boundsAnimationSpec) return false
-        return true
-    }
+    /**
+     * The default [FiniteAnimationSpec] used to animate panes with a delay. Note that the animation
+     * spec is based on bounds animation - in a situation to animate offset or size independently,
+     * developers can use the derived [DelayedOffsetAnimationSpec] and [DelayedSizeAnimationSpec].
+     */
+    val DelayedAnimationSpec: FiniteAnimationSpec<IntRect> =
+        DelayedSpringSpec(
+            dampingRatio = 0.8f,
+            stiffness = 380f,
+            delayedRatio = 0.1f,
+            visibilityThreshold = IntRectVisibilityThreshold
+        )
 
-    override fun hashCode(): Int {
-        return boundsAnimationSpec.hashCode()
-    }
+    /**
+     * The derived [FiniteAnimationSpec] that can be used to animate panes' positions when the
+     * specified pane motion is sliding in or out without size change. The spec will be derived from
+     * the provided [AnimationSpec] the using the corresponding top-left coordinates.
+     */
+    val OffsetAnimationSpec: FiniteAnimationSpec<IntOffset> =
+        DerivedOffsetAnimationSpec(AnimationSpec)
 
-    override fun toString(): String {
-        return "PaneAnimationSpecs(boundsAnimationSpec=$boundsAnimationSpec)"
-    }
+    /**
+     * The derived [FiniteAnimationSpec] that can be used to animate panes' sizes when the specified
+     * pane motion is expanding or shrinking without position change. The spec will be derived from
+     * the provided [AnimationSpec] by using the corresponding sizes.
+     */
+    val SizeAnimationSpec: FiniteAnimationSpec<IntSize> = DerivedSizeAnimationSpec(AnimationSpec)
+
+    /**
+     * The derived [FiniteAnimationSpec] that can be used to animate panes' positions when the
+     * specified pane motion is sliding in or out with a delay without size change. The spec will be
+     * derived from the provided [DelayedAnimationSpec] the using the corresponding top-left
+     * coordinates.
+     */
+    val DelayedOffsetAnimationSpec: FiniteAnimationSpec<IntOffset> =
+        DerivedOffsetAnimationSpec(DelayedAnimationSpec)
+
+    /**
+     * The derived [FiniteAnimationSpec] that can be used to animate panes' sizes when the specified
+     * pane motion is expanding or shrinking with a delay without position change. The spec will be
+     * derived from the provided [DelayedAnimationSpec] by using the corresponding sizes.
+     */
+    val DelayedSizeAnimationSpec: FiniteAnimationSpec<IntSize> =
+        DerivedSizeAnimationSpec(DelayedAnimationSpec)
 }
 
 /**
@@ -367,7 +392,7 @@ interface PaneMotion {
             object : DefaultImpl("EnterFromLeft", Type.Entering) {
                 override val PaneScaffoldMotionScope.enterTransition
                     get() =
-                        slideInHorizontally(animationSpecs.offsetAnimationSpec) {
+                        slideInHorizontally(PaneMotionDefaults.OffsetAnimationSpec) {
                             slideInFromLeftOffset
                         }
             }
@@ -380,7 +405,7 @@ interface PaneMotion {
             object : DefaultImpl("EnterFromRight", Type.Entering) {
                 override val PaneScaffoldMotionScope.enterTransition
                     get() =
-                        slideInHorizontally(animationSpecs.offsetAnimationSpec) {
+                        slideInHorizontally(PaneMotionDefaults.OffsetAnimationSpec) {
                             slideInFromRightOffset
                         }
             }
@@ -394,7 +419,7 @@ interface PaneMotion {
             object : DefaultImpl("EnterFromLeftDelayed", Type.Entering) {
                 override val PaneScaffoldMotionScope.enterTransition
                     get() =
-                        slideInHorizontally(delayedAnimationSpecs.offsetAnimationSpec) {
+                        slideInHorizontally(PaneMotionDefaults.DelayedOffsetAnimationSpec) {
                             slideInFromLeftOffset
                         }
             }
@@ -408,7 +433,7 @@ interface PaneMotion {
             object : DefaultImpl("EnterFromRightDelayed", Type.Entering) {
                 override val PaneScaffoldMotionScope.enterTransition
                     get() =
-                        slideInHorizontally(delayedAnimationSpecs.offsetAnimationSpec) {
+                        slideInHorizontally(PaneMotionDefaults.DelayedOffsetAnimationSpec) {
                             slideInFromRightOffset
                         }
             }
@@ -421,7 +446,7 @@ interface PaneMotion {
             object : DefaultImpl("ExitToLeft", Type.Exiting) {
                 override val PaneScaffoldMotionScope.exitTransition
                     get() =
-                        slideOutHorizontally(animationSpecs.offsetAnimationSpec) {
+                        slideOutHorizontally(PaneMotionDefaults.OffsetAnimationSpec) {
                             slideOutToLeftOffset
                         }
             }
@@ -434,7 +459,7 @@ interface PaneMotion {
             object : DefaultImpl("ExitToRight", Type.Exiting) {
                 override val PaneScaffoldMotionScope.exitTransition
                     get() =
-                        slideOutHorizontally(animationSpecs.offsetAnimationSpec) {
+                        slideOutHorizontally(PaneMotionDefaults.OffsetAnimationSpec) {
                             slideOutToRightOffset
                         }
             }
@@ -450,7 +475,7 @@ interface PaneMotion {
                 override val PaneScaffoldMotionScope.enterTransition
                     get() =
                         expandHorizontally(
-                            animationSpecs.sizeAnimationSpec,
+                            PaneMotionDefaults.SizeAnimationSpec,
                             Alignment.CenterHorizontally
                         )
             }
@@ -466,7 +491,7 @@ interface PaneMotion {
                 override val PaneScaffoldMotionScope.exitTransition
                     get() =
                         shrinkHorizontally(
-                            animationSpecs.sizeAnimationSpec,
+                            PaneMotionDefaults.SizeAnimationSpec,
                             Alignment.CenterHorizontally
                         )
             }
@@ -650,4 +675,92 @@ internal class DerivedOffsetAnimationSpec(private val boundsSpec: FiniteAnimatio
     }
 
     override fun hashCode(): Int = boundsSpec.hashCode()
+}
+
+internal class DelayedSpringSpec<T>(
+    dampingRatio: Float = Spring.DampingRatioNoBouncy,
+    stiffness: Float = Spring.StiffnessMedium,
+    private val delayedRatio: Float,
+    visibilityThreshold: T? = null
+) : FiniteAnimationSpec<T> {
+    private val originalSpringSpec = spring(dampingRatio, stiffness, visibilityThreshold)
+
+    override fun <V : AnimationVector> vectorize(
+        converter: TwoWayConverter<T, V>
+    ): VectorizedFiniteAnimationSpec<V> =
+        DelayedVectorizedSpringSpec(originalSpringSpec.vectorize(converter), delayedRatio)
+}
+
+private class DelayedVectorizedSpringSpec<V : AnimationVector>(
+    val originalVectorizedSpringSpec: VectorizedFiniteAnimationSpec<V>,
+    val delayedRatio: Float,
+) : VectorizedFiniteAnimationSpec<V> {
+    var delayedTimeNanos: Long = 0
+    var cachedInitialValue: V? = null
+    var cachedTargetValue: V? = null
+    var cachedInitialVelocity: V? = null
+    var cachedOriginalDurationNanos: Long = 0
+
+    override fun getValueFromNanos(
+        playTimeNanos: Long,
+        initialValue: V,
+        targetValue: V,
+        initialVelocity: V
+    ): V {
+        updateDelayedTimeNanosIfNeeded(initialValue, targetValue, initialVelocity)
+        return if (playTimeNanos <= delayedTimeNanos) {
+            initialValue
+        } else {
+            originalVectorizedSpringSpec.getValueFromNanos(
+                playTimeNanos - delayedTimeNanos,
+                initialValue,
+                targetValue,
+                initialVelocity
+            )
+        }
+    }
+
+    override fun getVelocityFromNanos(
+        playTimeNanos: Long,
+        initialValue: V,
+        targetValue: V,
+        initialVelocity: V
+    ): V {
+        updateDelayedTimeNanosIfNeeded(initialValue, targetValue, initialVelocity)
+        return if (playTimeNanos <= delayedTimeNanos) {
+            initialVelocity
+        } else {
+            originalVectorizedSpringSpec.getVelocityFromNanos(
+                playTimeNanos - delayedTimeNanos,
+                initialValue,
+                targetValue,
+                initialVelocity
+            )
+        }
+    }
+
+    override fun getDurationNanos(initialValue: V, targetValue: V, initialVelocity: V): Long {
+        updateDelayedTimeNanosIfNeeded(initialValue, targetValue, initialVelocity)
+        return cachedOriginalDurationNanos + delayedTimeNanos
+    }
+
+    private fun updateDelayedTimeNanosIfNeeded(
+        initialValue: V,
+        targetValue: V,
+        initialVelocity: V
+    ) {
+        if (
+            initialValue != cachedInitialValue ||
+                targetValue != cachedTargetValue ||
+                initialVelocity != cachedInitialVelocity
+        ) {
+            cachedOriginalDurationNanos =
+                originalVectorizedSpringSpec.getDurationNanos(
+                    initialValue,
+                    targetValue,
+                    initialVelocity
+                )
+            delayedTimeNanos = (cachedOriginalDurationNanos * delayedRatio).toLong()
+        }
+    }
 }

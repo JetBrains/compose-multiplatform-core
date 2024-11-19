@@ -18,11 +18,12 @@ package androidx.wear.compose.material3
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.foundation.interaction.InteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.geometry.RoundRect
@@ -73,73 +74,50 @@ private class AnimatedToggleRoundedCornerShape(
  */
 @Composable
 internal fun rememberAnimatedToggleRoundedCornerShape(
+    interactionSource: InteractionSource,
     uncheckedCornerSize: CornerSize,
     checkedCornerSize: CornerSize,
     pressedCornerSize: CornerSize,
-    pressed: Boolean,
     checked: Boolean,
     onPressAnimationSpec: FiniteAnimationSpec<Float>,
     onReleaseAnimationSpec: FiniteAnimationSpec<Float>,
 ): Shape {
-    val toggleState =
-        when {
-            pressed -> ToggleState.Pressed
-            checked -> ToggleState.Checked
-            else -> ToggleState.Unchecked
-        }
-
-    val previous = remember { mutableStateOf(toggleState) }
     val scope = rememberCoroutineScope()
-    val progress = remember { Animatable(1f) }
-
-    val toggledCornerSize =
-        toggleState.cornerSize(uncheckedCornerSize, checkedCornerSize, pressedCornerSize)
-    val animationSpec = if (pressed) onPressAnimationSpec else onReleaseAnimationSpec
+    val progress = remember { Animatable(0f) }
 
     val animatedShape = remember {
         AnimatedToggleRoundedCornerShape(
-            startCornerSize = toggledCornerSize,
-            endCornerSize = toggledCornerSize,
+            startCornerSize = if (checked) checkedCornerSize else uncheckedCornerSize,
+            endCornerSize = pressedCornerSize,
             progress = { progress.value },
         )
     }
 
-    LaunchedEffect(toggleState) {
-        // Allow the press up animation to finish its minimum duration before starting the next
-        if (!pressed) {
-            waitUntil { !progress.isRunning || progress.value > MIN_REQUIRED_ANIMATION_PROGRESS }
-        }
+    LaunchedEffect(interactionSource) {
+        interactionSource.interactions.collect { interaction ->
+            when (interaction) {
+                is PressInteraction.Press -> {
+                    scope.launch { progress.animateTo(1f, animationSpec = onPressAnimationSpec) }
+                }
+                is PressInteraction.Cancel,
+                is PressInteraction.Release -> {
+                    waitUntil {
+                        !progress.isRunning || progress.value > MIN_REQUIRED_ANIMATION_PROGRESS
+                    }
 
-        if (toggleState != previous.value) {
-            animatedShape.startCornerSize = animatedShape.endCornerSize
-            animatedShape.endCornerSize = toggledCornerSize
-            previous.value = toggleState
+                    // The end of the animation was the pressed shape. Reverse the animation back
+                    // to zero and set the start depending on the button's pressed state.
+                    animatedShape.startCornerSize =
+                        if (animatedShape.startCornerSize == uncheckedCornerSize) checkedCornerSize
+                        else uncheckedCornerSize
 
-            scope.launch {
-                progress.snapTo(1f - progress.value)
-                progress.animateTo(1f, animationSpec = animationSpec)
+                    scope.launch { progress.animateTo(0f, animationSpec = onReleaseAnimationSpec) }
+                }
             }
         }
     }
 
     return animatedShape
-}
-
-private fun ToggleState.cornerSize(
-    uncheckedCornerSize: CornerSize,
-    checkedCornerSize: CornerSize,
-    pressedCornerSize: CornerSize,
-) =
-    when (this) {
-        ToggleState.Unchecked -> uncheckedCornerSize
-        ToggleState.Checked -> checkedCornerSize
-        ToggleState.Pressed -> pressedCornerSize
-    }
-
-internal enum class ToggleState {
-    Unchecked,
-    Checked,
-    Pressed,
 }
 
 private const val MIN_REQUIRED_ANIMATION_PROGRESS = 0.75f

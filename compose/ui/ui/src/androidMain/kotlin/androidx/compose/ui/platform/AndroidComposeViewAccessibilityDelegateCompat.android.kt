@@ -18,7 +18,6 @@ package androidx.compose.ui.platform
 
 import android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_ALL_MASK
 import android.content.Context
-import android.content.res.Resources
 import android.graphics.RectF
 import android.os.Build
 import android.os.Bundle
@@ -182,20 +181,6 @@ private object RtlBoundsComparator : Comparator<SemanticsNode> {
         return bb.left.compareTo(ab.left)
     }
 }
-
-private val semanticComparators: Array<Comparator<SemanticsNode>> =
-    Array(2) { index ->
-        val comparator =
-            when (index) {
-                0 -> RtlBoundsComparator
-                else -> LtrBoundsComparator
-            }
-        comparator
-            // then compare by layoutNode's zIndex and placement order
-            .thenBy(LayoutNode.ZComparator) { it.layoutNode }
-            // then compare by semanticsId to break the tie somehow
-            .thenBy { it.id }
-    }
 
 // Kotlin `sortWith` should just pull out the highest traversal indices, but keep everything
 // else in place. If the element does not have a `traversalIndex` then `0f` will be used.
@@ -385,7 +370,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 currentSemanticsNodesInvalidated = false
                 field = view.semanticsOwner.getAllUncoveredSemanticsNodesToIntObjectMap()
                 if (isEnabled) {
-                    setTraversalValues(field, idToBeforeMap, idToAfterMap, view.context.resources)
+                    setTraversalValues()
                 }
             }
             return field
@@ -555,13 +540,226 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         )
     }
 
+    private val semanticComparators: Array<Comparator<SemanticsNode>> =
+        Array(2) { index ->
+            val comparator =
+                when (index) {
+                    0 -> RtlBoundsComparator
+                    else -> LtrBoundsComparator
+                }
+            comparator
+                // then compare by layoutNode's zIndex and placement order
+                .thenBy(LayoutNode.ZComparator) { it.layoutNode }
+                // then compare by semanticsId to break the tie somehow
+                .thenBy { it.id }
+        }
+
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun semanticComparator(layoutIsRtl: Boolean): Comparator<SemanticsNode> {
+        return semanticComparators[if (layoutIsRtl) 0 else 1]
+    }
+
+    // check to see if this entry overlaps with any groupings in rowGroupings
+    private fun placedEntryRowOverlaps(
+        rowGroupings: ArrayList<Pair<Rect, MutableList<SemanticsNode>>>,
+        node: SemanticsNode
+    ): Boolean {
+        // Conversion to long is needed in order to utilize `until`, which has no float ver
+        val entryTopCoord = node.boundsInWindow.top
+        val entryBottomCoord = node.boundsInWindow.bottom
+        val entryIsEmpty = entryTopCoord >= entryBottomCoord
+
+        for (currIndex in 0..rowGroupings.lastIndex) {
+            val currRect = rowGroupings[currIndex].first
+            val groupIsEmpty = currRect.top >= currRect.bottom
+            val groupOverlapsEntry =
+                !entryIsEmpty &&
+                    !groupIsEmpty &&
+                    max(entryTopCoord, currRect.top) < min(entryBottomCoord, currRect.bottom)
+
+            // If it overlaps with this row group, update cover and add node
+            if (groupOverlapsEntry) {
+                val newRect =
+                    currRect.intersect(0f, entryTopCoord, Float.POSITIVE_INFINITY, entryBottomCoord)
+                // Replace the cover rectangle, copying over the old list of nodes
+                rowGroupings[currIndex] = Pair(newRect, rowGroupings[currIndex].second)
+                // Add current node
+                rowGroupings[currIndex].second.add(node)
+                // We've found an overlapping group, return true
+                return true
+            }
+        }
+
+        // If we've made it here, then there are no groups our entry overlaps with
+        return false
+    }
+
+    /**
+     * Returns the results of geometry groupings, which is determined from 1) grouping nodes into
+     * distinct, non-overlapping rows based on their top/bottom coordinates, then 2) sorting nodes
+     * within each row with the semantics comparator.
+     *
+     * This method approaches traversal order with more nuance than an approach considering only
+     * just hierarchy or only just an individual node's bounds.
+     *
+     * If [containerChildrenMapping] exists, there are additional children to add, as well as the
+     * sorted parent itself
+     */
+    private fun sortByGeometryGroupings(
+        layoutIsRtl: Boolean,
+        parentListToSort: ArrayList<SemanticsNode>,
+        containerChildrenMapping: MutableIntObjectMap<MutableList<SemanticsNode>> =
+            mutableIntObjectMapOf()
+    ): MutableList<SemanticsNode> {
+        // RowGroupings list consists of pairs, first = a rectangle of the bounds of the row
+        // and second = the list of nodes in that row
+        val rowGroupings =
+            ArrayList<Pair<Rect, MutableList<SemanticsNode>>>(parentListToSort.size / 2)
+
+        for (entryIndex in 0..parentListToSort.lastIndex) {
+            val currEntry = parentListToSort[entryIndex]
+            // If this is the first entry, or vertical groups don't overlap
+            if (entryIndex == 0 || !placedEntryRowOverlaps(rowGroupings, currEntry)) {
+                val newRect = currEntry.boundsInWindow
+                rowGroupings.add(Pair(newRect, mutableListOf(currEntry)))
+            } // otherwise, we've already iterated through, found and placed it in a matching group
+        }
+
+        // Sort the rows from top to bottom
+        rowGroupings.sortWith(TopBottomBoundsComparator)
+
+        val returnList = ArrayList<SemanticsNode>()
+        val comparator = semanticComparator(layoutIsRtl)
+        rowGroupings.fastForEach { row ->
+            // Sort each individual row's parent nodes
+            row.second.sortWith(comparator)
+            returnList.addAll(row.second)
+        }
+
+        returnList.sortWith(UnmergedConfigComparator)
+
+        var i = 0
+        // Afterwards, go in and add the containers' children.
+        while (i <= returnList.lastIndex) {
+            val currNodeId = returnList[i].id
+            // If a parent node is a container, then add its children.
+            // Add all container's children after the container itself.
+            // Because we've already recursed on the containers children, the children should
+            // also be sorted by their traversal index
+            val containersChildrenList = containerChildrenMapping[currNodeId]
+            if (containersChildrenList != null) {
+                val containerIsScreenReaderFocusable = isScreenReaderFocusable(returnList[i])
+                if (!containerIsScreenReaderFocusable) {
+                    // Container is removed if it is not screenreader-focusable
+                    returnList.removeAt(i)
+                } else {
+                    // Increase counter if the container was not removed
+                    i += 1
+                }
+                // Add all the container's children and increase counter by the number of children
+                returnList.addAll(i, containersChildrenList)
+                i += containersChildrenList.size
+            } else {
+                // Advance to the next item
+                i += 1
+            }
+        }
+        return returnList
+    }
+
+    private fun geometryDepthFirstSearch(
+        currNode: SemanticsNode,
+        geometryList: ArrayList<SemanticsNode>,
+        containerMapToChildren: MutableIntObjectMap<MutableList<SemanticsNode>>
+    ) {
+        val currRTL = currNode.isRtl
+        // We only want to add children that are either traversalGroups or are
+        // screen reader focusable. The child must also be in the current pruned semantics tree.
+        val isTraversalGroup =
+            currNode.unmergedConfig.getOrElse(SemanticsProperties.IsTraversalGroup) { false }
+
+        if (
+            (isTraversalGroup || isScreenReaderFocusable(currNode)) &&
+                currentSemanticsNodes.containsKey(currNode.id)
+        ) {
+            geometryList.add(currNode)
+        }
+        if (isTraversalGroup) {
+            // Recurse and record the container's children, sorted
+            containerMapToChildren[currNode.id] =
+                subtreeSortedByGeometryGrouping(currRTL, currNode.children)
+        } else {
+            // Otherwise, continue adding children to the list that'll be sorted regardless of
+            // hierarchy
+            currNode.children.fastForEach { child ->
+                geometryDepthFirstSearch(child, geometryList, containerMapToChildren)
+            }
+        }
+    }
+
+    /**
+     * This function prepares a subtree for `sortByGeometryGroupings` by retrieving all
+     * non-container nodes and adding them to the list to be geometrically sorted. We recurse on
+     * containers (if they exist) and add their sorted children to an optional mapping. The list to
+     * be sorted and child mapping is passed into `sortByGeometryGroupings`.
+     */
+    private fun subtreeSortedByGeometryGrouping(
+        layoutIsRtl: Boolean,
+        listToSort: List<SemanticsNode>
+    ): MutableList<SemanticsNode> {
+        // This should be mapping of [containerID: listOfSortedChildren], only populated if there
+        // are container nodes in this level. If there are container nodes, `containerMapToChildren`
+        // would look like {containerId: [sortedChild, sortedChild], containerId: [sortedChild]}
+        val containerMapToChildren = mutableIntObjectMapOf<MutableList<SemanticsNode>>()
+        val geometryList = ArrayList<SemanticsNode>()
+
+        listToSort.fastForEach { node ->
+            geometryDepthFirstSearch(node, geometryList, containerMapToChildren)
+        }
+
+        return sortByGeometryGroupings(layoutIsRtl, geometryList, containerMapToChildren)
+    }
+
+    private fun setTraversalValues() {
+        idToBeforeMap.clear()
+        idToAfterMap.clear()
+
+        val hostSemanticsNode =
+            currentSemanticsNodes[AccessibilityNodeProviderCompat.HOST_VIEW_ID]?.semanticsNode!!
+        val hostLayoutIsRtl = hostSemanticsNode.isRtl
+
+        val semanticsOrderList =
+            subtreeSortedByGeometryGrouping(hostLayoutIsRtl, listOf(hostSemanticsNode))
+
+        // Iterate through our ordered list, and creating a mapping of current node to next node ID
+        // We'll later read through this and set traversal order with IdToBeforeMap
+        for (i in 1..semanticsOrderList.lastIndex) {
+            val prevId = semanticsOrderList[i - 1].id
+            val currId = semanticsOrderList[i].id
+            idToBeforeMap[prevId] = currId
+            idToAfterMap[currId] = prevId
+        }
+    }
+
+    private fun isScreenReaderFocusable(node: SemanticsNode): Boolean {
+        val nodeContentDescriptionOrNull =
+            node.unmergedConfig.getOrNull(SemanticsProperties.ContentDescription)?.firstOrNull()
+        val isSpeakingNode =
+            nodeContentDescriptionOrNull != null ||
+                getInfoText(node) != null ||
+                getInfoStateDescriptionOrNull(node) != null ||
+                getInfoIsCheckable(node)
+
+        return !node.isHidden &&
+            (node.unmergedConfig.isMergingSemanticsOfDescendants ||
+                node.isUnmergedLeafNode && isSpeakingNode)
+    }
+
     private fun populateAccessibilityNodeInfoProperties(
         virtualViewId: Int,
         info: AccessibilityNodeInfoCompat,
         semanticsNode: SemanticsNode
     ) {
-        val resources = view.context.resources
-
         // set classname
         info.className = ClassName
 
@@ -577,9 +775,9 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         role?.let {
             if (semanticsNode.isFake || semanticsNode.replacedChildren.isEmpty()) {
                 if (role == Role.Tab) {
-                    info.roleDescription = resources.getString(R.string.tab)
+                    info.roleDescription = view.context.resources.getString(R.string.tab)
                 } else if (role == Role.Switch) {
-                    info.roleDescription = resources.getString(R.string.switch_role)
+                    info.roleDescription = view.context.resources.getString(R.string.switch_role)
                 } else {
                     val className = role.toLegacyClassName()
                     // Images are often minor children of larger widgets, so we only want to
@@ -634,8 +832,8 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
         setText(semanticsNode, info)
         setContentInvalid(semanticsNode, info)
-        info.stateDescription = getInfoStateDescriptionOrNull(semanticsNode, resources)
-        info.isCheckable = getInfoIsCheckable(semanticsNode)
+        setStateDescription(semanticsNode, info)
+        setIsCheckable(semanticsNode, info)
 
         val toggleState =
             semanticsNode.unmergedConfig.getOrNull(SemanticsProperties.ToggleableState)
@@ -1029,7 +1227,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             }
         }
 
-        info.isScreenReaderFocusable = isScreenReaderFocusable(semanticsNode, resources)
+        info.isScreenReaderFocusable = isScreenReaderFocusable(semanticsNode)
 
         // `beforeId` refers to the semanticsId that should be read before this `virtualViewId`.
         val beforeId = idToBeforeMap.getOrDefault(virtualViewId, -1)
@@ -1075,6 +1273,143 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             info.isContentInvalid = true
             info.error = node.unmergedConfig.getOrNull(SemanticsProperties.Error)
         }
+    }
+
+    private fun getInfoStateDescriptionOrNull(node: SemanticsNode): String? {
+        var stateDescription = node.unmergedConfig.getOrNull(SemanticsProperties.StateDescription)
+        val toggleState = node.unmergedConfig.getOrNull(SemanticsProperties.ToggleableState)
+        val role = node.unmergedConfig.getOrNull(SemanticsProperties.Role)
+
+        // Check toggle state and retrieve description accordingly
+        toggleState?.let {
+            when (it) {
+                ToggleableState.On -> {
+                    // Unfortunately, talkback has a bug of using "checked", so we set state
+                    // description here
+                    if (role == Role.Switch && stateDescription == null) {
+                        stateDescription = view.context.resources.getString(R.string.state_on)
+                    }
+                }
+                ToggleableState.Off -> {
+                    // Unfortunately, talkback has a bug of using "not checked", so we set state
+                    // description here
+                    if (role == Role.Switch && stateDescription == null) {
+                        stateDescription = view.context.resources.getString(R.string.state_off)
+                    }
+                }
+                ToggleableState.Indeterminate -> {
+                    if (stateDescription == null) {
+                        stateDescription = view.context.resources.getString(R.string.indeterminate)
+                    }
+                }
+            }
+        }
+
+        // Check Selected property and retrieve description accordingly
+        node.unmergedConfig.getOrNull(SemanticsProperties.Selected)?.let {
+            if (role != Role.Tab) {
+                if (stateDescription == null) {
+                    // If a radio entry (radio button + text) is selectable, it won't have the role
+                    // RadioButton, so if we use info.isCheckable/info.isChecked, talkback will say
+                    // "checked/not checked" instead "selected/note selected".
+                    stateDescription =
+                        if (it) {
+                            view.context.resources.getString(R.string.selected)
+                        } else {
+                            view.context.resources.getString(R.string.not_selected)
+                        }
+                }
+            }
+        }
+
+        // Check if a node has progress bar range info and retrieve description accordingly
+        val rangeInfo = node.unmergedConfig.getOrNull(SemanticsProperties.ProgressBarRangeInfo)
+        rangeInfo?.let {
+            // let's set state description here and use state description change events.
+            // otherwise, we need to send out type_view_selected event, as the old android
+            // versions do. But the support for type_view_selected event for progress bars
+            // maybe deprecated in talkback in the future.
+            if (rangeInfo !== ProgressBarRangeInfo.Indeterminate) {
+                if (stateDescription == null) {
+                    val valueRange = rangeInfo.range
+                    val progress =
+                        (if (valueRange.endInclusive - valueRange.start == 0f) 0f
+                            else
+                                (rangeInfo.current - valueRange.start) /
+                                    (valueRange.endInclusive - valueRange.start))
+                            .fastCoerceIn(0f, 1f)
+
+                    // We only display 0% or 100% when it is exactly 0% or 100%.
+                    val percent =
+                        when (progress) {
+                            0f -> 0
+                            1f -> 100
+                            else -> (progress * 100).fastRoundToInt().coerceIn(1, 99)
+                        }
+                    stateDescription =
+                        view.context.resources.getString(R.string.template_percent, percent)
+                }
+            } else if (stateDescription == null) {
+                stateDescription = view.context.resources.getString(R.string.in_progress)
+            }
+        }
+
+        if (node.unmergedConfig.contains(SemanticsProperties.EditableText)) {
+            stateDescription = createStateDescriptionForTextField(node)
+        }
+
+        return stateDescription
+    }
+
+    /**
+     * Empty text field should not be ignored by the TB so we set a state description. When there is
+     * a speakable child, like a label or a placeholder text, setting this state description is
+     * redundant
+     */
+    private fun createStateDescriptionForTextField(node: SemanticsNode): String? {
+        val mergedConfig = node.copyWithMergingEnabled().config
+        val mergedNodeIsUnspeakable =
+            mergedConfig.getOrNull(SemanticsProperties.ContentDescription).isNullOrEmpty() &&
+                mergedConfig.getOrNull(SemanticsProperties.Text).isNullOrEmpty() &&
+                mergedConfig.getOrNull(SemanticsProperties.EditableText).isNullOrEmpty()
+        return if (mergedNodeIsUnspeakable) {
+            view.context.resources.getString(R.string.state_empty)
+        } else null
+    }
+
+    private fun setStateDescription(
+        node: SemanticsNode,
+        info: AccessibilityNodeInfoCompat,
+    ) {
+        info.stateDescription = getInfoStateDescriptionOrNull(node)
+    }
+
+    private fun getInfoIsCheckable(node: SemanticsNode): Boolean {
+        var isCheckable = false
+        val toggleState = node.unmergedConfig.getOrNull(SemanticsProperties.ToggleableState)
+        val role = node.unmergedConfig.getOrNull(SemanticsProperties.Role)
+
+        toggleState?.let { isCheckable = true }
+
+        node.unmergedConfig.getOrNull(SemanticsProperties.Selected)?.let {
+            if (role != Role.Tab) {
+                isCheckable = true
+            }
+        }
+
+        return isCheckable
+    }
+
+    private fun setIsCheckable(node: SemanticsNode, info: AccessibilityNodeInfoCompat) {
+        info.isCheckable = getInfoIsCheckable(node)
+    }
+
+    // This needs to be here instead of around line 3000 because we need access to the `view`
+    // that is inside the `AndroidComposeViewAccessibilityDelegateCompat` class
+    private fun getInfoText(node: SemanticsNode): AnnotatedString? {
+        val editableTextToAssign = node.unmergedConfig.getTextForTextField()
+        val textToAssign = node.unmergedConfig.getOrNull(SemanticsProperties.Text)?.firstOrNull()
+        return editableTextToAssign ?: textToAssign
     }
 
     @OptIn(InternalTextApi::class)
@@ -2020,11 +2355,11 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             if (layoutNode.nodes.has(Nodes.Semantics)) layoutNode
             else layoutNode.findClosestParentNode { it.nodes.has(Nodes.Semantics) }
 
-        val config = semanticsNode?.semanticsConfiguration ?: return
+        val config = semanticsNode?.collapsedSemantics ?: return
         if (!config.isMergingSemanticsOfDescendants) {
             semanticsNode
                 .findClosestParentNode {
-                    it.semanticsConfiguration?.isMergingSemanticsOfDescendants == true
+                    it.collapsedSemantics?.isMergingSemanticsOfDescendants == true
                 }
                 ?.let { semanticsNode = it }
         }
@@ -2901,353 +3236,6 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
     }
 }
 
-private fun setTraversalValues(
-    currentSemanticsNodes: IntObjectMap<SemanticsNodeWithAdjustedBounds>,
-    idToBeforeMap: MutableIntIntMap,
-    idToAfterMap: MutableIntIntMap,
-    resources: Resources
-) {
-    idToBeforeMap.clear()
-    idToAfterMap.clear()
-
-    val hostSemanticsNode =
-        currentSemanticsNodes[AccessibilityNodeProviderCompat.HOST_VIEW_ID]?.semanticsNode!!
-    val hostLayoutIsRtl = hostSemanticsNode.isRtl
-
-    val semanticsOrderList =
-        subtreeSortedByGeometryGrouping(
-            hostLayoutIsRtl,
-            listOf(hostSemanticsNode),
-            currentSemanticsNodes,
-            resources
-        )
-
-    // Iterate through our ordered list, and creating a mapping of current node to next node ID
-    // We'll later read through this and set traversal order with IdToBeforeMap
-    for (i in 1..semanticsOrderList.lastIndex) {
-        val prevId = semanticsOrderList[i - 1].id
-        val currId = semanticsOrderList[i].id
-        idToBeforeMap[prevId] = currId
-        idToAfterMap[currId] = prevId
-    }
-}
-
-/**
- * This function prepares a subtree for `sortByGeometryGroupings` by retrieving all non-container
- * nodes and adding them to the list to be geometrically sorted. We recurse on containers (if they
- * exist) and add their sorted children to an optional mapping. The list to be sorted and child
- * mapping is passed into `sortByGeometryGroupings`.
- */
-private fun subtreeSortedByGeometryGrouping(
-    layoutIsRtl: Boolean,
-    listToSort: List<SemanticsNode>,
-    currentSemanticsNodes: IntObjectMap<SemanticsNodeWithAdjustedBounds>,
-    resources: Resources
-): MutableList<SemanticsNode> {
-    // This should be mapping of [containerID: listOfSortedChildren], only populated if there
-    // are container nodes in this level. If there are container nodes, `containerMapToChildren`
-    // would look like {containerId: [sortedChild, sortedChild], containerId: [sortedChild]}
-    val containerMapToChildren = mutableIntObjectMapOf<MutableList<SemanticsNode>>()
-    val geometryList = ArrayList<SemanticsNode>()
-
-    listToSort.fastForEach { node ->
-        geometryDepthFirstSearch(
-            node,
-            geometryList,
-            containerMapToChildren,
-            currentSemanticsNodes,
-            resources
-        )
-    }
-
-    return sortByGeometryGroupings(layoutIsRtl, geometryList, resources, containerMapToChildren)
-}
-
-private fun geometryDepthFirstSearch(
-    currNode: SemanticsNode,
-    geometryList: ArrayList<SemanticsNode>,
-    containerMapToChildren: MutableIntObjectMap<MutableList<SemanticsNode>>,
-    currentSemanticsNodes: IntObjectMap<SemanticsNodeWithAdjustedBounds>,
-    resources: Resources
-) {
-    val currRTL = currNode.isRtl
-    // We only want to add children that are either traversalGroups or are
-    // screen reader focusable. The child must also be in the current pruned semantics tree.
-    val isTraversalGroup =
-        currNode.unmergedConfig.getOrElse(SemanticsProperties.IsTraversalGroup) { false }
-
-    if (
-        (isTraversalGroup || isScreenReaderFocusable(currNode, resources)) &&
-            currentSemanticsNodes.containsKey(currNode.id)
-    ) {
-        geometryList.add(currNode)
-    }
-    if (isTraversalGroup) {
-        // Recurse and record the container's children, sorted
-        containerMapToChildren[currNode.id] =
-            subtreeSortedByGeometryGrouping(
-                currRTL,
-                currNode.children,
-                currentSemanticsNodes,
-                resources
-            )
-    } else {
-        // Otherwise, continue adding children to the list that'll be sorted regardless of
-        // hierarchy
-        currNode.children.fastForEach { child ->
-            geometryDepthFirstSearch(
-                child,
-                geometryList,
-                containerMapToChildren,
-                currentSemanticsNodes,
-                resources
-            )
-        }
-    }
-}
-
-/**
- * Returns the results of geometry groupings, which is determined from 1) grouping nodes into
- * distinct, non-overlapping rows based on their top/bottom coordinates, then 2) sorting nodes
- * within each row with the semantics comparator.
- *
- * This method approaches traversal order with more nuance than an approach considering only just
- * hierarchy or only just an individual node's bounds.
- *
- * If [containerChildrenMapping] exists, there are additional children to add, as well as the sorted
- * parent itself
- */
-private fun sortByGeometryGroupings(
-    layoutIsRtl: Boolean,
-    parentListToSort: ArrayList<SemanticsNode>,
-    resources: Resources,
-    containerChildrenMapping: MutableIntObjectMap<MutableList<SemanticsNode>> =
-        mutableIntObjectMapOf()
-): MutableList<SemanticsNode> {
-    // RowGroupings list consists of pairs, first = a rectangle of the bounds of the row
-    // and second = the list of nodes in that row
-    val rowGroupings = ArrayList<Pair<Rect, MutableList<SemanticsNode>>>(parentListToSort.size / 2)
-
-    for (entryIndex in 0..parentListToSort.lastIndex) {
-        val currEntry = parentListToSort[entryIndex]
-        // If this is the first entry, or vertical groups don't overlap
-        if (entryIndex == 0 || !placedEntryRowOverlaps(rowGroupings, currEntry)) {
-            val newRect = currEntry.boundsInWindow
-            rowGroupings.add(Pair(newRect, mutableListOf(currEntry)))
-        } // otherwise, we've already iterated through, found and placed it in a matching group
-    }
-
-    // Sort the rows from top to bottom
-    rowGroupings.sortWith(TopBottomBoundsComparator)
-
-    val returnList = ArrayList<SemanticsNode>()
-    val comparator = semanticComparators[if (layoutIsRtl) 0 else 1]
-    rowGroupings.fastForEach { row ->
-        // Sort each individual row's parent nodes
-        row.second.sortWith(comparator)
-        returnList.addAll(row.second)
-    }
-
-    returnList.sortWith(UnmergedConfigComparator)
-
-    var i = 0
-    // Afterwards, go in and add the containers' children.
-    while (i <= returnList.lastIndex) {
-        val currNodeId = returnList[i].id
-        // If a parent node is a container, then add its children.
-        // Add all container's children after the container itself.
-        // Because we've already recursed on the containers children, the children should
-        // also be sorted by their traversal index
-        val containersChildrenList = containerChildrenMapping[currNodeId]
-        if (containersChildrenList != null) {
-            val containerIsScreenReaderFocusable = isScreenReaderFocusable(returnList[i], resources)
-            if (!containerIsScreenReaderFocusable) {
-                // Container is removed if it is not screenreader-focusable
-                returnList.removeAt(i)
-            } else {
-                // Increase counter if the container was not removed
-                i += 1
-            }
-            // Add all the container's children and increase counter by the number of children
-            returnList.addAll(i, containersChildrenList)
-            i += containersChildrenList.size
-        } else {
-            // Advance to the next item
-            i += 1
-        }
-    }
-    return returnList
-}
-
-private fun isScreenReaderFocusable(node: SemanticsNode, resources: Resources): Boolean {
-    val nodeContentDescriptionOrNull =
-        node.unmergedConfig.getOrNull(SemanticsProperties.ContentDescription)?.firstOrNull()
-    val isSpeakingNode =
-        nodeContentDescriptionOrNull != null ||
-            getInfoText(node) != null ||
-            getInfoStateDescriptionOrNull(node, resources) != null ||
-            getInfoIsCheckable(node)
-
-    return !node.isHidden &&
-        (node.unmergedConfig.isMergingSemanticsOfDescendants ||
-            node.isUnmergedLeafNode && isSpeakingNode)
-}
-
-private fun getInfoText(node: SemanticsNode): AnnotatedString? {
-    val editableTextToAssign = node.unmergedConfig.getOrNull(SemanticsProperties.EditableText)
-    val textToAssign = node.unmergedConfig.getOrNull(SemanticsProperties.Text)?.firstOrNull()
-    return editableTextToAssign ?: textToAssign
-}
-
-private fun getInfoStateDescriptionOrNull(node: SemanticsNode, resources: Resources): String? {
-    var stateDescription = node.unmergedConfig.getOrNull(SemanticsProperties.StateDescription)
-    val toggleState = node.unmergedConfig.getOrNull(SemanticsProperties.ToggleableState)
-    val role = node.unmergedConfig.getOrNull(SemanticsProperties.Role)
-
-    // Check toggle state and retrieve description accordingly
-    toggleState?.let {
-        when (it) {
-            ToggleableState.On -> {
-                // Unfortunately, talkback has a bug of using "checked", so we set state
-                // description here
-                if (role == Role.Switch && stateDescription == null) {
-                    stateDescription = resources.getString(R.string.state_on)
-                }
-            }
-            ToggleableState.Off -> {
-                // Unfortunately, talkback has a bug of using "not checked", so we set state
-                // description here
-                if (role == Role.Switch && stateDescription == null) {
-                    stateDescription = resources.getString(R.string.state_off)
-                }
-            }
-            ToggleableState.Indeterminate -> {
-                if (stateDescription == null) {
-                    stateDescription = resources.getString(R.string.indeterminate)
-                }
-            }
-        }
-    }
-
-    // Check Selected property and retrieve description accordingly
-    node.unmergedConfig.getOrNull(SemanticsProperties.Selected)?.let {
-        if (role != Role.Tab) {
-            if (stateDescription == null) {
-                // If a radio entry (radio button + text) is selectable, it won't have the role
-                // RadioButton, so if we use info.isCheckable/info.isChecked, talkback will say
-                // "checked/not checked" instead "selected/note selected".
-                stateDescription =
-                    if (it) {
-                        resources.getString(R.string.selected)
-                    } else {
-                        resources.getString(R.string.not_selected)
-                    }
-            }
-        }
-    }
-
-    // Check if a node has progress bar range info and retrieve description accordingly
-    val rangeInfo = node.unmergedConfig.getOrNull(SemanticsProperties.ProgressBarRangeInfo)
-    rangeInfo?.let {
-        // let's set state description here and use state description change events.
-        // otherwise, we need to send out type_view_selected event, as the old android
-        // versions do. But the support for type_view_selected event for progress bars
-        // maybe deprecated in talkback in the future.
-        if (rangeInfo !== ProgressBarRangeInfo.Indeterminate) {
-            if (stateDescription == null) {
-                val valueRange = rangeInfo.range
-                val progress =
-                    (if (valueRange.endInclusive - valueRange.start == 0f) 0f
-                        else
-                            (rangeInfo.current - valueRange.start) /
-                                (valueRange.endInclusive - valueRange.start))
-                        .fastCoerceIn(0f, 1f)
-
-                // We only display 0% or 100% when it is exactly 0% or 100%.
-                val percent =
-                    when (progress) {
-                        0f -> 0
-                        1f -> 100
-                        else -> (progress * 100).fastRoundToInt().coerceIn(1, 99)
-                    }
-                stateDescription = resources.getString(R.string.template_percent, percent)
-            }
-        } else if (stateDescription == null) {
-            stateDescription = resources.getString(R.string.in_progress)
-        }
-    }
-
-    if (node.unmergedConfig.contains(SemanticsProperties.EditableText)) {
-        stateDescription = createStateDescriptionForTextField(node, resources)
-    }
-
-    return stateDescription
-}
-
-/**
- * Empty text field should not be ignored by the TB so we set a state description. When there is a
- * speakable child, like a label or a placeholder text, setting this state description is redundant
- */
-private fun createStateDescriptionForTextField(node: SemanticsNode, resources: Resources): String? {
-    val mergedConfig = node.copyWithMergingEnabled().config
-    val mergedNodeIsUnspeakable =
-        mergedConfig.getOrNull(SemanticsProperties.ContentDescription).isNullOrEmpty() &&
-            mergedConfig.getOrNull(SemanticsProperties.Text).isNullOrEmpty() &&
-            mergedConfig.getOrNull(SemanticsProperties.EditableText).isNullOrEmpty()
-    return if (mergedNodeIsUnspeakable) resources.getString(R.string.state_empty) else null
-}
-
-private fun getInfoIsCheckable(node: SemanticsNode): Boolean {
-    var isCheckable = false
-    val toggleState = node.unmergedConfig.getOrNull(SemanticsProperties.ToggleableState)
-    val role = node.unmergedConfig.getOrNull(SemanticsProperties.Role)
-
-    toggleState?.let { isCheckable = true }
-
-    node.unmergedConfig.getOrNull(SemanticsProperties.Selected)?.let {
-        if (role != Role.Tab) {
-            isCheckable = true
-        }
-    }
-
-    return isCheckable
-}
-
-// check to see if this entry overlaps with any groupings in rowGroupings
-private fun placedEntryRowOverlaps(
-    rowGroupings: ArrayList<Pair<Rect, MutableList<SemanticsNode>>>,
-    node: SemanticsNode
-): Boolean {
-    // Conversion to long is needed in order to utilize `until`, which has no float ver
-    val entryTopCoord = node.boundsInWindow.top
-    val entryBottomCoord = node.boundsInWindow.bottom
-    val entryIsEmpty = entryTopCoord >= entryBottomCoord
-
-    for (currIndex in 0..rowGroupings.lastIndex) {
-        val currRect = rowGroupings[currIndex].first
-        val groupIsEmpty = currRect.top >= currRect.bottom
-        val groupOverlapsEntry =
-            !entryIsEmpty &&
-                !groupIsEmpty &&
-                max(entryTopCoord, currRect.top) < min(entryBottomCoord, currRect.bottom)
-
-        // If it overlaps with this row group, update cover and add node
-        if (groupOverlapsEntry) {
-            val newRect =
-                currRect.intersect(0f, entryTopCoord, Float.POSITIVE_INFINITY, entryBottomCoord)
-            // Replace the cover rectangle, copying over the old list of nodes
-            rowGroupings[currIndex] = Pair(newRect, rowGroupings[currIndex].second)
-            // Add current node
-            rowGroupings[currIndex].second.add(node)
-            // We've found an overlapping group, return true
-            return true
-        }
-    }
-
-    // If we've made it here, then there are no groups our entry overlaps with
-    return false
-}
-
 // TODO(mnuzen): Move common semantics logic into `SemanticsUtils` file to make a11y delegate
 // shorter and more readable.
 private fun SemanticsNode.enabled() = (!config.contains(SemanticsProperties.Disabled))
@@ -3276,12 +3264,12 @@ private fun SemanticsNode.excludeLineAndPageGranularities(): Boolean {
     val ancestor =
         layoutNode.findClosestParentNode {
             // looking for text field merging node
-            val ancestorSemanticsConfiguration = it.semanticsConfiguration
+            val ancestorSemanticsConfiguration = it.collapsedSemantics
             ancestorSemanticsConfiguration?.isMergingSemanticsOfDescendants == true &&
                 ancestorSemanticsConfiguration.contains(SemanticsProperties.EditableText)
         }
     return ancestor != null &&
-        ancestor.semanticsConfiguration?.getOrNull(SemanticsProperties.Focused) != true
+        ancestor.collapsedSemantics?.getOrNull(SemanticsProperties.Focused) != true
 }
 
 private fun AccessibilityAction<*>.accessibilityEquals(other: Any?): Boolean {

@@ -21,9 +21,11 @@ import androidx.kruth.assertThat
 import androidx.paging.DataSource
 import androidx.paging.PagingSource
 import androidx.room.Dao
+import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.XTypeName.Companion.PRIMITIVE_INT
+import androidx.room.compiler.codegen.compat.XConverters.toString
 import androidx.room.compiler.processing.XProcessingEnv
 import androidx.room.compiler.processing.XRawType
 import androidx.room.compiler.processing.isTypeElement
@@ -418,7 +420,7 @@ class TypeAdapterStoreTest {
             val bindScope = testCodeGenScope()
             adapter!!.bindToStmt("stmt", "41", "fooVar", bindScope)
             assertThat(
-                bindScope.generate().toString().trim(),
+                bindScope.generate().toString(CodeLanguage.JAVA).trim(),
                 `is`(
                     """
                     final int ${tmp(0)} = fooVar ? 1 : 0;
@@ -431,7 +433,7 @@ class TypeAdapterStoreTest {
             val cursorScope = testCodeGenScope()
             adapter.readFromCursor("res", "curs", "7", cursorScope)
             assertThat(
-                cursorScope.generate().toString().trim(),
+                cursorScope.generate().toString(CodeLanguage.JAVA).trim(),
                 `is`(
                     """
                     final int ${tmp(0)};
@@ -488,7 +490,7 @@ class TypeAdapterStoreTest {
             val bindScope = testCodeGenScope()
             adapter!!.bindToStmt("stmt", "41", "fooVar", bindScope)
             assertThat(
-                bindScope.generate().toString().trim(),
+                bindScope.generate().toString(CodeLanguage.JAVA).trim(),
                 `is`(
                     """
                     final boolean ${tmp(0)} = foo.bar.Point.toBoolean(fooVar);
@@ -502,7 +504,7 @@ class TypeAdapterStoreTest {
             val cursorScope = testCodeGenScope()
             adapter.readFromCursor("res", "curs", "11", cursorScope).toString()
             assertThat(
-                cursorScope.generate().toString().trim(),
+                cursorScope.generate().toString(CodeLanguage.JAVA).trim(),
                 `is`(
                     """
                     final int ${tmp(0)};
@@ -532,7 +534,7 @@ class TypeAdapterStoreTest {
             val bindScope = testCodeGenScope()
             adapter!!.readFromCursor("outDate", "curs", "0", bindScope)
             assertThat(
-                bindScope.generate().toString().trim(),
+                bindScope.generate().toString(CodeLanguage.JAVA).trim(),
                 `is`(
                     """
                 final java.lang.Long _tmp;
@@ -583,7 +585,7 @@ class TypeAdapterStoreTest {
                 """
                         .trimIndent()
                 }
-            assertThat(bindScope.generate().toString().trim())
+            assertThat(bindScope.generate().toString(CodeLanguage.JAVA).trim())
                 .isEqualTo(
                     """
                 |final java.lang.String ${tmp(0)} = androidx.room.util.StringUtil.joinIntoString(fooVar);
@@ -1969,12 +1971,7 @@ class TypeAdapterStoreTest {
                     invocation.context.processingEnv.requireType(CommonTypeNames.STRING)
                 ) {
                 override fun buildStatement(inputVarName: String, scope: CodeGenScope): XCodeBlock {
-                    return XCodeBlock.of(
-                        scope.language,
-                        "%T.joinIntoString(%L)",
-                        STRING_UTIL,
-                        inputVarName
-                    )
+                    return XCodeBlock.of("%T.joinIntoString(%L)", STRING_UTIL, inputVarName)
                 }
             }
 
@@ -1985,12 +1982,7 @@ class TypeAdapterStoreTest {
                     listOfInts
                 ) {
                 override fun buildStatement(inputVarName: String, scope: CodeGenScope): XCodeBlock {
-                    return XCodeBlock.of(
-                        scope.language,
-                        "%T.splitToIntList(%L)",
-                        STRING_UTIL,
-                        inputVarName
-                    )
+                    return XCodeBlock.of("%T.splitToIntList(%L)", STRING_UTIL, inputVarName)
                 }
             }
         return listOf(intListConverter, stringToIntListConverter)
@@ -2002,17 +1994,12 @@ class TypeAdapterStoreTest {
         return listOf(
             object : SingleStatementTypeConverter(tDate, tLong) {
                 override fun buildStatement(inputVarName: String, scope: CodeGenScope): XCodeBlock {
-                    return XCodeBlock.of(scope.language, "%L.time", inputVarName)
+                    return XCodeBlock.of("%L.time", inputVarName)
                 }
             },
             object : SingleStatementTypeConverter(tLong, tDate) {
                 override fun buildStatement(inputVarName: String, scope: CodeGenScope): XCodeBlock {
-                    return XCodeBlock.ofNewInstance(
-                        scope.language,
-                        tDate.asTypeName(),
-                        "%L",
-                        inputVarName
-                    )
+                    return XCodeBlock.ofNewInstance(tDate.asTypeName(), "%L", inputVarName)
                 }
             }
         )

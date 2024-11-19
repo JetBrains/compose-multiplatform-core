@@ -16,7 +16,6 @@
 
 package androidx.work.multiprocess
 
-import android.content.Context
 import androidx.concurrent.futures.SuspendToFutureAdapter.launchFuture
 import androidx.work.Configuration
 import androidx.work.ListenableWorker
@@ -26,42 +25,38 @@ import androidx.work.impl.awaitWithin
 import androidx.work.impl.utils.safeAccept
 import androidx.work.impl.utils.taskexecutor.TaskExecutor
 import com.google.common.util.concurrent.ListenableFuture
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 
 internal fun executeRemoteWorker(
-    context: Context,
     configuration: Configuration,
     workerClassName: String,
     workerParameters: WorkerParameters,
-    job: Job,
+    worker: ListenableWorker?,
+    throwable: Throwable?,
     taskExecutor: TaskExecutor,
 ): ListenableFuture<ListenableWorker.Result> {
     val dispatcher = taskExecutor.mainThreadExecutor.asCoroutineDispatcher()
     val future =
-        launchFuture<ListenableWorker.Result>(dispatcher + job, launchUndispatched = false) {
-            val worker =
-                try {
-                    configuration.workerFactory.createWorkerWithDefaultFallback(
-                        context,
-                        workerClassName,
-                        workerParameters
-                    )
-                } catch (throwable: Throwable) {
-                    configuration.workerInitializationExceptionHandler?.let { handler ->
-                        taskExecutor.executeOnTaskThread {
-                            handler.safeAccept(
-                                WorkerExceptionInfo(workerClassName, workerParameters, throwable),
-                                ListenableWorkerImpl.TAG
-                            )
-                        }
+        launchFuture<ListenableWorker.Result>(dispatcher, launchUndispatched = false) {
+            if (worker == null && throwable != null) {
+                configuration.workerInitializationExceptionHandler?.let { handler ->
+                    taskExecutor.executeOnTaskThread {
+                        handler.safeAccept(
+                            WorkerExceptionInfo(workerClassName, workerParameters, throwable),
+                            ListenableWorkerImpl.TAG
+                        )
                     }
-                    throw throwable
                 }
-            when (worker) {
-                is RemoteListenableWorker -> worker.startRemoteWork().awaitWithin(worker)
-                else ->
-                    worker.startWork().awaitWithin(worker) // Just treat it as a delegated worker
+                throw throwable
+            } else {
+                require(worker != null) { "Unexpected input for ($workerClassName)" }
+                when (worker) {
+                    is RemoteListenableWorker -> worker.startRemoteWork().awaitWithin(worker)
+                    else ->
+                        worker
+                            .startWork()
+                            .awaitWithin(worker) // Just treat it as a delegated worker
+                }
             }
         }
     return future

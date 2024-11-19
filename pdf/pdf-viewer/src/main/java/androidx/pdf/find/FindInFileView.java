@@ -451,4 +451,11 @@ public class FindInFileView extends LinearLayout {
         }
         return mPaginatedView.getPageRangeHandler().getVisiblePage();
     }
+
+    /**
+     * Hides the Keyboard and clears focus from QueryBox when SingleTap event is detected
+     */
+    public void handleSingleTapEvent() {
+        mQueryBox.clearFocus();
+    }
 }

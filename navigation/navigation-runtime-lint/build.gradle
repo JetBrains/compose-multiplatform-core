@@ -41,8 +41,8 @@ dependencies {
     bundleInside(project(":navigation:navigation-lint-common"))
 
     testImplementation(libs.kotlinStdlib)
-    testImplementation(libs.androidLintPrevApi)
-    testImplementation(libs.androidLintPrevTests)
+    testImplementation(libs.androidLintApiPrevAnalysis)
+    testImplementation(libs.androidLintTestsPrevAnalysis)
     testImplementation(libs.intellijCore)
     testImplementation(libs.junit)
     testImplementation(libs.truth)

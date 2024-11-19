@@ -3,6 +3,8 @@ AddedAbstractMethod: androidx.compose.ui.focus.FocusTargetModifierNode#getFocusa
     Added method androidx.compose.ui.focus.FocusTargetModifierNode.getFocusability()
 AddedAbstractMethod: androidx.compose.ui.focus.FocusTargetModifierNode#requestFocus():
     Added method androidx.compose.ui.focus.FocusTargetModifierNode.requestFocus()
+AddedAbstractMethod: androidx.compose.ui.focus.FocusTargetModifierNode#requestFocus(int):
+    Added method androidx.compose.ui.focus.FocusTargetModifierNode.requestFocus(int)
 AddedAbstractMethod: androidx.compose.ui.focus.FocusTargetModifierNode#setFocusability(int):
     Added method androidx.compose.ui.focus.FocusTargetModifierNode.setFocusability(int)
 

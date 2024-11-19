@@ -17,9 +17,8 @@
 package androidx.room.compiler.processing
 
 import androidx.room.compiler.codegen.CodeLanguage
+import androidx.room.compiler.codegen.XFileSpec
 import androidx.room.compiler.codegen.XTypeSpec
-import androidx.room.compiler.codegen.compat.XConverters.toJavaPoet
-import androidx.room.compiler.codegen.compat.XConverters.toKotlinPoet
 import com.squareup.javapoet.JavaFile
 import com.squareup.kotlinpoet.FileSpec
 import java.io.OutputStream
@@ -87,18 +86,4 @@ fun XTypeSpec.writeTo(
     packageName: String,
     generator: XFiler,
     mode: XFiler.Mode = XFiler.Mode.Isolating
-) =
-    when (language) {
-        CodeLanguage.JAVA ->
-            JavaFile.builder(packageName, toJavaPoet()).build().writeTo(generator, mode)
-        CodeLanguage.KOTLIN -> {
-            val name =
-                checkNotNull(toKotlinPoet().name) {
-                    "Anonymous classes don't have a name so cannot be used to create a FileSpec."
-                }
-            FileSpec.builder(packageName, name)
-                .addType(toKotlinPoet())
-                .build()
-                .writeTo(generator, mode)
-        }
-    }
+) = XFileSpec.of(packageName, this).writeTo(language, generator, mode)

@@ -61,6 +61,16 @@ public abstract class DeferrableSurface {
 
     /**
      * The exception that is returned by the ListenableFuture of {@link #getSurface()} if the
+     * provided {@link Surface} is invalid.
+     */
+    public static final class SurfaceInvalidException extends Exception {
+        public SurfaceInvalidException(@NonNull String message) {
+            super(message);
+        }
+    }
+
+    /**
+     * The exception that is returned by the ListenableFuture of {@link #getSurface()} if the
      * {@link Surface} backing the DeferrableSurface has already been closed.
      */
     @RestrictTo(Scope.LIBRARY_GROUP)

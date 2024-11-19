@@ -22,6 +22,7 @@ import androidx.room.compiler.codegen.XCodeBlock
 import androidx.room.compiler.codegen.XFunSpec
 import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.codegen.XTypeSpec
+import androidx.room.compiler.codegen.XTypeSpec.Builder.Companion.applyTo
 import androidx.room.ext.AndroidTypeNames.CURSOR
 import androidx.room.ext.RoomMemberNames.DB_UTIL_QUERY
 import androidx.room.solver.CodeGenScope
@@ -34,19 +35,20 @@ abstract class BaseObservableQueryResultBinder(adapter: QueryResultAdapter?) :
     QueryResultBinder(adapter) {
 
     protected fun XTypeSpec.Builder.createFinalizeMethod(roomSQLiteQueryVar: String) {
-        addFunction(
-            XFunSpec.builder(
-                    language = language,
-                    name = "finalize",
-                    visibility = VisibilityModifier.PROTECTED,
-                    // To 'override' finalize in Kotlin one does not use the 'override' keyword, but
-                    // in
-                    // Java the @Override is needed
-                    isOverride = language == CodeLanguage.JAVA
-                )
-                .apply { addStatement("%L.release()", roomSQLiteQueryVar) }
-                .build()
-        )
+        applyTo { language ->
+            addFunction(
+                XFunSpec.builder(
+                        name = "finalize",
+                        visibility = VisibilityModifier.PROTECTED,
+                        // To 'override' finalize in Kotlin one does not use the 'override' keyword,
+                        // but
+                        // in Java the @Override is needed
+                        isOverride = language == CodeLanguage.JAVA
+                    )
+                    .apply { addStatement("%L.release()", roomSQLiteQueryVar) }
+                    .build()
+            )
+        }
     }
 
     protected fun createRunQueryAndReturnStatements(
@@ -73,7 +75,6 @@ abstract class BaseObservableQueryResultBinder(adapter: QueryResultAdapter?) :
                 typeName = CURSOR,
                 assignExpr =
                     XCodeBlock.of(
-                        language = language,
                         format = "%M(%N, %L, %L, %L)",
                         DB_UTIL_QUERY,
                         dbProperty,

@@ -517,7 +517,9 @@ class PagerTest(val config: ParamConfig) : BasePagerTest(config) {
     }
 
     companion object {
-        @JvmStatic @Parameterized.Parameters(name = "{0}") fun params() = AllOrientationsParams
+        @JvmStatic
+        @Parameterized.Parameters(name = "{0}")
+        fun params() = AllOrientationsParams + ParamConfig(TestOrientation[0], useLookahead = true)
     }
 
     private class TestOverscrollEffect : OverscrollEffect {

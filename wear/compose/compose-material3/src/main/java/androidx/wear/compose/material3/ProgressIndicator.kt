@@ -236,14 +236,14 @@ class ProgressIndicatorColors(
     }
 
     /**
-     * Represents the animated overflow track color. The animated color will be a combination of
+     * Represents the animated overflow track color. The result will be a combination of
      * [indicatorBrush] and [overflowTrackBrush] depending on the [fraction].
      *
      * @param enabled whether the component is enabled.
      * @param fraction the fraction of indicator to overflow color, should be between 0 and 1,
      *   inclusive.
      */
-    internal fun animatedOverflowTrackBrush(enabled: Boolean, fraction: Float = 1f): Brush =
+    internal fun overflowTrackBrush(enabled: Boolean, fraction: Float = 1f): Brush =
         if (enabled) {
             if (overflowTrackBrush is SolidColor && indicatorBrush is SolidColor && fraction < 1f) {
                 SolidColor(lerp(indicatorBrush.value, overflowTrackBrush.value, fraction))

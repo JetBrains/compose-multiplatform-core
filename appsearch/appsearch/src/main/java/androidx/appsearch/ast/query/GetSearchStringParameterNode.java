@@ -104,4 +104,17 @@ public final class GetSearchStringParameterNode implements FunctionNode {
         return FunctionNode.FUNCTION_NAME_GET_SEARCH_STRING_PARAMETER
                 + "(" + mSearchStringIndex + ")";
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GetSearchStringParameterNode that = (GetSearchStringParameterNode) o;
+        return mSearchStringIndex == that.mSearchStringIndex;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(mSearchStringIndex);
+    }
 }

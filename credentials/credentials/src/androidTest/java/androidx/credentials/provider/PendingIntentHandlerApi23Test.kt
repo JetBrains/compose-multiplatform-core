@@ -26,7 +26,6 @@ import android.os.Binder
 import android.os.Build
 import android.os.Bundle
 import androidx.credentials.CreateCredentialRequest.Companion.createFrom
-import androidx.credentials.CreateCredentialResponse
 import androidx.credentials.CreateCustomCredentialResponse
 import androidx.credentials.CreatePasswordRequest
 import androidx.credentials.CreatePasswordResponse
@@ -41,16 +40,15 @@ import androidx.credentials.PasswordCredential
 import androidx.credentials.PublicKeyCredential
 import androidx.credentials.assertEquals
 import androidx.credentials.equals
-import androidx.credentials.exceptions.CreateCredentialException
 import androidx.credentials.exceptions.CreateCredentialInterruptedException
 import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.domerrors.ConstraintError
 import androidx.credentials.exceptions.domerrors.NotAllowedError
+import androidx.credentials.exceptions.publickeycredential.CreatePublicKeyCredentialDomException
 import androidx.credentials.exceptions.publickeycredential.GetPublicKeyCredentialDomException
 import androidx.credentials.getTestCallingAppInfo
 import androidx.credentials.internal.getFinalCreateCredentialData
 import androidx.credentials.provider.PendingIntentHandler.Api23Impl.Companion.extractBeginGetCredentialResponse
-import androidx.credentials.provider.PendingIntentHandler.Api23Impl.Companion.extractCreateCredentialException
-import androidx.credentials.provider.PendingIntentHandler.Api23Impl.Companion.extractCreateCredentialResponse
 import androidx.credentials.provider.PendingIntentHandler.Api23Impl.Companion.extractGetCredentialException
 import androidx.credentials.provider.PendingIntentHandler.Api23Impl.Companion.extractGetCredentialResponse
 import androidx.credentials.provider.PendingIntentHandler.Api23Impl.Companion.setBeginGetCredentialRequest
@@ -293,15 +291,13 @@ class PendingIntentHandlerApi23Test {
     }
 
     @Test
-    @Throws(Exception::class)
     fun setCreateCredentialResponse_passkeyResponse_success() {
         val intent = Intent()
-        val expected: CreateCredentialResponse = CreatePublicKeyCredentialResponse(TEST_JSON)
+        val expected = CreatePublicKeyCredentialResponse(TEST_JSON)
 
         setCreateCredentialResponse(intent, expected)
 
-        val actual: CreateCredentialResponse = extractCreateCredentialResponse(intent)!!
-
+        val actual = PendingIntentHandler.retrieveCreateCredentialResponse(expected.type, intent)!!
         assertEquals(actual, expected)
     }
 
@@ -309,27 +305,33 @@ class PendingIntentHandlerApi23Test {
     @Throws(Exception::class)
     fun setCreateCredentialResponse_passwordResponse_success() {
         val intent = Intent()
-        val expected: CreateCredentialResponse = CreatePasswordResponse()
+        val expected = CreatePasswordResponse()
 
         setCreateCredentialResponse(intent, expected)
 
-        val actual: CreateCredentialResponse = extractCreateCredentialResponse(intent)!!
+        val actual = PendingIntentHandler.retrieveCreateCredentialResponse(expected.type, intent)!!
         assertEquals(actual, expected)
     }
 
     @Test
-    @Throws(Exception::class)
     fun setCreateCredentialResponse_customResponse_success() {
         val intent = Intent()
         val customData = Bundle()
         customData.putString("k1", "text")
         customData.putBinder("k2", Binder())
-        val expected: CreateCredentialResponse = CreateCustomCredentialResponse("type", customData)
+        val expected = CreateCustomCredentialResponse("type", customData)
 
         setCreateCredentialResponse(intent, expected)
 
-        val actual: CreateCredentialResponse = extractCreateCredentialResponse(intent)!!
+        val actual = PendingIntentHandler.retrieveCreateCredentialResponse(expected.type, intent)!!
         assertEquals(actual, expected)
+    }
+
+    @Test
+    fun retrieveCreateCredentialResponse_emptyResponse_returnsNull() {
+        val actual = PendingIntentHandler.retrieveCreateCredentialResponse("type", Intent())
+
+        assertThat(actual).isNull()
     }
 
     @Test
@@ -424,16 +426,38 @@ class PendingIntentHandlerApi23Test {
     }
 
     @Test
-    @Throws(Exception::class)
     fun setCreateCredentialException_success() {
-        val expected: CreateCredentialException = CreateCredentialInterruptedException("Error msg")
+        val expected = CreateCredentialInterruptedException("Error msg")
         val intent = Intent()
 
         setCreateCredentialException(intent, expected)
 
-        val actual: CreateCredentialException = intent.extractCreateCredentialException()!!
+        val actual = PendingIntentHandler.retrieveCreateCredentialException(intent)!!
+        assertThat(actual).isInstanceOf(expected::class.java)
         assertThat(actual.type).isEqualTo(expected.type)
         assertThat(actual.errorMessage).isEqualTo(expected.errorMessage)
+    }
+
+    @Test
+    fun retrieveCreateCredentialException_success() {
+        val expected = CreatePublicKeyCredentialDomException(ConstraintError(), "Error msg")
+        val intent = Intent()
+
+        setCreateCredentialException(intent, expected)
+
+        val actual = PendingIntentHandler.retrieveCreateCredentialException(intent)!!
+        assertThat(actual).isInstanceOf(expected::class.java)
+        assertThat(actual.type).isEqualTo(expected.type)
+        assertThat(actual.errorMessage).isEqualTo(expected.errorMessage)
+        val actualConverted = actual as CreatePublicKeyCredentialDomException
+        assertThat(actualConverted.domError).isInstanceOf((expected.domError)::class.java)
+    }
+
+    @Test
+    fun retrieveCreateCredentialException_emptyIntent_returnsNull() {
+        val actual = PendingIntentHandler.retrieveCreateCredentialException(Intent())
+
+        assertThat(actual).isNull()
     }
 
     companion object {

@@ -18,14 +18,19 @@ package androidx.wear.compose.foundation.samples
 
 import androidx.annotation.Sampled
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.lazy.LocalTransformingLazyColumnItemScope
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.material.Text
 import kotlin.math.max
@@ -100,5 +105,57 @@ fun TransformingLazyColumnRectangularBoxesSample() {
                     }
             )
         }
+    }
+}
+
+@Preview
+@Sampled
+@Composable
+fun TransformingLazyColumnImplicitSample() {
+    fun rainbowColor(progress: Float): Color {
+        val hue = progress * 360f
+        val saturation = 1f
+        val value = 1f
+
+        return Color(android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, value)))
+    }
+
+    // Create a Box that automatically transform when in a TransformingLazyColumn
+    val implicitTransformingBox: @Composable (String) -> Unit = { text ->
+        val itemScope = LocalTransformingLazyColumnItemScope.current
+        Box(
+            Modifier.height(30.dp)
+                .then(
+                    itemScope?.let {
+                        with(it) {
+                            Modifier.graphicsLayer {
+                                    val itemProgression = scrollProgress ?: return@graphicsLayer
+                                    val scale =
+                                        (itemProgression.bottomOffsetFraction -
+                                            max(itemProgression.topOffsetFraction, 0f)) /
+                                            (itemProgression.bottomOffsetFraction -
+                                                itemProgression.topOffsetFraction)
+                                    scaleX = scale
+                                }
+                                .drawBehind {
+                                    val colorProgress =
+                                        scrollProgress?.let {
+                                            (it.topOffsetFraction + it.bottomOffsetFraction) / 2f
+                                        } ?: 0f
+                                    drawRect(rainbowColor(colorProgress))
+                                }
+                        }
+                    } ?: Modifier.background(Color.Green)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            BasicText(text)
+        }
+    }
+    TransformingLazyColumn {
+        items(count = 10) { implicitTransformingBox("Before #$it") }
+        // The middle 3 boxes will not auto-transform
+        items(count = 3) { TransformExclusion { implicitTransformingBox("Middle #$it") } }
+        items(count = 10) { implicitTransformingBox("After #$it") }
     }
 }

@@ -18,10 +18,8 @@ package androidx.benchmark.macro.perfetto
 
 import androidx.benchmark.perfetto.PerfettoTraceProcessor
 import androidx.benchmark.perfetto.Slice
-import org.intellij.lang.annotations.Language
 
 internal object BatteryDischargeQuery {
-    @Language("sql")
     private fun getFullQuery(slice: Slice) =
         """
         SELECT

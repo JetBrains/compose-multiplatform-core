@@ -82,8 +82,10 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.round
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -308,7 +310,7 @@ internal class TextFieldSelectionState(
         if (!value.selection.collapsed) return Rect.Zero
         val cursorRect = layoutResult.getCursorRect(value.selection.start)
 
-        val cursorWidth = with(density) { DefaultCursorThickness.toPx() }
+        val cursorWidth = with(density) { floor(DefaultCursorThickness.toPx()).coerceAtLeast(1f) }
         // left and right values in cursorRect should be the same but in any case use the
         // logically correct anchor.
         val cursorCenterX =
@@ -326,6 +328,13 @@ internal class TextFieldSelectionState(
                 // than the maximum value.
                 .coerceAtMost(layoutResult.size.width - cursorWidth / 2)
                 .coerceAtLeast(cursorWidth / 2)
+                .let {
+                    // When cursor width is odd, draw it in the middle of a pixel,
+                    // to avoid blurring due to antialiasing.
+                    if (cursorWidth.toInt() % 2 == 1) {
+                        floor(it) + 0.5f // round to nearest n+0.5
+                    } else round(it)
+                }
 
         return Rect(
             left = coercedCursorCenterX - cursorWidth / 2,

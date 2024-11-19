@@ -38,6 +38,17 @@ public class PropertyDefinedNodeCtsTest {
     public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
 
     @Test
+    public void testEquals_identical() {
+        PropertyDefinedNode propertyDefinedOne = new PropertyDefinedNode(
+                new PropertyPath("example.property.path"));
+        PropertyDefinedNode propertyDefinedTwo = new PropertyDefinedNode(
+                new PropertyPath("example.property.path"));
+
+        assertThat(propertyDefinedOne).isEqualTo(propertyDefinedTwo);
+        assertThat(propertyDefinedOne.hashCode()).isEqualTo(propertyDefinedTwo.hashCode());
+    }
+
+    @Test
     public void testConstructor_throwsOnNullPointer() {
         assertThrows(NullPointerException.class, () -> new PropertyDefinedNode(null));
     }

@@ -17,6 +17,10 @@
 package androidx.compose.ui.focus
 
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.CustomDestinationResult.Cancelled
+import androidx.compose.ui.focus.CustomDestinationResult.None
+import androidx.compose.ui.focus.CustomDestinationResult.RedirectCancelled
+import androidx.compose.ui.focus.CustomDestinationResult.Redirected
 import androidx.compose.ui.focus.FocusDirection.Companion.Exit
 import androidx.compose.ui.focus.FocusRequester.Companion.Cancel
 import androidx.compose.ui.focus.FocusRequester.Companion.Redirect
@@ -38,11 +42,11 @@ import androidx.compose.ui.node.visitAncestors
 import androidx.compose.ui.node.visitSelfAndAncestors
 import androidx.compose.ui.node.visitSubtreeIf
 import androidx.compose.ui.platform.InspectorInfo
+import androidx.compose.ui.util.trace
 
 internal class FocusTargetNode(
     focusability: Focusability = Focusability.Always,
-    private val onFocusChange: ((previous: FocusState, current: FocusState) -> Unit)? = null,
-    private val onDispatchEventsCompleted: ((FocusTargetNode) -> Unit)? = null
+    private val onFocusChange: ((previous: FocusState, current: FocusState) -> Unit)? = null
 ) :
     CompositionLocalConsumerModifierNode,
     FocusTargetModifierNode,
@@ -68,8 +72,29 @@ internal class FocusTargetNode(
             with(requireTransactionManager()) { uncommittedFocusState = value }
         }
 
+    @Deprecated(
+        message = "Use the version accepting FocusDirection",
+        replaceWith = ReplaceWith("this.requestFocus()"),
+        level = DeprecationLevel.HIDDEN
+    )
     override fun requestFocus(): Boolean {
-        return requestFocus(FocusDirection.Enter) ?: false
+        return requestFocus(FocusDirection.Enter)
+    }
+
+    override fun requestFocus(focusDirection: FocusDirection): Boolean {
+        trace("FocusTransactions:requestFocus") {
+            if (!fetchFocusProperties().canFocus) return false
+            return requireTransactionManager().withNewTransaction(
+                onCancelled = { if (node.isAttached) dispatchFocusCallbacks() }
+            ) {
+                when (performCustomRequestFocus(focusDirection)) {
+                    None -> performRequestFocus()
+                    Redirected -> true
+                    Cancelled,
+                    RedirectCancelled -> false
+                }
+            }
+        }
     }
 
     override var focusability: Focusability = focusability
@@ -250,7 +275,7 @@ internal class FocusTargetNode(
         val focusState = focusState
         // Avoid invoking callback when we initialize the state (from `null` to Inactive) or
         // if we are detached and go from Inactive to `null` - there isn't a conceptual focus
-        // state change here.
+        // state change here
         if (previousOrInactive != focusState) {
             onFocusChange?.invoke(previousOrInactive, focusState)
         }
@@ -258,8 +283,6 @@ internal class FocusTargetNode(
             // TODO(251833873): Consider caching it.getFocusState().
             it.onFocusEvent(it.getFocusState())
         }
-
-        onDispatchEventsCompleted?.invoke(this)
     }
 
     internal object FocusTargetElement : ModifierNodeElement<FocusTargetNode>() {

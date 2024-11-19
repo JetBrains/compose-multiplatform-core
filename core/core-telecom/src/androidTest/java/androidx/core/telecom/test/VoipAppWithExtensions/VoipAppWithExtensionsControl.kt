@@ -40,7 +40,6 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
@@ -107,16 +106,7 @@ open class VoipAppWithExtensionsControl : Service() {
                                 mOnSetActiveLambda,
                                 mOnSetInActiveLambda
                             ) {
-                                launch {
-                                    // caution, when creating e2e tests on sdks 33 or lower,
-                                    // the setActive can be sent BEFORE:
-                                    // - incoming calls are set to RINGING
-                                    // - outgoing calls are set to DIALING
-                                    // This means the a delay is needed so the ACTIVE state is not
-                                    // overridden. This is being looked into b/374821494
-                                    delay(500)
-                                    setActive()
-                                }
+                                launch { setActive() }
                                 isMuted
                                     .onEach { mCallback?.onGlobalMuteStateChanged(it) }
                                     .launchIn(this)

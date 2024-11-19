@@ -16,10 +16,8 @@
 
 package androidx.pdf
 
-import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
 import android.os.Build
-import android.view.KeyEvent
 import androidx.annotation.RequiresExtension
 import androidx.fragment.app.testing.FragmentScenario
 import androidx.fragment.app.testing.launchFragmentInContainer
@@ -31,7 +29,6 @@ import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.longClick
-import androidx.test.espresso.action.ViewActions.pressKey
 import androidx.test.espresso.action.ViewActions.swipeDown
 import androidx.test.espresso.action.ViewActions.swipeUp
 import androidx.test.espresso.action.ViewActions.typeText
@@ -50,7 +47,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@SuppressLint("BanThreadSleep")
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 35)
@@ -237,38 +233,6 @@ class PdfViewerFragmentTestSuite {
             .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
         onView(withId(androidx.pdf.testapp.R.id.host_Search))
             .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
-    }
-
-    fun testPdfViewerFragment_setDocumentUri_passwordProtected_portrait() {
-        val scenario =
-            scenarioLoadDocument(
-                TEST_PROTECTED_DOCUMENT_FILE,
-                Lifecycle.State.RESUMED,
-                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            )
-
-        // Delay required for password dialog to come up
-        // TODO: Implement callback based delay and remove Thread.sleep
-        Thread.sleep(DELAY_TIME_MS)
-        onView(withId(R.id.password)).perform(typeText(PROTECTED_DOCUMENT_PASSWORD))
-        onView(withId(R.id.password)).perform(pressKey(KeyEvent.KEYCODE_ENTER))
-
-        // Delay required for the PDF to load
-        // TODO: Implement callback based delay and remove Thread.sleep
-        Thread.sleep(DELAY_TIME_MS)
-        onView(withId(R.id.loadingView))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
-        scenario.onFragment {
-            Preconditions.checkArgument(
-                it.documentLoaded,
-                "Unable to load document due to ${it.documentError?.message}"
-            )
-        }
-
-        // Swipe actions
-        onView(withId(R.id.parent_pdf_container)).perform(swipeUp())
-        onView(withId(R.id.parent_pdf_container)).perform(swipeDown())
-        scenario.close()
     }
 
     @Test

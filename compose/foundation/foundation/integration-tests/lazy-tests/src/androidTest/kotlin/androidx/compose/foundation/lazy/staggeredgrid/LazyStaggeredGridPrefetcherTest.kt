@@ -448,7 +448,6 @@ class LazyStaggeredGridPrefetcherTest(orientation: Orientation) :
         }
 
         waitForPrefetch()
-        waitForPrefetch()
 
         // ┌─┬─┐
         // │2├─┤

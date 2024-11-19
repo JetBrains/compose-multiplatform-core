@@ -269,7 +269,7 @@ object DeviceInfo {
      *
      * See b/292294133
      */
-    const val ART_MAINLINE_MIN_VERSION_CLASS_INIT_TRACING = 341511000L
+    const val ART_MAINLINE_MIN_VERSION_CLASS_LOAD_TRACING = 341511000L
 
     /**
      * Starting with an API 34 change cherry-picked to mainline, when `verify`-compiled, ART will
@@ -324,14 +324,14 @@ object DeviceInfo {
         Build.VERSION.SDK_INT in 26..30 || // b/313868903
             artMainlineVersion in ART_MAINLINE_VERSIONS_AFFECTING_METHOD_TRACING // b/303660864
 
-    fun isClassInitTracingAvailable(targetApiLevel: Int, targetArtMainlineVersion: Long?): Boolean =
+    fun isClassLoadTracingAvailable(targetApiLevel: Int, targetArtMainlineVersion: Long?): Boolean =
         targetApiLevel >= 35 ||
             (targetApiLevel >= 31 &&
                 (targetArtMainlineVersion == null ||
-                    targetArtMainlineVersion >= ART_MAINLINE_MIN_VERSION_CLASS_INIT_TRACING))
+                    targetArtMainlineVersion >= ART_MAINLINE_MIN_VERSION_CLASS_LOAD_TRACING))
 
-    val supportsClassInitTracing =
-        isClassInitTracingAvailable(Build.VERSION.SDK_INT, artMainlineVersion)
+    val supportsClassLoadTracing =
+        isClassLoadTracingAvailable(Build.VERSION.SDK_INT, artMainlineVersion)
 
     val supportsRuntimeImages =
         Build.VERSION.SDK_INT >= 34 || artMainlineVersion >= ART_MAINLINE_MIN_VERSION_RUNTIME_IMAGE

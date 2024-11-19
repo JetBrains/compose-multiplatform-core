@@ -155,7 +155,7 @@ class TransitionDetectorTest : LintDetectorTest() {
             .files(
                 kotlin(
                     """
-                package foo
+                package test.foo
 
                 import androidx.compose.animation.core.*
                 import androidx.compose.runtime.*
@@ -181,22 +181,22 @@ class TransitionDetectorTest : LintDetectorTest() {
             .run()
             .expect(
                 """
-src/foo/test.kt:13: Error: Target state parameter it is not used [UnusedTransitionTargetStateParameter]
+src/test/foo/test.kt:13: Error: Target state parameter it is not used [UnusedTransitionTargetStateParameter]
                     transition.animateFloat { if (foo) 1f else 0f }
                                             ~~~~~~~~~~~~~~~~~~~~~~~
-src/foo/test.kt:14: Error: Target state parameter it is not used [UnusedTransitionTargetStateParameter]
+src/test/foo/test.kt:14: Error: Target state parameter it is not used [UnusedTransitionTargetStateParameter]
                     transition.animateFloat(targetValueByState = { if (foo) 1f else 0f })
                                                                  ~~~~~~~~~~~~~~~~~~~~~~~
-src/foo/test.kt:15: Error: Target state parameter param is not used [UnusedTransitionTargetStateParameter]
+src/test/foo/test.kt:15: Error: Target state parameter param is not used [UnusedTransitionTargetStateParameter]
                     transition.animateFloat { param -> if (foo) 1f else 0f }
                                               ~~~~~
-src/foo/test.kt:16: Error: Target state parameter param is not used [UnusedTransitionTargetStateParameter]
+src/test/foo/test.kt:16: Error: Target state parameter param is not used [UnusedTransitionTargetStateParameter]
                     transition.animateFloat(targetValueByState = { param -> if (foo) 1f else 0f })
                                                                    ~~~~~
-src/foo/test.kt:17: Error: Target state parameter _ is not used [UnusedTransitionTargetStateParameter]
+src/test/foo/test.kt:17: Error: Target state parameter _ is not used [UnusedTransitionTargetStateParameter]
                     transition.animateFloat { _ -> if (foo) 1f else 0f }
                                               ~
-src/foo/test.kt:18: Error: Target state parameter _ is not used [UnusedTransitionTargetStateParameter]
+src/test/foo/test.kt:18: Error: Target state parameter _ is not used [UnusedTransitionTargetStateParameter]
                     transition.animateFloat(targetValueByState = { _ -> if (foo) 1f else 0f })
                                                                    ~
 6 errors, 0 warnings
@@ -210,7 +210,7 @@ src/foo/test.kt:18: Error: Target state parameter _ is not used [UnusedTransitio
             .files(
                 kotlin(
                     """
-                package foo
+                package test.foo
 
                 import androidx.compose.animation.core.*
                 import androidx.compose.runtime.*
@@ -246,10 +246,10 @@ src/foo/test.kt:18: Error: Target state parameter _ is not used [UnusedTransitio
             .run()
             .expect(
                 """
-src/foo/test.kt:13: Error: Target state parameter it is not used [UnusedTransitionTargetStateParameter]
+src/test/foo/test.kt:13: Error: Target state parameter it is not used [UnusedTransitionTargetStateParameter]
                     transition.animateFloat {
                                             ^
-src/foo/test.kt:22: Error: Target state parameter param is not used [UnusedTransitionTargetStateParameter]
+src/test/foo/test.kt:22: Error: Target state parameter param is not used [UnusedTransitionTargetStateParameter]
                     transition.animateFloat { param ->
                                               ~~~~~
 2 errors, 0 warnings
@@ -263,7 +263,7 @@ src/foo/test.kt:22: Error: Target state parameter param is not used [UnusedTrans
             .files(
                 kotlin(
                     """
-            package foo
+            package test.foo
 
             import androidx.compose.animation.core.*
             import androidx.compose.runtime.*

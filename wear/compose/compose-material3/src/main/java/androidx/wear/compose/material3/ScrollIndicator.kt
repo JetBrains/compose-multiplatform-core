@@ -593,7 +593,14 @@ internal class ScalingLazyColumnStateAdapter(private val state: ScalingLazyListS
      */
     private fun decimalLastItemIndex(layoutInfo: ScalingLazyListLayoutInfo): Float {
         if (layoutInfo.visibleItemsInfo.isEmpty()) return 0f
-        val lastItem = layoutInfo.visibleItemsInfo.last()
+        val lastVisibleItem = layoutInfo.visibleItemsInfo.last()
+        val isLastItem = lastVisibleItem.index == layoutInfo.totalItemsCount - 1
+        // If our visible item is last in the list, we add afterContentPadding to its size
+        val lastVisibleItemSize =
+            lastVisibleItem.size +
+                (if (isLastItem)
+                    layoutInfo.afterContentPadding + layoutInfo.afterAutoCenteringPadding
+                else 0)
         // This is the offset of the last item w.r.t. the ScalingLazyColumn coordinate system where
         // 0 in the center of the visible viewport and +/-(state.viewportHeightPx / 2f) are the
         // start and end of the viewport.
@@ -602,14 +609,15 @@ internal class ScalingLazyColumnStateAdapter(private val state: ScalingLazyListS
         // center of the viewport, it does not change viewport coordinates. As a result this
         // calculation needs to take the anchorType into account to calculate the correct end
         // of list item offset.
-        val lastItemEndOffset = lastItem.startOffset(layoutInfo.anchorType) + lastItem.size
+        val lastItemEndOffset =
+            lastVisibleItem.startOffset(layoutInfo.anchorType) + lastVisibleItemSize
         val viewportEndOffset = layoutInfo.viewportSize.height / 2f
         // Coerce item size to at least 1 to avoid divide by zero for zero height items
-        val lastItemVisibleFraction =
-            (1f - ((lastItemEndOffset - viewportEndOffset) / lastItem.size.coerceAtLeast(1)))
+        val lastVisibleItemFraction =
+            (1f - (lastItemEndOffset - viewportEndOffset) / lastVisibleItemSize.coerceAtLeast(1))
                 .coerceAtMost(1f)
 
-        return lastItem.index.toFloat() + lastItemVisibleFraction
+        return lastVisibleItem.index.toFloat() + lastVisibleItemFraction
     }
 
     /**
@@ -624,15 +632,23 @@ internal class ScalingLazyColumnStateAdapter(private val state: ScalingLazyListS
      */
     private fun decimalFirstItemIndex(layoutInfo: ScalingLazyListLayoutInfo): Float {
         if (layoutInfo.visibleItemsInfo.isEmpty()) return 0f
-        val firstItem = layoutInfo.visibleItemsInfo.first()
-        val firstItemStartOffset = firstItem.startOffset(layoutInfo.anchorType)
+        val firstVisibleItem = layoutInfo.visibleItemsInfo.first()
+        val isFirstItem = firstVisibleItem.index == 0
+        // If our visible item is first in the list, we set beforeFirstItemPadding to the padding
+        // before the first item. Then we add it to the size of the first item in our calculations.
+        val beforeFirstItemPadding =
+            if (isFirstItem) layoutInfo.beforeContentPadding + layoutInfo.beforeAutoCenteringPadding
+            else 0
+
+        val firstItemStartOffset =
+            firstVisibleItem.startOffset(layoutInfo.anchorType) - beforeFirstItemPadding
         val viewportStartOffset = -(layoutInfo.viewportSize.height / 2f)
         // Coerce item size to at least 1 to avoid divide by zero for zero height items
         val firstItemInvisibleFraction =
-            ((viewportStartOffset - firstItemStartOffset) / firstItem.size.coerceAtLeast(1))
+            ((viewportStartOffset - firstItemStartOffset) /
+                    (firstVisibleItem.size + beforeFirstItemPadding).coerceAtLeast(1))
                 .coerceAtLeast(0f)
-
-        return firstItem.index.toFloat() + firstItemInvisibleFraction
+        return firstVisibleItem.index.toFloat() + firstItemInvisibleFraction
     }
 }
 
@@ -783,23 +799,33 @@ internal class LazyColumnStateAdapter(private val state: LazyListState) : Indica
 
     private fun decimalLastItemIndex(): Float {
         if (state.layoutInfo.visibleItemsInfo.isEmpty()) return 0f
-        val lastItem = state.layoutInfo.visibleItemsInfo.last()
+        val lastVisibleItem = state.layoutInfo.visibleItemsInfo.last()
+        val isLastItem = lastVisibleItem.index == state.layoutInfo.totalItemsCount - 1
+        val lastVisibleItemSize =
+            lastVisibleItem.size + (if (isLastItem) state.layoutInfo.afterContentPadding else 0)
         // Coerce item sizes to at least 1 to avoid divide by zero for zero height items
-        val lastItemVisibleSize =
-            (state.layoutInfo.viewportEndOffset - lastItem.offset)
-                .coerceAtMost(lastItem.size)
+        val lastVisibleItemOffset =
+            (state.layoutInfo.viewportEndOffset - lastVisibleItem.offset)
+                .coerceAtMost(lastVisibleItemSize)
                 .coerceAtLeast(1)
-        return lastItem.index.toFloat() +
-            lastItemVisibleSize.toFloat() / lastItem.size.coerceAtLeast(1).toFloat()
+        return lastVisibleItem.index.toFloat() +
+            lastVisibleItemOffset.toFloat() / lastVisibleItemSize.coerceAtLeast(1).toFloat()
     }
 
     private fun decimalFirstItemIndex(): Float {
         if (state.layoutInfo.visibleItemsInfo.isEmpty()) return 0f
-        val firstItem = state.layoutInfo.visibleItemsInfo.first()
-        val firstItemOffset = firstItem.offset - state.layoutInfo.viewportStartOffset
+        val firstVisibleItem = state.layoutInfo.visibleItemsInfo.first()
+        val isFirstItem = firstVisibleItem.index == 0
+        // If our visible item is first in the list, we set beforeFirstItemPadding to the padding
+        // before the first item. Then we add it to the size of the first item in our calculations.
+        val beforeFirstItemPadding = (if (isFirstItem) state.layoutInfo.beforeContentPadding else 0)
+        val firstItemOffset =
+            firstVisibleItem.offset - state.layoutInfo.viewportStartOffset - beforeFirstItemPadding
+
         // Coerce item size to at least 1 to avoid divide by zero for zero height items
-        return firstItem.index.toFloat() -
-            firstItemOffset.coerceAtMost(0).toFloat() / firstItem.size.coerceAtLeast(1).toFloat()
+        return firstVisibleItem.index.toFloat() -
+            firstItemOffset.coerceAtMost(0).toFloat() /
+                (firstVisibleItem.size + beforeFirstItemPadding).coerceAtLeast(1).toFloat()
     }
 }
 

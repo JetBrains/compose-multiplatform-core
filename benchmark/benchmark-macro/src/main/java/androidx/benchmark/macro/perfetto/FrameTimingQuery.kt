@@ -20,10 +20,8 @@ import androidx.benchmark.perfetto.PerfettoTraceProcessor
 import androidx.benchmark.perfetto.Slice
 import androidx.benchmark.perfetto.processNameLikePkg
 import androidx.benchmark.perfetto.toSlices
-import org.intellij.lang.annotations.Language
 
 internal object FrameTimingQuery {
-    @Language("sql")
     private fun getFullQuery(packageName: String) =
         """
         ------ Select all frame-relevant slices from slice table

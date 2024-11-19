@@ -59,12 +59,29 @@ class FocusRequester {
      *
      * @sample androidx.compose.ui.samples.RequestFocusSample
      */
+    @Deprecated(
+        message = "use the version the has a FocusDirection",
+        replaceWith = ReplaceWith("this.requestFocus()"),
+        level = DeprecationLevel.HIDDEN
+    )
     fun requestFocus() {
-        focus()
+        requestFocus(Enter)
     }
 
-    // TODO(b/245755256): Consider making this API Public.
-    internal fun focus(): Boolean = findFocusTargetNode { it.requestFocus() }
+    /**
+     * Use this function to request focus with a specific direction. If the system grants focus to a
+     * component associated with this [FocusRequester], its [onFocusChanged] modifiers will receive
+     * a [FocusState] object where [FocusState.isFocused] is true.
+     *
+     * @param focusDirection The direction passed to the [FocusTargetModifierNode] to indicate the
+     *   direction that the focus request comes from.
+     * @return `true` if the focus was successfully requested or `false` if the focus request was
+     *   canceled.
+     * @sample androidx.compose.ui.samples.RequestFocusSample
+     */
+    fun requestFocus(focusDirection: FocusDirection = Enter): Boolean = findFocusTargetNode {
+        it.requestFocus(focusDirection)
+    }
 
     internal fun findFocusTargetNode(onFound: (FocusTargetNode) -> Boolean): Boolean {
         return findFocusTarget { focusTarget ->

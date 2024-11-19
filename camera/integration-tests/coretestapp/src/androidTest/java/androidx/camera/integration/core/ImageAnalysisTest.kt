@@ -19,6 +19,7 @@ import android.content.Context
 import android.graphics.ImageFormat
 import android.os.Handler
 import android.os.HandlerThread
+import android.util.Rational
 import android.util.Size
 import android.view.Surface
 import androidx.annotation.GuardedBy
@@ -32,6 +33,8 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageAnalysis.BackpressureStrategy
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageProxy
+import androidx.camera.core.UseCaseGroup
+import androidx.camera.core.ViewPort
 import androidx.camera.core.impl.ImageOutputConfig
 import androidx.camera.core.impl.ImageOutputConfig.OPTION_RESOLUTION_SELECTOR
 import androidx.camera.core.impl.SessionConfig
@@ -49,15 +52,18 @@ import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.LabTestRule
+import androidx.camera.testing.impl.WakelockEmptyActivityRule
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -86,6 +92,8 @@ internal class ImageAnalysisTest(
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(PreTestCameraIdList(cameraConfig))
 
     @get:Rule val labTest: LabTestRule = LabTestRule()
+
+    @get:Rule val wakelockEmptyActivityRule = WakelockEmptyActivityRule()
 
     companion object {
         private val DEFAULT_RESOLUTION = Size(640, 480)
@@ -294,6 +302,42 @@ internal class ImageAnalysisTest(
                 useCase.currentConfig.containsOption(ImageOutputConfig.OPTION_TARGET_ASPECT_RATIO)
             )
             .isFalse()
+    }
+
+    @Test
+    fun viewPort_OverwriteCropRect(): Unit = runBlocking {
+        // Arrange.
+        val rotation =
+            if (CameraUtil.getSensorOrientation(CameraSelector.LENS_FACING_BACK)!! % 180 != 0)
+                Surface.ROTATION_90
+            else Surface.ROTATION_0
+        val imageProxyDeferred = CompletableDeferred<ImageProxy>()
+        val imageAnalysis =
+            ImageAnalysis.Builder().setTargetRotation(rotation).build().apply {
+                setAnalyzer(CameraXExecutors.newHandlerExecutor(handler)) { image ->
+                    imageProxyDeferred.complete(image)
+                    image.close()
+                }
+            }
+        val viewPort = ViewPort.Builder(Rational(2, 1), imageAnalysis.targetRotation).build()
+
+        // Act.
+        withContext(Dispatchers.Main) {
+            val useCaseGroup =
+                UseCaseGroup.Builder().setViewPort(viewPort).addUseCase(imageAnalysis).build()
+            cameraProvider.bindToLifecycle(
+                fakeLifecycleOwner,
+                CameraSelector.DEFAULT_BACK_CAMERA,
+                useCaseGroup
+            )
+        }
+        val imageProxy = withTimeoutOrNull(5000) { imageProxyDeferred.await() }
+
+        // Assert.
+        val aspectRatioThreshold = 0.01
+        assertThat(Rational(imageProxy!!.cropRect.width(), imageProxy.cropRect.height()).toDouble())
+            .isWithin(aspectRatioThreshold)
+            .of(viewPort.aspectRatio.toDouble())
     }
 
     @Test

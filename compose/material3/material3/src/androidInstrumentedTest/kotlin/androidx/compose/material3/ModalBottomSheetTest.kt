@@ -586,6 +586,18 @@ class ModalBottomSheetTest {
         assertTrue(state.anchoredDraggableState.anchors.hasAnchorFor(SheetValue.PartiallyExpanded))
         assertTrue(state.anchoredDraggableState.anchors.hasAnchorFor(SheetValue.Expanded))
 
+        scope.launch { state.expand() }
+        rule.waitForIdle()
+        assertThat(state.currentValue).isEqualTo(SheetValue.Expanded)
+
+        amountOfItems = 50
+        rule.waitForIdle()
+        assertThat(state.currentValue).isEqualTo(SheetValue.Expanded)
+        // We should retain the current value if possible
+        assertTrue(state.anchoredDraggableState.anchors.hasAnchorFor(SheetValue.Hidden))
+        assertTrue(state.anchoredDraggableState.anchors.hasAnchorFor(SheetValue.PartiallyExpanded))
+        assertTrue(state.anchoredDraggableState.anchors.hasAnchorFor(SheetValue.Expanded))
+
         amountOfItems = 0 // When the sheet height is 0, we should only have a hidden anchor
         rule.waitForIdle()
         assertThat(state.currentValue).isEqualTo(SheetValue.Hidden)

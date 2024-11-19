@@ -154,8 +154,9 @@ interface OverscrollEffect {
 }
 
 /**
- * Returns a wrapped version of [this] [OverscrollEffect] with an empty [OverscrollEffect.node] that
- * will not draw / render, but will still handle events.
+ * Returns a wrapped version of [this] [OverscrollEffect] with an empty [OverscrollEffect.node].
+ * This prevents the overscroll effect from applying any visual effect, but it will still handle
+ * events.
  *
  * This can be used along with [withoutEventHandling] in cases where you wish to change where
  * overscroll is rendered for a given component. Pass this wrapped instance that doesn't render to
@@ -170,37 +171,39 @@ interface OverscrollEffect {
  * @see withoutEventHandling
  */
 @Stable
-fun OverscrollEffect.withoutDrawing(): OverscrollEffect =
+fun OverscrollEffect.withoutVisualEffect(): OverscrollEffect =
     WrappedOverscrollEffect(
-        drawingEnabled = false,
+        attachNode = false,
         eventHandlingEnabled = true,
         innerOverscrollEffect = this
     )
 
 /**
- * Returns a wrapped version of [this] [OverscrollEffect] that will not handle events / consume
- * values provided through [OverscrollEffect.applyToScroll] / [OverscrollEffect.applyToFling], but
- * will still render / attach [OverscrollEffect.node].
+ * Returns a wrapped version of [this] [OverscrollEffect] that will not handle any incoming events.
+ * This means that calls to [OverscrollEffect.applyToScroll] / [OverscrollEffect.applyToFling] will
+ * directly execute the provided performScroll / performFling lambdas, without the
+ * [OverscrollEffect] ever seeing the incoming values. [OverscrollEffect.node] will still be
+ * attached, so that overscroll can render.
  *
  * This can be useful if you want to render an [OverscrollEffect] in a different component that
  * normally provides events to overscroll, such as a [androidx.compose.foundation.lazy.LazyColumn].
- * Use this along with [withoutDrawing] to create two wrapped instances: one that does not handle
- * events, and one that does not draw, so you can ensure that the overscroll effect is only rendered
- * once, and only receives events from one source.
+ * Use this along with [withoutVisualEffect] to create two wrapped instances: one that does not
+ * handle events, and one that does not draw, so you can ensure that the overscroll effect is only
+ * rendered once, and only receives events from one source.
  *
- * @see withoutDrawing
+ * @see withoutVisualEffect
  */
 @Stable
 fun OverscrollEffect.withoutEventHandling(): OverscrollEffect =
     WrappedOverscrollEffect(
-        drawingEnabled = true,
+        attachNode = true,
         eventHandlingEnabled = false,
         innerOverscrollEffect = this
     )
 
 @Immutable
 private class WrappedOverscrollEffect(
-    private val drawingEnabled: Boolean,
+    private val attachNode: Boolean,
     private val eventHandlingEnabled: Boolean,
     private val innerOverscrollEffect: OverscrollEffect
 ) : OverscrollEffect {
@@ -231,13 +234,13 @@ private class WrappedOverscrollEffect(
         get() = innerOverscrollEffect.isInProgress
 
     override val node: DelegatableNode =
-        if (drawingEnabled) innerOverscrollEffect.node else object : Modifier.Node() {}
+        if (attachNode) innerOverscrollEffect.node else object : Modifier.Node() {}
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is WrappedOverscrollEffect) return false
 
-        if (drawingEnabled != other.drawingEnabled) return false
+        if (attachNode != other.attachNode) return false
         if (eventHandlingEnabled != other.eventHandlingEnabled) return false
         if (innerOverscrollEffect != other.innerOverscrollEffect) return false
 
@@ -245,7 +248,7 @@ private class WrappedOverscrollEffect(
     }
 
     override fun hashCode(): Int {
-        var result = drawingEnabled.hashCode()
+        var result = attachNode.hashCode()
         result = 31 * result + eventHandlingEnabled.hashCode()
         result = 31 * result + innerOverscrollEffect.hashCode()
         return result

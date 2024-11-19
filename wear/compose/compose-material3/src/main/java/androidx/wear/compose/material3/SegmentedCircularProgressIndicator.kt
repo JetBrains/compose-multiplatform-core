@@ -164,7 +164,7 @@ fun SegmentedCircularProgressIndicator(
                                     sweep = segmentSweepAngle,
                                     gapSweep = gapSweep,
                                     brush =
-                                        colors.animatedOverflowTrackBrush(
+                                        colors.overflowTrackBrush(
                                             enabled,
                                             animatedOverflowColor.value
                                         ),

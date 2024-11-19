@@ -24,11 +24,11 @@ import static java.util.Collections.emptyList;
 
 import androidx.camera.core.CompositionSettings;
 import androidx.camera.core.concurrent.CameraCoordinator;
+import androidx.camera.core.impl.AdapterCameraInfo;
 import androidx.camera.core.impl.CameraConfig;
 import androidx.camera.core.impl.CameraConfigs;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.CameraInternal;
-import androidx.camera.core.impl.RestrictedCameraInfo;
 import androidx.camera.core.internal.CameraUseCaseAdapter;
 import androidx.camera.testing.fakes.FakeCamera;
 import androidx.camera.testing.impl.fakes.FakeCameraConfig;
@@ -633,7 +633,7 @@ public final class LifecycleCameraRepositoryTest {
         CameraConfig cameraConfig = new FakeCameraConfig();
         return new CameraUseCaseAdapter(mCamera,
                 null,
-                new RestrictedCameraInfo((CameraInfoInternal) mCamera.getCameraInfo(),
+                new AdapterCameraInfo((CameraInfoInternal) mCamera.getCameraInfo(),
                         cameraConfig),
                 null,
                 CompositionSettings.DEFAULT,

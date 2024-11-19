@@ -22,6 +22,8 @@ import androidx.appsearch.flags.FlaggedApi;
 import androidx.appsearch.flags.Flags;
 import androidx.core.util.Preconditions;
 
+import java.util.Objects;
+
 /**
  * {@link Node} that stores text.
  *
@@ -258,5 +260,19 @@ public final class TextNode implements Node{
      */
     private boolean isLatinLetter(char c) {
         return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TextNode textNode = (TextNode) o;
+        return mPrefix == textNode.mPrefix && mVerbatim == textNode.mVerbatim
+                && Objects.equals(mValue, textNode.mValue);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(mValue, mPrefix, mVerbatim);
     }
 }

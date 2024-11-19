@@ -35,7 +35,6 @@ class ViewInfoValidationWriter(val view: DatabaseView) : ValidationWriter() {
                 typeName = RoomTypeNames.VIEW_INFO,
                 assignExpr =
                     XCodeBlock.ofNewInstance(
-                        language,
                         RoomTypeNames.VIEW_INFO,
                         "%S, %S",
                         view.viewName,
@@ -57,7 +56,6 @@ class ViewInfoValidationWriter(val view: DatabaseView) : ValidationWriter() {
                 addStatement(
                     "return %L",
                     XCodeBlock.ofNewInstance(
-                        language,
                         RoomTypeNames.ROOM_OPEN_DELEGATE_VALIDATION_RESULT,
                         "false, %S + %L + %S + %L",
                         "${view.viewName}(${view.element.qualifiedName}).\n Expected:\n",

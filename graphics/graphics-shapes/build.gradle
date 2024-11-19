@@ -21,6 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+import androidx.build.KotlinTarget
 import androidx.build.LibraryType
 import androidx.build.PlatformIdentifier
 
@@ -53,8 +55,8 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 implementation(libs.kotlinStdlib)
-                implementation("androidx.collection:collection:1.4.2")
-                implementation("androidx.annotation:annotation:1.8.1")
+                implementation("androidx.collection:collection:1.4.5")
+                implementation("androidx.annotation:annotation:1.9.1")
             }
         }
 
@@ -118,4 +120,5 @@ androidx {
     description = "create and render rounded polygonal shapes"
     legacyDisableKotlinStrictApiMode = true
     metalavaK2UastEnabled = false
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

@@ -104,8 +104,6 @@ internal object KotlinCliRunner {
 
         cliArguments.javacArguments = javacArguments.toTypedArray()
 
-        cliArguments.useK2Kapt = false
-
         val inherited =
             if (inheritClasspaths) {
                 TestClasspath.inheritedClasspath

@@ -41,11 +41,11 @@ import androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_C
 import androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_SINGLE
 import androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_UNSPECIFIED
 import androidx.camera.core.concurrent.CameraCoordinator.CameraOperatingMode
+import androidx.camera.core.impl.AdapterCameraInfo
 import androidx.camera.core.impl.CameraConfig
 import androidx.camera.core.impl.CameraConfigs
 import androidx.camera.core.impl.CameraInternal
 import androidx.camera.core.impl.ExtendedCameraConfigProviderStore
-import androidx.camera.core.impl.RestrictedCameraInfo
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
 import androidx.camera.core.impl.utils.ContextUtil
@@ -73,7 +73,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
     private var cameraX: CameraX? = null
     private var context: Context? = null
     @GuardedBy("mLock")
-    private val cameraInfoMap: MutableMap<CameraUseCaseAdapter.CameraId, RestrictedCameraInfo> =
+    private val cameraInfoMap: MutableMap<CameraUseCaseAdapter.CameraId, AdapterCameraInfo> =
         HashMap()
 
     internal fun initAsync(
@@ -532,25 +532,24 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
             val primaryCameraInternal =
                 primaryCameraSelector.select(cameraX!!.cameraRepository.cameras)
             primaryCameraInternal.setPrimary(true)
-            val primaryRestrictedCameraInfo =
-                getCameraInfo(primaryCameraSelector) as RestrictedCameraInfo
+            val primaryAdapterCameraInfo = getCameraInfo(primaryCameraSelector) as AdapterCameraInfo
 
             var secondaryCameraInternal: CameraInternal? = null
-            var secondaryRestrictedCameraInfo: RestrictedCameraInfo? = null
+            var secondaryAdapterCameraInfo: AdapterCameraInfo? = null
             if (secondaryCameraSelector != null) {
                 secondaryCameraInternal =
                     secondaryCameraSelector.select(cameraX!!.cameraRepository.cameras)
                 secondaryCameraInternal.setPrimary(false)
-                secondaryRestrictedCameraInfo =
-                    getCameraInfo(secondaryCameraSelector) as RestrictedCameraInfo
+                secondaryAdapterCameraInfo =
+                    getCameraInfo(secondaryCameraSelector) as AdapterCameraInfo
             }
 
             var lifecycleCameraToBind =
                 lifecycleCameraRepository.getLifecycleCamera(
                     lifecycleOwner,
                     CameraUseCaseAdapter.generateCameraId(
-                        primaryRestrictedCameraInfo,
-                        secondaryRestrictedCameraInfo
+                        primaryAdapterCameraInfo,
+                        secondaryAdapterCameraInfo
                     )
                 )
 
@@ -579,8 +578,8 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
                         CameraUseCaseAdapter(
                             primaryCameraInternal,
                             secondaryCameraInternal,
-                            primaryRestrictedCameraInfo,
-                            secondaryRestrictedCameraInfo,
+                            primaryAdapterCameraInfo,
+                            secondaryAdapterCameraInfo,
                             primaryCompositionSettings,
                             secondaryCompositionSettings,
                             cameraX!!.cameraFactory.cameraCoordinator,
@@ -616,16 +615,16 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
                     cameraInfoInternal.cameraId,
                     cameraConfig.compatibilityId
                 )
-            var restrictedCameraInfo: RestrictedCameraInfo?
+            var adapterCameraInfo: AdapterCameraInfo?
             synchronized(lock) {
-                restrictedCameraInfo = cameraInfoMap[key]
-                if (restrictedCameraInfo == null) {
-                    restrictedCameraInfo = RestrictedCameraInfo(cameraInfoInternal, cameraConfig)
-                    cameraInfoMap[key] = restrictedCameraInfo!!
+                adapterCameraInfo = cameraInfoMap[key]
+                if (adapterCameraInfo == null) {
+                    adapterCameraInfo = AdapterCameraInfo(cameraInfoInternal, cameraConfig)
+                    cameraInfoMap[key] = adapterCameraInfo!!
                 }
             }
 
-            return@trace restrictedCameraInfo!!
+            return@trace adapterCameraInfo!!
         }
 
     private fun isVideoCapture(useCase: UseCase): Boolean {

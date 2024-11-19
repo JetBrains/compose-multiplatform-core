@@ -36,6 +36,7 @@ import androidx.wear.compose.material3.AlertDialogDefaults
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.SwitchButton
 import androidx.wear.compose.material3.Text
 
 @Sampled
@@ -122,6 +123,8 @@ fun AlertDialogWithEdgeButtonSample() {
 @Composable
 fun AlertDialogWithContentGroupsSample() {
     var showDialog by remember { mutableStateOf(false) }
+    var weatherEnabled by remember { mutableStateOf(false) }
+    var calendarEnabled by remember { mutableStateOf(false) }
 
     Box(Modifier.fillMaxSize()) {
         FilledTonalButton(
@@ -147,16 +150,18 @@ fun AlertDialogWithContentGroupsSample() {
         }
     ) {
         item {
-            FilledTonalButton(
+            SwitchButton(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = {},
+                checked = weatherEnabled,
+                onCheckedChange = { weatherEnabled = it },
                 label = { Text("Weather") }
             )
         }
         item {
-            FilledTonalButton(
+            SwitchButton(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = {},
+                checked = calendarEnabled,
+                onCheckedChange = { calendarEnabled = it },
                 label = { Text("Calendar") }
             )
         }

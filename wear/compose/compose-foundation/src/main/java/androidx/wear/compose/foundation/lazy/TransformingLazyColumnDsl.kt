@@ -20,6 +20,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.lazy.layout.LazyLayoutIntervalContent
 import androidx.compose.foundation.lazy.layout.MutableIntervalList
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -53,6 +54,18 @@ sealed interface TransformingLazyColumnItemScope {
         heightProvider:
             (measuredHeight: Int, scrollProgress: TransformingLazyColumnItemScrollProgress) -> Int
     ): Modifier
+
+    /**
+     * Preserves the appearance of some content within an item, by preventing implicit access to the
+     * [TransformingLazyColumnItemScope]. Explicit use of [LocalTransformingLazyColumnItemScope] can
+     * still apply transformations to the item.
+     *
+     * @sample androidx.wear.compose.foundation.samples.TransformingLazyColumnImplicitSample
+     */
+    @Composable
+    fun TransformExclusion(content: @Composable TransformingLazyColumnItemScope.() -> Unit) {
+        CompositionLocalProvider(LocalTransformingLazyColumnItemScope provides null) { content() }
+    }
 }
 
 /** Receiver scope which is used by [TransformingLazyColumn]. */

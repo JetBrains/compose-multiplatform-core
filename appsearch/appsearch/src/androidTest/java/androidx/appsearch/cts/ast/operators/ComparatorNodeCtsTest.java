@@ -38,6 +38,22 @@ public class ComparatorNodeCtsTest {
     public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
 
     @Test
+    public void testEquals_identical() {
+        PropertyPath propertyPathOne = new PropertyPath("example.property.path");
+        int valueOne = 5;
+        ComparatorNode equalsNodeOne =
+                new ComparatorNode(ComparatorNode.EQUALS, propertyPathOne, valueOne);
+
+        PropertyPath propertyPathTwo = new PropertyPath("example.property.path");
+        int valueTwo = 5;
+        ComparatorNode equalsNodeTwo =
+                new ComparatorNode(ComparatorNode.EQUALS, propertyPathTwo, valueTwo);
+
+        assertThat(equalsNodeOne).isEqualTo(equalsNodeTwo);
+        assertThat(equalsNodeOne.hashCode()).isEqualTo(equalsNodeTwo.hashCode());
+    }
+
+    @Test
     public void testConstructor_correctConstruction() {
         List<PropertyPath.PathSegment> pathSegmentList = List.of(
                 PropertyPath.PathSegment.create("example"),

@@ -17,6 +17,7 @@
 package androidx.room.solver.query.result
 
 import androidx.room.compiler.codegen.CodeLanguage
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.processing.XNullability
 import androidx.room.solver.CodeGenScope
 
@@ -33,7 +34,7 @@ class SingleItemQueryResultAdapter(private val rowAdapter: RowAdapter) :
             beginControlFlow("if (%L.$stepName())", cursorVarName).apply {
                 rowAdapter.convert(outVarName, cursorVarName, scope)
             }
-            nextControlFlow("else").apply {
+            nextControlFlow("else").applyTo { language ->
                 val defaultValue = rowAdapter.out.defaultValue()
                 if (
                     language == CodeLanguage.KOTLIN &&

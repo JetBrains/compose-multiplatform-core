@@ -360,6 +360,7 @@ internal class AndroidCameraState(
         if (closeInfo != null) {
             _state.value = CameraStateClosing(closeInfo.errorCode)
             camera2DeviceCloser.closeCamera(
+                cameraDeviceWrapper = androidCameraDevice,
                 cameraDevice = cameraDevice,
                 closeUnderError = closeInfo.errorCode != null,
                 androidCameraState = this,

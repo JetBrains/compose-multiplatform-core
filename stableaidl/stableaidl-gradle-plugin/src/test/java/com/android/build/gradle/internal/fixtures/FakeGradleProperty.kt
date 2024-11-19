@@ -92,6 +92,7 @@ class FakeGradleProperty<T>(private var value: T? = null) : Property<T> {
         throw NotImplementedError()
     }
 
+    @Suppress("WRONG_NULLABILITY_FOR_JAVA_OVERRIDE")
     override fun orElse(p0: T): Provider<T> {
         throw NotImplementedError()
     }

@@ -19,7 +19,6 @@ package androidx.profileinstaller;
 import static androidx.profileinstaller.ProfileTranscoder.MAGIC_PROF;
 import static androidx.profileinstaller.ProfileTranscoder.MAGIC_PROFM;
 
-import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.os.Build;
 
@@ -188,30 +187,6 @@ public class DeviceProfileWriter {
     }
 
     /**
-     * Loads an {@link InputStream} from assets whether the underlying file is compressed or not.
-     *
-     * @param assetManager The {@link AssetManager} to use.
-     * @param location The source file's location.
-     * @return An InputStream in case the profile was successfully read.
-     * @throws IOException If anything goes wrong while opening or reading the file.
-     */
-    private @Nullable InputStream openStreamFromAssets(AssetManager assetManager, String location)
-            throws IOException {
-        InputStream profileStream = null;
-        try {
-            AssetFileDescriptor descriptor = assetManager.openFd(location);
-            profileStream = descriptor.createInputStream();
-        } catch (FileNotFoundException e) {
-            String message = e.getMessage();
-            if (message != null && message.contains("compressed")) {
-                mDiagnostics.onDiagnosticReceived(
-                        ProfileInstaller.DIAGNOSTIC_PROFILE_IS_COMPRESSED, null);
-            }
-        }
-        return profileStream;
-    }
-
-    /**
      * Load the baseline profile file from assets.
      * @param assetManager The {@link AssetManager} to use.
      * @return The opened stream or null if the stream was unable to be opened.
@@ -219,9 +194,17 @@ public class DeviceProfileWriter {
     private @Nullable InputStream getProfileInputStream(AssetManager assetManager) {
         InputStream profileStream = null;
         try {
-            profileStream = openStreamFromAssets(assetManager, mProfileSourceLocation);
+            profileStream = assetManager.openFd(mProfileSourceLocation).createInputStream();
         } catch (FileNotFoundException e) {
-            mDiagnostics.onResultReceived(ProfileInstaller.RESULT_BASELINE_PROFILE_NOT_FOUND, e);
+            String message = e.getMessage();
+            if (message != null && message.contains("compressed")) {
+                mDiagnostics.onDiagnosticReceived(
+                        ProfileInstaller.DIAGNOSTIC_PROFILE_IS_COMPRESSED, null);
+            } else {
+                mDiagnostics.onResultReceived(
+                        ProfileInstaller.RESULT_BASELINE_PROFILE_NOT_FOUND, e
+                );
+            }
         } catch (IOException e) {
             mDiagnostics.onResultReceived(ProfileInstaller.RESULT_IO_EXCEPTION, e);
         }
@@ -261,8 +244,9 @@ public class DeviceProfileWriter {
      */
     @Nullable
     private DeviceProfileWriter addMetadata(DexProfileData[] profile, byte[] desiredVersion) {
-
-        try (InputStream is = openStreamFromAssets(mAssetManager, mProfileMetaSourceLocation)) {
+        try (InputStream is = mAssetManager
+                .openFd(mProfileMetaSourceLocation)
+                .createInputStream()) {
             if (is != null) {
                 byte[] metaVersion = ProfileTranscoder.readHeader(is, MAGIC_PROFM);
                 mProfile = ProfileTranscoder.readMeta(

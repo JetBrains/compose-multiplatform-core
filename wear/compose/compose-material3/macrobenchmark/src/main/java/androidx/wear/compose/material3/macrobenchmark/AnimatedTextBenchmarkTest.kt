@@ -16,14 +16,17 @@
 
 package androidx.wear.compose.material3.macrobenchmark
 
+import android.os.Build
 import androidx.benchmark.macro.CompilationMode
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.material3.macrobenchmark.common.AnimatedTextBenchmark
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
 class AnimatedTextBenchmarkTest(compilationMode: CompilationMode) :
     BenchmarkTestBase(
         compilationMode = compilationMode,

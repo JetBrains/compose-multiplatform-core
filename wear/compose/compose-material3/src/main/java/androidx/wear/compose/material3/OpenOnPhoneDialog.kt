@@ -388,7 +388,7 @@ private fun iconContainer(
             .background(iconContainerColor)
     )
 
-    CircularProgressIndicator(
+    CircularProgressIndicatorContent(
         modifier = Modifier.graphicsLayer { alpha = progressAlphaAnimationFraction.value },
         progress = progress,
         strokeWidth = strokeWidth,

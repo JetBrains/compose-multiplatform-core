@@ -778,6 +778,9 @@ message DashedLinePattern {
 // A simple spacer used to provide padding between adjacent elements in an Arc.
 message ArcSpacer {
   // The length of this spacer, in degrees. If not defined, defaults to 0.
+  //
+  // <setter>This value is ignored when an angular length is provided by calling
+  // {@code setAngularLength()}.</setter>
   DegreesProp length = 1;
 
   // The thickness of this spacer, in DP. If not defined, defaults to 0.
@@ -786,8 +789,11 @@ message ArcSpacer {
   // Modifiers for this element.
   ArcModifiers modifiers = 3;
 
-  // The length of this spacer. If not defined, defaults to 0 degrees.
-  ArcSpacerLength angular_length = 4;
+  // The length of this spacer. <setter>If not defined, defaults to 0 degrees. If set, this angular
+  // length will be used instead of the value provided in {@code setLength()}.</setter>
+  //
+  // <setter>Note that this field only supports static values.</setter>
+  AngularDimension angular_length = 4;
 }
 
 // A container that allows a standard LayoutElement to be added to an Arc.

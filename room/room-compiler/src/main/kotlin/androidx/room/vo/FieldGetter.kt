@@ -18,6 +18,8 @@ package androidx.room.vo
 
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.buildCodeBlock
+import androidx.room.compiler.codegen.compat.XConverters.toString
 import androidx.room.compiler.processing.XNullability
 import androidx.room.compiler.processing.XType
 import androidx.room.ext.capitalize
@@ -35,7 +37,7 @@ data class FieldGetter(
         builder.addLocalVariable(
             name = outVar,
             typeName = type.asTypeName(),
-            assignExpr = getterExpression(ownerVar, builder.language)
+            assignExpr = getterExpression(ownerVar)
         )
     }
 
@@ -46,7 +48,7 @@ data class FieldGetter(
         binder: StatementValueBinder,
         scope: CodeGenScope
     ) {
-        val varExpr = getterExpression(ownerVar, scope.language)
+        val varExpr = getterExpression(ownerVar)
         // A temporary local val is needed in Kotlin whenever the getter method returns nullable or
         // the field / property is nullable such that a smart cast can be properly performed. Even
         // if the field / property are immutable (val), we still use a local val in case the
@@ -60,25 +62,31 @@ data class FieldGetter(
             )
             binder.bindToStmt(stmtParamVar, indexVar, tmpField, scope)
         } else {
-            binder.bindToStmt(stmtParamVar, indexVar, varExpr.toString(), scope)
+            binder.bindToStmt(
+                stmtParamVar,
+                indexVar,
+                // This method expects a String, which depends on the language. We should change
+                // the method signature to accept an XCodeBlock instead.
+                varExpr.toString(scope.language),
+                scope
+            )
         }
     }
 
-    private fun getterExpression(ownerVar: String, codeLanguage: CodeLanguage): XCodeBlock {
-        return when (codeLanguage) {
+    private fun getterExpression(ownerVar: String) = buildCodeBlock { language ->
+        when (language) {
             CodeLanguage.JAVA ->
                 when (callType) {
-                    CallType.FIELD -> "%L.%L"
+                    CallType.FIELD -> add("%L.%L", ownerVar, jvmName)
                     CallType.METHOD,
-                    CallType.SYNTHETIC_METHOD -> "%L.%L()"
+                    CallType.SYNTHETIC_METHOD -> add("%L.%L()", ownerVar, jvmName)
                     CallType.CONSTRUCTOR -> error("Getters should never be of type 'constructor'!")
-                }.let { expr -> XCodeBlock.of(codeLanguage, expr, ownerVar, jvmName) }
+                }
             CodeLanguage.KOTLIN ->
                 when (callType) {
                     CallType.FIELD,
-                    CallType.SYNTHETIC_METHOD ->
-                        XCodeBlock.of(codeLanguage, "%L.%L", ownerVar, fieldName)
-                    CallType.METHOD -> XCodeBlock.of(codeLanguage, "%L.%L()", ownerVar, jvmName)
+                    CallType.SYNTHETIC_METHOD -> add("%L.%L", ownerVar, fieldName)
+                    CallType.METHOD -> add("%L.%L()", ownerVar, jvmName)
                     CallType.CONSTRUCTOR -> error("Getters should never be of type 'constructor'!")
                 }
         }

@@ -21,7 +21,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.test.annotation.UiThreadTest
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -36,7 +35,6 @@ val local = compositionLocalOf { 0 }
 @OptIn(ExperimentalCoroutinesApi::class, ExperimentalTestApi::class)
 class CompositionLocalBenchmark : ComposeBenchmarkBase() {
 
-    @UiThreadTest
     @Test
     @Ignore // Only used for overhead comparison, not to be tracked.
     fun compositionLocal_compose_depth_1_1() = runBlockingTestWithFrameClock {
@@ -45,7 +43,6 @@ class CompositionLocalBenchmark : ComposeBenchmarkBase() {
         }
     }
 
-    @UiThreadTest
     @Test
     @Ignore // Only used for overhead comparison, not to be tracked.
     fun compositionLocal_compose_depth_1_10() = runBlockingTestWithFrameClock {
@@ -56,7 +53,6 @@ class CompositionLocalBenchmark : ComposeBenchmarkBase() {
         }
     }
 
-    @UiThreadTest
     @Test
     @Ignore // Only used for overhead comparison, not to be tracked.
     fun compositionLocal_compose_depth_1_100() = runBlockingTestWithFrameClock {
@@ -67,7 +63,6 @@ class CompositionLocalBenchmark : ComposeBenchmarkBase() {
         }
     }
 
-    @UiThreadTest
     @Test
     @Ignore // Only used for overhead comparison, not to be tracked.
     fun compositionLocal_compose_depth_100_1() = runBlockingTestWithFrameClock {
@@ -76,7 +71,6 @@ class CompositionLocalBenchmark : ComposeBenchmarkBase() {
         }
     }
 
-    @UiThreadTest
     @Test
     @Ignore // Only used for overhead comparison, not to be tracked.
     fun compositionLocal_compose_depth_100_10() = runBlockingTestWithFrameClock {
@@ -87,7 +81,6 @@ class CompositionLocalBenchmark : ComposeBenchmarkBase() {
         }
     }
 
-    @UiThreadTest
     @Test
     @Ignore // Only used for overhead comparison, not to be tracked.
     fun compositionLocal_compose_depth_100_100() = runBlockingTestWithFrameClock {
@@ -98,7 +91,6 @@ class CompositionLocalBenchmark : ComposeBenchmarkBase() {
         }
     }
 
-    @UiThreadTest
     @Test
     @Ignore // Only used for overhead comparison, not to be tracked.
     fun compositionLocal_compose_nested_providers_10() = runBlockingTestWithFrameClock {
@@ -106,7 +98,6 @@ class CompositionLocalBenchmark : ComposeBenchmarkBase() {
         measureCompose { NestedProviders(10) { local.current } }
     }
 
-    @UiThreadTest
     @Test
     @Ignore // Only used for overhead comparison, not to be tracked.
     fun compositionLocal_compose_nested_providers_100() = runBlockingTestWithFrameClock {
@@ -114,7 +105,6 @@ class CompositionLocalBenchmark : ComposeBenchmarkBase() {
         measureCompose { NestedProviders(100) { local.current } }
     }
 
-    @UiThreadTest
     @Test
     @Ignore // Only used for overhead comparison, not to be tracked.
     fun compositionLocal_compose_nested_providers_1000() = runBlockingTestWithFrameClock {

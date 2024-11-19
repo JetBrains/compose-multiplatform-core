@@ -162,7 +162,6 @@ public class PdfViewer extends LoadingViewer {
      * After the document content is saved over the original in InkActivity, we set this bit to true
      * so we know to call when the new document content is loaded.
      */
-    private boolean mShouldRedrawOnDocumentLoaded = false;
     private Snackbar mSnackbar;
 
     private LayoutHandler mLayoutHandler;
@@ -644,10 +643,6 @@ public class PdfViewer extends LoadingViewer {
                             dismissPasswordDialog();
                             mLayoutHandler.maybeLayoutPages(1);
                             mSearchModel.setNumPages(numPages);
-                        }
-
-                        if (mShouldRedrawOnDocumentLoaded) {
-                            mShouldRedrawOnDocumentLoaded = false;
                         }
 
                         if (mIsAnnotationIntentResolvable) {

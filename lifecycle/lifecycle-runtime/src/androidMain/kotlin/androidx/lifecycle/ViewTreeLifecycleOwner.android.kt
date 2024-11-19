@@ -18,6 +18,7 @@
 package androidx.lifecycle
 
 import android.view.View
+import androidx.core.viewtree.getParentOrViewTreeDisjointParent
 import androidx.lifecycle.runtime.R
 
 /**
@@ -53,7 +54,7 @@ public fun View.findViewTreeLifecycleOwner(): LifecycleOwner? {
         if (lifecycleOwner != null) {
             return lifecycleOwner
         }
-        currentView = currentView.parent as? View
+        currentView = currentView.getParentOrViewTreeDisjointParent() as? View
     }
     return null
 }

@@ -45,7 +45,6 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
-import java.util.concurrent.Executors
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import org.junit.Assume.assumeTrue
@@ -115,12 +114,10 @@ class Camera2ExtensionsPreviewStabilizationTest(private val cameraId: String) {
             configs.getOutputSizes(SurfaceTexture::class.java).maxBy { it.width * it.height }
         val deferredPreviewFrame = CompletableDeferred<SurfaceTexture>()
 
-        val executorForGL = Executors.newSingleThreadExecutor()
         // Some OEM requires frames drain (updateTexImage being invoked) in SurfaceTexture,
         // otherwise it might cause still capture to fail.
         val surfaceTextureHolder =
             SurfaceTextureProvider.createAutoDrainingSurfaceTextureAsync(
-                    executorForGL,
                     previewSize.width,
                     previewSize.height,
                     {
@@ -128,9 +125,7 @@ class Camera2ExtensionsPreviewStabilizationTest(private val cameraId: String) {
                             deferredPreviewFrame.complete(it)
                         }
                     }
-                ) {
-                    executorForGL.shutdown()
-                }
+                )
                 .await()
         val previewSurface = Surface(surfaceTextureHolder.surfaceTexture)
 

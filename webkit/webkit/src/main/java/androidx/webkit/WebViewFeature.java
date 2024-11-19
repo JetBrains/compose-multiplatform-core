@@ -108,6 +108,9 @@ public class WebViewFeature {
             WEBVIEW_MEDIA_INTEGRITY_API_STATUS,
             MUTE_AUDIO,
             PROFILE_URL_PREFETCH,
+            WEB_AUTHENTICATION,
+            SPECULATIVE_LOADING,
+            BACK_FORWARD_CACHE,
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})

@@ -286,7 +286,7 @@ class PerfettoTraceProcessor {
          * @see PerfettoTraceProcessor
          * @see PerfettoTraceProcessor.Session
          */
-        fun query(@Language("sql") query: String): Sequence<Row> {
+        fun query(query: String): Sequence<Row> {
             inMemoryTrace("PerfettoTraceProcessor#query $query".take(127)) {
                 require(traceProcessor.perfettoHttpServer.isRunning()) {
                     "Perfetto trace_shell_process is not running."

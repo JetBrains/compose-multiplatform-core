@@ -127,7 +127,7 @@ class EntityCursorConverterWriterTest : BaseEntityParserTest() {
 
                     override fun createTypeSpecBuilder(): XTypeSpec.Builder {
                         getOrCreateFunction(EntityCursorConverterWriter(entity, false))
-                        return XTypeSpec.classBuilder(codeLanguage, className).applyToJavaPoet {
+                        return XTypeSpec.classBuilder(className).applyToJavaPoet {
                             addModifiers(Modifier.PUBLIC)
                         }
                     }

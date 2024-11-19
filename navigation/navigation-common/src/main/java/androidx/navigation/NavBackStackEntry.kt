@@ -44,6 +44,8 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import java.util.UUID
+import kotlin.reflect.KClass
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.serializer
 
 /**
@@ -295,8 +297,20 @@ private constructor(
  * @param [T] the entry's [NavDestination.route] as a [KClass]
  * @return A new instance of this entry's [NavDestination.route] as an object of type [T]
  */
-public inline fun <reified T> NavBackStackEntry.toRoute(): T {
+public inline fun <reified T> NavBackStackEntry.toRoute(): T = toRoute(T::class)
+
+/**
+ * Returns route as an object of type [T]
+ *
+ * Extrapolates arguments from [NavBackStackEntry.arguments] and recreates object [T]
+ *
+ * @param [route] the entry's [NavDestination.route] as a [KClass]
+ * @return A new instance of this entry's [NavDestination.route] as an object of type [T]
+ */
+@OptIn(InternalSerializationApi::class)
+@Suppress("UNCHECKED_CAST")
+public fun <T> NavBackStackEntry.toRoute(route: KClass<*>): T {
     val bundle = arguments ?: Bundle()
     val typeMap = destination.arguments.mapValues { it.value.type }
-    return serializer<T>().decodeArguments(bundle, typeMap)
+    return route.serializer().decodeArguments(bundle, typeMap) as T
 }

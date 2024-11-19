@@ -17,21 +17,26 @@
 package androidx.appsearch.localstorage;
 
 import static androidx.appsearch.app.AppSearchResult.RESULT_INVALID_ARGUMENT;
+import static androidx.appsearch.app.AppSearchResult.RESULT_OUT_OF_SPACE;
 import static androidx.appsearch.localstorage.util.PrefixUtil.addPrefixToDocument;
 import static androidx.appsearch.localstorage.util.PrefixUtil.createPrefix;
 import static androidx.appsearch.localstorage.util.PrefixUtil.removePrefixesFromDocument;
 import static androidx.appsearch.localstorage.visibilitystore.VisibilityStore.ANDROID_V_OVERLAY_DATABASE_NAME;
 import static androidx.appsearch.localstorage.visibilitystore.VisibilityStore.VISIBILITY_DATABASE_NAME;
 import static androidx.appsearch.localstorage.visibilitystore.VisibilityStore.VISIBILITY_PACKAGE_NAME;
+import static androidx.appsearch.testutil.AppSearchTestUtils.calculateDigest;
 import static androidx.appsearch.testutil.AppSearchTestUtils.createMockVisibilityChecker;
+import static androidx.appsearch.testutil.AppSearchTestUtils.generateRandomBytes;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
 
 import android.content.Context;
+import android.os.ParcelFileDescriptor;
 
 import androidx.annotation.NonNull;
+import androidx.appsearch.app.AppSearchBlobHandle;
 import androidx.appsearch.app.AppSearchResult;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.GenericDocument;
@@ -95,6 +100,9 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -117,18 +125,20 @@ public class AppSearchImplTest {
     private final CallerAccess mSelfCallerAccess = new CallerAccess(mContext.getPackageName());
 
     private AppSearchImpl mAppSearchImpl;
+    private AppSearchConfig mUnlimitedConfig = new AppSearchConfigImpl(
+            new UnlimitedLimitConfig(),
+            new LocalStorageIcingOptionsConfig()
+    );
 
     @Before
     public void setUp() throws Exception {
         mAppSearchDir = mTemporaryFolder.newFolder();
         mAppSearchImpl = AppSearchImpl.create(
                 mAppSearchDir,
-                new AppSearchConfigImpl(
-                        new UnlimitedLimitConfig(),
-                        new LocalStorageIcingOptionsConfig()
-                ),
+                mUnlimitedConfig,
                 /*initStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
     }
 
@@ -513,7 +523,10 @@ public class AppSearchImplTest {
         mAppSearchImpl = AppSearchImpl.create(
                 mAppSearchDir, new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                initStatsBuilder, /*visibilityChecker=*/ null, ALWAYS_OPTIMIZE);
+                initStatsBuilder,
+                /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
+                ALWAYS_OPTIMIZE);
 
         // Check recovery state
         InitializeStats initStats = initStatsBuilder.build();
@@ -746,7 +759,8 @@ public class AppSearchImplTest {
                         new LocalStorageIcingOptionsConfig()
                 ),
                 /*initStatsBuilder=*/ null,
-                mockVisibilityChecker, ALWAYS_OPTIMIZE
+                mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
+                ALWAYS_OPTIMIZE
         );
 
         // Insert package1 schema
@@ -921,7 +935,8 @@ public class AppSearchImplTest {
                         new LocalStorageIcingOptionsConfig()
                 ),
                 /*initStatsBuilder=*/ null,
-                mockVisibilityChecker, ALWAYS_OPTIMIZE
+                mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
+                ALWAYS_OPTIMIZE
         );
 
         AppSearchSchema.StringPropertyConfig personField =
@@ -2238,7 +2253,168 @@ public class AppSearchImplTest {
     }
 
     @Test
-    public void testClearPackageData() throws AppSearchException {
+    public void testWriteAndReadBlob() throws Exception {
+        mAppSearchImpl = AppSearchImpl.create(
+                mAppSearchDir,
+                new AppSearchConfigImpl(new UnlimitedLimitConfig(),
+                        new LocalStorageIcingOptionsConfig()),
+                /*initStatsBuilder=*/ null,
+                /*visibilityChecker=*/ null,
+                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
+                ALWAYS_OPTIMIZE);
+        byte[] data = generateRandomBytes(20 * 1024); // 20 KiB
+        byte[] digest = calculateDigest(data);
+        AppSearchBlobHandle handle = AppSearchBlobHandle.createWithSha256(
+                digest, "package", "db1", "ns");
+        try (ParcelFileDescriptor writePfd = mAppSearchImpl.openWriteBlob("package", "db1", handle);
+                OutputStream outputStream = new ParcelFileDescriptor
+                        .AutoCloseOutputStream(writePfd)) {
+            outputStream.write(data);
+            outputStream.flush();
+        }
+
+        // commit the change and read the blob.
+        mAppSearchImpl.commitBlob("package", "db1", handle);
+        byte[] readBytes = new byte[20 * 1024];
+        try (ParcelFileDescriptor readPfd =  mAppSearchImpl.openReadBlob("package", "db1", handle);
+                InputStream inputStream = new ParcelFileDescriptor.AutoCloseInputStream(readPfd)) {
+            inputStream.read(readBytes);
+        }
+        assertThat(readBytes).isEqualTo(data);
+    }
+
+    @Test
+    public void testOpenReadForWrite_notAllowed() throws Exception {
+        mAppSearchImpl = AppSearchImpl.create(
+                mAppSearchDir,
+                new AppSearchConfigImpl(new UnlimitedLimitConfig(),
+                        new LocalStorageIcingOptionsConfig()),
+                /*initStatsBuilder=*/ null,
+                /*visibilityChecker=*/ null,
+                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
+                ALWAYS_OPTIMIZE);
+        byte[] data = generateRandomBytes(20); // 20 Bytes
+        byte[] digest = calculateDigest(data);
+        AppSearchBlobHandle handle = AppSearchBlobHandle.createWithSha256(
+                digest, "package", "db1", "ns");
+        try (ParcelFileDescriptor writePfd = mAppSearchImpl.openWriteBlob("package", "db1", handle);
+                OutputStream outputStream = new ParcelFileDescriptor
+                        .AutoCloseOutputStream(writePfd)) {
+            outputStream.write(data);
+            outputStream.flush();
+        }
+
+        // commit the change and read the blob.
+        mAppSearchImpl.commitBlob("package", "db1", handle);
+
+        // Open output stream on read-only pfd.
+        assertThrows(IOException.class, () -> {
+            try (ParcelFileDescriptor readPfd =
+                         mAppSearchImpl.openReadBlob("package", "db1", handle);
+                    OutputStream outputStream = new ParcelFileDescriptor
+                            .AutoCloseOutputStream(readPfd)) {
+                outputStream.write(data);
+            }
+        });
+    }
+
+    @Test
+    public void testOpenWriteForRead_allowed() throws Exception {
+        mAppSearchImpl = AppSearchImpl.create(
+                mAppSearchDir,
+                new AppSearchConfigImpl(new UnlimitedLimitConfig(),
+                        new LocalStorageIcingOptionsConfig()),
+                /*initStatsBuilder=*/ null,
+                /*visibilityChecker=*/ null,
+                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
+                ALWAYS_OPTIMIZE);
+        byte[] data = generateRandomBytes(20); // 20 Bytes
+        byte[] digest = calculateDigest(data);
+        AppSearchBlobHandle handle = AppSearchBlobHandle.createWithSha256(
+                digest, "package", "db1", "ns");
+        // openWriteBlob returns read and write fd.
+        try (ParcelFileDescriptor writePfd = mAppSearchImpl.openWriteBlob("package", "db1", handle);
+                InputStream inputStream = new ParcelFileDescriptor
+                        .AutoCloseInputStream(writePfd)) {
+            inputStream.read(new byte[10]);
+        }
+    }
+
+    @Test
+    public void testRevokeFileDescriptor() throws Exception {
+        mAppSearchImpl = AppSearchImpl.create(
+                mAppSearchDir,
+                new AppSearchConfigImpl(new UnlimitedLimitConfig(),
+                        new LocalStorageIcingOptionsConfig()),
+                /*initStatsBuilder=*/ null,
+                /*visibilityChecker=*/ null,
+                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
+                ALWAYS_OPTIMIZE);
+        byte[] data = generateRandomBytes(20 * 1024); // 20 KiB
+        byte[] digest = calculateDigest(data);
+        AppSearchBlobHandle handle = AppSearchBlobHandle.createWithSha256(
+                digest, "package", "db1", "ns");
+        try (ParcelFileDescriptor writePfd =
+                     mAppSearchImpl.openWriteBlob("package", "db1", handle)) {
+            // Clear package data and all file descriptor to that package will be revoked.
+            mAppSearchImpl.clearPackageData("package");
+
+            assertThrows(IOException.class, () -> {
+                try (OutputStream outputStream = new ParcelFileDescriptor
+                        .AutoCloseOutputStream(writePfd)) {
+                    outputStream.write(data);
+                }
+            });
+        }
+
+        // reopen file descriptor could work.
+        try (ParcelFileDescriptor writePfd2 =
+                     mAppSearchImpl.openWriteBlob("package", "db1", handle)) {
+            try (OutputStream outputStream = new ParcelFileDescriptor
+                    .AutoCloseOutputStream(writePfd2)) {
+                outputStream.write(data);
+            }
+            // close the AppSearchImpl will revoke all sent fds.
+            mAppSearchImpl.close();
+            assertThrows(IOException.class, () -> {
+                try (OutputStream outputStream = new ParcelFileDescriptor
+                        .AutoCloseOutputStream(writePfd2)) {
+                    outputStream.write(data);
+                }
+            });
+        }
+    }
+
+    @Test
+    public void testInvalidBlobHandle() throws Exception {
+        mAppSearchImpl = AppSearchImpl.create(
+                mAppSearchDir,
+                new AppSearchConfigImpl(new UnlimitedLimitConfig(),
+                        new LocalStorageIcingOptionsConfig()),
+                /*initStatsBuilder=*/ null,
+                /*visibilityChecker=*/ null,
+                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
+                ALWAYS_OPTIMIZE);
+        byte[] data = generateRandomBytes(20 * 1024); // 20 KiB
+        byte[] digest = calculateDigest(data);
+        AppSearchBlobHandle handle = AppSearchBlobHandle.createWithSha256(
+                digest, "package", "db1", "ns");
+
+        AppSearchException e = assertThrows(AppSearchException.class,
+                () -> mAppSearchImpl.openWriteBlob("wrongPackageName", "db1", handle));
+        assertThat(e.getResultCode()).isEqualTo(RESULT_INVALID_ARGUMENT);
+        assertThat(e.getMessage()).contains("Blob package doesn't match calling package, "
+                + "calling package: wrongPackageName, blob package: package");
+
+        e = assertThrows(AppSearchException.class,
+                () -> mAppSearchImpl.openWriteBlob("package", "wrongDb", handle));
+        assertThat(e.getResultCode()).isEqualTo(RESULT_INVALID_ARGUMENT);
+        assertThat(e.getMessage()).contains("Blob database doesn't match calling database, "
+                + "calling database: wrongDb, blob database: db1");
+    }
+
+    @Test
+    public void testClearPackageData() throws Exception {
         List<SchemaTypeConfigProto> existingSchemas =
                 mAppSearchImpl.getSchemaProtoLocked().getTypesList();
         Map<String, Set<String>> existingDatabases = mAppSearchImpl.getPackageToDatabases();
@@ -2911,6 +3087,7 @@ public class AppSearchImplTest {
                 ),
                 /*initStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
         getResult = appSearchImpl2.getDocument("package", "database", "namespace1",
                 "id1",
@@ -2983,6 +3160,7 @@ public class AppSearchImplTest {
                 ),
                 /*initStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
         assertThrows(AppSearchException.class, () -> appSearchImpl2.getDocument("package",
                 "database",
@@ -3062,6 +3240,7 @@ public class AppSearchImplTest {
                 ),
                 /*initStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
         assertThrows(AppSearchException.class, () -> appSearchImpl2.getDocument("package",
                 "database",
@@ -3190,8 +3369,14 @@ public class AppSearchImplTest {
                     public int getMaxSuggestionCount() {
                         return Integer.MAX_VALUE;
                     }
+
+                    @Override
+                    public int getMaxOpenBlobCount() {
+                        return Integer.MAX_VALUE;
+                    }
                 }, new LocalStorageIcingOptionsConfig()),
                 /*initStatsBuilder=*/ null, /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -3274,8 +3459,14 @@ public class AppSearchImplTest {
                     public int getMaxSuggestionCount() {
                         return Integer.MAX_VALUE;
                     }
+
+                    @Override
+                    public int getMaxOpenBlobCount() {
+                        return Integer.MAX_VALUE;
+                    }
                 }, new LocalStorageIcingOptionsConfig()),
                 /*initStatsBuilder=*/ null, /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -3336,8 +3527,14 @@ public class AppSearchImplTest {
                     public int getMaxSuggestionCount() {
                         return Integer.MAX_VALUE;
                     }
+
+                    @Override
+                    public int getMaxOpenBlobCount() {
+                        return Integer.MAX_VALUE;
+                    }
                 }, new LocalStorageIcingOptionsConfig()),
                 /*initStatsBuilder=*/ null, /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
 
         // Make sure the limit is maintained
@@ -3378,8 +3575,14 @@ public class AppSearchImplTest {
                     public int getMaxSuggestionCount() {
                         return Integer.MAX_VALUE;
                     }
+
+                    @Override
+                    public int getMaxOpenBlobCount() {
+                        return Integer.MAX_VALUE;
+                    }
                 }, new LocalStorageIcingOptionsConfig()),
                 /*initStatsBuilder=*/ null, /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -3496,8 +3699,14 @@ public class AppSearchImplTest {
                     public int getMaxSuggestionCount() {
                         return Integer.MAX_VALUE;
                     }
+
+                    @Override
+                    public int getMaxOpenBlobCount() {
+                        return Integer.MAX_VALUE;
+                    }
                 }, new LocalStorageIcingOptionsConfig()),
                 /*initStatsBuilder=*/ null, /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -3597,8 +3806,14 @@ public class AppSearchImplTest {
                     public int getMaxSuggestionCount() {
                         return Integer.MAX_VALUE;
                     }
+
+                    @Override
+                    public int getMaxOpenBlobCount() {
+                        return Integer.MAX_VALUE;
+                    }
                 }, new LocalStorageIcingOptionsConfig()),
                 /*initStatsBuilder=*/ null, /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
 
         // package1 should still be out of space
@@ -3659,8 +3874,14 @@ public class AppSearchImplTest {
                     public int getMaxSuggestionCount() {
                         return Integer.MAX_VALUE;
                     }
+
+                    @Override
+                    public int getMaxOpenBlobCount() {
+                        return Integer.MAX_VALUE;
+                    }
                 }, new LocalStorageIcingOptionsConfig()),
                 /*initStatsBuilder=*/ null, /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -3817,8 +4038,14 @@ public class AppSearchImplTest {
                     public int getMaxSuggestionCount() {
                         return Integer.MAX_VALUE;
                     }
+
+                    @Override
+                    public int getMaxOpenBlobCount() {
+                        return Integer.MAX_VALUE;
+                    }
                 }, new LocalStorageIcingOptionsConfig()),
                 /*initStatsBuilder=*/ null, /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -3905,8 +4132,14 @@ public class AppSearchImplTest {
                     public int getMaxSuggestionCount() {
                         return Integer.MAX_VALUE;
                     }
+
+                    @Override
+                    public int getMaxOpenBlobCount() {
+                        return Integer.MAX_VALUE;
+                    }
                 }, new LocalStorageIcingOptionsConfig()),
                 /*initStatsBuilder=*/ null, /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -3967,8 +4200,14 @@ public class AppSearchImplTest {
                     public int getMaxSuggestionCount() {
                         return Integer.MAX_VALUE;
                     }
+
+                    @Override
+                    public int getMaxOpenBlobCount() {
+                        return Integer.MAX_VALUE;
+                    }
                 }, new LocalStorageIcingOptionsConfig()),
                 /*initStatsBuilder=*/ null, /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
 
         // Index id2. This should pass but only because we check for replacements.
@@ -4019,8 +4258,14 @@ public class AppSearchImplTest {
                     public int getMaxSuggestionCount() {
                         return 2;
                     }
+
+                    @Override
+                    public int getMaxOpenBlobCount() {
+                        return Integer.MAX_VALUE;
+                    }
                 }, new LocalStorageIcingOptionsConfig()),
                 /*initStatsBuilder=*/ null, /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
 
         AppSearchException e = assertThrows(AppSearchException.class, () ->
@@ -4060,8 +4305,14 @@ public class AppSearchImplTest {
                     public int getMaxSuggestionCount() {
                         return Integer.MAX_VALUE;
                     }
+
+                    @Override
+                    public int getMaxOpenBlobCount() {
+                        return Integer.MAX_VALUE;
+                    }
                 }, new LocalStorageIcingOptionsConfig()),
                 /*initStatsBuilder=*/ null, /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -4120,8 +4371,14 @@ public class AppSearchImplTest {
                     public int getMaxSuggestionCount() {
                         return Integer.MAX_VALUE;
                     }
+
+                    @Override
+                    public int getMaxOpenBlobCount() {
+                        return Integer.MAX_VALUE;
+                    }
                 }, new LocalStorageIcingOptionsConfig()),
                 /*initStatsBuilder=*/ null, /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
 
         // Insert schemas for thress packages
@@ -4236,8 +4493,14 @@ public class AppSearchImplTest {
                     public int getMaxSuggestionCount() {
                         return Integer.MAX_VALUE;
                     }
+
+                    @Override
+                    public int getMaxOpenBlobCount() {
+                        return Integer.MAX_VALUE;
+                    }
                 }, new LocalStorageIcingOptionsConfig()),
                 /*initStatsBuilder=*/ null, /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -4307,8 +4570,14 @@ public class AppSearchImplTest {
                     public int getMaxSuggestionCount() {
                         return Integer.MAX_VALUE;
                     }
+
+                    @Override
+                    public int getMaxOpenBlobCount() {
+                        return Integer.MAX_VALUE;
+                    }
                 }, new LocalStorageIcingOptionsConfig()),
                 /*initStatsBuilder=*/ null, /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -4424,8 +4693,14 @@ public class AppSearchImplTest {
                     public int getMaxSuggestionCount() {
                         return Integer.MAX_VALUE;
                     }
+
+                    @Override
+                    public int getMaxOpenBlobCount() {
+                        return Integer.MAX_VALUE;
+                    }
                 }, new LocalStorageIcingOptionsConfig()),
                 /*initStatsBuilder=*/ null, /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
 
         // Insert schema
@@ -4530,6 +4805,68 @@ public class AppSearchImplTest {
                 /*logger=*/ null);
     }
 
+    @Test
+    public void testLimitConfig_activeFds() throws Exception {
+        mAppSearchImpl.close();
+        File tempFolder = mTemporaryFolder.newFolder();
+        AppSearchConfig config = new AppSearchConfigImpl(new LimitConfig() {
+            @Override
+            public int getMaxDocumentSizeBytes() {
+                return Integer.MAX_VALUE;
+            }
+
+            @Override
+            public int getPerPackageDocumentCountLimit() {
+                return Integer.MAX_VALUE;
+            }
+
+            @Override
+            public int getDocumentCountLimitStartThreshold() {
+                return Integer.MAX_VALUE;
+            }
+
+            @Override
+            public int getMaxSuggestionCount() {
+                return Integer.MAX_VALUE;
+            }
+
+            @Override
+            public int getMaxOpenBlobCount() {
+                return 2;
+            }
+        }, new LocalStorageIcingOptionsConfig());
+        mAppSearchImpl = AppSearchImpl.create(
+                tempFolder,
+                config,
+                /*initStatsBuilder=*/ null, /*visibilityChecker=*/ null,
+                new JetpackRevocableFileDescriptorStore(config),
+                ALWAYS_OPTIMIZE);
+        // We could open only 2 fds per package.
+        byte[] data1 = generateRandomBytes(20 * 1024); // 20 KiB
+        byte[] digest1 = calculateDigest(data1);
+        AppSearchBlobHandle handle1 = AppSearchBlobHandle.createWithSha256(
+                digest1, "package", "db1", "ns");
+        mAppSearchImpl.openWriteBlob("package", "db1", handle1);
+
+        byte[] data2 = generateRandomBytes(20 * 1024); // 20 KiB
+        byte[] digest2 = calculateDigest(data2);
+        AppSearchBlobHandle handle2 = AppSearchBlobHandle.createWithSha256(
+                digest2, "package", "db1", "ns");
+        mAppSearchImpl.openWriteBlob("package", "db1", handle2);
+
+        // Open 3rd fd will fail.
+        byte[] data3 = generateRandomBytes(20 * 1024); // 20 KiB
+        byte[] digest3 = calculateDigest(data3);
+        AppSearchBlobHandle handle3 = AppSearchBlobHandle.createWithSha256(
+                digest3, "package", "db1", "ns");
+        AppSearchException e = assertThrows(AppSearchException.class,
+                () -> mAppSearchImpl.openWriteBlob("package", "db1", handle3));
+        assertThat(e.getResultCode()).isEqualTo(RESULT_OUT_OF_SPACE);
+        assertThat(e).hasMessageThat().contains(
+                "Package \"package\" exceeded limit of 2 opened file descriptors. "
+                        + "Some file descriptors must be closed to open additional ones.");
+    }
+
     /**
      * Ensure that it is okay to register the same observer for multiple packages and that removing
      * the observer for one package doesn't remove it for the other.
@@ -4620,8 +4957,8 @@ public class AppSearchImplTest {
                         new LocalStorageIcingOptionsConfig()
                 ),
                 /*initStatsBuilder=*/ null,
-                mockVisibilityChecker, ALWAYS_OPTIMIZE
-        );
+                mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
+                ALWAYS_OPTIMIZE);
 
         InternalSetSchemaResponse internalSetSchemaResponse = mAppSearchImpl.setSchema(
                 "package",
@@ -4672,8 +5009,8 @@ public class AppSearchImplTest {
                         new LocalStorageIcingOptionsConfig()
                 ),
                 /*initStatsBuilder=*/ null,
-                mockVisibilityChecker, ALWAYS_OPTIMIZE
-        );
+                mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
+                ALWAYS_OPTIMIZE);
 
         InternalSetSchemaResponse internalSetSchemaResponse = mAppSearchImpl.setSchema(
                 "package",
@@ -4722,8 +5059,8 @@ public class AppSearchImplTest {
                         new LocalStorageIcingOptionsConfig()
                 ),
                 /*initStatsBuilder=*/ null,
-                mockVisibilityChecker, ALWAYS_OPTIMIZE
-        );
+                mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
+                ALWAYS_OPTIMIZE);
 
         InternalSetSchemaResponse internalSetSchemaResponse = mAppSearchImpl.setSchema(
                 "package",
@@ -4786,8 +5123,8 @@ public class AppSearchImplTest {
                         new LocalStorageIcingOptionsConfig()
                 ),
                 /*initStatsBuilder=*/ null,
-                mockVisibilityChecker, ALWAYS_OPTIMIZE
-        );
+                mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
+                ALWAYS_OPTIMIZE);
 
         InternalSetSchemaResponse internalSetSchemaResponse = mAppSearchImpl.setSchema(
                 "package",
@@ -5149,6 +5486,7 @@ public class AppSearchImplTest {
                 ),
                 /*initStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
 
         String prefix = PrefixUtil.createPrefix("packageName", "databaseName");
@@ -5194,6 +5532,7 @@ public class AppSearchImplTest {
                 ),
                 /*initStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
 
         assertThat(mAppSearchImpl.mVisibilityStoreLocked.getVisibility(prefix + "Email")).isNull();
@@ -5225,8 +5564,8 @@ public class AppSearchImplTest {
                         new LocalStorageIcingOptionsConfig()
                 ),
                 /*initStatsBuilder=*/ null,
-                mockVisibilityChecker, ALWAYS_OPTIMIZE
-        );
+                mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
+                ALWAYS_OPTIMIZE);
 
         // Add a schema type that is not displayed by the system
         InternalSetSchemaResponse internalSetSchemaResponse = mAppSearchImpl.setSchema(
@@ -5334,8 +5673,8 @@ public class AppSearchImplTest {
                         new LocalStorageIcingOptionsConfig()
                 ),
                 /*initStatsBuilder=*/ null,
-                mockVisibilityChecker, ALWAYS_OPTIMIZE
-        );
+                mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
+                ALWAYS_OPTIMIZE);
 
         // Add two schema types that are not displayed by the system.
         InternalSetSchemaResponse internalSetSchemaResponse = mAppSearchImpl.setSchema(
@@ -5409,8 +5748,8 @@ public class AppSearchImplTest {
                         new LocalStorageIcingOptionsConfig()
                 ),
                 /*initStatsBuilder=*/ null,
-                publicAclMockChecker, ALWAYS_OPTIMIZE
-        );
+                publicAclMockChecker, /*revocableFileDescriptorStore=*/ null,
+                ALWAYS_OPTIMIZE);
 
         List<InternalVisibilityConfig> visibilityConfigs = ImmutableList.of(
                 new InternalVisibilityConfig.Builder("PublicTypeA")
@@ -5504,8 +5843,8 @@ public class AppSearchImplTest {
                         new LocalStorageIcingOptionsConfig()
                 ),
                 /*initStatsBuilder=*/ null,
-                publicAclMockChecker, ALWAYS_OPTIMIZE
-        );
+                publicAclMockChecker, /*revocableFileDescriptorStore=*/ null,
+                ALWAYS_OPTIMIZE);
 
         List<InternalVisibilityConfig> visibilityConfigs = ImmutableList.of(
                 new InternalVisibilityConfig.Builder("PublicTypeA")
@@ -5667,8 +6006,8 @@ public class AppSearchImplTest {
                         new LocalStorageIcingOptionsConfig()
                 ),
                 /*initStatsBuilder=*/null,
-                rejectChecker, ALWAYS_OPTIMIZE
-        );
+                rejectChecker, /*revocableFileDescriptorStore=*/ null,
+                ALWAYS_OPTIMIZE);
 
         // Add a schema type
         InternalSetSchemaResponse internalSetSchemaResponse = mAppSearchImpl.setSchema(
@@ -5781,8 +6120,8 @@ public class AppSearchImplTest {
                         new LocalStorageIcingOptionsConfig()
                 ),
                 /*initStatsBuilder=*/null,
-                visibilityChecker, ALWAYS_OPTIMIZE
-        );
+                visibilityChecker, /*revocableFileDescriptorStore=*/ null,
+                ALWAYS_OPTIMIZE);
 
         // Add a schema type
         InternalSetSchemaResponse internalSetSchemaResponse = mAppSearchImpl.setSchema(
@@ -5842,8 +6181,8 @@ public class AppSearchImplTest {
                         new LocalStorageIcingOptionsConfig()
                 ),
                 /*initStatsBuilder=*/null,
-                rejectChecker, ALWAYS_OPTIMIZE
-        );
+                rejectChecker, /*revocableFileDescriptorStore=*/ null,
+                ALWAYS_OPTIMIZE);
 
         // Add a schema type
         InternalSetSchemaResponse internalSetSchemaResponse = mAppSearchImpl.setSchema(
@@ -6184,8 +6523,8 @@ public class AppSearchImplTest {
                         new LocalStorageIcingOptionsConfig()
                 ),
                 /*initStatsBuilder=*/null,
-                visibilityChecker, ALWAYS_OPTIMIZE
-        );
+                visibilityChecker, /*revocableFileDescriptorStore=*/ null,
+                ALWAYS_OPTIMIZE);
 
         // Register an observer
         TestObserverCallback observer = new TestObserverCallback();
@@ -6349,8 +6688,8 @@ public class AppSearchImplTest {
                         new LocalStorageIcingOptionsConfig()
                 ),
                 /*initStatsBuilder=*/null,
-                visibilityChecker, ALWAYS_OPTIMIZE
-        );
+                visibilityChecker, /*revocableFileDescriptorStore=*/ null,
+                ALWAYS_OPTIMIZE);
 
         // Add a schema.
         InternalSetSchemaResponse internalSetSchemaResponse = mAppSearchImpl.setSchema(
@@ -6448,8 +6787,8 @@ public class AppSearchImplTest {
                         new LocalStorageIcingOptionsConfig()
                 ),
                 /*initStatsBuilder=*/null,
-                visibilityChecker, ALWAYS_OPTIMIZE
-        );
+                visibilityChecker, /*revocableFileDescriptorStore=*/ null,
+                ALWAYS_OPTIMIZE);
 
         // Add a schema.
         InternalSetSchemaResponse internalSetSchemaResponse = mAppSearchImpl.setSchema(
@@ -6549,8 +6888,8 @@ public class AppSearchImplTest {
                         new LocalStorageIcingOptionsConfig()
                 ),
                 /*initStatsBuilder=*/null,
-                visibilityChecker, ALWAYS_OPTIMIZE
-        );
+                visibilityChecker, /*revocableFileDescriptorStore=*/ null,
+                ALWAYS_OPTIMIZE);
 
         // Add a schema.
         InternalSetSchemaResponse internalSetSchemaResponse = mAppSearchImpl.setSchema(

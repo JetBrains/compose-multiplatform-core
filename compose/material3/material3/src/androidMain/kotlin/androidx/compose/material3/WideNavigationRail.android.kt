@@ -110,13 +110,9 @@ actual class ModalWideNavigationRailProperties(
     }
 }
 
-@Immutable
-@ExperimentalMaterial3ExpressiveApi
-actual object ModalWideNavigationRailDefaults {
-
-    /** Properties used to customize the window behavior of a [ModalWideNavigationRail]. */
-    actual val Properties = ModalWideNavigationRailProperties()
-}
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+internal actual fun createDefaultModalWideNavigationRailProperties() =
+    ModalWideNavigationRailProperties()
 
 // Fork of androidx.compose.ui.window.AndroidDialog_androidKt.Dialog
 // Added predictiveBackProgress param to pass into ModalWideNavigationRailDialogWrapper.

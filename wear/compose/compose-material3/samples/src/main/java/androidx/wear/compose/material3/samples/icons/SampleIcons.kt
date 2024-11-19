@@ -44,11 +44,11 @@ fun AvatarIcon() {
 }
 
 @Composable
-fun CheckIcon() {
+fun CheckIcon(modifier: Modifier = Modifier.size(ButtonDefaults.IconSize)) {
     Icon(
         painter = painterResource(R.drawable.ic_check_rounded),
         contentDescription = "Check",
-        modifier = Modifier.size(ButtonDefaults.IconSize)
+        modifier = modifier
     )
 }
 

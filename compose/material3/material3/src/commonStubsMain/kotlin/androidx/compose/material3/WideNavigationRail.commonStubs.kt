@@ -26,11 +26,9 @@ actual constructor(
     actual val shouldDismissOnBackPress: Boolean,
 )
 
-@Immutable
-@ExperimentalMaterial3ExpressiveApi
-actual object ModalWideNavigationRailDefaults {
-    actual val Properties: ModalWideNavigationRailProperties = implementedInJetBrainsFork()
-}
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+internal actual fun createDefaultModalWideNavigationRailProperties():
+    ModalWideNavigationRailProperties = implementedInJetBrainsFork()
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable

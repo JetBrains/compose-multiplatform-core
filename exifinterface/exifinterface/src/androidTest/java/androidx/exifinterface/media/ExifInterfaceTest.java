@@ -325,12 +325,13 @@ public class ExifInterfaceTest {
 
     @Test
     @LargeTest
-    public void testPngWithExif() throws Throwable {
+    public void testPngWithExifAndXmp() throws Throwable {
         File imageFile =
                 copyFromResourceToFile(
-                        R.raw.png_with_exif_byte_order_ii, "png_with_exif_byte_order_ii.png");
-        readFromFilesWithExif(imageFile, ExpectedAttributes.PNG_WITH_EXIF_BYTE_ORDER_II);
-        testWritingExif(imageFile, ExpectedAttributes.PNG_WITH_EXIF_BYTE_ORDER_II);
+                        R.raw.png_with_exif_and_xmp_byte_order_ii,
+                        "png_with_exif_and_xmp_byte_order_ii.png");
+        readFromFilesWithExif(imageFile, ExpectedAttributes.PNG_WITH_EXIF_AND_XMP_BYTE_ORDER_II);
+        testWritingExif(imageFile, ExpectedAttributes.PNG_WITH_EXIF_AND_XMP_BYTE_ORDER_II);
     }
 
     @Test

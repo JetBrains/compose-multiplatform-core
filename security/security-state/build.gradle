@@ -27,13 +27,13 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
+    alias(libs.plugins.kotlinSerialization)
 }
 
 dependencies {
     api("androidx.annotation:annotation:1.8.1")
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesCore)
-    implementation("com.google.code.gson:gson:2.10.1")
+    implementation(libs.kotlinSerializationJson)
     implementation("androidx.core:core:1.12.0")
     implementation("androidx.webkit:webkit:1.11.0")
 
@@ -56,9 +56,6 @@ dependencies {
 android {
     compileSdk 35
     namespace "androidx.security.state"
-    defaultConfig {
-        consumerProguardFiles 'proguard-rules.pro'
-    }
 }
 
 androidx {

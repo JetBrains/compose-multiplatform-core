@@ -51,7 +51,6 @@ class OpenDelegateWriter(val database: Database) {
 
     private fun createOpenDelegate(scope: CodeGenScope): XTypeSpec {
         return XTypeSpec.anonymousClassBuilder(
-                scope.language,
                 "%L, %S, %S",
                 database.version,
                 database.identityHash,
@@ -59,19 +58,19 @@ class OpenDelegateWriter(val database: Database) {
             )
             .apply {
                 superclass(RoomTypeNames.ROOM_OPEN_DELEGATE)
-                addFunction(createCreateAllTables(scope))
-                addFunction(createDropAllTables(scope.fork()))
-                addFunction(createOnCreate(scope.fork()))
-                addFunction(createOnOpen(scope.fork()))
-                addFunction(createOnPreMigrate(scope))
-                addFunction(createOnPostMigrate(scope))
+                addFunction(createCreateAllTables())
+                addFunction(createDropAllTables())
+                addFunction(createOnCreate())
+                addFunction(createOnOpen())
+                addFunction(createOnPreMigrate())
+                addFunction(createOnPostMigrate())
                 createValidateMigration(scope.fork()).forEach { addFunction(it) }
             }
             .build()
     }
 
     private fun createValidateMigration(scope: CodeGenScope): List<XFunSpec> {
-        val methodBuilders = mutableListOf<XFunSpec.Builder>()
+        val methodBuilders = mutableMapOf<String, XFunSpec.Builder>()
         val entities = ArrayDeque(database.entities)
         val views = ArrayDeque(database.views)
         while (!entities.isEmpty() || !views.isEmpty()) {
@@ -84,7 +83,6 @@ class OpenDelegateWriter(val database: Database) {
                 }
             val validateMethod =
                 XFunSpec.builder(
-                        language = scope.language,
                         name = methodName,
                         visibility =
                             if (isPrimaryMethod) {
@@ -96,7 +94,7 @@ class OpenDelegateWriter(val database: Database) {
                     )
                     .apply {
                         returns(RoomTypeNames.ROOM_OPEN_DELEGATE_VALIDATION_RESULT)
-                        addParameter(SQLiteDriverTypeNames.CONNECTION, connectionParamName)
+                        addParameter(connectionParamName, SQLiteDriverTypeNames.CONNECTION)
                         var statementCount = 0
                         while (!entities.isEmpty() && statementCount < VALIDATE_CHUNK_SIZE) {
                             val methodScope = scope.fork()
@@ -122,21 +120,20 @@ class OpenDelegateWriter(val database: Database) {
                             addStatement(
                                 "return %L",
                                 XCodeBlock.ofNewInstance(
-                                    scope.language,
                                     RoomTypeNames.ROOM_OPEN_DELEGATE_VALIDATION_RESULT,
                                     "true, null"
                                 )
                             )
                         }
                     }
-            methodBuilders.add(validateMethod)
+            methodBuilders.put(methodName, validateMethod)
         }
 
         // If there are secondary validate methods then add invocation statements to all of them
         // from the primary method.
         if (methodBuilders.size > 1) {
             val body =
-                XCodeBlock.builder(scope.language)
+                XCodeBlock.builder()
                     .apply {
                         val resultVar = scope.getTmpVar("_result")
                         addLocalVariable(
@@ -144,8 +141,7 @@ class OpenDelegateWriter(val database: Database) {
                             typeName = RoomTypeNames.ROOM_OPEN_DELEGATE_VALIDATION_RESULT,
                             isMutable = true
                         )
-                        methodBuilders.drop(1).forEach {
-                            val methodName = it.build().name
+                        methodBuilders.keys.drop(1).forEach { methodName ->
                             addStatement("%L = %L(%L)", resultVar, methodName, connectionParamName)
                             beginControlFlow("if (!%L.isValid)", resultVar).apply {
                                 addStatement("return %L", resultVar)
@@ -155,57 +151,52 @@ class OpenDelegateWriter(val database: Database) {
                         addStatement(
                             "return %L",
                             XCodeBlock.ofNewInstance(
-                                scope.language,
                                 RoomTypeNames.ROOM_OPEN_DELEGATE_VALIDATION_RESULT,
                                 "true, null"
                             )
                         )
                     }
                     .build()
-            methodBuilders.first().addCode(body)
+            methodBuilders.values.first().addCode(body)
         } else if (methodBuilders.size == 1) {
-            methodBuilders
+            methodBuilders.values
                 .first()
                 .addStatement(
                     "return %L",
                     XCodeBlock.ofNewInstance(
-                        scope.language,
                         RoomTypeNames.ROOM_OPEN_DELEGATE_VALIDATION_RESULT,
                         "true, null"
                     )
                 )
         }
-        return methodBuilders.map { it.build() }
+        return methodBuilders.values.map { it.build() }
     }
 
-    private fun createOnCreate(scope: CodeGenScope): XFunSpec {
+    private fun createOnCreate(): XFunSpec {
         return XFunSpec.builder(
-                language = scope.language,
                 name = "onCreate",
                 visibility = VisibilityModifier.PUBLIC,
                 isOverride = true
             )
-            .apply { addParameter(SQLiteDriverTypeNames.CONNECTION, connectionParamName) }
+            .apply { addParameter(connectionParamName, SQLiteDriverTypeNames.CONNECTION) }
             .build()
     }
 
-    private fun createOnOpen(scope: CodeGenScope): XFunSpec {
+    private fun createOnOpen(): XFunSpec {
         return XFunSpec.builder(
-                language = scope.language,
                 name = "onOpen",
                 visibility = VisibilityModifier.PUBLIC,
                 isOverride = true
             )
             .apply {
-                addParameter(SQLiteDriverTypeNames.CONNECTION, connectionParamName)
+                addParameter(connectionParamName, SQLiteDriverTypeNames.CONNECTION)
                 if (database.enableForeignKeys) {
                     addStatement(
                         "%L",
                         XCodeBlock.ofExtensionCall(
-                            language = scope.language,
                             memberName = SQLiteDriverMemberNames.CONNECTION_EXEC_SQL,
                             receiverVarName = connectionParamName,
-                            args = XCodeBlock.of(scope.language, "%S", "PRAGMA foreign_keys = ON")
+                            args = XCodeBlock.of("%S", "PRAGMA foreign_keys = ON")
                         )
                     )
                 }
@@ -214,23 +205,21 @@ class OpenDelegateWriter(val database: Database) {
             .build()
     }
 
-    private fun createCreateAllTables(scope: CodeGenScope): XFunSpec {
+    private fun createCreateAllTables(): XFunSpec {
         return XFunSpec.builder(
-                language = scope.language,
                 name = "createAllTables",
                 visibility = VisibilityModifier.PUBLIC,
                 isOverride = true
             )
             .apply {
-                addParameter(SQLiteDriverTypeNames.CONNECTION, connectionParamName)
+                addParameter(connectionParamName, SQLiteDriverTypeNames.CONNECTION)
                 database.bundle.buildCreateQueries().forEach { createQuery ->
                     addStatement(
                         "%L",
                         XCodeBlock.ofExtensionCall(
-                            language = scope.language,
                             memberName = SQLiteDriverMemberNames.CONNECTION_EXEC_SQL,
                             receiverVarName = connectionParamName,
-                            args = XCodeBlock.of(scope.language, "%S", createQuery)
+                            args = XCodeBlock.of("%S", createQuery)
                         )
                     )
                 }
@@ -238,23 +227,21 @@ class OpenDelegateWriter(val database: Database) {
             .build()
     }
 
-    private fun createDropAllTables(scope: CodeGenScope): XFunSpec {
+    private fun createDropAllTables(): XFunSpec {
         return XFunSpec.builder(
-                language = scope.language,
                 name = "dropAllTables",
                 visibility = VisibilityModifier.PUBLIC,
                 isOverride = true
             )
             .apply {
-                addParameter(SQLiteDriverTypeNames.CONNECTION, connectionParamName)
+                addParameter(connectionParamName, SQLiteDriverTypeNames.CONNECTION)
                 database.entities.forEach {
                     addStatement(
                         "%L",
                         XCodeBlock.ofExtensionCall(
-                            language = scope.language,
                             memberName = SQLiteDriverMemberNames.CONNECTION_EXEC_SQL,
                             receiverVarName = connectionParamName,
-                            args = XCodeBlock.of(scope.language, "%S", createDropTableQuery(it))
+                            args = XCodeBlock.of("%S", createDropTableQuery(it))
                         )
                     )
                 }
@@ -262,10 +249,9 @@ class OpenDelegateWriter(val database: Database) {
                     addStatement(
                         "%L",
                         XCodeBlock.ofExtensionCall(
-                            language = scope.language,
                             memberName = SQLiteDriverMemberNames.CONNECTION_EXEC_SQL,
                             receiverVarName = connectionParamName,
-                            args = XCodeBlock.of(scope.language, "%S", createDropViewQuery(it))
+                            args = XCodeBlock.of("%S", createDropViewQuery(it))
                         )
                     )
                 }
@@ -273,15 +259,14 @@ class OpenDelegateWriter(val database: Database) {
             .build()
     }
 
-    private fun createOnPreMigrate(scope: CodeGenScope): XFunSpec {
+    private fun createOnPreMigrate(): XFunSpec {
         return XFunSpec.builder(
-                language = scope.language,
                 name = "onPreMigrate",
                 visibility = VisibilityModifier.PUBLIC,
                 isOverride = true
             )
             .apply {
-                addParameter(SQLiteDriverTypeNames.CONNECTION, connectionParamName)
+                addParameter(connectionParamName, SQLiteDriverTypeNames.CONNECTION)
                 addStatement(
                     "%M(%L)",
                     RoomMemberNames.DB_UTIL_DROP_FTS_SYNC_TRIGGERS,
@@ -291,15 +276,14 @@ class OpenDelegateWriter(val database: Database) {
             .build()
     }
 
-    private fun createOnPostMigrate(scope: CodeGenScope): XFunSpec {
+    private fun createOnPostMigrate(): XFunSpec {
         return XFunSpec.builder(
-                language = scope.language,
                 name = "onPostMigrate",
                 visibility = VisibilityModifier.PUBLIC,
                 isOverride = true
             )
             .apply {
-                addParameter(SQLiteDriverTypeNames.CONNECTION, connectionParamName)
+                addParameter(connectionParamName, SQLiteDriverTypeNames.CONNECTION)
                 database.entities
                     .filterIsInstance(FtsEntity::class.java)
                     .filter { it.ftsOptions.contentEntity != null }
@@ -308,10 +292,9 @@ class OpenDelegateWriter(val database: Database) {
                         addStatement(
                             "%L",
                             XCodeBlock.ofExtensionCall(
-                                language = scope.language,
                                 memberName = SQLiteDriverMemberNames.CONNECTION_EXEC_SQL,
                                 receiverVarName = connectionParamName,
-                                args = XCodeBlock.of(scope.language, "%S", syncTriggerQuery)
+                                args = XCodeBlock.of("%S", syncTriggerQuery)
                             )
                         )
                     }

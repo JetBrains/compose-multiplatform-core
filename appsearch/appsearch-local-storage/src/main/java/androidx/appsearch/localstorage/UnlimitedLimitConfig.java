@@ -44,4 +44,9 @@ public class UnlimitedLimitConfig implements LimitConfig {
     public int getMaxSuggestionCount() {
         return Integer.MAX_VALUE;
     }
+
+    @Override
+    public int getMaxOpenBlobCount() {
+        return Integer.MAX_VALUE;
+    }
 }

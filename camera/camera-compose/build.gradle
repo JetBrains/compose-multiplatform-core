@@ -65,6 +65,7 @@ android {
 androidx {
     name = "Camera Compose"
     type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    samples(project(":camera:camera-compose:camera-compose-samples"))
     inceptionYear = "2024"
     description = "Jetpack Compose tools for users of the Jetpack Camera camera-core library"
 }

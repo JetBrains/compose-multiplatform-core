@@ -33,10 +33,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.wear.compose.foundation.lazy.AutoCenteringParams
@@ -59,12 +59,14 @@ class ScrollIndicatorTest {
     private var itemSizeDp: Dp = Dp.Infinity
     private var itemSpacingPx = 6
     private var itemSpacingDp: Dp = Dp.Infinity
+    private var viewportSizeDp = Dp.Infinity
 
     @Before
     fun before() {
         with(rule.density) {
             itemSizeDp = itemSizePx.toDp()
             itemSpacingDp = itemSpacingPx.toDp()
+            viewportSizeDp = itemSizeDp * 3f + itemSpacingDp * 2f
         }
     }
 
@@ -115,11 +117,28 @@ class ScrollIndicatorTest {
 
     @Test
     fun scalingLazyColumnStateAdapter_mediumContent_withContentPadding() {
+        val itemsCount = 6
+        val contentPadding = itemSizeDp + itemSpacingDp
+
+        // We can get an approximate indicator size by dividing viewPort size by the length of all
+        // items - including visible (top) content padding.
+        val expectedIndicatorSize =
+            viewportSizeDp /
+                (itemSizeDp * itemsCount + itemSpacingDp * (itemsCount - 1) + contentPadding)
+
         verifySlcPositionAndSize(
-            expectedIndicatorPosition = 0f,
-            expectedIndicatorSize = 0.5f,
-            itemsCount = 6,
-            contentPaddingPx = itemSizePx + itemSpacingPx
+            expectedIndicatorPosition = {
+                // As we centered the list at the 1st item and added a contentPadding - we
+                // expect indicator value to be larger than 0.
+                Truth.assertThat(it).isAtLeast(0.1f)
+            },
+            expectedIndicatorSize = {
+                Truth.assertThat(it).isWithin(0.05f).of(expectedIndicatorSize)
+            },
+            autoCentering = null,
+            initialCenterItemIndex = 1,
+            itemsCount = itemsCount,
+            contentPaddingDp = contentPadding
         )
     }
 
@@ -140,7 +159,19 @@ class ScrollIndicatorTest {
 
     @Test
     fun scalingLazyColumnStateAdapter_shortContent_scrolled() {
-        verifySlcScrollToCenter(expectedIndicatorSize = 0.75f, itemsCount = 4)
+        val itemsCount = 4
+
+        // By default in this test we use SLC with AutoCentering at 0th item. Last item will also be
+        // centered. Knowing that, the size of the screen and size of the item, we can say that the
+        // top and bottom paddings should be equal to itemSizeDp + itemSpacingDp.
+        val autoCenteringPadding = itemSizeDp + itemSpacingDp
+        // We can get an approximate indicator size by dividing viewPort size by the length of all
+        // items - including visible (top) auto centering padding.
+        val expectedIndicatorSize =
+            viewportSizeDp /
+                (itemSizeDp * itemsCount + itemSpacingDp * (itemsCount - 1) + autoCenteringPadding)
+
+        verifySlcScrollToCenter(expectedIndicatorSize = expectedIndicatorSize, itemsCount = 4)
     }
 
     @Test
@@ -302,11 +333,14 @@ class ScrollIndicatorTest {
 
     private fun verifySlcScrollToCenter(expectedIndicatorSize: Float, itemsCount: Int) {
         verifySlcPositionAndSize(
-            expectedIndicatorPosition = 0.5f,
-            expectedIndicatorSize = expectedIndicatorSize,
-            // Scrolling by half of the list height, minus original central position of the list,
-            // which is 1.5th item.
-            scrollByItems = itemsCount / 2f - 1.5f,
+            expectedIndicatorPosition = { Truth.assertThat(it).isWithin(0.05f).of(0.5f) },
+            expectedIndicatorSize = {
+                Truth.assertThat(it).isWithin(0.05f).of(expectedIndicatorSize)
+            },
+            initialCenterItemIndex = 0,
+            // Scrolling by half of the total list height, minus original central position of the
+            // list, which is 0.5th item.
+            scrollByItems = itemsCount / 2f - 0.5f,
             itemsCount = itemsCount
         )
     }
@@ -314,27 +348,46 @@ class ScrollIndicatorTest {
     private fun verifySlcPositionAndSize(
         expectedIndicatorPosition: Float,
         expectedIndicatorSize: Float,
+        reverseLayout: Boolean = false,
+        itemsCount: Int = 0,
+    ) {
+        verifySlcPositionAndSize(
+            expectedIndicatorPosition = {
+                Truth.assertThat(it).isWithin(0.05f).of(expectedIndicatorPosition)
+            },
+            expectedIndicatorSize = {
+                Truth.assertThat(it).isWithin(0.05f).of(expectedIndicatorSize)
+            },
+            reverseLayout = reverseLayout,
+            itemsCount = itemsCount
+        )
+    }
+
+    private fun verifySlcPositionAndSize(
+        expectedIndicatorPosition: (actual: Float) -> Unit,
+        expectedIndicatorSize: (actual: Float) -> Unit,
         verticalArrangement: Arrangement.Vertical =
             Arrangement.spacedBy(space = itemSpacingDp, alignment = Alignment.Bottom),
         reverseLayout: Boolean = false,
-        autoCentering: AutoCenteringParams? = AutoCenteringParams(),
-        contentPaddingPx: Int = 0,
+        initialCenterItemIndex: Int = 1,
+        autoCentering: AutoCenteringParams? =
+            AutoCenteringParams(itemIndex = initialCenterItemIndex),
+        contentPaddingDp: Dp = 0.dp,
         scrollByItems: Float = 0f,
         itemsCount: Int = 0,
     ) {
         lateinit var state: ScalingLazyListState
         lateinit var indicatorState: IndicatorState
         rule.setContent {
-            state = rememberScalingLazyListState()
+            state = rememberScalingLazyListState(initialCenterItemIndex)
             indicatorState = ScalingLazyColumnStateAdapter(state)
             ScalingLazyColumn(
                 state = state,
                 verticalArrangement = verticalArrangement,
                 reverseLayout = reverseLayout,
-                modifier = Modifier.requiredSize(itemSizeDp * 3f + itemSpacingDp * 2f),
+                modifier = Modifier.requiredSize(viewportSizeDp),
                 autoCentering = autoCentering,
-                contentPadding =
-                    with(LocalDensity.current) { PaddingValues(contentPaddingPx.toDp()) }
+                contentPadding = PaddingValues(contentPaddingDp)
             ) {
                 items(itemsCount) { Box(Modifier.requiredSize(itemSizeDp).background(Color.Red)) }
             }
@@ -349,10 +402,8 @@ class ScrollIndicatorTest {
         }
 
         rule.runOnIdle {
-            Truth.assertThat(indicatorState.positionFraction)
-                .isWithin(0.05f)
-                .of(expectedIndicatorPosition)
-            Truth.assertThat(indicatorState.sizeFraction).isWithin(0.05f).of(expectedIndicatorSize)
+            expectedIndicatorPosition(indicatorState.positionFraction)
+            expectedIndicatorSize(indicatorState.sizeFraction)
         }
     }
 
@@ -385,7 +436,7 @@ class ScrollIndicatorTest {
                 state = state,
                 verticalArrangement = verticalArrangement,
                 reverseLayout = reverseLayout,
-                modifier = Modifier.requiredSize(itemSizeDp * 3f + itemSpacingDp * 2f),
+                modifier = Modifier.requiredSize(viewportSizeDp),
             ) {
                 items(itemsCount) {
                     Box(Modifier.requiredSize(itemSizeDp).background(Color.Red)) { Text("$it") }
@@ -436,9 +487,7 @@ class ScrollIndicatorTest {
             state = rememberScrollState()
             indicatorState = ScrollStateAdapter(state) { viewPortSize }
             Box(
-                modifier =
-                    Modifier.onSizeChanged { viewPortSize = it }
-                        .requiredSize(itemSizeDp * 3f + itemSpacingDp * 2f)
+                modifier = Modifier.onSizeChanged { viewPortSize = it }.requiredSize(viewportSizeDp)
             ) {
                 Column(
                     verticalArrangement = verticalArrangement,
@@ -483,7 +532,7 @@ class ScrollIndicatorTest {
             LazyColumn(
                 state = state,
                 verticalArrangement = verticalArrangement,
-                modifier = Modifier.requiredSize(itemSizeDp * 3f + itemSpacingDp * 2f),
+                modifier = Modifier.requiredSize(viewportSizeDp),
             ) {
                 items(itemsCount) {
                     Box(Modifier.requiredSize(itemSizeDp).background(Color.Red)) { Text("$it") }

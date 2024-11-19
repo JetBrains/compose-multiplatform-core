@@ -47,9 +47,9 @@ class EntityCursorConverterWriter(private val entity: Entity, private val userDr
         builder.apply {
             val cursorParamName = if (userDriverApi) "statement" else "cursor"
             if (userDriverApi) {
-                addParameter(SQLiteDriverTypeNames.STATEMENT, cursorParamName)
+                addParameter(cursorParamName, SQLiteDriverTypeNames.STATEMENT)
             } else {
-                addParameter(AndroidTypeNames.CURSOR, cursorParamName)
+                addParameter(cursorParamName, AndroidTypeNames.CURSOR)
             }
             returns(entity.typeName)
             addCode(buildConvertMethodBody(writer, cursorParamName))
@@ -78,7 +78,6 @@ class EntityCursorConverterWriter(private val entity: Entity, private val userDr
                         typeName = XTypeName.PRIMITIVE_INT,
                         assignExpr =
                             XCodeBlock.of(
-                                language,
                                 "%M(%N, %S)",
                                 packageMember,
                                 cursorParamName,

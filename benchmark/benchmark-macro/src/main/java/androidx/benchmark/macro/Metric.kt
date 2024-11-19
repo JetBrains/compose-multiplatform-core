@@ -77,12 +77,9 @@ sealed class Metric {
         init {
             val expectedArtMainlineVersion = expectedArtMainlineVersion(apiLevel)
             if (expectedArtMainlineVersion != null) {
+                // require exact match
                 require(artMainlineVersion == expectedArtMainlineVersion) {
                     "For API level $apiLevel, expected artMainlineVersion to be $expectedArtMainlineVersion, observed $artMainlineVersion"
-                }
-            } else if (artMainlineVersion != null) {
-                require(artMainlineVersion > 1L) {
-                    "For API level $apiLevel, expected artMainlineVersion to be > 1, observed $artMainlineVersion"
                 }
             }
         }
@@ -92,6 +89,8 @@ sealed class Metric {
                 when {
                     apiLevel == 30 -> 1L
                     apiLevel < 30 -> -1
+                    // can't reason about other levels, since low ram go devices
+                    // may not have mainline updates enabled at all, e.g. wembley
                     else -> null
                 }
 
@@ -638,15 +637,15 @@ constructor(
 /**
  * Captures metrics about ART method/class compilation and initialization.
  *
- * JIT Compilation, Class Verification, and (on supported devices) Class Initialization.
+ * JIT Compilation, Class Verification, and (on supported devices) Class Loading.
  *
  * For more information on how ART compilation works, see
  * [ART Runtime docs](https://source.android.com/docs/core/runtime/configure).
  *
  * ## JIT Compilation
- * As interpreted (uncompiled) dex code from your APK is run, methods will be Just-In-Time (JIT)
- * compiled, and this compilation is traced by ART. This does not apply to code AOT compiled either
- * from Baseline Profiles, Warmup Profiles, or Full AOT.
+ * As interpreted (uncompiled) dex code from the APK is run, some methods will be Just-In-Time (JIT)
+ * compiled, and this compilation is traced by ART. This does not apply to methods AOT compiled
+ * either from Baseline Profiles, Warmup Profiles, or Full AOT.
  *
  * The number of traces and total duration (reported as `artJitCount` and `artJitSumMs`) indicate
  * how many uncompiled methods were considered hot by the runtime, and were JITted during
@@ -655,38 +654,45 @@ constructor(
  * Note that framework code on the system image that is not AOT compiled on the system image may
  * also be JITted, and will also show up in this metric. If you see this metric reporting non-zero
  * values when compiled with [CompilationMode.Full] or [CompilationMode.Partial], this may be the
- * reason. See also "Class Verification" below.
+ * reason.
  *
- * ## Class Initialization
- * Class Initialization tracing requires either API 35, or API 31+ with ART mainline version >=
+ * Some methods can't be AOTed or JIT compiled. Generally these are either methods too large for the
+ * Android runtime compiler, or due to a malformed class definition.
+ *
+ * ## Class Loading
+ * Class Loading tracing requires either API 35, or API 31+ with ART mainline version >=
  * `341511000`. If a device doesn't support these tracepoints, the measurements will not be reported
  * in Studio UI or in JSON results. You can check your device's ART mainline version with:
  * ```
  * adb shell cmd package list packages --show-versioncode --apex-only art
  * ```
  *
- * Classes must be initialized by ART in order to be used at runtime. In [CompilationMode.None]
- * (with `warmupRuntimeImageEnabled=false`) and [CompilationMode.Full], this is deferred until
- * runtime, and the cost of this can significantly slow down scenarios where code is run for the
- * first time, such as startup. In [CompilationMode.Partial], this is done at compile time if the
- * class is `trivial` (that is, has no static initializers).
+ * Classes must be loaded by ART in order to be used at runtime. In [CompilationMode.None] and
+ * [CompilationMode.Full], this is deferred until runtime, and the cost of this can significantly
+ * slow down scenarios where code is run for the first time, such as startup.
  *
- * The number of traces and total duration (reported as `artClassInitCount` and `artClassInitSumMs`)
- * indicate how many classes were initialized during measurement, at runtime, without
- * pre-initialization at compile time (or in the case of `CompilationMode.None(true), a previous app
- * launch)`.
+ * In `CompilationMode.Partial(warmupIterations=...)` classes captured in the warmup profile (used
+ * during the warmup iterations) are persisted into the `.art` file at compile time to allow them to
+ * be preloaded during app start, before app code begins to execute. If a class is preloaded by the
+ * runtime, it will not appear in traces.
+ *
+ * Even if a class is captured in the warmup profile, it will not be persisted at compile time if
+ * any of the superclasses are not in the app's profile (extremely unlikely) or the Boot Image
+ * profile (for Boot Image classes).
+ *
+ * The number of traces and total duration (reported as `artClassLoadCount` and `artClassLoadSumMs`)
+ * indicate how many classes were loaded during measurement, at runtime, without preloading at
+ * compile time.
  *
  * These tracepoints are slices of the form `Lcom/example/MyClassName;` for a class named
  * `com.example.MyClassName`.
  *
- * Even using `CompilationMode.Partial(warmupIterations=...)`, this number will often be non-zero,
- * even if every class is captured in the profile. This can be caused by a static initializer in the
- * class, preventing it from being compile-time initialized.
+ * Class loading is not affected by class verification.
  *
  * ## Class Verification
- *
- * Before initialization, classes must be verified by the runtime. Typically all classes in a
- * release APK are verified at install time, regardless of [CompilationMode].
+ * Most usages of a class require classes to be verified by the runtime (some usage only require
+ * loading). Typically all classes in a release APK are verified at install time, regardless of
+ * [CompilationMode].
  *
  * The number of traces and total duration (reported as `artVerifyClass` and `artVerifyClassSumMs`)
  * indicate how many classes were verified during measurement, at runtime.
@@ -695,14 +701,13 @@ constructor(
  * 1) If install-time verification fails for a class, it will remain unverified, and be verified at
  *    runtime.
  * 2) Debuggable=true apps are not verified at install time, to save on iteration speed at the cost
- *    of runtime performance. This results in runtime verification of each class as its loaded which
- *    is the source of much of the slowdown between a debug app and a release app (assuming you're
- *    not using a compile-time optimizing dexer, like R8). This is only relevant in macrobenchmark
- *    if suppressing warnings about measuring debug app performance.
+ *    of runtime performance. This results in runtime verification of each class as it's loaded
+ *    which is the source of much of the slowdown between a debug app and a release app. As
+ *    Macrobenchmark treats `debuggable=true` as a measurement error, this won't be the case for
+ *    `ArtMetric` measurements unless you suppress that error.
  *
- * Class Verification at runtime prevents both install-time class initialization, and install-time
- * method compilation. If you see JIT from classes in your apk despite using [CompilationMode.Full],
- * install-time verification failures could be the cause, and would show up in this metric.
+ * Some classes will be verified at runtime rather than install time due to limitations in the
+ * compiler and runtime or due to being malformed.
  */
 @RequiresApi(24)
 class ArtMetric : Metric() {
@@ -717,14 +722,14 @@ class ArtMetric : Metric() {
                 .querySlices("VerifyClass %", packageName = captureInfo.targetPackageName)
                 .asMeasurements("artVerifyClass") +
             if (
-                DeviceInfo.isClassInitTracingAvailable(
+                DeviceInfo.isClassLoadTracingAvailable(
                     targetApiLevel = captureInfo.apiLevel,
                     targetArtMainlineVersion = captureInfo.artMainlineVersion
                 )
             ) {
                 traceSession
-                    .querySlices("L%;", packageName = captureInfo.targetPackageName)
-                    .asMeasurements("artClassInit")
+                    .querySlices("L%/%;", packageName = captureInfo.targetPackageName)
+                    .asMeasurements("artClassLoad")
             } else emptyList()
     }
 

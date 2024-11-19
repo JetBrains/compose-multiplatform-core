@@ -461,28 +461,28 @@ class RectListTest {
         // ====
 
         // just touches top left corner
-        assertTrue(rectIntersectsRect(src, 1, 1, 10, 10))
+        assertFalse(rectIntersectsRect(src, 1, 1, 10, 10))
 
         // just touches top right corner
-        assertTrue(rectIntersectsRect(src, 20, 1, 30, 10))
+        assertFalse(rectIntersectsRect(src, 20, 1, 30, 10))
 
         // just touches bottom right corner
-        assertTrue(rectIntersectsRect(src, 20, 20, 30, 30))
+        assertFalse(rectIntersectsRect(src, 20, 20, 30, 30))
 
         // just touches bottom left corner
-        assertTrue(rectIntersectsRect(src, 1, 20, 10, 30))
+        assertFalse(rectIntersectsRect(src, 1, 20, 10, 30))
 
         // left side is touching but not overlapping
-        assertTrue(rectIntersectsRect(src, 1, 10, 10, 20))
+        assertFalse(rectIntersectsRect(src, 1, 10, 10, 20))
 
         // right side is touching but not overlapping
-        assertTrue(rectIntersectsRect(src, 20, 10, 30, 20))
+        assertFalse(rectIntersectsRect(src, 20, 10, 30, 20))
 
         // top side is touching but not overlapping
-        assertTrue(rectIntersectsRect(src, 10, 1, 20, 10))
+        assertFalse(rectIntersectsRect(src, 10, 1, 20, 10))
 
         // bottom side is touching but not overlapping
-        assertTrue(rectIntersectsRect(src, 10, 20, 20, 30))
+        assertFalse(rectIntersectsRect(src, 10, 20, 20, 30))
 
         // Clear Intersection
         // ===

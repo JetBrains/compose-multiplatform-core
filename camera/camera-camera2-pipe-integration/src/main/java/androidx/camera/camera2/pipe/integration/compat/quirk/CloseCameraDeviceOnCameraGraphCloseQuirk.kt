@@ -21,13 +21,13 @@ import android.os.Build
 import androidx.camera.core.impl.Quirk
 
 /**
- * Quirk needed on devices where not closing the camera device before creating a new capture session
- * can lead to undesirable behaviors, such as native camera HAL crashes. On Exynos7870 platforms for
- * example, once their 3A pipeline times out, recreating a capture session has a high chance of
- * triggering use-after-free crashes.
+ * Quirk needed on devices where not closing the camera device can lead to undesirable behaviors,
+ * such as switching to a new session without closing the camera device may cause native camera HAL
+ * crashes, or the app getting "frozen" while CameraPipe awaits on a 1s cooldown to finally close
+ * the camera device.
  *
  * QuirkSummary
- * - Bug Id: 282871038
+ * - Bug Id: 282871038, 369300443
  * - Description: Instructs CameraPipe to close the camera device before creating a new capture
  *   session to avoid undesirable behaviors
  *
@@ -38,7 +38,21 @@ public class CloseCameraDeviceOnCameraGraphCloseQuirk : Quirk {
     public companion object {
         @JvmStatic
         public fun isEnabled(): Boolean {
-            return Build.HARDWARE == "samsungexynos7870"
+            if (Build.HARDWARE == "samsungexynos7870") {
+                // On Exynos7870 platforms, when their 3A pipeline times out, recreating a capture
+                // session has a high chance of triggering use-after-free crashes. Closing the
+                // camera device helps reduce the likelihood of this happening.
+                return true
+            } else if (
+                Build.VERSION.SDK_INT in Build.VERSION_CODES.R..Build.VERSION_CODES.TIRAMISU &&
+                    (Device.isOppoDevice() || Device.isOnePlusDevice() || Device.isRealmeDevice())
+            ) {
+                // On Oppo-family devices from Android 11 to Android 13, a process called
+                // OplusHansManager actively "freezes" app processes, which means we cannot delay
+                // closing the camera device for any amount of time.
+                return true
+            }
+            return false
         }
     }
 }

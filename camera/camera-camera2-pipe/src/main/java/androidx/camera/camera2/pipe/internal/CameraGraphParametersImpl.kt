@@ -55,6 +55,7 @@ internal constructor(
         synchronized(lock) { parameters[key] as T }
 
     public override operator fun <T : Any> set(key: CaptureRequest.Key<T>, value: T?) {
+
         setAll(mapOf(key to value))
     }
 
@@ -157,9 +158,10 @@ internal constructor(
     }
 
     private fun applyUpdate(update: Boolean) {
+        val unappliedParameters = fetchUpdatedParameters() ?: return
         if (update) {
             sessionLock.withTokenIn(graphScope) {
-                // TODO(amycao): b/354899273 Wire CameraGraphParameters to CameraGraph
+                graphProcessor.updateParameters(unappliedParameters)
             }
         }
     }

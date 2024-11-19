@@ -316,19 +316,11 @@ class CaptureNodeTest {
 
     @Test
     fun transformWithPostviewSizeAndYuv() {
-        // Arrange: set the postviewSize to the CaptureNode.In
-        val postviewSize = Size(640, 480)
+        // Arrange: set the postview settings to the CaptureNode.In
+        val postviewSettings = PostviewSettings.create(Size(640, 480), YUV_420_888)
 
         val input =
-            CaptureNode.In.of(
-                Size(10, 10),
-                JPEG,
-                listOf(JPEG),
-                false,
-                null,
-                postviewSize,
-                YUV_420_888
-            )
+            CaptureNode.In.of(Size(10, 10), JPEG, listOf(JPEG), false, null, postviewSettings)
 
         // Act: transform.
         val node = CaptureNode()
@@ -336,18 +328,18 @@ class CaptureNodeTest {
 
         // Assert: postview surface is created
         assertThat(input.postviewSurface).isNotNull()
-        assertThat(input.postviewSurface!!.prescribedSize).isEqualTo(postviewSize)
+        assertThat(input.postviewSurface!!.prescribedSize).isEqualTo(postviewSettings.resolution)
         assertThat(input.postviewSurface!!.prescribedStreamFormat).isEqualTo(YUV_420_888)
         node.release()
     }
 
     @Test
     fun transformWithPostviewSizeAndJpeg() {
-        // Arrange: set the postviewSize to the CaptureNode.In
-        val postviewSize = Size(640, 480)
+        // Arrange: set the postview settings to the CaptureNode.In
+        val postviewSettings = PostviewSettings.create(Size(640, 480), JPEG)
 
         val input =
-            CaptureNode.In.of(Size(10, 10), JPEG, listOf(JPEG), false, null, postviewSize, JPEG)
+            CaptureNode.In.of(Size(10, 10), JPEG, listOf(JPEG), false, null, postviewSettings)
 
         // Act: transform.
         val node = CaptureNode()
@@ -355,7 +347,7 @@ class CaptureNodeTest {
 
         // Assert: postview surface is created
         assertThat(input.postviewSurface).isNotNull()
-        assertThat(input.postviewSurface!!.prescribedSize).isEqualTo(postviewSize)
+        assertThat(input.postviewSurface!!.prescribedSize).isEqualTo(postviewSettings.resolution)
         assertThat(input.postviewSurface!!.prescribedStreamFormat).isEqualTo(JPEG)
         node.release()
     }

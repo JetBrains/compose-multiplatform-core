@@ -20,9 +20,17 @@
 
 package androidx.savedstate
 
+import android.os.IBinder
 import android.os.Parcelable
+import android.util.Size
+import android.util.SizeF
+import android.util.SparseArray
 import androidx.core.os.BundleCompat.getParcelable
+import androidx.core.os.BundleCompat.getParcelableArray
 import androidx.core.os.BundleCompat.getParcelableArrayList
+import androidx.core.os.BundleCompat.getSerializable
+import androidx.core.os.BundleCompat.getSparseParcelableArray
+import java.io.Serializable
 
 @JvmInline
 actual value class SavedStateReader
@@ -30,6 +38,33 @@ actual value class SavedStateReader
 internal actual constructor(
     @PublishedApi internal actual val source: SavedState,
 ) {
+
+    /**
+     * Retrieves an [IBinder] object associated with the specified key.
+     *
+     * @param key The key to retrieve the value for.
+     * @return The value associated with the [key].
+     * @throws IllegalStateException If the key is not found.
+     */
+    inline fun getBinder(key: String): IBinder {
+        if (key !in this) keyNotFoundError(key)
+        return source.getBinder(key) ?: valueNotFoundError(key)
+    }
+
+    /**
+     * Retrieves an [IBinder] value associated with the specified [key], or returns [defaultValue]
+     * if the [key] is not found or the associated value has the wrong type.
+     *
+     * @param key The [key] to retrieve the value for.
+     * @param defaultValue A function providing the default value to return if the key is not found
+     *   or the associated value has the wrong type.
+     * @return The value associated with the [key], or the result of [defaultValue] if the key is
+     *   not found or the associated value has the wrong type.
+     */
+    inline fun getBinderOrElse(key: String, defaultValue: () -> IBinder): IBinder {
+        if (key !in this) defaultValue()
+        return source.getBinder(key) ?: defaultValue()
+    }
 
     actual inline fun getBoolean(key: String): Boolean {
         if (key !in this) keyNotFoundError(key)
@@ -44,6 +79,19 @@ internal actual constructor(
     actual inline fun getChar(key: String): Char {
         if (key !in this) keyNotFoundError(key)
         return source.getChar(key, DEFAULT_CHAR)
+    }
+
+    actual inline fun getCharSequence(key: String): CharSequence {
+        if (key !in this) keyNotFoundError(key)
+        return source.getCharSequence(key) ?: valueNotFoundError(key)
+    }
+
+    actual inline fun getCharSequenceOrElse(
+        key: String,
+        defaultValue: () -> CharSequence
+    ): CharSequence {
+        if (key !in this) defaultValue()
+        return source.getCharSequence(key) ?: defaultValue()
     }
 
     actual inline fun getCharOrElse(key: String, defaultValue: () -> Char): Char {
@@ -92,11 +140,10 @@ internal actual constructor(
     }
 
     /**
-     * Retrieves a [Parcelable] object associated with the specified key. Throws an
-     * [IllegalStateException] if the key doesn't exist.
+     * Retrieves a [Parcelable] object associated with the specified key.
      *
      * @param key The key to retrieve the value for.
-     * @return The [Parcelable] object associated with the key.
+     * @return The value associated with the [key].
      * @throws IllegalStateException If the key is not found.
      */
     inline fun <reified T : Parcelable> getParcelable(key: String): T {
@@ -105,17 +152,102 @@ internal actual constructor(
     }
 
     /**
-     * Retrieves a [Parcelable] object associated with the specified key, or a default value if the
-     * key doesn't exist.
+     * Retrieves a [Parcelable] value associated with the specified [key], or returns [defaultValue]
+     * if the [key] is not found or the associated value has the wrong type.
      *
-     * @param key The key to retrieve the value for.
-     * @param defaultValue A function providing the default [Parcelable] if the key is not found.
-     * @return The [Parcelable] object associated with the key, or the default value if the key is
-     *   not found.
+     * @param key The [key] to retrieve the value for.
+     * @param defaultValue A function providing the default value to return if the key is not found
+     *   or the associated value has the wrong type.
+     * @return The value associated with the [key], or the result of [defaultValue] if the key is
+     *   not found or the associated value has the wrong type.
      */
     inline fun <reified T : Parcelable> getParcelableOrElse(key: String, defaultValue: () -> T): T {
         if (key !in this) defaultValue()
         return getParcelable(source, key, T::class.java) ?: defaultValue()
+    }
+
+    /**
+     * Retrieves a [Serializable] object associated with the specified key.
+     *
+     * @param key The key to retrieve the value for.
+     * @return The value associated with the [key].
+     * @throws IllegalStateException If the key is not found.
+     */
+    inline fun <reified T : Serializable> getSerializable(key: String): T {
+        if (key !in this) keyNotFoundError(key)
+        return getSerializable(source, key, T::class.java) ?: valueNotFoundError(key)
+    }
+
+    /**
+     * Retrieves a [Serializable] value associated with the specified [key], or returns
+     * [defaultValue] if the [key] is not found or the associated value has the wrong type.
+     *
+     * @param key The [key] to retrieve the value for.
+     * @param defaultValue A function providing the default value to return if the key is not found
+     *   or the associated value has the wrong type.
+     * @return The value associated with the [key], or the result of [defaultValue] if the key is
+     *   not found or the associated value has the wrong type.
+     */
+    inline fun <reified T : Serializable> getSerializableOrElse(
+        key: String,
+        defaultValue: () -> T
+    ): T {
+        if (key !in this) defaultValue()
+        return getSerializable(source, key, T::class.java) ?: defaultValue()
+    }
+
+    /**
+     * Retrieves a [Size] object associated with the specified key.
+     *
+     * @param key The key to retrieve the value for.
+     * @return The value associated with the [key].
+     * @throws IllegalStateException If the key is not found.
+     */
+    inline fun getSize(key: String): Size {
+        if (key !in this) keyNotFoundError(key)
+        return source.getSize(key) ?: valueNotFoundError(key)
+    }
+
+    /**
+     * Retrieves a [Size] value associated with the specified [key], or returns [defaultValue] if
+     * the [key] is not found or the associated value has the wrong type.
+     *
+     * @param key The [key] to retrieve the value for.
+     * @param defaultValue A function providing the default value to return if the key is not found
+     *   or the associated value has the wrong type.
+     * @return The value associated with the [key], or the result of [defaultValue] if the key is
+     *   not found or the associated value has the wrong type.
+     */
+    inline fun getSizeOrElse(key: String, defaultValue: () -> Size): Size {
+        if (key !in this) defaultValue()
+        return source.getSize(key) ?: defaultValue()
+    }
+
+    /**
+     * Retrieves a [SizeF] object associated with the specified key.
+     *
+     * @param key The key to retrieve the value for.
+     * @return The value associated with the [key].
+     * @throws IllegalStateException If the key is not found.
+     */
+    inline fun getSizeF(key: String): SizeF {
+        if (key !in this) keyNotFoundError(key)
+        return source.getSizeF(key) ?: valueNotFoundError(key)
+    }
+
+    /**
+     * Retrieves a [SizeF] value associated with the specified [key], or returns [defaultValue] if
+     * the [key] is not found or the associated value has the wrong type.
+     *
+     * @param key The [key] to retrieve the value for.
+     * @param defaultValue A function providing the default value to return if the key is not found
+     *   or the associated value has the wrong type.
+     * @return The value associated with the [key], or the result of [defaultValue] if the key is
+     *   not found or the associated value has the wrong type.
+     */
+    inline fun getSizeFOrElse(key: String, defaultValue: () -> SizeF): SizeF {
+        if (key !in this) defaultValue()
+        return source.getSizeF(key) ?: defaultValue()
     }
 
     actual inline fun getString(key: String): String {
@@ -138,6 +270,19 @@ internal actual constructor(
         return source.getIntegerArrayList(key) ?: defaultValue()
     }
 
+    actual inline fun getCharSequenceList(key: String): List<CharSequence> {
+        if (key !in this) keyNotFoundError(key)
+        return source.getCharSequenceArrayList(key) ?: valueNotFoundError(key)
+    }
+
+    actual inline fun getCharSequenceListOrElse(
+        key: String,
+        defaultValue: () -> List<CharSequence>
+    ): List<CharSequence> {
+        if (key !in this) defaultValue()
+        return source.getCharSequenceArrayList(key) ?: defaultValue()
+    }
+
     actual inline fun getStringList(key: String): List<String> {
         if (key !in this) keyNotFoundError(key)
         return source.getStringArrayList(key) ?: valueNotFoundError(key)
@@ -152,12 +297,12 @@ internal actual constructor(
     }
 
     /**
-     * Retrieves a [List] of elements of [Parcelable] associated with the specified [key]. Throws an
-     * [IllegalStateException] if the [key] doesn't exist.
+     * Retrieves a [List] of elements of [Parcelable] associated with the specified [key].
      *
      * @param key The [key] to retrieve the value for.
-     * @return The [List] of elements of [Parcelable] associated with the [key].
-     * @throws IllegalStateException If the [key] is not found.
+     * @return The value associated with the [key].
+     * @throws IllegalArgumentException If the [key] is not found.
+     * @throws IllegalStateException if associated value has wrong type.
      */
     inline fun <reified T : Parcelable> getParcelableList(key: String): List<T> {
         if (key !in this) keyNotFoundError(key)
@@ -169,10 +314,10 @@ internal actual constructor(
      * default value if the [key] doesn't exist.
      *
      * @param key The [key] to retrieve the value for.
-     * @param defaultValue A function providing the default value if the [key] is not found or the
-     *   retrieved value is not a list of [Parcelable].
-     * @return The list of elements of [Parcelable] associated with the [key], or the default value
-     *   if the [key] is not found.
+     * @param defaultValue A function providing the default value to return if the key is not found
+     *   or the associated value has the wrong type.
+     * @return The value associated with the [key], or the result of [defaultValue] if the key is
+     *   not found or the associated value has the wrong type.
      */
     inline fun <reified T : Parcelable> getParcelableListOrElse(
         key: String,
@@ -203,6 +348,21 @@ internal actual constructor(
     actual inline fun getCharArrayOrElse(key: String, defaultValue: () -> CharArray): CharArray {
         if (key !in this) defaultValue()
         return source.getCharArray(key) ?: defaultValue()
+    }
+
+    @Suppress("ArrayReturn")
+    actual inline fun getCharSequenceArray(key: String): Array<CharSequence> {
+        if (key !in this) keyNotFoundError(key)
+        return source.getCharSequenceArray(key) ?: valueNotFoundError(key)
+    }
+
+    @Suppress("ArrayReturn")
+    actual inline fun getCharSequenceArrayOrElse(
+        key: String,
+        defaultValue: () -> Array<CharSequence>
+    ): Array<CharSequence> {
+        if (key !in this) defaultValue()
+        return source.getCharSequenceArray(key) ?: defaultValue()
     }
 
     actual inline fun getDoubleArray(key: String): DoubleArray {
@@ -261,6 +421,75 @@ internal actual constructor(
         return source.getStringArray(key) ?: defaultValue()
     }
 
+    /**
+     * Retrieves an [Array] of elements of [Parcelable] associated with the specified [key].
+     *
+     * @param key The [key] to retrieve the value for.
+     * @return The value associated with the [key].
+     * @throws IllegalArgumentException If the [key] is not found.
+     * @throws IllegalStateException if associated value has wrong type.
+     */
+    @Suppress("ArrayReturn")
+    inline fun <reified T : Parcelable> getParcelableArray(key: String): Array<T> {
+        if (key !in this) keyNotFoundError(key)
+        @Suppress("UNCHECKED_CAST")
+        return getParcelableArray(source, key, T::class.java) as? Array<T>
+            ?: valueNotFoundError(key)
+    }
+
+    /**
+     * Retrieves a [Array] of elements of [Parcelable] associated with the specified [key], or a
+     * default value if the [key] doesn't exist.
+     *
+     * @param key The [key] to retrieve the value for.
+     * @param defaultValue A function providing the default value to return if the key is not found
+     *   or the associated value has the wrong type.
+     * @return The value associated with the [key], or the result of [defaultValue] if the key is
+     *   not found or the associated value has the wrong type.
+     */
+    @Suppress("ArrayReturn")
+    inline fun <reified T : Parcelable> getParcelableArrayOrElse(
+        key: String,
+        defaultValue: () -> Array<T>
+    ): Array<T> {
+        if (key !in this) defaultValue()
+        @Suppress("UNCHECKED_CAST")
+        return getParcelableArray(source, key, T::class.java) as? Array<T> ?: defaultValue()
+    }
+
+    /**
+     * Retrieves a [SparseArray] of elements of [Parcelable] associated with the specified [key].
+     *
+     * @param key The [key] to retrieve the value for.
+     * @return The value associated with the [key].
+     * @throws IllegalArgumentException If the [key] is not found.
+     * @throws IllegalStateException if associated value has wrong type.
+     */
+    inline fun <reified T : Parcelable> getSparseParcelableArray(key: String): SparseArray<T> {
+        if (key !in this) keyNotFoundError(key)
+        return getSparseParcelableArray(source, key, T::class.java) as? SparseArray<T>
+            ?: valueNotFoundError(key)
+    }
+
+    /**
+     * Retrieves a [SparseArray] of elements of [Parcelable] associated with the specified [key], or
+     * a default value if the [key] doesn't exist.
+     *
+     * @param key The [key] to retrieve the value for.
+     * @param defaultValue A function providing the default value to return if the key is not found
+     *   or the associated value has the wrong type.
+     * @return The value associated with the [key], or the result of [defaultValue] if the key is
+     *   not found or the associated value has the wrong type.
+     */
+    inline fun <reified T : Parcelable> getSparseParcelableArrayOrElse(
+        key: String,
+        defaultValue: () -> SparseArray<T>
+    ): SparseArray<T> {
+        if (key !in this) defaultValue()
+        return getSparseParcelableArray(source, key, T::class.java) as? SparseArray<T>
+            ?: defaultValue()
+    }
+
     actual inline fun getSavedState(key: String): SavedState {
         if (key !in this) keyNotFoundError(key)
         return source.getBundle(key) ?: valueNotFoundError(key)
@@ -285,6 +514,8 @@ internal actual constructor(
     actual inline operator fun contains(key: String): Boolean = source.containsKey(key)
 
     actual fun contentDeepEquals(other: SavedState): Boolean = source.contentDeepEquals(other)
+
+    actual fun contentDeepHashCode(): Int = source.contentDeepHashCode()
 
     actual fun toMap(): Map<String, Any?> {
         return buildMap(capacity = source.size()) {
@@ -327,4 +558,33 @@ private fun SavedState.contentDeepEquals(other: SavedState): Boolean {
         }
     }
     return true
+}
+
+private fun SavedState.contentDeepHashCode(): Int {
+    var result = 1
+
+    for (k in this.keySet()) {
+        val elementHash =
+            when (@Suppress("DEPRECATION") val element = this[k]) {
+                // container types
+                is SavedState -> element.contentDeepHashCode()
+                is Array<*> -> element.contentDeepHashCode()
+
+                // primitive arrays
+                is ByteArray -> element.contentHashCode()
+                is ShortArray -> element.contentHashCode()
+                is IntArray -> element.contentHashCode()
+                is LongArray -> element.contentHashCode()
+                is FloatArray -> element.contentHashCode()
+                is DoubleArray -> element.contentHashCode()
+                is CharArray -> element.contentHashCode()
+                is BooleanArray -> element.contentHashCode()
+
+                // if nothing else works
+                else -> element.hashCode()
+            }
+        result = 31 * result + elementHash
+    }
+
+    return result
 }

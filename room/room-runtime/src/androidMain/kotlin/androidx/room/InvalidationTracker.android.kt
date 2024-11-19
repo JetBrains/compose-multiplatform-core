@@ -28,6 +28,7 @@ import java.util.concurrent.Callable
 import kotlinx.atomicfu.locks.reentrantLock
 import kotlinx.atomicfu.locks.withLock
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -80,8 +81,8 @@ actual constructor(
     private val invalidationLiveDataContainer: InvalidationLiveDataContainer =
         InvalidationLiveDataContainer(database)
 
-    /** The initialization state for restarting invalidation after auto-close. */
-    private var multiInstanceClientInitState: MultiInstanceClientInitState? = null
+    /** The intent for restarting invalidation after auto-close. */
+    private var multiInstanceInvalidationIntent: Intent? = null
 
     /** The multi instance invalidation client. */
     private var multiInstanceInvalidationClient: MultiInstanceInvalidationClient? = null
@@ -130,10 +131,7 @@ actual constructor(
     internal actual fun internalInit(connection: SQLiteConnection) {
         implementation.configureConnection(connection)
         synchronized(trackerLock) {
-            if (multiInstanceInvalidationClient == null && multiInstanceClientInitState != null) {
-                // Start multi-instance invalidation, based in info from the saved initState.
-                startMultiInstanceInvalidation()
-            }
+            multiInstanceInvalidationClient?.start(checkNotNull(multiInstanceInvalidationIntent))
         }
     }
 
@@ -183,28 +181,14 @@ actual constructor(
 
     private fun onAutoCloseCallback() {
         synchronized(trackerLock) {
-            val isObserverMapEmpty = getAllObservers().filterNot { it.isRemote }.isEmpty()
-            if (multiInstanceInvalidationClient != null && isObserverMapEmpty) {
-                stopMultiInstanceInvalidation()
+            multiInstanceInvalidationClient?.let { client ->
+                val isObserverMapEmpty = getAllObservers().filterNot { it.isRemote }.isEmpty()
+                if (isObserverMapEmpty) {
+                    client.stop()
+                }
             }
             implementation.resetSync()
         }
-    }
-
-    private fun startMultiInstanceInvalidation() {
-        val state = checkNotNull(multiInstanceClientInitState)
-        multiInstanceInvalidationClient =
-            MultiInstanceInvalidationClient(
-                    context = state.context,
-                    name = state.name,
-                    invalidationTracker = this,
-                )
-                .apply { start(state.serviceIntent) }
-    }
-
-    private fun stopMultiInstanceInvalidation() {
-        multiInstanceInvalidationClient?.stop()
-        multiInstanceInvalidationClient = null
     }
 
     /**
@@ -234,7 +218,14 @@ actual constructor(
      */
     @JvmOverloads
     actual fun createFlow(vararg tables: String, emitInitialState: Boolean): Flow<Set<String>> {
-        return implementation.createFlow(tables, emitInitialState)
+        val (resolvedTableNames, tableIds) = implementation.validateTableNames(tables)
+        val trackerFlow = implementation.createFlow(resolvedTableNames, tableIds, emitInitialState)
+        val multiInstanceFlow = multiInstanceInvalidationClient?.createFlow(resolvedTableNames)
+        return if (multiInstanceFlow != null) {
+            merge(trackerFlow, multiInstanceFlow)
+        } else {
+            trackerFlow
+        }
     }
 
     /**
@@ -367,12 +358,12 @@ actual constructor(
      *
      * @param tables The invalidated tables.
      */
-    internal fun notifyObserversByTableNames(vararg tables: String) {
+    internal fun notifyObserversByTableNames(tables: Set<String>) {
         observerMapLock
             .withLock { observerMap.values.toList() }
             .forEach {
                 if (!it.observer.isRemote) {
-                    it.notifyByTableNames(setOf(*tables))
+                    it.notifyByTableNames(tables)
                 }
             }
     }
@@ -459,17 +450,13 @@ actual constructor(
         name: String,
         serviceIntent: Intent
     ) {
-        multiInstanceClientInitState =
-            MultiInstanceClientInitState(
-                context = context,
-                name = name,
-                serviceIntent = serviceIntent
-            )
+        multiInstanceInvalidationIntent = serviceIntent
+        multiInstanceInvalidationClient = MultiInstanceInvalidationClient(context, name, this)
     }
 
     /** Stops invalidation tracker operations. */
     internal actual fun stop() {
-        stopMultiInstanceInvalidation()
+        multiInstanceInvalidationClient?.stop()
     }
 
     /**

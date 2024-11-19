@@ -50,9 +50,9 @@ import androidx.camera.core.DynamicRange.HLG_10_BIT
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory
 import androidx.camera.core.ZoomState
+import androidx.camera.core.impl.AdapterCameraInfo
 import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.ImageFormatConstants
-import androidx.camera.core.impl.RestrictedCameraInfo
 import androidx.camera.testing.impl.fakes.FakeCameraConfig
 import androidx.testutils.MainDispatcherRule
 import androidx.testutils.assertThrows
@@ -717,11 +717,11 @@ class CameraInfoAdapterTest {
     }
 
     @Test
-    fun canUnwrapRestrictedCameraInfoAsCameraMetadata() {
+    fun canUnwrapAdapterCameraInfoAsCameraMetadata() {
         val fakeCameraConfig = FakeCameraConfig()
-        val restrictedCameraInfo = RestrictedCameraInfo(cameraInfoAdapter, fakeCameraConfig)
+        val adapterCameraInfo = AdapterCameraInfo(cameraInfoAdapter, fakeCameraConfig)
 
-        val cameraMetadata = restrictedCameraInfo.unwrapAs(CameraMetadata::class)
+        val cameraMetadata = adapterCameraInfo.unwrapAs(CameraMetadata::class)
         assertThat(cameraMetadata).isNotNull()
     }
 }

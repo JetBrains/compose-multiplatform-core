@@ -55,6 +55,7 @@ import androidx.health.connect.client.records.RespiratoryRateRecord
 import androidx.health.connect.client.records.RestingHeartRateRecord
 import androidx.health.connect.client.records.SeriesRecord
 import androidx.health.connect.client.records.SexualActivityRecord
+import androidx.health.connect.client.records.SkinTemperatureRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.SpeedRecord
 import androidx.health.connect.client.records.StepsCadenceRecord
@@ -479,6 +480,28 @@ fun Record.toProto(): DataProto.DataPoint =
                         putValues("mealType", it)
                     }
                     name?.let { putValues("name", stringVal(it)) }
+                }
+                .build()
+        is SkinTemperatureRecord ->
+            intervalProto()
+                .setDataType(protoDataType("SkinTemperature"))
+                .apply {
+                    if (baseline != null) {
+                        putValues("baseline", doubleVal(baseline.inCelsius))
+                    }
+                    if (deltas.isNotEmpty()) {
+                        putSubTypeDataLists(
+                            "deltas",
+                            DataProto.DataPoint.SubTypeDataList.newBuilder()
+                                .addAllValues(deltas.map { it.toProto() })
+                                .build(),
+                        )
+                    }
+                    enumValFromInt(
+                            measurementLocation,
+                            SkinTemperatureRecord.MEASUREMENT_LOCATION_INT_TO_STRING_MAP,
+                        )
+                        ?.let { putValues("measurementLocation", it) }
                 }
                 .build()
         is SleepSessionRecord ->

@@ -16,32 +16,49 @@
 
 package androidx.room.compiler.codegen
 
+import androidx.room.compiler.codegen.impl.XAnnotationSpecImpl
 import androidx.room.compiler.codegen.java.JavaAnnotationSpec
 import androidx.room.compiler.codegen.kotlin.KotlinAnnotationSpec
 import com.squareup.kotlinpoet.javapoet.JAnnotationSpec
 import com.squareup.kotlinpoet.javapoet.KAnnotationSpec
 
-interface XAnnotationSpec : TargetLanguage {
-
-    interface Builder : TargetLanguage {
+interface XAnnotationSpec {
+    interface Builder {
         // TODO(b/127483380): Only supports one value, add support for arrays
         fun addMember(name: String, code: XCodeBlock): Builder
 
-        fun addMember(name: String, format: String, vararg args: Any?): Builder =
-            addMember(name, XCodeBlock.of(language, format, *args))
+        fun addMember(name: String, format: String, vararg args: Any): Builder =
+            addMember(name, XCodeBlock.of(format, *args))
 
         fun build(): XAnnotationSpec
+
+        companion object {
+            fun Builder.applyTo(block: Builder.(CodeLanguage) -> Unit) = apply {
+                when (this) {
+                    is XAnnotationSpecImpl.Builder -> {
+                        this.java.block(CodeLanguage.JAVA)
+                        this.kotlin.block(CodeLanguage.KOTLIN)
+                    }
+                    is JavaAnnotationSpec.Builder -> block(CodeLanguage.JAVA)
+                    is KotlinAnnotationSpec.Builder -> block(CodeLanguage.KOTLIN)
+                }
+            }
+
+            fun Builder.applyTo(language: CodeLanguage, block: Builder.() -> Unit) =
+                applyTo { codeLanguage ->
+                    if (codeLanguage == language) {
+                        block()
+                    }
+                }
+        }
     }
 
     companion object {
         @JvmStatic
-        fun builder(language: CodeLanguage, className: XClassName): Builder {
-            return when (language) {
-                CodeLanguage.JAVA ->
-                    JavaAnnotationSpec.Builder(JAnnotationSpec.builder(className.java))
-                CodeLanguage.KOTLIN ->
-                    KotlinAnnotationSpec.Builder(KAnnotationSpec.builder(className.kotlin))
-            }
-        }
+        fun builder(className: XClassName): Builder =
+            XAnnotationSpecImpl.Builder(
+                JavaAnnotationSpec.Builder(JAnnotationSpec.builder(className.java)),
+                KotlinAnnotationSpec.Builder(KAnnotationSpec.builder(className.kotlin))
+            )
     }
 }

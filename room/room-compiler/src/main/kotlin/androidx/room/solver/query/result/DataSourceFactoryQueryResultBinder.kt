@@ -39,7 +39,7 @@ class DataSourceFactoryQueryResultBinder(
     ) {
         scope.builder.apply {
             val pagedListProvider =
-                XTypeSpec.anonymousClassBuilder(language)
+                XTypeSpec.anonymousClassBuilder()
                     .apply {
                         superclass(
                             PagingTypeNames.DATA_SOURCE_FACTORY.parametrizedBy(
@@ -67,7 +67,6 @@ class DataSourceFactoryQueryResultBinder(
     ) {
         addFunction(
             XFunSpec.builder(
-                    language = language,
                     name = "create",
                     visibility = VisibilityModifier.PUBLIC,
                     isOverride = true

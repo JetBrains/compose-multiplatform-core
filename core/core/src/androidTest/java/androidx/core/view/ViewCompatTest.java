@@ -66,6 +66,7 @@ import android.view.Display;
 import android.view.View;
 import android.view.autofill.AutofillId;
 import android.view.contentcapture.ContentCaptureSession;
+import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -73,6 +74,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.test.R;
 import androidx.core.view.autofill.AutofillIdCompat;
 import androidx.core.view.contentcapture.ContentCaptureSessionCompat;
+import androidx.core.viewtree.ViewTree;
 import androidx.test.annotation.UiThreadTest;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
@@ -130,6 +132,23 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
         final View view = new View(mActivityTestRule.getActivity());
         ViewCompat.setTransitionName(view, "abc");
         assertEquals("abc", ViewCompat.getTransitionName(view));
+    }
+
+    @Test
+    public void testGetDisjointParentOfOverlay() throws Throwable {
+        final Activity activity = mActivityTestRule.getActivity();
+        FrameLayout overlayHost = new FrameLayout(activity);
+        View overlaidView = new View(activity);
+
+        mActivityTestRule.runOnUiThread(() -> {
+            activity.setContentView(overlayHost);
+            ViewCompat.addOverlayView(overlayHost, overlaidView);
+        });
+
+        assertEquals(
+                overlayHost,
+                ViewTree.getParentOrViewTreeDisjointParent((View) overlaidView.getParent())
+        );
     }
 
     @Test

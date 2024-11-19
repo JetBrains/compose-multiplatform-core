@@ -160,7 +160,7 @@ internal class SharedBoundsNode(
         }
     }
 
-    private fun MeasureScope.place(placeable: Placeable): MeasureResult {
+    private fun MeasureScope.approachPlace(placeable: Placeable): MeasureResult {
         if (!sharedElement.foundMatch) {
             // No match
             return layout(placeable.width, placeable.height) {
@@ -231,7 +231,7 @@ internal class SharedBoundsNode(
                 } ?: constraints
             }
         val placeable = measurable.measure(resolvedConstraints)
-        return place(placeable)
+        return approachPlace(placeable)
     }
 
     private fun LayoutCoordinates.updateCurrentBounds() {
@@ -243,6 +243,7 @@ internal class SharedBoundsNode(
     }
 
     override fun ContentDrawScope.draw() {
+        state.firstFrameDrawn = true
         // Update clipPath
         state.clipPathInOverlay =
             state.overlayClip.getClipPath(

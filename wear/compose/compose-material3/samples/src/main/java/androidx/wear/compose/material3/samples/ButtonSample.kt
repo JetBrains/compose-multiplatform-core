@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
@@ -36,8 +37,8 @@ import androidx.wear.compose.material3.Text
 
 @Sampled
 @Composable
-fun SimpleButtonSample() {
-    Button(onClick = { /* Do something */ }, label = { Text("Button") })
+fun SimpleButtonSample(modifier: Modifier = Modifier) {
+    Button(onClick = { /* Do something */ }, label = { Text("Simple Button") }, modifier = modifier)
 }
 
 @Sampled
@@ -196,7 +197,9 @@ fun OutlinedButtonSample(modifier: Modifier = Modifier.fillMaxWidth()) {
 fun SimpleChildButtonSample(modifier: Modifier = Modifier.fillMaxWidth()) {
     ChildButton(
         onClick = { /* Do something */ },
-        label = { Text("Child Button") },
+        label = {
+            Text("Child Button", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+        },
         modifier = modifier,
     )
 }
@@ -221,7 +224,7 @@ fun ChildButtonSample(modifier: Modifier = Modifier.fillMaxWidth()) {
 
 @Sampled
 @Composable
-fun CompactButtonSample(modifier: Modifier = Modifier.fillMaxWidth()) {
+fun CompactButtonSample(modifier: Modifier = Modifier) {
     CompactButton(
         onClick = { /* Do something */ },
         icon = {
@@ -242,7 +245,7 @@ fun CompactButtonSample(modifier: Modifier = Modifier.fillMaxWidth()) {
 fun CompactButtonWithOnLongClickSample(
     onClickHandler: () -> Unit,
     onLongClickHandler: () -> Unit,
-    modifier: Modifier = Modifier.fillMaxWidth()
+    modifier: Modifier = Modifier
 ) {
     CompactButton(
         onClick = onClickHandler,
@@ -255,7 +258,7 @@ fun CompactButtonWithOnLongClickSample(
 
 @Sampled
 @Composable
-fun FilledTonalCompactButtonSample(modifier: Modifier = Modifier.fillMaxWidth()) {
+fun FilledTonalCompactButtonSample(modifier: Modifier = Modifier) {
     CompactButton(
         onClick = { /* Do something */ },
         icon = {
@@ -274,7 +277,7 @@ fun FilledTonalCompactButtonSample(modifier: Modifier = Modifier.fillMaxWidth())
 
 @Sampled
 @Composable
-fun OutlinedCompactButtonSample(modifier: Modifier = Modifier.fillMaxWidth()) {
+fun OutlinedCompactButtonSample(modifier: Modifier = Modifier) {
     CompactButton(
         onClick = { /* Do something */ },
         icon = {

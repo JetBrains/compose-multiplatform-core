@@ -150,6 +150,55 @@ class UserResizeModeTest {
     }
 
     @Test
+    fun dragDividerUpdatesUserDivierDrawableState() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        val spl = createTestSpl(context, childPanesAcceptTouchEvents = true)
+
+        val drawable =
+            object : Drawable() {
+                var isPressed: Boolean = false
+
+                override fun draw(canvas: Canvas) {}
+
+                override fun setAlpha(alpha: Int) {}
+
+                override fun setColorFilter(colorFilter: ColorFilter?) {}
+
+                @Suppress("DeprecatedCallableAddReplaceWith")
+                @Deprecated("Deprecated in Java")
+                override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+
+                override fun isStateful(): Boolean = true
+
+                override fun onStateChange(state: IntArray): Boolean {
+                    isPressed = state.any { it == android.R.attr.state_pressed }
+                    return true
+                }
+            }
+
+        spl.setUserResizingDividerDrawable(drawable)
+
+        assertWithMessage("drawable is not pressed before touch down")
+            .that(drawable.isPressed)
+            .isFalse()
+
+        spl.dispatchTouchEvent(downEvent(50f, 50f))
+        assertWithMessage("drawable is not pressed before drag start")
+            .that(drawable.isPressed)
+            .isFalse()
+
+        spl.dispatchTouchEvent(moveEvent(25f, 50f))
+        assertWithMessage("drawable state is pressed after drag start")
+            .that(drawable.isPressed)
+            .isTrue()
+
+        spl.dispatchTouchEvent(upEvent(25f, 50f))
+        assertWithMessage("drawable is not pressed after touch up")
+            .that(drawable.isPressed)
+            .isFalse()
+    }
+
+    @Test
     fun dividerClickListenerInvoked() {
         val context = InstrumentationRegistry.getInstrumentation().context
         val spl = createTestSpl(context)

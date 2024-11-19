@@ -72,7 +72,7 @@ class DeleteOrUpdateMethodAdapter private constructor(val returnType: XType) {
                     name = resultVar,
                     typeName = XTypeName.PRIMITIVE_INT,
                     isMutable = true,
-                    assignExpr = XCodeBlock.of(language, "0")
+                    assignExpr = XCodeBlock.of("0")
                 )
             }
             parameters.forEach { param ->
@@ -127,7 +127,7 @@ class DeleteOrUpdateMethodAdapter private constructor(val returnType: XType) {
                     name = resultVar,
                     typeName = XTypeName.PRIMITIVE_INT,
                     isMutable = true,
-                    assignExpr = XCodeBlock.of(language, "0")
+                    assignExpr = XCodeBlock.of("0")
                 )
             }
             addStatement("%N.beginTransaction()", dbProperty)

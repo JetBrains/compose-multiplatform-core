@@ -30,6 +30,7 @@ import androidx.appsearch.app.AppSearchEnvironmentFactory;
 import androidx.appsearch.app.AppSearchSession;
 import androidx.appsearch.app.GlobalSearchSession;
 import androidx.appsearch.exceptions.AppSearchException;
+import androidx.appsearch.flags.Flags;
 import androidx.appsearch.localstorage.stats.InitializeStats;
 import androidx.appsearch.localstorage.stats.OptimizeStats;
 import androidx.appsearch.localstorage.util.FutureUtil;
@@ -353,16 +354,22 @@ public class LocalStorage {
         // Syncing the current logging level to Icing before creating the AppSearch object, so that
         // the correct logging level will cover the period of Icing initialization.
         AppSearchImpl.syncLoggingLevelToIcing();
+        AppSearchConfig config = new AppSearchConfigImpl(
+                new UnlimitedLimitConfig(),
+                new LocalStorageIcingOptionsConfig(),
+                /* storeParentInfoAsSyntheticProperty= */ false,
+                /* shouldRetrieveParentInfo= */ true
+        );
+        AppSearchRevocableFileDescriptorStore revocableFileDescriptorStore = null;
+        if (Flags.enableBlobStore()) {
+            revocableFileDescriptorStore = new JetpackRevocableFileDescriptorStore(config);
+        }
         mAppSearchImpl = AppSearchImpl.create(
                 icingDir,
-                new AppSearchConfigImpl(
-                        new UnlimitedLimitConfig(),
-                        new LocalStorageIcingOptionsConfig(),
-                        /* storeParentInfoAsSyntheticProperty= */ false,
-                        /* shouldRetrieveParentInfo= */ true
-                ),
+                config,
                 initStatsBuilder,
                 /*visibilityChecker=*/ null,
+                revocableFileDescriptorStore,
                 new JetpackOptimizeStrategy());
 
         if (logger != null) {

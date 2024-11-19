@@ -339,4 +339,9 @@ Failed sysctl call: hw\.nperflevels, Error code: 2
 # > Task :benchmark:benchmark-macro:processReleaseAndroidTestManifest
 \$SUPPORT/benchmark/benchmark\-macro/src/androidTest/AndroidManifest\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
 receiver\#androidx\.profileinstaller\.ProfileInstallReceiver@android:enabled was tagged at AndroidManifest\.xml:[0-9]+ to replace other declarations but no other declaration present
+# > Task :wasmJsBrowserTest, known problem and Jetbrains will filter out in following releases:
+# https://slack-chats.kotlinlang.org/t/21024041/any-suggestiong-how-to-solve-uncaught-in-promise-linkerror-i
 Critical dependency: Accessing import\.meta directly is unsupported.*
+# Comes up after test execution or after Karma attempts to kill the browser and it takes too long
+# Can be ignored as the test is complete by the time the message is printed
+ChromeHeadless was not killed in.*

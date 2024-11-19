@@ -33,6 +33,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.content.res.TypedArrayUtils;
+import androidx.core.view.ViewCompat;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -426,7 +427,7 @@ public abstract class Visibility extends Transition {
                 sceneRoot.getLocationOnScreen(loc);
                 overlayView.offsetLeftAndRight((screenX - loc[0]) - overlayView.getLeft());
                 overlayView.offsetTopAndBottom((screenY - loc[1]) - overlayView.getTop());
-                sceneRoot.getOverlay().add(overlayView);
+                ViewCompat.addOverlayView(sceneRoot, overlayView);
             }
             Animator animator = onDisappear(sceneRoot, overlayView, startValues, endValues);
             if (!reusingOverlayView) {
@@ -628,7 +629,7 @@ public abstract class Visibility extends Transition {
         @Override
         public void onAnimationResume(Animator animation) {
             if (mOverlayView.getParent() == null) {
-                mOverlayHost.getOverlay().add(mOverlayView);
+                ViewCompat.addOverlayView(mOverlayHost, mOverlayView);
             } else {
                 cancel();
             }
@@ -638,7 +639,7 @@ public abstract class Visibility extends Transition {
         public void onAnimationStart(@NonNull Animator animation, boolean isReverse) {
             if (isReverse) {
                 mStartView.setTag(R.id.save_overlay_view, mOverlayView);
-                mOverlayHost.getOverlay().add(mOverlayView);
+                ViewCompat.addOverlayView(mOverlayHost, mOverlayView);
                 mHasOverlay = true;
             }
         }

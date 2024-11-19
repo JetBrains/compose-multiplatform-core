@@ -86,7 +86,7 @@ class ModalWideNavigationRailScreenshotTest {
 @Composable
 private fun DefaultModalWideNavigationRail() {
     ModalWideNavigationRail(
-        state = rememberWideNavigationRailState(WideNavigationRailValue.Expanded),
+        state = rememberWideNavigationRailState(true),
         expandedHeaderTopPadding = 64.dp,
         header = {
             Column {

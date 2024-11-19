@@ -830,6 +830,45 @@ public class SearchSpecCtsTest {
     }
 
     @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SEARCH_SPEC_FILTER_DOCUMENT_IDS)
+    public void testFilterDocumentIds() {
+        SearchSpec searchSpec = new SearchSpec.Builder()
+                .setTermMatch(SearchSpec.TERM_MATCH_PREFIX)
+                .addFilterDocumentIds(ImmutableList.of("uri1", "uri2"))
+                .addFilterDocumentIds(ImmutableList.of("uri3"))
+                .addFilterDocumentIds("uri4", "uri5")
+                .addFilterDocumentIds(ImmutableList.of())
+                .build();
+
+        List<String> filterDocumentIds = searchSpec.getFilterDocumentIds();
+        assertThat(filterDocumentIds)
+                .containsExactly("uri1", "uri2", "uri3", "uri4", "uri5");
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SEARCH_SPEC_FILTER_DOCUMENT_IDS)
+    public void testFilterDocumentIds_default_isEmpty() {
+        SearchSpec searchSpec = new SearchSpec.Builder().build();
+        assertThat(searchSpec.getFilterDocumentIds()).isEmpty();
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SEARCH_SPEC_FILTER_DOCUMENT_IDS)
+    public void testFilterDocumentIds_rebuild_doesntAffectOriginal() {
+        SearchSpec.Builder searchSpecBuilder =
+                new SearchSpec.Builder().addFilterDocumentIds(ImmutableList.of("uri1", "uri2"));
+
+        SearchSpec original = searchSpecBuilder.build();
+        SearchSpec rebuild = searchSpecBuilder
+                .addFilterDocumentIds(ImmutableList.of("uri3"))
+                .build();
+
+        // Rebuild won't effect the original object
+        assertThat(original.getFilterDocumentIds()).containsExactly("uri1", "uri2");
+        assertThat(rebuild.getFilterDocumentIds()).containsExactly("uri1", "uri2", "uri3");
+    }
+
+    @Test
     @RequiresFlagsEnabled(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
     public void testSearchSpecBuilder_copyConstructor() {
         List<String> expectedPropertyPaths1 = ImmutableList.of("path1", "path2");
@@ -1017,5 +1056,27 @@ public class SearchSpecCtsTest {
         SearchSpec searchSpec = new SearchSpec.Builder().addSearchStringParameters("param1",
                 "param2").clearSearchStringParameters().build();
         assertThat(searchSpec.getSearchStringParameters()).isEmpty();
+    }
+
+    @Test
+    @RequiresFlagsEnabled({Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS,
+            Flags.FLAG_ENABLE_SEARCH_SPEC_FILTER_DOCUMENT_IDS})
+    public void testSearchSpecBuilder_copyConstructor_filterDocumentIds() {
+        SearchSpec searchSpec = new SearchSpec.Builder()
+                .addFilterDocumentIds(ImmutableList.of("uri1", "uri2")).build();
+        SearchSpec searchSpecCopy = new SearchSpec.Builder(searchSpec).build();
+        assertThat(searchSpecCopy.getFilterDocumentIds()).isEqualTo(
+                searchSpec.getFilterDocumentIds());
+    }
+
+    @Test
+    @RequiresFlagsEnabled({Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS,
+            Flags.FLAG_ENABLE_SEARCH_SPEC_FILTER_DOCUMENT_IDS})
+    public void testSearchSpecBuilder_clearFilterDocumentIds() {
+        SearchSpec searchSpec = new SearchSpec.Builder()
+                .addFilterDocumentIds(ImmutableList.of("uri1", "uri2"))
+                .clearFilterDocumentIds()
+                .build();
+        assertThat(searchSpec.getFilterDocumentIds()).isEmpty();
     }
 }

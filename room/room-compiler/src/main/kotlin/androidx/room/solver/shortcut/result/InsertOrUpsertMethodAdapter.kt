@@ -18,6 +18,7 @@ package androidx.room.solver.shortcut.result
 
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.processing.XType
@@ -196,7 +197,6 @@ class InsertOrUpsertMethodAdapter private constructor(private val methodInfo: Me
                 val upsertAdapter = adapters.getValue(param.name).first
                 val resultFormat =
                     XCodeBlock.of(
-                            language,
                             "%L.%L(%L, %L)",
                             upsertAdapter.name,
                             methodInfo.methodName,
@@ -211,7 +211,6 @@ class InsertOrUpsertMethodAdapter private constructor(private val methodInfo: Me
                                         methodInfo.returnInfo.typeName
                             ) {
                                 XCodeBlock.ofCast(
-                                    language = language,
                                     typeName = methodInfo.returnInfo.typeName,
                                     expressionBlock = it
                                 )
@@ -270,7 +269,7 @@ class InsertOrUpsertMethodAdapter private constructor(private val methodInfo: Me
         dbProperty: XPropertySpec,
         scope: CodeGenScope
     ) {
-        scope.builder.apply {
+        scope.builder.applyTo { language ->
             val methodName = methodInfo.methodName
             val methodReturnInfo = methodInfo.returnInfo
 
@@ -291,29 +290,20 @@ class InsertOrUpsertMethodAdapter private constructor(private val methodInfo: Me
                     // We want to keep the e.g. Array<out Long> generic type function signature, so
                     // need to do a cast.
                     val resultFormat =
-                        XCodeBlock.of(
-                                language,
-                                "%L.%L(%L)",
-                                upsertAdapter.name,
-                                methodName,
-                                param.name
-                            )
-                            .let {
-                                if (
-                                    language == CodeLanguage.KOTLIN &&
-                                        methodReturnInfo == ReturnInfo.ID_ARRAY_BOX &&
-                                        methodInfo.returnType.asTypeName() ==
-                                            methodReturnInfo.typeName
-                                ) {
-                                    XCodeBlock.ofCast(
-                                        language = language,
-                                        typeName = methodReturnInfo.typeName,
-                                        expressionBlock = it
-                                    )
-                                } else {
-                                    it
-                                }
+                        XCodeBlock.of("%L.%L(%L)", upsertAdapter.name, methodName, param.name).let {
+                            if (
+                                language == CodeLanguage.KOTLIN &&
+                                    methodReturnInfo == ReturnInfo.ID_ARRAY_BOX &&
+                                    methodInfo.returnType.asTypeName() == methodReturnInfo.typeName
+                            ) {
+                                XCodeBlock.ofCast(
+                                    typeName = methodReturnInfo.typeName,
+                                    expressionBlock = it
+                                )
+                            } else {
+                                it
                             }
+                        }
 
                     if (resultVar != null) {
                         // if it has more than 1 parameter, we would've already printed the error

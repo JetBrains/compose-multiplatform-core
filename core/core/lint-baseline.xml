@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.8.0-alpha06" type="baseline" client="gradle" dependencies="false" name="AGP (8.8.0-alpha06)" variant="all" version="8.8.0-alpha06">
+<issues format="6" by="lint 8.8.0-alpha08" type="baseline" client="gradle" dependencies="false" name="AGP (8.8.0-alpha08)" variant="all" version="8.8.0-alpha08">
 
     <issue
         id="NewApi"
@@ -566,6 +566,51 @@
         errorLine2="                                             ~~~~~~">
         <location
             file="src/main/java/androidx/core/service/quicksettings/TileServiceCompat.java"/>
+    </issue>
+
+    <issue
+        id="WrongConstant"
+        message="Must be one or more of: ShortcutManager.FLAG_MATCH_MANIFEST, ShortcutManager.FLAG_MATCH_DYNAMIC, ShortcutManager.FLAG_MATCH_PINNED, ShortcutManager.FLAG_MATCH_CACHED"
+        errorLine1="    public static final int FLAG_MATCH_MANIFEST = 1 &lt;&lt; 0;"
+        errorLine2="                                                  ~">
+        <location
+            file="src/main/java/androidx/core/content/pm/ShortcutManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="WrongConstant"
+        message="Must be one or more of: ShortcutManager.FLAG_MATCH_MANIFEST, ShortcutManager.FLAG_MATCH_DYNAMIC, ShortcutManager.FLAG_MATCH_PINNED, ShortcutManager.FLAG_MATCH_CACHED"
+        errorLine1="    public static final int FLAG_MATCH_DYNAMIC = 1 &lt;&lt; 1;"
+        errorLine2="                                                 ~">
+        <location
+            file="src/main/java/androidx/core/content/pm/ShortcutManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="WrongConstant"
+        message="Must be one or more of: ShortcutManager.FLAG_MATCH_MANIFEST, ShortcutManager.FLAG_MATCH_DYNAMIC, ShortcutManager.FLAG_MATCH_PINNED, ShortcutManager.FLAG_MATCH_CACHED"
+        errorLine1="    public static final int FLAG_MATCH_DYNAMIC = 1 &lt;&lt; 1;"
+        errorLine2="                                                      ~">
+        <location
+            file="src/main/java/androidx/core/content/pm/ShortcutManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="WrongConstant"
+        message="Must be one or more of: ShortcutManager.FLAG_MATCH_MANIFEST, ShortcutManager.FLAG_MATCH_DYNAMIC, ShortcutManager.FLAG_MATCH_PINNED, ShortcutManager.FLAG_MATCH_CACHED"
+        errorLine1="    public static final int FLAG_MATCH_PINNED = 1 &lt;&lt; 2;"
+        errorLine2="                                                ~">
+        <location
+            file="src/main/java/androidx/core/content/pm/ShortcutManagerCompat.java"/>
+    </issue>
+
+    <issue
+        id="WrongConstant"
+        message="Must be one or more of: ShortcutManager.FLAG_MATCH_MANIFEST, ShortcutManager.FLAG_MATCH_DYNAMIC, ShortcutManager.FLAG_MATCH_PINNED, ShortcutManager.FLAG_MATCH_CACHED"
+        errorLine1="    public static final int FLAG_MATCH_PINNED = 1 &lt;&lt; 2;"
+        errorLine2="                                                     ~">
+        <location
+            file="src/main/java/androidx/core/content/pm/ShortcutManagerCompat.java"/>
     </issue>
 
     <issue

@@ -177,6 +177,57 @@ class ProgressIndicatorScreenshotTest {
         }
 
     @Test
+    fun circular_progress_indicator_content(@TestParameter screenSize: ScreenSize) =
+        verifyProgressIndicatorScreenshot(screenSize = screenSize) {
+            CircularProgressIndicatorContent(
+                progress = { 0.25f },
+                modifier = Modifier.aspectRatio(1f).testTag(TEST_TAG),
+                startAngle = 120f,
+                endAngle = 60f,
+            )
+        }
+
+    @Test
+    fun circular_progress_indicator_content_overflow(@TestParameter screenSize: ScreenSize) =
+        verifyProgressIndicatorScreenshot(screenSize = screenSize) {
+            CircularProgressIndicatorContent(
+                progress = { 1.2f },
+                modifier = Modifier.aspectRatio(1f).testTag(TEST_TAG),
+                startAngle = 120f,
+                endAngle = 60f,
+                allowProgressOverflow = true
+            )
+        }
+
+    @Test
+    fun circular_progress_indicator_content_disabled(@TestParameter screenSize: ScreenSize) =
+        verifyProgressIndicatorScreenshot(screenSize = screenSize) {
+            CircularProgressIndicatorContent(
+                progress = { 0.25f },
+                modifier = Modifier.aspectRatio(1f).testTag(TEST_TAG),
+                startAngle = 120f,
+                endAngle = 60f,
+                enabled = false
+            )
+        }
+
+    @Test
+    fun circular_progress_indicator_content_custom_color(@TestParameter screenSize: ScreenSize) =
+        verifyProgressIndicatorScreenshot(screenSize = screenSize) {
+            CircularProgressIndicatorContent(
+                progress = { 0.75f },
+                modifier = Modifier.size(200.dp).testTag(TEST_TAG),
+                startAngle = 120f,
+                endAngle = 60f,
+                colors =
+                    ProgressIndicatorDefaults.colors(
+                        indicatorColor = Color.Green,
+                        trackColor = Color.Red.copy(alpha = 0.5f)
+                    )
+            )
+        }
+
+    @Test
     fun segmented_progress_indicator_with_progress(@TestParameter screenSize: ScreenSize) =
         verifyProgressIndicatorScreenshot(screenSize = screenSize) {
             SegmentedCircularProgressIndicator(

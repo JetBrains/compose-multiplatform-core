@@ -23,10 +23,10 @@ import android.content.SharedPreferences
 import android.net.Uri
 import androidx.security.state.SecurityPatchState.Companion.COMPONENT_SYSTEM
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.gson.Gson
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.Date
+import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -63,7 +63,11 @@ class UpdateInfoProviderTest {
             .setSecurityPatchLevel("2022-01-01")
             .setPublishedDate(publishedDate)
             .build()
-    private val expectedJson = Gson().toJson(updateInfo)
+    private val expectedJson =
+        Json.encodeToString(
+            SerializableUpdateInfo.serializer(),
+            updateInfo.toSerializableUpdateInfo()
+        )
     private val mockEmptyEditor: SharedPreferences.Editor = mock<SharedPreferences.Editor> {}
     private val mockEditor: SharedPreferences.Editor =
         mock<SharedPreferences.Editor> {
@@ -73,7 +77,7 @@ class UpdateInfoProviderTest {
     private val mockPrefs: SharedPreferences =
         mock<SharedPreferences> {
             on { edit() } doReturn mockEditor
-            on { all } doReturn mapOf(Pair("key", Gson().toJson(updateInfo)))
+            on { all } doReturn mapOf(Pair("key", expectedJson))
         }
     private val mockContext: Context =
         mock<Context> {

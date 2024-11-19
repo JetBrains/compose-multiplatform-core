@@ -32,7 +32,6 @@ import androidx.room.compiler.processing.testcode.OtherAnnotation
 import androidx.room.compiler.processing.testcode.RepeatableJavaAnnotation
 import androidx.room.compiler.processing.testcode.RepeatableKotlinAnnotation
 import androidx.room.compiler.processing.testcode.TestSuppressWarnings
-import androidx.room.compiler.processing.util.KOTLINC_LANGUAGE_1_9_ARGS
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
 import androidx.room.compiler.processing.util.asJTypeName
@@ -169,8 +168,7 @@ class XAnnotationTest(private val preCompiled: Boolean) {
                     .trimIndent()
             )
         // https://github.com/google/ksp/issues/2078
-        runTest(sources = listOf(javaSrc, kotlinSrc), kotlincArgs = KOTLINC_LANGUAGE_1_9_ARGS) {
-            invocation ->
+        runTest(sources = listOf(javaSrc, kotlinSrc)) { invocation ->
             val typeElement = invocation.processingEnv.requireTypeElement("Foo")
             val annotation =
                 typeElement.getAllAnnotations().single { it.qualifiedName == "MyAnnotation" }

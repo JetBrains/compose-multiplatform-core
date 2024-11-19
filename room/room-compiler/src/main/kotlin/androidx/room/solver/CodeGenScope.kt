@@ -29,7 +29,7 @@ class CodeGenScope(
 ) {
     val language = writer.context.codeLanguage
     val javaLambdaSyntaxAvailable = writer.context.javaLambdaSyntaxAvailable
-    val builder by lazy { XCodeBlock.builder(language) }
+    val builder by lazy { XCodeBlock.builder() }
     private val tmpVarIndices = mutableMapOf<String, Int>()
 
     companion object {

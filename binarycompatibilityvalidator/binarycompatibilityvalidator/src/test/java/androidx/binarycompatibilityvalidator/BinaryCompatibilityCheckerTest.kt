@@ -28,6 +28,9 @@ import org.junit.Test
 @OptIn(ExperimentalLibraryAbiReader::class, ExperimentalBCVApi::class)
 class BinaryCompatibilityCheckerTest {
     private val klibFile by lazy { getJavaResource("collection.klib") }
+    private val validBaselineFile by lazy { getJavaResource("valid_baseline.txt") }
+    private val invalidBaselineFile by lazy { getJavaResource("invalid_baseline_file.txt") }
+    private val invalidBaselineFormatFile by lazy { getJavaResource("invalid_baseline_format.txt") }
 
     @Test
     fun klibDumpIsCompatibleWithItself() {
@@ -480,6 +483,27 @@ class BinaryCompatibilityCheckerTest {
                 "removed setter from my.lib/myVal"
             )
         testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrorMessages)
+    }
+
+    @Test
+    fun propertyVarToValWithInternalSet() {
+        val beforeText =
+            """
+        open class my.lib/MyClass { // my.lib/MyClass|null[0]
+            constructor <init>() // my.lib/MyClass.<init>|<init>(){}[0]
+            open var myProperty // my.lib/MyClass.myProperty|{}myProperty[0]
+                open fun <get-myProperty>(): kotlin/Int // my.lib/MyClass.myProperty.<get-myProperty>|<get-myProperty>(){}[0]
+        }
+        """
+        val afterText =
+            """
+        open class my.lib/MyClass { // my.lib/MyClass|null[0]
+            constructor <init>() // my.lib/MyClass.<init>|<init>(){}[0]
+            open val myProperty // my.lib/MyClass.myProperty|{}myProperty[0]
+                open fun <get-myProperty>(): kotlin/Int // my.lib/MyClass.myProperty.<get-myProperty>|<get-myProperty>(){}[0]
+        }
+        """
+        testBeforeAndAfterIsCompatible(beforeText, afterText)
     }
 
     @Test
@@ -1261,29 +1285,154 @@ class BinaryCompatibilityCheckerTest {
             assertFailsWith<ValidationException> {
                 BinaryCompatibilityChecker.checkAllBinariesAreCompatible(afterLibs, beforeLibs)
             }
-        assertThat(e.message).contains("Removed targets [iosX64]")
+        assertThat(e.message).contains("[iosX64]: Target was removed")
     }
 
-    private fun testBeforeAndAfterIsCompatible(before: String, after: String) {
-        runBeforeAndAfter(before, after)
+    @Test
+    fun returnsErrorsObjectWhenValidateIsFalse() {
+        val beforeText =
+            createDumpText(
+                """
+        final class my.lib/MyClass { // my.lib/MyClass|null[0]
+            constructor <init>() // my.lib/MyClass.<init>|<init>(){}[0]
+        }
+        """,
+                listOf("myTarget")
+            )
+        val afterText = createDumpText("", listOf("myTarget"))
+
+        val errors =
+            BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
+                KlibDumpParser(afterText).parse(),
+                KlibDumpParser(beforeText).parse(),
+                baselines = emptySet(),
+                validate = false
+            )
+        assertThat(errors)
+            .isEqualTo(
+                listOf(
+                    CompatibilityError(
+                        "Removed declaration my.lib/MyClass from androidx:library",
+                        "myTarget",
+                        CompatibilityErrorSeverity.ERROR
+                    )
+                )
+            )
+    }
+
+    @Test
+    fun allowsBreakingChangeWhenBaselined() {
+        val beforeText =
+            """
+        final class my.lib/MyClass { // my.lib/MyClass|null[0]
+            constructor <init>() // my.lib/MyClass.<init>|<init>(){}[0]
+        }
+        """
+        val afterText = ""
+        val baselines =
+            setOf(
+                "[iosX64]: Removed declaration my.lib/MyClass from androidx:library",
+                "[linuxX64]: Removed declaration my.lib/MyClass from androidx:library"
+            )
+        testBeforeAndAfterIsCompatible(beforeText, afterText, baselines)
+    }
+
+    @Test
+    fun doesNotAllowEverythingJustBecauseBaselinesExist() {
+        val beforeText =
+            """
+        final class my.lib/MyClass { // my.lib/MyClass|null[0]
+            constructor <init>() // my.lib/MyClass.<init>|<init>(){}[0]
+        }
+        final class my.lib/MyOtherClass { // my.lib/MyClass|null[0]
+            constructor <init>() // my.lib/MyClass.<init>|<init>(){}[0]
+        }
+        """
+        val afterText = ""
+        val baselines = setOf("Removed declaration my.lib/MyClass from androidx:library")
+        val expectedErrors = listOf("Removed declaration my.lib/MyOtherClass from androidx:library")
+        testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrors, baselines)
+    }
+
+    @Test
+    fun acceptsChangesFromBaselineFile() {
+        val beforeText =
+            createDumpText(
+                """
+        final class my.lib/MyClass { // my.lib/MyClass|null[0]
+            constructor <init>() // my.lib/MyClass.<init>|<init>(){}[0]
+        }
+        """
+            )
+        val afterText = createDumpText("")
+        val beforeLibs = KlibDumpParser(beforeText).parse()
+        val afterLibs = KlibDumpParser(afterText).parse()
+
+        BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
+            afterLibs,
+            beforeLibs,
+            validBaselineFile
+        )
+    }
+
+    @Test
+    fun throwsOnInvalidBaselineVersion() {
+        val e =
+            assertFailsWith<RuntimeException> {
+                BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
+                    emptyMap(),
+                    emptyMap(),
+                    invalidBaselineFormatFile
+                )
+            }
+        assertThat(e.message).contains("Unrecognized baseline format: '2.0'")
+    }
+
+    @Test
+    fun throwsOnInvalidBaselineFile() {
+        val e =
+            assertFailsWith<RuntimeException> {
+                BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
+                    emptyMap(),
+                    emptyMap(),
+                    invalidBaselineFile
+                )
+            }
+        assertThat(e.message)
+            .contains(
+                "Failed to parse baseline version from 'src/test/resources/invalid_baseline_file.txt'"
+            )
+    }
+
+    private fun testBeforeAndAfterIsCompatible(
+        before: String,
+        after: String,
+        baselines: Set<String> = emptySet()
+    ) {
+        runBeforeAndAfter(before, after, baselines)
     }
 
     private fun testBeforeAndAfterIsIncompatible(
         before: String,
         after: String,
-        expectedErrors: List<String>
+        expectedErrors: List<String>,
+        baselines: Set<String> = emptySet()
     ) {
-        val e = assertFailsWith<ValidationException> { runBeforeAndAfter(before, after) }
+        val e = assertFailsWith<ValidationException> { runBeforeAndAfter(before, after, baselines) }
         for (error in expectedErrors) assertThat(e.message).contains(error)
     }
 
-    private fun runBeforeAndAfter(before: String, after: String) {
+    private fun runBeforeAndAfter(
+        before: String,
+        after: String,
+        baselines: Set<String> = emptySet()
+    ) {
         val beforeText = createDumpText(before)
         val afterText = createDumpText(after)
         val beforeLibs = KlibDumpParser(beforeText).parse()
         val afterLibs = KlibDumpParser(afterText).parse()
 
-        BinaryCompatibilityChecker.checkAllBinariesAreCompatible(afterLibs, beforeLibs)
+        BinaryCompatibilityChecker.checkAllBinariesAreCompatible(afterLibs, beforeLibs, baselines)
     }
 
     private fun createDumpText(

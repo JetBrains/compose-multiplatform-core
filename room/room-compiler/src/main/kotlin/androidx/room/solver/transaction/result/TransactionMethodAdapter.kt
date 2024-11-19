@@ -77,14 +77,13 @@ class TransactionMethodAdapter(
     ): XCodeBlock =
         when (callType) {
             TransactionMethod.CallType.CONCRETE -> {
-                XCodeBlock.of(language, "%T.super.%N(", daoImplName, jvmMethodName)
+                XCodeBlock.of("%T.super.%N(", daoImplName, jvmMethodName)
             }
             TransactionMethod.CallType.DEFAULT_JAVA8 -> {
-                XCodeBlock.of(language, "%T.super.%N(", daoName, jvmMethodName)
+                XCodeBlock.of("%T.super.%N(", daoName, jvmMethodName)
             }
             TransactionMethod.CallType.DEFAULT_KOTLIN -> {
                 XCodeBlock.of(
-                    language,
                     "%T.%N.%N(%T.this",
                     daoName,
                     DEFAULT_IMPLS_CLASS_NAME,
@@ -96,5 +95,5 @@ class TransactionMethodAdapter(
 
     private fun CodeGenScope.getKotlinInvokeExpr(
         daoImplName: XClassName,
-    ): XCodeBlock = XCodeBlock.of(language, "super@%T.%N(", daoImplName, methodName)
+    ): XCodeBlock = XCodeBlock.of("super@%T.%N(", daoImplName, methodName)
 }

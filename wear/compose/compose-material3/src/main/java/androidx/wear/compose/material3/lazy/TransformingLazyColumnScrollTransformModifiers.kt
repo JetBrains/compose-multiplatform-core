@@ -16,12 +16,14 @@
 
 package androidx.wear.compose.material3.lazy
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.paint
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
@@ -29,12 +31,17 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.addOutline
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.node.LayoutAwareModifierNode
@@ -69,8 +76,7 @@ fun Modifier.targetMorphingHeight(
 /**
  * A modifier that enables Material3 Motion transformations for content within a
  * [TransformingLazyColumn] item. It also draws the background behind the content using Material3
- * Motion transformations. There is also an overload that applies the same visual transformations to
- * the background.
+ * Motion transformations.
  *
  * This modifier calculates and applies transformations to the content based on the
  * [TransformingLazyColumnItemScrollProgress] of the item inside the [TransformingLazyColumn]. It
@@ -88,11 +94,18 @@ fun Modifier.scrollTransform(
     shape: Shape = RectangleShape
 ): Modifier =
     with(scope) {
-        var minMorphingHeight by remember { mutableStateOf<Float?>(null) }
-        val spec = remember { LazyColumnScrollTransformBehavior { minMorphingHeight } }
+        var minMorphingHeight by remember(scope) { mutableStateOf<Float?>(null) }
+        val spec = remember(scope) { LazyColumnScrollTransformBehavior { minMorphingHeight } }
         val painter =
-            remember(backgroundColor, shape) {
-                ScalingMorphingBackgroundPainter(spec, shape, backgroundColor) { scrollProgress }
+            remember(scope, backgroundColor, shape) {
+                ScalingMorphingBackgroundPainter(
+                    spec,
+                    shape,
+                    border = null,
+                    backgroundPainter = ColorPainter(backgroundColor)
+                ) {
+                    scrollProgress
+                }
             }
         this@scrollTransform then
             TargetMorphingHeightConsumerModifierElement { minMorphingHeight = it?.toFloat() }
@@ -111,6 +124,49 @@ fun Modifier.scrollTransform(
  * [TransformingLazyColumnItemScrollProgress] of the item inside the
  * [TransformingLazyColumnItemScope]. It adjusts the height, position, applies scaling and morphing
  * effects as the item scrolls.
+ *
+ * @sample androidx.wear.compose.material3.samples.TransformingLazyColumnScalingMorphingEffectSample
+ * @param scope The [TransformingLazyColumnItemScope] provides access to the item's index and key.
+ * @param shape [Shape] of the background.
+ * @param painter [Painter] to use for the background.
+ * @param border Border to draw around the background, or null if no border is needed.
+ */
+@Composable
+fun Modifier.scrollTransform(
+    scope: TransformingLazyColumnItemScope,
+    shape: Shape,
+    painter: Painter,
+    border: BorderStroke? = null
+): Modifier =
+    with(scope) {
+        var minMorphingHeight by remember(scope) { mutableStateOf<Float?>(null) }
+        val spec = remember(scope) { LazyColumnScrollTransformBehavior { minMorphingHeight } }
+        val morphingPainter =
+            remember(scope, painter, shape, border) {
+                ScalingMorphingBackgroundPainter(spec, shape, border, painter) { scrollProgress }
+            }
+        this@scrollTransform then
+            TargetMorphingHeightConsumerModifierElement { minMorphingHeight = it?.toFloat() }
+                .paint(morphingPainter)
+                .transformedHeight { height, scrollProgress ->
+                    with(spec) { scrollProgress.placementHeight(height.toFloat()).fastRoundToInt() }
+                }
+                .graphicsLayer { contentTransformation(spec) { scrollProgress } }
+                .clip(shape)
+    }
+
+/**
+ * A modifier that enables Material3 Motion transformations for content within a
+ * [TransformingLazyColumn] item.
+ *
+ * This modifier calculates and applies transformations to the content and background based on the
+ * [TransformingLazyColumnItemScrollProgress] of the item inside the
+ * [TransformingLazyColumnItemScope]. It adjusts the height, position, applies scaling and morphing
+ * effects as the item scrolls.
+ *
+ * Note that in most cases is recommended to use one of the other overrides to explicitly provide
+ * [Shape] and background [Color] (or [Painter]) so the modifier can do the background drawing and
+ * apply specific effects to background and content, as in the Material spec.
  *
  * @sample androidx.wear.compose.material3.samples.TransformingLazyColumnScalingMorphingEffectSample
  * @param scope The [TransformingLazyColumnItemScope] provides access to the item's index and key.
@@ -170,7 +226,8 @@ private fun GraphicsLayerScope.contentTransformation(
 private class ScalingMorphingBackgroundPainter(
     private val spec: LazyColumnScrollTransformBehavior,
     private val shape: Shape,
-    private val backgroundColor: Color,
+    private val border: BorderStroke?,
+    private val backgroundPainter: Painter,
     private val progress: DrawScope.() -> TransformingLazyColumnItemScrollProgress?
 ) : Painter() {
     override val intrinsicSize: Size
@@ -179,23 +236,31 @@ private class ScalingMorphingBackgroundPainter(
     override fun DrawScope.onDraw() {
         with(spec) {
             progress()?.let {
-                val scale = it.scale
-                val xOffset =
-                    size.width * (1f - scale) / 2f +
-                        it.backgroundXOffsetFraction * size.width * scale
-                val width =
-                    size.width * scale - 2f * it.backgroundXOffsetFraction * size.width * scale
+                val contentWidth =
+                    (1f - 2 * (1f - it.backgroundXOffsetFraction)) * size.width * it.scale
+                val xOffset = (size.width - contentWidth) / 2f
+
                 translate(xOffset, 0f) {
-                    drawOutline(
-                        outline =
-                            shape.createOutline(
-                                Size(width, it.placementHeight(size.height)),
-                                layoutDirection,
-                                this
-                            ),
-                        color = backgroundColor,
-                        alpha = it.backgroundAlpha,
-                    )
+                    val placementHeight = it.placementHeight(size.height)
+                    val shapeOutline =
+                        shape.createOutline(
+                            Size(contentWidth, placementHeight),
+                            layoutDirection,
+                            this@onDraw
+                        )
+
+                    // TODO: b/376693576 - cache the path.
+                    clipPath(Path().apply { addOutline(shapeOutline) }) {
+                        if (border != null) {
+                            drawOutline(
+                                outline = shapeOutline,
+                                brush = border.brush,
+                                alpha = it.backgroundAlpha,
+                                style = Stroke(border.width.toPx())
+                            )
+                        }
+                        with(backgroundPainter) { draw(Size(contentWidth, placementHeight)) }
+                    }
                 }
             }
         }

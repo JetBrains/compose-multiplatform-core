@@ -20,6 +20,7 @@ import android.os.Build
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -68,26 +69,49 @@ class EdgeButtonScreenshotTest {
     }
 
     @Test
-    fun edge_button_small() =
-        verifyScreenshot() { BasicEdgeButton(buttonSize = EdgeButtonSize.Small) }
+    fun edge_button_small() = verifyScreenshot {
+        BasicEdgeButton(buttonSize = EdgeButtonSize.Small)
+    }
 
     @Test
-    fun edge_button_medium() =
-        verifyScreenshot() { BasicEdgeButton(buttonSize = EdgeButtonSize.Medium) }
+    fun edge_button_medium() = verifyScreenshot {
+        BasicEdgeButton(buttonSize = EdgeButtonSize.Medium)
+    }
 
     @Test
-    fun edge_button_large() =
-        verifyScreenshot() { BasicEdgeButton(buttonSize = EdgeButtonSize.Large) }
+    fun edge_button_large() = verifyScreenshot {
+        BasicEdgeButton(buttonSize = EdgeButtonSize.Large)
+    }
 
     @Test
-    fun edge_button_disabled() =
-        verifyScreenshot() { BasicEdgeButton(buttonSize = EdgeButtonSize.Medium, enabled = false) }
+    fun edge_button_xsmall_icon() = verifyScreenshot {
+        BasicEdgeButtonWithIcon(buttonSize = EdgeButtonSize.ExtraSmall)
+    }
 
     @Test
-    fun edge_button_small_space_very_limited() =
-        verifyScreenshot() {
-            BasicEdgeButton(buttonSize = EdgeButtonSize.Small, constrainedHeight = 10.dp)
-        }
+    fun edge_button_small_icon() = verifyScreenshot {
+        BasicEdgeButtonWithIcon(buttonSize = EdgeButtonSize.Small)
+    }
+
+    @Test
+    fun edge_button_medium_icon() = verifyScreenshot {
+        BasicEdgeButtonWithIcon(buttonSize = EdgeButtonSize.Medium)
+    }
+
+    @Test
+    fun edge_button_large_icon() = verifyScreenshot {
+        BasicEdgeButtonWithIcon(buttonSize = EdgeButtonSize.Large)
+    }
+
+    @Test
+    fun edge_button_disabled() = verifyScreenshot {
+        BasicEdgeButton(buttonSize = EdgeButtonSize.Medium, enabled = false)
+    }
+
+    @Test
+    fun edge_button_small_space_very_limited() = verifyScreenshot {
+        BasicEdgeButton(buttonSize = EdgeButtonSize.Small, constrainedHeight = 10.dp)
+    }
 
     @Test
     fun edge_button_small_space_limited() = verifyScreenshot {
@@ -131,6 +155,23 @@ class EdgeButtonScreenshotTest {
                         .then(constrainedHeight?.let { Modifier.height(it) } ?: Modifier)
             ) {
                 BasicText(text)
+            }
+        }
+    }
+
+    @Composable
+    private fun BasicEdgeButtonWithIcon(
+        buttonSize: EdgeButtonSize,
+        enabled: Boolean = true,
+    ) {
+        Box(Modifier.fillMaxSize()) {
+            EdgeButton(
+                onClick = { /* Do something */ },
+                enabled = enabled,
+                buttonSize = buttonSize,
+                modifier = Modifier.align(Alignment.BottomEnd).testTag(TEST_TAG)
+            ) {
+                TestIcon(modifier = Modifier.size(EdgeButtonDefaults.iconSizeFor(buttonSize)))
             }
         }
     }

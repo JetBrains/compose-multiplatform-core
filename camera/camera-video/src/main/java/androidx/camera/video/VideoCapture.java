@@ -83,6 +83,7 @@ import androidx.camera.core.ImageCapture;
 import androidx.camera.core.Logger;
 import androidx.camera.core.MirrorMode;
 import androidx.camera.core.Preview;
+import androidx.camera.core.ResolutionInfo;
 import androidx.camera.core.SurfaceRequest;
 import androidx.camera.core.SurfaceRequest.TransformationInfo;
 import androidx.camera.core.UseCase;
@@ -314,6 +315,51 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
         if (setTargetRotationInternal(rotation)) {
             sendTransformationInfoIfReady();
         }
+    }
+
+    /**
+     * Returns information about the selected resolution.
+     *
+     * <p>Note that the {@link ResolutionInfo#getResolution()} might not be the same as the
+     * resolution of the recorded video because the video might have been rotated according to
+     * the camera sensor orientation and the target rotation, and/or have been cropped according
+     * to the {@link androidx.camera.core.ViewPort} settings.
+     * The recorded video resolution can be determined by applying the
+     * {@link ResolutionInfo#getRotationDegrees()} to the size of
+     * {@link ResolutionInfo#getCropRect()}.
+     *
+     * <p>The resolution information may change if:
+     * <ul>
+     * <li>The use case is unbound and then rebound.
+     * <li>{@link #setTargetRotation(int)} is called to change the target rotation.
+     * </ul>
+     *
+     * <p>If changes occur, the application should call {@code getResolutionInfo()} again
+     * to get the latest {@link ResolutionInfo}.
+     *
+     * @return the resolution information if the use case is bound by the
+     * {@link androidx.camera.lifecycle.ProcessCameraProvider#bindToLifecycle} API, or {@code
+     * null} if the use case is not yet bound.
+     */
+    @Nullable
+    public ResolutionInfo getResolutionInfo() {
+        return getResolutionInfoInternal();
+    }
+
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    @Nullable
+    @Override
+    protected ResolutionInfo getResolutionInfoInternal() {
+        CameraInternal camera = getCamera();
+        Size resolution = getAttachedSurfaceResolution();
+        Rect cropRect = mCropRect;
+        int rotationDegrees = mRotationDegrees;
+
+        if (camera == null || resolution == null || cropRect == null) {
+            return null;
+        }
+
+        return new ResolutionInfo(resolution, cropRect, rotationDegrees);
     }
 
     /**

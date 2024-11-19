@@ -19,10 +19,12 @@ package androidx.room.solver.query.result
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.VisibilityModifier
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.codegen.XFunSpec
 import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.XTypeSpec
+import androidx.room.compiler.codegen.XTypeSpec.Builder.Companion.applyTo
 import androidx.room.compiler.processing.XNullability
 import androidx.room.compiler.processing.XType
 import androidx.room.ext.AndroidTypeNames.CURSOR
@@ -48,9 +50,9 @@ internal class RxLambdaQueryResultBinder(
         scope: CodeGenScope
     ) {
         val callable =
-            CallableTypeSpecBuilder(scope.language, typeArg.asTypeName()) {
+            CallableTypeSpecBuilder(typeArg.asTypeName()) {
                     addCode(
-                        XCodeBlock.builder(language)
+                        XCodeBlock.builder()
                             .apply {
                                 fillInCallMethod(
                                     roomSQLiteQueryVar = roomSQLiteQueryVar,
@@ -101,7 +103,6 @@ internal class RxLambdaQueryResultBinder(
             typeName = CURSOR,
             assignExpr =
                 XCodeBlock.of(
-                    language = language,
                     format = "%M(%N, %L, %L, %L)",
                     DB_UTIL_QUERY,
                     dbProperty,
@@ -110,7 +111,7 @@ internal class RxLambdaQueryResultBinder(
                     "null"
                 )
         )
-        beginControlFlow("try").apply {
+        beginControlFlow("try").applyTo { language ->
             adapter?.convert(outVar, cursorVar, adapterScope)
             add(adapterScope.generate())
             if (
@@ -123,11 +124,9 @@ internal class RxLambdaQueryResultBinder(
                     addStatement(
                         "throw %L",
                         XCodeBlock.ofNewInstance(
-                            language,
                             rxType.version.emptyResultExceptionClassName,
                             "%L",
                             XCodeBlock.of(
-                                language,
                                 when (language) {
                                     CodeLanguage.KOTLIN -> "%S + %L.sql"
                                     CodeLanguage.JAVA -> "%S + %L.getSql()"
@@ -149,19 +148,20 @@ internal class RxLambdaQueryResultBinder(
     }
 
     private fun XTypeSpec.Builder.createFinalizeMethod(roomSQLiteQueryVar: String) {
-        addFunction(
-            XFunSpec.builder(
-                    language = language,
-                    name = "finalize",
-                    visibility = VisibilityModifier.PROTECTED,
-                    // To 'override' finalize in Kotlin one does not use the 'override' keyword, but
-                    // in
-                    // Java the @Override is needed
-                    isOverride = language == CodeLanguage.JAVA
-                )
-                .apply { addStatement("%L.release()", roomSQLiteQueryVar) }
-                .build()
-        )
+        applyTo { language ->
+            addFunction(
+                XFunSpec.builder(
+                        name = "finalize",
+                        visibility = VisibilityModifier.PROTECTED,
+                        // To 'override' finalize in Kotlin one does not use the 'override' keyword,
+                        // but
+                        // in Java the @Override is needed
+                        isOverride = language == CodeLanguage.JAVA
+                    )
+                    .apply { addStatement("%L.release()", roomSQLiteQueryVar) }
+                    .build()
+            )
+        }
     }
 
     override fun isMigratedToDriver() = adapter?.isMigratedToDriver() == true
@@ -190,11 +190,6 @@ internal class RxLambdaQueryResultBinder(
                             javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable
                         ) {
                         override fun XCodeBlock.Builder.body(scope: CodeGenScope) {
-                            val returnPrefix =
-                                when (language) {
-                                    CodeLanguage.JAVA -> "return "
-                                    CodeLanguage.KOTLIN -> ""
-                                }
                             val statementVar = scope.getTmpVar("_stmt")
                             addLocalVal(
                                 statementVar,
@@ -207,7 +202,12 @@ internal class RxLambdaQueryResultBinder(
                             bindStatement?.invoke(scope, statementVar)
                             val outVar = scope.getTmpVar("_result")
                             adapter?.convert(outVar, statementVar, scope)
-                            addStatement("$returnPrefix%L", outVar)
+                            applyTo { language ->
+                                when (language) {
+                                    CodeLanguage.JAVA -> addStatement("return %L", outVar)
+                                    CodeLanguage.KOTLIN -> addStatement("%L", outVar)
+                                }
+                            }
                             nextControlFlow("finally")
                             addStatement("%L.close()", statementVar)
                             endControlFlow()

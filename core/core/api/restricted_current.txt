@@ -3453,6 +3453,13 @@ package androidx.core.view {
     method @Deprecated public static void setQuickScaleEnabled(Object!, boolean);
   }
 
+  public class ScrollFeedbackProviderCompat {
+    method public static androidx.core.view.ScrollFeedbackProviderCompat createProvider(android.view.View);
+    method public void onScrollLimit(int, int, int, boolean);
+    method public void onScrollProgress(int, int, int, int);
+    method public void onSnapToItem(int, int, int);
+  }
+
   public interface ScrollingView {
     method public int computeHorizontalScrollExtent();
     method public int computeHorizontalScrollOffset();
@@ -3496,6 +3503,7 @@ package androidx.core.view {
     method public static int addAccessibilityAction(android.view.View, CharSequence, androidx.core.view.accessibility.AccessibilityViewCommand);
     method public static void addKeyboardNavigationClusters(android.view.View, java.util.Collection<android.view.View!>, int);
     method public static void addOnUnhandledKeyEventListener(android.view.View, androidx.core.view.ViewCompat.OnUnhandledKeyEventListenerCompat);
+    method public static void addOverlayView(android.view.ViewGroup, android.view.View);
     method @Deprecated public static androidx.core.view.ViewPropertyAnimatorCompat animate(android.view.View);
     method @Deprecated public static boolean canScrollHorizontally(android.view.View!, int);
     method @Deprecated public static boolean canScrollVertically(android.view.View!, int);

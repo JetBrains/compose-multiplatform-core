@@ -20,6 +20,7 @@ import androidx.room.compiler.codegen.XCodeBlock
 import androidx.room.compiler.codegen.XFunSpec
 import androidx.room.compiler.codegen.XMemberName.Companion.packageMember
 import androidx.room.compiler.codegen.XTypeName
+import androidx.room.compiler.codegen.compat.XConverters.toString
 import androidx.room.compiler.processing.XType
 import androidx.room.ext.AndroidTypeNames
 import androidx.room.ext.ArrayLiteral
@@ -61,13 +62,14 @@ class EntityRowAdapter(val entity: Entity, out: XType) : QueryMappedRowAdapter(o
                             column = columnName,
                             indexVar =
                                 XCodeBlock.of(
-                                        scope.language,
                                         "%M(%L, %S)",
                                         packageMember,
                                         cursorVarName,
                                         columnName
                                     )
-                                    .toString()
+                                    // indexVar expects a string, and that depends on the language.
+                                    // We should change the method signature to accept XCodeBlock.
+                                    .toString(scope.language)
                         )
                     }
             }
@@ -92,17 +94,9 @@ class EntityRowAdapter(val entity: Entity, out: XType) : QueryMappedRowAdapter(o
             cursorDelegateVarName =
                 scope.getTmpVar(if (scope.useDriverApi) "_wrappedStmt" else "_wrappedCursor")
             val entityColumnNamesParam =
-                ArrayLiteral(
-                    scope.language,
-                    CommonTypeNames.STRING,
-                    *entity.columnNames.toTypedArray()
-                )
+                ArrayLiteral(CommonTypeNames.STRING, *entity.columnNames.toTypedArray())
             val entityColumnIndicesParam =
-                ArrayLiteral(
-                    scope.language,
-                    XTypeName.PRIMITIVE_INT,
-                    *indices.map { it.indexVar }.toTypedArray()
-                )
+                ArrayLiteral(XTypeName.PRIMITIVE_INT, *indices.map { it.indexVar }.toTypedArray())
             val wrapperTypeName =
                 if (scope.useDriverApi) {
                     SQLiteDriverTypeNames.STATEMENT
@@ -120,7 +114,6 @@ class EntityRowAdapter(val entity: Entity, out: XType) : QueryMappedRowAdapter(o
                 wrapperTypeName,
                 assignExpr =
                     XCodeBlock.of(
-                        scope.language,
                         "%M(%L, %L, %L)",
                         packageMember,
                         cursorVarName,

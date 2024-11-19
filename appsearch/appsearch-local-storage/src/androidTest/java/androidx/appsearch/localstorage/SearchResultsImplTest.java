@@ -49,13 +49,16 @@ public class SearchResultsImplTest {
 
     @Before
     public void setUp() throws Exception {
+        AppSearchConfig config = new AppSearchConfigImpl(
+                new UnlimitedLimitConfig(),
+                new LocalStorageIcingOptionsConfig()
+        );
         mAppSearchImpl = AppSearchImpl.create(
                 mTemporaryFolder.newFolder(),
-                new AppSearchConfigImpl(
-                        new UnlimitedLimitConfig(),
-                        new LocalStorageIcingOptionsConfig()
-                ),
-                /*initStatsBuilder=*/ null, /*visibilityChecker=*/ null,
+                config,
+                /*initStatsBuilder=*/ null,
+                /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
     }
 

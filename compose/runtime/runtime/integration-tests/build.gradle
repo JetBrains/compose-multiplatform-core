@@ -110,8 +110,6 @@ tasks.withType(KotlinCompile).configureEach {
         incremental = false
         freeCompilerArgs += [
             "-Xcontext-receivers",
-            "-P",
-            "plugin:androidx.compose.compiler.plugins.kotlin:sourceInformation=true"
         ]
     }
 }

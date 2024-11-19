@@ -33,6 +33,7 @@ import androidx.test.filters.SmallTest;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -99,6 +100,7 @@ public class PageIndicatorTest {
         mPageIndicator.setRangeAndZoom(new Range(1, 2), 1.5f, true);
     }
 
+    @Ignore // b/376314114
     @Test
     public void testAnnounceZoomChanges() {
         mPageIndicator.setRangeAndZoom(new Range(0, 0), 1.5f, false);

@@ -8,6 +8,7 @@ package androidx.compose.material3.adaptive {
   public final class AndroidWindowAdaptiveInfo_androidKt {
     method @androidx.compose.runtime.Composable public static androidx.compose.runtime.State<java.util.List<androidx.window.layout.FoldingFeature>> collectFoldingFeaturesAsState();
     method @androidx.compose.runtime.Composable public static androidx.compose.material3.adaptive.WindowAdaptiveInfo currentWindowAdaptiveInfo();
+    method @SuppressCompatibility @androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi @androidx.compose.runtime.Composable public static long currentWindowDpSize();
     method @androidx.compose.runtime.Composable public static long currentWindowSize();
   }
 

@@ -178,6 +178,49 @@ internal class SavedStateTest : RobolectricTest() {
     }
 
     @Test
+    fun contentDeepHashCode_isConsistentForSameInstance() {
+        val state = createDefaultSavedState()
+
+        val hashCode1 = state.read { contentDeepHashCode() }
+        val hashCode2 = state.read { contentDeepHashCode() }
+
+        assertThat(hashCode1).isEqualTo(hashCode2)
+    }
+
+    @Test
+    fun contentDeepHashCode_isEqualForSameContent() {
+        val state1 = createDefaultSavedState()
+        val state2 = createDefaultSavedState()
+
+        val hashCode1 = state1.read { contentDeepHashCode() }
+        val hashCode2 = state2.read { contentDeepHashCode() }
+
+        assertThat(hashCode1).isEqualTo(hashCode2)
+    }
+
+    @Test
+    fun contentDeepHashCode_isDifferentForDifferentContent() {
+        val state1 = savedState { putInt("id", 1) }
+        val state2 = savedState { putInt("id", 2) }
+
+        val hashCode1 = state1.read { contentDeepHashCode() }
+        val hashCode2 = state2.read { contentDeepHashCode() }
+
+        assertThat(hashCode1).isNotEqualTo(hashCode2)
+    }
+
+    @Test
+    fun contentDeepHashCode_generatesUniqueValues() {
+        val states = List(size = 1000) { idx -> savedState { putInt("id", idx) } }
+
+        // Calculate the hash code, of each element, and remove any possible duplicate.
+        val hashCodes = states.map { state -> state.read { contentDeepHashCode() } }.toSet()
+
+        // Ensure that each hash code is unique.
+        assertThat(hashCodes.size).isEqualTo(states.size)
+    }
+
+    @Test
     fun toMap() {
         val sharedState = savedState {
             putInt(KEY_1, Int.MIN_VALUE)
@@ -286,6 +329,49 @@ internal class SavedStateTest : RobolectricTest() {
         val actual = underTest.read { getCharOrElse(KEY_1) { Char.MAX_VALUE } }
 
         assertThat(actual).isEqualTo(Char.MAX_VALUE)
+    }
+
+    @Test
+    fun getCharSequence_whenSet_returns() {
+        val underTest = savedState { putCharSequence(KEY_1, CHAR_SEQUENCE_VALUE_1) }
+        val actual = underTest.read { getCharSequence(KEY_1) }
+
+        assertThat(actual).isEqualTo(CHAR_SEQUENCE_VALUE_1)
+    }
+
+    @Test
+    fun getCharSequence_whenNotSet_throws() {
+        assertThrows<IllegalArgumentException> { savedState().read { getCharSequence(KEY_1) } }
+    }
+
+    @Test
+    fun getCharSequence_whenSet_differentType_throws() {
+        val underTest = savedState { putInt(KEY_1, Int.MAX_VALUE) }
+
+        assertThrows<IllegalStateException> { underTest.read { getString(KEY_1) } }
+    }
+
+    @Test
+    fun getCharSequenceOrElse_whenSet_returns() {
+        val underTest = savedState { putCharSequence(KEY_1, CHAR_SEQUENCE_VALUE_1) }
+        val actual = underTest.read { getCharSequenceOrElse(KEY_1) { CHAR_SEQUENCE_VALUE_2 } }
+
+        assertThat(actual).isEqualTo(CHAR_SEQUENCE_VALUE_1)
+    }
+
+    @Test
+    fun getCharSequenceOrElse_whenNotSet_returnsElse() {
+        val actual = savedState().read { getCharSequenceOrElse(KEY_1) { CHAR_SEQUENCE_VALUE_2 } }
+
+        assertThat(actual).isEqualTo(CHAR_SEQUENCE_VALUE_2)
+    }
+
+    @Test
+    fun getCharSequenceOrElse_whenSet_differentType_returnsElse() {
+        val underTest = savedState { putInt(KEY_1, Int.MAX_VALUE) }
+        val actual = underTest.read { getCharSequenceOrElse(KEY_1) { CHAR_SEQUENCE_VALUE_2 } }
+
+        assertThat(actual).isEqualTo(CHAR_SEQUENCE_VALUE_2)
     }
 
     @Test
@@ -582,6 +668,53 @@ internal class SavedStateTest : RobolectricTest() {
     }
 
     @Test
+    fun getCharSequenceList_whenSet_returns() {
+        val underTest = savedState { putCharSequenceList(KEY_1, CHAR_SEQUENCE_LIST) }
+        val actual = underTest.read { getCharSequenceList(KEY_1) }
+
+        assertThat(actual).isEqualTo(CHAR_SEQUENCE_LIST)
+    }
+
+    @Test
+    fun getCharSequenceList_whenNotSet_throws() {
+        assertThrows<IllegalArgumentException> { savedState().read { getCharSequenceList(KEY_1) } }
+    }
+
+    @Test
+    fun getCharSequenceList_whenSet_differentType_throws() {
+        val expected = Int.MAX_VALUE
+
+        val underTest = savedState { putInt(KEY_1, expected) }
+
+        assertThrows<IllegalStateException> { underTest.read { getCharSequenceList(KEY_1) } }
+    }
+
+    @Test
+    fun getCharSequenceListOrElse_whenSet_returns() {
+        val underTest = savedState { putCharSequenceList(KEY_1, CHAR_SEQUENCE_LIST) }
+        val actual = underTest.read { getCharSequenceListOrElse(KEY_1) { emptyList() } }
+
+        assertThat(actual).isEqualTo(CHAR_SEQUENCE_LIST)
+    }
+
+    @Test
+    fun getCharSequenceListOrElse_whenNotSet_returnsElse() {
+        val actual = savedState().read { getCharSequenceListOrElse(KEY_1) { emptyList() } }
+
+        assertThat(actual).isEqualTo(emptyList<CharSequence>())
+    }
+
+    @Test
+    fun getCharSequenceListOrElse_whenSet_differentType_returnsElse() {
+        val expected = Int.MAX_VALUE
+
+        val underTest = savedState { putInt(KEY_1, expected) }
+        val actual = underTest.read { getCharSequenceListOrElse(KEY_1) { emptyList() } }
+
+        assertThat(actual).isEqualTo(emptyList<CharSequence>())
+    }
+
+    @Test
     fun getStringList_whenSet_returns() {
         val underTest = savedState { putStringList(KEY_1, LIST_STRING_VALUE) }
         val actual = underTest.read { getStringList(KEY_1) }
@@ -730,6 +863,59 @@ internal class SavedStateTest : RobolectricTest() {
 
         val underTest = savedState { putInt(KEY_1, Int.MAX_VALUE) }
         val actual = underTest.read { getCharArrayOrElse(KEY_1) { expected } }
+
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Test
+    fun getCharSequenceArray_whenSet_returns() {
+        val expected = Array<CharSequence>(size = 5) { idx -> idx.toString() }
+
+        val underTest = savedState { putCharSequenceArray(KEY_1, expected) }
+        val actual = underTest.read { getCharSequenceArray(KEY_1) }
+
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Test
+    fun getCharSequenceArray_whenNotSet_throws() {
+        assertThrows<IllegalArgumentException> { savedState().read { getCharSequenceArray(KEY_1) } }
+    }
+
+    @Test
+    fun getCharSequenceArray_whenSet_differentType_throws() {
+        val expected = Int.MAX_VALUE
+
+        val underTest = savedState { putInt(KEY_1, expected) }
+
+        assertThrows<IllegalStateException> { underTest.read { getCharSequenceArray(KEY_1) } }
+    }
+
+    @Test
+    fun getCharSequenceArrayOrElse_whenSet_returns() {
+        val expected = CHAR_SEQUENCE_ARRAY
+
+        val underTest = savedState { putCharSequenceArray(KEY_1, expected) }
+        val actual = underTest.read { getCharSequenceArrayOrElse(KEY_1) { emptyArray() } }
+
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Test
+    fun getCharSequenceArrayOrElse_whenNotSet_returnsElse() {
+        val expected = CHAR_SEQUENCE_ARRAY
+
+        val actual = savedState().read { getCharSequenceArrayOrElse(KEY_1) { expected } }
+
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Test
+    fun getCharSequenceArrayOrElse_whenSet_differentType_returnsElse() {
+        val expected = CHAR_SEQUENCE_ARRAY
+
+        val underTest = savedState { putInt(KEY_1, Int.MAX_VALUE) }
+        val actual = underTest.read { getCharSequenceArrayOrElse(KEY_1) { expected } }
 
         assertThat(actual).isEqualTo(expected)
     }
@@ -1066,39 +1252,43 @@ internal class SavedStateTest : RobolectricTest() {
         val LIST_INT_VALUE = List(size = 5) { idx -> idx }
         val LIST_STRING_VALUE = List(size = 5) { idx -> "index=$idx" }
         val SAVED_STATE_VALUE = savedState()
+        val CHAR_SEQUENCE_VALUE_1: CharSequence = Int.MIN_VALUE.toString()
+        val CHAR_SEQUENCE_VALUE_2: CharSequence = Int.MAX_VALUE.toString()
+        val CHAR_SEQUENCE_ARRAY = Array<CharSequence>(size = 5) { idx -> "index=$idx" }
+        val CHAR_SEQUENCE_LIST = List<CharSequence>(size = 5) { idx -> "index=$idx" }
 
         private fun createDefaultSavedState(): SavedState {
             var key = 0
             val savedState = savedState {
                 putBoolean(key = "KEY_${++key}", value = true)
-                putBooleanArray(key = "KEY_${++key}", values = booleanArrayOf(true, false))
+                putBooleanArray(key = "KEY_${++key}", value = booleanArrayOf(true, false))
                 putChar(key = "KEY_${++key}", value = Char.MAX_VALUE)
                 putCharArray(
                     key = "KEY_${++key}",
-                    values = charArrayOf(Char.MIN_VALUE, Char.MAX_VALUE)
+                    value = charArrayOf(Char.MIN_VALUE, Char.MAX_VALUE)
                 )
                 putDouble(key = "KEY_${++key}", value = Double.MAX_VALUE)
                 putDoubleArray(
                     key = "KEY_${++key}",
-                    values = doubleArrayOf(Double.MIN_VALUE, Double.MAX_VALUE)
+                    value = doubleArrayOf(Double.MIN_VALUE, Double.MAX_VALUE)
                 )
                 putFloat(key = "KEY_${++key}", value = Float.MAX_VALUE)
                 putFloatArray(
                     key = "KEY_${++key}",
-                    values = floatArrayOf(Float.MIN_VALUE, Float.MAX_VALUE)
+                    value = floatArrayOf(Float.MIN_VALUE, Float.MAX_VALUE)
                 )
                 putInt(key = "KEY_${++key}", value = Int.MAX_VALUE)
-                putIntArray(key = "KEY_${++key}", values = intArrayOf(1, 2, 3))
-                putIntList(key = "KEY_${++key}", values = listOf(Int.MIN_VALUE, Int.MAX_VALUE))
+                putIntArray(key = "KEY_${++key}", value = intArrayOf(1, 2, 3))
+                putIntList(key = "KEY_${++key}", value = listOf(Int.MIN_VALUE, Int.MAX_VALUE))
                 putLong(key = "KEY_${++key}", value = Long.MAX_VALUE)
                 putLongArray(
                     key = "KEY_${++key}",
-                    values = longArrayOf(Long.MIN_VALUE, Long.MAX_VALUE)
+                    value = longArrayOf(Long.MIN_VALUE, Long.MAX_VALUE)
                 )
                 putNull(key = "KEY_${++key}")
                 putString(key = "KEY_${++key}", value = "Text")
-                putStringArray(key = "KEY_${++key}", values = arrayOf("Text3", "text4"))
-                putStringList(key = "KEY_${++key}", values = listOf("Text1", "text2"))
+                putStringArray(key = "KEY_${++key}", value = arrayOf("Text3", "text4"))
+                putStringList(key = "KEY_${++key}", value = listOf("Text1", "text2"))
             }
             return savedState {
                 putAll(savedState)

@@ -16,41 +16,43 @@
 
 package androidx.compose.foundation.layout
 
+import androidx.compose.runtime.Composable
+
 actual val WindowInsets.Companion.captionBar: WindowInsets
-    get() = implementedInJetBrainsFork()
+    @Composable get() = implementedInJetBrainsFork()
 
 actual val WindowInsets.Companion.displayCutout: WindowInsets
-    get() = implementedInJetBrainsFork()
+    @Composable get() = implementedInJetBrainsFork()
 
 actual val WindowInsets.Companion.ime: WindowInsets
-    get() = implementedInJetBrainsFork()
+    @Composable get() = implementedInJetBrainsFork()
 
 actual val WindowInsets.Companion.mandatorySystemGestures: WindowInsets
-    get() = implementedInJetBrainsFork()
+    @Composable get() = implementedInJetBrainsFork()
 
 actual val WindowInsets.Companion.navigationBars: WindowInsets
-    get() = implementedInJetBrainsFork()
+    @Composable get() = implementedInJetBrainsFork()
 
 actual val WindowInsets.Companion.statusBars: WindowInsets
-    get() = implementedInJetBrainsFork()
+    @Composable get() = implementedInJetBrainsFork()
 
 actual val WindowInsets.Companion.systemBars: WindowInsets
-    get() = implementedInJetBrainsFork()
+    @Composable get() = implementedInJetBrainsFork()
 
 actual val WindowInsets.Companion.systemGestures: WindowInsets
-    get() = implementedInJetBrainsFork()
+    @Composable get() = implementedInJetBrainsFork()
 
 actual val WindowInsets.Companion.tappableElement: WindowInsets
-    get() = implementedInJetBrainsFork()
+    @Composable get() = implementedInJetBrainsFork()
 
 actual val WindowInsets.Companion.waterfall: WindowInsets
-    get() = implementedInJetBrainsFork()
+    @Composable get() = implementedInJetBrainsFork()
 
 actual val WindowInsets.Companion.safeDrawing: WindowInsets
-    get() = implementedInJetBrainsFork()
+    @Composable get() = implementedInJetBrainsFork()
 
 actual val WindowInsets.Companion.safeGestures: WindowInsets
-    get() = implementedInJetBrainsFork()
+    @Composable get() = implementedInJetBrainsFork()
 
 actual val WindowInsets.Companion.safeContent: WindowInsets
-    get() = implementedInJetBrainsFork()
+    @Composable get() = implementedInJetBrainsFork()

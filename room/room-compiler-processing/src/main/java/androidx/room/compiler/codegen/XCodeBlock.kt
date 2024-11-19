@@ -16,6 +16,8 @@
 
 package androidx.room.compiler.codegen
 
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
+import androidx.room.compiler.codegen.impl.XCodeBlockImpl
 import androidx.room.compiler.codegen.java.JavaCodeBlock
 import androidx.room.compiler.codegen.kotlin.KotlinCodeBlock
 
@@ -37,9 +39,9 @@ import androidx.room.compiler.codegen.kotlin.KotlinCodeBlock
  *   importable, e.g. it's a top-level function or a property declared inside an object, the import
  *   will be resolved if possible. Arguments for members must be of type [XMemberName].
  */
-interface XCodeBlock : TargetLanguage {
+interface XCodeBlock {
 
-    interface Builder : TargetLanguage {
+    interface Builder {
 
         fun add(code: XCodeBlock): Builder
 
@@ -79,7 +81,7 @@ interface XCodeBlock : TargetLanguage {
                 name = name,
                 typeName = typeName,
                 isMutable = false,
-                assignExpr = of(language, assignExprFormat, *assignExprArgs)
+                assignExpr = of(assignExprFormat, *assignExprArgs)
             )
         }
 
@@ -95,7 +97,7 @@ interface XCodeBlock : TargetLanguage {
             itemVarName: String,
             typeName: XTypeName,
             iteratorVarName: String
-        ) = apply {
+        ) = applyTo { language ->
             when (language) {
                 CodeLanguage.JAVA ->
                     beginControlFlow("for (%T %L : %L)", typeName, itemVarName, iteratorVarName)
@@ -105,20 +107,45 @@ interface XCodeBlock : TargetLanguage {
         }
 
         fun build(): XCodeBlock
+
+        companion object {
+            fun Builder.applyTo(block: Builder.(CodeLanguage) -> Unit) = apply {
+                when (this) {
+                    is XCodeBlockImpl.Builder -> {
+                        this.java.block(CodeLanguage.JAVA)
+                        this.kotlin.block(CodeLanguage.KOTLIN)
+                    }
+                    is JavaCodeBlock.Builder -> block(CodeLanguage.JAVA)
+                    is KotlinCodeBlock.Builder -> block(CodeLanguage.KOTLIN)
+                }
+            }
+
+            fun Builder.applyTo(language: CodeLanguage, block: Builder.() -> Unit) =
+                applyTo { codeLanguage ->
+                    if (codeLanguage == language) {
+                        block()
+                    }
+                }
+        }
     }
 
     companion object {
         @JvmStatic
-        fun builder(language: CodeLanguage): Builder {
-            return when (language) {
-                CodeLanguage.JAVA -> JavaCodeBlock.Builder(JCodeBlock.builder())
-                CodeLanguage.KOTLIN -> KotlinCodeBlock.Builder(KCodeBlock.builder())
-            }
-        }
+        fun builder(): Builder =
+            XCodeBlockImpl.Builder(
+                JavaCodeBlock.Builder(JCodeBlock.builder()),
+                KotlinCodeBlock.Builder(KCodeBlock.builder())
+            )
+
+        @JvmStatic fun of(format: String, vararg args: Any?) = builder().add(format, *args).build()
 
         @JvmStatic
-        fun of(language: CodeLanguage, format: String, vararg args: Any?) =
-            builder(language).add(format, *args).build()
+        fun ofString(java: String, kotlin: String) = buildCodeBlock { language ->
+            when (language) {
+                CodeLanguage.JAVA -> add(java)
+                CodeLanguage.KOTLIN -> add(kotlin)
+            }
+        }
 
         /**
          * Convenience code block of a new instantiation expression.
@@ -126,68 +153,45 @@ interface XCodeBlock : TargetLanguage {
          * Shouldn't contain parenthesis.
          */
         @JvmStatic
-        fun ofNewInstance(
-            language: CodeLanguage,
-            typeName: XTypeName,
-            argsFormat: String = "",
-            vararg args: Any?
-        ): XCodeBlock {
-            return builder(language)
-                .apply {
-                    when (language) {
-                        CodeLanguage.JAVA ->
-                            add("new %T($argsFormat)", typeName.copy(nullable = false), *args)
-                        CodeLanguage.KOTLIN ->
-                            add("%T($argsFormat)", typeName.copy(nullable = false), *args)
-                    }
+        fun ofNewInstance(typeName: XTypeName, argsFormat: String = "", vararg args: Any?) =
+            buildCodeBlock { language ->
+                when (language) {
+                    CodeLanguage.JAVA ->
+                        add("new %T($argsFormat)", typeName.copy(nullable = false), *args)
+                    CodeLanguage.KOTLIN ->
+                        add("%T($argsFormat)", typeName.copy(nullable = false), *args)
                 }
-                .build()
-        }
+            }
 
         /** Convenience code block of an unsafe cast expression. */
         @JvmStatic
-        fun ofCast(
-            language: CodeLanguage,
-            typeName: XTypeName,
-            expressionBlock: XCodeBlock
-        ): XCodeBlock {
-            return builder(language)
-                .apply {
-                    when (language) {
-                        CodeLanguage.JAVA -> add("(%T) (%L)", typeName, expressionBlock)
-                        CodeLanguage.KOTLIN -> add("(%L) as %T", expressionBlock, typeName)
-                    }
-                }
-                .build()
+        fun ofCast(typeName: XTypeName, expressionBlock: XCodeBlock) = buildCodeBlock { language ->
+            when (language) {
+                CodeLanguage.JAVA -> add("(%T) (%L)", typeName, expressionBlock)
+                CodeLanguage.KOTLIN -> add("(%L) as %T", expressionBlock, typeName)
+            }
         }
 
         /** Convenience code block of a Java class literal. */
         @JvmStatic
-        fun ofJavaClassLiteral(
-            language: CodeLanguage,
-            typeName: XClassName,
-        ): XCodeBlock {
-            return when (language) {
-                CodeLanguage.JAVA -> of(language, "%T.class", typeName)
-                CodeLanguage.KOTLIN -> of(language, "%T::class.java", typeName)
+        fun ofJavaClassLiteral(typeName: XClassName) = buildCodeBlock { language ->
+            when (language) {
+                CodeLanguage.JAVA -> add("%T.class", typeName)
+                CodeLanguage.KOTLIN -> add("%T::class.java", typeName)
             }
         }
 
         /** Convenience code block of a Kotlin class literal. */
         @JvmStatic
-        fun ofKotlinClassLiteral(
-            language: CodeLanguage,
-            typeName: XClassName,
-        ): XCodeBlock {
-            return when (language) {
+        fun ofKotlinClassLiteral(typeName: XClassName) = buildCodeBlock { language ->
+            when (language) {
                 CodeLanguage.JAVA ->
-                    of(
-                        language,
+                    add(
                         "%T.getKotlinClass(%T.class)",
                         XClassName.get("kotlin.jvm", "JvmClassMappingKt"),
                         typeName
                     )
-                CodeLanguage.KOTLIN -> of(language, "%T::class", typeName)
+                CodeLanguage.KOTLIN -> add("%T::class", typeName)
             }
         }
 
@@ -200,15 +204,13 @@ interface XCodeBlock : TargetLanguage {
          */
         @JvmStatic
         fun ofTernaryIf(
-            language: CodeLanguage,
             condition: XCodeBlock,
             leftExpr: XCodeBlock,
             rightExpr: XCodeBlock,
-        ): XCodeBlock {
-            return when (language) {
-                CodeLanguage.JAVA -> of(language, "%L ? %L : %L", condition, leftExpr, rightExpr)
-                CodeLanguage.KOTLIN ->
-                    of(language, "if (%L) %L else %L", condition, leftExpr, rightExpr)
+        ) = buildCodeBlock { language ->
+            when (language) {
+                CodeLanguage.JAVA -> add("%L ? %L : %L", condition, leftExpr, rightExpr)
+                CodeLanguage.KOTLIN -> add("if (%L) %L else %L", condition, leftExpr, rightExpr)
             }
         }
 
@@ -220,16 +222,15 @@ interface XCodeBlock : TargetLanguage {
          * For Kotlin this will emit: `<receiverVarName>.<memberName>(<args>)`
          */
         @JvmStatic
-        fun ofExtensionCall(
-            language: CodeLanguage,
-            memberName: XMemberName,
-            receiverVarName: String,
-            args: XCodeBlock
-        ): XCodeBlock {
-            return when (language) {
-                CodeLanguage.JAVA -> of(language, "%M(%L, %L)", memberName, receiverVarName, args)
-                CodeLanguage.KOTLIN -> of(language, "%L.%M(%L)", receiverVarName, memberName, args)
+        fun ofExtensionCall(memberName: XMemberName, receiverVarName: String, args: XCodeBlock) =
+            buildCodeBlock { language ->
+                when (language) {
+                    CodeLanguage.JAVA -> add("%M(%L, %L)", memberName, receiverVarName, args)
+                    CodeLanguage.KOTLIN -> add("%L.%M(%L)", receiverVarName, memberName, args)
+                }
             }
-        }
     }
 }
+
+fun buildCodeBlock(block: XCodeBlock.Builder.(CodeLanguage) -> Unit) =
+    XCodeBlock.builder().applyTo { language -> block(language) }.build()

@@ -18,6 +18,7 @@ package androidx.room.vo
 
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.processing.XType
 import androidx.room.ext.capitalize
 import androidx.room.solver.CodeGenScope
@@ -34,19 +35,19 @@ data class FieldSetter(
         if (callType == CallType.CONSTRUCTOR) {
             return
         }
-        when (builder.language) {
-            CodeLanguage.JAVA -> {
-                val stmt =
-                    when (callType) {
-                        CallType.FIELD -> "%L.%L = %L"
-                        CallType.METHOD,
-                        CallType.SYNTHETIC_METHOD -> "%L.%L(%L)"
-                        else -> error("Unknown call type: $callType")
-                    }
-                builder.addStatement(stmt, ownerVar, jvmName, inVar)
-            }
-            CodeLanguage.KOTLIN -> {
-                builder.addStatement("%L.%L = %L", ownerVar, fieldName, inVar)
+        builder.applyTo { language ->
+            when (language) {
+                CodeLanguage.JAVA -> {
+                    val stmt =
+                        when (callType) {
+                            CallType.FIELD -> "%L.%L = %L"
+                            CallType.METHOD,
+                            CallType.SYNTHETIC_METHOD -> "%L.%L(%L)"
+                            else -> error("Unknown call type: $callType")
+                        }
+                    addStatement(stmt, ownerVar, jvmName, inVar)
+                }
+                CodeLanguage.KOTLIN -> addStatement("%L.%L = %L", ownerVar, fieldName, inVar)
             }
         }
     }

@@ -18,7 +18,6 @@
 package androidx.compose.ui.node
 
 import androidx.annotation.RestrictTo
-import androidx.collection.IntObjectMap
 import androidx.compose.runtime.Applier
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.autofill.Autofill
@@ -47,7 +46,6 @@ import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
-import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.spatial.RectManager
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -68,9 +66,6 @@ internal interface Owner : PositionCalculator {
 
     /** The root layout node in the component tree. */
     val root: LayoutNode
-
-    /** A mapping of semantic id to LayoutNode. */
-    val layoutNodes: IntObjectMap<LayoutNode>
 
     /** Draw scope reused for drawing speed up. */
     val sharedDrawScope: LayoutNodeDrawScope
@@ -132,8 +127,6 @@ internal interface Owner : PositionCalculator {
     val softwareKeyboardController: SoftwareKeyboardController
 
     val pointerIconService: PointerIconService
-
-    val semanticsOwner: SemanticsOwner
 
     /** Provide a focus owner that controls focus within Compose. */
     val focusOwner: FocusOwner

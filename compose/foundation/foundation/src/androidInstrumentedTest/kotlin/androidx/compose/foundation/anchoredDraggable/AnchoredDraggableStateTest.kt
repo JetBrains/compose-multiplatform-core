@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.anchoredDraggable
 
+import androidx.annotation.FloatRange
 import androidx.compose.animation.SplineBasedFloatDecayAnimationSpec
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.AnimationVector
@@ -1394,19 +1395,23 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
         assertThat(state.offset).isEqualTo(200f)
     }
 
-    @Test
-    fun anchoredDraggable_fling_offsetPastHalfwayBetweenAnchors_beforePosThreshold_doesntAdvance() {
+    /**
+     * Test that the state only moves on to the next anchor if the offset has crossed the positional
+     * threshold at the time of the fling.
+     */
+    private fun anchoredDraggable_fling_fromOffset_onlyAdvancesIfThresholdCrossed(
+        @FloatRange(0.0, 1.0) flingOffsetFraction: Float,
+        positionalThreshold: (Float) -> Float
+    ) {
         val velocityThreshold = with(rule.density) { 125.dp.toPx() }
-        val positionalThreshold: (Float) -> Float = { it * 0.9f }
+        val anchors = DraggableAnchors {
+            A at 0f
+            B at 100f
+        }
         val state =
             createAnchoredDraggableState(
                 initialValue = A,
-                anchors =
-                    DraggableAnchors {
-                        A at 0f
-                        B at 100f
-                        C at 200f
-                    },
+                anchors = anchors,
                 positionalThreshold = positionalThreshold
             )
         val flingBehavior =
@@ -1417,20 +1422,81 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                 snapAnimationSpec = tween()
             )
 
-        state.dispatchRawDelta(80f)
+        val aToBDistance = anchors.positionOf(B) - anchors.positionOf(A)
+        val resolvedPositionalThreshold = abs(positionalThreshold(aToBDistance))
+        val flingOffset = aToBDistance * flingOffsetFraction
+        state.dispatchRawDelta(flingOffset)
 
-        assertThat(state.offset).isEqualTo(80f)
+        assertThat(state.offset).isEqualTo(flingOffset)
         assertThat(state.settledValue).isEqualTo(A)
-        assertThat(state.currentValue).isEqualTo(B)
 
         runBlocking(AutoTestFrameClock()) {
             performFling(flingBehavior, state, velocityThreshold - 1f)
         }
 
-        assertThat(state.offset).isEqualTo(0f)
-        assertThat(state.settledValue).isEqualTo(A)
-        assertThat(state.currentValue).isEqualTo(A)
+        if (flingOffset < resolvedPositionalThreshold) {
+            assertThat(state.offset).isEqualTo(0f)
+            assertThat(state.settledValue).isEqualTo(A)
+            assertThat(state.currentValue).isEqualTo(A)
+        } else {
+            assertThat(state.offset).isEqualTo(100f)
+            assertThat(state.settledValue).isEqualTo(B)
+            assertThat(state.currentValue).isEqualTo(B)
+        }
+
+        runBlocking(AutoTestFrameClock()) { state.animateTo(B) }
+        assertThat(state.offset).isEqualTo(100f)
+        assertThat(state.settledValue).isEqualTo(B)
+        assertThat(state.currentValue).isEqualTo(B)
+
+        state.dispatchRawDelta(-flingOffset)
+
+        assertThat(state.offset).isEqualTo(anchors.positionOf(B) - flingOffset)
+        assertThat(state.settledValue).isEqualTo(B)
+
+        runBlocking(AutoTestFrameClock()) {
+            performFling(flingBehavior, state, -(velocityThreshold - 1f))
+        }
+        if (flingOffset < resolvedPositionalThreshold) {
+            assertThat(state.offset).isEqualTo(100f)
+            assertThat(state.settledValue).isEqualTo(B)
+            assertThat(state.currentValue).isEqualTo(B)
+        } else {
+            assertThat(state.offset).isEqualTo(0f)
+            assertThat(state.settledValue).isEqualTo(A)
+            assertThat(state.currentValue).isEqualTo(A)
+        }
     }
+
+    @Test
+    fun anchoredDraggable_fling_offsetPastHalfwayBetweenAnchors_beyondPosThreshold_advances() {
+        anchoredDraggable_fling_fromOffset_onlyAdvancesIfThresholdCrossed(
+            flingOffsetFraction = 0.9f,
+            positionalThreshold = { it * 0.8f }
+        )
+    }
+
+    @Test
+    fun anchoredDraggable_fling_offsetLessThanHalfwayBetweenAnchors_beyondPosThreshold_advances() {
+        anchoredDraggable_fling_fromOffset_onlyAdvancesIfThresholdCrossed(
+            flingOffsetFraction = 0.4f,
+            positionalThreshold = { it * 0.3f }
+        )
+    }
+
+    @Test
+    fun anchoredDraggable_fling_offsetLessHalfwayBetweenAnchors_beforePosThreshold_doesntAdvance() =
+        anchoredDraggable_fling_fromOffset_onlyAdvancesIfThresholdCrossed(
+            flingOffsetFraction = 0.4f,
+            positionalThreshold = { it * 0.5f }
+        )
+
+    @Test
+    fun anchoredDraggable_fling_offsetPastHalfwayBetweenAnchors_beforePosThreshold_doesntAdvance() =
+        anchoredDraggable_fling_fromOffset_onlyAdvancesIfThresholdCrossed(
+            flingOffsetFraction = 0.8f,
+            positionalThreshold = { it * 0.9f }
+        )
 
     /** Test the [valueUnderTest] progressively for each delta from [from] to [to]. */
     private suspend fun <T> AnchoredDraggableState<T>.testProgression(

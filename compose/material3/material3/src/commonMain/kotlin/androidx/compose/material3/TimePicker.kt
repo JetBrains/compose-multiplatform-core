@@ -24,7 +24,7 @@ import androidx.collection.intListOf
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
-import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.SnapSpec
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.MutatePriority.PreventUserInput
@@ -98,6 +98,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -113,6 +114,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
@@ -162,6 +164,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
@@ -1677,9 +1680,11 @@ private fun ClockText(
     autoSwitchToMinute: Boolean
 ) {
     val style = ClockDialLabelTextFont.value
-    val maxDist = with(LocalDensity.current) { MaxDistance.toPx() }
+    val density: Density = LocalDensity.current
+    val maxDist = with(density) { MaxDistance.toPx() }
     var center by remember { mutableStateOf(Offset.Zero) }
     var parentCenter by remember { mutableStateOf(IntOffset.Zero) }
+    var boundsInParent by remember { mutableStateOf(Rect.Zero) }
     val scope = rememberCoroutineScope()
     val contentDescription =
         numberContentDescription(
@@ -1689,25 +1694,27 @@ private fun ClockText(
         )
 
     val text = value.toLocalString()
-    val selected =
-        if (state.selection == TimePickerSelectionMode.Minute) {
-            state.minute.toLocalString() == text
-        } else {
-            state.hour.toLocalString() == text
+    val selected by
+        remember(state) {
+            derivedStateOf {
+                val selectorPos = state.selectorPos
+                val offset = with(density) { Offset(selectorPos.x.toPx(), selectorPos.y.toPx()) }
+                boundsInParent.contains(offset)
+            }
         }
 
     // TODO Load the motionScheme tokens from the component tokens file
-    val animationSpec: FiniteAnimationSpec<Float> = MotionSchemeKeyTokens.DefaultSpatial.value()
     Box(
         contentAlignment = Alignment.Center,
         modifier =
             modifier
-                .minimumInteractiveComponentSize()
-                .size(MinimumInteractiveSize)
                 .onGloballyPositioned {
                     parentCenter = it.parentCoordinates?.size?.center ?: IntOffset.Zero
-                    center = it.boundsInParent().center
+                    boundsInParent = it.boundsInParent()
+                    center = boundsInParent.center
                 }
+                .minimumInteractiveComponentSize()
+                .size(MinimumInteractiveSize)
                 .focusable()
                 .semantics(mergeDescendants = true) {
                     onClick {
@@ -1718,7 +1725,7 @@ private fun ClockText(
                                 maxDist,
                                 autoSwitchToMinute,
                                 parentCenter,
-                                animationSpec
+                                SnapSpec()
                             )
                         }
                         true
@@ -1983,8 +1990,15 @@ private enum class LayoutId {
     InnerCircle,
 }
 
-internal expect val defaultTimePickerLayoutType: TimePickerLayoutType
-    @Composable @ReadOnlyComposable get
+// TODO(https://github.com/JetBrains/compose-multiplatform/issues/3373) fix expect composable getter
+@OptIn(ExperimentalMaterial3Api::class)
+internal val defaultTimePickerLayoutType: TimePickerLayoutType
+    @Composable @ReadOnlyComposable get() = defaultTimePickerLayoutType()
+
+@Composable
+@ReadOnlyComposable
+@OptIn(ExperimentalMaterial3Api::class)
+internal expect fun defaultTimePickerLayoutType(): TimePickerLayoutType
 
 private const val FullCircle: Float = (PI * 2).toFloat()
 private const val HalfCircle: Float = FullCircle / 2f

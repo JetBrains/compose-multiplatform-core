@@ -706,6 +706,8 @@ internal const val Lower26Bits = 0b0000_0011_1111_1111_1111_1111_1111_1111
 internal const val Lower9Bits = 0b0000_0000_0000_0000_0000_0001_1111_1111
 internal const val EverythingButParentId = 0xfff0_0000_03ff_ffffUL
 internal const val EverythingButLastChildOffset = 0xe00fffffffffffffUL
+private const val PackedIntsLowestBit = 0x000_0001_0000_0001L
+private const val PackedIntsHighestBit = -0x7FFF_FFFF_8000_0000L // 0x8000_0000_8000_0000UL
 
 /**
  * This is the "meta" value that we assign to every removed value.
@@ -786,11 +788,15 @@ internal inline fun rectIntersectsRect(
 
     // Both of the above expressions represent two long subtractions which are effectively each two
     // int subtractions. If any of the individual subtractions would have resulted in a negative
-    // value, then the rectangle has an intersection. If this is true, then there will be
+    // value, then the rectangle has no intersection. If this is true, then there will be
     // "underflow" from one 32bit component to the next, which we can detect by isolating the top
     // bits of each component using 0x8000_0000_8000_0000UL.toLong()
-    val a = (destRB - srcLT) or (srcRB - destLT)
-    return a and 0x8000_0000_8000_0000UL.toLong() == 0L
+
+    // Since an intersection happens when both right/bottom corners are **larger** than the left/top
+    // of the other (only top/left edges are inclusive in a Rect), we subtract a 1 to underflow in
+    // the case they are the same.
+    val a = (destRB - srcLT - PackedIntsLowestBit) or (srcRB - destLT - PackedIntsLowestBit)
+    return a and PackedIntsHighestBit == 0L
 }
 
 /**

@@ -39,7 +39,6 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
-import androidx.test.annotation.UiThreadTest
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -54,100 +53,89 @@ import org.junit.runners.MethodSorters
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class ComposeBenchmark : ComposeBenchmarkBase() {
 
-    @UiThreadTest
     @Test
     fun benchmark_01_Compose_OneRect() = runBlockingTestWithFrameClock {
         val model = ColorModel()
         measureCompose { OneRect(model) }
     }
 
-    @UiThreadTest
     @Test
     fun benchmark_02_Compose_TenRects() = runBlockingTestWithFrameClock {
         val model = ColorModel()
         measureCompose { TenRects(model) }
     }
 
-    @UiThreadTest
     @Test
     fun benchmark_03_Compose_100Rects() = runBlockingTestWithFrameClock {
         val model = ColorModel()
         measureCompose { HundredRects(model = model) }
     }
 
-    @UiThreadTest
     @Test
     fun benchmark_04_Recompose_OneRect() = runBlockingTestWithFrameClock {
         val model = ColorModel()
-        measureRecomposeSuspending {
+        measureRecompose {
             compose { OneRect(model) }
             update { model.toggle() }
         }
     }
 
-    @UiThreadTest
     @Test
     fun benchmark_04_Recompose_OneRect_WithRecomposer() = runBlockingTestWithFrameClock {
         val model = ColorModel()
-        measureRecomposeSuspending {
+        measureRecompose {
             compose { OneRect(model) }
             update { model.toggle() }
         }
     }
 
-    @UiThreadTest
     @Test
     fun benchmark_05_Recompose_TenRect_Wide() = runBlockingTestWithFrameClock {
         val model = ColorModel()
-        measureRecomposeSuspending {
+        measureRecompose {
             compose { TenRects(model, narrow = false) }
             update { model.toggle() }
         }
     }
 
-    @UiThreadTest
     @Test
     fun benchmark_06_Recompose_TenRect_Narrow() = runBlockingTestWithFrameClock {
         val model = ColorModel()
-        measureRecomposeSuspending {
+        measureRecompose {
             compose { TenRects(model, narrow = true) }
             update { model.toggle() }
         }
     }
 
-    @UiThreadTest
     @Test
     fun benchmark_07_Recompose_100Rect_Wide() = runBlockingTestWithFrameClock {
         val model = ColorModel()
-        measureRecomposeSuspending {
+        measureRecompose {
             compose { HundredRects(model, narrow = false) }
             update { model.toggle() }
         }
     }
 
-    @UiThreadTest
     @Test
     fun benchmark_08_Recompose_100Rect_Narrow() = runBlockingTestWithFrameClock {
         val model = ColorModel()
-        measureRecomposeSuspending {
+        measureRecompose {
             compose { HundredRects(model, narrow = true) }
             update { model.toggle() }
         }
     }
 
-    @UiThreadTest
     @Test
     fun benchmark_10_NestedRowColumnsWithModifier() = runBlockingTestWithFrameClock {
         var pad by mutableStateOf(0)
         val modifier = Modifier.composed { Modifier.padding(pad.dp) }
-        measureRecomposeSuspending {
+        measureRecompose {
             compose { Column(modifier = modifier) { repeat(100) { Text("Some text") } } }
             update { pad = 10 }
             reset { pad = 0 }
         }
     }
 
-    @UiThreadTest
     @Test
     fun benchmark_10_derivedState_reads_compose() = runBlockingTestWithFrameClock {
         val state1 by mutableStateOf(1)
@@ -164,7 +152,6 @@ class ComposeBenchmark : ComposeBenchmarkBase() {
         }
     }
 
-    @UiThreadTest
     @Test
     fun benchmark_10_derivedState_reads_recompose() = runBlockingTestWithFrameClock {
         var state1 by mutableStateOf(1)
@@ -172,7 +159,7 @@ class ComposeBenchmark : ComposeBenchmarkBase() {
         val state3 by mutableStateOf(6)
         val list by derivedStateOf { List(state1 + state2 + state3) { "$it" } }
 
-        measureRecomposeSuspending {
+        measureRecompose {
             compose {
                 Column {
                     for (i in list.indices) {
@@ -185,7 +172,6 @@ class ComposeBenchmark : ComposeBenchmarkBase() {
         }
     }
 
-    @UiThreadTest
     @Test
     fun benchmark_reverse_list() = runBlockingTestWithFrameClock {
         val state =
@@ -212,7 +198,7 @@ class ComposeBenchmark : ComposeBenchmarkBase() {
                 20
             )
 
-        measureRecomposeSuspending {
+        measureRecompose {
             compose {
                 Column {
                     for (value in state) {
@@ -225,25 +211,21 @@ class ComposeBenchmark : ComposeBenchmarkBase() {
         }
     }
 
-    @UiThreadTest
     @Test
     fun benchmark_f_compose_Rect_1() = runBlockingTestWithFrameClock {
         measureComposeFocused { Rect() }
     }
 
-    @UiThreadTest
     @Test
     fun benchmark_f_compose_Rect_10() = runBlockingTestWithFrameClock {
         measureComposeFocused { repeat(10) { Rect() } }
     }
 
-    @UiThreadTest
     @Test
     fun benchmark_f_compose_Rect_100() = runBlockingTestWithFrameClock {
         measureComposeFocused { repeat(100) { Rect() } }
     }
 
-    @UiThreadTest
     @Test
     fun benchmark_g_group_eliding_focused_1000() = runBlockingTestWithFrameClock {
         measureCompose { repeat(1000) { MyLayout { SimpleText("Value: $it") } } }

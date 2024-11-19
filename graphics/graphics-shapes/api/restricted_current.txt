@@ -58,9 +58,17 @@ package androidx.graphics.shapes {
   public abstract class Feature {
     ctor public Feature(java.util.List<? extends androidx.graphics.shapes.Cubic> cubics);
     method public final java.util.List<androidx.graphics.shapes.Cubic> getCubics();
+    method public abstract boolean isConcaveCorner();
+    method public abstract boolean isConvexCorner();
+    method public abstract boolean isEdge();
+    method public abstract boolean isIgnorableFeature();
     method public abstract androidx.graphics.shapes.Feature reversed();
     method public abstract androidx.graphics.shapes.Feature transformed(androidx.graphics.shapes.PointTransformer f);
     property public final java.util.List<androidx.graphics.shapes.Cubic> cubics;
+    property public abstract boolean isConcaveCorner;
+    property public abstract boolean isConvexCorner;
+    property public abstract boolean isEdge;
+    property public abstract boolean isIgnorableFeature;
     field public static final androidx.graphics.shapes.Feature.Factory Factory;
   }
 
@@ -69,6 +77,17 @@ package androidx.graphics.shapes {
     method public androidx.graphics.shapes.Feature buildConvexCorner(java.util.List<? extends androidx.graphics.shapes.Cubic> cubics);
     method public androidx.graphics.shapes.Feature buildEdge(androidx.graphics.shapes.Cubic cubic);
     method public androidx.graphics.shapes.Feature buildIgnorableFeature(java.util.List<? extends androidx.graphics.shapes.Cubic> cubics);
+  }
+
+  public final class FeatureSerializer {
+    method public static java.util.List<androidx.graphics.shapes.Feature> parse(String serializedFeatures);
+    method public static String serialize(java.util.List<? extends androidx.graphics.shapes.Feature> features);
+    field public static final androidx.graphics.shapes.FeatureSerializer.Companion Companion;
+  }
+
+  public static final class FeatureSerializer.Companion {
+    method public java.util.List<androidx.graphics.shapes.Feature> parse(String serializedFeatures);
+    method public String serialize(java.util.List<? extends androidx.graphics.shapes.Feature> features);
   }
 
   public final class Morph {
@@ -110,11 +129,13 @@ package androidx.graphics.shapes {
     method public float getCenterX();
     method public float getCenterY();
     method public java.util.List<androidx.graphics.shapes.Cubic> getCubics();
+    method public java.util.List<androidx.graphics.shapes.Feature> getFeatures();
     method public androidx.graphics.shapes.RoundedPolygon normalized();
     method public androidx.graphics.shapes.RoundedPolygon transformed(androidx.graphics.shapes.PointTransformer f);
     property public final float centerX;
     property public final float centerY;
     property public final java.util.List<androidx.graphics.shapes.Cubic> cubics;
+    property public final java.util.List<androidx.graphics.shapes.Feature> features;
     field public static final androidx.graphics.shapes.RoundedPolygon.Companion Companion;
   }
 
@@ -179,6 +200,15 @@ package androidx.graphics.shapes {
     method public static android.graphics.Path toPath(androidx.graphics.shapes.RoundedPolygon);
     method public static android.graphics.Path toPath(androidx.graphics.shapes.RoundedPolygon, optional android.graphics.Path path);
     method public static androidx.graphics.shapes.RoundedPolygon transformed(androidx.graphics.shapes.RoundedPolygon, android.graphics.Matrix matrix);
+  }
+
+  public final class SvgPathParser {
+    method public static java.util.List<androidx.graphics.shapes.Feature> parseFeatures(String svgPath);
+    field public static final androidx.graphics.shapes.SvgPathParser.Companion Companion;
+  }
+
+  public static final class SvgPathParser.Companion {
+    method public java.util.List<androidx.graphics.shapes.Feature> parseFeatures(String svgPath);
   }
 
 }

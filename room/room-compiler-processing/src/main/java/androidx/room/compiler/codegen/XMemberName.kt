@@ -66,11 +66,19 @@ internal constructor(
          *
          * @see [androidx.room.compiler.processing.XMemberContainer.asClassName]
          */
-        fun XClassName.packageMember(simpleName: String): XMemberName {
+        fun XClassName.packageMember(simpleName: String) = packageMember(XName.of(simpleName))
+
+        /**
+         * Creates a [XMemberName] is that is contained by the receiving class's package, i.e. a
+         * top-level function or property.
+         *
+         * @see [androidx.room.compiler.processing.XMemberContainer.asClassName]
+         */
+        fun XClassName.packageMember(simpleName: XName): XMemberName {
             return XMemberName(
                 enclosingClassName = null,
-                java = JCodeBlock.of("$T.$L", this.java, simpleName),
-                kotlin = KMemberName(this.packageName, simpleName)
+                java = JCodeBlock.of("$T.$L", this.java, simpleName.java),
+                kotlin = KMemberName(this.packageName, simpleName.kotlin)
             )
         }
     }

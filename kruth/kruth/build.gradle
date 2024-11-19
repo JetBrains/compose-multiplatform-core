@@ -38,7 +38,6 @@ androidXMultiplatform {
     mac()
     linux()
     ios()
-    watchosDeviceArm64()
     watchos()
     tvos()
     androidNative()

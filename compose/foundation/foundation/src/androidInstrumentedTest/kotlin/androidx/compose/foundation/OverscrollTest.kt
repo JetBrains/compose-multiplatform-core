@@ -1172,10 +1172,10 @@ class OverscrollTest {
     }
 
     @Test
-    fun overscrollEffect_withoutDrawing_preDrag() {
+    fun overscrollEffect_withoutVisualEffect_preDrag() {
         var acummulatedScroll = 0f
         val controller = TestOverscrollEffect(consumePreCycles = true)
-        val withoutDrawing = controller.withoutDrawing()
+        val withoutVisualEffect = controller.withoutVisualEffect()
         val scrollableState = ScrollableState { delta ->
             acummulatedScroll += delta
             delta
@@ -1183,7 +1183,7 @@ class OverscrollTest {
         val viewConfig =
             rule.setOverscrollContentAndReturnViewConfig(
                 scrollableState = scrollableState,
-                overscrollEffect = withoutDrawing
+                overscrollEffect = withoutVisualEffect
             )
 
         rule.onNodeWithTag(boxTag).performTouchInput {
@@ -1205,11 +1205,11 @@ class OverscrollTest {
     }
 
     @Test
-    fun overscrollEffect_withoutDrawing_preFling() {
+    fun overscrollEffect_withoutVisualEffect_preFling() {
         var acummulatedScroll = 0f
         var lastFlingReceived = 0f
         val controller = TestOverscrollEffect(consumePreCycles = true)
-        val withoutDrawing = controller.withoutDrawing()
+        val withoutVisualEffect = controller.withoutVisualEffect()
         val scrollableState = ScrollableState { delta ->
             acummulatedScroll += delta
             delta
@@ -1223,7 +1223,7 @@ class OverscrollTest {
             }
         rule.setOverscrollContentAndReturnViewConfig(
             scrollableState = scrollableState,
-            overscrollEffect = withoutDrawing,
+            overscrollEffect = withoutVisualEffect,
             flingBehavior = flingBehavior
         )
 

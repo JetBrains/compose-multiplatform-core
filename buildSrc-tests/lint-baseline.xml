@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.8.0-alpha04" type="baseline" client="gradle" dependencies="false" name="AGP (8.8.0-alpha04)" variant="all" version="8.8.0-alpha04">
+<issues format="6" by="lint 8.8.0-alpha06" type="baseline" client="gradle" dependencies="false" name="AGP (8.8.0-alpha06)" variant="all" version="8.8.0-alpha06">
 
     <issue
         id="EagerGradleConfiguration"
@@ -240,15 +240,6 @@
         message="Avoid using method getRootProject"
         errorLine1="    rootProject.extensions.findByType(YarnRootExtension::class.java)?.let {"
         errorLine2="    ~~~~~~~~~~~">
-        <location
-            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/AndroidXMultiplatformExtension.kt"/>
-    </issue>
-
-    <issue
-        id="GradleProjectIsolation"
-        message="Avoid using method getRootProject"
-        errorLine1="    val unzipChromeTask = rootProject.tasks.named(&quot;unzipChrome&quot;)"
-        errorLine2="                          ~~~~~~~~~~~">
         <location
             file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/AndroidXMultiplatformExtension.kt"/>
     </issue>

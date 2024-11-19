@@ -59,8 +59,7 @@ fun LevelIndicator(
     val paddingHorizontal = LevelIndicatorDefaults.edgePadding
     val radius = screenWidthDp / 2 - paddingHorizontal.value - strokeWidth.value / 2
     // Calculate indicator height based on a triangle of the top half of the sweep angle
-    // and subtract the end caps
-    val indicatorHeight = 2f * sin((0.5f * sweepAngle).toRadians()) * radius - strokeWidth.value
+    val indicatorHeight = 2f * sin((0.5f * sweepAngle).toRadians()) * radius
 
     IndicatorImpl(
         state =

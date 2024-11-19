@@ -514,8 +514,7 @@ def get_new_docs_tip_of_tree_build_grade_line(group_id, artifact_id):
     For a library androidx.foo.bar:bar-qux, the new line will be of the form:
     docs(project(":foo:bar:bar-qux"))
 
-    If it is a sample project, then the new line will be of the form:
-    samples(project(":foo:bar:bar-qux-sample"))
+    If it is a sample project, then it will return None. samples(project(":foo:bar:bar-qux-sample")) needs to be added to the androidx block of the library build.gradle file.
 
     Args:
         group_id: group_id of the new library
@@ -525,7 +524,8 @@ def get_new_docs_tip_of_tree_build_grade_line(group_id, artifact_id):
     gradle_cmd = get_gradle_project_coordinates(group_id, artifact_id)
     prefix = "docs"
     if "sample" in gradle_cmd:
-        prefix = "samples"
+        print("Auto-detected sample project. Please add the sample dependency to androidx block of the library build.gradle file. See compose/ui/ui/build.gradle for an example.")
+        return None
     return "    %s(project(\"%s\"))\n" % (prefix, gradle_cmd)
 
 def update_docs_tip_of_tree_build_grade(group_id, artifact_id):

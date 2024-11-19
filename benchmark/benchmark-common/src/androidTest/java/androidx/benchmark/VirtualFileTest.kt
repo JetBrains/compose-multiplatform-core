@@ -23,7 +23,6 @@ import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -70,26 +69,22 @@ class VirtualFileTest(
         file2.delete()
     }
 
-    @Ignore // b/375656692
     @Test
     fun absolutePath() {
         assertThat(file1.absolutePath).isEqualTo(expectedFile1Path)
     }
 
-    @Ignore // b/375656692
     @Test
     fun fileType() {
         assertThat(file1.fileType).isEqualTo(expectedFileType)
     }
 
-    @Ignore // b/375656692
     @Test
     fun writeReadText() {
         file1.writeText("test")
         assertThat(file1.readText()).isEqualTo("test")
     }
 
-    @Ignore // b/375656692
     @Test
     fun writeReadBytes() {
         val bytes = ByteArray(3) { it.toByte() }
@@ -97,7 +92,6 @@ class VirtualFileTest(
         assertThat(file1.readBytes()).isEqualTo(bytes)
     }
 
-    @Ignore // b/375656692
     @Test
     fun existDelete() {
         file1.writeText("text")
@@ -106,7 +100,6 @@ class VirtualFileTest(
         assertThat(file1.exists()).isFalse()
     }
 
-    @Ignore // b/375656692
     @Test
     fun copyFrom() {
         file2.writeText("text")
@@ -114,7 +107,6 @@ class VirtualFileTest(
         assertThat(file1.readText()).isEqualTo("text")
     }
 
-    @Ignore // b/375656692
     @Test
     fun copyTo() {
         file1.writeText("text")
@@ -122,7 +114,6 @@ class VirtualFileTest(
         assertThat(file2.readText()).isEqualTo("text")
     }
 
-    @Ignore // b/375656692
     @Test
     fun moveTo() {
         file1.writeText("text")
@@ -131,14 +122,12 @@ class VirtualFileTest(
         assertThat(file1.exists()).isFalse()
     }
 
-    @Ignore // b/375656692
     @Test
     fun md5sum() {
         file1.writeText("text")
         assertThat(file1.md5sum()).isEqualTo("1cb251ec0d568de6a929b520c4aed8d1")
     }
 
-    @Ignore // b/375656692
     @Test
     fun ls() {
         file1.writeText("text")
@@ -160,7 +149,6 @@ class VirtualFileIoTest {
         shellFile = ShellFile.inTempDir("shell.file1").apply { delete() }
     }
 
-    @Ignore // b/375656692
     @Test
     fun shellCopyToUser() {
         shellFile.writeText("test")
@@ -168,7 +156,6 @@ class VirtualFileIoTest {
         assertThat(userFile.readText()).isEqualTo("test")
     }
 
-    @Ignore // b/375656692
     @Test
     fun shellCopyFromUser() {
         userFile.writeText("test")
@@ -176,7 +163,6 @@ class VirtualFileIoTest {
         assertThat(shellFile.readText()).isEqualTo("test")
     }
 
-    @Ignore // b/375656692
     @Test
     fun userCopyToShell() {
         userFile.writeText("test")
@@ -184,7 +170,6 @@ class VirtualFileIoTest {
         assertThat(shellFile.readText()).isEqualTo("test")
     }
 
-    @Ignore // b/375656692
     @Test
     fun userCopyFromShell() {
         shellFile.writeText("test")

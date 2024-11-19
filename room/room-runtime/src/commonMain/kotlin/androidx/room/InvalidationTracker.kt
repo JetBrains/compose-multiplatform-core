@@ -211,10 +211,10 @@ internal class TriggerBasedInvalidationTracker(
     }
 
     internal fun createFlow(
-        tables: Array<out String>,
+        resolvedTableNames: Array<String>,
+        tableIds: IntArray,
         emitInitialState: Boolean
     ): Flow<Set<String>> {
-        val (resolvedTableNames, tableIds) = validateTableNames(tables)
         return flow {
             val shouldSync = observedTableStates.onObserverAdded(tableIds)
             if (shouldSync) {

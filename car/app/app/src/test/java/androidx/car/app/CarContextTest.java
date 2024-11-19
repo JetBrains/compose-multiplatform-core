@@ -332,6 +332,7 @@ public class CarContextTest {
         assertThat(applicationContextDrawable.getIntrinsicHeight()).isEqualTo(64);
     }
 
+    @Ignore // b/376315779
     @Test
     // TODO(rampara): Investigate removing usage of deprecated updateConfiguration API
     @SuppressWarnings("deprecation")

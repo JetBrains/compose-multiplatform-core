@@ -134,6 +134,25 @@ class SerializationTest {
             assertThat(serializable).isEqualTo(2)
         }
     }
+
+    @Test
+    fun emptyValueStaysEmpty() {
+        activityTestRuleScenario.scenario.onActivity { activity ->
+            val viewModel: MyViewModel = ViewModelProvider(activity)[MyViewModel::class]
+            var serializable: List<Double> by
+                viewModel.savedStateHandle.saved { listOf(1.0, 2.0, 3.0) }
+            assertThat(serializable).isEqualTo(listOf(1.0, 2.0, 3.0))
+            serializable = emptyList()
+            assertThat(serializable).isEqualTo(emptyList<Double>())
+        }
+        activityTestRuleScenario.scenario.recreate()
+        activityTestRuleScenario.scenario.onActivity { activity ->
+            val viewModel: MyViewModel = ViewModelProvider(activity)[MyViewModel::class]
+            var serializable: List<Double> by
+                viewModel.savedStateHandle.saved { error("Unexpected initializer call") }
+            assertThat(serializable).isEqualTo(emptyList<Double>())
+        }
+    }
 }
 
 class MyViewModel(val savedStateHandle: SavedStateHandle) : ViewModel()

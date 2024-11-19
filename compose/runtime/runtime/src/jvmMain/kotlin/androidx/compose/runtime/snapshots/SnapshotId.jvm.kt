@@ -22,26 +22,30 @@ import androidx.collection.mutableLongListOf
 
 actual typealias SnapshotId = Long
 
-actual const val SnapshotIdZero: SnapshotId = 0L
-actual const val SnapshotIdMax: SnapshotId = Long.MAX_VALUE
-actual const val SnapshotIdSize: Int = Long.SIZE_BITS
-actual const val SnapshotIdInvalidValue: SnapshotId = -1
+internal actual const val SnapshotIdZero: SnapshotId = 0L
+internal actual const val SnapshotIdMax: SnapshotId = Long.MAX_VALUE
+internal actual const val SnapshotIdSize: Int = Long.SIZE_BITS
+internal actual const val SnapshotIdInvalidValue: SnapshotId = -1
 
-actual inline operator fun SnapshotId.compareTo(other: SnapshotId): Int = this.compareTo(other)
+internal actual inline operator fun SnapshotId.compareTo(other: SnapshotId): Int =
+    this.compareTo(other)
 
-actual inline operator fun SnapshotId.compareTo(other: Int): Int = this.compareTo(other.toLong())
+internal actual inline operator fun SnapshotId.compareTo(other: Int): Int =
+    this.compareTo(other.toLong())
 
-actual inline operator fun SnapshotId.plus(other: Int): SnapshotId = this + other.toLong()
+internal actual inline operator fun SnapshotId.plus(other: Int): SnapshotId = this + other.toLong()
 
-actual inline operator fun SnapshotId.minus(other: SnapshotId): SnapshotId = this - other
+internal actual inline operator fun SnapshotId.minus(other: SnapshotId): SnapshotId = this - other
 
-actual inline operator fun SnapshotId.minus(other: Int): SnapshotId = this - other.toLong()
+internal actual inline operator fun SnapshotId.minus(other: Int): SnapshotId = this - other.toLong()
 
-actual inline operator fun SnapshotId.div(other: Int): SnapshotId = this / other.toLong()
+internal actual inline operator fun SnapshotId.div(other: Int): SnapshotId = this / other.toLong()
 
-actual inline operator fun SnapshotId.times(other: Int): SnapshotId = this * other.toLong()
+internal actual inline operator fun SnapshotId.times(other: Int): SnapshotId = this * other.toLong()
 
 actual inline fun SnapshotId.toInt(): Int = this.toInt()
+
+actual inline fun SnapshotId.toLong(): Long = this
 
 actual typealias SnapshotIdArray = LongArray
 

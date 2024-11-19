@@ -123,7 +123,8 @@ public final class DimensionBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     @OptIn(markerClass = ExperimentalProtoLayoutExtensionApi.class)
     public static final class DpProp
-            implements ContainerDimension,
+            implements AngularDimension,
+                ContainerDimension,
                 ImageDimension,
                 SpacerDimension,
                 ExtensionDimension,
@@ -191,6 +192,13 @@ public final class DimensionBuilders {
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
         @NonNull
+        public DimensionProto.AngularDimension toAngularDimensionProto() {
+            return DimensionProto.AngularDimension.newBuilder().setDp(mImpl).build();
+        }
+
+        @Override
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        @NonNull
         public DimensionProto.ContainerDimension toContainerDimensionProto() {
             return DimensionProto.ContainerDimension.newBuilder().setLinearDimension(mImpl).build();
         }
@@ -233,7 +241,8 @@ public final class DimensionBuilders {
         /** Builder for {@link DpProp}. */
         @SuppressWarnings("HiddenSuperclass")
         public static final class Builder
-                implements ContainerDimension.Builder,
+                implements AngularDimension.Builder,
+                        ContainerDimension.Builder,
                         ImageDimension.Builder,
                         SpacerDimension.Builder,
                         ExtensionDimension.Builder,
@@ -636,9 +645,54 @@ public final class DimensionBuilders {
         }
     }
 
+    /**
+     * Interface defining the length of an arc element.
+     */
+    @RequiresSchemaVersion(major = 1, minor = 500)
+    public interface AngularDimension {
+        /** Get the protocol buffer representation of this object. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        @NonNull
+        DimensionProto.AngularDimension toAngularDimensionProto();
+
+        /** Get the fingerprint for this object or null if unknown. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        @Nullable
+        Fingerprint getFingerprint();
+
+        /** Builder to create {@link AngularDimension} objects. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        interface Builder {
+
+            /** Builds an instance with values accumulated in this Builder. */
+            @NonNull
+            AngularDimension build();
+        }
+    }
+
+    /** Creates a new wrapper instance from the proto. */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    @NonNull
+    public static AngularDimension angularDimensionFromProto(
+            @NonNull DimensionProto.AngularDimension proto, @Nullable Fingerprint fingerprint) {
+        if (proto.hasDegrees()) {
+            return DegreesProp.fromProto(proto.getDegrees(), fingerprint);
+        }
+        if (proto.hasDp()) {
+            return DpProp.fromProto(proto.getDp(), fingerprint);
+        }
+        throw new IllegalStateException("Proto was not a recognised instance of AngularDimension");
+    }
+
+    @NonNull
+    static AngularDimension angularDimensionFromProto(
+            @NonNull DimensionProto.AngularDimension proto) {
+        return angularDimensionFromProto(proto, null);
+    }
+
     /** A type for angular dimensions, measured in degrees. */
     @RequiresSchemaVersion(major = 1, minor = 0)
-    public static final class DegreesProp {
+    public static final class DegreesProp implements AngularDimension{
         private final DimensionProto.DegreesProp mImpl;
         @Nullable private final Fingerprint mFingerprint;
 
@@ -672,6 +726,7 @@ public final class DimensionBuilders {
         }
 
         /** Get the fingerprint for this object, or null if unknown. */
+        @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
         @Nullable
         public Fingerprint getFingerprint() {
@@ -692,10 +747,16 @@ public final class DimensionBuilders {
         }
 
         /** Returns the internal proto instance. */
+        @NonNull
+        DimensionProto.DegreesProp toProto() {
+            return mImpl;
+        }
+
+        @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
         @NonNull
-        public DimensionProto.DegreesProp toProto() {
-            return mImpl;
+        public DimensionProto.AngularDimension toAngularDimensionProto() {
+            return DimensionProto.AngularDimension.newBuilder().setDegrees(mImpl).build();
         }
 
         @Override
@@ -710,7 +771,8 @@ public final class DimensionBuilders {
         }
 
         /** Builder for {@link DegreesProp} */
-        public static final class Builder {
+        @SuppressWarnings("HiddenSuperclass")
+        public static final class Builder implements AngularDimension.Builder{
             private final DimensionProto.DegreesProp.Builder mImpl =
                     DimensionProto.DegreesProp.newBuilder();
             private final Fingerprint mFingerprint = new Fingerprint(-1927567665);
@@ -766,6 +828,7 @@ public final class DimensionBuilders {
              *     #setDynamicValue(DynamicFloat)} but neither {@link #Builder(float)} nor {@link
              *     #setValue(float)} is used to provide a static value.
              */
+            @Override
             @NonNull
             public DegreesProp build() {
                 if (mImpl.hasDynamicValue() && !mImpl.hasValue()) {

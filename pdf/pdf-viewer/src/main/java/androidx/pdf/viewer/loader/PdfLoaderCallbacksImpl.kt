@@ -23,7 +23,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import androidx.annotation.RestrictTo
-import androidx.annotation.UiThread
 import androidx.core.os.OperationCanceledException
 import androidx.fragment.app.FragmentManager
 import androidx.pdf.R
@@ -44,7 +43,6 @@ import androidx.pdf.util.Preconditions
 import androidx.pdf.util.ThreadUtils
 import androidx.pdf.util.TileBoard
 import androidx.pdf.viewer.LayoutHandler
-import androidx.pdf.viewer.LoadingView
 import androidx.pdf.viewer.PageViewFactory
 import androidx.pdf.viewer.PaginatedView
 import androidx.pdf.viewer.PdfPasswordDialog
@@ -63,7 +61,6 @@ public class PdfLoaderCallbacksImpl(
     private var fastScrollView: FastScrollView,
     private var zoomView: ZoomView,
     private var paginatedView: PaginatedView,
-    private var loadingView: LoadingView,
     private var findInFileView: FindInFileView,
     private var isTextSearchActive: Boolean,
     private var viewState: ExposedValue<ViewState>,
@@ -107,11 +104,6 @@ public class PdfLoaderCallbacksImpl(
             }
 
         onDocumentLoadFailure(thrown, true)
-    }
-
-    @UiThread
-    public fun hideSpinner() {
-        loadingView.visibility = View.GONE
     }
 
     private fun lookAtSelection(selection: SelectedMatch?) {
@@ -188,7 +180,6 @@ public class PdfLoaderCallbacksImpl(
         }
 
         onDocumentLoaded()
-        hideSpinner()
 
         // Assume we see at least the first page
         paginatedView.pageRangeHandler.maxPage = 1

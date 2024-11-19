@@ -42,6 +42,7 @@ import java.net.URLClassLoader
 import java.nio.file.Files
 import javax.lang.model.element.Modifier
 import javax.tools.Diagnostic
+import org.junit.Ignore
 import org.junit.Test
 
 @OptIn(ExperimentalProcessingApi::class)
@@ -413,6 +414,7 @@ class TestRunnerTest {
         }
     }
 
+    @Ignore // This is for Kotlin 2.1.0+.
     @Test
     fun testK2Flags() {
         val src =

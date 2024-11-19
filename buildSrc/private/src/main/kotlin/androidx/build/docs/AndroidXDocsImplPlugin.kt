@@ -61,6 +61,8 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileSystemOperations
+import org.gradle.api.file.FileTree
+import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
@@ -249,13 +251,18 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             // Store archiveOperations into a local variable to prevent access to the plugin
             // during the task execution, as that breaks configuration caching.
             val localVar = archiveOperations
+            val tempDir = project.layout.buildDirectory.dir("tmp/JvmSources").get().asFile
             task.into(sourcesDestinationDirectory)
             task.from(
                 pairProvider
                     .map { it.first }
                     .map {
                         it.map { jar ->
-                            localVar.zipTree(jar).matching { it.exclude("**/META-INF/MANIFEST.MF") }
+                            localVar
+                                .zipTree(jar)
+                                .matching { it.exclude("**/META-INF/MANIFEST.MF") }
+                                .rewriteImageTagsAndCopy(tempDir)
+                            tempDir
                         }
                     }
             )
@@ -267,15 +274,18 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 // Store archiveOperations into a local variable to prevent access to the plugin
                 // during the task execution, as that breaks configuration caching.
                 val localVar = archiveOperations
+                val tempDir = project.layout.buildDirectory.dir("tmp/SampleSources").get().asFile
                 task.into(samplesDestinationDirectory)
                 task.from(
                     pairProvider
                         .map { it.second }
                         .map {
                             it.map { jar ->
-                                localVar.zipTree(jar).matching {
-                                    it.exclude("**/META-INF/MANIFEST.MF")
-                                }
+                                localVar
+                                    .zipTree(jar)
+                                    .matching { it.exclude("**/META-INF/MANIFEST.MF") }
+                                    .rewriteImageTagsAndCopy(tempDir)
+                                tempDir
                             }
                         }
                 )
@@ -827,13 +837,22 @@ abstract class UnzipMultiplatformSourcesTask() : DefaultTask() {
     @get:OutputDirectory abstract val metadataOutput: DirectoryProperty
 
     @get:OutputDirectory abstract val sourceOutput: DirectoryProperty
+
     @get:OutputDirectory abstract val samplesOutput: DirectoryProperty
 
     @get:Inject abstract val fileSystemOperations: FileSystemOperations
+
     @get:Inject abstract val archiveOperations: ArchiveOperations
+
+    @get:Inject abstract val projectLayout: ProjectLayout
 
     @TaskAction
     fun execute() {
+        val tempSourcesDir =
+            projectLayout.buildDirectory.dir("tmp/MultiplatformSources").get().asFile
+        val tempSamplesDir =
+            projectLayout.buildDirectory.dir("tmp/MultiplatformSamples").get().asFile
+
         val (sources, samples) =
             inputJars
                 .get()
@@ -842,18 +861,26 @@ abstract class UnzipMultiplatformSourcesTask() : DefaultTask() {
                 // Now that we publish sample jars, they can get confused with normal source
                 // jars. We want to handle sample jars separately, so filter by the name.
                 .partition { name -> "samples" !in name }
+
+        sources.values.forEach { fileTree ->
+            fileTree.matching { it.exclude("META-INF/*") }.rewriteImageTagsAndCopy(tempSourcesDir)
+        }
         fileSystemOperations.sync {
             it.duplicatesStrategy = DuplicatesStrategy.FAIL
-            it.from(sources.values)
+            it.from(tempSourcesDir)
             it.into(sourceOutput)
             it.exclude("META-INF/*")
+        }
+
+        samples.values.forEach { fileTree ->
+            fileTree.matching { it.exclude("META-INF/*") }.rewriteImageTagsAndCopy(tempSamplesDir)
         }
         fileSystemOperations.sync {
             // Some libraries share samples, e.g. paging. This can be an issue if and only if the
             // consumer libraries have pinned samples version or are not in an atomic group.
             // We don't have anything matching this case now, but should enforce better. b/334825580
             it.duplicatesStrategy = DuplicatesStrategy.INCLUDE
-            it.from(samples.values)
+            it.from(tempSamplesDir)
             it.into(samplesOutput)
             it.exclude("META-INF/*")
         }
@@ -943,3 +970,48 @@ private fun Project.getExtraCommonDependencies(): FileCollection =
                 )
             }
     )
+
+private fun FileTree.rewriteImageTagsAndCopy(destinationDir: File) {
+    visit { fileDetails ->
+        if (!fileDetails.isDirectory) {
+            val targetFile = File(destinationDir, fileDetails.relativePath.pathString)
+            targetFile.parentFile.mkdirs()
+
+            if (fileDetails.file.extension == "kt") {
+                val content = fileDetails.file.readText()
+                val updatedContent = rewriteLinks(content)
+                targetFile.writeText(updatedContent)
+            } else {
+                fileDetails.file.copyTo(targetFile, overwrite = true)
+            }
+        }
+    }
+}
+
+/**
+ * Rewrites multi-line markdown links ![]()to a single-line format. Work-around for b/350055200.
+ *
+ * Example transformation:
+ * ```
+ * Original: ![Example
+ *           Image](http://example.com/image.png)
+ * Result:   ![Example Image](http://example.com/image.png)
+ * ```
+ */
+internal fun rewriteLinks(content: String): String =
+    markdownLinksRegex.replace(content) { matchResult ->
+        val exclamationMark = matchResult.groupValues[1]
+        val linkText = matchResult.groupValues[2].replace("\n", " ").replace(" * ", "").trim()
+        val url = matchResult.groupValues[3].trim()
+        "$exclamationMark[$linkText]($url)"
+    }
+
+/**
+ * Regular expression to match markdown link syntax, supporting both standard links and image links.
+ *
+ * The pattern matches:
+ * - Optional `!` at the beginning for image links.
+ * - Link text enclosed in square brackets `[ ... ]`, allowing for whitespace around the text.
+ * - URL in parentheses `( ... )`, allowing for whitespace around the URL.
+ */
+private val markdownLinksRegex = Regex("""(!?)\[\s*([^\[\]]+?)\s*]\(\s*([^(]+?)\s*\)""")

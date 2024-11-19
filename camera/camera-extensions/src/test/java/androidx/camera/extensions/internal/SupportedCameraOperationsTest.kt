@@ -25,7 +25,7 @@ import android.os.Build
 import android.util.Pair
 import android.util.Range
 import android.util.Size
-import androidx.camera.core.impl.RestrictedCameraInfo
+import androidx.camera.core.impl.AdapterCameraInfo
 import androidx.camera.extensions.impl.advanced.AdvancedExtenderImpl
 import androidx.camera.extensions.impl.advanced.Camera2SessionConfigImpl
 import androidx.camera.extensions.impl.advanced.OutputSurfaceConfigurationImpl
@@ -112,7 +112,7 @@ class SupportedCameraOperationsTest(private val extenderType: String) {
 
     private fun testSupportedCameraOperation(
         supportedCaptureRequestKeys: List<CaptureRequest.Key<out Any>>,
-        @RestrictedCameraInfo.CameraOperation expectSupportedOperations: Set<Int>
+        @AdapterCameraInfo.CameraOperation expectSupportedOperations: Set<Int>
     ) {
         var vendorExtender: VendorExtender? = null
         if (extenderType == "basic") {
@@ -137,7 +137,7 @@ class SupportedCameraOperationsTest(private val extenderType: String) {
     fun supportedCameraOperations_zoomIsEnabled_androidR() {
         testSupportedCameraOperation(
             supportedCaptureRequestKeys = listOf(CaptureRequest.CONTROL_ZOOM_RATIO),
-            expectSupportedOperations = setOf(RestrictedCameraInfo.CAMERA_OPERATION_ZOOM)
+            expectSupportedOperations = setOf(AdapterCameraInfo.CAMERA_OPERATION_ZOOM)
         )
     }
 
@@ -146,7 +146,7 @@ class SupportedCameraOperationsTest(private val extenderType: String) {
     fun supportedCameraOperations_cropregion_zoomIsEnabled_androidR() {
         testSupportedCameraOperation(
             supportedCaptureRequestKeys = listOf(CaptureRequest.SCALER_CROP_REGION),
-            expectSupportedOperations = setOf(RestrictedCameraInfo.CAMERA_OPERATION_ZOOM)
+            expectSupportedOperations = setOf(AdapterCameraInfo.CAMERA_OPERATION_ZOOM)
         )
     }
 
@@ -155,7 +155,7 @@ class SupportedCameraOperationsTest(private val extenderType: String) {
     fun supportedCameraOperations_zoomIsEnabled() {
         testSupportedCameraOperation(
             supportedCaptureRequestKeys = listOf(CaptureRequest.SCALER_CROP_REGION),
-            expectSupportedOperations = setOf(RestrictedCameraInfo.CAMERA_OPERATION_ZOOM)
+            expectSupportedOperations = setOf(AdapterCameraInfo.CAMERA_OPERATION_ZOOM)
         )
     }
 
@@ -164,7 +164,7 @@ class SupportedCameraOperationsTest(private val extenderType: String) {
         testSupportedCameraOperation(
             supportedCaptureRequestKeys =
                 listOf(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_TRIGGER),
-            expectSupportedOperations = setOf(RestrictedCameraInfo.CAMERA_OPERATION_AUTO_FOCUS)
+            expectSupportedOperations = setOf(AdapterCameraInfo.CAMERA_OPERATION_AUTO_FOCUS)
         )
     }
 
@@ -175,7 +175,7 @@ class SupportedCameraOperationsTest(private val extenderType: String) {
                 listOf(
                     CaptureRequest.CONTROL_AF_REGIONS,
                 ),
-            expectSupportedOperations = setOf(RestrictedCameraInfo.CAMERA_OPERATION_AF_REGION)
+            expectSupportedOperations = setOf(AdapterCameraInfo.CAMERA_OPERATION_AF_REGION)
         )
     }
 
@@ -186,7 +186,7 @@ class SupportedCameraOperationsTest(private val extenderType: String) {
                 listOf(
                     CaptureRequest.CONTROL_AE_REGIONS,
                 ),
-            expectSupportedOperations = setOf(RestrictedCameraInfo.CAMERA_OPERATION_AE_REGION)
+            expectSupportedOperations = setOf(AdapterCameraInfo.CAMERA_OPERATION_AE_REGION)
         )
     }
 
@@ -197,7 +197,7 @@ class SupportedCameraOperationsTest(private val extenderType: String) {
                 listOf(
                     CaptureRequest.CONTROL_AWB_REGIONS,
                 ),
-            expectSupportedOperations = setOf(RestrictedCameraInfo.CAMERA_OPERATION_AWB_REGION)
+            expectSupportedOperations = setOf(AdapterCameraInfo.CAMERA_OPERATION_AWB_REGION)
         )
     }
 
@@ -206,7 +206,7 @@ class SupportedCameraOperationsTest(private val extenderType: String) {
         testSupportedCameraOperation(
             supportedCaptureRequestKeys =
                 listOf(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.FLASH_MODE),
-            expectSupportedOperations = setOf(RestrictedCameraInfo.CAMERA_OPERATION_TORCH)
+            expectSupportedOperations = setOf(AdapterCameraInfo.CAMERA_OPERATION_TORCH)
         )
     }
 
@@ -218,7 +218,7 @@ class SupportedCameraOperationsTest(private val extenderType: String) {
                     CaptureRequest.CONTROL_AE_MODE,
                     CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER
                 ),
-            expectSupportedOperations = setOf(RestrictedCameraInfo.CAMERA_OPERATION_FLASH)
+            expectSupportedOperations = setOf(AdapterCameraInfo.CAMERA_OPERATION_FLASH)
         )
     }
 
@@ -230,7 +230,7 @@ class SupportedCameraOperationsTest(private val extenderType: String) {
                     CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION,
                 ),
             expectSupportedOperations =
-                setOf(RestrictedCameraInfo.CAMERA_OPERATION_EXPOSURE_COMPENSATION)
+                setOf(AdapterCameraInfo.CAMERA_OPERATION_EXPOSURE_COMPENSATION)
         )
     }
 
@@ -242,8 +242,7 @@ class SupportedCameraOperationsTest(private val extenderType: String) {
                 listOf(
                     CaptureRequest.EXTENSION_STRENGTH,
                 ),
-            expectSupportedOperations =
-                setOf(RestrictedCameraInfo.CAMERA_OPERATION_EXTENSION_STRENGTH)
+            expectSupportedOperations = setOf(AdapterCameraInfo.CAMERA_OPERATION_EXTENSION_STRENGTH)
         )
     }
 
@@ -257,14 +256,14 @@ class SupportedCameraOperationsTest(private val extenderType: String) {
             supportedCaptureRequestKeys = emptyList(),
             expectSupportedOperations =
                 setOf(
-                    RestrictedCameraInfo.CAMERA_OPERATION_ZOOM,
-                    RestrictedCameraInfo.CAMERA_OPERATION_AUTO_FOCUS,
-                    RestrictedCameraInfo.CAMERA_OPERATION_TORCH,
-                    RestrictedCameraInfo.CAMERA_OPERATION_AF_REGION,
-                    RestrictedCameraInfo.CAMERA_OPERATION_AE_REGION,
-                    RestrictedCameraInfo.CAMERA_OPERATION_AWB_REGION,
-                    RestrictedCameraInfo.CAMERA_OPERATION_EXPOSURE_COMPENSATION,
-                    RestrictedCameraInfo.CAMERA_OPERATION_FLASH
+                    AdapterCameraInfo.CAMERA_OPERATION_ZOOM,
+                    AdapterCameraInfo.CAMERA_OPERATION_AUTO_FOCUS,
+                    AdapterCameraInfo.CAMERA_OPERATION_TORCH,
+                    AdapterCameraInfo.CAMERA_OPERATION_AF_REGION,
+                    AdapterCameraInfo.CAMERA_OPERATION_AE_REGION,
+                    AdapterCameraInfo.CAMERA_OPERATION_AWB_REGION,
+                    AdapterCameraInfo.CAMERA_OPERATION_EXPOSURE_COMPENSATION,
+                    AdapterCameraInfo.CAMERA_OPERATION_FLASH
                 )
         )
     }

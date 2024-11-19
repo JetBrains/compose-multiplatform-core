@@ -15,10 +15,12 @@
   limitations under the License.
   -->
 
-<shape
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <solid android:color="#c0555555"/>
-    <size android:width="8dp" android:height="80dp"/>
-    <corners android:radius="4dp"/>
-</shape>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Pressed state -->
+    <item
+        android:state_pressed="true"
+        android:drawable="@drawable/slidingpanelayout_divider_pressed" />
+    <!-- Default state -->
+    <item
+        android:drawable="@drawable/slidingpanelayout_divider_default"/>
+</selector>

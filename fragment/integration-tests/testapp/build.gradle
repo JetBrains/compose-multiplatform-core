@@ -22,6 +22,7 @@ plugins {
 
 android {
     namespace "androidx.fragment.testapp"
+    compileSdk 35
 }
 
 dependencies {
@@ -34,6 +35,8 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.1.0")
     debugImplementation(project(":fragment:fragment-testing-manifest"))
 
+    androidTestImplementation(project(":core:core-ktx"))
+    androidTestImplementation(project(":core:core"))
     androidTestImplementation(project(":fragment:fragment-testing"))
     androidTestImplementation("androidx.lifecycle:lifecycle-common:2.6.2")
     androidTestImplementation(project(":fragment:fragment-testing-manifest"))

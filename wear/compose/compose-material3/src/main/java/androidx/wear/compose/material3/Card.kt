@@ -19,7 +19,6 @@ package androidx.wear.compose.material3
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -42,8 +41,6 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.paint
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -53,10 +50,11 @@ import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.lazy.LocalTransformingLazyColumnItemScope
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.material3.tokens.CardTokens
 import androidx.wear.compose.material3.tokens.ImageCardTokens
 import androidx.wear.compose.material3.tokens.OutlinedCardTokens
@@ -72,6 +70,8 @@ import androidx.wear.compose.materialcore.Text
  * The [Card] is Rectangle shaped rounded corners by default.
  *
  * Cards can be enabled or disabled. A disabled card will not respond to click events.
+ *
+ * Card scales itself appropriately when used within the scope of a [TransformingLazyColumn].
  *
  * Example of a [Card]:
  *
@@ -162,6 +162,8 @@ fun Card(
  *
  * If more than one composable is provided in the content slot it is the responsibility of the
  * caller to determine how to layout the contents, e.g. provide either a row or a column.
+ *
+ * AppCard scales itself appropriately when used within the scope of a [TransformingLazyColumn].
  *
  * Example of an [AppCard]:
  *
@@ -311,6 +313,8 @@ fun AppCard(
  * If more than one composable is provided in the [content] slot it is the responsibility of the
  * caller to determine how to layout the contents, e.g. provide either a row or a column.
  *
+ * TitleCard scales itself appropriately when used within the scope of a [TransformingLazyColumn].
+ *
  * Example of a [TitleCard] with [time], [title] and [content]:
  *
  * @sample androidx.wear.compose.material3.samples.TitleCardSample
@@ -458,6 +462,9 @@ fun TitleCard(
  * The [Card] is Rectangle shaped with rounded corners by default.
  *
  * Cards can be enabled or disabled. A disabled card will not respond to click events.
+ *
+ * OutlinedCard scales itself appropriately when used within the scope of a
+ * [TransformingLazyColumn].
  *
  * Example of an [OutlinedCard]:
  *
@@ -846,8 +853,7 @@ private fun CardImpl(
         modifier =
             modifier
                 .fillMaxWidth()
-                .clip(shape = shape)
-                .paint(painter = colors.containerPainter, contentScale = ContentScale.Crop)
+                .container(colors.containerPainter, shape, border)
                 .combinedClickable(
                     enabled = enabled,
                     onClick = onClick,
@@ -864,8 +870,8 @@ private fun CardImpl(
                     indication = ripple(),
                     interactionSource = interactionSource,
                 )
-                .then(border?.let { Modifier.border(border = border, shape = shape) } ?: Modifier)
                 .padding(contentPadding),
-        content = content
-    )
+    ) {
+        CompositionLocalProvider(LocalTransformingLazyColumnItemScope provides null) { content() }
+    }
 }

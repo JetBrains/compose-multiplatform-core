@@ -44,6 +44,7 @@ import androidx.wear.compose.integration.demos.common.AdaptiveScreen
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.EdgeButton
+import androidx.wear.compose.material3.EdgeButtonDefaults
 import androidx.wear.compose.material3.EdgeButtonSize
 import androidx.wear.compose.material3.RadioButton
 import androidx.wear.compose.material3.ScreenScaffold
@@ -86,7 +87,7 @@ fun EdgeButtonBelowLazyColumnDemo() {
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 contentPadding =
                     ScreenScaffoldDefaults.contentPaddingWithEdgeButton(
-                        edgeButtonSize = EdgeButtonSize.Medium,
+                        edgeButtonSize = EdgeButtonSize.Large,
                         10.dp,
                         20.dp,
                         10.dp,
@@ -237,7 +238,7 @@ fun EdgeButtonMultiDemo() {
                         ButtonDefaults.outlinedButtonBorder(enabled = true)
                     else null
             ) {
-                CheckIcon()
+                CheckIcon(modifier = Modifier.size(EdgeButtonDefaults.iconSizeFor(sizes[size])))
             }
         }
     }
@@ -281,7 +282,12 @@ fun EdgeButtonConfigurableDemo() {
                     enabled = colors[selectedColor].first != "Disabled"
                 ) {
                     if (selectedType == 0) {
-                        CheckIcon()
+                        CheckIcon(
+                            modifier =
+                                Modifier.size(
+                                    EdgeButtonDefaults.iconSizeFor(sizes[selectedSize].second)
+                                )
+                        )
                     } else {
                         Text("Ok")
                     }

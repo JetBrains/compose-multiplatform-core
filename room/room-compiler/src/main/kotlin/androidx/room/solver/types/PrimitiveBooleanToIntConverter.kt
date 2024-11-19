@@ -19,6 +19,7 @@ package androidx.room.solver.types
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
 import androidx.room.compiler.codegen.XTypeName
+import androidx.room.compiler.codegen.buildCodeBlock
 import androidx.room.compiler.processing.XProcessingEnv
 import androidx.room.solver.CodeGenScope
 
@@ -30,17 +31,17 @@ object PrimitiveBooleanToIntConverter {
         return listOf(
             object : SingleStatementTypeConverter(tBoolean, tInt) {
                 override fun buildStatement(inputVarName: String, scope: CodeGenScope): XCodeBlock {
-                    return when (scope.language) {
-                        CodeLanguage.JAVA ->
-                            XCodeBlock.of(scope.language, "%L ? 1 : 0", inputVarName)
-                        CodeLanguage.KOTLIN ->
-                            XCodeBlock.of(scope.language, "if (%L) 1 else 0", inputVarName)
+                    return buildCodeBlock { language ->
+                        when (language) {
+                            CodeLanguage.JAVA -> add("%L ? 1 : 0", inputVarName)
+                            CodeLanguage.KOTLIN -> add("if (%L) 1 else 0", inputVarName)
+                        }
                     }
                 }
             },
             object : SingleStatementTypeConverter(tInt, tBoolean) {
                 override fun buildStatement(inputVarName: String, scope: CodeGenScope): XCodeBlock {
-                    return XCodeBlock.of(scope.language, "%L != 0", inputVarName)
+                    return XCodeBlock.of("%L != 0", inputVarName)
                 }
             }
         )

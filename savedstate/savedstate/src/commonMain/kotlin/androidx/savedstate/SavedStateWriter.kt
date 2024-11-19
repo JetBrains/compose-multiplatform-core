@@ -45,7 +45,21 @@ internal constructor(
      */
     public inline fun putBoolean(key: String, value: Boolean)
 
+    /**
+     * Stores a char value associated with the specified key in the [SavedState].
+     *
+     * @param key The key to associate the value with.
+     * @param value The char value to store.
+     */
     public inline fun putChar(key: String, value: Char)
+
+    /**
+     * Stores a char sequence value associated with the specified key in the [SavedState].
+     *
+     * @param key The key to associate the value with.
+     * @param value The char sequence value to store.
+     */
+    public inline fun putCharSequence(key: String, value: CharSequence)
 
     /**
      * Stores a double value associated with the specified key in the [SavedState].
@@ -98,79 +112,97 @@ internal constructor(
      * Stores a list of elements of [Int] associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
-     * @param values The list of elements to store.
+     * @param value The list of elements to store.
      */
-    public inline fun putIntList(key: String, values: List<Int>)
+    public inline fun putIntList(key: String, value: List<Int>)
+
+    /**
+     * Stores a list of elements of [CharSequence] associated with the specified key in the
+     * [SavedState].
+     *
+     * @param key The key to associate the value with.
+     * @param value The list of elements to store.
+     */
+    public inline fun putCharSequenceList(key: String, value: List<CharSequence>)
 
     /**
      * Stores a list of elements of [String] associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
-     * @param values The list of elements to store.
+     * @param value The list of elements to store.
      */
-    public inline fun putStringList(key: String, values: List<String>)
+    public inline fun putStringList(key: String, value: List<String>)
 
     /**
      * Stores an [Array] of elements of [Boolean] associated with the specified key in the
      * [SavedState].
      *
      * @param key The key to associate the value with.
-     * @param values The array of elements to store.
+     * @param value The array of elements to store.
      */
-    public inline fun putBooleanArray(key: String, values: BooleanArray)
+    public inline fun putBooleanArray(key: String, value: BooleanArray)
 
     /**
      * Stores an [Array] of elements of [Boolean] associated with the specified key in the
      * [SavedState].
      *
      * @param key The key to associate the value with.
-     * @param values The array of elements to store.
+     * @param value The array of elements to store.
      */
-    public inline fun putCharArray(key: String, values: CharArray)
+    public inline fun putCharArray(key: String, value: CharArray)
+
+    /**
+     * Stores an [Array] of elements of [CharSequence] associated with the specified key in the
+     * [SavedState].
+     *
+     * @param key The key to associate the value with.
+     * @param value The array of elements to store.
+     */
+    public inline fun putCharSequenceArray(key: String, value: Array<CharSequence>)
 
     /**
      * Stores an [Array] of elements of [Double] associated with the specified key in the
      * [SavedState].
      *
      * @param key The key to associate the value with.
-     * @param values The array of elements to store.
+     * @param value The array of elements to store.
      */
-    public inline fun putDoubleArray(key: String, values: DoubleArray)
+    public inline fun putDoubleArray(key: String, value: DoubleArray)
 
     /**
      * Stores an [Array] of elements of [Float] associated with the specified key in the
      * [SavedState].
      *
      * @param key The key to associate the value with.
-     * @param values The array of elements to store.
+     * @param value The array of elements to store.
      */
-    public inline fun putFloatArray(key: String, values: FloatArray)
+    public inline fun putFloatArray(key: String, value: FloatArray)
 
     /**
      * Stores an [Array] of elements of [Int] associated with the specified key in the [SavedState].
      *
      * @param key The key to associate the value with.
-     * @param values The array of elements to store.
+     * @param value The array of elements to store.
      */
-    public inline fun putIntArray(key: String, values: IntArray)
+    public inline fun putIntArray(key: String, value: IntArray)
 
     /**
      * Stores an [Array] of elements of [Long] associated with the specified key in the
      * [SavedState].
      *
      * @param key The key to associate the value with.
-     * @param values The array of elements to store.
+     * @param value The array of elements to store.
      */
-    public inline fun putLongArray(key: String, values: LongArray)
+    public inline fun putLongArray(key: String, value: LongArray)
 
     /**
      * Stores an [Array] of elements of [String] associated with the specified key in the
      * [SavedState].
      *
      * @param key The key to associate the value with.
-     * @param values The array of elements to store.
+     * @param value The array of elements to store.
      */
-    public inline fun putStringArray(key: String, values: Array<String>)
+    public inline fun putStringArray(key: String, value: Array<String>)
 
     /**
      * Stores a [SavedState] object associated with the specified key in the [SavedState].
@@ -183,9 +215,9 @@ internal constructor(
     /**
      * Stores all key-value pairs from the provided [SavedState] into this [SavedState].
      *
-     * @param values The [SavedState] containing the key-value pairs to add.
+     * @param from The [SavedState] containing the key-value pairs to add.
      */
-    public inline fun putAll(values: SavedState)
+    public inline fun putAll(from: SavedState)
 
     /**
      * Removes the value associated with the specified key from the [SavedState].

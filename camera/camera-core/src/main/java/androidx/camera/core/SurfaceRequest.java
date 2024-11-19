@@ -439,6 +439,20 @@ public final class SurfaceRequest {
      */
     public void provideSurface(@NonNull Surface surface, @NonNull Executor executor,
             @NonNull Consumer<Result> resultListener) {
+        if (!surface.isValid()) {
+            // Only check Surface validness. The resolution match check might cause unexpected
+            // compatibility issue.
+            boolean success = mSurfaceCompleter.setException(
+                    new DeferrableSurface.SurfaceInvalidException(
+                            "The provided surface is invalid."));
+            if (success) {
+                executor.execute(
+                        () -> resultListener.accept(
+                                Result.of(Result.RESULT_INVALID_SURFACE, surface)));
+                return;
+            }
+        }
+
         if (mSurfaceCompleter.set(surface) || mSurfaceFuture.isCancelled()) {
             // Session will be pending completion (or surface request was cancelled). Return the
             // session future.
@@ -467,11 +481,16 @@ public final class SurfaceRequest {
                         () -> resultListener.accept(
                                 Result.of(Result.RESULT_SURFACE_ALREADY_PROVIDED, surface)));
             } catch (InterruptedException | ExecutionException e) {
-                executor.execute(
-                        () -> resultListener.accept(
-                                Result.of(Result.RESULT_WILL_NOT_PROVIDE_SURFACE, surface)));
+                if (e.getCause() instanceof DeferrableSurface.SurfaceUnavailableException) {
+                    executor.execute(
+                            () -> resultListener.accept(
+                                    Result.of(Result.RESULT_WILL_NOT_PROVIDE_SURFACE, surface)));
+                } else {
+                    executor.execute(
+                            () -> resultListener.accept(
+                                    Result.of(Result.RESULT_SURFACE_ALREADY_PROVIDED, surface)));
+                }
             }
-
         }
     }
 

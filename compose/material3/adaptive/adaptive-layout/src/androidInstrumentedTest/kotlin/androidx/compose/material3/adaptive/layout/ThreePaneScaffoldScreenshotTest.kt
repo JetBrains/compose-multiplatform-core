@@ -17,13 +17,16 @@
 package androidx.compose.material3.adaptive.layout
 
 import android.os.Build
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
+import androidx.compose.material3.VerticalDragHandle
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.testutils.assertAgainstGolden
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -392,7 +395,7 @@ class ThreePaneScaffoldScreenshotTest {
             SampleThreePaneScaffoldWithPaneExpansion(mockPaneExpansionState) { MockDragHandle(it) }
         }
 
-        rule.runOnIdle { mockPaneExpansionState.dispatchRawDelta(mockDraggingDp) }
+        rule.runOnIdle { mockPaneExpansionState.draggableState.dispatchRawDelta(mockDraggingDp) }
 
         rule
             .onNodeWithTag(ThreePaneScaffoldTestTag)
@@ -413,7 +416,7 @@ class ThreePaneScaffoldScreenshotTest {
             SampleThreePaneScaffoldWithPaneExpansion(mockPaneExpansionState) { MockDragHandle(it) }
         }
 
-        rule.runOnIdle { mockPaneExpansionState.dispatchRawDelta(mockDraggingDp) }
+        rule.runOnIdle { mockPaneExpansionState.draggableState.dispatchRawDelta(mockDraggingDp) }
 
         rule
             .onNodeWithTag(ThreePaneScaffoldTestTag)
@@ -434,7 +437,7 @@ class ThreePaneScaffoldScreenshotTest {
             SampleThreePaneScaffoldWithPaneExpansion(mockPaneExpansionState) { MockDragHandle(it) }
         }
 
-        rule.runOnIdle { mockPaneExpansionState.dispatchRawDelta(mockDraggingDp) }
+        rule.runOnIdle { mockPaneExpansionState.draggableState.dispatchRawDelta(mockDraggingDp) }
 
         rule
             .onNodeWithTag(ThreePaneScaffoldTestTag)
@@ -519,5 +522,14 @@ internal fun SampleThreePaneScaffoldWithPaneExpansion(
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 internal fun ThreePaneScaffoldScope.MockDragHandle(state: PaneExpansionState) {
-    PaneExpansionDragHandle(state, MaterialTheme.colorScheme.outline)
+    val interactionSource = remember { MutableInteractionSource() }
+    VerticalDragHandle(
+        modifier =
+            Modifier.paneExpansionDraggable(
+                state,
+                LocalMinimumInteractiveComponentSize.current,
+                interactionSource
+            ),
+        interactionSource = interactionSource
+    )
 }

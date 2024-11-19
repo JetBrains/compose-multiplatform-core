@@ -38,7 +38,6 @@ class ByteArrayWrapperColumnTypeAdapter(out: XType) :
                     "%L = %L",
                     outVarName,
                     XCodeBlock.ofNewInstance(
-                        language = language,
                         BYTE_ARRAY_WRAPPER,
                         argsFormat = "%L.getBlob(%L)",
                         cursorVarName,

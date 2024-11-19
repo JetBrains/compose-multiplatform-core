@@ -33,7 +33,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.overscroll
 import androidx.compose.foundation.rememberOverscrollEffect
-import androidx.compose.foundation.withoutDrawing
+import androidx.compose.foundation.withoutVisualEffect
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -266,10 +266,10 @@ fun OverscrollRenderedOnTopOfLazyListDecorations() {
     val items = remember { (1..100).toList() }
     val state = rememberLazyListState()
     val overscroll = rememberOverscrollEffect()
-    // Create a wrapped version of the above overscroll effect that does not draw. This will be
-    // used inside LazyColumn to provide events to overscroll, without letting LazyColumn draw the
-    // overscroll effect internally.
-    val overscrollWithoutDrawing = overscroll?.withoutDrawing()
+    // Create a wrapped version of the above overscroll effect that does not apply a visual effect.
+    // This will be used inside LazyColumn to provide events to overscroll, without letting
+    // LazyColumn render the overscroll effect internally.
+    val overscrollWithoutVisualEffect = overscroll?.withoutVisualEffect()
     LazyColumn(
         content = { items(items) { Text("Item $it") } },
         state = state,
@@ -291,8 +291,8 @@ fun OverscrollRenderedOnTopOfLazyListDecorations() {
                         )
                     }
                 },
-        // Pass the overscroll effect that does not draw inside the LazyList to receive overscroll
-        // events
-        overscrollEffect = overscrollWithoutDrawing
+        // Pass the overscroll effect that does not apply a visual effect inside the LazyList to
+        // receive overscroll events
+        overscrollEffect = overscrollWithoutVisualEffect
     )
 }

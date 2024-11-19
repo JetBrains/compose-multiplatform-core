@@ -61,16 +61,15 @@ class ArrayQueryParameterAdapter(
     }
 
     override fun getArgCount(inputVarName: String, outputVarName: String, scope: CodeGenScope) {
-        val sizeExpr = ArraySizeExprCode(scope.language, inputVarName)
+        val sizeExpr = ArraySizeExprCode(inputVarName)
         val countAssignment =
             if (nullability == XNullability.NONNULL) {
                 sizeExpr
             } else {
                 XCodeBlock.ofTernaryIf(
-                    language = scope.language,
-                    condition = XCodeBlock.of(scope.language, "%L == null", inputVarName),
-                    leftExpr = XCodeBlock.of(scope.language, "1"),
-                    rightExpr = XCodeBlock.of(scope.language, "%L", sizeExpr)
+                    condition = XCodeBlock.of("%L == null", inputVarName),
+                    leftExpr = XCodeBlock.of("1"),
+                    rightExpr = XCodeBlock.of("%L", sizeExpr)
                 )
             }
         scope.builder.addLocalVariable(

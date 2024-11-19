@@ -29,6 +29,10 @@ class RootsDetector(environment: InspectorEnvironment) {
         return alternateViews.ifEmpty { getAndroidViews() }
     }
 
+    fun getAllRoots(): List<View> {
+        return alternateViewHelper.getAlternateViews() + getAndroidViews()
+    }
+
     private fun getAndroidViews(): List<View> {
         ThreadUtils.assertOnMainThread()
         val views = WindowInspector.getGlobalWindowViews()

@@ -27,6 +27,7 @@ import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.core.Token
+import androidx.camera.camera2.pipe.internal.CameraGraphParametersImpl
 import androidx.camera.camera2.pipe.internal.FrameCaptureQueue
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.Deferred
@@ -38,6 +39,7 @@ internal class CameraGraphSessionImpl(
     private val graphProcessor: GraphProcessor,
     private val controller3A: Controller3A,
     private val frameCaptureQueue: FrameCaptureQueue,
+    private val parameters: CameraGraphParametersImpl
 ) : CameraGraph.Session {
     private val debugId = cameraGraphSessionIds.incrementAndGet()
 
@@ -80,6 +82,10 @@ internal class CameraGraphSessionImpl(
     }
 
     override fun close() {
+        val unappliedParameters = parameters.fetchUpdatedParameters()
+        if (unappliedParameters != null) {
+            graphProcessor.updateParameters(unappliedParameters)
+        }
         token.release()
     }
 

@@ -87,10 +87,11 @@ object Arguments {
     internal val profilerSkipWhenDurationRisksAnr: Boolean
     internal val profilerPerfCompareEnable: Boolean
     internal val thermalThrottleSleepDurationSeconds: Long
-    private val cpuEventCounterEnable: Boolean
+    val cpuEventCounterEnable: Boolean // non-internal, checked in CpuEventCounterBenchmark
     internal val cpuEventCounterMask: Int
     internal val requireAot: Boolean
     internal val requireJitDisabledIfRooted: Boolean
+    val throwOnMainThreadMeasureRepeated: Boolean // non-internal, used in BenchmarkRule
     val runOnMainDeadlineSeconds: Long // non-internal, used in BenchmarkRule
 
     internal var error: String? = null
@@ -340,6 +341,9 @@ object Arguments {
         requireAot = arguments.getBenchmarkArgument("requireAot")?.toBoolean() ?: false
         requireJitDisabledIfRooted =
             arguments.getBenchmarkArgument("requireJitDisabledIfRooted")?.toBoolean() ?: false
+
+        throwOnMainThreadMeasureRepeated =
+            arguments.getBenchmarkArgument("throwOnMainThreadMeasureRepeated")?.toBoolean() ?: false
 
         if (arguments.getString("orchestratorService") != null) {
             InstrumentationResults.scheduleIdeWarningOnNextReport(

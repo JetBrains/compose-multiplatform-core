@@ -125,6 +125,21 @@ abstract class Feature(val cubics: List<Cubic>) {
     abstract fun reversed(): Feature
 
     /**
+     * Whether this Feature gets ignored in the Morph mapping. See [buildIgnorableFeature] for more
+     * details.
+     */
+    abstract val isIgnorableFeature: Boolean
+
+    /** Whether this Feature is an Edge with no inward or outward indentation. */
+    abstract val isEdge: Boolean
+
+    /** Whether this Feature is a convex corner (outward indentation in a shape). */
+    abstract val isConvexCorner: Boolean
+
+    /** Whether this Feature is a concave corner (inward indentation in a shape). */
+    abstract val isConcaveCorner: Boolean
+
+    /**
      * Edges have only a list of the cubic curves which make up the edge. Edges lie between corners
      * and have no vertex or concavity; the curves are simply straight lines (represented by Cubic
      * curves).
@@ -152,6 +167,14 @@ abstract class Feature(val cubics: List<Cubic>) {
         }
 
         override fun toString(): String = "Edge"
+
+        override val isIgnorableFeature = true
+
+        override val isEdge = true
+
+        override val isConvexCorner = false
+
+        override val isConcaveCorner = false
     }
 
     /**
@@ -189,5 +212,13 @@ abstract class Feature(val cubics: List<Cubic>) {
         override fun toString(): String {
             return "Corner: cubics=${cubics.joinToString(separator = ", "){"[$it]"}} convex=$convex"
         }
+
+        override val isIgnorableFeature = false
+
+        override val isEdge = false
+
+        override val isConvexCorner = convex
+
+        override val isConcaveCorner = !convex
     }
 }

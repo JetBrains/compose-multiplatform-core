@@ -20,6 +20,7 @@ import androidx.kruth.assertThat
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.compiler.codegen.CodeLanguage
+import androidx.room.compiler.codegen.compat.XConverters.toString
 import androidx.room.compiler.processing.XTypeElement
 import androidx.room.compiler.processing.util.Source
 import androidx.room.ext.RoomTypeNames.ROOM_SQL_QUERY
@@ -59,7 +60,7 @@ class QueryWriterTest {
         ) { _, writer ->
             val scope = testCodeGenScope()
             writer.prepareReadAndBind("_sql", "_stmt", scope)
-            assertThat(scope.generate().toString().trim())
+            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim())
                 .isEqualTo(
                     """
                 final java.lang.String _sql = "SELECT id FROM users";
@@ -89,7 +90,7 @@ class QueryWriterTest {
                 }
                 """
                     .trimIndent()
-            assertThat(scope.generate().toString().trim())
+            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim())
                 .isEqualTo(
                     """
                 |final java.lang.String _sql = "SELECT id FROM users WHERE name LIKE ?";
@@ -112,7 +113,7 @@ class QueryWriterTest {
         ) { _, writer ->
             val scope = testCodeGenScope()
             writer.prepareReadAndBind("_sql", "_stmt", scope)
-            assertThat(scope.generate().toString().trim())
+            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim())
                 .isEqualTo(
                     """
                 final java.lang.String _sql = "SELECT id FROM users WHERE id IN(?,?)";
@@ -137,7 +138,7 @@ class QueryWriterTest {
         ) { _, writer ->
             val scope = testCodeGenScope()
             writer.prepareReadAndBind("_sql", "_stmt", scope)
-            assertThat(scope.generate().toString().trim())
+            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim())
                 .isEqualTo(
                     """
                 final java.lang.StringBuilder _stringBuilder = new java.lang.StringBuilder();
@@ -205,7 +206,7 @@ class QueryWriterTest {
         ) { _, writer ->
             val scope = testCodeGenScope()
             writer.prepareReadAndBind("_sql", "_stmt", scope)
-            assertThat(scope.generate().toString().trim()).isEqualTo(collectionOut)
+            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim()).isEqualTo(collectionOut)
         }
     }
 
@@ -219,7 +220,7 @@ class QueryWriterTest {
         ) { _, writer ->
             val scope = testCodeGenScope()
             writer.prepareReadAndBind("_sql", "_stmt", scope)
-            assertThat(scope.generate().toString().trim()).isEqualTo(collectionOut)
+            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim()).isEqualTo(collectionOut)
         }
     }
 
@@ -233,7 +234,7 @@ class QueryWriterTest {
         ) { _, writer ->
             val scope = testCodeGenScope()
             writer.prepareReadAndBind("_sql", "_stmt", scope)
-            assertThat(scope.generate().toString().trim()).isEqualTo(collectionOut)
+            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim()).isEqualTo(collectionOut)
         }
     }
 
@@ -247,7 +248,7 @@ class QueryWriterTest {
         ) { _, writer ->
             val scope = testCodeGenScope()
             writer.prepareReadAndBind("_sql", "_stmt", scope)
-            assertThat(scope.generate().toString().trim())
+            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim())
                 .isEqualTo(
                     """
                 final java.lang.String _sql = "SELECT id FROM users WHERE age > ? OR bage > ?";
@@ -272,7 +273,7 @@ class QueryWriterTest {
         ) { _, writer ->
             val scope = testCodeGenScope()
             writer.prepareReadAndBind("_sql", "_stmt", scope)
-            assertThat(scope.generate().toString().trim())
+            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim())
                 .isEqualTo(
                     """
                 final java.lang.StringBuilder _stringBuilder = new java.lang.StringBuilder();
@@ -316,7 +317,7 @@ class QueryWriterTest {
         ) { _, writer ->
             val scope = testCodeGenScope()
             writer.prepareReadAndBind("_sql", "_stmt", scope)
-            assertThat(scope.generate().toString().trim())
+            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim())
                 .isEqualTo(
                     """
                 final java.lang.StringBuilder _stringBuilder = new java.lang.StringBuilder();

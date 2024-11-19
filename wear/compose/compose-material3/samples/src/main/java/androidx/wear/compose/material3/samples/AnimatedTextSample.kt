@@ -19,13 +19,17 @@ package androidx.wear.compose.material3.samples
 import androidx.annotation.Sampled
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontVariation
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material3.AnimatedText
 import androidx.wear.compose.material3.Button
@@ -87,39 +91,34 @@ fun AnimatedTextSampleButtonResponse() {
                     FontVariation.weight(500),
                 ),
             startFontSize = 30.sp,
-            endFontSize = 40.sp,
+            endFontSize = 30.sp,
         )
-    val firstNumber = remember { mutableIntStateOf(0) }
-    val firstAnimatable = remember { Animatable(0f) }
-    val secondNumber = remember { mutableIntStateOf(0) }
-    val secondAnimatable = remember { Animatable(0f) }
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        AnimatedText(
-            text = "${firstNumber.value}",
-            fontRegistry = animatedTextFontRegistry,
-            progressFraction = { firstAnimatable.value },
-        )
+    val number = remember { mutableIntStateOf(0) }
+    val textAnimatable = remember { Animatable(0f) }
+    Row(verticalAlignment = Alignment.CenterVertically) {
         Button(
+            modifier = Modifier.padding(horizontal = 16.dp),
             onClick = {
-                firstNumber.value += 1
+                number.value -= 1
                 scope.launch {
-                    firstAnimatable.animateTo(1f)
-                    firstAnimatable.animateTo(0f)
+                    textAnimatable.animateTo(1f)
+                    textAnimatable.animateTo(0f)
                 }
             },
-            label = { Text("+") }
+            label = { Text("-") }
         )
         AnimatedText(
-            text = "${secondNumber.value}",
+            text = "${number.value}",
             fontRegistry = animatedTextFontRegistry,
-            progressFraction = { secondAnimatable.value },
+            progressFraction = { textAnimatable.value },
         )
         Button(
+            modifier = Modifier.padding(horizontal = 16.dp),
             onClick = {
-                secondNumber.value += 1
+                number.value += 1
                 scope.launch {
-                    secondAnimatable.animateTo(1f)
-                    secondAnimatable.animateTo(0f)
+                    textAnimatable.animateTo(1f)
+                    textAnimatable.animateTo(0f)
                 }
             },
             label = { Text("+") }
@@ -132,17 +131,17 @@ fun AnimatedTextSampleButtonResponse() {
 fun AnimatedTextSampleSharedFontRegistry() {
     val animatedTextFontRegistry =
         rememberAnimatedTextFontRegistry(
-            // Variation axes at the start of the animation, width 10, weight 200
+            // Variation axes at the start of the animation, width 50, weight 300
             startFontVariationSettings =
                 FontVariation.Settings(
-                    FontVariation.width(10f),
-                    FontVariation.weight(200),
+                    FontVariation.width(50f),
+                    FontVariation.weight(300),
                 ),
-            // Variation axes at the end of the animation, width 100, weight 500
+            // Variation axes at the end of the animation are the same as the start axes
             endFontVariationSettings =
                 FontVariation.Settings(
-                    FontVariation.width(100f),
-                    FontVariation.weight(500),
+                    FontVariation.width(50f),
+                    FontVariation.weight(300),
                 ),
             startFontSize = 15.sp,
             endFontSize = 25.sp,

@@ -18,6 +18,7 @@ package androidx.room.solver.query.result
 
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.codegen.XMemberName.Companion.companionMember
 import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.codegen.XTypeName
@@ -51,17 +52,13 @@ class CoroutineResultBinder(
         scope.builder.addLocalVariable(
             name = cancellationSignalVar,
             typeName = AndroidTypeNames.CANCELLATION_SIGNAL,
-            assignExpr =
-                XCodeBlock.ofNewInstance(
-                    scope.language,
-                    AndroidTypeNames.CANCELLATION_SIGNAL,
-                ),
+            assignExpr = XCodeBlock.ofNewInstance(AndroidTypeNames.CANCELLATION_SIGNAL),
         )
 
         val callableImpl =
-            CallableTypeSpecBuilder(scope.language, typeArg.asTypeName()) {
+            CallableTypeSpecBuilder(typeArg.asTypeName()) {
                     addCode(
-                        XCodeBlock.builder(language)
+                        XCodeBlock.builder()
                             .apply {
                                 createRunQueryAndReturnStatements(
                                     roomSQLiteQueryVar = roomSQLiteQueryVar,
@@ -126,7 +123,6 @@ class CoroutineResultBinder(
             typeName = AndroidTypeNames.CURSOR,
             assignExpr =
                 XCodeBlock.of(
-                    language,
                     "%M(%N, %L, %L, %L)",
                     DB_UTIL_QUERY,
                     dbProperty,
@@ -179,11 +175,6 @@ class CoroutineResultBinder(
                             javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable
                         ) {
                         override fun XCodeBlock.Builder.body(scope: CodeGenScope) {
-                            val returnPrefix =
-                                when (language) {
-                                    CodeLanguage.JAVA -> "return "
-                                    CodeLanguage.KOTLIN -> ""
-                                }
                             val statementVar = scope.getTmpVar("_stmt")
                             addLocalVal(
                                 statementVar,
@@ -196,7 +187,12 @@ class CoroutineResultBinder(
                             bindStatement?.invoke(scope, statementVar)
                             val outVar = scope.getTmpVar("_result")
                             adapter?.convert(outVar, statementVar, scope)
-                            addStatement("$returnPrefix%L", outVar)
+                            applyTo { language ->
+                                when (language) {
+                                    CodeLanguage.JAVA -> addStatement("return %L", outVar)
+                                    CodeLanguage.KOTLIN -> addStatement("%L", outVar)
+                                }
+                            }
                             nextControlFlow("finally")
                             addStatement("%L.close()", statementVar)
                             endControlFlow()

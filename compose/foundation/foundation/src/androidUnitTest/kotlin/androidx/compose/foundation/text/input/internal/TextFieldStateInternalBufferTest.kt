@@ -242,7 +242,7 @@ class TextFieldStateInternalBufferTest {
     }
 
     @Test
-    fun compositionIsCleared_when_textIsSame() {
+    fun compositionIsNotCleared_when_textIsSame() {
         val state = TextFieldState()
         val composition = TextRange(0, 2)
 
@@ -257,7 +257,7 @@ class TextFieldStateInternalBufferTest {
         state.syncMainBufferToTemporaryBuffer(newValue)
 
         assertThat(state.text.toString()).isEqualTo(newValue.toString())
-        assertThat(state.composition).isNull()
+        assertThat(state.composition).isEqualTo(TextRange(0, 2))
     }
 
     @Test

@@ -71,6 +71,7 @@ import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.testing.fakes.FakeCamera
 import androidx.camera.testing.impl.SurfaceTextureProvider
+import androidx.camera.testing.impl.fakes.FakeEncoderProfilesProvider
 import androidx.camera.testing.impl.fakes.FakeUseCase
 import androidx.camera.testing.impl.fakes.FakeUseCaseConfig
 import androidx.test.core.app.ApplicationProvider
@@ -714,6 +715,7 @@ class UseCaseManagerTest {
                 useCaseThreads = { useCaseThreads },
                 cameraInfoInternal = { fakeCamera.cameraInfoInternal },
                 templateParamsOverride = templateParamsOverride,
+                encoderProfilesProvider = FakeEncoderProfilesProvider.Builder().build(),
                 context = ApplicationProvider.getApplicationContext(),
                 cameraProperties =
                     FakeCameraProperties(

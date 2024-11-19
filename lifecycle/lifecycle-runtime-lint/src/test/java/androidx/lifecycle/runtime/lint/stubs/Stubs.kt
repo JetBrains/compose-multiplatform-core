@@ -124,6 +124,7 @@ private val ACTIVITY_STUB =
 """
     )
 
+// This stub depends on definitions in LIFECYCLE_STUB
 private val REPEAT_ON_LIFECYCLE_STUB =
     TestFiles.kt(
             "androidx/lifecycle/RepeatOnLifecycle.kt",
@@ -132,13 +133,6 @@ private val REPEAT_ON_LIFECYCLE_STUB =
 
         import androidx.lifecycle.LifecycleOwner
         import kotlinx.coroutines.CoroutineScope
-
-        abstract class Lifecycle {
-            enum class State { CREATED, STARTED }
-            fun isAtLeast(state: State): Boolean {
-                return true
-            }
-        }
 
         public suspend fun Lifecycle.repeatOnLifecycle(
             state: Lifecycle.State,

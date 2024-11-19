@@ -248,7 +248,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                 bottomItemScrollProgress(
                     // TODO: artemiy - Investigate why this is needed.
                     if (idx == 0) previousOffset - itemSpacing else previousOffset,
-                    item.placeable.height,
+                    item.measuredHeight,
                     containerConstraints.maxHeight
                 )
             item.offset = previousOffset
@@ -267,7 +267,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                 topItemScrollProgress(
                     // TODO: artemiy - Investigate why this is needed.
                     if (idx == 0) bottomLineOffset + 2 * itemSpacing else bottomLineOffset,
-                    visibleItems[idx].placeable.height,
+                    visibleItems[idx].measuredHeight,
                     containerConstraints.maxHeight
                 )
             visibleItems[idx].offset = bottomLineOffset - visibleItems[idx].transformedHeight

@@ -38,6 +38,10 @@ typealias JModifier = javax.lang.model.element.Modifier
 
 typealias JTypeSpecBuilder = com.squareup.javapoet.TypeSpec.Builder
 
+typealias JFileSpec = com.squareup.javapoet.JavaFile
+
+typealias JFileSpecBuilder = com.squareup.javapoet.JavaFile.Builder
+
 typealias KCodeBlock = com.squareup.kotlinpoet.CodeBlock
 
 typealias KCodeBlockBuilder = com.squareup.kotlinpoet.CodeBlock.Builder
@@ -57,6 +61,10 @@ typealias KFunSpec = com.squareup.kotlinpoet.FunSpec
 typealias KFunSpecBuilder = com.squareup.kotlinpoet.FunSpec.Builder
 
 typealias KTypeSpecBuilder = com.squareup.kotlinpoet.TypeSpec.Builder
+
+typealias KFileSpec = com.squareup.kotlinpoet.FileSpec
+
+typealias KFileSpecBuilder = com.squareup.kotlinpoet.FileSpec.Builder
 
 typealias KMemberName = com.squareup.kotlinpoet.MemberName
 

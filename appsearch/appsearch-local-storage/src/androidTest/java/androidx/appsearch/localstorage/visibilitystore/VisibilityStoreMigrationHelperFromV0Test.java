@@ -31,6 +31,7 @@ import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.InternalSetSchemaResponse;
 import androidx.appsearch.app.InternalVisibilityConfig;
 import androidx.appsearch.app.PackageIdentifier;
+import androidx.appsearch.localstorage.AppSearchConfig;
 import androidx.appsearch.localstorage.AppSearchConfigImpl;
 import androidx.appsearch.localstorage.AppSearchImpl;
 import androidx.appsearch.localstorage.LocalStorageIcingOptionsConfig;
@@ -58,6 +59,8 @@ public class VisibilityStoreMigrationHelperFromV0Test {
     @Rule
     public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
     private File mFile;
+    private AppSearchConfig mConfig = new AppSearchConfigImpl(new UnlimitedLimitConfig(),
+            new LocalStorageIcingOptionsConfig());
 
     @Before
     public void setUp() throws Exception {
@@ -131,9 +134,10 @@ public class VisibilityStoreMigrationHelperFromV0Test {
         // Persist to disk and re-open the AppSearchImpl
         appSearchImplInV0.close();
         AppSearchImpl appSearchImpl = AppSearchImpl.create(mFile,
-                new AppSearchConfigImpl(new UnlimitedLimitConfig(),
-                        new LocalStorageIcingOptionsConfig()), /*initStatsBuilder=*/ null,
+                mConfig,
+                /*initStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
 
         GenericDocument actualDocument1 =
@@ -204,9 +208,10 @@ public class VisibilityStoreMigrationHelperFromV0Test {
                 .build();
         // Set deprecated visibility schema version 0 into AppSearchImpl.
         AppSearchImpl appSearchImpl = AppSearchImpl.create(mFile,
-                new AppSearchConfigImpl(new UnlimitedLimitConfig(),
-                        new LocalStorageIcingOptionsConfig()), /*initStatsBuilder=*/ null,
+                mConfig,
+                /*initStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
         InternalSetSchemaResponse internalSetSchemaResponse = appSearchImpl.setSchema(
                 VisibilityStore.VISIBILITY_PACKAGE_NAME,

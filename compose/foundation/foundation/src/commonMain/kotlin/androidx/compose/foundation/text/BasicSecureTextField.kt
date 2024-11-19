@@ -19,7 +19,6 @@ package androidx.compose.foundation.text
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.KeyboardActionHandler
 import androidx.compose.foundation.text.input.TextFieldBuffer
@@ -163,13 +162,20 @@ fun BasicSecureTextField(
         }
 
     val secureTextFieldModifier =
-        modifier.then(
-            if (revealLastTypedEnabled) {
-                secureTextFieldController.focusChangeModifier
-            } else {
-                Modifier
+        modifier
+            .onPreviewKeyEvent { keyEvent ->
+                // BasicTextField uses this static mapping
+                val command = platformDefaultKeyMapping.map(keyEvent)
+                // do not propagate copy and cut operations
+                command == KeyCommand.COPY || command == KeyCommand.CUT
             }
-        )
+            .then(
+                if (revealLastTypedEnabled) {
+                    secureTextFieldController.focusChangeModifier
+                } else {
+                    Modifier
+                }
+            )
 
     DisableCutCopy {
         BasicTextField(
@@ -317,19 +323,7 @@ private fun DisableCutCopy(content: @Composable () -> Unit) {
                 }
             }
         }
-    CompositionLocalProvider(LocalTextToolbar provides copyDisabledToolbar) {
-        Box(
-            modifier =
-                Modifier.onPreviewKeyEvent { keyEvent ->
-                    // BasicTextField uses this static mapping
-                    val command = platformDefaultKeyMapping.map(keyEvent)
-                    // do not propagate copy and cut operations
-                    command == KeyCommand.COPY || command == KeyCommand.CUT
-                }
-        ) {
-            content()
-        }
-    }
+    CompositionLocalProvider(LocalTextToolbar provides copyDisabledToolbar, content)
 }
 
 @Deprecated(

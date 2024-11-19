@@ -24,6 +24,8 @@ import androidx.appsearch.flags.FlaggedApi;
 import androidx.appsearch.flags.Flags;
 import androidx.core.util.Preconditions;
 
+import java.util.Objects;
+
 /**
  * {@link FunctionNode} representing the `propertyDefined` query function.
  *
@@ -84,5 +86,18 @@ public final class PropertyDefinedNode implements FunctionNode {
     @Override
     public String toString() {
         return FUNCTION_NAME_PROPERTY_DEFINED + "(\"" + mProperty + "\")";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PropertyDefinedNode that = (PropertyDefinedNode) o;
+        return Objects.equals(mProperty, that.mProperty);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(mProperty);
     }
 }

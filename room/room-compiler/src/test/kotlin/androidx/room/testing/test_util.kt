@@ -237,7 +237,7 @@ fun testCodeGenScope(): CodeGenScope {
             override val packageName = "test"
 
             override fun createTypeSpecBuilder(): XTypeSpec.Builder {
-                return XTypeSpec.classBuilder(codeLanguage, "Foo")
+                return XTypeSpec.classBuilder("Foo")
             }
         }
     )

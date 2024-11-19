@@ -82,7 +82,7 @@ async function handleLicenseRequest(url: string, enableLocalDebugging: boolean =
     args: CHROME_LAUNCH_ARGS,
     devtools: enableLocalDebugging,
     // https://developer.chrome.com/articles/new-headless/
-    headless: 'new'
+    headless: true
   });
   const page = await browser.newPage();
   if (enableLocalDebugging) {

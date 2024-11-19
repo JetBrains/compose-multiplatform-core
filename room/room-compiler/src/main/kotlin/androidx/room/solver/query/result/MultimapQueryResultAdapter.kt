@@ -21,6 +21,7 @@ import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XClassName
 import androidx.room.compiler.codegen.XCodeBlock
 import androidx.room.compiler.codegen.asClassName
+import androidx.room.compiler.codegen.buildCodeBlock
 import androidx.room.compiler.processing.XType
 import androidx.room.ext.CollectionTypeNames
 import androidx.room.ext.CommonTypeNames
@@ -212,24 +213,16 @@ abstract class MultimapQueryResultAdapter(
     }
 
     /** Generates a code expression that verifies if all matched fields are null. */
-    fun getColumnNullCheckCode(
-        language: CodeLanguage,
-        cursorVarName: String,
-        indexVars: List<ColumnIndexVar>
-    ) =
-        XCodeBlock.builder(language)
-            .apply {
-                val space =
-                    when (language) {
-                        CodeLanguage.JAVA -> "%W"
-                        CodeLanguage.KOTLIN -> " "
-                    }
-                val conditions =
-                    indexVars.map {
-                        XCodeBlock.of(language, "%L.isNull(%L)", cursorVarName, it.indexVar)
-                    }
-                val placeholders = conditions.joinToString(separator = "$space&&$space") { "%L" }
-                add(placeholders, *conditions.toTypedArray())
-            }
-            .build()
+    fun getColumnNullCheckCode(cursorVarName: String, indexVars: List<ColumnIndexVar>) =
+        buildCodeBlock { language ->
+            val space =
+                when (language) {
+                    CodeLanguage.JAVA -> "%W"
+                    CodeLanguage.KOTLIN -> " "
+                }
+            val conditions =
+                indexVars.map { XCodeBlock.of("%L.isNull(%L)", cursorVarName, it.indexVar) }
+            val placeholders = conditions.joinToString(separator = "$space&&$space") { "%L" }
+            add(placeholders, *conditions.toTypedArray())
+        }
 }

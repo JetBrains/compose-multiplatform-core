@@ -21,29 +21,33 @@ import androidx.room.compiler.codegen.JPropertySpecBuilder
 import androidx.room.compiler.codegen.XAnnotationSpec
 import androidx.room.compiler.codegen.XCodeBlock
 import androidx.room.compiler.codegen.XPropertySpec
+import androidx.room.compiler.codegen.XSpec
+import androidx.room.compiler.codegen.XTypeName
+import androidx.room.compiler.codegen.impl.XAnnotationSpecImpl
+import androidx.room.compiler.codegen.impl.XCodeBlockImpl
 
-internal class JavaPropertySpec(internal val actual: JPropertySpec) : JavaLang(), XPropertySpec {
+internal class JavaPropertySpec(
+    override val name: String,
+    override val type: XTypeName,
+    internal val actual: JPropertySpec
+) : XSpec(), XPropertySpec {
 
-    override val name: String = actual.name
-
-    internal class Builder(internal val actual: JPropertySpecBuilder) :
-        JavaLang(), XPropertySpec.Builder {
+    internal class Builder(
+        private val name: String,
+        private val type: XTypeName,
+        internal val actual: JPropertySpecBuilder
+    ) : XSpec.Builder(), XPropertySpec.Builder {
 
         override fun addAnnotation(annotation: XAnnotationSpec) = apply {
-            require(annotation is JavaAnnotationSpec)
-            actual.addAnnotation(annotation.actual)
+            require(annotation is XAnnotationSpecImpl)
+            actual.addAnnotation(annotation.java.actual)
         }
 
         override fun initializer(initExpr: XCodeBlock) = apply {
-            require(initExpr is JavaCodeBlock)
-            actual.initializer(initExpr.actual)
+            require(initExpr is XCodeBlockImpl)
+            actual.initializer(initExpr.java.actual)
         }
 
-        override fun getter(code: XCodeBlock) = apply {
-            require(code is JavaCodeBlock)
-            error("Adding a property getter when code language is Java is not supported.")
-        }
-
-        override fun build() = JavaPropertySpec(actual.build())
+        override fun build() = JavaPropertySpec(name, type, actual.build())
     }
 }

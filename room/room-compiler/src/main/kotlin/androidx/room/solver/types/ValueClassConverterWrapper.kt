@@ -51,7 +51,7 @@ class ValueClassConverterWrapper(
                 addStatement(
                     format = "%L = %L",
                     outVarName,
-                    XCodeBlock.ofNewInstance(language, out.asTypeName(), "%N", propertyValueVarName)
+                    XCodeBlock.ofNewInstance(out.asTypeName(), "%N", propertyValueVarName)
                 )
             }
             if (out.nullability == XNullability.NONNULL) {
@@ -76,7 +76,6 @@ class ValueClassConverterWrapper(
             val assignmentBlock =
                 if (out.nullability == XNullability.NONNULL) {
                     XCodeBlock.of(
-                        scope.language,
                         "checkNotNull(%L.%L) { %S }",
                         valueVarName,
                         valuePropertyName,
@@ -84,7 +83,7 @@ class ValueClassConverterWrapper(
                             "class '$out' to a NOT NULL column."
                     )
                 } else {
-                    XCodeBlock.of(scope.language, "%L?.%L", valueVarName, valuePropertyName)
+                    XCodeBlock.of("%L?.%L", valueVarName, valuePropertyName)
                 }
             addLocalVariable(
                 name = propertyName,

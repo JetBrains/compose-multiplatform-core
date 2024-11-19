@@ -47,6 +47,14 @@ package androidx.datastore.preferences.core {
     method public static androidx.datastore.preferences.core.MutablePreferences createMutable(androidx.datastore.preferences.core.Preferences.Pair<? extends java.lang.Object?>... pairs);
   }
 
+  public final class PreferencesFileSerializer implements androidx.datastore.core.Serializer<androidx.datastore.preferences.core.Preferences> {
+    method public androidx.datastore.preferences.core.Preferences getDefaultValue();
+    method @kotlin.jvm.Throws(exceptionClasses={IOException::class, CorruptionException::class}) public suspend Object? readFrom(java.io.InputStream input, kotlin.coroutines.Continuation<? super androidx.datastore.preferences.core.Preferences>) throws androidx.datastore.core.CorruptionException, java.io.IOException;
+    method @kotlin.jvm.Throws(exceptionClasses={IOException::class, CorruptionException::class}) public suspend Object? writeTo(androidx.datastore.preferences.core.Preferences t, java.io.OutputStream output, kotlin.coroutines.Continuation<? super kotlin.Unit>) throws androidx.datastore.core.CorruptionException, java.io.IOException;
+    property public androidx.datastore.preferences.core.Preferences defaultValue;
+    field public static final androidx.datastore.preferences.core.PreferencesFileSerializer INSTANCE;
+  }
+
   public final class PreferencesKeys {
     method public static androidx.datastore.preferences.core.Preferences.Key<java.lang.Boolean> booleanKey(String name);
     method public static androidx.datastore.preferences.core.Preferences.Key<byte[]> byteArrayKey(String name);

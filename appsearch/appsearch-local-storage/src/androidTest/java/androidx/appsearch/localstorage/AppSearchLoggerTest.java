@@ -70,17 +70,19 @@ public class AppSearchLoggerTest {
     public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
     private AppSearchImpl mAppSearchImpl;
     private SimpleTestLogger mLogger;
+    private AppSearchConfig mConfig = new AppSearchConfigImpl(
+            new UnlimitedLimitConfig(),
+            new LocalStorageIcingOptionsConfig()
+    );
 
     @Before
     public void setUp() throws Exception {
         mAppSearchImpl = AppSearchImpl.create(
                 mTemporaryFolder.newFolder(),
-                new AppSearchConfigImpl(
-                        new UnlimitedLimitConfig(),
-                        new LocalStorageIcingOptionsConfig()
-                ),
+                mConfig,
                 /*initStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
         mLogger = new SimpleTestLogger();
     }
@@ -368,12 +370,10 @@ public class AppSearchLoggerTest {
         InitializeStats.Builder initStatsBuilder = new InitializeStats.Builder();
         AppSearchImpl appSearchImpl = AppSearchImpl.create(
                 mTemporaryFolder.newFolder(),
-                new AppSearchConfigImpl(
-                        new UnlimitedLimitConfig(),
-                        new LocalStorageIcingOptionsConfig()
-                ),
+                mConfig,
                 initStatsBuilder,
                 /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
         InitializeStats iStats = initStatsBuilder.build();
         appSearchImpl.close();
@@ -401,12 +401,10 @@ public class AppSearchLoggerTest {
 
         AppSearchImpl appSearchImpl = AppSearchImpl.create(
                 folder,
-                new AppSearchConfigImpl(
-                        new UnlimitedLimitConfig(),
-                        new LocalStorageIcingOptionsConfig()
-                ),
+                mConfig,
                 /*initStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
         List<AppSearchSchema> schemas = ImmutableList.of(
                 new AppSearchSchema.Builder("Type1").build(),
@@ -440,10 +438,10 @@ public class AppSearchLoggerTest {
 
         // Create another appsearchImpl on the same folder
         InitializeStats.Builder initStatsBuilder = new InitializeStats.Builder();
-        appSearchImpl = AppSearchImpl.create(
-                folder, new AppSearchConfigImpl(new UnlimitedLimitConfig(),
-                        new LocalStorageIcingOptionsConfig()),
-                initStatsBuilder, /*visibilityChecker=*/ null, ALWAYS_OPTIMIZE);
+        appSearchImpl = AppSearchImpl.create(folder, mConfig,
+                initStatsBuilder, /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
+                ALWAYS_OPTIMIZE);
         InitializeStats iStats = initStatsBuilder.build();
 
         assertThat(iStats).isNotNull();
@@ -469,10 +467,10 @@ public class AppSearchLoggerTest {
         final String testDatabase = "testDatabase";
         final File folder = mTemporaryFolder.newFolder();
 
-        AppSearchImpl appSearchImpl = AppSearchImpl.create(
-                folder, new AppSearchConfigImpl(new UnlimitedLimitConfig(),
-                        new LocalStorageIcingOptionsConfig()),
-                /*initStatsBuilder=*/ null, /*visibilityChecker=*/ null, ALWAYS_OPTIMIZE);
+        AppSearchImpl appSearchImpl = AppSearchImpl.create(folder, mConfig,
+                /*initStatsBuilder=*/ null, /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
+                ALWAYS_OPTIMIZE);
 
         List<AppSearchSchema> schemas = ImmutableList.of(
                 new AppSearchSchema.Builder("Type1").build(),
@@ -509,10 +507,10 @@ public class AppSearchLoggerTest {
 
         // Create another appsearchImpl on the same folder
         InitializeStats.Builder initStatsBuilder = new InitializeStats.Builder();
-        appSearchImpl = AppSearchImpl.create(
-                folder, new AppSearchConfigImpl(new UnlimitedLimitConfig(),
-                        new LocalStorageIcingOptionsConfig()),
-                initStatsBuilder, /*visibilityChecker=*/ null, ALWAYS_OPTIMIZE);
+        appSearchImpl = AppSearchImpl.create(folder, mConfig,
+                initStatsBuilder, /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
+                ALWAYS_OPTIMIZE);
         InitializeStats iStats = initStatsBuilder.build();
 
         // Some of other fields are already covered by AppSearchImplTest#testReset()

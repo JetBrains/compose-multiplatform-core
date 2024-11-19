@@ -54,6 +54,9 @@ object IntentExtraKey {
     /** Launches the activity with the specified extension mode. */
     const val INTENT_EXTRA_KEY_EXTENSION_MODE = "extension_mode"
 
+    /** Takes the still image with the specified output format. */
+    const val INTENT_EXTRA_KEY_OUTPUT_FORMAT = "still_image_output_format"
+
     /**
      * The captured image will be deleted automatically if the intent used to launch the activity
      * includes the setting as true.

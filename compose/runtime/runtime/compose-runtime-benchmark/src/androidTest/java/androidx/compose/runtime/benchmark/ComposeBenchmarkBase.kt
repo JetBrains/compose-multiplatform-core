@@ -16,6 +16,7 @@
 
 package androidx.compose.runtime.benchmark
 
+import android.app.Activity
 import android.view.View
 import androidx.activity.compose.setContent
 import androidx.benchmark.ExperimentalBenchmarkConfigApi
@@ -23,6 +24,7 @@ import androidx.benchmark.MetricCapture
 import androidx.benchmark.MicrobenchmarkConfig
 import androidx.benchmark.TimeCapture
 import androidx.benchmark.junit4.BenchmarkRule
+import androidx.benchmark.junit4.measureRepeatedOnMainThread
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ControlledComposition
@@ -34,8 +36,12 @@ import androidx.compose.runtime.tooling.CompositionData
 import androidx.compose.runtime.tooling.LocalInspectionTables
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.TestMonotonicFrameClock
+import androidx.test.core.app.ActivityScenario
+import androidx.test.ext.junit.rules.ActivityScenarioRule
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -112,9 +118,9 @@ abstract class ComposeBenchmarkBase {
             )
         )
 
-    @Suppress("DEPRECATION")
-    @get:Rule
-    val activityRule = androidx.test.rule.ActivityTestRule(ComposeActivity::class.java)
+    @get:Rule val activityScenarioRule = ActivityScenarioRule(ComposeActivity::class.java)
+    val activityScenario
+        get() = activityScenarioRule.scenario
 
     // Here and elsewhere in this file, this is intentionally not OptIn, because we want to
     // communicate to consumers that by using this API, they're also transitively getting all the
@@ -123,21 +129,21 @@ abstract class ComposeBenchmarkBase {
     @ExperimentalCoroutinesApi
     @ExperimentalTestApi
     suspend fun TestScope.measureCompose(block: @Composable () -> Unit) = coroutineScope {
-        val activity = activityRule.activity
         val recomposer = Recomposer(coroutineContext)
-        val emptyView = View(activity)
 
         try {
-            benchmarkRule.measureRepeatedSuspendable {
+            val activity = activityScenario.getCurrentActivity()
+
+            benchmarkRule.measureRepeatedOnMainThread {
                 activity.setContent(recomposer) { CountGroupsAndSlots(block) }
 
                 runWithTimingDisabled {
-                    activity.setContentView(emptyView)
+                    activity.setContentView(View(activity))
                     testScheduler.advanceUntilIdle()
                 }
             }
         } finally {
-            activity.setContentView(emptyView)
+            activityScenario.onActivity { activity -> activity.setContentView(View(activity)) }
             testScheduler.advanceUntilIdle()
             recomposer.cancel()
         }
@@ -146,12 +152,11 @@ abstract class ComposeBenchmarkBase {
     @ExperimentalCoroutinesApi
     @ExperimentalTestApi
     suspend fun TestScope.measureComposeFocused(block: @Composable () -> Unit) = coroutineScope {
-        val activity = activityRule.activity
         val recomposer = Recomposer(coroutineContext)
-        val emptyView = View(activity)
 
         try {
-            benchmarkRule.measureRepeatedSuspendable {
+            val activity = activityScenario.getCurrentActivity()
+            benchmarkRule.measureRepeatedOnMainThread {
                 val benchmarkState = benchmarkRule.getState()
                 benchmarkState.pauseTiming()
 
@@ -167,12 +172,12 @@ abstract class ComposeBenchmarkBase {
                 benchmarkState.resumeTiming()
 
                 runWithTimingDisabled {
-                    activity.setContentView(emptyView)
+                    activity.setContentView(View(activity))
                     testScheduler.advanceUntilIdle()
                 }
             }
         } finally {
-            activity.setContentView(emptyView)
+            activityScenario.onActivity { activity -> activity.setContentView(View(activity)) }
             testScheduler.advanceUntilIdle()
             recomposer.cancel()
         }
@@ -180,42 +185,51 @@ abstract class ComposeBenchmarkBase {
 
     @ExperimentalCoroutinesApi
     @ExperimentalTestApi
-    suspend fun TestScope.measureRecomposeSuspending(block: RecomposeReceiver.() -> Unit) =
-        coroutineScope {
-            val receiver = RecomposeReceiver()
-            receiver.block()
+    suspend fun TestScope.measureRecompose(block: RecomposeReceiver.() -> Unit) {
+        val receiver = RecomposeReceiver()
+        receiver.block()
 
-            val activity = activityRule.activity
-            val emptyView = View(activity)
+        val recomposer = Recomposer(currentCoroutineContext())
+        val coroutineScope = CoroutineScope(currentCoroutineContext())
 
-            val recomposer = Recomposer(coroutineContext)
-            launch { recomposer.runRecomposeAndApplyChanges() }
-
+        activityScenario.onActivity { activity ->
+            coroutineScope.launch { recomposer.runRecomposeAndApplyChanges() }
             activity.setContent(recomposer) { CountGroupsAndSlots(receiver.composeCb) }
+        }
 
-            var iterations = 0
-            benchmarkRule.measureRepeatedSuspendable {
-                runWithTimingDisabled {
-                    receiver.updateModelCb()
-                    Snapshot.sendApplyNotifications()
-                }
+        var iterations = 0
+        benchmarkRule.measureRepeatedOnMainThread {
+            runWithTimingDisabled {
+                receiver.updateModelCb()
+                Snapshot.sendApplyNotifications()
                 assertTrue(
                     "recomposer does not have invalidations for frame",
                     recomposer.hasPendingWork
                 )
-                testScheduler.advanceUntilIdle()
-                assertFalse("recomposer has invalidations for frame", recomposer.hasPendingWork)
-                runWithTimingDisabled {
-                    receiver.resetCb()
-                    Snapshot.sendApplyNotifications()
-                    testScheduler.advanceUntilIdle()
-                }
-                iterations++
             }
 
-            activity.setContentView(emptyView)
-            recomposer.cancel()
+            testScheduler.advanceUntilIdle()
+
+            runWithTimingDisabled {
+                assertFalse("recomposer has invalidations for frame", recomposer.hasPendingWork)
+                receiver.resetCb()
+                Snapshot.sendApplyNotifications()
+                testScheduler.advanceUntilIdle()
+                iterations++
+            }
         }
+
+        activityScenario.onActivity { activity -> activity.setContentView(View(activity)) }
+        recomposer.cancel()
+    }
+
+    private suspend fun currentCoroutineContext() = coroutineContext
+
+    private fun <A : Activity> ActivityScenario<A>.getCurrentActivity(): A {
+        lateinit var activity: A
+        onActivity { activity = it }
+        return activity
+    }
 }
 
 @ExperimentalCoroutinesApi

@@ -89,9 +89,9 @@ class WideNavigationRailTest {
 
         restorationTester.setContent { railState = rememberWideNavigationRailState() }
 
-        assertThat(railState.isExpanded).isFalse()
+        assertThat(railState.targetValue).isFalse()
         restorationTester.emulateSavedInstanceStateRestore()
-        assertThat(railState.isExpanded).isFalse()
+        assertThat(railState.targetValue).isFalse()
     }
 
     @Test
@@ -137,9 +137,7 @@ class WideNavigationRailTest {
     fun rail_expanded_size() {
         rule
             .setMaterialContentForSizeAssertions {
-                WideNavigationRail(
-                    state = rememberWideNavigationRailState(WideNavigationRailValue.Expanded)
-                ) {
+                WideNavigationRail(state = rememberWideNavigationRailState(true)) {
                     repeat(3) { index ->
                         WideNavigationRailItem(
                             railExpanded = true,
@@ -160,7 +158,7 @@ class WideNavigationRailTest {
         rule
             .setMaterialContentForSizeAssertions {
                 WideNavigationRail(
-                    state = rememberWideNavigationRailState(WideNavigationRailValue.Expanded),
+                    state = rememberWideNavigationRailState(true),
                     header = { Spacer(Modifier.width(400.dp)) }
                 ) {
                     repeat(3) { index ->
@@ -206,7 +204,7 @@ class WideNavigationRailTest {
     @Test
     fun rail_expanded_collapses() {
         rule.setMaterialContent(lightColorScheme()) {
-            val state = rememberWideNavigationRailState(WideNavigationRailValue.Expanded)
+            val state = rememberWideNavigationRailState(true)
             val scope = rememberCoroutineScope()
             WideNavigationRail(
                 modifier = Modifier.testTag("rail"),

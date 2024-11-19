@@ -20,22 +20,14 @@ import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.unit.LayoutDirection
 
-/**
- * Represents the horizontal order of panes in a [ThreePaneScaffold] from start to end. Note that
- * the values of [firstPane], [secondPane] and [thirdPane] have to be different, otherwise
- * [IllegalArgumentException] will be thrown.
- *
- * @param firstPane The first pane from the start of the [ThreePaneScaffold]
- * @param secondPane The second pane from the start of the [ThreePaneScaffold]
- * @param thirdPane The third pane from the start of the [ThreePaneScaffold]
- * @constructor create an instance of [ThreePaneScaffoldHorizontalOrder]
- */
+/** Represents the horizontal order of panes in a [ThreePaneScaffold] from start to end. */
 @ExperimentalMaterial3AdaptiveApi
 @Immutable
-internal class ThreePaneScaffoldHorizontalOrder(
-    val firstPane: ThreePaneScaffoldRole,
-    val secondPane: ThreePaneScaffoldRole,
-    val thirdPane: ThreePaneScaffoldRole
+class ThreePaneScaffoldHorizontalOrder
+internal constructor(
+    internal val firstPane: ThreePaneScaffoldRole,
+    internal val secondPane: ThreePaneScaffoldRole,
+    internal val thirdPane: ThreePaneScaffoldRole
 ) : PaneScaffoldHorizontalOrder<ThreePaneScaffoldRole> {
     init {
         require(firstPane != secondPane && secondPane != thirdPane && firstPane != thirdPane) {

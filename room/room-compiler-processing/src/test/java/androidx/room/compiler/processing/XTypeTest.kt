@@ -27,7 +27,6 @@ import androidx.room.compiler.processing.javac.JavacType
 import androidx.room.compiler.processing.ksp.ERROR_JTYPE_NAME
 import androidx.room.compiler.processing.ksp.ERROR_KTYPE_NAME
 import androidx.room.compiler.processing.ksp.KspTypeArgumentType
-import androidx.room.compiler.processing.util.KOTLINC_LANGUAGE_1_9_ARGS
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
 import androidx.room.compiler.processing.util.asJClassName
@@ -1711,8 +1710,6 @@ class XTypeTest {
                     )
                 ),
             createProcessingSteps = { listOf(WildcardProcessingStep()) },
-            // https://github.com/google/ksp/issues/2113
-            kotlincArguments = KOTLINC_LANGUAGE_1_9_ARGS
         ) { result ->
             result.hasError()
             result.hasErrorCount(1)
@@ -2421,8 +2418,6 @@ class XTypeTest {
                 } else {
                     emptyList()
                 },
-            // https://github.com/google/ksp/issues/1640
-            kotlincArguments = KOTLINC_LANGUAGE_1_9_ARGS
         ) { invocation ->
             val kotlinElm = invocation.processingEnv.requireTypeElement("KotlinClass")
             kotlinElm.getMethodByJvmName("kotlinValueClassDirectUsage").apply {

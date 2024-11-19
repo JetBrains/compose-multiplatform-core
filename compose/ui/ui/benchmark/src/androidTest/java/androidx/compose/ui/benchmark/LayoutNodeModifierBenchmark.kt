@@ -21,7 +21,7 @@ package androidx.compose.ui.benchmark
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.benchmark.junit4.BenchmarkRule
-import androidx.benchmark.junit4.measureRepeated
+import androidx.benchmark.junit4.measureRepeatedOnMainThread
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
@@ -59,9 +59,9 @@ class LayoutNodeModifierBenchmark(private val numberOfModifiers: Int) {
 
     @get:Rule val rule = SimpleAndroidBenchmarkRule()
 
-    var modifiers = emptyList<Modifier>()
-    var combinedModifier: Modifier = Modifier
-    lateinit var testModifierUpdater: TestModifierUpdater
+    private var modifiers = emptyList<Modifier>()
+    private var combinedModifier: Modifier = Modifier
+    private lateinit var testModifierUpdater: TestModifierUpdater
 
     @Before
     fun setup() {
@@ -92,24 +92,19 @@ class LayoutNodeModifierBenchmark(private val numberOfModifiers: Int) {
 
     @Test
     fun setAndClearModifiers() {
-        rule.activityTestRule.runOnUiThread {
-            rule.benchmarkRule.measureRepeated {
-                testModifierUpdater.updateModifier(combinedModifier)
-                testModifierUpdater.updateModifier(Modifier)
-            }
+        rule.benchmarkRule.measureRepeatedOnMainThread {
+            testModifierUpdater.updateModifier(combinedModifier)
+            testModifierUpdater.updateModifier(Modifier)
         }
     }
 
     @Test
     fun smallModifierChange() {
-        rule.activityTestRule.runOnUiThread {
-            val altModifier = Modifier.padding(10.dp).then(combinedModifier)
+        val altModifier = Modifier.padding(10.dp).then(combinedModifier)
+        rule.activityTestRule.runOnUiThread { testModifierUpdater.updateModifier(altModifier) }
+        rule.benchmarkRule.measureRepeatedOnMainThread {
+            testModifierUpdater.updateModifier(combinedModifier)
             testModifierUpdater.updateModifier(altModifier)
-
-            rule.benchmarkRule.measureRepeated {
-                testModifierUpdater.updateModifier(combinedModifier)
-                testModifierUpdater.updateModifier(altModifier)
-            }
         }
     }
 
@@ -133,15 +128,13 @@ class LayoutNodeModifierBenchmark(private val numberOfModifiers: Int) {
             }
         }
 
-        rule.activityTestRule.runOnUiThread {
-            rule.benchmarkRule.measureRepeated {
-                testModifierUpdater.updateModifier(combinedModifier)
-                testModifierUpdater.updateModifier(altModifier)
-            }
+        rule.benchmarkRule.measureRepeatedOnMainThread {
+            testModifierUpdater.updateModifier(combinedModifier)
+            testModifierUpdater.updateModifier(altModifier)
         }
     }
 
-    class SimpleAndroidBenchmarkRule() : TestRule {
+    class SimpleAndroidBenchmarkRule : TestRule {
         @Suppress("DEPRECATION")
         val activityTestRule = androidx.test.rule.ActivityTestRule(ComponentActivity::class.java)
 

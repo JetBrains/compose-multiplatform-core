@@ -38,6 +38,17 @@ public class HasPropertyNodeCtsTest {
     public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
 
     @Test
+    public void testEquals_identical() {
+        HasPropertyNode hasPropertyOne =
+                new HasPropertyNode(new PropertyPath("example.property.path"));
+        HasPropertyNode hasPropertyTwo =
+                new HasPropertyNode(new PropertyPath("example.property.path"));
+
+        assertThat(hasPropertyOne).isEqualTo(hasPropertyTwo);
+        assertThat(hasPropertyOne.hashCode()).isEqualTo(hasPropertyTwo.hashCode());
+    }
+
+    @Test
     public void testConstructor_throwsOnNullPointer() {
         assertThrows(NullPointerException.class, () -> new HasPropertyNode(null));
     }

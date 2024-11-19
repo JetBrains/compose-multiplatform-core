@@ -20,6 +20,7 @@ import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.VisibilityModifier
 import androidx.room.compiler.codegen.XClassName
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.codegen.XFunSpec
 import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.codegen.XTypeName
@@ -65,7 +66,6 @@ class MultiTypedPagingSourceQueryResultBinder(
             val tableNamesList = tableNames.joinToString(", ") { "\"$it\"" }
             val pagingSourceSpec =
                 XTypeSpec.anonymousClassBuilder(
-                        language = language,
                         argsFormat = "%L, %N, %L",
                         roomSQLiteQueryVar,
                         dbProperty,
@@ -75,7 +75,6 @@ class MultiTypedPagingSourceQueryResultBinder(
                         superclass(pagingSourceTypeName)
                         addFunction(
                             XFunSpec.builder(
-                                    language = scope.language,
                                     name = "convertRows",
                                     visibility = VisibilityModifier.PROTECTED,
                                     isOverride = true
@@ -121,12 +120,10 @@ class MultiTypedPagingSourceQueryResultBinder(
                 val assignExpr =
                     if (bindStatement != null) {
                         XCodeBlock.ofNewInstance(
-                            language = scope.language,
                             typeName = RAW_QUERY,
                             "%L, %L",
                             sqlQueryVar,
                             Function1TypeSpec(
-                                language = scope.language,
                                 parameterTypeName = SQLiteDriverTypeNames.STATEMENT,
                                 parameterName = stmtVarName,
                                 returnTypeName = KotlinTypeNames.UNIT
@@ -140,12 +137,7 @@ class MultiTypedPagingSourceQueryResultBinder(
                             }
                         )
                     } else {
-                        XCodeBlock.ofNewInstance(
-                            language = scope.language,
-                            typeName = RAW_QUERY,
-                            "%L",
-                            sqlQueryVar
-                        )
+                        XCodeBlock.ofNewInstance(typeName = RAW_QUERY, "%L", sqlQueryVar)
                     }
                 scope.builder.apply {
                     addLocalVariable(
@@ -184,7 +176,6 @@ class MultiTypedPagingSourceQueryResultBinder(
                             typeName = RAW_QUERY,
                             assignExpr =
                                 XCodeBlock.ofNewInstance(
-                                    language = scope.language,
                                     typeName = RAW_QUERY,
                                     argsFormat = "%N",
                                     sqlQueryVar
@@ -215,7 +206,6 @@ class MultiTypedPagingSourceQueryResultBinder(
     ): XTypeSpec {
         val tableNamesList = tableNames.joinToString(", ") { "\"$it\"" }
         return XTypeSpec.anonymousClassBuilder(
-                language = language,
                 argsFormat = "%L, %N, %L",
                 rawQueryVarName,
                 dbProperty,
@@ -244,7 +234,6 @@ class MultiTypedPagingSourceQueryResultBinder(
         val resultVar = scope.getTmpVar("_result")
         checkNotNull(convertRowsOverrideInfo)
         return XFunSpec.overridingBuilder(
-                language = scope.language,
                 element = convertRowsOverrideInfo.method,
                 owner = convertRowsOverrideInfo.owner
             )
@@ -268,23 +257,20 @@ class MultiTypedPagingSourceQueryResultBinder(
                                     javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable
                                 ) {
                                 override fun XCodeBlock.Builder.body(scope: CodeGenScope) {
-                                    val returnPrefix =
-                                        when (language) {
-                                            CodeLanguage.JAVA -> "return "
-                                            CodeLanguage.KOTLIN -> ""
-                                        }
-                                    val getSql =
-                                        when (language) {
-                                            CodeLanguage.JAVA -> "getSql()"
-                                            CodeLanguage.KOTLIN -> "sql"
-                                        }
-                                    addLocalVal(
-                                        stmtVarName,
-                                        SQLiteDriverTypeNames.STATEMENT,
-                                        "%L.prepare(%L.$getSql)",
-                                        connectionVar,
-                                        limitRawQueryParamName
-                                    )
+                                    applyTo { language ->
+                                        val getSql =
+                                            when (language) {
+                                                CodeLanguage.JAVA -> "getSql()"
+                                                CodeLanguage.KOTLIN -> "sql"
+                                            }
+                                        addLocalVal(
+                                            stmtVarName,
+                                            SQLiteDriverTypeNames.STATEMENT,
+                                            "%L.prepare(%L.$getSql)",
+                                            connectionVar,
+                                            limitRawQueryParamName
+                                        )
+                                    }
                                     addStatement(
                                         "%L.getBindingFunction().invoke(%L)",
                                         limitRawQueryParamName,
@@ -292,7 +278,14 @@ class MultiTypedPagingSourceQueryResultBinder(
                                     )
                                     beginControlFlow("try").apply {
                                         listAdapter?.convert(resultVar, stmtVarName, scope)
-                                        addStatement("$returnPrefix%L", resultVar)
+                                        applyTo { language ->
+                                            val returnPrefix =
+                                                when (language) {
+                                                    CodeLanguage.JAVA -> "return "
+                                                    CodeLanguage.KOTLIN -> ""
+                                                }
+                                            addStatement("$returnPrefix%L", resultVar)
+                                        }
                                     }
                                     nextControlFlow("finally")
                                     addStatement("%L.close()", stmtVarName)

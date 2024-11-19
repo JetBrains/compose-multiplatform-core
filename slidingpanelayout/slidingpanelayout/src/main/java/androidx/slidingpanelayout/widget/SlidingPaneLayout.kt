@@ -17,6 +17,7 @@
 package androidx.slidingpanelayout.widget
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.graphics.Canvas
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
@@ -427,6 +428,16 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         setUserResizingDividerDrawable(ContextCompat.getDrawable(context, resId))
     }
 
+    /**
+     * The tint color for the resizing divider [Drawable] which is set by
+     * [setUserResizingDividerDrawable]. This may also be set from `userResizingDividerTint` XML
+     * attribute during the view inflation. Note: the tint is not retained after calling
+     * [setUserResizingDividerDrawable].
+     */
+    fun setUserResizingDividerTint(colorStateList: ColorStateList?) {
+        userResizingDividerDrawable?.apply { setTintList(colorStateList) }
+    }
+
     /** `true` if the user is currently dragging the [user resizing divider][isUserResizable] */
     val isDividerDragging: Boolean
         get() = draggableDividerHandler.isDragging
@@ -581,6 +592,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 getBoolean(R.styleable.SlidingPaneLayout_isUserResizingEnabled, false)
             userResizingDividerDrawable =
                 getDrawable(R.styleable.SlidingPaneLayout_userResizingDividerDrawable)
+            // It won't override the tint on drawable if userResizingDividerTint is not specified.
+            getColorStateList(R.styleable.SlidingPaneLayout_userResizingDividerTint)?.apply {
+                setUserResizingDividerTint(this)
+            }
+
             isChildClippingToResizeDividerEnabled =
                 getBoolean(
                     R.styleable.SlidingPaneLayout_isChildClippingToResizeDividerEnabled,
@@ -2254,6 +2270,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             } else {
                 userResizeBehavior.onUserResizeComplete(this@SlidingPaneLayout, dragPositionX)
             }
+            drawableStateChanged()
             invalidate()
         }
 

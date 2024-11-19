@@ -921,6 +921,7 @@ package androidx.car.app.mediaextensions {
     field public static final String KEY_EXCLUDE_MEDIA_ITEM_FROM_MIXED_APP_LIST = "androidx.car.app.mediaextensions.KEY_EXCLUDE_MEDIA_ITEM_FROM_MIXED_APP_LIST";
     field public static final String KEY_IMMERSIVE_AUDIO = "androidx.car.app.mediaextensions.KEY_IMMERSIVE_AUDIO";
     field public static final String KEY_SUBTITLE_LINK_MEDIA_ID = "androidx.car.app.mediaextensions.KEY_SUBTITLE_LINK_MEDIA_ID";
+    field public static final String KEY_TINTABLE_INDICATOR_ICON_URI_LIST = "androidx.car.app.mediaextensions.KEY_TINTABLE_INDICATOR_ICON_URI_LIST";
   }
 
 }

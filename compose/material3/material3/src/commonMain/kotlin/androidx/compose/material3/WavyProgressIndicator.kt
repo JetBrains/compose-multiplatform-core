@@ -625,13 +625,14 @@ fun CircularWavyProgressIndicator(
             }
         }
     }
+    val coercedAmplitude = amplitude.coerceIn(0f, 1f)
     PathProgressIndicator(
         modifier = modifier.size(WavyProgressIndicatorDefaults.CircularContainerSize),
         // Resolves the Path from a RoundedPolygon that represents the active indicator.
         progressPath = { _, progressWavelength, strokeWidth, size, supportMotion, path ->
             circularShapes.update(size, progressWavelength, strokeWidth)
             circularShapes.activeIndicatorMorph!!.toPath(
-                progress = amplitude,
+                progress = coercedAmplitude,
                 path = path,
                 repeatPath = supportMotion,
                 rotationPivotX = 0.5f,
@@ -647,7 +648,7 @@ fun CircularWavyProgressIndicator(
         trackColor = trackColor,
         stroke = stroke,
         trackStroke = trackStroke,
-        amplitude = amplitude.coerceIn(0f, 1f),
+        amplitude = coercedAmplitude,
         waveOffset = { lastOffsetValue.floatValue },
         wavelength = wavelength,
         gapSize = gapSize,
@@ -733,7 +734,7 @@ private fun PathProgressIndicator(
 
                 // Animate changes in the amplitude. As this requires a progress value, we do it
                 // inside the Spacer to avoid redundant recompositions.
-                val amplitudeForProgress = amplitude(progressValue)
+                val amplitudeForProgress = amplitude(progressValue).coerceIn(0f, 1f)
                 val animatedAmplitude =
                     amplitudeAnimatable
                         ?: Animatable(amplitudeForProgress, Float.VectorConverter).also {

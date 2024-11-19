@@ -38,7 +38,20 @@ sealed interface FocusTargetModifierNode : DelegatableNode {
      *
      * @return true if focus was successfully requested
      */
+    @Deprecated(
+        message = "Use the version accepting FocusDirection",
+        replaceWith = ReplaceWith("this.requestFocus()"),
+        level = DeprecationLevel.HIDDEN
+    )
     fun requestFocus(): Boolean
+
+    /**
+     * Request focus for this node.
+     *
+     * @param focusDirection The direction from which the focus is being requested
+     * @return true if focus was successfully requested
+     */
+    fun requestFocus(focusDirection: FocusDirection = FocusDirection.Enter): Boolean
 
     /**
      * The [Focusability] for this node.
@@ -74,8 +87,7 @@ private object InvalidateSemantics {
     level = DeprecationLevel.HIDDEN
 )
 @JsName("funFocusTargetModifierNode")
-fun FocusTargetModifierNode(): FocusTargetModifierNode =
-    FocusTargetNode(onDispatchEventsCompleted = InvalidateSemantics::onDispatchEventsCompleted)
+fun FocusTargetModifierNode(): FocusTargetModifierNode = FocusTargetNode()
 
 /**
  * Create a [FocusTargetModifierNode] that can be delegated to in order to create a modifier that

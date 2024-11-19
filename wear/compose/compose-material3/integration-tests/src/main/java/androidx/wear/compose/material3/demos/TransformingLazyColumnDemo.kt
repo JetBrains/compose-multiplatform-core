@@ -17,23 +17,68 @@
 package androidx.wear.compose.material3.demos
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
+import androidx.wear.compose.material3.AppCard
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.ButtonGroup
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.lazy.scrollTransform
 import androidx.wear.compose.material3.lazy.targetMorphingHeight
+import androidx.wear.compose.material3.samples.AppCardSample
+import androidx.wear.compose.material3.samples.AppCardWithIconSample
+import androidx.wear.compose.material3.samples.AppCardWithImageSample
+import androidx.wear.compose.material3.samples.ButtonExtraLargeIconSample
+import androidx.wear.compose.material3.samples.ButtonLargeIconSample
+import androidx.wear.compose.material3.samples.ButtonSample
+import androidx.wear.compose.material3.samples.CardSample
+import androidx.wear.compose.material3.samples.ChildButtonSample
+import androidx.wear.compose.material3.samples.CompactButtonSample
+import androidx.wear.compose.material3.samples.FilledTonalButtonSample
+import androidx.wear.compose.material3.samples.FilledTonalCompactButtonSample
+import androidx.wear.compose.material3.samples.FilledVariantButtonSample
+import androidx.wear.compose.material3.samples.OutlinedAppCardSample
+import androidx.wear.compose.material3.samples.OutlinedButtonSample
+import androidx.wear.compose.material3.samples.OutlinedCardSample
+import androidx.wear.compose.material3.samples.OutlinedCompactButtonSample
+import androidx.wear.compose.material3.samples.OutlinedTitleCardSample
+import androidx.wear.compose.material3.samples.R
+import androidx.wear.compose.material3.samples.SimpleButtonSample
+import androidx.wear.compose.material3.samples.SimpleChildButtonSample
+import androidx.wear.compose.material3.samples.SimpleFilledTonalButtonSample
+import androidx.wear.compose.material3.samples.SimpleFilledVariantButtonSample
+import androidx.wear.compose.material3.samples.SimpleOutlinedButtonSample
+import androidx.wear.compose.material3.samples.TitleCardSample
+import androidx.wear.compose.material3.samples.TitleCardWithImageBackgroundSample
+import androidx.wear.compose.material3.samples.TitleCardWithMultipleImagesSample
+import androidx.wear.compose.material3.samples.TitleCardWithSubtitleAndTimeSample
 
 @Composable
 fun TransformingLazyColumnNotificationsDemo() {
@@ -66,6 +111,134 @@ fun TransformingLazyColumnNotificationsDemo() {
         }
     }
 }
+
+@Composable
+fun TransformingLazyColumnButtons() {
+    val state = rememberTransformingLazyColumnState()
+    TransformingLazyColumn(
+        state = state,
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 50.dp),
+        modifier = Modifier.background(MaterialTheme.colorScheme.background),
+    ) {
+        item(contentType = "header") {
+            // No modifier is applied - no Material 3 Motion transformations.
+            ListHeader { Text("Buttons", style = MaterialTheme.typography.labelLarge) }
+        }
+
+        item { SimpleButtonSample(modifier = Modifier.fillMaxWidth()) }
+        item { ButtonSample() }
+        item { ButtonLargeIconSample() }
+        item { ButtonExtraLargeIconSample() }
+        item { SimpleFilledTonalButtonSample() }
+        item { FilledTonalButtonSample() }
+        item { SimpleFilledVariantButtonSample() }
+        item { FilledVariantButtonSample() }
+        item { SimpleOutlinedButtonSample() }
+        item { OutlinedButtonSample() }
+        item { SimpleChildButtonSample() }
+        item { ChildButtonSample() }
+        item { CompactButtonSample(modifier = Modifier.fillMaxWidth()) }
+        item { FilledTonalCompactButtonSample(modifier = Modifier.fillMaxWidth()) }
+        item { OutlinedCompactButtonSample(modifier = Modifier.fillMaxWidth()) }
+        item { ButtonBackgroundImage(painterResource(R.drawable.backgroundimage), enabled = true) }
+        item { ButtonBackgroundImage(painterResource(R.drawable.backgroundimage), enabled = false) }
+        item { ListHeader { Text("Complex Buttons") } }
+        item {
+            Row(Modifier.scrollTransform(this@item)) {
+                TransformExclusion {
+                    SimpleButtonSample(Modifier.weight(1f))
+                    Spacer(Modifier.width(4.dp))
+                    SimpleButtonSample(Modifier.weight(1f))
+                }
+            }
+        }
+        item {
+            TransformExclusion {
+                val interactionSourceLeft = remember { MutableInteractionSource() }
+                val interactionSourceRight = remember { MutableInteractionSource() }
+                ButtonGroup(Modifier.scrollTransform(this@item)) {
+                    buttonGroupItem(interactionSource = interactionSourceLeft) {
+                        Button(onClick = {}, interactionSource = interactionSourceLeft) {
+                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text("L")
+                            }
+                        }
+                    }
+                    buttonGroupItem(interactionSource = interactionSourceRight) {
+                        Button(onClick = {}, interactionSource = interactionSourceRight) {
+                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text("R")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TransformingLazyColumnCards() {
+    val state = rememberTransformingLazyColumnState()
+    TransformingLazyColumn(
+        state = state,
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 50.dp),
+        modifier = Modifier.background(MaterialTheme.colorScheme.background),
+    ) {
+        item { ListHeader { Text("Card") } }
+        item { CardSample() }
+        item { CardWithImageDemo() }
+        item { CardWithMultipleImagesDemo() }
+        item { OutlinedCardSample() }
+        item { VerticallyCenteredBaseCard() }
+        item { CardWithButtons() }
+
+        item { ListHeader { Text("App card") } }
+        item { AppCardSample() }
+        item { AppCardWithIconSample() }
+        item { AppCardWithImageSample() }
+        item { AppCardWithMultipleImagesDemo() }
+        item { OutlinedAppCardSample() }
+
+        item { ListHeader { Text("Title card") } }
+        item { TitleCardSample() }
+        item { TitleCardWithSubtitleDemo() }
+        item { TitleCardWithSubtitleAndTimeSample() }
+        item { TitleCardWithContentSubtitleAndTimeDemo() }
+        item { TitleCardWithImageDemo() }
+        item { TitleCardWithMultipleImagesSample() }
+        item { OutlinedTitleCardSample() }
+        item { OutlinedTitleCardWithSubtitleDemo() }
+        item { OutlinedTitleCardWithSubtitleAndTimeDemo() }
+
+        item { ListHeader { Text("Image card") } }
+        item { TitleCardWithImageBackgroundSample() }
+    }
+}
+
+@Composable
+private fun CardWithButtons() {
+    AppCard(
+        onClick = { /* Do something */ },
+        appName = { Text("App name") },
+        title = { Text("Card with buttons") },
+        time = { Text("now") },
+    ) {
+        Button(onClick = { /* Do something */ }) { Text("Button 1") }
+        Spacer(Modifier.height(4.dp))
+        Button(onClick = { /* Do something */ }) { Text("Button 2") }
+    }
+}
+
+@Composable
+private fun ButtonBackgroundImage(painter: Painter, enabled: Boolean) =
+    Button(
+        modifier = Modifier.sizeIn(maxHeight = ButtonDefaults.Height).fillMaxWidth(),
+        onClick = { /* Do something */ },
+        label = { Text("Image Background", maxLines = 1) },
+        enabled = enabled,
+        colors = ButtonDefaults.imageBackgroundButtonColors(painter)
+    )
 
 private data class NotificationItem(val title: String, val body: String)
 
