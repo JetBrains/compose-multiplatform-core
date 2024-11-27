@@ -1,6 +1,7 @@
 package androidx.compose.mpp.demo
 
 import androidx.compose.mpp.demo.bugs.BugsScreen
+import androidx.compose.mpp.demo.interops.HtmlInteropDemos
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -24,7 +25,8 @@ fun main() {
                         BugsScreen,
                         Screen.Example("Web Clipboard API example") {
                             WebClipboardDemo()
-                        }
+                        },
+                        HtmlInteropDemos
                     )
                 )
             }

@@ -17,12 +17,31 @@
 package androidx.compose.mpp.demo
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.viewinterop.*
+import kotlinx.browser.document
+import org.w3c.dom.HTMLDivElement
 
 @Composable
+@OptIn(ExperimentalComposeUiApi::class)
 internal actual fun TestInteropView(modifier: Modifier, color: Color) {
-    Box(modifier.background(color)) // TODO
+    val cssColorValue = remember(color) { color.toCssValue() }
+    WebElementView(
+        modifier = modifier,
+        factory = {
+            (document.createElement("div") as HTMLDivElement).apply {
+                style.apply {
+                    background = cssColorValue
+                }
+            }
+        }
+    )
+}
+
+private fun Color.toCssValue(): String {
+    return "rgb(${red * 100}% ${green * 100}% ${blue * 100}% / ${alpha})"
 }
