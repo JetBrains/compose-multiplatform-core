@@ -17,11 +17,12 @@
 package androidx.concurrent.futures;
 
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An AndroidX version of Guava's {@code SettableFuture}.
@@ -41,8 +42,7 @@ public final class ResolvableFuture<V> extends AbstractResolvableFuture<V> {
      * Creates a new {@code ResolvableFuture} that can be completed or cancelled by a later method
      * call.
      */
-    @NonNull
-    public static <V> ResolvableFuture<V> create() {
+    public static <V> @NonNull ResolvableFuture<V> create() {
         return new ResolvableFuture<>();
     }
 

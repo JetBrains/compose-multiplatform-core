@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -149,16 +150,17 @@ fun EdgeButton(
             }
         }
 
-    val containerShapeHelper = remember { ShapeHelper(density) }
-    val shape = EdgeButtonShape(containerShapeHelper)
+    val containerSize = remember { mutableStateOf(Size.Zero) }
+    val containerShapeHelper = remember {
+        derivedStateOf { ShapeHelper(density).apply { update(containerSize.value) } }
+    }
+    val shape = remember { derivedStateOf { EdgeButtonShape(containerShapeHelper.value) } }
 
     val containerFadeStartPx = with(LocalDensity.current) { CONTAINER_FADE_START_DP.toPx() }
     val containerFadeEndPx = with(LocalDensity.current) { CONTAINER_FADE_END_DP.toPx() }
     val contentFadeStartPx = with(LocalDensity.current) { CONTENT_FADE_START_DP.toPx() }
     val contentFadeEndPx = with(LocalDensity.current) { CONTENT_FADE_END_DP.toPx() }
 
-    val borderModifier =
-        if (border != null) Modifier.border(border = border, shape = shape) else Modifier
     Row(
         horizontalArrangement = Arrangement.Center,
         modifier =
@@ -182,7 +184,7 @@ fun EdgeButton(
                             buttonWidthPx,
                             buttonHeightPx.coerceIn(constraints.minHeight, constraints.maxHeight)
                         )
-                    containerShapeHelper.update(size.toSize())
+                    containerSize.value = size.toSize()
 
                     val placeable =
                         measurable.measure(
@@ -192,7 +194,7 @@ fun EdgeButton(
                 }
                 .graphicsLayer {
                     // Container fades when button height goes from 18dp to 0dp
-                    val height = (containerShapeHelper.lastSize.value?.height ?: 0f)
+                    val height = containerSize.value.height
                     alpha =
                         easing
                             .transform(
@@ -201,8 +203,12 @@ fun EdgeButton(
                             )
                             .coerceIn(0f, 1f)
                 }
-                .then(borderModifier)
-                .clip(shape = shape)
+                .then(
+                    // BorderModifier
+                    if (border != null) Modifier.border(border = border, shape = shape.value)
+                    else Modifier
+                )
+                .clip(shape = shape.value)
                 .paint(
                     painter = colors.containerPainter(enabled = enabled),
                     contentScale = ContentScale.Crop
@@ -214,7 +220,7 @@ fun EdgeButton(
                     compositingStrategy = CompositingStrategy.Offscreen
                 }
                 .drawWithContent {
-                    val height = (containerShapeHelper.lastSize.value?.height ?: 0f)
+                    val height = containerSize.value.height
 
                     val alpha =
                         easing
@@ -246,7 +252,7 @@ fun EdgeButton(
                     indication = ripple(),
                     interactionSource = interactionSource,
                 )
-                .sizeAndOffset { containerShapeHelper.contentWindow }
+                .sizeAndOffset { containerShapeHelper.value.contentWindow }
                 .scaleAndAlignContent(buttonSize)
                 // Limit the content size to the expected width for the button size.
                 .requiredSizeIn(

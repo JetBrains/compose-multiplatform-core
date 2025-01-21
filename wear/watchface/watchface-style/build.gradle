@@ -40,7 +40,7 @@ def copyApkTaskProvider = tasks.register("copyApkAssets", Copy) {
 
     // Note that the artifact directory included contain multiple output-metadata.json files built
     // with the apks. Since we're not interested in those we can simply exclude duplicates.
-    duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 // Define a configuration that can be resolved. This project is the consumer of test apks, i.e. it
@@ -92,13 +92,13 @@ afterEvaluate {
 
 android {
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
 
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
     sourceSets.androidTest.assets.srcDir(copyApkTaskProvider)
-    namespace "androidx.wear.watchface.style"
+    namespace = "androidx.wear.watchface.style"
 }
 
 androidx {

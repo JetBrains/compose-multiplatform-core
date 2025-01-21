@@ -22,9 +22,9 @@ plugins {
 
 android {
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
-    namespace "androidx.constraintlayout.compose.integration.macrobenchmark"
+    namespace = "androidx.constraintlayout.compose.integration.macrobenchmark"
 
     targetProjectPath = ":constraintlayout:constraintlayout-compose:integration-tests:macrobenchmark-target"
     experimentalProperties["android.experimental.self-instrumenting"] = true

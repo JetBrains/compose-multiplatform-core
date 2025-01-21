@@ -42,7 +42,7 @@ class NavWrapperManagerTest {
                 }
 
                 @Composable
-                override fun <T : Any> WrapContent(record: Record<T>) {
+                override fun <T : Any> WrapContent(record: NavRecord<T>) {
                     calledWrapContent = true
                 }
             }
@@ -51,7 +51,7 @@ class NavWrapperManagerTest {
 
         composeTestRule.setContent {
             manager.PrepareBackStack(listOf("something"))
-            manager.ContentForRecord(Record("myKey") {})
+            manager.ContentForRecord(NavRecord("myKey") {})
         }
 
         assertThat(calledWrapBackStack).isTrue()
@@ -70,7 +70,7 @@ class NavWrapperManagerTest {
                 }
 
                 @Composable
-                override fun <T : Any> WrapContent(record: Record<T>) {
+                override fun <T : Any> WrapContent(record: NavRecord<T>) {
                     calledWrapContentCount++
                 }
             }
@@ -79,7 +79,7 @@ class NavWrapperManagerTest {
 
         composeTestRule.setContent {
             manager.PrepareBackStack(listOf("something"))
-            manager.ContentForRecord(Record("myKey") {})
+            manager.ContentForRecord(NavRecord("myKey") {})
         }
 
         assertThat(calledWrapBackStackCount).isEqualTo(1)

@@ -43,5 +43,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.emoji.appcompat"
+    namespace = "androidx.emoji.appcompat"
 }

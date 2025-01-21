@@ -61,10 +61,14 @@ internal class TransformingLazyColumnScrollScope(
             val averageSize = layoutInfo.visibleItemsAverageHeight + layoutInfo.itemSpacing
             val indexesDiff = targetIndex - layoutInfo.anchorItemIndex
             (averageSize * indexesDiff) - layoutInfo.anchorItemScrollOffset
-        } else {
-            val visibleItem = layoutInfo.visibleItems.fastFirstOrNull { it.index == targetIndex }
-            visibleItem?.offset ?: 0
-        } + targetOffset
+        } else
+            if (targetIndex == layoutInfo.anchorItemIndex) {
+                -layoutInfo.anchorItemScrollOffset
+            } else {
+                val visibleItem =
+                    layoutInfo.visibleItems.fastFirstOrNull { it.index == targetIndex }
+                (visibleItem?.offset ?: 0) - layoutInfo.viewportSize.height / 2
+            } + targetOffset
     }
 
     internal fun TransformingLazyColumnScrollScope.isItemVisible(index: Int): Boolean {

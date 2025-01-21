@@ -47,12 +47,12 @@ dependencies {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
     lintOptions {
         // Bug in Android Lint 7.0.0-alpha15 b/187419330
         disable("MissingLeanbackLauncher", "ImpliedTouchscreenHardware", "MissingLeanbackSupport")
     }
-    namespace "androidx.leanback.paging"
+    namespace = "androidx.leanback.paging"
 }
 
 androidx {

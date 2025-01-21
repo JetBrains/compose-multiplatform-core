@@ -556,6 +556,8 @@ internal fun pickerTextOption(
     optionHeight: Dp,
     selectedContentColor: Color,
     unselectedContentColor: Color,
+    invalidContentColor: Color = unselectedContentColor,
+    isValid: (Int) -> Boolean = { true },
 ): (@Composable PickerScope.(optionIndex: Int, pickerSelected: Boolean) -> Unit) =
     { value: Int, pickerSelected: Boolean ->
         Box(
@@ -567,10 +569,10 @@ internal fun pickerTextOption(
                 maxLines = 1,
                 style = textStyle,
                 color =
-                    if (pickerSelected) {
-                        selectedContentColor
-                    } else {
-                        unselectedContentColor
+                    when {
+                        !isValid(value) -> invalidContentColor
+                        pickerSelected -> selectedContentColor
+                        else -> unselectedContentColor
                     },
                 modifier = Modifier.align(Alignment.Center).wrapContentSize(),
             )

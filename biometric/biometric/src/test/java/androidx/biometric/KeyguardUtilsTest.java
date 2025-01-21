@@ -27,11 +27,12 @@ import android.app.KeyguardManager;
 import android.content.Context;
 import android.os.Build;
 
-import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
@@ -39,15 +40,12 @@ import org.robolectric.annotation.internal.DoNotInstrument;
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
 public class KeyguardUtilsTest {
+    @Rule
+    public final MockitoRule mocks = MockitoJUnit.rule();
+
     @Mock private AccessibilityService mAccessibilityService;
     @Mock private Context mContext;
     @Mock private KeyguardManager mKeyguardManager;
-
-    @SuppressWarnings("deprecation") // b/251211046
-    @Before
-    public void setUp() {
-        MockitoAnnotations.initMocks(this);
-    }
 
     @Test
     @Config(minSdk = Build.VERSION_CODES.M)

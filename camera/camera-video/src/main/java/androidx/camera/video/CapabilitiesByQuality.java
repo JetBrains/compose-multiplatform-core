@@ -185,6 +185,13 @@ public class CapabilitiesByQuality {
         return VideoValidatedEncoderProfilesProxy.from(profiles);
     }
 
+    /**
+     * Checks if the {@link EncoderProfilesProvider} contains at least one supported quality.
+     */
+    public static boolean containsSupportedQuality(@NonNull EncoderProfilesProvider provider) {
+        return !new CapabilitiesByQuality(provider).getSupportedQualities().isEmpty();
+    }
+
     private static void checkQualityConstantsOrThrow(@NonNull Quality quality) {
         Preconditions.checkArgument(Quality.containsQuality(quality),
                 "Unknown quality: " + quality);

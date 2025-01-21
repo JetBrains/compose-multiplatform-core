@@ -19,7 +19,10 @@ package androidx.compose.material3
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,6 +31,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -301,11 +305,11 @@ class AppBarTest {
     fun smallTopAppBar_customHeight() {
         lateinit var scrollBehavior: TopAppBarScrollBehavior
         val expandedHeightDp = 50.dp
-        var expandedHeightDpPx = 0
+        var expandedHeightPx = 0
 
         rule.setMaterialContent(lightColorScheme()) {
             scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-            expandedHeightDpPx = with(LocalDensity.current) { expandedHeightDp.roundToPx() }
+            expandedHeightPx = with(LocalDensity.current) { expandedHeightDp.roundToPx() }
             TopAppBar(
                 title = { Text("Title", Modifier.testTag(TitleTestTag)) },
                 modifier = Modifier.testTag(TopAppBarTestTag),
@@ -314,7 +318,7 @@ class AppBarTest {
             )
         }
 
-        assertThat(scrollBehavior.state.heightOffsetLimit).isEqualTo(-expandedHeightDpPx)
+        assertThat(scrollBehavior.state.heightOffsetLimit).isEqualTo(-expandedHeightPx)
         rule.onNodeWithTag(TopAppBarTestTag).assertHeightIsEqualTo(expandedHeightDp)
     }
 
@@ -728,11 +732,11 @@ class AppBarTest {
         lateinit var scrollBehavior: TopAppBarScrollBehavior
         val collapsedHeightDp = 0.dp
         val expandedHeightDp = TopAppBarDefaults.MediumAppBarWithSubtitleExpandedHeight
-        var expandedHeightDpPx = 0
+        var expandedHeightPx = 0
 
         rule.setMaterialContent(lightColorScheme()) {
             scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-            expandedHeightDpPx = with(LocalDensity.current) { expandedHeightDp.roundToPx() }
+            expandedHeightPx = with(LocalDensity.current) { expandedHeightDp.roundToPx() }
             Box(Modifier.testTag(TopAppBarTestTag)) {
                 MediumTopAppBar(
                     navigationIcon = { FakeIcon(Modifier.testTag(NavigationIconTestTag)) },
@@ -748,8 +752,8 @@ class AppBarTest {
 
         // Simulate a partially collapsed app bar.
         rule.runOnIdle {
-            scrollBehavior.state.heightOffset = -expandedHeightDpPx.toFloat()
-            scrollBehavior.state.contentOffset = -expandedHeightDpPx.toFloat()
+            scrollBehavior.state.heightOffset = -expandedHeightPx.toFloat()
+            scrollBehavior.state.contentOffset = -expandedHeightPx.toFloat()
         }
         rule.waitForIdle()
 
@@ -757,7 +761,7 @@ class AppBarTest {
         val subtitleBounds = rule.onNodeWithTag(SubtitleTestTag).getBoundsInRoot()
         val titlesHeight = titleBounds.height + subtitleBounds.height
 
-        assertThat(scrollBehavior.state.heightOffsetLimit).isEqualTo(-expandedHeightDpPx)
+        assertThat(scrollBehavior.state.heightOffsetLimit).isEqualTo(-expandedHeightPx)
         rule.onNodeWithTag(TopAppBarTestTag).assertHeightIsEqualTo(titlesHeight)
     }
 
@@ -1092,11 +1096,11 @@ class AppBarTest {
         lateinit var scrollBehavior: TopAppBarScrollBehavior
         val collapsedHeightDp = 0.dp
         val expandedHeightDp = TopAppBarDefaults.LargeAppBarWithSubtitleExpandedHeight
-        var expandedHeightDpPx = 0
+        var expandedHeightPx = 0
 
         rule.setMaterialContent(lightColorScheme()) {
             scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-            expandedHeightDpPx = with(LocalDensity.current) { expandedHeightDp.roundToPx() }
+            expandedHeightPx = with(LocalDensity.current) { expandedHeightDp.roundToPx() }
             Box(Modifier.testTag(TopAppBarTestTag)) {
                 LargeTopAppBar(
                     navigationIcon = { FakeIcon(Modifier.testTag(NavigationIconTestTag)) },
@@ -1112,8 +1116,8 @@ class AppBarTest {
 
         // Simulate a partially collapsed app bar.
         rule.runOnIdle {
-            scrollBehavior.state.heightOffset = -expandedHeightDpPx.toFloat()
-            scrollBehavior.state.contentOffset = -expandedHeightDpPx.toFloat()
+            scrollBehavior.state.heightOffset = -expandedHeightPx.toFloat()
+            scrollBehavior.state.contentOffset = -expandedHeightPx.toFloat()
         }
         rule.waitForIdle()
 
@@ -1121,7 +1125,7 @@ class AppBarTest {
         val subtitleBounds = rule.onNodeWithTag(SubtitleTestTag).getBoundsInRoot()
         val titlesHeight = titleBounds.height + subtitleBounds.height
 
-        assertThat(scrollBehavior.state.heightOffsetLimit).isEqualTo(-expandedHeightDpPx)
+        assertThat(scrollBehavior.state.heightOffsetLimit).isEqualTo(-expandedHeightPx)
         rule.onNodeWithTag(TopAppBarTestTag).assertHeightIsEqualTo(titlesHeight)
     }
 
@@ -1588,6 +1592,105 @@ class AppBarTest {
             assertThat(topAppBarState!!.heightOffset).isEqualTo(-300f)
             assertThat(topAppBarState!!.contentOffset).isEqualTo(-550f)
         }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun topAppBar_intrinsicHeight() {
+        lateinit var scrollBehavior: TopAppBarScrollBehavior
+        val expandedHeightDp = 50.dp
+        var expandedHeightPx = 0
+
+        rule.setMaterialContent(lightColorScheme()) {
+            scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+            expandedHeightPx = with(LocalDensity.current) { expandedHeightDp.roundToPx() }
+            Column {
+                Row(modifier = Modifier.height(IntrinsicSize.Min).testTag(RowTestTag + 0)) {
+                    TopAppBar(
+                        title = { Text("Title") },
+                        expandedHeight = expandedHeightDp,
+                        scrollBehavior = scrollBehavior
+                    )
+                }
+                Row(modifier = Modifier.height(IntrinsicSize.Max).testTag(RowTestTag + 1)) {
+                    TopAppBar(
+                        title = { Text("Title") },
+                        expandedHeight = expandedHeightDp,
+                        scrollBehavior = scrollBehavior
+                    )
+                }
+            }
+        }
+
+        assertThat(scrollBehavior.state.heightOffsetLimit).isEqualTo(-expandedHeightPx)
+        // Expecting the row's intrinsic height to be the same as the expanded height whether a
+        // height(IntrinsicSize.Max) or height(IntrinsicSize.Min) is used.
+        rule.onNodeWithTag(RowTestTag + 0).assertHeightIsEqualTo(expandedHeightDp)
+        rule.onNodeWithTag(RowTestTag + 1).assertHeightIsEqualTo(expandedHeightDp)
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun topAppBar_intrinsicWidth() {
+        lateinit var scrollBehavior: TopAppBarScrollBehavior
+        // totalHorizontalPadding = 4 at navigation start, 4 before and after the title, and 4 at
+        // the actions end.
+        val totalHorizontalPadding = 16.dp
+        val expandedHeightDp = 50.dp
+        var expandedHeightPx = 0
+        rule.setMaterialContent(lightColorScheme()) {
+            scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+            expandedHeightPx = with(LocalDensity.current) { expandedHeightDp.roundToPx() }
+            Column {
+                Row(modifier = Modifier.width(IntrinsicSize.Min).testTag(RowTestTag + 0)) {
+                    TopAppBar(
+                        modifier = Modifier.fillMaxWidth(),
+                        navigationIcon = { FakeIcon(Modifier.testTag(NavigationIconTestTag)) },
+                        title = { Text("Title", Modifier.testTag(TitleTestTag)) },
+                        actions = { FakeIcon(Modifier.testTag(ActionsTestTag)) },
+                        expandedHeight = expandedHeightDp,
+                        scrollBehavior = scrollBehavior
+                    )
+                }
+                Row(modifier = Modifier.width(IntrinsicSize.Max).testTag(RowTestTag + 1)) {
+                    TopAppBar(
+                        modifier = Modifier.fillMaxWidth(),
+                        navigationIcon = { FakeIcon(Modifier) },
+                        title = { Text("Title") },
+                        actions = { FakeIcon(Modifier) },
+                        expandedHeight = expandedHeightDp,
+                        scrollBehavior = scrollBehavior
+                    )
+                }
+            }
+        }
+
+        assertThat(scrollBehavior.state.heightOffsetLimit).isEqualTo(-expandedHeightPx)
+        // Expecting the row's intrinsic width to be the same as the expanded width whether a
+        // width(IntrinsicSize.Max) or width(IntrinsicSize.Min) is used.
+        val intrinsicWidth =
+            totalHorizontalPadding +
+                rule.onNodeWithTag(NavigationIconTestTag).getBoundsInRoot().width +
+                rule.onNodeWithTag(TitleTestTag).getBoundsInRoot().width +
+                rule.onNodeWithTag(ActionsTestTag).getBoundsInRoot().width
+        rule
+            .onNodeWithTag(RowTestTag + 0)
+            .getBoundsInRoot()
+            .width
+            .assertIsEqualTo(
+                expected = intrinsicWidth,
+                subject = "intrinsic width",
+                tolerance = 1.dp
+            )
+        rule
+            .onNodeWithTag(RowTestTag + 1)
+            .getBoundsInRoot()
+            .width
+            .assertIsEqualTo(
+                expected = intrinsicWidth,
+                subject = "intrinsic width",
+                tolerance = 1.dp
+            )
     }
 
     @Test
@@ -2321,4 +2424,5 @@ class AppBarTest {
     private val TitleTestTag = "title"
     private val SubtitleTestTag = "subtitle"
     private val ActionsTestTag = "actions"
+    private val RowTestTag = "row"
 }

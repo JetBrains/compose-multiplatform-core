@@ -49,7 +49,7 @@ android {
         animationsDisabled = true
     }
 
-    namespace "androidx.coordinatorlayout"
+    namespace = "androidx.coordinatorlayout"
 }
 
 androidx {

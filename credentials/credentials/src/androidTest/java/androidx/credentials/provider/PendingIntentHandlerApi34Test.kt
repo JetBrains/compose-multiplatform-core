@@ -18,7 +18,6 @@ package androidx.credentials.provider
 import android.content.Intent
 import android.content.pm.SigningInfo
 import android.credentials.CredentialOption
-import android.os.Build
 import android.os.Bundle
 import android.service.credentials.CallingAppInfo
 import android.service.credentials.CreateCredentialRequest
@@ -27,6 +26,7 @@ import androidx.annotation.RequiresApi
 import androidx.credentials.CreatePasswordResponse
 import androidx.credentials.GetCredentialResponse
 import androidx.credentials.PasswordCredential
+import androidx.credentials.assertEquals
 import androidx.credentials.equals
 import androidx.credentials.exceptions.CreateCredentialInterruptedException
 import androidx.credentials.exceptions.GetCredentialInterruptedException
@@ -34,6 +34,7 @@ import androidx.credentials.setUpCreatePasswordRequest
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
+import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert
 import org.junit.Test
@@ -68,6 +69,8 @@ class PendingIntentHandlerApi34Test {
 
         private const val FRAMEWORK_EXPECTED_CONSTANT_AUTH_RESULT =
             "androidx.credentials.provider.BIOMETRIC_AUTH_RESULT"
+
+        private val context = InstrumentationRegistry.getInstrumentation().context
     }
 
     @Test
@@ -278,10 +281,6 @@ class PendingIntentHandlerApi34Test {
 
     @Test
     fun test_createCredentialException() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return
-        }
-
         val intent = Intent()
         val initialException = CreateCredentialInterruptedException("message")
 
@@ -289,16 +288,14 @@ class PendingIntentHandlerApi34Test {
 
         val finalException = intent.getCreateCredentialException()
         assertThat(finalException).isNotNull()
-        assertThat(finalException).isEqualTo(initialException)
+        assertThat(finalException!!.type).isEqualTo(initialException.type)
+        assertThat(finalException.message).isEqualTo(initialException.message)
     }
 
     @Test
-    fun test_createCredentialException_throwsWhenEmptyIntent() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return
-        }
-
+    fun test_createCredentialException_nullExceptionWhenEmptyIntent() {
         val intent = Intent()
+
         assertThat(intent.getCreateCredentialException()).isNull()
     }
 
@@ -417,10 +414,6 @@ class PendingIntentHandlerApi34Test {
 
     @Test
     fun test_credentialException() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return
-        }
-
         val intent = Intent()
         val initialException = GetCredentialInterruptedException("message")
 
@@ -428,25 +421,19 @@ class PendingIntentHandlerApi34Test {
 
         val finalException = intent.getGetCredentialException()
         assertThat(finalException).isNotNull()
-        assertThat(finalException).isEqualTo(initialException)
+        assertThat(finalException!!.type).isEqualTo(initialException.type)
+        assertThat(finalException.message).isEqualTo(initialException.message)
     }
 
     @Test
-    fun test_credentialException_throwsWhenEmptyIntent() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return
-        }
-
+    fun test_credentialException_nullWhenEmptyIntent() {
         val intent = Intent()
+
         assertThat(intent.getGetCredentialException()).isNull()
     }
 
     @Test
     fun test_beginGetResponse() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return
-        }
-
         val intent = Intent()
         val initialResponse = BeginGetCredentialResponse.Builder().build()
 
@@ -454,25 +441,18 @@ class PendingIntentHandlerApi34Test {
 
         val finalResponse = intent.getBeginGetResponse()
         assertThat(finalResponse).isNotNull()
-        assertThat(finalResponse).isEqualTo(initialResponse)
+        assertEquals(context, finalResponse!!, initialResponse)
     }
 
     @Test
-    fun test_beginGetResponse_throwsWhenEmptyIntent() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return
-        }
-
+    fun test_beginGetResponse_nullWhenEmptyIntent() {
         val intent = Intent()
+
         assertThat(intent.getBeginGetResponse()).isNull()
     }
 
     @Test
     fun test_credentialResponse() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return
-        }
-
         val intent = Intent()
         val credential = PasswordCredential("a", "b")
         val initialResponse = GetCredentialResponse(credential)
@@ -481,25 +461,18 @@ class PendingIntentHandlerApi34Test {
 
         val finalResponse = intent.getGetCredentialResponse()
         assertThat(finalResponse).isNotNull()
-        assertThat(finalResponse).isEqualTo(initialResponse)
+        assertEquals(finalResponse!!, initialResponse)
     }
 
     @Test
-    fun test_credentialResponse_throwsWhenEmptyIntent() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return
-        }
-
+    fun test_credentialResponse_nullWhenEmptyIntent() {
         val intent = Intent()
+
         assertThat(intent.getGetCredentialResponse()).isNull()
     }
 
     @Test
     fun test_createCredentialCredentialResponse() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return
-        }
-
         val intent = Intent()
         val initialResponse = CreatePasswordResponse()
 
@@ -507,17 +480,13 @@ class PendingIntentHandlerApi34Test {
 
         val finalResponse = intent.getCreateCredentialCredentialResponse()
         assertThat(finalResponse).isNotNull()
-        assertThat(finalResponse).isEqualTo(initialResponse)
+        assertThat(equals(finalResponse!!.data, initialResponse.data))
     }
 
     @Test
-    fun test_createCredentialCredentialResponse_throwsWhenEmptyIntent() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return
-        }
-
+    fun test_createCredentialCredentialResponse_nullWhenEmptyIntent() {
         val intent = Intent()
-        val r = intent.getCreateCredentialCredentialResponse()
-        assertThat(r).isNull()
+
+        assertThat(intent.getCreateCredentialCredentialResponse()).isNull()
     }
 }

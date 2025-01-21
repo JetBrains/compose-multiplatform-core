@@ -20,9 +20,9 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Icon
+import android.os.Build
 import android.os.Bundle
 import android.service.credentials.CredentialEntry
-import androidx.core.os.BuildCompat
 import androidx.credentials.CredentialOption
 import androidx.credentials.R
 import androidx.credentials.equals
@@ -321,7 +321,7 @@ class CustomCredentialEntryTest {
     }
 
     private fun constructEntryWithAllParams(): CustomCredentialEntry {
-        return if (BuildCompat.isAtLeastV()) {
+        return if (Build.VERSION.SDK_INT >= 35) {
             CustomCredentialEntry(
                 mContext,
                 TITLE,
@@ -364,7 +364,7 @@ class CustomCredentialEntryTest {
         assertThat(mPendingIntent).isEqualTo(entry.pendingIntent)
         assertThat(entry.isDefaultIconPreferredAsSingleProvider).isEqualTo(SINGLE_PROVIDER_ICON_BIT)
         assertThat(ENTRY_GROUP_ID).isEqualTo(entry.entryGroupId)
-        if (BuildCompat.isAtLeastV() && entry.biometricPromptData != null) {
+        if (Build.VERSION.SDK_INT >= 35 && entry.biometricPromptData != null) {
             assertThat(entry.biometricPromptData!!.allowedAuthenticators)
                 .isEqualTo(testBiometricPromptData().allowedAuthenticators)
         } else {
@@ -384,7 +384,7 @@ class CustomCredentialEntryTest {
         assertThat(BEGIN_OPTION.type).isEqualTo(entry.type)
         assertThat(entry.isDefaultIconPreferredAsSingleProvider).isEqualTo(SINGLE_PROVIDER_ICON_BIT)
         assertThat(ENTRY_GROUP_ID).isEqualTo(entry.entryGroupId)
-        if (BuildCompat.isAtLeastV() && entry.biometricPromptData != null) {
+        if (Build.VERSION.SDK_INT >= 35 && entry.biometricPromptData != null) {
             assertThat(entry.biometricPromptData!!.allowedAuthenticators)
                 .isEqualTo(testBiometricPromptData().allowedAuthenticators)
         } else {

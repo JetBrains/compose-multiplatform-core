@@ -101,6 +101,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.coerceAtLeast
+import androidx.compose.ui.unit.constrainHeight
+import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.offset
@@ -1179,7 +1181,7 @@ private class TextFieldMeasurePolicy(
                 labelWidth,
             )
         val wrappedWidth = leadingWidth + middleSection + trailingWidth
-        return max(wrappedWidth, constraints.minWidth)
+        return constraints.constrainWidth(wrappedWidth)
     }
 
     private fun Density.calculateHeight(
@@ -1228,8 +1230,7 @@ private class TextFieldMeasurePolicy(
 
         val middleSectionHeight = verticalPadding + nonOverlappedLabelHeight + inputFieldHeight
 
-        return max(
-            constraints.minHeight,
+        return constraints.constrainHeight(
             (if (isLabelAbove) labelHeight else 0) +
                 maxOf(leadingHeight, trailingHeight, middleSectionHeight) +
                 supportingHeight

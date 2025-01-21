@@ -21,6 +21,7 @@ import android.view.View
 import android.view.ViewStructure
 import android.view.autofill.AutofillValue
 import androidx.autofill.HintConstants.AUTOFILL_HINT_PERSON_NAME
+import androidx.compose.ui.ComposeUiFlags.isSemanticAutofillEnabled
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.LocalAutofill
@@ -76,6 +77,7 @@ class AndroidAutoFillTest {
     @SdkSuppress(minSdkVersion = 26)
     @Test
     fun onProvideAutofillVirtualStructure_populatesViewStructure() {
+        if (isSemanticAutofillEnabled) return
         // Arrange.
         val viewStructure: ViewStructure = FakeViewStructure()
         val autofillNode =
@@ -110,6 +112,7 @@ class AndroidAutoFillTest {
     @SdkSuppress(minSdkVersion = 26)
     @Test
     fun autofill_triggersOnFill() {
+        if (isSemanticAutofillEnabled) return
         // Arrange.
         val expectedValue = "PersonName"
         var autofilledValue = ""

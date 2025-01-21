@@ -16,10 +16,10 @@
 
 package androidx.navigation.common.lint
 
-import androidx.navigation.lint.common.K_SERIALIZER
-import androidx.navigation.lint.common.NAVIGATION_STUBS
-import androidx.navigation.lint.common.SERIALIZABLE_ANNOTATION
-import androidx.navigation.lint.common.bytecodeStub
+import androidx.navigation.lint.test.K_SERIALIZER
+import androidx.navigation.lint.test.NAVIGATION_STUBS
+import androidx.navigation.lint.test.SERIALIZABLE_ANNOTATION
+import androidx.navigation.lint.test.bytecodeStub
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue
@@ -776,6 +776,6 @@ inline fun <reified T : Any> NavGraphBuilder.navigation() { }
             .map { it.toTestBytecodeStub() }
             .toTypedArray()
     val SERIALIZABLE_TEST_CLASS =
-        androidx.navigation.lint.common.SERIALIZABLE_TEST_CLASS.toTestKotlinAndBytecodeStub().kotlin
-    val TEST_CLASS = androidx.navigation.lint.common.TEST_CLASS.toTestKotlinAndBytecodeStub().kotlin
+        androidx.navigation.lint.test.SERIALIZABLE_TEST_CLASS.toTestKotlinAndBytecodeStub().kotlin
+    val TEST_CLASS = androidx.navigation.lint.test.TEST_CLASS.toTestKotlinAndBytecodeStub().kotlin
 }

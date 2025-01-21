@@ -22,13 +22,13 @@ plugins {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
 
-    namespace "androidx.wear.compose.integration.macrobenchmark.target"
+    namespace = "androidx.wear.compose.integration.macrobenchmark.target"
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles(getDefaultProguardFile('proguard-android-optimize.txt'),
                     "proguard-benchmark.pro")
         }
@@ -53,4 +53,4 @@ dependencies {
     implementation(project(path:':tracing:tracing-perfetto-binary'))
 }
 
-android.defaultConfig.minSdkVersion 25
+android.defaultConfig.minSdk = 25

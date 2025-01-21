@@ -21,6 +21,7 @@ import static androidx.appsearch.app.AppSearchResult.RESULT_INVALID_SCHEMA;
 import static androidx.appsearch.app.AppSearchResult.throwableToFailedResult;
 
 import android.content.Context;
+import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -28,7 +29,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
 import androidx.appsearch.app.AppSearchBatchResult;
+import androidx.appsearch.app.AppSearchBlobHandle;
 import androidx.appsearch.app.AppSearchSession;
+import androidx.appsearch.app.CommitBlobResponse;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.Features;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.GetByDocumentIdRequest;
@@ -36,13 +40,17 @@ import androidx.appsearch.app.GetSchemaResponse;
 import androidx.appsearch.app.InternalSetSchemaResponse;
 import androidx.appsearch.app.InternalVisibilityConfig;
 import androidx.appsearch.app.Migrator;
+import androidx.appsearch.app.OpenBlobForReadResponse;
+import androidx.appsearch.app.OpenBlobForWriteResponse;
 import androidx.appsearch.app.PutDocumentsRequest;
+import androidx.appsearch.app.RemoveBlobResponse;
 import androidx.appsearch.app.RemoveByDocumentIdRequest;
 import androidx.appsearch.app.ReportUsageRequest;
 import androidx.appsearch.app.SearchResults;
 import androidx.appsearch.app.SearchSpec;
 import androidx.appsearch.app.SearchSuggestionResult;
 import androidx.appsearch.app.SearchSuggestionSpec;
+import androidx.appsearch.app.SetBlobVisibilityRequest;
 import androidx.appsearch.app.SetSchemaRequest;
 import androidx.appsearch.app.SetSchemaResponse;
 import androidx.appsearch.app.StorageInfo;
@@ -412,6 +420,124 @@ class SearchSessionImpl implements AppSearchSession {
         });
     }
 
+    @NonNull
+    @Override
+    @ExperimentalAppSearchApi
+    // TODO(b/273591938) support change notification for put blob.
+    public ListenableFuture<OpenBlobForWriteResponse>
+            openBlobForWriteAsync(@NonNull Set<AppSearchBlobHandle> handles) {
+        Preconditions.checkNotNull(handles);
+        Preconditions.checkState(!mIsClosed, "AppSearchSession has already been closed");
+        return execute(() -> {
+            AppSearchBatchResult.Builder<AppSearchBlobHandle, ParcelFileDescriptor> resultBuilder =
+                    new AppSearchBatchResult.Builder<>();
+            for (AppSearchBlobHandle handle : handles) {
+                try {
+                    // We pass the caller mPackageName and mDatabaseName to AppSearchImpl and let it
+                    // to compare with given handle to reduce code export delta.
+                    ParcelFileDescriptor pfd =
+                            mAppSearchImpl.openWriteBlob(mPackageName, mDatabaseName, handle);
+                    resultBuilder.setSuccess(handle, pfd);
+                } catch (Throwable t) {
+                    resultBuilder.setResult(handle, throwableToFailedResult(t));
+                }
+            }
+            return new OpenBlobForWriteResponse(resultBuilder.build());
+        });
+    }
+
+    @NonNull
+    @Override
+    @ExperimentalAppSearchApi
+    public ListenableFuture<RemoveBlobResponse> removeBlobAsync(
+            @NonNull Set<AppSearchBlobHandle> handles) {
+        Preconditions.checkNotNull(handles);
+        Preconditions.checkState(!mIsClosed, "AppSearchSession has already been closed");
+        return execute(() -> {
+            AppSearchBatchResult.Builder<AppSearchBlobHandle, Void> resultBuilder =
+                    new AppSearchBatchResult.Builder<>();
+            for (AppSearchBlobHandle handle : handles) {
+                try {
+                    mAppSearchImpl.removeBlob(mPackageName, mDatabaseName, handle);
+                    resultBuilder.setSuccess(handle, null);
+                } catch (Throwable t) {
+                    resultBuilder.setResult(handle, throwableToFailedResult(t));
+                }
+            }
+            return new RemoveBlobResponse(resultBuilder.build());
+        });
+    }
+
+    @NonNull
+    @Override
+    @ExperimentalAppSearchApi
+    // TODO(b/273591938) support change notification for put blob.
+    public ListenableFuture<CommitBlobResponse> commitBlobAsync(
+            @NonNull Set<AppSearchBlobHandle> handles) {
+        Preconditions.checkNotNull(handles);
+        Preconditions.checkState(!mIsClosed, "AppSearchSession has already been closed");
+        return execute(() -> {
+            AppSearchBatchResult.Builder<AppSearchBlobHandle, Void> resultBuilder =
+                    new AppSearchBatchResult.Builder<>();
+            for (AppSearchBlobHandle handle : handles) {
+                try {
+                    // We pass the caller mPackageName and mDatabaseName to AppSearchImpl and let it
+                    // to compare with given handle to reduce code export delta.
+                    mAppSearchImpl.commitBlob(mPackageName, mDatabaseName, handle);
+                    resultBuilder.setSuccess(handle, null);
+                } catch (Throwable t) {
+                    resultBuilder.setResult(handle, throwableToFailedResult(t));
+                }
+            }
+            return new CommitBlobResponse(resultBuilder.build());
+        });
+    }
+
+
+    @NonNull
+    @Override
+    @ExperimentalAppSearchApi
+    public ListenableFuture<OpenBlobForReadResponse> openBlobForReadAsync(
+            @NonNull Set<AppSearchBlobHandle> handles) {
+        Preconditions.checkNotNull(handles);
+        Preconditions.checkState(!mIsClosed, "AppSearchSession has already been closed");
+        return execute(() -> {
+            AppSearchBatchResult.Builder<AppSearchBlobHandle, ParcelFileDescriptor> resultBuilder =
+                    new AppSearchBatchResult.Builder<>();
+            for (AppSearchBlobHandle handle : handles) {
+                try {
+                    // We pass the caller mPackageName and mDatabaseName to AppSearchImpl and let it
+                    // to compare with given handle to reduce code export delta.
+                    ParcelFileDescriptor pfd =
+                            mAppSearchImpl.openReadBlob(mPackageName, mDatabaseName, handle);
+                    resultBuilder.setSuccess(handle, pfd);
+                } catch (Throwable t) {
+                    resultBuilder.setResult(handle, throwableToFailedResult(t));
+                }
+            }
+            return new OpenBlobForReadResponse(resultBuilder.build());
+        });
+    }
+
+    @NonNull
+    @Override
+    @ExperimentalAppSearchApi
+    public ListenableFuture<Void> setBlobVisibilityAsync(
+            @NonNull SetBlobVisibilityRequest request) {
+        Preconditions.checkNotNull(request);
+        Preconditions.checkState(!mIsClosed, "AppSearchSession has already been closed");
+        return execute(() -> {
+            List<InternalVisibilityConfig> visibilityConfigs =
+                    InternalVisibilityConfig.toInternalVisibilityConfigs(request);
+            mAppSearchImpl.setBlobNamespaceVisibility(
+                    mPackageName,
+                    mDatabaseName,
+                    visibilityConfigs);
+            mIsMutated = true;
+            return null;
+        });
+    }
+
     @Override
     @NonNull
     public SearchResults search(
@@ -540,6 +666,7 @@ class SearchSessionImpl implements AppSearchSession {
 
     @Override
     @NonNull
+    @ExperimentalAppSearchApi
     public ListenableFuture<StorageInfo> getStorageInfoAsync() {
         Preconditions.checkState(!mIsClosed, "AppSearchSession has already been closed");
         return execute(() -> mAppSearchImpl.getStorageInfoForDatabase(mPackageName, mDatabaseName));

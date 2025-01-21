@@ -318,6 +318,7 @@ public final class JoinSpec extends AbstractSafeParcelable {
         }
 
         /** Creates a new {@link Builder} from the given {@link JoinSpec}. */
+        @ExperimentalAppSearchApi
         @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
         public Builder(@NonNull JoinSpec joinSpec) {
             Preconditions.checkNotNull(joinSpec);
@@ -346,6 +347,7 @@ public final class JoinSpec extends AbstractSafeParcelable {
          *
          * @param childPropertyExpression the property to match in the child documents.
          */
+        @ExperimentalAppSearchApi
         @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
         @CanIgnoreReturnValue
         @NonNull

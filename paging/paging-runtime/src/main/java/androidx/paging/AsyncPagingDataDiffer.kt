@@ -179,15 +179,19 @@ constructor(
                                 else -> {
                                     previousPresenter.set(previousList)
                                     val diffResult =
-                                        withContext(workerDispatcher) {
-                                            val diff =
+                                        try {
+                                            withContext(workerDispatcher) {
                                                 previousList.computeDiff(newList, diffCallback)
-                                            // set to null right after computeDiff in case another
-                                            // refresh comes in and interrupts the work following
-                                            // this withContext block
+                                            }
+                                        } finally {
+                                            // Set null here to ensure previousPresenter is reset
+                                            // even if this refresh is interrupted.
+                                            // Also, ensure we reset presenter on main thread to
+                                            // avoid potential race with RV doing work between
+                                            // set null and dispatchDiff.
                                             previousPresenter.set(null)
-                                            diff
                                         }
+
                                     previousList.dispatchDiff(updateCallback, newList, diffResult)
                                     val transformedIndex =
                                         previousList.transformAnchorIndex(

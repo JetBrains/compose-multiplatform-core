@@ -20,7 +20,7 @@ import android.content.Context;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -136,7 +136,7 @@ class SoftwareWritableIdentityCredential extends WritableIdentityCredential {
 
     @Override
     public @NonNull Collection<X509Certificate> getCredentialKeyCertificateChain(
-            @NonNull byte[] challenge) {
+            byte @NonNull [] challenge) {
         Collection<X509Certificate> certificates = ensureCredentialKey(challenge);
         if (certificates == null) {
             throw new RuntimeException(
@@ -193,9 +193,8 @@ class SoftwareWritableIdentityCredential extends WritableIdentityCredential {
         return signature;
     }
 
-    @NonNull
     @Override
-    public byte[] personalize(@NonNull PersonalizationData personalizationData) {
+    public byte @NonNull [] personalize(@NonNull PersonalizationData personalizationData) {
 
         try {
             ensureCredentialKey(null);

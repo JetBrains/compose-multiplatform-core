@@ -20,8 +20,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 
-import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -29,11 +30,9 @@ import java.util.List;
  * Holds an {@link Intent} and other data necessary to start a Trusted Web Activity.
  */
 public final class TrustedWebActivityIntent {
-    @NonNull
-    private final Intent mIntent;
+    private final @NonNull Intent mIntent;
 
-    @NonNull
-    private final List<Uri> mSharedFileUris;
+    private final @NonNull List<Uri> mSharedFileUris;
 
     TrustedWebActivityIntent(@NonNull Intent intent, @NonNull List<Uri> sharedFileUris) {
         mIntent = intent;
@@ -59,8 +58,7 @@ public final class TrustedWebActivityIntent {
      * Returns the held {@link Intent}. For launching a Trusted Web Activity prefer using
      * {@link #launchTrustedWebActivity}.
      */
-    @NonNull
-    public Intent getIntent() {
+    public @NonNull Intent getIntent() {
         return mIntent;
     }
 }

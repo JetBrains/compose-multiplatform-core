@@ -56,8 +56,8 @@ dependencies {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.metrics.performance"
+    compileSdk = 35
+    namespace = "androidx.metrics.performance"
 }
 
 androidx {

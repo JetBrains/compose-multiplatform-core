@@ -96,8 +96,8 @@ androidXMultiplatform {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.lifecycle.viewmodel.navigation3"
+    compileSdk = 35
+    namespace = "androidx.lifecycle.viewmodel.navigation3"
 }
 
 androidx {

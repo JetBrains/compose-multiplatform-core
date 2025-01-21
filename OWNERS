@@ -30,7 +30,7 @@ per-file docs-tip-of-tree/build.gradle = owengray@google.com, asfalcone@google.c
 
 # settings.gradle
 per-file *settings.gradle = set noparent
-per-file *settings.gradle = alanv@google.com, aurimas@google.com
+per-file *settings.gradle = alanv@google.com, aurimas@google.com, omarismail@google.com
 # Core-Telecom
 per-file *libraryversions.toml = breadley@google.com, tgunn@google.com, tjstuart@google.com
 # Wear

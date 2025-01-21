@@ -29,6 +29,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleRegistry
 import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
+import androidx.privacysandbox.sdkruntime.core.SdkSandboxClientImportanceListenerCompat
 import androidx.privacysandbox.sdkruntime.core.activity.ActivityHolder
 import androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandlerCompat
 import androidx.privacysandbox.sdkruntime.core.controller.LoadSdkCallback
@@ -43,6 +44,8 @@ internal class PlatformUDCImpl(private val controller: SdkSandboxController, sdk
     private val appOwnedSdkProvider = AppOwnedSdkProvider.create(controller)
     private val sdkLoader = PlatformSdkLoader.create(controller)
     private val clientPackageNameProvider = ClientPackageNameProvider(controller, sdkContext)
+    private val clientImportanceListenerRegistry =
+        PlatformClientImportanceListenerRegistry.create(controller)
 
     private val compatToPlatformMap =
         hashMapOf<SdkSandboxActivityHandlerCompat, SdkSandboxActivityHandler>()
@@ -90,6 +93,22 @@ internal class PlatformUDCImpl(private val controller: SdkSandboxController, sdk
     }
 
     override fun getClientPackageName(): String = clientPackageNameProvider.getClientPackageName()
+
+    override fun registerSdkSandboxClientImportanceListener(
+        executor: Executor,
+        listenerCompat: SdkSandboxClientImportanceListenerCompat
+    ) =
+        clientImportanceListenerRegistry.registerSdkSandboxClientImportanceListener(
+            executor,
+            listenerCompat
+        )
+
+    override fun unregisterSdkSandboxClientImportanceListener(
+        listenerCompat: SdkSandboxClientImportanceListenerCompat
+    ) =
+        clientImportanceListenerRegistry.unregisterSdkSandboxClientImportanceListener(
+            listenerCompat
+        )
 
     internal class ActivityHolderImpl(private val platformActivity: Activity) : ActivityHolder {
         private val dispatcher = OnBackPressedDispatcher {}

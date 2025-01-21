@@ -19,8 +19,8 @@ package androidx.webkit;
 import android.net.Uri;
 import android.webkit.MimeTypeMap;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -77,9 +77,8 @@ public final class URLUtilCompat {
      * @see android.webkit.URLUtil#guessFileName(String, String, String)
      * @see #getFilenameFromContentDisposition(String)
      */
-    @NonNull
-    public static String guessFileName(@NonNull String url, @Nullable String contentDisposition,
-            @Nullable String mimeType) {
+    public static @NonNull String guessFileName(@NonNull String url,
+            @Nullable String contentDisposition, @Nullable String mimeType) {
         String filename = getFilenameSuggestion(url, contentDisposition);
         // Split filename between base and extension
         // Add an extension if filename does not have one
@@ -104,8 +103,7 @@ public final class URLUtilCompat {
      * ensure that the filename contains no path separators by replacing them with the {@code "_"}
      * character.
      */
-    @NonNull
-    private static String getFilenameSuggestion(@NonNull String url,
+    private static @NonNull String getFilenameSuggestion(@NonNull String url,
             @Nullable String contentDisposition) {
         // First attempt to parse the Content-Disposition header if available
         if (contentDisposition != null) {
@@ -132,8 +130,7 @@ public final class URLUtilCompat {
      * Replace all instances of {@code "/"} with {@code "_"} to avoid filenames that navigate the
      * path.
      */
-    @NonNull
-    private static String replacePathSeparators(@NonNull String raw) {
+    private static @NonNull String replacePathSeparators(@NonNull String raw) {
         return raw.replaceAll("/", "_");
     }
 
@@ -157,8 +154,7 @@ public final class URLUtilCompat {
      * @param mimeType Reported mimetype
      * @return A file extension, including the {@code .}
      */
-    @NonNull
-    private static String suggestExtensionFromMimeType(@Nullable String mimeType) {
+    private static @NonNull String suggestExtensionFromMimeType(@Nullable String mimeType) {
         if (mimeType == null) {
             return ".bin";
         }
@@ -212,8 +208,8 @@ public final class URLUtilCompat {
      * @return The filename suggested by the header or {@code null} if no filename could be
      * parsed from the header value.
      */
-    @Nullable
-    public static String getFilenameFromContentDisposition(@NonNull String contentDisposition) {
+    public static @Nullable String getFilenameFromContentDisposition(
+            @NonNull String contentDisposition) {
         String[] parts = contentDisposition.trim().split(";", 2);
         if (parts.length < 2) {
             // Need at least 2 parts, the `disposition-type` and at least one `disposition-parm`.
@@ -300,8 +296,7 @@ public final class URLUtilCompat {
      * Replace all instances of {@code "+"} with the percent-encoded equivalent for the given
      * {@code encoding}.
      */
-    @NonNull
-    private static String encodePlusCharacters(@NonNull String valueChars,
+    private static @NonNull String encodePlusCharacters(@NonNull String valueChars,
             @NonNull String encoding) {
         Charset charset = Charset.forName(encoding);
         StringBuilder sb = new StringBuilder();

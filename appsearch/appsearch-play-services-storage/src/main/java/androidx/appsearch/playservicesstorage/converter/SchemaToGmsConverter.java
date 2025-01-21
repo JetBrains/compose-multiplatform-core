@@ -118,6 +118,14 @@ public final class SchemaToGmsConverter {
                     == AppSearchSchema.StringPropertyConfig.JOINABLE_VALUE_TYPE_QUALIFIED_ID) {
                 gmsBuilder.setJoinableValueType(stringProperty.getJoinableValueType());
             }
+            if (stringProperty.getDeletePropagationType()
+                    == AppSearchSchema.StringPropertyConfig
+                            .DELETE_PROPAGATION_TYPE_PROPAGATE_FROM) {
+                // TODO(b/376913014): remove this once delete propagation API is available.
+                throw new UnsupportedOperationException(
+                        "StringPropertyConfig.DELETE_PROPAGATION_TYPE_PROPAGATE_FROM is not"
+                                + " supported on this AppSearch implementation.");
+            }
             return gmsBuilder.build();
         } else if (jetpackProperty instanceof AppSearchSchema.LongPropertyConfig) {
             AppSearchSchema.LongPropertyConfig longProperty =
@@ -131,14 +139,36 @@ public final class SchemaToGmsConverter {
                     == AppSearchSchema.LongPropertyConfig.INDEXING_TYPE_RANGE) {
                 longPropertyBuilder.setIndexingType(longProperty.getIndexingType());
             }
+            if (longProperty.isScoringEnabled()) {
+                // TODO(b/379743983): update once this feature is available.
+                throw new UnsupportedOperationException(
+                        Features.SCHEMA_SCORABLE_PROPERTY_CONFIG
+                                + " is not available on this AppSearch implementation.");
+            }
             return longPropertyBuilder.build();
         } else if (jetpackProperty instanceof AppSearchSchema.DoublePropertyConfig) {
+            AppSearchSchema.DoublePropertyConfig doubleProperty =
+                    (AppSearchSchema.DoublePropertyConfig) jetpackProperty;
+            if (doubleProperty.isScoringEnabled()) {
+                // TODO(b/379743983): update once this feature is available.
+                throw new UnsupportedOperationException(
+                        Features.SCHEMA_SCORABLE_PROPERTY_CONFIG
+                                + " is not available on this AppSearch implementation.");
+            }
             return new com.google.android.gms.appsearch.AppSearchSchema.DoublePropertyConfig
                     .Builder(
                     jetpackProperty.getName())
                     .setCardinality(jetpackProperty.getCardinality())
                     .build();
         } else if (jetpackProperty instanceof AppSearchSchema.BooleanPropertyConfig) {
+            AppSearchSchema.BooleanPropertyConfig booleanProperty =
+                    (AppSearchSchema.BooleanPropertyConfig) jetpackProperty;
+            if (booleanProperty.isScoringEnabled()) {
+                // TODO(b/379743983): update once this feature is available.
+                throw new UnsupportedOperationException(
+                        Features.SCHEMA_SCORABLE_PROPERTY_CONFIG
+                                + " is not available on this AppSearch implementation.");
+            }
             return new com.google.android.gms.appsearch.AppSearchSchema.BooleanPropertyConfig
                     .Builder(
                     jetpackProperty.getName())
@@ -162,7 +192,13 @@ public final class SchemaToGmsConverter {
                             documentProperty.getIndexableNestedProperties()).build();
         } else if (jetpackProperty instanceof AppSearchSchema.EmbeddingPropertyConfig) {
             // TODO(b/326656531): Remove this once embedding search APIs are available.
+            // TODO(b/359959345): Remember to add the check for quantization when embedding has
+            //  become available but quantization has not yet.
             throw new UnsupportedOperationException(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG
+                    + " is not available on this AppSearch implementation.");
+        } else if (jetpackProperty instanceof AppSearchSchema.BlobHandlePropertyConfig) {
+            // TODO(b/273591938): Remove this once blob APIs are available.
+            throw new UnsupportedOperationException(Features.BLOB_STORAGE
                     + " is not available on this AppSearch implementation.");
         } else {
             throw new IllegalArgumentException(
@@ -195,6 +231,7 @@ public final class SchemaToGmsConverter {
                             gmsProperty;
             // TODO(b/326987971): Call jetpackBuilder.setDescription() once descriptions become
             //  available in gms.
+            // TODO(b/379743983): call setScoringEnabled() once this feature is available.
             return new AppSearchSchema.LongPropertyConfig.Builder(
                     gmsProperty.getName())
                     .setCardinality(gmsProperty.getCardinality())
@@ -204,6 +241,7 @@ public final class SchemaToGmsConverter {
                 instanceof com.google.android.gms.appsearch.AppSearchSchema.DoublePropertyConfig) {
             // TODO(b/326987971): Call jetpackBuilder.setDescription() once descriptions become
             //  available in gms.
+            // TODO(b/379743983): call setScoringEnabled() once this feature is available.
             return new AppSearchSchema.DoublePropertyConfig.Builder(
                     gmsProperty.getName())
                     .setCardinality(gmsProperty.getCardinality()).build();
@@ -211,6 +249,7 @@ public final class SchemaToGmsConverter {
                 instanceof com.google.android.gms.appsearch.AppSearchSchema.BooleanPropertyConfig) {
             // TODO(b/326987971): Call jetpackBuilder.setDescription() once descriptions become
             // available in gms.
+            // TODO(b/379743983): call setScoringEnabled() once this feature is available.
             return new AppSearchSchema.BooleanPropertyConfig.Builder(
                     gmsProperty.getName())
                     .setCardinality(gmsProperty.getCardinality())

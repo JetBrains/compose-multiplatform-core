@@ -67,8 +67,6 @@ import android.view.ViewConfiguration;
 
 import androidx.annotation.GuardedBy;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.media.MediaSessionManager;
@@ -77,6 +75,9 @@ import androidx.media.VolumeProviderCompat;
 import androidx.media.session.MediaButtonReceiver;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -947,8 +948,7 @@ public class MediaSessionCompat {
      * @see MediaSessionManager.RemoteUserInfo#LEGACY_CONTROLLER
      * @see MediaSessionManager#isTrustedForMediaControl(RemoteUserInfo)
      */
-    @NonNull
-    public final RemoteUserInfo getCurrentControllerInfo() {
+    public final @NonNull RemoteUserInfo getCurrentControllerInfo() {
         return mImpl.getCurrentControllerInfo();
     }
 
@@ -1040,8 +1040,7 @@ public class MediaSessionCompat {
      *
      */
     @RestrictTo(LIBRARY)
-    @Nullable
-    public static Bundle unparcelWithClassLoader(@Nullable Bundle bundle) {
+    public static @Nullable Bundle unparcelWithClassLoader(@Nullable Bundle bundle) {
         if (bundle == null) {
             return null;
         }
@@ -4628,8 +4627,7 @@ public class MediaSessionCompat {
         }
 
         @Override
-        @NonNull
-        public final RemoteUserInfo getCurrentControllerInfo() {
+        public final @NonNull RemoteUserInfo getCurrentControllerInfo() {
             android.media.session.MediaSessionManager.RemoteUserInfo info =
                     ((MediaSession) mSessionFwk).getCurrentControllerInfo();
             return new RemoteUserInfo(info);

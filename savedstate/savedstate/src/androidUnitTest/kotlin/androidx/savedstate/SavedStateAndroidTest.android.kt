@@ -373,8 +373,8 @@ internal class ParcelableSavedStateTest : RobolectricTest() {
 
     @Test
     fun getSerializable_whenSet_returns() {
-        val underTest = savedState { putSerializable(KEY_1, SERIALIZABLE_VALUE_1) }
-        val actual = underTest.read { getSerializable<TestSerializable>(KEY_1) }
+        val underTest = savedState { putJavaSerializable(KEY_1, SERIALIZABLE_VALUE_1) }
+        val actual = underTest.read { getJavaSerializable<TestSerializable>(KEY_1) }
 
         assertThat(actual).isEqualTo(SERIALIZABLE_VALUE_1)
     }
@@ -382,7 +382,7 @@ internal class ParcelableSavedStateTest : RobolectricTest() {
     @Test
     fun getSerializable_whenNotSet_throws() {
         assertThrows<IllegalArgumentException> {
-            savedState().read { getSerializable<TestSerializable>(KEY_1) }
+            savedState().read { getJavaSerializable<TestSerializable>(KEY_1) }
         }
     }
 
@@ -391,21 +391,21 @@ internal class ParcelableSavedStateTest : RobolectricTest() {
         val underTest = savedState { putInt(KEY_1, Int.MAX_VALUE) }
 
         assertThrows<IllegalStateException> {
-            underTest.read { getSerializable<TestSerializable>(KEY_1) }
+            underTest.read { getJavaSerializable<TestSerializable>(KEY_1) }
         }
     }
 
     @Test
     fun getSerializableOrElse_whenSet_returns() {
-        val underTest = savedState { putSerializable(KEY_1, SERIALIZABLE_VALUE_1) }
-        val actual = underTest.read { getSerializableOrElse(KEY_1) { SERIALIZABLE_VALUE_2 } }
+        val underTest = savedState { putJavaSerializable(KEY_1, SERIALIZABLE_VALUE_1) }
+        val actual = underTest.read { getJavaSerializableOrElse(KEY_1) { SERIALIZABLE_VALUE_2 } }
 
         assertThat(actual).isEqualTo(SERIALIZABLE_VALUE_1)
     }
 
     @Test
     fun getSerializableOrElse_whenNotSet_returnsElse() {
-        val actual = savedState().read { getSerializableOrElse(KEY_1) { SERIALIZABLE_VALUE_2 } }
+        val actual = savedState().read { getJavaSerializableOrElse(KEY_1) { SERIALIZABLE_VALUE_2 } }
 
         assertThat(actual).isEqualTo(SERIALIZABLE_VALUE_2)
     }
@@ -413,7 +413,7 @@ internal class ParcelableSavedStateTest : RobolectricTest() {
     @Test
     fun getSerializableOrElse_whenSet_differentType_returnsDefault() {
         val underTest = savedState { putInt(KEY_1, Int.MAX_VALUE) }
-        val actual = underTest.read { getSerializableOrElse(KEY_1) { SERIALIZABLE_VALUE_1 } }
+        val actual = underTest.read { getJavaSerializableOrElse(KEY_1) { SERIALIZABLE_VALUE_1 } }
 
         assertThat(actual).isEqualTo(SERIALIZABLE_VALUE_1)
     }

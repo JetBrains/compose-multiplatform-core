@@ -19,7 +19,7 @@ package androidx.wear.tiles.material;
 import android.content.Context;
 import android.graphics.Color;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,11 +38,12 @@ public class TestCasesGenerator {
      * different for different user font sizes. Note that some of the golden will have the same name
      * as it should point on the same size independent image.
      */
-    @NonNull
-    static Map<String, androidx.wear.tiles.LayoutElementBuilders.LayoutElement> generateTestCases(
-            @NonNull Context context,
-            @NonNull androidx.wear.tiles.DeviceParametersBuilders.DeviceParameters deviceParameters,
-            @NonNull String goldenSuffix) {
+    static @NonNull Map<String, androidx.wear.tiles.LayoutElementBuilders.LayoutElement>
+            generateTestCases(
+                    @NonNull Context context,
+                    androidx.wear.tiles.DeviceParametersBuilders.@NonNull DeviceParameters
+                            deviceParameters,
+                    @NonNull String goldenSuffix) {
         androidx.wear.tiles.ModifiersBuilders.Clickable clickable =
                 new androidx.wear.tiles.ModifiersBuilders.Clickable.Builder()
                         .setOnClick(

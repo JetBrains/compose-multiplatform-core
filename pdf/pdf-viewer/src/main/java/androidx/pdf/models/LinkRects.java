@@ -25,11 +25,12 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.ext.SdkExtensions;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.data.ListOfList;
 import androidx.pdf.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -82,14 +83,12 @@ public class LinkRects extends ListOfList<Rect> implements Parcelable {
     }
 
     /** Return the URL corresponding to the given link. */
-    @NonNull
-    public String getUrl(int link) {
+    public @NonNull String getUrl(int link) {
         return mUrls.get(link);
     }
 
     /** Return the URL corresponding to the given point. */
-    @Nullable
-    public String getUrlAtPoint(int x, int y) {
+    public @Nullable String getUrlAtPoint(int x, int y) {
         for (int rect = 0; rect < mRects.size(); rect++) {
             if (mRects.get(rect).contains(x, y)) {
                 for (int link = 1; link <= mLinkToRect.size(); link++) {
@@ -102,9 +101,8 @@ public class LinkRects extends ListOfList<Rect> implements Parcelable {
         return null;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return size() + " links";
     }
 
@@ -146,8 +144,8 @@ public class LinkRects extends ListOfList<Rect> implements Parcelable {
      * )
      * </pre>
      */
-    @NonNull
-    public static LinkRects flattenList(@NonNull List<PdfPageLinkContent> pdfPageLinkContentList) {
+    public static @NonNull LinkRects flattenList(
+            @NonNull List<PdfPageLinkContent> pdfPageLinkContentList) {
         if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 13) {
             List<Rect> rects = new ArrayList<>();
             List<Integer> linkToRect = new ArrayList<>();
@@ -169,18 +167,15 @@ public class LinkRects extends ListOfList<Rect> implements Parcelable {
         throw new UnsupportedOperationException("Operation support above S");
     }
 
-    @NonNull
-    public List<Rect> getRects() {
+    public @NonNull List<Rect> getRects() {
         return mRects;
     }
 
-    @NonNull
-    public List<Integer> getLinkToRect() {
+    public @NonNull List<Integer> getLinkToRect() {
         return mLinkToRect;
     }
 
-    @NonNull
-    public List<String> getUrls() {
+    public @NonNull List<String> getUrls() {
         return mUrls;
     }
 }

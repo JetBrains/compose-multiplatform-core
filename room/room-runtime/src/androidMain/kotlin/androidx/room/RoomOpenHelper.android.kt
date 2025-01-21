@@ -252,7 +252,7 @@ open class RoomOpenHelper(
         }
 
         internal fun dropAllTables(db: SupportSQLiteDatabase) {
-            db.query("SELECT name FROM sqlite_master WHERE type = 'table'")
+            db.query("SELECT name, type FROM sqlite_master WHERE type = 'table' OR type = 'view'")
                 .useCursor { cursor ->
                     buildList {
                         while (cursor.moveToNext()) {
@@ -260,11 +260,18 @@ open class RoomOpenHelper(
                             if (name.startsWith("sqlite_") || name == "android_metadata") {
                                 continue
                             }
-                            add(name)
+                            val isView = cursor.getString(1) == "view"
+                            add(name to isView)
                         }
                     }
                 }
-                .forEach { table -> db.execSQL("DROP TABLE IF EXISTS $table") }
+                .forEach { (name, isView) ->
+                    if (isView) {
+                        db.execSQL("DROP VIEW IF EXISTS $name")
+                    } else {
+                        db.execSQL("DROP TABLE IF EXISTS $name")
+                    }
+                }
         }
     }
 }

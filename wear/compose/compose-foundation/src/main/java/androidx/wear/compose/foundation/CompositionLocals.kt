@@ -25,7 +25,6 @@ import android.provider.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -38,7 +37,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 /**
  * CompositionLocal for global reduce-motion setting, which turns off animations and screen
@@ -83,11 +81,9 @@ private val reduceMotionCache = AtomicReference<StateFlow<Boolean>>()
 
 // Callers of this function should pass an application context. Passing an activity context might
 // result in activity leaks.
-@Composable
 private fun getReduceMotionFlowFor(applicationContext: Context): StateFlow<Boolean> {
     val resolver = applicationContext.contentResolver
     val reduceMotionUri = Settings.Global.getUriFor(REDUCE_MOTION)
-    val coroutineScope = rememberCoroutineScope()
 
     return reduceMotionCache.updateAndGet {
         it
@@ -107,11 +103,9 @@ private fun getReduceMotionFlowFor(applicationContext: Context): StateFlow<Boole
                             }
                         }
 
-                    coroutineScope.launch {
-                        resolver.registerContentObserver(reduceMotionUri, false, contentObserver)
-                        // Force send value when flow is initialized
-                        resolver.notifyChange(reduceMotionUri, contentObserver)
-                    }
+                    resolver.registerContentObserver(reduceMotionUri, false, contentObserver)
+                    // Force send value when flow is initialized
+                    resolver.notifyChange(reduceMotionUri, contentObserver)
 
                     awaitClose { resolver.unregisterContentObserver(contentObserver) }
                 }

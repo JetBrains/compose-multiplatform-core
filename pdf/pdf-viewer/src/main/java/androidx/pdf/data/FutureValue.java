@@ -16,9 +16,10 @@
 
 package androidx.pdf.data;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The result of an asynchronous operation that may complete at a later time. Useful to avoid

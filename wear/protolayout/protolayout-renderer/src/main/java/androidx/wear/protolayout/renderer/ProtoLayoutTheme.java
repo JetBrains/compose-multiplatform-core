@@ -21,9 +21,10 @@ import android.graphics.Typeface;
 
 import androidx.annotation.AttrRes;
 import androidx.annotation.DrawableRes;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
+
+import org.jspecify.annotations.NonNull;
 
 /** Theme customization for ProtoLayout texts, which includes Font types and variants. */
 @RestrictTo(Scope.LIBRARY)
@@ -38,14 +39,11 @@ public interface ProtoLayoutTheme {
     /** Holder for different weights of the same font variant. */
     interface FontSet {
 
-        @NonNull
-        Typeface getNormalFont();
+        @NonNull Typeface getNormalFont();
 
-        @NonNull
-        Typeface getMediumFont();
+        @NonNull Typeface getMediumFont();
 
-        @NonNull
-        Typeface getBoldFont();
+        @NonNull Typeface getBoldFont();
     }
 
     /**
@@ -63,12 +61,10 @@ public interface ProtoLayoutTheme {
      * @param preferredFontFamilies the ordered list of String values representing the preferred
      *     font families that should be used.
      */
-    @NonNull
-    FontSet getFontSet(@NonNull String... preferredFontFamilies);
+    @NonNull FontSet getFontSet(String @NonNull ... preferredFontFamilies);
 
     /** Gets an Android Theme object styled with TextAppearance attributes. */
-    @NonNull
-    Theme getTheme();
+    @NonNull Theme getTheme();
 
     /**
      * Gets an Attribute resource Id for a fallback TextAppearance. The resource with this id should

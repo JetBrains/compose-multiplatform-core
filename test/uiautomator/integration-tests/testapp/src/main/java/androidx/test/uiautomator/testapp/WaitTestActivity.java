@@ -21,7 +21,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class WaitTestActivity extends Activity {
     @Override

@@ -21,8 +21,9 @@ import android.graphics.ColorFilter;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.Drawable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A {@link Drawable} overlay that highlights given list of {@link DrawSpec}.
@@ -32,7 +33,7 @@ import androidx.annotation.RestrictTo;
 public class HighlightOverlay extends Drawable {
     protected final DrawSpec[] mDrawSpecs;
 
-    protected HighlightOverlay(@NonNull DrawSpec... drawSpecs) {
+    protected HighlightOverlay(DrawSpec @NonNull ... drawSpecs) {
         this.mDrawSpecs = drawSpecs;
     }
 

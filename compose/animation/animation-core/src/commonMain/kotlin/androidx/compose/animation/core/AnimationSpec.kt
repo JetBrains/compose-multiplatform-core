@@ -865,7 +865,7 @@ public fun <T> keyframesWithSpline(
  * Use overload without [periodicBias] parameter for the non-periodic implementation.
  *
  * A periodic spline is one such that the starting and ending velocities are equal. This makes them
- * useful to crete smooth repeatable animations. Such as an infinite pulsating animation:
+ * useful to create smooth repeatable animations. Such as an infinite pulsating animation:
  *
  * @sample androidx.compose.animation.core.samples.PeriodicKeyframesWithSplines
  *

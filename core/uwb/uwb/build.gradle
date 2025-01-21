@@ -59,16 +59,16 @@ androidx {
 }
 
 android {
-    namespace "androidx.core.uwb"
+    namespace = "androidx.core.uwb"
     buildFeatures {
         aidl = true
     }
     buildTypes.configureEach {
         stableAidl {
-            version 1
+            version = 1
         }
     }
     defaultConfig {
-        minSdkVersion 23
+        minSdk = 23
     }
 }

@@ -21,12 +21,13 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.wearable.complications.ComplicationData;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
@@ -44,8 +45,7 @@ public final class IdAndComplicationDataWireFormat implements VersionedParcelabl
 
     /** The {@link ComplicationData} to set for the complication. */
     @ParcelField(2)
-    @NonNull
-    ComplicationData mComplicationData;
+    @NonNull ComplicationData mComplicationData;
 
     /** Used by VersionedParcelable. */
     IdAndComplicationDataWireFormat() {}
@@ -59,8 +59,7 @@ public final class IdAndComplicationDataWireFormat implements VersionedParcelabl
         return mId;
     }
 
-    @NonNull
-    public ComplicationData getComplicationData() {
+    public @NonNull ComplicationData getComplicationData() {
         return mComplicationData;
     }
 
@@ -103,9 +102,8 @@ public final class IdAndComplicationDataWireFormat implements VersionedParcelabl
         return Objects.hash(mId, mComplicationData);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "IdAndComplicationDataWireFormat{"
                 + "mId="
                 + mId

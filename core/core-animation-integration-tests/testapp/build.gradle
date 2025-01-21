@@ -31,5 +31,5 @@ dependencies {
 }
 
 android {
-    namespace "androidx.core.animation.testapp"
+    namespace = "androidx.core.animation.testapp"
 }

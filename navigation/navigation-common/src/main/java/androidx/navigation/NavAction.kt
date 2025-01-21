@@ -15,8 +15,9 @@
  */
 package androidx.navigation
 
-import android.os.Bundle
 import androidx.annotation.IdRes
+import androidx.savedstate.SavedState
+import androidx.savedstate.read
 
 /**
  * Navigation actions provide a level of indirection between your navigation code and the underlying
@@ -31,7 +32,7 @@ import androidx.annotation.IdRes
  * @param destinationId the ID of the destination that should be navigated to when this action is
  *   used.
  * @param navOptions special options for this action that should be used by default
- * @param defaultArguments argument bundle to be used by default
+ * @param defaultArguments argument SavedState to be used by default
  */
 public class NavAction
 @JvmOverloads
@@ -41,32 +42,31 @@ constructor(
     /** The NavOptions to be used by default when navigating to this action. */
     public var navOptions: NavOptions? = null,
     /**
-     * The argument bundle to be used by default when navigating to this action.
+     * The argument SavedState to be used by default when navigating to this action.
      *
-     * @return bundle of default argument values
+     * @return SavedState of default argument values
      */
-    public var defaultArguments: Bundle? = null
+    public var defaultArguments: SavedState? = null
 ) {
 
-    @Suppress("DEPRECATION")
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other == null || other !is NavAction) return false
-        return destinationId == other.destinationId &&
-            navOptions == other.navOptions &&
-            (defaultArguments == other.defaultArguments ||
-                defaultArguments?.keySet()?.all {
-                    defaultArguments?.get(it) == other.defaultArguments?.get(it)
-                } == true)
+        if (other !is NavAction) return false
+
+        if (destinationId != other.destinationId) return false
+        if (navOptions != other.navOptions) return false
+
+        val args1 = defaultArguments
+        val args2 = other.defaultArguments
+
+        if (args1 == args2) return true
+        return args1 != null && args2 != null && args1.read { contentDeepEquals(args2) }
     }
 
-    @Suppress("DEPRECATION")
     override fun hashCode(): Int {
         var result = destinationId.hashCode()
         result = 31 * result + navOptions.hashCode()
-        defaultArguments?.keySet()?.forEach {
-            result = 31 * result + defaultArguments?.get(it).hashCode()
-        }
+        defaultArguments?.read { result = 31 * result + contentDeepHashCode() }
         return result
     }
 

@@ -231,15 +231,31 @@ constructor(
     }
 
     /**
-     * Start an activity on another device. This api currently supports sending intents with action
-     * set to [android.content.Intent.ACTION_VIEW], a data uri populated using
+     * Start an activity on another device.
+     *
+     * This API currently supports sending intents with action set to
+     * [android.content.Intent.ACTION_VIEW], a data URI populated using
      * [android.content.Intent.setData], and with the category
-     * [android.content.Intent.CATEGORY_BROWSABLE] present. If the current device is a watch, the
-     * activity will start on the companion phone device. Otherwise, the activity will start on all
-     * connected watch devices.
+     * [android.content.Intent.CATEGORY_BROWSABLE] present.
+     *
+     * When [targetNodeId] is unspecified, if the current device is a watch, the activity will start
+     * on the companion phone device. Otherwise, the activity will start on all connected watch
+     * devices.
+     *
+     * If the intent passed in sets a different action or does not contain the CATEGORY_BROWSABLE
+     * category or does not set a data URI, the call will be rejected and a
+     * [kotlin.IllegalArgumentException] thrown.
+     *
+     * Besides the mandated action and category, the caller must provide a data URI and an optional
+     * set of categories to be delivered to the remote device.
+     *
+     * If any additional attributes of the intent are set (for examples, extras, package,
+     * component), they will be stripped from the intent. Only an intent with ACTION_VIEW,
+     * CATEGORY_BROWSABLE, any other specified categories, and the provided data URI will be
+     * delivered to the remote devices.
      *
      * @param targetIntent The intent to open on the remote device. Action must be set to
-     *   [android.content.Intent.ACTION_VIEW], a data uri must be populated using
+     *   [android.content.Intent.ACTION_VIEW], a data URI must be populated using
      *   [android.content.Intent.setData], and the category
      *   [android.content.Intent.CATEGORY_BROWSABLE] must be present.
      * @param targetNodeId Wear OS node id for the device where the activity should be started. If
@@ -260,7 +276,7 @@ constructor(
                     " remote activity"
             }
             requireNotNull(targetIntent.data) {
-                "Data Uri is required when starting a remote activity"
+                "Data URI is required when starting a remote activity"
             }
             require(targetIntent.categories?.contains(Intent.CATEGORY_BROWSABLE) == true) {
                 "The category ${Intent.CATEGORY_BROWSABLE} must be present on the intent"

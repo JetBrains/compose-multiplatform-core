@@ -75,22 +75,7 @@ object Shell {
     }
 
     fun connectUiAutomation() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            ShellImpl // force initialization
-        }
-    }
-
-    /**
-     * Run a command, and capture stdout, dropping / ignoring stderr
-     *
-     * Below L, returns null
-     */
-    fun optionalCommand(command: String): String? {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            executeScriptCaptureStdoutStderr(command).stdout
-        } else {
-            null
-        }
+        ShellImpl // force initialization
     }
 
     /**
@@ -98,7 +83,7 @@ object Shell {
      * directly by the app process.
      */
     fun catProcFileLong(path: String): Long? {
-        return optionalCommand("cat $path")?.trim()?.run {
+        return executeScriptCaptureStdoutStderr("cat $path").stdout.trim().run {
             try {
                 toLong()
             } catch (exception: NumberFormatException) {

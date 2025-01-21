@@ -24,13 +24,14 @@ import android.content.pm.Signature;
 import android.os.Build;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.collection.ArrayMap;
 import androidx.collection.LruCache;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -434,8 +435,7 @@ class AppSignatureVerifier {
     abstract static class AppSigningInfo {
         abstract String getPackageName();
         abstract List<Signature> getCurrentSignatures();
-        @Nullable
-        abstract List<Signature> getSigningLineage();
+        abstract @Nullable List<Signature> getSigningLineage();
         abstract long getLastUpdateTime();
 
         /**
@@ -446,7 +446,7 @@ class AppSignatureVerifier {
          * level 28, but a non-null value must be specified for the {@code currentSignatures}.
          */
         static AppSigningInfo create(@NonNull String packageName,
-                @NonNull Signature[] currentSignatures, Signature[] signingLineage,
+                Signature @NonNull [] currentSignatures, Signature[] signingLineage,
                 long lastUpdateTime) {
             return new AutoValue_AppSignatureVerifier_AppSigningInfo(packageName,
                     Arrays.asList(currentSignatures),

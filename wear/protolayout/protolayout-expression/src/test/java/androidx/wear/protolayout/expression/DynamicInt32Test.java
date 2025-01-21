@@ -16,11 +16,11 @@
 
 package androidx.wear.protolayout.expression;
 
+import static androidx.wear.protolayout.expression.DynamicBuilders.dynamicInt32FromProto;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
-
-import static androidx.wear.protolayout.expression.DynamicBuilders.dynamicInt32FromProto;
 
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat;
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicInt32;

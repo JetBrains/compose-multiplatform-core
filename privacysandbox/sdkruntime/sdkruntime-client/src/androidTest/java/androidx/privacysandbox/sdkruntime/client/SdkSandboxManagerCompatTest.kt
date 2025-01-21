@@ -20,6 +20,7 @@ import android.content.ContextWrapper
 import android.os.Binder
 import android.os.Bundle
 import androidx.privacysandbox.sdkruntime.client.activity.SdkActivity
+import androidx.privacysandbox.sdkruntime.client.loader.CatchingClientImportanceListener
 import androidx.privacysandbox.sdkruntime.client.loader.CatchingSdkActivityHandler
 import androidx.privacysandbox.sdkruntime.client.loader.asTestSdk
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
@@ -293,6 +294,33 @@ class SdkSandboxManagerCompatTest {
 
         val result = localSdk.asTestSdk().getClientPackageName()
         assertThat(result).isEqualTo(context.getPackageName())
+    }
+
+    @Test
+    fun sdkController_registerSdkSandboxClientImportanceListener() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val managerCompat = SdkSandboxManagerCompat.from(context)
+        val localSdk = managerCompat.loadSdkWithFeature(ClientFeature.CLIENT_IMPORTANCE_LISTENER)
+        val testSdk = localSdk.asTestSdk()
+
+        val listener = CatchingClientImportanceListener()
+
+        with(ActivityScenario.launch(EmptyActivity::class.java)) {
+            withActivity {
+                testSdk.registerSdkSandboxClientImportanceListener(listener)
+                assertThat(moveTaskToBack(true)).isTrue()
+            }
+        }
+
+        val events = listener.waitForEvents()
+        assertThat(events).containsExactly(false)
+
+        with(ActivityScenario.launch(EmptyActivity::class.java)) {
+            withActivity {
+                assertThat(listener.events).containsExactly(false, true).inOrder()
+                testSdk.unregisterSdkSandboxClientImportanceListener(listener)
+            }
+        }
     }
 
     private fun SdkSandboxManagerCompat.loadSdkWithFeature(

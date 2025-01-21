@@ -258,6 +258,13 @@ public object BuildCompat {
      */
     @JvmStatic
     @ChecksSdkIntAtLeast(api = 35, codename = "VanillaIceCream")
+    @Deprecated(
+        message =
+            "Android VanillaIceCream is a finalized release and this method is no longer " +
+                "necessary. It will be removed in a future release of this library. Instead, use " +
+                "`Build.VERSION.SDK_INT >= 35`.",
+        ReplaceWith("android.os.Build.VERSION.SDK_INT >= 35")
+    )
     public fun isAtLeastV(): Boolean =
         Build.VERSION.SDK_INT >= 35 ||
             (Build.VERSION.SDK_INT >= 34 &&

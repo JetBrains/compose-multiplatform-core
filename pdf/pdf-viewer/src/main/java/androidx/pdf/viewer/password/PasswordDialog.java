@@ -38,8 +38,6 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
@@ -48,6 +46,9 @@ import androidx.pdf.util.Accessibility;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputLayout;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Dialog for querying password for a protected file. The dialog has 2 buttons:
@@ -74,10 +75,9 @@ public abstract class PasswordDialog extends DialogFragment {
         this.mFinishOnCancel = finishOnCancel;
     }
 
-    @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-            @Nullable Bundle savedInstanceState) {
+    public @Nullable View onCreateView(@NonNull LayoutInflater inflater,
+            @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View rootView = super.onCreateView(inflater, container, savedInstanceState);
         // Make dialog non-cancellable if required
         if (getArguments() != null) {
@@ -87,9 +87,8 @@ public abstract class PasswordDialog extends DialogFragment {
         return rootView;
     }
 
-    @NonNull
     @Override
-    public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+    public @NonNull Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
         Activity activity = requireActivity();
         MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
         LayoutInflater inflater = activity.getLayoutInflater();

@@ -18,6 +18,7 @@ package androidx.pdf.service.connect
 
 import android.content.Context
 import android.content.ServiceConnection
+import android.net.Uri
 import androidx.annotation.RestrictTo
 import androidx.pdf.PdfDocumentRemote
 
@@ -35,7 +36,7 @@ public interface PdfServiceConnection : ServiceConnection {
     public val documentBinder: PdfDocumentRemote?
 
     /** Initiates binding to the service, and suspends until the service is bound */
-    public suspend fun bindAndConnect()
+    public suspend fun bindAndConnect(uri: Uri)
 
     /** Immediately unbinds the service */
     public fun disconnect()

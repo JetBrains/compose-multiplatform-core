@@ -17,12 +17,12 @@
 package androidx.navigation
 
 import android.annotation.SuppressLint
-import android.os.Bundle
 import androidx.collection.ArrayMap
+import androidx.savedstate.SavedState
 import java.lang.reflect.Method
 import kotlin.reflect.KClass
 
-internal val methodSignature = arrayOf(Bundle::class.java)
+internal val methodSignature = arrayOf(SavedState::class.java)
 internal val methodMap = ArrayMap<KClass<out NavArgs>, Method>()
 
 /**
@@ -34,7 +34,7 @@ internal val methodMap = ArrayMap<KClass<out NavArgs>, Method>()
  */
 public class NavArgsLazy<Args : NavArgs>(
     private val navArgsClass: KClass<Args>,
-    private val argumentProducer: () -> Bundle
+    private val argumentProducer: () -> SavedState
 ) : Lazy<Args> {
     private var cached: Args? = null
 

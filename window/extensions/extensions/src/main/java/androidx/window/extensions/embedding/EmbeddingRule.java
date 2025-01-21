@@ -16,9 +16,10 @@
 
 package androidx.window.extensions.embedding;
 
-import androidx.annotation.Nullable;
 import androidx.window.extensions.RequiresVendorApiLevel;
 import androidx.window.extensions.core.util.function.Function;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -27,8 +28,7 @@ import java.util.Objects;
  * updating from the core library.
  */
 public abstract class EmbeddingRule {
-    @Nullable
-    private final String mTag;
+    private final @Nullable String mTag;
 
     EmbeddingRule(@Nullable String tag) {
         mTag = tag;
@@ -43,8 +43,7 @@ public abstract class EmbeddingRule {
      * {@link ActivityEmbeddingComponent#setSplitAttributesCalculator(Function)}.
      */
     @RequiresVendorApiLevel(level = 2)
-    @Nullable
-    public String getTag() {
+    public @Nullable String getTag() {
         return mTag;
     }
 

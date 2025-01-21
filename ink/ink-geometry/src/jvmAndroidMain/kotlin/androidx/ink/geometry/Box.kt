@@ -17,6 +17,8 @@
 package androidx.ink.geometry
 
 import androidx.annotation.FloatRange
+import androidx.annotation.RestrictTo
+import androidx.ink.geometry.internal.BoxNative
 import kotlin.math.abs
 
 /**
@@ -46,11 +48,35 @@ public abstract class Box internal constructor() {
     public val height: Float
         @FloatRange(from = 0.0) get() = yMax - yMin
 
+    /**
+     * Returns the center of the [Box].
+     *
+     * Performance-sensitive code should use the [computeCenter] overload that takes a pre-allocated
+     * [MutableVec], so that instance can be reused across multiple calls.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun computeCenter(): ImmutableVec {
+        return BoxNative.createCenter(xMin, yMin, xMax, yMax, ImmutableVec::class.java)
+    }
+
     /** Populates [outVec] with the center of the [Box], and returns [outVec]. */
     public fun computeCenter(outVec: MutableVec): MutableVec {
-        BoxHelper.nativeCenter(xMin, yMin, xMax, yMax, outVec)
+        BoxNative.populateCenter(xMin, yMin, xMax, yMax, outVec)
         return outVec
     }
+
+    /**
+     * Returns a list containing the 4 corners of the [Box]. The order of the corners is: (x_min,
+     * y_min), (x_max, y_min), (x_max, y_max), (x_min, y_max).
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun computeCorners(): List<ImmutableVec> =
+        listOf(
+            ImmutableVec(xMin, yMin),
+            ImmutableVec(xMax, yMin),
+            ImmutableVec(xMax, yMax),
+            ImmutableVec(xMin, yMax),
+        )
 
     /**
      * Populates the 4 output points with the corners of the [Box]. The order of the corners is:
@@ -77,14 +103,14 @@ public abstract class Box internal constructor() {
      * Box's boundary are considered to be contained.
      */
     public operator fun contains(point: Vec): Boolean =
-        BoxHelper.nativeContainsPoint(xMin, yMin, xMax, yMax, point.x, point.y)
+        BoxNative.containsPoint(xMin, yMin, xMax, yMax, point.x, point.y)
 
     /**
      * Returns whether the other Box is contained within this Box. Edges of the other Box that
      * overlap with this one's boundary are considered to be contained.
      */
     public operator fun contains(otherBox: Box): Boolean =
-        BoxHelper.nativeContainsBox(
+        BoxNative.containsBox(
             xMin,
             yMin,
             xMax,

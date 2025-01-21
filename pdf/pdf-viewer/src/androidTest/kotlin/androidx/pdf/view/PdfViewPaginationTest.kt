@@ -17,6 +17,7 @@
 package androidx.pdf.view
 
 import android.graphics.Point
+import android.graphics.PointF
 import android.view.View
 import android.view.View.MeasureSpec
 import android.view.ViewGroup
@@ -84,7 +85,6 @@ class PdfViewPaginationTest {
                     layout(0, 0, 100, 200)
                 }
             }
-            Espresso.onIdle()
 
             Espresso.onView(withId(PDF_VIEW_ID))
                 .checkPagesAreVisible(firstVisiblePage = 0, visiblePages = 1)
@@ -129,6 +129,40 @@ class PdfViewPaginationTest {
             Espresso.onView(withId(PDF_VIEW_ID))
                 .checkPagesAreVisible(firstVisiblePage = 0, visiblePages = 3)
 
+            close()
+        }
+    }
+
+    @Test
+    fun testScrollToPage() = runTest {
+        val pdfDocument = FakePdfDocument(List(10) { Point(100, 300) })
+        setupPdfView(500, 1000, pdfDocument)
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+
+            // Scroll to page 9
+            Espresso.onView(withId(PDF_VIEW_ID)).scrollToPage(9)
+            pdfDocument.waitForLayout(untilPage = 9)
+
+            // Expect to see only page 9
+            Espresso.onView(withId(PDF_VIEW_ID))
+                .checkPagesAreVisible(firstVisiblePage = 9, visiblePages = 1)
+            close()
+        }
+    }
+
+    @Test
+    fun testScrollToPosition() = runTest {
+        val pdfDocument = FakePdfDocument(List(10) { Point(100, 300) })
+        setupPdfView(500, 1000, pdfDocument)
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+
+            // Scroll to the top of page 9
+            Espresso.onView(withId(PDF_VIEW_ID)).scrollToPosition(PdfPoint(9, PointF(0F, 0F)))
+            pdfDocument.waitForLayout(untilPage = 9)
+
+            // Expect to see pages 8 and 9
+            Espresso.onView(withId(PDF_VIEW_ID))
+                .checkPagesAreVisible(firstVisiblePage = 8, visiblePages = 2)
             close()
         }
     }

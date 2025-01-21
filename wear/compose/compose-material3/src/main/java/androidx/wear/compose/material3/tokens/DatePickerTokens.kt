@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// VERSION: v0_103
+// VERSION: v0_105
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 package androidx.wear.compose.material3.tokens
@@ -29,5 +29,7 @@ internal object DatePickerTokens {
     val LabelLargeTypography = TypographyKeyTokens.TitleLarge
     val LabelTypography = TypographyKeyTokens.TitleMedium
     val SelectedContentColor = ColorSchemeKeyTokens.OnBackground
-    val UnselectedContentColor = ColorSchemeKeyTokens.SecondaryDim
+    val UnselectedContentColor = ColorSchemeKeyTokens.PrimaryDim
+    val InvalidContentColor = ColorSchemeKeyTokens.OnSurface
+    val InvalidContentOpacity = 0.38f
 }

@@ -16,21 +16,25 @@
 
 package androidx.appsearch.cts.app;
 
+import static androidx.appsearch.testutil.AppSearchTestUtils.calculateDigest;
+import static androidx.appsearch.testutil.AppSearchTestUtils.generateRandomBytes;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
 
 import android.os.Parcel;
 
+import androidx.appsearch.app.AppSearchBlobHandle;
 import androidx.appsearch.app.EmbeddingVector;
 import androidx.appsearch.app.GenericDocument;
-import androidx.appsearch.flags.CheckFlagsRule;
-import androidx.appsearch.flags.DeviceFlagsValueProvider;
 import androidx.appsearch.flags.Flags;
-import androidx.appsearch.flags.RequiresFlagsEnabled;
+import androidx.appsearch.testutil.AppSearchTestUtils;
+import androidx.appsearch.testutil.flags.RequiresFlagsEnabled;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.RuleChain;
 
 import java.util.Objects;
 
@@ -47,7 +51,7 @@ public class GenericDocumentCtsTest {
             .build();
 
     @Rule
-    public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
+    public final RuleChain mRuleChain = AppSearchTestUtils.createCommonTestRules();
 
     @Test
     @SuppressWarnings("deprecation")
@@ -1263,7 +1267,7 @@ public class GenericDocumentCtsTest {
                 new GenericDocument.Builder<>("namespace", "id1", "schema1")
                         .setScore(42)
                         .setPropertyString("propString", "Hello")
-                        .setPropertyBytes("propBytes", new byte[][] {{1, 2}})
+                        .setPropertyBytes("propBytes", new byte[][]{{1, 2}})
                         .setPropertyDocument(
                                 "propDocument") // Set the property with an empty doc array.
                         .build();
@@ -1279,7 +1283,270 @@ public class GenericDocumentCtsTest {
 
         // Compare results
         assertThat(document.getPropertyString("propString")).isEqualTo("Hello");
-        assertThat(document.getPropertyBytesArray("propBytes")).isEqualTo(new byte[][] {{1, 2}});
+        assertThat(document.getPropertyBytesArray("propBytes")).isEqualTo(new byte[][]{{1, 2}});
         assertThat(document.getPropertyDocumentArray("propDocument")).hasLength(0);
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_BLOB_STORE)
+    public void testDocumentEquals_identicalWithBlobHandleValues() throws Exception {
+        byte[] data1 = generateRandomBytes(10); // 10 Bytes
+        byte[] digest1 = calculateDigest(data1);
+        byte[] data2 = generateRandomBytes(10); // 10 Bytes
+        byte[] digest2 = calculateDigest(data2);
+        AppSearchBlobHandle blobHandle1 = AppSearchBlobHandle.createWithSha256(
+                digest1, "package1", "db1", "ns");
+        AppSearchBlobHandle blobHandle2 = AppSearchBlobHandle.createWithSha256(
+                digest2, "package1", "db1", "ns");
+
+        GenericDocument document1 = new GenericDocument.Builder<>("namespace", "id1",
+                "schemaType1")
+                .setCreationTimestampMillis(5L)
+                .setTtlMillis(1L)
+                .setPropertyLong("longKey1", 1L, 2L, 3L)
+                .setPropertyDouble("doubleKey1", 1.0, 2.0, 3.0)
+                .setPropertyBoolean("booleanKey1", true, false, true)
+                .setPropertyString("stringKey1", "test-value1", "test-value2", "test-value3")
+                .setPropertyBlobHandle("blobHandleKey1", blobHandle1, blobHandle2)
+                .build();
+        GenericDocument document2 = new GenericDocument.Builder<>("namespace", "id1",
+                "schemaType1")
+                .setCreationTimestampMillis(5L)
+                .setTtlMillis(1L)
+                .setPropertyLong("longKey1", 1L, 2L, 3L)
+                .setPropertyDouble("doubleKey1", 1.0, 2.0, 3.0)
+                .setPropertyBoolean("booleanKey1", true, false, true)
+                .setPropertyString("stringKey1", "test-value1", "test-value2", "test-value3")
+                .setPropertyBlobHandle("blobHandleKey1", blobHandle1, blobHandle2)
+                .build();
+        assertThat(document1).isEqualTo(document2);
+        assertThat(document1.hashCode()).isEqualTo(document2.hashCode());
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_BLOB_STORE)
+    public void testDocumentEquals_differentOrderWithBlobHandleValues() throws Exception {
+        byte[] data1 = generateRandomBytes(10); // 10 Bytes
+        byte[] digest1 = calculateDigest(data1);
+        byte[] data2 = generateRandomBytes(10); // 10 Bytes
+        byte[] digest2 = calculateDigest(data2);
+        AppSearchBlobHandle blobHandle1 = AppSearchBlobHandle.createWithSha256(
+                digest1, "package1", "db1", "ns");
+        AppSearchBlobHandle blobHandle2 = AppSearchBlobHandle.createWithSha256(
+                digest2, "package1", "db1", "ns");
+
+        GenericDocument document1 = new GenericDocument.Builder<>("namespace", "id1",
+                "schemaType1")
+                .setCreationTimestampMillis(5L)
+                .setPropertyLong("longKey1", 1L, 2L, 3L)
+                .setPropertyBlobHandle("blobHandleKey1", blobHandle1, blobHandle2)
+                .setPropertyDouble("doubleKey1", 1.0, 2.0, 3.0)
+                .setPropertyBoolean("booleanKey1", true, false, true)
+                .setPropertyString("stringKey1", "test-value1", "test-value2", "test-value3")
+                .build();
+
+        // Create second document with same parameter but different order.
+        GenericDocument document2 = new GenericDocument.Builder<>("namespace", "id1",
+                "schemaType1")
+                .setCreationTimestampMillis(5L)
+                .setPropertyBoolean("booleanKey1", true, false, true)
+                .setPropertyString("stringKey1", "test-value1", "test-value2", "test-value3")
+                .setPropertyDouble("doubleKey1", 1.0, 2.0, 3.0)
+                .setPropertyLong("longKey1", 1L, 2L, 3L)
+                .setPropertyBlobHandle("blobHandleKey1", blobHandle1, blobHandle2)
+                .build();
+        assertThat(document1).isEqualTo(document2);
+        assertThat(document1.hashCode()).isEqualTo(document2.hashCode());
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_BLOB_STORE)
+    public void testDocumentGetBlobHandleValue() throws Exception {
+        byte[] data = generateRandomBytes(10); // 10 Bytes
+        byte[] digest = calculateDigest(data);
+        AppSearchBlobHandle blobHandle1 = AppSearchBlobHandle.createWithSha256(
+                digest, "package1", "db1", "ns");
+
+        GenericDocument document = new GenericDocument.Builder<>("namespace", "id1", "schemaType1")
+                .setCreationTimestampMillis(5L)
+                .setScore(1)
+                .setTtlMillis(1L)
+                .setPropertyLong("longKey1", 1L)
+                .setPropertyDouble("doubleKey1", 1.0)
+                .setPropertyBoolean("booleanKey1", true)
+                .setPropertyString("stringKey1", "test-value1")
+                .setPropertyBlobHandle("blobKey1", blobHandle1)
+                .build();
+        assertThat(document.getId()).isEqualTo("id1");
+        assertThat(document.getTtlMillis()).isEqualTo(1L);
+        assertThat(document.getSchemaType()).isEqualTo("schemaType1");
+        assertThat(document.getCreationTimestampMillis()).isEqualTo(5);
+        assertThat(document.getScore()).isEqualTo(1);
+        assertThat(document.getPropertyLong("longKey1")).isEqualTo(1L);
+        assertThat(document.getPropertyDouble("doubleKey1")).isEqualTo(1.0);
+        assertThat(document.getPropertyBoolean("booleanKey1")).isTrue();
+        assertThat(document.getPropertyString("stringKey1")).isEqualTo("test-value1");
+        assertThat(document.getPropertyBlobHandle("blobKey1")).isEqualTo(blobHandle1);
+
+        assertThat(document.getProperty("longKey1")).isInstanceOf(long[].class);
+        assertThat((long[]) document.getProperty("longKey1")).asList().containsExactly(1L);
+        assertThat(document.getProperty("doubleKey1")).isInstanceOf(double[].class);
+        assertThat((double[]) document.getProperty("doubleKey1")).usingTolerance(
+                0.05).containsExactly(1.0);
+        assertThat(document.getProperty("booleanKey1")).isInstanceOf(boolean[].class);
+        assertThat((boolean[]) document.getProperty("booleanKey1")).asList().containsExactly(true);
+        assertThat(document.getProperty("stringKey1")).isInstanceOf(String[].class);
+        assertThat((String[]) document.getProperty("stringKey1")).asList().containsExactly(
+                "test-value1");
+        assertThat((AppSearchBlobHandle[]) document.getProperty(
+                "blobKey1")).asList().containsExactly(blobHandle1).inOrder();
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_BLOB_STORE)
+    public void testDocumentGetArrayBlobHandleValues() throws Exception {
+        byte[] data1 = generateRandomBytes(10); // 10 Bytes
+        byte[] digest1 = calculateDigest(data1);
+        byte[] data2 = generateRandomBytes(10); // 10 Bytes
+        byte[] digest2 = calculateDigest(data2);
+        AppSearchBlobHandle blobHandle1 = AppSearchBlobHandle.createWithSha256(
+                digest1, "package1", "db1", "ns");
+        AppSearchBlobHandle blobHandle2 = AppSearchBlobHandle.createWithSha256(
+                digest2, "package1", "db1", "ns");
+
+        GenericDocument document = new GenericDocument.Builder<>("namespace", "id1", "schemaType1")
+                .setCreationTimestampMillis(5L)
+                .setPropertyLong("longKey1", 1L, 2L, 3L)
+                .setPropertyDouble("doubleKey1", 1.0, 2.0, 3.0)
+                .setPropertyBoolean("booleanKey1", true, false, true)
+                .setPropertyString("stringKey1", "test-value1", "test-value2", "test-value3")
+                .setPropertyBlobHandle("blobHandleKey1", blobHandle1, blobHandle2)
+                .build();
+
+        assertThat(document.getId()).isEqualTo("id1");
+        assertThat(document.getSchemaType()).isEqualTo("schemaType1");
+        assertThat(document.getPropertyLongArray("longKey1")).asList()
+                .containsExactly(1L, 2L, 3L).inOrder();
+        assertThat(document.getPropertyDoubleArray("doubleKey1")).usingExactEquality()
+                .containsExactly(1.0, 2.0, 3.0).inOrder();
+        assertThat(document.getPropertyBooleanArray("booleanKey1")).asList()
+                .containsExactly(true, false, true).inOrder();
+        assertThat(document.getPropertyStringArray("stringKey1")).asList()
+                .containsExactly("test-value1", "test-value2", "test-value3").inOrder();
+        assertThat(document.getPropertyBlobHandleArray("blobHandleKey1")).asList()
+                .containsExactly(blobHandle1, blobHandle2).inOrder();
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_BLOB_STORE)
+    public void testDocument_setEmptyBlobHandleValues() {
+        GenericDocument document = new GenericDocument.Builder<>("namespace", "id1", "schemaType1")
+                .setPropertyBoolean("booleanKey")
+                .setPropertyString("stringKey")
+                .setPropertyBytes("byteKey")
+                .setPropertyDouble("doubleKey")
+                .setPropertyDocument("documentKey")
+                .setPropertyLong("longKey")
+                .setPropertyBlobHandle("blobKey")
+                .build();
+        assertThat(document.getPropertyBooleanArray("booleanKey")).isEmpty();
+        assertThat(document.getPropertyStringArray("stringKey")).isEmpty();
+        assertThat(document.getPropertyBytesArray("byteKey")).isEmpty();
+        assertThat(document.getPropertyDoubleArray("doubleKey")).isEmpty();
+        assertThat(document.getPropertyDocumentArray("documentKey")).isEmpty();
+        assertThat(document.getPropertyLongArray("longKey")).isEmpty();
+        assertThat(document.getPropertyBlobHandleArray("blobKey")).isEmpty();
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_BLOB_STORE)
+    public void testDocumentInvalid_setNullBlobHandleValues() throws Exception {
+        byte[] data = generateRandomBytes(10); // 10 Bytes
+        byte[] digest = calculateDigest(data);
+        AppSearchBlobHandle blobHandle1 = AppSearchBlobHandle.createWithSha256(
+                digest, "package1", "db1", "ns");
+        AppSearchBlobHandle nullBlobHandle = null;
+
+        GenericDocument.Builder<?> builder = new GenericDocument.Builder<>("namespace", "id1",
+                "schemaType1");
+
+        assertThrows(IllegalArgumentException.class,
+                () -> builder.setPropertyBlobHandle("blobs",
+                        new AppSearchBlobHandle[]{blobHandle1, nullBlobHandle}));
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_BLOB_STORE)
+    public void testDocument_toBuilderWithBlobHandleValues() throws Exception {
+        byte[] data1 = generateRandomBytes(10); // 10 Bytes
+        byte[] digest1 = calculateDigest(data1);
+        byte[] data2 = generateRandomBytes(10); // 10 Bytes
+        byte[] digest2 = calculateDigest(data2);
+        AppSearchBlobHandle blobHandle1 = AppSearchBlobHandle.createWithSha256(
+                digest1, "package1", "db1", "ns");
+        AppSearchBlobHandle blobHandle2 = AppSearchBlobHandle.createWithSha256(
+                digest2, "package1", "db1", "ns");
+
+        GenericDocument document1 = new GenericDocument.Builder<>(
+                /*namespace=*/"", "id1", "schemaType1")
+                .setCreationTimestampMillis(5L)
+                .setPropertyLong("longKey1", 1L, 2L, 3L)
+                .setPropertyDouble("doubleKey1", 1.0, 2.0, 3.0)
+                .setPropertyBoolean("booleanKey1", true, false, true)
+                .setPropertyString("stringKey1", "String1", "String2", "String3")
+                .setPropertyBlobHandle("blobKey1", blobHandle1, blobHandle2)
+                .build();
+        GenericDocument document2 =
+                new GenericDocument.Builder<>(document1)
+                        .setId("id2")
+                        .setNamespace("namespace2")
+                        .setPropertyBlobHandle("blobKey1", blobHandle2)
+                        .setPropertyLong("longKey2", 10L)
+                        .clearProperty("booleanKey1")
+                        .build();
+
+        // Make sure old doc hasn't changed
+        assertThat(document1.getId()).isEqualTo("id1");
+        assertThat(document1.getNamespace()).isEqualTo("");
+        assertThat(document1.getPropertyLongArray("longKey1")).asList()
+                .containsExactly(1L, 2L, 3L).inOrder();
+        assertThat(document1.getPropertyBooleanArray("booleanKey1")).asList()
+                .containsExactly(true, false, true).inOrder();
+        assertThat(document1.getPropertyLongArray("longKey2")).isNull();
+        assertThat(document1.getPropertyBlobHandleArray("blobKey1")).asList()
+                .containsExactly(blobHandle1, blobHandle2).inOrder();
+
+        // Make sure the new doc contains the expected values
+        GenericDocument expectedDoc = new GenericDocument.Builder<>(
+                "namespace2", "id2", "schemaType1")
+                .setCreationTimestampMillis(5L)
+                .setPropertyLong("longKey1", 1L, 2L, 3L)
+                .setPropertyLong("longKey2", 10L)
+                .setPropertyDouble("doubleKey1", 1.0, 2.0, 3.0)
+                .setPropertyString("stringKey1", "String1", "String2", "String3")
+                .setPropertyBlobHandle("blobKey1", blobHandle2)
+                .build();
+        assertThat(document2).isEqualTo(expectedDoc);
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_BLOB_STORE)
+    public void testDocumentGetPropertyNamesWithBlobHandleValue() throws Exception {
+        byte[] data = generateRandomBytes(10); // 10 Bytes
+        byte[] digest = calculateDigest(data);
+        AppSearchBlobHandle blobHandle = AppSearchBlobHandle.createWithSha256(
+                digest, "package1", "db1", "ns");
+        GenericDocument document = new GenericDocument.Builder<>("namespace", "id1", "schemaType1")
+                .setCreationTimestampMillis(5L)
+                .setScore(1)
+                .setTtlMillis(1L)
+                .setPropertyLong("longKey1", 1L)
+                .setPropertyDouble("doubleKey1", 1.0)
+                .setPropertyBoolean("booleanKey1", true)
+                .setPropertyString("stringKey1", "test-value1")
+                .setPropertyBlobHandle("blobKey1", blobHandle)
+                .build();
+        assertThat(document.getPropertyNames()).containsExactly("longKey1", "doubleKey1",
+                "booleanKey1", "stringKey1", "blobKey1");
     }
 }

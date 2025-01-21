@@ -142,7 +142,10 @@ internal class TriggerBasedInvalidationTracker(
     private val shadowTablesMap: Map<String, String>,
     // View to underlying table names
     private val viewTables: Map<String, Set<String>>,
+    // All trackable table names
     tableNames: Array<out String>,
+    // True if a TEMP / in-memory table should be using for tracking
+    private val useTempTable: Boolean,
     // Callback function for when a set of tables are invalidated, the 'id' of a table is its
     // index in the given `tableNames`
     private val onInvalidatedTablesIds: (Set<Int>) -> Unit
@@ -202,7 +205,12 @@ internal class TriggerBasedInvalidationTracker(
         if (!isReadConnection) {
             connection.execSQL("PRAGMA temp_store = MEMORY")
             connection.execSQL("PRAGMA recursive_triggers = 1")
-            connection.execSQL(CREATE_TRACKING_TABLE_SQL)
+            connection.execSQL(DROP_TRACKING_TABLE_SQL)
+            if (useTempTable) {
+                connection.execSQL(CREATE_TRACKING_TABLE_SQL)
+            } else {
+                connection.execSQL(CREATE_TRACKING_TABLE_SQL.replace("TEMP", ""))
+            }
             // When a connection is configured the temporary triggers need to be synced since it is
             // possible that a new write connection is being configured because a previous one
             // was lost along with its installed triggers.
@@ -312,9 +320,10 @@ internal class TriggerBasedInvalidationTracker(
         connection.execSQL("INSERT OR IGNORE INTO $UPDATE_TABLE_NAME VALUES($tableId, 0)")
         val tableName = tablesNames[tableId]
         for (trigger in TRIGGERS) {
+            val tempKeyword = if (useTempTable) "TEMP" else ""
             val triggerName = getTriggerName(tableName, trigger)
             connection.execSQL(
-                "CREATE TEMP TRIGGER IF NOT EXISTS `$triggerName` " +
+                "CREATE $tempKeyword TRIGGER IF NOT EXISTS `$triggerName` " +
                     "AFTER $trigger ON `$tableName` BEGIN " +
                     "UPDATE $UPDATE_TABLE_NAME SET $INVALIDATED_COLUMN_NAME = 1 " +
                     "WHERE $TABLE_ID_COLUMN_NAME = $tableId AND $INVALIDATED_COLUMN_NAME = 0; " +
@@ -453,6 +462,8 @@ internal class TriggerBasedInvalidationTracker(
             "CREATE TEMP TABLE IF NOT EXISTS $UPDATE_TABLE_NAME (" +
                 "$TABLE_ID_COLUMN_NAME INTEGER PRIMARY KEY, " +
                 "$INVALIDATED_COLUMN_NAME INTEGER NOT NULL DEFAULT 0)"
+
+        private const val DROP_TRACKING_TABLE_SQL = "DROP TABLE IF EXISTS $UPDATE_TABLE_NAME"
 
         private const val SELECT_UPDATED_TABLES_SQL =
             "SELECT * FROM $UPDATE_TABLE_NAME WHERE $INVALIDATED_COLUMN_NAME = 1"

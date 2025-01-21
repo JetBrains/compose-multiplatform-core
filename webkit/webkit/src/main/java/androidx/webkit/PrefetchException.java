@@ -16,14 +16,14 @@
 
 package androidx.webkit;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Super class for all asynchronous exceptions produced by
  * {@link Profile} prefetch operations.
  */
 @Profile.ExperimentalUrlPrefetch
-public final class PrefetchException extends RuntimeException {
+public class PrefetchException extends Exception {
     public PrefetchException(@NonNull String error) {
         super(error);
     }

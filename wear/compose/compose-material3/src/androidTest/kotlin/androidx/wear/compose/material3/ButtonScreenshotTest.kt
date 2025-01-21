@@ -235,8 +235,8 @@ class ButtonScreenshotTest {
         CompactButton(
             onClick = {},
             modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
-            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
-            icon = { ButtonIcon(size = ButtonDefaults.SmallIconSize) },
+            label = { Text("Icon & label", modifier = Modifier.fillMaxWidth()) },
+            icon = { ButtonIcon(size = ButtonDefaults.ExtraSmallIconSize) },
         )
     }
 
@@ -278,7 +278,7 @@ class ButtonScreenshotTest {
                     backgroundImagePainter = painterResource(R.drawable.backgroundimage1),
                     forcedSize = size
                 ),
-            icon = { ButtonIcon(size = ButtonDefaults.SmallIconSize) },
+            icon = { ButtonIcon(size = ButtonDefaults.IconSize) },
             modifier = Modifier.testTag(TEST_TAG)
         )
     }
@@ -288,7 +288,7 @@ class ButtonScreenshotTest {
         CompactButton(
             onClick = {},
             label = { Text("Compact Button") },
-            icon = { ButtonIcon(size = ButtonDefaults.SmallIconSize) },
+            icon = { ButtonIcon(size = ButtonDefaults.ExtraSmallIconSize) },
             enabled = enabled,
             modifier = Modifier.testTag(TEST_TAG)
         )

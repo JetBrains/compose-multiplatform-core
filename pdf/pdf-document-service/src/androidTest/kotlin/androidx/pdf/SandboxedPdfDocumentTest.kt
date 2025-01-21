@@ -24,7 +24,6 @@ import android.graphics.Rect
 import android.os.Build
 import android.util.Size
 import androidx.annotation.RequiresExtension
-import androidx.pdf.service.connect.FakePdfServiceConnection
 import androidx.pdf.utils.TestUtils
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -291,7 +290,6 @@ class SandboxedPdfDocumentTest {
                 SandboxedPdfLoader(
                     context,
                     Dispatchers.Main,
-                    FakePdfServiceConnection(context, /* isConnected= */ false)
                 )
             val uri = TestUtils.openFile(context, filename)
 

@@ -34,7 +34,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.safeparcel"
+    namespace = "androidx.safeparcel"
 }
 
 androidx {

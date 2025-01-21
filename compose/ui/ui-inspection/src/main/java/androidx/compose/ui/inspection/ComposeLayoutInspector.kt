@@ -412,13 +412,17 @@ class ComposeLayoutInspector(connection: Connection, environment: InspectorEnvir
 
         val data =
             ThreadUtils.runOnMainThread {
-                    layoutInspectorTree.resetAccumulativeState()
                     layoutInspectorTree.includeAllParameters = includeAllParameters
-                    val composeViews =
+                    val composeViewWrappers =
                         getAndroidComposeViews(rootViewId, skipSystemComposables, generation)
+                    val composeViews = composeViewWrappers.map { it.composeView }
+                    val nodesByComposeView =
+                        layoutInspectorTree
+                            .apply { this.hideSystemNodes = skipSystemComposables }
+                            .convert(composeViews)
                     val composeViewsByRoot =
                         mutableLongObjectMapOf<MutableList<AndroidComposeViewWrapper>>()
-                    composeViews.groupByToLongObjectMap(composeViewsByRoot) {
+                    composeViewWrappers.groupByToLongObjectMap(composeViewsByRoot) {
                         it.rootView.uniqueDrawingId
                     }
                     val data = mutableLongObjectMapOf<CacheData>()
@@ -428,12 +432,14 @@ class ComposeLayoutInspector(connection: Connection, environment: InspectorEnvir
                             CacheData(
                                 value.first().rootView,
                                 value.map {
-                                    CacheTree(it.viewParent, it.createNodes(), it.viewsToSkip)
+                                    val nodes =
+                                        nodesByComposeView[it.composeView.uniqueDrawingId]
+                                            ?: emptyList()
+                                    CacheTree(it.viewParent, nodes, it.viewsToSkip)
                                 }
                             )
                         )
                     }
-                    layoutInspectorTree.resetAccumulativeState()
                     data
                 }
                 .get()
@@ -455,10 +461,11 @@ class ComposeLayoutInspector(connection: Connection, environment: InspectorEnvir
      */
     private fun getComposableFromAnchor(anchorId: Int): InspectorNode? =
         ThreadUtils.runOnMainThread {
-                layoutInspectorTree.resetAccumulativeState()
                 layoutInspectorTree.includeAllParameters = false
                 val composeViews = getAndroidComposeViews(-1L, false, 1)
-                composeViews.firstNotNullOfOrNull { it.findParameters(anchorId) }
+                composeViews.firstNotNullOfOrNull {
+                    layoutInspectorTree.findParameters(it.composeView, anchorId)
+                }
             }
             .get()
 
@@ -480,12 +487,7 @@ class ComposeLayoutInspector(connection: Connection, environment: InspectorEnvir
         val wrappers = mutableListOf<AndroidComposeViewWrapper>()
         roots.forEach { root ->
             root.flatten().mapNotNullTo(wrappers) { view ->
-                AndroidComposeViewWrapper.tryCreateFor(
-                    layoutInspectorTree,
-                    root,
-                    view,
-                    skipSystemComposables
-                )
+                AndroidComposeViewWrapper.tryCreateFor(root, view, skipSystemComposables)
             }
         }
         return wrappers

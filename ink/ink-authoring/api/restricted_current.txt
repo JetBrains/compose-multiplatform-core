@@ -38,6 +38,7 @@ package androidx.ink.authoring {
     method public androidx.ink.authoring.InProgressStrokeId startStroke(android.view.MotionEvent event, int pointerId, androidx.ink.brush.Brush brush, optional android.graphics.Matrix motionEventToWorldTransform);
     method public androidx.ink.authoring.InProgressStrokeId startStroke(android.view.MotionEvent event, int pointerId, androidx.ink.brush.Brush brush, optional android.graphics.Matrix motionEventToWorldTransform, optional android.graphics.Matrix strokeToWorldTransform);
     method public androidx.ink.authoring.InProgressStrokeId startStroke(androidx.ink.strokes.StrokeInput input, androidx.ink.brush.Brush brush);
+    method public androidx.ink.authoring.InProgressStrokeId startStroke(androidx.ink.strokes.StrokeInput input, androidx.ink.brush.Brush brush, optional android.graphics.Matrix strokeToViewTransform);
     property @VisibleForTesting public final androidx.test.espresso.idling.CountingIdlingResource? inProgressStrokeCounter;
     property public final android.graphics.Path? maskPath;
     property public final android.graphics.Matrix motionEventToViewTransform;

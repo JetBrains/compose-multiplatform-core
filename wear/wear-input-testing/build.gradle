@@ -35,9 +35,9 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 25
+        minSdk = 25
     }
-    namespace "androidx.wear.input.testing"
+    namespace = "androidx.wear.input.testing"
 }
 
 androidx {

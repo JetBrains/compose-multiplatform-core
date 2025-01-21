@@ -23,8 +23,8 @@ import androidx.benchmark.macro.FrameTimingGfxInfoMetric
 import androidx.benchmark.macro.FrameTimingMetric
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
-import androidx.compose.integration.hero.jetsnack.ITERATIONS
-import androidx.compose.integration.hero.jetsnack.waitForComposeIdle
+import androidx.compose.integration.hero.common.macrobenchmark.HeroMacrobenchmarkDefaults
+import androidx.compose.integration.hero.common.macrobenchmark.waitForComposeIdle
 import androidx.test.filters.LargeTest
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
@@ -76,7 +76,7 @@ class JetsnackScrollBenchmark(val compilationMode: CompilationMode) {
             packageName = JETSNACK_TARGET_PACKAGE_NAME,
             metrics = listOf(FrameTimingMetric(), FrameTimingGfxInfoMetric()),
             compilationMode = compilationMode,
-            iterations = ITERATIONS,
+            iterations = HeroMacrobenchmarkDefaults.ITERATIONS,
             measureBlock = {
                 val intent = Intent()
                 intent.action = action

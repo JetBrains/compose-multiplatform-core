@@ -31,10 +31,11 @@ plugins {
 }
 
 android {
-    namespace "androidx.paging.samples"
+    namespace = "androidx.paging.samples"
 }
 
 dependencies {
+    api(libs.jspecify)
     compileOnly(project(":annotation:annotation-sampled"))
 
     implementation("androidx.appcompat:appcompat:1.2.0")

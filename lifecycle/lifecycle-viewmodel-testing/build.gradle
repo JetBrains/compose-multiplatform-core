@@ -43,6 +43,7 @@ androidXMultiplatform {
         }
         withAndroidTestOnJvmBuilder {
             it.defaultSourceSetName = "androidUnitTest"
+            it.compilationName = "unitTest"
         }
     }
     desktop()
@@ -58,6 +59,9 @@ androidXMultiplatform {
                 api(project(":lifecycle:lifecycle-viewmodel"))
                 api(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
+                implementation(project(":lifecycle:lifecycle-runtime"))
+                implementation(project(":lifecycle:lifecycle-runtime-testing"))
+                implementation(project(":lifecycle:lifecycle-viewmodel-savedstate"))
             }
         }
 
@@ -69,17 +73,30 @@ androidXMultiplatform {
             }
         }
 
+        jvmMain {
+            dependsOn(commonMain)
+        }
+
+        jvmTest {
+            dependsOn(commonTest)
+        }
+
         androidMain {
             dependsOn(commonMain)
+            dependsOn(jvmMain)
+        }
+
+        androidUnitTest {
+            dependsOn(commonTest)
+            dependsOn(jvmTest)
             dependencies {
-                implementation(project(":lifecycle:lifecycle-runtime"))
-                implementation(project(":lifecycle:lifecycle-runtime-testing"))
-                implementation(project(":lifecycle:lifecycle-viewmodel-savedstate"))
+                implementation(libs.robolectric)
             }
         }
 
         androidInstrumentedTest {
             dependsOn(commonTest)
+            dependsOn(jvmTest)
             dependencies {
                 implementation("androidx.core:core-ktx:1.2.0")
                 implementation(libs.testExtJunit)
@@ -88,19 +105,68 @@ androidXMultiplatform {
             }
         }
 
-        nonJvmCommonMain.dependsOn(commonMain)
-        nativeMain.dependsOn(nonJvmCommonMain)
-        darwinMain.dependsOn(nativeMain)
-        linuxMain.dependsOn(nativeMain)
+        nonAndroidMain {
+            dependsOn(commonMain)
+        }
+
+        nonAndroidTest {
+            dependsOn(commonTest)
+        }
+
+        desktopMain {
+            dependsOn(jvmMain)
+            dependsOn(nonAndroidMain)
+        }
+
+        desktopTest {
+            dependsOn(jvmTest)
+            dependsOn(nonAndroidTest)
+        }
+
+        nativeMain {
+            dependsOn(commonMain)
+            dependsOn(nonAndroidMain)
+        }
+
+        nativeTest {
+            dependsOn(commonTest)
+            dependsOn(nonAndroidTest)
+        }
+
+        darwinMain {
+            dependsOn(nativeMain)
+        }
+
+        darwinTest {
+            dependsOn(nativeTest)
+        }
+
+        linuxMain {
+            dependsOn(nativeMain)
+        }
+
+        linuxTest {
+            dependsOn(nativeTest)
+        }
 
         targets.configureEach { target ->
-            if (target.platformType == KotlinPlatformType.native) {
+            if (target.platformType == org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet {
                     def konanTargetFamily = target.konanTarget.family
-                    if (konanTargetFamily == Family.OSX || konanTargetFamily == Family.IOS) {
+                    if (konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.OSX || konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.IOS) {
                         dependsOn(darwinMain)
-                    } else if (konanTargetFamily == Family.LINUX) {
+                    } else if (konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.LINUX) {
                         dependsOn(linuxMain)
+                    } else {
+                        throw new GradleException("unknown native target ${target}")
+                    }
+                }
+                target.compilations["test"].defaultSourceSet {
+                    def konanTargetFamily = target.konanTarget.family
+                    if (konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.OSX || konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.IOS) {
+                        dependsOn(darwinTest)
+                    } else if (konanTargetFamily == org.jetbrains.kotlin.konan.target.Family.LINUX) {
+                        dependsOn(linuxTest)
                     } else {
                         throw new GradleException("unknown native target ${target}")
                     }

@@ -29,13 +29,14 @@ import android.util.Size;
 import android.util.SizeF;
 import android.util.SparseBooleanArray;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.collection.ArrayMap;
 import androidx.collection.ArraySet;
 import androidx.collection.SimpleArrayMap;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -57,8 +58,7 @@ import java.util.Set;
 @RestrictTo(LIBRARY_GROUP_PREFIX)
 public abstract class VersionedParcel {
 
-    @NonNull
-    private static final String TAG = "VersionedParcel";
+    private static final @NonNull String TAG = "VersionedParcel";
 
     // These constants cannot change once shipped.
     private static final int EX_SECURITY = -1;
@@ -78,12 +78,9 @@ public abstract class VersionedParcel {
     private static final int TYPE_INTEGER = 7;
     private static final int TYPE_FLOAT = 8;
 
-    @NonNull
-    final SimpleArrayMap<String, Method> mReadCache;
-    @NonNull
-    final SimpleArrayMap<String, Method> mWriteCache;
-    @NonNull
-    final SimpleArrayMap<String, Class<?>> mParcelizerCache;
+    final @NonNull SimpleArrayMap<String, Method> mReadCache;
+    final @NonNull SimpleArrayMap<String, Method> mWriteCache;
+    final @NonNull SimpleArrayMap<String, Class<?>> mParcelizerCache;
 
     VersionedParcel(
             @NonNull SimpleArrayMap<String, Method> readCache,
@@ -110,15 +107,14 @@ public abstract class VersionedParcel {
     /**
      * Create a sub-parcel to be used for a child VersionedParcelable
      */
-    @NonNull
-    protected abstract VersionedParcel createSubParcel();
+    protected abstract @NonNull VersionedParcel createSubParcel();
 
     /**
      * Write a byte array into the parcel.
      *
      * @param b Bytes to place into the parcel.
      */
-    protected abstract void writeByteArray(@Nullable byte[] b);
+    protected abstract void writeByteArray(byte @Nullable [] b);
 
     /**
      * Write a byte array into the parcel.
@@ -127,7 +123,7 @@ public abstract class VersionedParcel {
      * @param offset Index of first byte to be written.
      * @param len    Number of bytes to write.
      */
-    protected abstract void writeByteArray(@Nullable byte[] b, int offset, int len);
+    protected abstract void writeByteArray(byte @Nullable [] b, int offset, int len);
 
     /**
      * Write a CharSequence into the parcel.
@@ -222,40 +218,34 @@ public abstract class VersionedParcel {
     /**
      * Read a string value from the parcel at the current dataPosition().
      */
-    @Nullable
-    protected abstract String readString();
+    protected abstract @Nullable String readString();
 
     /**
      * Read an object from the parcel at the current dataPosition().
      */
-    @Nullable
-    protected abstract IBinder readStrongBinder();
+    protected abstract @Nullable IBinder readStrongBinder();
 
     /**
      * Read a byte[] object from the parcel.
      */
-    @Nullable
-    protected abstract byte[] readByteArray();
+    protected abstract byte @Nullable [] readByteArray();
 
     /**
      * Read a CharSequence from the parcel
      */
-    @Nullable
-    protected abstract CharSequence readCharSequence();
+    protected abstract @Nullable CharSequence readCharSequence();
 
     /**
      */
     @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
-    @Nullable
-    protected abstract <T extends Parcelable> T readParcelable();
+    protected abstract <T extends Parcelable> @Nullable T readParcelable();
 
     /**
      * Read and return a new Bundle object from the parcel at the current
      * dataPosition().  Returns null if the previously written Bundle object was
      * null.
      */
-    @Nullable
-    protected abstract Bundle readBundle();
+    protected abstract @Nullable Bundle readBundle();
 
     /**
      * Read a boolean value from the parcel at the current dataPosition().
@@ -313,7 +303,7 @@ public abstract class VersionedParcel {
      *
      * @param b Bytes to place into the parcel.
      */
-    public void writeByteArray(@Nullable byte[] b, int fieldId) {
+    public void writeByteArray(byte @Nullable [] b, int fieldId) {
         setOutputField(fieldId);
         writeByteArray(b);
     }
@@ -325,7 +315,7 @@ public abstract class VersionedParcel {
      * @param offset Index of first byte to be written.
      * @param len    Number of bytes to write.
      */
-    public void writeByteArray(@Nullable byte[] b, int offset, int len, int fieldId) {
+    public void writeByteArray(byte @Nullable [] b, int offset, int len, int fieldId) {
         setOutputField(fieldId);
         writeByteArray(b, offset, len);
     }
@@ -460,8 +450,7 @@ public abstract class VersionedParcel {
     /**
      * Read a string value from the parcel at the current dataPosition().
      */
-    @Nullable
-    public String readString(@Nullable String def, int fieldId) {
+    public @Nullable String readString(@Nullable String def, int fieldId) {
         if (!readField(fieldId)) {
             return def;
         }
@@ -471,8 +460,7 @@ public abstract class VersionedParcel {
     /**
      * Read an object from the parcel at the current dataPosition().
      */
-    @Nullable
-    public IBinder readStrongBinder(@Nullable IBinder def, int fieldId) {
+    public @Nullable IBinder readStrongBinder(@Nullable IBinder def, int fieldId) {
         if (!readField(fieldId)) {
             return def;
         }
@@ -483,8 +471,7 @@ public abstract class VersionedParcel {
      * Read a byte[] object from the parcel and copy it into the
      * given byte array.
      */
-    @Nullable
-    public byte[] readByteArray(@Nullable byte[] def, int fieldId) {
+    public byte @Nullable [] readByteArray(byte @Nullable [] def, int fieldId) {
         if (!readField(fieldId)) {
             return def;
         }
@@ -493,8 +480,7 @@ public abstract class VersionedParcel {
 
     /**
      */
-    @Nullable
-    public <T extends Parcelable> T readParcelable(@Nullable T def, int fieldId) {
+    public <T extends Parcelable> @Nullable T readParcelable(@Nullable T def, int fieldId) {
         if (!readField(fieldId)) {
             return def;
         }
@@ -506,8 +492,7 @@ public abstract class VersionedParcel {
      * dataPosition().  Returns null if the previously written Bundle object was
      * null.
      */
-    @Nullable
-    public Bundle readBundle(@Nullable Bundle def, int fieldId) {
+    public @Nullable Bundle readBundle(@Nullable Bundle def, int fieldId) {
         if (!readField(fieldId)) {
             return def;
         }
@@ -563,14 +548,14 @@ public abstract class VersionedParcel {
 
     /**
      */
-    public void writeBooleanArray(@Nullable boolean[] val, int fieldId) {
+    public void writeBooleanArray(boolean @Nullable [] val, int fieldId) {
         setOutputField(fieldId);
         writeBooleanArray(val);
     }
 
     /**
      */
-    protected void writeBooleanArray(@Nullable boolean[] val) {
+    protected void writeBooleanArray(boolean @Nullable [] val) {
         if (val != null) {
             int n = val.length;
             writeInt(n);
@@ -584,8 +569,7 @@ public abstract class VersionedParcel {
 
     /**
      */
-    @Nullable
-    public boolean[] readBooleanArray(@Nullable boolean[] def, int fieldId) {
+    public boolean @Nullable [] readBooleanArray(boolean @Nullable [] def, int fieldId) {
         if (!readField(fieldId)) {
             return def;
         }
@@ -594,8 +578,7 @@ public abstract class VersionedParcel {
 
     /**
      */
-    @Nullable
-    protected boolean[] readBooleanArray() {
+    protected boolean @Nullable [] readBooleanArray() {
         int n = readInt();
         if (n < 0) {
             return null;
@@ -609,7 +592,7 @@ public abstract class VersionedParcel {
 
     /**
      */
-    public void writeCharArray(@Nullable char[] val, int fieldId) {
+    public void writeCharArray(char @Nullable [] val, int fieldId) {
         setOutputField(fieldId);
         if (val != null) {
             int n = val.length;
@@ -624,8 +607,7 @@ public abstract class VersionedParcel {
 
     /**
      */
-    @Nullable
-    public CharSequence readCharSequence(@Nullable CharSequence def, int fieldId) {
+    public @Nullable CharSequence readCharSequence(@Nullable CharSequence def, int fieldId) {
         if (!readField(fieldId)) {
             return def;
         }
@@ -634,8 +616,7 @@ public abstract class VersionedParcel {
 
     /**
      */
-    @Nullable
-    public char[] readCharArray(@Nullable char[] def, int fieldId) {
+    public char @Nullable [] readCharArray(char @Nullable [] def, int fieldId) {
         if (!readField(fieldId)) {
             return def;
         }
@@ -652,14 +633,14 @@ public abstract class VersionedParcel {
 
     /**
      */
-    public void writeIntArray(@Nullable int[] val, int fieldId) {
+    public void writeIntArray(int @Nullable [] val, int fieldId) {
         setOutputField(fieldId);
         writeIntArray(val);
     }
 
     /**
      */
-    protected void writeIntArray(@Nullable int[] val) {
+    protected void writeIntArray(int @Nullable [] val) {
         if (val != null) {
             int n = val.length;
             writeInt(n);
@@ -673,8 +654,7 @@ public abstract class VersionedParcel {
 
     /**
      */
-    @Nullable
-    public int[] readIntArray(@Nullable int[] def, int fieldId) {
+    public int @Nullable [] readIntArray(int @Nullable [] def, int fieldId) {
         if (!readField(fieldId)) {
             return def;
         }
@@ -683,8 +663,7 @@ public abstract class VersionedParcel {
 
     /**
      */
-    @Nullable
-    protected int[] readIntArray() {
+    protected int @Nullable [] readIntArray() {
         int n = readInt();
         if (n < 0) {
             return null;
@@ -698,14 +677,14 @@ public abstract class VersionedParcel {
 
     /**
      */
-    public void writeLongArray(@Nullable long[] val, int fieldId) {
+    public void writeLongArray(long @Nullable [] val, int fieldId) {
         setOutputField(fieldId);
         writeLongArray(val);
     }
 
     /**
      */
-    protected void writeLongArray(@Nullable long[] val) {
+    protected void writeLongArray(long @Nullable [] val) {
         if (val != null) {
             int n = val.length;
             writeInt(n);
@@ -719,8 +698,7 @@ public abstract class VersionedParcel {
 
     /**
      */
-    @Nullable
-    public long[] readLongArray(@Nullable long[] def, int fieldId) {
+    public long @Nullable [] readLongArray(long @Nullable [] def, int fieldId) {
         if (!readField(fieldId)) {
             return def;
         }
@@ -729,8 +707,7 @@ public abstract class VersionedParcel {
 
     /**
      */
-    @Nullable
-    protected long[] readLongArray() {
+    protected long @Nullable [] readLongArray() {
         int n = readInt();
         if (n < 0) {
             return null;
@@ -744,14 +721,14 @@ public abstract class VersionedParcel {
 
     /**
      */
-    public void writeFloatArray(@Nullable float[] val, int fieldId) {
+    public void writeFloatArray(float @Nullable [] val, int fieldId) {
         setOutputField(fieldId);
         writeFloatArray(val);
     }
 
     /**
      */
-    protected void writeFloatArray(@Nullable float[] val) {
+    protected void writeFloatArray(float @Nullable [] val) {
         if (val != null) {
             int n = val.length;
             writeInt(n);
@@ -765,8 +742,7 @@ public abstract class VersionedParcel {
 
     /**
      */
-    @Nullable
-    public float[] readFloatArray(@Nullable float[] def, int fieldId) {
+    public float @Nullable [] readFloatArray(float @Nullable [] def, int fieldId) {
         if (!readField(fieldId)) {
             return def;
         }
@@ -775,8 +751,7 @@ public abstract class VersionedParcel {
 
     /**
      */
-    @Nullable
-    protected float[] readFloatArray() {
+    protected float @Nullable [] readFloatArray() {
         int n = readInt();
         if (n < 0) {
             return null;
@@ -790,14 +765,14 @@ public abstract class VersionedParcel {
 
     /**
      */
-    public void writeDoubleArray(@Nullable double[] val, int fieldId) {
+    public void writeDoubleArray(double @Nullable [] val, int fieldId) {
         setOutputField(fieldId);
         writeDoubleArray(val);
     }
 
     /**
      */
-    protected void writeDoubleArray(@Nullable double[] val) {
+    protected void writeDoubleArray(double @Nullable [] val) {
         if (val != null) {
             int n = val.length;
             writeInt(n);
@@ -811,8 +786,7 @@ public abstract class VersionedParcel {
 
     /**
      */
-    @Nullable
-    public double[] readDoubleArray(@Nullable double[] def, int fieldId) {
+    public double @Nullable [] readDoubleArray(double @Nullable [] def, int fieldId) {
         if (!readField(fieldId)) {
             return def;
         }
@@ -821,8 +795,7 @@ public abstract class VersionedParcel {
 
     /**
      */
-    @Nullable
-    protected double[] readDoubleArray() {
+    protected double @Nullable [] readDoubleArray() {
         int n = readInt();
         if (n < 0) {
             return null;
@@ -959,14 +932,14 @@ public abstract class VersionedParcel {
      * @see #readList
      * @see VersionedParcelable
      */
-    public <T> void writeArray(@Nullable T[] val, int fieldId) {
+    public <T> void writeArray(T @Nullable [] val, int fieldId) {
         setOutputField(fieldId);
         writeArray(val);
     }
 
     /**
      */
-    protected <T> void writeArray(@Nullable T[] val) {
+    protected <T> void writeArray(T @Nullable [] val) {
         if (val == null) {
             writeInt(-1);
             return;
@@ -1188,8 +1161,7 @@ public abstract class VersionedParcel {
      * @see #writeException
      * @see #writeNoException
      */
-    @Nullable
-    public Exception readException(@Nullable Exception def, int fieldId) {
+    public @Nullable Exception readException(@Nullable Exception def, int fieldId) {
         if (!readField(fieldId)) {
             return def;
         }
@@ -1220,8 +1192,7 @@ public abstract class VersionedParcel {
     /**
      * Gets the root {@link Throwable#getCause() cause} of {@code t}
      */
-    @NonNull
-    protected static Throwable getRootCause(@NonNull Throwable t) {
+    protected static @NonNull Throwable getRootCause(@NonNull Throwable t) {
         while (t.getCause() != null) t = t.getCause();
         return t;
     }
@@ -1232,8 +1203,7 @@ public abstract class VersionedParcel {
      * @param code Used to determine which exception class to throw.
      * @param msg  The exception message.
      */
-    @NonNull
-    private Exception createException(int code, String msg) {
+    private @NonNull Exception createException(int code, String msg) {
         switch (code) {
             case EX_PARCELABLE:
                 return (Exception) readParcelable();
@@ -1270,8 +1240,7 @@ public abstract class VersionedParcel {
      * Read a Size from the parcel at the current dataPosition().
      */
     @RequiresApi(21)
-    @Nullable
-    public Size readSize(@Nullable Size def, int fieldId) {
+    public @Nullable Size readSize(@Nullable Size def, int fieldId) {
         if (!readField(fieldId)) {
             return def;
         }
@@ -1282,8 +1251,7 @@ public abstract class VersionedParcel {
      * Read a SizeF from the parcel at the current dataPosition().
      */
     @RequiresApi(21)
-    @Nullable
-    public SizeF readSizeF(@Nullable SizeF def, int fieldId) {
+    public @Nullable SizeF readSizeF(@Nullable SizeF def, int fieldId) {
         if (!readField(fieldId)) {
             return def;
         }
@@ -1295,8 +1263,7 @@ public abstract class VersionedParcel {
      * dataPosition().  Returns null if the previously written list object was
      * null.
      */
-    @Nullable
-    public SparseBooleanArray readSparseBooleanArray(
+    public @Nullable SparseBooleanArray readSparseBooleanArray(
             @Nullable SparseBooleanArray def,
             int fieldId
     ) {
@@ -1328,8 +1295,7 @@ public abstract class VersionedParcel {
      * as those that were previously written.
      * @see #writeSet
      */
-    @Nullable
-    public <T> Set<T> readSet(@Nullable Set<T> def, int fieldId) {
+    public <T> @Nullable Set<T> readSet(@Nullable Set<T> def, int fieldId) {
         if (!readField(fieldId)) {
             return def;
         }
@@ -1348,8 +1314,7 @@ public abstract class VersionedParcel {
      * as those that were previously written.
      * @see #writeList
      */
-    @Nullable
-    public <T> List<T> readList(@Nullable List<T> def, int fieldId) {
+    public <T> @Nullable List<T> readList(@Nullable List<T> def, int fieldId) {
         if (!readField(fieldId)) {
             return def;
         }
@@ -1357,8 +1322,7 @@ public abstract class VersionedParcel {
     }
 
     @SuppressWarnings("unchecked")
-    @Nullable
-    private <T, S extends Collection<T>> S readCollection(@NonNull S list) {
+    private <T, S extends Collection<T>> @Nullable S readCollection(@NonNull S list) {
         int n = readInt();
         if (n < 0) {
             return null;
@@ -1415,8 +1379,7 @@ public abstract class VersionedParcel {
      * as those that were previously written.
      * @see #writeMap
      */
-    @Nullable
-    public <K, V> Map<K, V> readMap(@Nullable Map<K, V> def, int fieldId) {
+    public <K, V> @Nullable Map<K, V> readMap(@Nullable Map<K, V> def, int fieldId) {
         if (!readField(fieldId)) {
             return def;
         }
@@ -1450,8 +1413,7 @@ public abstract class VersionedParcel {
      * as those that were previously written.
      * @see #writeArray
      */
-    @Nullable
-    public <T> T[] readArray(@Nullable T[] def, int fieldId) {
+    public <T> T @Nullable [] readArray(T @Nullable [] def, int fieldId) {
         if (!readField(fieldId)) {
             return def;
         }
@@ -1461,8 +1423,7 @@ public abstract class VersionedParcel {
     /**
      */
     @SuppressWarnings("unchecked")
-    @Nullable
-    protected <T> T[] readArray(@Nullable T[] def) {
+    protected <T> T @Nullable [] readArray(T @Nullable [] def) {
         int n = readInt();
         if (n < 0) {
             return null;
@@ -1511,8 +1472,7 @@ public abstract class VersionedParcel {
 
     /**
      */
-    @Nullable
-    public <T extends VersionedParcelable> T readVersionedParcelable(
+    public <T extends VersionedParcelable> @Nullable T readVersionedParcelable(
             @Nullable T def,
             int fieldId
     ) {
@@ -1531,8 +1491,7 @@ public abstract class VersionedParcel {
      *                                was an error trying to instantiate the VersionedParcelable.
      */
     @SuppressWarnings("TypeParameterUnusedInFormals")
-    @Nullable
-    protected <T extends VersionedParcelable> T readVersionedParcelable() {
+    protected <T extends VersionedParcelable> @Nullable T readVersionedParcelable() {
         String name = readString();
         if (name == null) {
             return null;
@@ -1546,8 +1505,7 @@ public abstract class VersionedParcel {
      * @return the Serializable object, or null if the Serializable name
      * wasn't found in the parcel.
      */
-    @Nullable
-    protected Serializable readSerializable() {
+    protected @Nullable Serializable readSerializable() {
         String name = readString();
         if (name == null) {
             // For some reason we were unable to read the name of the Serializable (either there
@@ -1585,8 +1543,7 @@ public abstract class VersionedParcel {
     /**
      */
     @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
-    @NonNull
-    protected <T extends VersionedParcelable> T readFromParcel(
+    protected <T extends VersionedParcelable> @NonNull T readFromParcel(
             @NonNull String parcelCls,
             @NonNull VersionedParcel versionedParcel
     ) {
@@ -1638,8 +1595,7 @@ public abstract class VersionedParcel {
         }
     }
 
-    @NonNull
-    private Method getReadMethod(@NonNull String parcelCls) throws IllegalAccessException,
+    private @NonNull Method getReadMethod(@NonNull String parcelCls) throws IllegalAccessException,
             NoSuchMethodException, ClassNotFoundException {
         Method m = mReadCache.get(parcelCls);
         if (m == null) {
@@ -1650,8 +1606,7 @@ public abstract class VersionedParcel {
         return m;
     }
 
-    @NonNull
-    private Method getWriteMethod(@NonNull Class<?> baseCls) throws IllegalAccessException,
+    private @NonNull Method getWriteMethod(@NonNull Class<?> baseCls) throws IllegalAccessException,
             NoSuchMethodException, ClassNotFoundException {
         Method m = mWriteCache.get(baseCls.getName());
         if (m == null) {
@@ -1662,8 +1617,7 @@ public abstract class VersionedParcel {
         return m;
     }
 
-    @NonNull
-    private Class<?> findParcelClass(@NonNull Class<?> cls)
+    private @NonNull Class<?> findParcelClass(@NonNull Class<?> cls)
             throws ClassNotFoundException {
         Class<?> ret = mParcelizerCache.get(cls.getName());
         if (ret == null) {
@@ -1701,8 +1655,7 @@ public abstract class VersionedParcel {
             }
         }
 
-        @Nullable
-        static Size readSize(@NonNull VersionedParcel self) {
+        static @Nullable Size readSize(@NonNull VersionedParcel self) {
             if (self.readBoolean()) {
                 int width = self.readInt();
                 int height = self.readInt();
@@ -1711,8 +1664,7 @@ public abstract class VersionedParcel {
             return null;
         }
 
-        @Nullable
-        static SizeF readSizeF(@NonNull VersionedParcel self) {
+        static @Nullable SizeF readSizeF(@NonNull VersionedParcel self) {
             if (self.readBoolean()) {
                 float width = self.readFloat();
                 float height = self.readFloat();

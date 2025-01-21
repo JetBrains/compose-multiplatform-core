@@ -1014,6 +1014,10 @@ class MultiParagraph(
  * @return The index of the target [ParagraphInfo] in [paragraphInfoList].
  */
 internal fun findParagraphByIndex(paragraphInfoList: List<ParagraphInfo>, index: Int): Int {
+    val lastLineEnd = paragraphInfoList.last().endIndex
+    requirePrecondition(index <= paragraphInfoList.last().endIndex) {
+        "Index $index should be less or equal than last line's end $lastLineEnd"
+    }
     val paragraphIndex =
         paragraphInfoList.fastBinarySearch { paragraphInfo ->
             when {

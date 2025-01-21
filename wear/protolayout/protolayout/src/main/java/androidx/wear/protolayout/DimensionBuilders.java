@@ -23,8 +23,6 @@ import static androidx.wear.protolayout.expression.Preconditions.checkNotNull;
 import androidx.annotation.Dimension;
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
@@ -36,6 +34,9 @@ import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.expression.RequiresSchemaVersion;
 import androidx.wear.protolayout.proto.DimensionProto;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 /** Builders for dimensions for layout elements. */
 public final class DimensionBuilders {
     private DimensionBuilders() {}
@@ -45,36 +46,31 @@ public final class DimensionBuilders {
 
     /** Shortcut for building a {@link DpProp} using a measurement in DP. */
     @RequiresSchemaVersion(major = 1, minor = 0)
-    @NonNull
-    public static DpProp dp(@Dimension(unit = DP) float valueDp) {
+    public static @NonNull DpProp dp(@Dimension(unit = DP) float valueDp) {
         return new DpProp.Builder(valueDp).build();
     }
 
     /** Shortcut for building a {@link SpProp} using a measurement in SP. */
     @RequiresSchemaVersion(major = 1, minor = 0)
-    @NonNull
-    public static SpProp sp(@Dimension(unit = SP) float valueSp) {
+    public static @NonNull SpProp sp(@Dimension(unit = SP) float valueSp) {
         return new SpProp.Builder().setValue(valueSp).build();
     }
 
     /** Shortcut for building a {@link EmProp} using a measurement in EM. */
     @RequiresSchemaVersion(major = 1, minor = 0)
-    @NonNull
-    public static EmProp em(int valueEm) {
+    public static @NonNull EmProp em(int valueEm) {
         return new EmProp.Builder().setValue(valueEm).build();
     }
 
     /** Shortcut for building a {@link EmProp} using a measurement in EM. */
     @RequiresSchemaVersion(major = 1, minor = 0)
-    @NonNull
-    public static EmProp em(float valueEm) {
+    public static @NonNull EmProp em(float valueEm) {
         return new EmProp.Builder().setValue(valueEm).build();
     }
 
     /** Shortcut for building an {@link DegreesProp} using a measurement in degrees. */
     @RequiresSchemaVersion(major = 1, minor = 0)
-    @NonNull
-    public static DegreesProp degrees(float valueDegrees) {
+    public static @NonNull DegreesProp degrees(float valueDegrees) {
         return new DegreesProp.Builder(valueDegrees).build();
     }
 
@@ -83,8 +79,7 @@ public final class DimensionBuilders {
      * parent.
      */
     @RequiresSchemaVersion(major = 1, minor = 0)
-    @NonNull
-    public static ExpandedDimensionProp expand() {
+    public static @NonNull ExpandedDimensionProp expand() {
         return EXPAND;
     }
 
@@ -102,8 +97,7 @@ public final class DimensionBuilders {
      * they are expanded, defaults to 1.
      */
     @RequiresSchemaVersion(major = 1, minor = 300)
-    @NonNull
-    public static ExpandedDimensionProp weight(@FloatRange(from = 0.0) float weight) {
+    public static @NonNull ExpandedDimensionProp weight(@FloatRange(from = 0.0) float weight) {
         return new ExpandedDimensionProp.Builder()
                 .setLayoutWeight(new FloatProp.Builder(weight).build())
                 .build();
@@ -114,8 +108,7 @@ public final class DimensionBuilders {
      * children.
      */
     @RequiresSchemaVersion(major = 1, minor = 0)
-    @NonNull
-    public static WrappedDimensionProp wrap() {
+    public static @NonNull WrappedDimensionProp wrap() {
         return WRAP;
     }
 
@@ -130,7 +123,7 @@ public final class DimensionBuilders {
                 ExtensionDimension,
                 PivotDimension {
         private final DimensionProto.DpProp mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         DpProp(DimensionProto.DpProp impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -153,8 +146,7 @@ public final class DimensionBuilders {
          * {@code dynamicValue} has an invalid result, the provided static value will be used
          * instead.
          */
-        @Nullable
-        public DynamicFloat getDynamicValue() {
+        public @Nullable DynamicFloat getDynamicValue() {
             if (mImpl.hasDynamicValue()) {
                 return DynamicBuilders.dynamicFloatFromProto(mImpl.getDynamicValue());
             } else {
@@ -164,77 +156,66 @@ public final class DimensionBuilders {
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static DpProp fromProto(
-                @NonNull DimensionProto.DpProp proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull DpProp fromProto(
+                DimensionProto.@NonNull DpProp proto, @Nullable Fingerprint fingerprint) {
             return new DpProp(proto, fingerprint);
         }
 
-        @NonNull
-        static DpProp fromProto(@NonNull DimensionProto.DpProp proto) {
+        static @NonNull DpProp fromProto(DimensionProto.@NonNull DpProp proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        DimensionProto.DpProp toProto() {
+        DimensionProto.@NonNull DpProp toProto() {
             return mImpl;
         }
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public DimensionProto.AngularDimension toAngularDimensionProto() {
+        public DimensionProto.@NonNull AngularDimension toAngularDimensionProto() {
             return DimensionProto.AngularDimension.newBuilder().setDp(mImpl).build();
         }
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public DimensionProto.ContainerDimension toContainerDimensionProto() {
+        public DimensionProto.@NonNull ContainerDimension toContainerDimensionProto() {
             return DimensionProto.ContainerDimension.newBuilder().setLinearDimension(mImpl).build();
         }
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public DimensionProto.ImageDimension toImageDimensionProto() {
+        public DimensionProto.@NonNull ImageDimension toImageDimensionProto() {
             return DimensionProto.ImageDimension.newBuilder().setLinearDimension(mImpl).build();
         }
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public DimensionProto.SpacerDimension toSpacerDimensionProto() {
+        public DimensionProto.@NonNull SpacerDimension toSpacerDimensionProto() {
             return DimensionProto.SpacerDimension.newBuilder().setLinearDimension(mImpl).build();
         }
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
         @ExperimentalProtoLayoutExtensionApi
-        public DimensionProto.ExtensionDimension toExtensionDimensionProto() {
+        public DimensionProto.@NonNull ExtensionDimension toExtensionDimensionProto() {
             return DimensionProto.ExtensionDimension.newBuilder().setLinearDimension(mImpl).build();
         }
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public DimensionProto.PivotDimension toPivotDimensionProto() {
+        public DimensionProto.@NonNull PivotDimension toPivotDimensionProto() {
             return DimensionProto.PivotDimension.newBuilder().setOffsetDp(mImpl).build();
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "DpProp{" + "value=" + getValue() + ", dynamicValue=" + getDynamicValue() + "}";
         }
 
@@ -272,8 +253,7 @@ public final class DimensionBuilders {
              * ignored. If the static value is not specified, zero will be used instead.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setValue(@Dimension(unit = DP) float value) {
+            public @NonNull Builder setValue(@Dimension(unit = DP) float value) {
                 mImpl.setValue(value);
                 mFingerprint.recordPropertyUpdate(1, Float.floatToIntBits(value));
                 return this;
@@ -286,8 +266,7 @@ public final class DimensionBuilders {
              * instead.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setDynamicValue(@NonNull DynamicFloat dynamicValue) {
+            public @NonNull Builder setDynamicValue(@NonNull DynamicFloat dynamicValue) {
                 mImpl.setDynamicValue(dynamicValue.toDynamicFloatProto());
                 mFingerprint.recordPropertyUpdate(
                         2, checkNotNull(dynamicValue.getFingerprint()).aggregateValueAsInt());
@@ -302,8 +281,7 @@ public final class DimensionBuilders {
              *     #setValue(float)} is used to provide a static value.
              */
             @Override
-            @NonNull
-            public DpProp build() {
+            public @NonNull DpProp build() {
                 if (mImpl.hasDynamicValue() && !mImpl.hasValue()) {
                     throw new IllegalStateException("Static value is missing.");
                 }
@@ -314,7 +292,7 @@ public final class DimensionBuilders {
 
     private static class DpPropLayoutConstraint {
         protected final DimensionProto.DpProp mImpl;
-        @Nullable protected final Fingerprint mFingerprint;
+        protected final @Nullable Fingerprint mFingerprint;
 
         protected DpPropLayoutConstraint(
                 DimensionProto.DpProp impl, @Nullable Fingerprint fingerprint) {
@@ -335,15 +313,13 @@ public final class DimensionBuilders {
 
         @SuppressWarnings("Unused")
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         @SuppressWarnings("Unused")
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public DimensionProto.SpacerDimension toSpacerDimensionProto() {
+        public DimensionProto.@NonNull SpacerDimension toSpacerDimensionProto() {
             return DimensionProto.SpacerDimension.newBuilder().setLinearDimension(mImpl).build();
         }
 
@@ -371,8 +347,7 @@ public final class DimensionBuilders {
              * of the dynamic value that is being provided.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            private Builder setValue(@Dimension(unit = DP) float value) {
+            private @NonNull Builder setValue(@Dimension(unit = DP) float value) {
                 mImpl.setValueForLayout(value);
                 mFingerprint.recordPropertyUpdate(3, Float.floatToIntBits(value));
                 return this;
@@ -399,8 +374,7 @@ public final class DimensionBuilders {
             return mImpl.getHorizontalAlignmentForLayoutValue();
         }
 
-        @NonNull
-        static HorizontalLayoutConstraint fromProto(@NonNull DimensionProto.DpProp proto) {
+        static @NonNull HorizontalLayoutConstraint fromProto(DimensionProto.@NonNull DpProp proto) {
             return new HorizontalLayoutConstraint(proto, null);
         }
 
@@ -423,8 +397,7 @@ public final class DimensionBuilders {
              * value. If not specified, defaults to center alignment.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setHorizontalAlignment(
+            public @NonNull Builder setHorizontalAlignment(
                     @LayoutElementBuilders.HorizontalAlignment int horizontalAlignment) {
                 mImpl.setHorizontalAlignmentForLayoutValue(horizontalAlignment);
                 mFingerprint.recordPropertyUpdate(5, horizontalAlignment);
@@ -432,8 +405,7 @@ public final class DimensionBuilders {
             }
 
             /** Builds an instance of {@link HorizontalLayoutConstraint}. */
-            @NonNull
-            public HorizontalLayoutConstraint build() {
+            public @NonNull HorizontalLayoutConstraint build() {
                 return new HorizontalLayoutConstraint(mImpl.build(), mFingerprint);
             }
         }
@@ -456,8 +428,7 @@ public final class DimensionBuilders {
             return mImpl.getVerticalAlignmentForLayoutValue();
         }
 
-        @NonNull
-        static VerticalLayoutConstraint fromProto(@NonNull DimensionProto.DpProp proto) {
+        static @NonNull VerticalLayoutConstraint fromProto(DimensionProto.@NonNull DpProp proto) {
             return new VerticalLayoutConstraint(proto, null);
         }
 
@@ -480,8 +451,7 @@ public final class DimensionBuilders {
              * If not specified, defaults to center alignment.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setVerticalAlignment(
+            public @NonNull Builder setVerticalAlignment(
                     @LayoutElementBuilders.VerticalAlignment int verticalAlignment) {
                 mImpl.setVerticalAlignmentForLayoutValue(verticalAlignment);
                 mFingerprint.recordPropertyUpdate(4, verticalAlignment);
@@ -489,8 +459,7 @@ public final class DimensionBuilders {
             }
 
             /** Builds an instance of {@link VerticalLayoutConstraint}. */
-            @NonNull
-            public VerticalLayoutConstraint build() {
+            public @NonNull VerticalLayoutConstraint build() {
                 return new VerticalLayoutConstraint(mImpl.build(), mFingerprint);
             }
         }
@@ -500,7 +469,7 @@ public final class DimensionBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class SpProp {
         private final DimensionProto.SpProp mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         SpProp(DimensionProto.SpProp impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -515,34 +484,29 @@ public final class DimensionBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static SpProp fromProto(
-                @NonNull DimensionProto.SpProp proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull SpProp fromProto(
+                DimensionProto.@NonNull SpProp proto, @Nullable Fingerprint fingerprint) {
             return new SpProp(proto, fingerprint);
         }
 
-        @NonNull
-        static SpProp fromProto(@NonNull DimensionProto.SpProp proto) {
+        static @NonNull SpProp fromProto(DimensionProto.@NonNull SpProp proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public DimensionProto.SpProp toProto() {
+        public DimensionProto.@NonNull SpProp toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "SpProp{" + "value=" + getValue() + "}";
         }
 
@@ -556,16 +520,14 @@ public final class DimensionBuilders {
 
             /** Sets the value, in sp. */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setValue(@Dimension(unit = SP) float value) {
+            public @NonNull Builder setValue(@Dimension(unit = SP) float value) {
                 mImpl.setValue(value);
                 mFingerprint.recordPropertyUpdate(2, Float.floatToIntBits(value));
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public SpProp build() {
+            public @NonNull SpProp build() {
                 return new SpProp(mImpl.build(), mFingerprint);
             }
         }
@@ -575,7 +537,7 @@ public final class DimensionBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class EmProp {
         private final DimensionProto.EmProp mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         EmProp(DimensionProto.EmProp impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -589,34 +551,29 @@ public final class DimensionBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static EmProp fromProto(
-                @NonNull DimensionProto.EmProp proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull EmProp fromProto(
+                DimensionProto.@NonNull EmProp proto, @Nullable Fingerprint fingerprint) {
             return new EmProp(proto, fingerprint);
         }
 
-        @NonNull
-        static EmProp fromProto(@NonNull DimensionProto.EmProp proto) {
+        static @NonNull EmProp fromProto(DimensionProto.@NonNull EmProp proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public DimensionProto.EmProp toProto() {
+        public DimensionProto.@NonNull EmProp toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "EmProp{" + "value=" + getValue() + "}";
         }
 
@@ -630,16 +587,14 @@ public final class DimensionBuilders {
 
             /** Sets the value, in em. */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setValue(float value) {
+            public @NonNull Builder setValue(float value) {
                 mImpl.setValue(value);
                 mFingerprint.recordPropertyUpdate(1, Float.floatToIntBits(value));
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public EmProp build() {
+            public @NonNull EmProp build() {
                 return new EmProp(mImpl.build(), mFingerprint);
             }
         }
@@ -652,29 +607,25 @@ public final class DimensionBuilders {
     public interface AngularDimension {
         /** Get the protocol buffer representation of this object. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        DimensionProto.AngularDimension toAngularDimensionProto();
+        DimensionProto.@NonNull AngularDimension toAngularDimensionProto();
 
         /** Get the fingerprint for this object or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        Fingerprint getFingerprint();
+        @Nullable Fingerprint getFingerprint();
 
         /** Builder to create {@link AngularDimension} objects. */
         @RestrictTo(Scope.LIBRARY_GROUP)
         interface Builder {
 
             /** Builds an instance with values accumulated in this Builder. */
-            @NonNull
-            AngularDimension build();
+            @NonNull AngularDimension build();
         }
     }
 
     /** Creates a new wrapper instance from the proto. */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static AngularDimension angularDimensionFromProto(
-            @NonNull DimensionProto.AngularDimension proto, @Nullable Fingerprint fingerprint) {
+    public static @NonNull AngularDimension angularDimensionFromProto(
+            DimensionProto.@NonNull AngularDimension proto, @Nullable Fingerprint fingerprint) {
         if (proto.hasDegrees()) {
             return DegreesProp.fromProto(proto.getDegrees(), fingerprint);
         }
@@ -684,9 +635,8 @@ public final class DimensionBuilders {
         throw new IllegalStateException("Proto was not a recognised instance of AngularDimension");
     }
 
-    @NonNull
-    static AngularDimension angularDimensionFromProto(
-            @NonNull DimensionProto.AngularDimension proto) {
+    static @NonNull AngularDimension angularDimensionFromProto(
+            DimensionProto.@NonNull AngularDimension proto) {
         return angularDimensionFromProto(proto, null);
     }
 
@@ -694,7 +644,7 @@ public final class DimensionBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class DegreesProp implements AngularDimension{
         private final DimensionProto.DegreesProp mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         DegreesProp(DimensionProto.DegreesProp impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -716,8 +666,7 @@ public final class DimensionBuilders {
          * If {@code dynamicValue} has an invalid result, the provided static value will be used
          * instead.
          */
-        @Nullable
-        public DynamicFloat getDynamicValue() {
+        public @Nullable DynamicFloat getDynamicValue() {
             if (mImpl.hasDynamicValue()) {
                 return DynamicBuilders.dynamicFloatFromProto(mImpl.getDynamicValue());
             } else {
@@ -728,40 +677,34 @@ public final class DimensionBuilders {
         /** Get the fingerprint for this object, or null if unknown. */
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static DegreesProp fromProto(
-                @NonNull DimensionProto.DegreesProp proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull DegreesProp fromProto(
+                DimensionProto.@NonNull DegreesProp proto, @Nullable Fingerprint fingerprint) {
             return new DegreesProp(proto, fingerprint);
         }
 
-        @NonNull
-        static DegreesProp fromProto(@NonNull DimensionProto.DegreesProp proto) {
+        static @NonNull DegreesProp fromProto(DimensionProto.@NonNull DegreesProp proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
-        @NonNull
-        DimensionProto.DegreesProp toProto() {
+        DimensionProto.@NonNull DegreesProp toProto() {
             return mImpl;
         }
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public DimensionProto.AngularDimension toAngularDimensionProto() {
+        public DimensionProto.@NonNull AngularDimension toAngularDimensionProto() {
             return DimensionProto.AngularDimension.newBuilder().setDegrees(mImpl).build();
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "DegreesProp{"
                     + "value="
                     + getValue()
@@ -799,8 +742,7 @@ public final class DimensionBuilders {
              * ignored. If the static value is not specified, zero will be used instead.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setValue(float value) {
+            public @NonNull Builder setValue(float value) {
                 mImpl.setValue(value);
                 mFingerprint.recordPropertyUpdate(1, Float.floatToIntBits(value));
                 return this;
@@ -813,8 +755,7 @@ public final class DimensionBuilders {
              * value will be used instead.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setDynamicValue(@NonNull DynamicFloat dynamicValue) {
+            public @NonNull Builder setDynamicValue(@NonNull DynamicFloat dynamicValue) {
                 mImpl.setDynamicValue(dynamicValue.toDynamicFloatProto());
                 mFingerprint.recordPropertyUpdate(
                         2, checkNotNull(dynamicValue.getFingerprint()).aggregateValueAsInt());
@@ -829,8 +770,7 @@ public final class DimensionBuilders {
              *     #setValue(float)} is used to provide a static value.
              */
             @Override
-            @NonNull
-            public DegreesProp build() {
+            public @NonNull DegreesProp build() {
                 if (mImpl.hasDynamicValue() && !mImpl.hasValue()) {
                     throw new IllegalStateException("Static value is missing.");
                 }
@@ -846,7 +786,7 @@ public final class DimensionBuilders {
     @RequiresSchemaVersion(major = 1, minor = 200)
     public static final class AngularLayoutConstraint {
         private final DimensionProto.DegreesProp mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         AngularLayoutConstraint(
                 DimensionProto.DegreesProp impl, @Nullable Fingerprint fingerprint) {
@@ -870,19 +810,17 @@ public final class DimensionBuilders {
         }
 
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public DimensionProto.DegreesProp toProto() {
+        public DimensionProto.@NonNull DegreesProp toProto() {
             return mImpl;
         }
 
-        @NonNull
-        static AngularLayoutConstraint fromProto(@NonNull DimensionProto.DegreesProp proto) {
+        static @NonNull AngularLayoutConstraint fromProto(
+                DimensionProto.@NonNull DegreesProp proto) {
             return new AngularLayoutConstraint(proto, null);
         }
 
@@ -907,8 +845,7 @@ public final class DimensionBuilders {
              * Sets the fixed value to reserve the space when used on a layout-changing data bind.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            private Builder setValue(@Dimension(unit = DP) float value) {
+            private @NonNull Builder setValue(@Dimension(unit = DP) float value) {
                 mImpl.setValueForLayout(value);
                 mFingerprint.recordPropertyUpdate(3, Float.floatToIntBits(value));
                 return this;
@@ -919,8 +856,7 @@ public final class DimensionBuilders {
              * not specified, defaults to center alignment.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setAngularAlignment(
+            public @NonNull Builder setAngularAlignment(
                     @LayoutElementBuilders.AngularAlignment int angularAlignment) {
                 mImpl.setAngularAlignmentForLayoutValue(angularAlignment);
                 mFingerprint.recordPropertyUpdate(4, angularAlignment);
@@ -928,8 +864,7 @@ public final class DimensionBuilders {
             }
 
             /** Builds an instance of {@link AngularLayoutConstraint}. */
-            @NonNull
-            public AngularLayoutConstraint build() {
+            public @NonNull AngularLayoutConstraint build() {
                 return new AngularLayoutConstraint(mImpl.build(), mFingerprint);
             }
         }
@@ -943,7 +878,7 @@ public final class DimensionBuilders {
     public static final class ExpandedDimensionProp
             implements ContainerDimension, ImageDimension, SpacerDimension {
         private final DimensionProto.ExpandedDimensionProp mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         ExpandedDimensionProp(
                 DimensionProto.ExpandedDimensionProp impl, @Nullable Fingerprint fingerprint) {
@@ -961,8 +896,7 @@ public final class DimensionBuilders {
          *
          * <p>Note that negative values are not supported and it can lead to unexpected behaviour.
          */
-        @Nullable
-        public FloatProp getLayoutWeight() {
+        public @Nullable FloatProp getLayoutWeight() {
             if (mImpl.hasLayoutWeight()) {
                 return FloatProp.fromProto(mImpl.getLayoutWeight());
             } else {
@@ -972,37 +906,32 @@ public final class DimensionBuilders {
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static ExpandedDimensionProp fromProto(
-                @NonNull DimensionProto.ExpandedDimensionProp proto,
+        public static @NonNull ExpandedDimensionProp fromProto(
+                DimensionProto.@NonNull ExpandedDimensionProp proto,
                 @Nullable Fingerprint fingerprint) {
             return new ExpandedDimensionProp(proto, fingerprint);
         }
 
-        @NonNull
-        static ExpandedDimensionProp fromProto(
-                @NonNull DimensionProto.ExpandedDimensionProp proto) {
+        static @NonNull ExpandedDimensionProp fromProto(
+                DimensionProto.@NonNull ExpandedDimensionProp proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        DimensionProto.ExpandedDimensionProp toProto() {
+        DimensionProto.@NonNull ExpandedDimensionProp toProto() {
             return mImpl;
         }
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public DimensionProto.ContainerDimension toContainerDimensionProto() {
+        public DimensionProto.@NonNull ContainerDimension toContainerDimensionProto() {
             return DimensionProto.ContainerDimension.newBuilder()
                     .setExpandedDimension(mImpl)
                     .build();
@@ -1010,21 +939,18 @@ public final class DimensionBuilders {
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public DimensionProto.ImageDimension toImageDimensionProto() {
+        public DimensionProto.@NonNull ImageDimension toImageDimensionProto() {
             return DimensionProto.ImageDimension.newBuilder().setExpandedDimension(mImpl).build();
         }
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public DimensionProto.SpacerDimension toSpacerDimensionProto() {
+        public DimensionProto.@NonNull SpacerDimension toSpacerDimensionProto() {
             return DimensionProto.SpacerDimension.newBuilder().setExpandedDimension(mImpl).build();
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "ExpandedDimensionProp{" + "layoutWeight=" + getLayoutWeight() + "}";
         }
 
@@ -1055,8 +981,7 @@ public final class DimensionBuilders {
              * <p>Note that this field only supports static values.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setLayoutWeight(@NonNull FloatProp layoutWeight) {
+            public @NonNull Builder setLayoutWeight(@NonNull FloatProp layoutWeight) {
                 if (layoutWeight.getDynamicValue() != null) {
                     throw new IllegalArgumentException(
                             "ExpandedDimensionProp.Builder.setLayoutWeight doesn't support dynamic"
@@ -1070,8 +995,7 @@ public final class DimensionBuilders {
 
             /** Builds an instance from accumulated values. */
             @Override
-            @NonNull
-            public ExpandedDimensionProp build() {
+            public @NonNull ExpandedDimensionProp build() {
                 return new ExpandedDimensionProp(mImpl.build(), mFingerprint);
             }
         }
@@ -1084,7 +1008,7 @@ public final class DimensionBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class WrappedDimensionProp implements ContainerDimension {
         private final DimensionProto.WrappedDimensionProp mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         WrappedDimensionProp(
                 DimensionProto.WrappedDimensionProp impl, @Nullable Fingerprint fingerprint) {
@@ -1093,8 +1017,7 @@ public final class DimensionBuilders {
         }
 
         /** Gets the minimum size of this dimension. If not set, then there is no minimum size. */
-        @Nullable
-        public DpProp getMinimumSize() {
+        public @Nullable DpProp getMinimumSize() {
             if (mImpl.hasMinimumSize()) {
                 return DpProp.fromProto(mImpl.getMinimumSize());
             } else {
@@ -1104,44 +1027,39 @@ public final class DimensionBuilders {
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static WrappedDimensionProp fromProto(
-                @NonNull DimensionProto.WrappedDimensionProp proto,
+        public static @NonNull WrappedDimensionProp fromProto(
+                DimensionProto.@NonNull WrappedDimensionProp proto,
                 @Nullable Fingerprint fingerprint) {
             return new WrappedDimensionProp(proto, fingerprint);
         }
 
-        @NonNull
-        static WrappedDimensionProp fromProto(@NonNull DimensionProto.WrappedDimensionProp proto) {
+        static @NonNull WrappedDimensionProp fromProto(
+                DimensionProto.@NonNull WrappedDimensionProp proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        DimensionProto.WrappedDimensionProp toProto() {
+        DimensionProto.@NonNull WrappedDimensionProp toProto() {
             return mImpl;
         }
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public DimensionProto.ContainerDimension toContainerDimensionProto() {
+        public DimensionProto.@NonNull ContainerDimension toContainerDimensionProto() {
             return DimensionProto.ContainerDimension.newBuilder()
                     .setWrappedDimension(mImpl)
                     .build();
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "WrappedDimensionProp{" + "minimumSize=" + getMinimumSize() + "}";
         }
 
@@ -1161,8 +1079,7 @@ public final class DimensionBuilders {
              * <p>Note that this field only supports static values.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setMinimumSize(@NonNull DpProp minimumSize) {
+            public @NonNull Builder setMinimumSize(@NonNull DpProp minimumSize) {
                 if (minimumSize.getDynamicValue() != null) {
                     throw new IllegalArgumentException(
                             "WrappedDimensionProp.Builder.setMinimumSize doesn't support dynamic"
@@ -1176,8 +1093,7 @@ public final class DimensionBuilders {
 
             /** Builds an instance from accumulated values. */
             @Override
-            @NonNull
-            public WrappedDimensionProp build() {
+            public @NonNull WrappedDimensionProp build() {
                 return new WrappedDimensionProp(mImpl.build(), mFingerprint);
             }
         }
@@ -1195,7 +1111,7 @@ public final class DimensionBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class ProportionalDimensionProp implements ImageDimension {
         private final DimensionProto.ProportionalDimensionProp mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         ProportionalDimensionProp(
                 DimensionProto.ProportionalDimensionProp impl, @Nullable Fingerprint fingerprint) {
@@ -1217,45 +1133,39 @@ public final class DimensionBuilders {
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static ProportionalDimensionProp fromProto(
-                @NonNull DimensionProto.ProportionalDimensionProp proto,
+        public static @NonNull ProportionalDimensionProp fromProto(
+                DimensionProto.@NonNull ProportionalDimensionProp proto,
                 @Nullable Fingerprint fingerprint) {
             return new ProportionalDimensionProp(proto, fingerprint);
         }
 
-        @NonNull
-        static ProportionalDimensionProp fromProto(
-                @NonNull DimensionProto.ProportionalDimensionProp proto) {
+        static @NonNull ProportionalDimensionProp fromProto(
+                DimensionProto.@NonNull ProportionalDimensionProp proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        DimensionProto.ProportionalDimensionProp toProto() {
+        DimensionProto.@NonNull ProportionalDimensionProp toProto() {
             return mImpl;
         }
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public DimensionProto.ImageDimension toImageDimensionProto() {
+        public DimensionProto.@NonNull ImageDimension toImageDimensionProto() {
             return DimensionProto.ImageDimension.newBuilder()
                     .setProportionalDimension(mImpl)
                     .build();
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "ProportionalDimensionProp{"
                     + "aspectRatioWidth="
                     + getAspectRatioWidth()
@@ -1276,8 +1186,7 @@ public final class DimensionBuilders {
 
             /** Sets the width to be used when calculating the aspect ratio to preserve. */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setAspectRatioWidth(@IntRange(from = 0) int aspectRatioWidth) {
+            public @NonNull Builder setAspectRatioWidth(@IntRange(from = 0) int aspectRatioWidth) {
                 mImpl.setAspectRatioWidth(aspectRatioWidth);
                 mFingerprint.recordPropertyUpdate(1, aspectRatioWidth);
                 return this;
@@ -1285,8 +1194,8 @@ public final class DimensionBuilders {
 
             /** Sets the height to be used when calculating the aspect ratio ratio to preserve. */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setAspectRatioHeight(@IntRange(from = 0) int aspectRatioHeight) {
+            public @NonNull Builder setAspectRatioHeight(
+                    @IntRange(from = 0) int aspectRatioHeight) {
                 mImpl.setAspectRatioHeight(aspectRatioHeight);
                 mFingerprint.recordPropertyUpdate(2, aspectRatioHeight);
                 return this;
@@ -1294,8 +1203,7 @@ public final class DimensionBuilders {
 
             /** Builds an instance from accumulated values. */
             @Override
-            @NonNull
-            public ProportionalDimensionProp build() {
+            public @NonNull ProportionalDimensionProp build() {
                 return new ProportionalDimensionProp(mImpl.build(), mFingerprint);
             }
         }
@@ -1306,29 +1214,25 @@ public final class DimensionBuilders {
     public interface ContainerDimension {
         /** Get the protocol buffer representation of this object. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        DimensionProto.ContainerDimension toContainerDimensionProto();
+        DimensionProto.@NonNull ContainerDimension toContainerDimensionProto();
 
         /** Get the fingerprint for this object or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        Fingerprint getFingerprint();
+        @Nullable Fingerprint getFingerprint();
 
         /** Builder to create {@link ContainerDimension} objects. */
         @RestrictTo(Scope.LIBRARY_GROUP)
         interface Builder {
 
             /** Builds an instance with values accumulated in this Builder. */
-            @NonNull
-            ContainerDimension build();
+            @NonNull ContainerDimension build();
         }
     }
 
     /** Creates a new wrapper instance from the proto. */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static ContainerDimension containerDimensionFromProto(
-            @NonNull DimensionProto.ContainerDimension proto, @Nullable Fingerprint fingerprint) {
+    public static @NonNull ContainerDimension containerDimensionFromProto(
+            DimensionProto.@NonNull ContainerDimension proto, @Nullable Fingerprint fingerprint) {
         if (proto.hasLinearDimension()) {
             return DpProp.fromProto(proto.getLinearDimension(), fingerprint);
         }
@@ -1342,9 +1246,8 @@ public final class DimensionBuilders {
                 "Proto was not a recognised instance of ContainerDimension");
     }
 
-    @NonNull
-    static ContainerDimension containerDimensionFromProto(
-            @NonNull DimensionProto.ContainerDimension proto) {
+    static @NonNull ContainerDimension containerDimensionFromProto(
+            DimensionProto.@NonNull ContainerDimension proto) {
         return containerDimensionFromProto(proto, null);
     }
 
@@ -1353,29 +1256,25 @@ public final class DimensionBuilders {
     public interface ImageDimension {
         /** Get the protocol buffer representation of this object. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        DimensionProto.ImageDimension toImageDimensionProto();
+        DimensionProto.@NonNull ImageDimension toImageDimensionProto();
 
         /** Get the fingerprint for this object or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        Fingerprint getFingerprint();
+        @Nullable Fingerprint getFingerprint();
 
         /** Builder to create {@link ImageDimension} objects. */
         @RestrictTo(Scope.LIBRARY_GROUP)
         interface Builder {
 
             /** Builds an instance with values accumulated in this Builder. */
-            @NonNull
-            ImageDimension build();
+            @NonNull ImageDimension build();
         }
     }
 
     /** Creates a new wrapper instance from the proto. */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static ImageDimension imageDimensionFromProto(
-            @NonNull DimensionProto.ImageDimension proto, @Nullable Fingerprint fingerprint) {
+    public static @NonNull ImageDimension imageDimensionFromProto(
+            DimensionProto.@NonNull ImageDimension proto, @Nullable Fingerprint fingerprint) {
         if (proto.hasLinearDimension()) {
             return DpProp.fromProto(proto.getLinearDimension(), fingerprint);
         }
@@ -1389,8 +1288,8 @@ public final class DimensionBuilders {
         throw new IllegalStateException("Proto was not a recognised instance of ImageDimension");
     }
 
-    @NonNull
-    static ImageDimension imageDimensionFromProto(@NonNull DimensionProto.ImageDimension proto) {
+    static @NonNull ImageDimension imageDimensionFromProto(
+            DimensionProto.@NonNull ImageDimension proto) {
         return imageDimensionFromProto(proto, null);
     }
 
@@ -1399,29 +1298,25 @@ public final class DimensionBuilders {
     public interface SpacerDimension {
         /** Get the protocol buffer representation of this object. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        DimensionProto.SpacerDimension toSpacerDimensionProto();
+        DimensionProto.@NonNull SpacerDimension toSpacerDimensionProto();
 
         /** Get the fingerprint for this object or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        Fingerprint getFingerprint();
+        @Nullable Fingerprint getFingerprint();
 
         /** Builder to create {@link SpacerDimension} objects. */
         @RestrictTo(Scope.LIBRARY_GROUP)
         interface Builder {
 
             /** Builds an instance with values accumulated in this Builder. */
-            @NonNull
-            SpacerDimension build();
+            @NonNull SpacerDimension build();
         }
     }
 
     /** Creates a new wrapper instance from the proto. */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static SpacerDimension spacerDimensionFromProto(
-            @NonNull DimensionProto.SpacerDimension proto, @Nullable Fingerprint fingerprint) {
+    public static @NonNull SpacerDimension spacerDimensionFromProto(
+            DimensionProto.@NonNull SpacerDimension proto, @Nullable Fingerprint fingerprint) {
         if (proto.hasLinearDimension()) {
             return DpProp.fromProto(proto.getLinearDimension(), fingerprint);
         }
@@ -1431,8 +1326,8 @@ public final class DimensionBuilders {
         throw new IllegalStateException("Proto was not a recognised instance of SpacerDimension");
     }
 
-    @NonNull
-    static SpacerDimension spacerDimensionFromProto(@NonNull DimensionProto.SpacerDimension proto) {
+    static @NonNull SpacerDimension spacerDimensionFromProto(
+            DimensionProto.@NonNull SpacerDimension proto) {
         return spacerDimensionFromProto(proto, null);
     }
 
@@ -1445,29 +1340,25 @@ public final class DimensionBuilders {
     public interface ExtensionDimension {
         /** Get the protocol buffer representation of this object. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        DimensionProto.ExtensionDimension toExtensionDimensionProto();
+        DimensionProto.@NonNull ExtensionDimension toExtensionDimensionProto();
 
         /** Get the fingerprint for this object or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        Fingerprint getFingerprint();
+        @Nullable Fingerprint getFingerprint();
 
         /** Builder to create {@link ExtensionDimension} objects. */
         @RestrictTo(Scope.LIBRARY_GROUP)
         interface Builder {
 
             /** Builds an instance with values accumulated in this Builder. */
-            @NonNull
-            ExtensionDimension build();
+            @NonNull ExtensionDimension build();
         }
     }
 
     /** Creates a new wrapper instance from the proto. */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static ExtensionDimension extensionDimensionFromProto(
-            @NonNull DimensionProto.ExtensionDimension proto, @Nullable Fingerprint fingerprint) {
+    public static @NonNull ExtensionDimension extensionDimensionFromProto(
+            DimensionProto.@NonNull ExtensionDimension proto, @Nullable Fingerprint fingerprint) {
         if (proto.hasLinearDimension()) {
             return DpProp.fromProto(proto.getLinearDimension(), fingerprint);
         }
@@ -1475,9 +1366,8 @@ public final class DimensionBuilders {
                 "Proto was not a recognised instance of ExtensionDimension");
     }
 
-    @NonNull
-    static ExtensionDimension extensionDimensionFromProto(
-            @NonNull DimensionProto.ExtensionDimension proto) {
+    static @NonNull ExtensionDimension extensionDimensionFromProto(
+            DimensionProto.@NonNull ExtensionDimension proto) {
         return extensionDimensionFromProto(proto, null);
     }
 
@@ -1485,7 +1375,7 @@ public final class DimensionBuilders {
     @RequiresSchemaVersion(major = 1, minor = 400)
     public static final class BoundingBoxRatio implements PivotDimension {
         private final DimensionProto.BoundingBoxRatio mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         BoundingBoxRatio(DimensionProto.BoundingBoxRatio impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -1498,8 +1388,7 @@ public final class DimensionBuilders {
          * bottom / end of the bounding box. Its default value 0.5 represents the middle of the
          * bounding box. Values outside [0, 1] are also valid. Dynamic value is supported.
          */
-        @NonNull
-        public FloatProp getRatio() {
+        public @NonNull FloatProp getRatio() {
             if (mImpl.hasRatio()) {
                 return FloatProp.fromProto(mImpl.getRatio());
             } else {
@@ -1509,40 +1398,34 @@ public final class DimensionBuilders {
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static BoundingBoxRatio fromProto(
-                @NonNull DimensionProto.BoundingBoxRatio proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull BoundingBoxRatio fromProto(
+                DimensionProto.@NonNull BoundingBoxRatio proto, @Nullable Fingerprint fingerprint) {
             return new BoundingBoxRatio(proto, fingerprint);
         }
 
-        @NonNull
-        static BoundingBoxRatio fromProto(@NonNull DimensionProto.BoundingBoxRatio proto) {
+        static @NonNull BoundingBoxRatio fromProto(DimensionProto.@NonNull BoundingBoxRatio proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
-        @NonNull
-        DimensionProto.BoundingBoxRatio toProto() {
+        DimensionProto.@NonNull BoundingBoxRatio toProto() {
             return mImpl;
         }
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public DimensionProto.PivotDimension toPivotDimensionProto() {
+        public DimensionProto.@NonNull PivotDimension toPivotDimensionProto() {
             return DimensionProto.PivotDimension.newBuilder().setLocationRatio(mImpl).build();
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "BoundingBoxRatio{" + "ratio=" + getRatio() + "}";
         }
 
@@ -1573,8 +1456,7 @@ public final class DimensionBuilders {
              * of the bounding box. Values outside [0, 1] are also valid. Dynamic value is
              * supported.
              */
-            @NonNull
-            private Builder setRatio(@NonNull FloatProp ratio) {
+            private @NonNull Builder setRatio(@NonNull FloatProp ratio) {
                 mImpl.setRatio(ratio.toProto());
                 mFingerprint.recordPropertyUpdate(
                         1, checkNotNull(ratio.getFingerprint()).aggregateValueAsInt());
@@ -1583,8 +1465,7 @@ public final class DimensionBuilders {
 
             /** Builds an instance from accumulated values. */
             @Override
-            @NonNull
-            public BoundingBoxRatio build() {
+            public @NonNull BoundingBoxRatio build() {
                 return new BoundingBoxRatio(mImpl.build(), mFingerprint);
             }
         }
@@ -1598,29 +1479,25 @@ public final class DimensionBuilders {
     public interface PivotDimension {
         /** Get the protocol buffer representation of this object. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        DimensionProto.PivotDimension toPivotDimensionProto();
+        DimensionProto.@NonNull PivotDimension toPivotDimensionProto();
 
         /** Get the fingerprint for this object or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        Fingerprint getFingerprint();
+        @Nullable Fingerprint getFingerprint();
 
         /** Builder to create {@link PivotDimension} objects. */
         @RestrictTo(Scope.LIBRARY_GROUP)
         interface Builder {
 
             /** Builds an instance with values accumulated in this Builder. */
-            @NonNull
-            PivotDimension build();
+            @NonNull PivotDimension build();
         }
     }
 
     /** Creates a new wrapper instance from the proto. */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static PivotDimension pivotDimensionFromProto(
-            @NonNull DimensionProto.PivotDimension proto, @Nullable Fingerprint fingerprint) {
+    public static @NonNull PivotDimension pivotDimensionFromProto(
+            DimensionProto.@NonNull PivotDimension proto, @Nullable Fingerprint fingerprint) {
         if (proto.hasOffsetDp()) {
             return DpProp.fromProto(proto.getOffsetDp(), fingerprint);
         }
@@ -1630,8 +1507,8 @@ public final class DimensionBuilders {
         throw new IllegalStateException("Proto was not a recognised instance of PivotDimension");
     }
 
-    @NonNull
-    static PivotDimension pivotDimensionFromProto(@NonNull DimensionProto.PivotDimension proto) {
+    static @NonNull PivotDimension pivotDimensionFromProto(
+            DimensionProto.@NonNull PivotDimension proto) {
         return pivotDimensionFromProto(proto, null);
     }
 }

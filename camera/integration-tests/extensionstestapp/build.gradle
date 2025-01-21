@@ -32,18 +32,18 @@ plugins {
 
 android {
     defaultConfig {
-        applicationId "androidx.camera.integration.extensions"
+        applicationId = "androidx.camera.integration.extensions"
     }
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             testProguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-    namespace "androidx.camera.integration.extensions"
+    namespace = "androidx.camera.integration.extensions"
 }
 
 dependencies {

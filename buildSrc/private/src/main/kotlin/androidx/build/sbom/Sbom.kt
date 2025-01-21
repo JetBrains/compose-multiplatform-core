@@ -106,6 +106,10 @@ private fun Project.listSbomConfigurationNamesForArchive(task: AbstractArchiveTa
         // Jar tasks don't generally embed other dependencies in them
         return listOf()
     }
+    if (task is Zip && task.name.endsWith("Klib")) {
+        // klib zip tasks don't generally embed other dependencies in them
+        return listOf()
+    }
     if (task is GMavenZipTask) {
         // A GMavenZipTask just zips one or more artifacts we've already built
         return listOf()

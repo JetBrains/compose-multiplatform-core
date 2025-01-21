@@ -173,9 +173,9 @@ as appropriate.
 
 #### Splitting existing modules
 
-Existing modules *should not* be split into smaller modules; doing so creates
-the potential for class duplication issues when a developer depends on a new
-sub-module alongside the older top-level module. Consider the following
+Use caution when splitting existing modules into smaller modules; doing so
+creates the potential for class duplication issues when a developer depends on a
+new sub-module alongside the older top-level module. Consider the following
 scenario:
 
 *   `androidx.library:1.0.0`
@@ -194,16 +194,18 @@ A developer writes an app that depends directly on `androidx.library.util:1.1.0`
 and also transitively pulls in `androidx.library:1.0.0`. Their app will no
 longer compile due to class duplication of `androidx.library.util.B`.
 
-While it is possible for the developer to fix this by manually specifying a
-dependency on `androidx.library:1.1.0`, there is no easy way for the developer
-to discover this solution from the class duplication error raised at compile
-time.
+To avoid this issue make sure to define a
+[dependency constraint](/docs/api_guidelines/index.md#dependencies-constraints)
+on`androidx.library:1.1.0` from inside `androidx.library.util:1.1.0`. This
+ensures that if a developer depends on `androidx.library.util:1.1.0`, the
+minimum version of `androidx.library` will be `1.1.0`, avoiding the class
+duplication.
 
-Same-version groups are a special case for this rule. Existing modules that are
-already in a same-version group may be split into sub-modules provided that (a)
-the sub-modules are also in the same-version group and (b) the full API surface
-of the existing module is preserved through transitive dependencies, e.g. the
-sub-modules are added as dependencies of the existing module.
+Same-version groups already have constraints defined, so existing modules that
+are already in a same-version group may be split into sub-modules provided that
+(a) the sub-modules are also in the same-version group and (b) the full API
+surface of the existing module is preserved through transitive dependencies,
+e.g. the sub-modules are added as dependencies of the existing module.
 
 #### Same-version (atomic) groups {#modules-atomic}
 

@@ -16,6 +16,7 @@
 
 package androidx.wear.compose.material3
 
+import androidx.annotation.FloatRange
 import androidx.compose.foundation.shape.AbsoluteCutCornerShape
 import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
 import androidx.compose.foundation.shape.CornerBasedShape
@@ -310,5 +311,29 @@ internal fun rememberAnimatedCornerBasedShape(
 ): Shape {
     return remember(shape, pressedShape, progress) {
         AnimatedMorphShape(shape, pressedShape) { progress.value }
+    }
+}
+
+internal fun CornerBasedShape.fractionalRoundedCornerShape(fraction: Float) =
+    RoundedCornerShape(
+        topStart = FractionalCornerSize(this.topStart, fraction),
+        topEnd = FractionalCornerSize(this.topEnd, fraction),
+        bottomEnd = FractionalCornerSize(this.bottomEnd, fraction),
+        bottomStart = FractionalCornerSize(this.bottomStart, fraction),
+    )
+
+/**
+ * An implementation of [CornerSize], which is a wrapper for another [CornerSize], and multiplies
+ * all the corners of the other shape by a percentage fraction.
+ *
+ * @param cornerSize the base [CornerSize].
+ * @param fraction fraction in range [0..1] to be applied to the base corner size.
+ */
+private class FractionalCornerSize(
+    private val cornerSize: CornerSize,
+    @FloatRange(from = 0.0, to = 1.0) val fraction: Float = 1f
+) : CornerSize {
+    override fun toPx(shapeSize: Size, density: Density): Float {
+        return cornerSize.toPx(shapeSize, density) * fraction
     }
 }

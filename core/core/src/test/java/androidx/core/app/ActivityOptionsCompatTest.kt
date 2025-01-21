@@ -17,6 +17,8 @@
 package androidx.core.app
 
 import android.app.ActivityOptions
+import android.view.Display
+import junit.framework.TestCase.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -36,5 +38,15 @@ class ActivityOptionsCompatTest {
         activityOptionsCompat.setPendingIntentBackgroundActivityStartMode(
             ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_DENIED
         )
+    }
+
+    @Config(minSdk = 26)
+    @Test
+    fun testSetLaunchDisplayId() {
+        val activityOptionsCompat = ActivityOptionsCompat.makeBasic()
+        assertEquals(activityOptionsCompat.launchDisplayId, Display.INVALID_DISPLAY)
+
+        activityOptionsCompat.setLaunchDisplayId(0)
+        assertEquals(activityOptionsCompat.launchDisplayId, 0)
     }
 }

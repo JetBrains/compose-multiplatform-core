@@ -28,8 +28,6 @@ import android.annotation.SuppressLint;
 import android.graphics.Color;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.ColorBuilders.ColorProp;
@@ -46,6 +44,9 @@ import androidx.wear.protolayout.ModifiersBuilders.Semantics;
 import androidx.wear.protolayout.TypeBuilders.StringProp;
 import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.proto.LayoutElementProto;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -97,7 +98,7 @@ public class Button implements LayoutElement {
      */
     public static final String METADATA_TAG_CUSTOM_CONTENT = "CSTBTN";
 
-    @NonNull private final Box mElement;
+    private final @NonNull Box mElement;
 
     Button(@NonNull Box element) {
         mElement = element;
@@ -119,7 +120,7 @@ public class Button implements LayoutElement {
         /** Button type to be used when setting a content which is a custom one. */
         public static final int CUSTOM_CONTENT = 3;
 
-        @NonNull static final Map<Integer, String> TYPE_TO_TAG = new HashMap<>();
+        static final @NonNull Map<Integer, String> TYPE_TO_TAG = new HashMap<>();
 
         /** Button types. */
         @RestrictTo(Scope.LIBRARY)
@@ -127,12 +128,12 @@ public class Button implements LayoutElement {
         @IntDef({NOT_SET, ICON, TEXT, IMAGE, CUSTOM_CONTENT})
         public @interface ButtonType {}
 
-        @NonNull private final Clickable mClickable;
-        @Nullable private StringProp mContentDescription;
-        @NonNull private DpProp mSize = dp(0f);
+        private final @NonNull Clickable mClickable;
+        private @Nullable StringProp mContentDescription;
+        private @NonNull DpProp mSize = dp(0f);
         @ButtonType private int mType = NOT_SET;
-        @NonNull private ColorProp mBackgroundColor = argb(Color.BLACK);
-        @Nullable private LayoutElement mContent;
+        private @NonNull ColorProp mBackgroundColor = argb(Color.BLACK);
+        private @Nullable LayoutElement mContent;
 
         static {
             TYPE_TO_TAG.put(ICON, METADATA_TAG_ICON);
@@ -159,22 +160,19 @@ public class Button implements LayoutElement {
          * <p>While this field is statically accessible from 1.0, it's only bindable since version
          * 1.2 and renderers supporting version 1.2 will use the dynamic value (if set).
          */
-        @NonNull
-        public Builder setContentDescription(@NonNull StringProp contentDescription) {
+        public @NonNull Builder setContentDescription(@NonNull StringProp contentDescription) {
             this.mContentDescription = contentDescription;
             return this;
         }
 
         /** Sets the size for the {@link Button}. If not set, Button won't be shown. */
-        @NonNull
-        public Builder setSize(@NonNull DpProp size) {
+        public @NonNull Builder setSize(@NonNull DpProp size) {
             mSize = size;
             return this;
         }
 
         /** Sets the background colors for the {@link Button}. If not set, black is used. */
-        @NonNull
-        public Builder setBackgroundColor(@NonNull ColorProp backgroundColor) {
+        public @NonNull Builder setBackgroundColor(@NonNull ColorProp backgroundColor) {
             mBackgroundColor = backgroundColor;
             return this;
         }
@@ -183,8 +181,7 @@ public class Button implements LayoutElement {
          * Sets the content for this Button. Any previously added content will be overridden.
          * Provided content should be styled and sized.
          */
-        @NonNull
-        public Builder setContent(@NonNull LayoutElement content, @ButtonType int type) {
+        public @NonNull Builder setContent(@NonNull LayoutElement content, @ButtonType int type) {
             this.mContent = content;
             this.mType = type;
             return this;
@@ -192,9 +189,8 @@ public class Button implements LayoutElement {
 
         /** Constructs and returns {@link Button} with the provided field and look. */
         @SuppressLint("CheckResult") // (b/247804720)
-        @NonNull
         @Override
-        public Button build() {
+        public @NonNull Button build() {
             Modifiers.Builder modifiers =
                     new Modifiers.Builder()
                             .setClickable(mClickable)
@@ -233,20 +229,17 @@ public class Button implements LayoutElement {
     }
 
     /** Returns the content of this Button if it has been added. Otherwise, it returns null. */
-    @Nullable
-    public LayoutElement getContent() {
+    public @Nullable LayoutElement getContent() {
         return mElement.getContents().get(0);
     }
 
     /** Returns click event action associated with this Button. */
-    @NonNull
-    public Clickable getClickable() {
+    public @NonNull Clickable getClickable() {
         return checkNotNull(checkNotNull(mElement.getModifiers()).getClickable());
     }
 
     /** Returns content description for this Button. */
-    @Nullable
-    public StringProp getContentDescription() {
+    public @Nullable StringProp getContentDescription() {
         Semantics semantics = checkNotNull(mElement.getModifiers()).getSemantics();
         if (semantics == null) {
             return null;
@@ -255,21 +248,18 @@ public class Button implements LayoutElement {
     }
 
     /** Returns size for this Button. */
-    @NonNull
-    public ContainerDimension getSize() {
+    public @NonNull ContainerDimension getSize() {
         return checkNotNull(mElement.getWidth());
     }
 
     /** Returns the background color for this Button. */
-    @NonNull
-    public ColorProp getBackgroundColor() {
+    public @NonNull ColorProp getBackgroundColor() {
         return checkNotNull(
                 checkNotNull(checkNotNull(mElement.getModifiers()).getBackground()).getColor());
     }
 
     /** Returns metadata tag set to this Button. */
-    @NonNull
-    public String getMetadataTag() {
+    public @NonNull String getMetadataTag() {
         return getMetadataTagName(
                 checkNotNull(checkNotNull(mElement.getModifiers()).getMetadata()));
     }
@@ -279,8 +269,7 @@ public class Button implements LayoutElement {
      * content with {@code container.getContents().get(index)}) if that element can be converted to
      * Button. Otherwise, it will return null.
      */
-    @Nullable
-    public static Button fromLayoutElement(@NonNull LayoutElement element) {
+    public static @Nullable Button fromLayoutElement(@NonNull LayoutElement element) {
         if (element instanceof Button) {
             return (Button) element;
         }
@@ -295,16 +284,14 @@ public class Button implements LayoutElement {
         return new Button(boxElement);
     }
 
-    @NonNull
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public LayoutElementProto.LayoutElement toLayoutElementProto() {
+    public LayoutElementProto.@NonNull LayoutElement toLayoutElementProto() {
         return checkNotNull(mElement.toLayoutElementProto());
     }
 
-    @Nullable
     @Override
-    public Fingerprint getFingerprint() {
+    public @Nullable Fingerprint getFingerprint() {
         return mElement.getFingerprint();
     }
 }

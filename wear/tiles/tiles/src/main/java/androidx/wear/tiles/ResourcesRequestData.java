@@ -16,8 +16,9 @@
 
 package androidx.wear.tiles;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Holder for Tiles' ResourceRequest class, to be parceled and transferred to a Tile Service.
@@ -30,7 +31,7 @@ public final class ResourcesRequestData extends ProtoParcelable {
     public static final Creator<ResourcesRequestData> CREATOR =
             newCreator(ResourcesRequestData.class, ResourcesRequestData::new);
 
-    public ResourcesRequestData(@NonNull byte[] params, int version) {
+    public ResourcesRequestData(byte @NonNull [] params, int version) {
         super(params, version);
     }
 }

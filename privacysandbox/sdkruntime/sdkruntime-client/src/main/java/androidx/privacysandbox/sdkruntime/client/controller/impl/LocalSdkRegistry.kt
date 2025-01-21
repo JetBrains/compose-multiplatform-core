@@ -86,6 +86,7 @@ internal class LocalSdkRegistry(
 
         loadedEntry.sdkProvider.beforeUnloadSdk()
         LocalSdkActivityHandlerRegistry.unregisterAllActivityHandlersForSdk(sdkName)
+        LocalClientImportanceListenerRegistry.unregisterAllListenersForSdk(sdkName)
     }
 
     override fun getLoadedSdks(): List<SandboxedSdkCompat> =

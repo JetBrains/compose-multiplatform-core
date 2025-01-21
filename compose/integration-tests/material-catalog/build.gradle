@@ -32,20 +32,20 @@ plugins {
 }
 
 android {
-    compileSdkVersion 35
+    compileSdk = 35
     defaultConfig {
-        applicationId "androidx.compose.material.catalog"
+        applicationId = "androidx.compose.material.catalog"
         versionCode 2500
         versionName "2.5.0"
     }
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
         }
     }
-    namespace "androidx.compose.material.catalog"
+    namespace = "androidx.compose.material.catalog"
 }
 
 dependencies {

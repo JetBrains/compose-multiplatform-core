@@ -46,9 +46,8 @@ dependencies {
 }
 
 android {
-    compileSdk 35
-
-    namespace 'androidx.graphics.core'
+    compileSdk = 35
+    namespace = "androidx.graphics.core"
 
     defaultConfig {
         externalNativeBuild {
@@ -63,12 +62,12 @@ android {
                                 "-Wl,--undefined-version"
             }
         }
-        consumerProguardFiles 'proguard-rules.pro'
+        consumerProguardFiles("proguard-rules.pro")
     }
     externalNativeBuild {
         cmake {
             path file('src/main/cpp/CMakeLists.txt')
-            version '3.22.1'
+            version = libs.versions.cmake.get()
         }
     }
 }

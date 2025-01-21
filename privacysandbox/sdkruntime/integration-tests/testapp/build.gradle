@@ -19,10 +19,11 @@ plugins {
     id('org.jetbrains.kotlin.android')
 }
 android {
-    namespace 'androidx.privacysandbox.sdkruntime.integration.testapp'
+    namespace = "androidx.privacysandbox.sdkruntime.integration.testapp"
     defaultConfig {
-        applicationId 'androidx.privacysandbox.sdkruntime.integration.testapp'
-        compileSdk 35
+        applicationId = "androidx.privacysandbox.sdkruntime.integration.testapp"
+        compileSdk = 35
+        compileSdkExtension = 14
     }
     privacySandbox {
         enable = true

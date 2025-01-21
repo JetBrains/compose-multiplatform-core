@@ -22,25 +22,25 @@ plugins {
 }
 
 android {
-    compileSdkVersion 35
+    compileSdk = 35
     defaultConfig {
-        applicationId "androidx.wear.compose.integration.demos"
-        minSdk 25
-        versionCode 52
-        versionName "1.54"
+        applicationId = "androidx.wear.compose.integration.demos"
+        minSdk = 25
+        versionCode = 57
+        versionName = "1.57"
     }
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
     buildFeatures {
-        viewBinding true
+        viewBinding = true
     }
-    namespace "androidx.wear.compose.integration.demos"
+    namespace = "androidx.wear.compose.integration.demos"
 }
 
 dependencies {

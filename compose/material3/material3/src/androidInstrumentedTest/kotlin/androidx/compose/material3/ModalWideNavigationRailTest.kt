@@ -97,7 +97,7 @@ class ModalWideNavigationRailTest {
             ) {
                 WideNavigationRailItem(
                     modifier = Modifier.testTag("item"),
-                    railExpanded = state.targetValue,
+                    railExpanded = state.targetValue == WideNavigationRailValue.Expanded,
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
@@ -110,7 +110,7 @@ class ModalWideNavigationRailTest {
         rule.onNodeWithTag("header").performClick()
 
         // Assert rail is expanded.
-        assertThat(state.targetValue).isTrue()
+        assertThat(state.targetValue.isExpanded).isTrue()
         // Assert width changed to expanded width.
         rule
             .onNodeWithTag("item")
@@ -122,7 +122,7 @@ class ModalWideNavigationRailTest {
     fun modalWideRail_collapses() {
         lateinit var state: WideNavigationRailState
         rule.setMaterialContentForSizeAssertions {
-            state = rememberWideNavigationRailState(true)
+            state = rememberWideNavigationRailState(WideNavigationRailValue.Expanded)
             val scope = rememberCoroutineScope()
 
             ModalWideNavigationRail(
@@ -136,7 +136,7 @@ class ModalWideNavigationRailTest {
                 }
             ) {
                 WideNavigationRailItem(
-                    railExpanded = state.targetValue,
+                    railExpanded = state.targetValue.isExpanded,
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
@@ -149,7 +149,7 @@ class ModalWideNavigationRailTest {
         rule.onNodeWithTag("header").performClick()
 
         // Assert rail is collapsed.
-        assertThat(state.targetValue).isFalse()
+        assertThat(state.targetValue.isExpanded).isFalse()
         // Assert width changed to collapse width.
         rule
             .onNodeWithTag("rail")
@@ -162,7 +162,7 @@ class ModalWideNavigationRailTest {
         lateinit var state: WideNavigationRailState
 
         rule.setMaterialContentForSizeAssertions {
-            state = rememberWideNavigationRailState(true)
+            state = rememberWideNavigationRailState(WideNavigationRailValue.Expanded)
             closeRail = getString(Strings.CloseRail)
 
             ModalWideNavigationRail(
@@ -170,7 +170,7 @@ class ModalWideNavigationRailTest {
                 state = state,
             ) {
                 WideNavigationRailItem(
-                    railExpanded = state.targetValue,
+                    railExpanded = state.targetValue.isExpanded,
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
@@ -186,7 +186,7 @@ class ModalWideNavigationRailTest {
         rule.waitForIdle()
 
         // Assert rail is collapsed.
-        assertThat(state.targetValue).isFalse()
+        assertThat(state.targetValue.isExpanded).isFalse()
         // Assert width changed to collapse width.
         rule
             .onNodeWithTag("rail")
@@ -199,7 +199,9 @@ class ModalWideNavigationRailTest {
 
         rule.setMaterialContentForSizeAssertions {
             paneTitle = getString(Strings.WideNavigationRailPaneTitle)
-            ModalWideNavigationRail(state = rememberWideNavigationRailState(true)) {
+            ModalWideNavigationRail(
+                state = rememberWideNavigationRailState(WideNavigationRailValue.Expanded)
+            ) {
                 WideNavigationRailItem(
                     modifier = Modifier.testTag("item"),
                     railExpanded = true,
@@ -224,7 +226,7 @@ class ModalWideNavigationRailTest {
         lateinit var state: WideNavigationRailState
         lateinit var scope: CoroutineScope
         rule.setMaterialContentForSizeAssertions {
-            state = rememberWideNavigationRailState(true)
+            state = rememberWideNavigationRailState(WideNavigationRailValue.Expanded)
             scope = rememberCoroutineScope()
 
             ModalWideNavigationRail(
@@ -243,13 +245,13 @@ class ModalWideNavigationRailTest {
         }
 
         // Rail starts as expanded.
-        assertThat(state.targetValue).isTrue()
+        assertThat(state.targetValue.isExpanded).isTrue()
         // Collapse rail.
         scope.launch { state.collapse() }
         rule.waitForIdle()
 
         // Assert rail is not expanded.
-        assertThat(state.targetValue).isFalse()
+        assertThat(state.targetValue.isExpanded).isFalse()
         // Assert rail is not displayed.
         rule.onNodeWithTag("rail").assertDoesNotExist()
     }
@@ -283,7 +285,7 @@ class ModalWideNavigationRailTest {
         rule.waitForIdle()
 
         // Assert rail is expanded.
-        assertThat(state.targetValue).isTrue()
+        assertThat(state.targetValue.isExpanded).isTrue()
         // Assert rail is displayed.
         rule.onNodeWithTag("rail").isDisplayed()
         // Assert rail's offset.
@@ -295,7 +297,7 @@ class ModalWideNavigationRailTest {
         lateinit var state: WideNavigationRailState
 
         rule.setMaterialContentForSizeAssertions {
-            state = rememberWideNavigationRailState(true)
+            state = rememberWideNavigationRailState(WideNavigationRailValue.Expanded)
 
             ModalWideNavigationRail(
                 modifier = Modifier.testTag("rail"),
@@ -316,7 +318,7 @@ class ModalWideNavigationRailTest {
         rule.waitForIdle()
 
         // Assert rail is not expanded.
-        assertThat(state.targetValue).isFalse()
+        assertThat(state.targetValue.isExpanded).isFalse()
         // Assert rail is not displayed.
         rule.onNodeWithTag("rail").assertDoesNotExist()
     }
@@ -327,7 +329,7 @@ class ModalWideNavigationRailTest {
         lateinit var state: WideNavigationRailState
         rule.setMaterialContentForSizeAssertions {
             closeRail = getString(Strings.CloseRail)
-            state = rememberWideNavigationRailState(true)
+            state = rememberWideNavigationRailState(WideNavigationRailValue.Expanded)
 
             ModalWideNavigationRail(
                 modifier = Modifier.testTag("rail"),
@@ -345,7 +347,7 @@ class ModalWideNavigationRailTest {
         }
 
         // The rail should be expanded.
-        assertThat(state.targetValue).isTrue()
+        assertThat(state.targetValue.isExpanded).isTrue()
 
         rule
             .onNodeWithContentDescription(closeRail)
@@ -354,7 +356,7 @@ class ModalWideNavigationRailTest {
         rule.waitForIdle()
 
         // Assert rail is not expanded.
-        assertThat(state.targetValue).isFalse()
+        assertThat(state.targetValue.isExpanded).isFalse()
         // Assert rail is not displayed.
         rule.onNodeWithTag("item").assertDoesNotExist()
     }

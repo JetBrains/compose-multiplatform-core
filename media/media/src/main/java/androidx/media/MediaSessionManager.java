@@ -26,10 +26,11 @@ import android.support.v4.media.session.MediaSessionCompat;
 import android.text.TextUtils;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Provides support for interacting with {@link MediaSessionCompat media sessions} that
@@ -52,8 +53,7 @@ public final class MediaSessionManager {
      *
      * @return The MediaSessionManager instance for this context.
      */
-    @NonNull
-    public static MediaSessionManager getSessionManager(@NonNull Context context) {
+    public static @NonNull MediaSessionManager getSessionManager(@NonNull Context context) {
         if (context == null) {
             throw new IllegalArgumentException("context cannot be null");
         }

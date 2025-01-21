@@ -26,8 +26,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatButton;
 import androidx.appcompat.widget.AppCompatTextView;
 import androidx.core.util.Consumer;
@@ -36,6 +34,9 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.androidx.mediarouting.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -57,14 +58,13 @@ import java.util.List;
         mListDiffer.submitList(newItems);
     }
 
-    @NonNull
-    public List<SystemRoutesAdapterItem> getItems() {
+    public @NonNull List<SystemRoutesAdapterItem> getItems() {
         return mListDiffer.getCurrentList();
     }
 
-    @NonNull
     @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public RecyclerView.@NonNull ViewHolder onCreateViewHolder(@NonNull ViewGroup parent,
+            int viewType) {
         Context context = parent.getContext();
         if (viewType == VIEW_TYPE_HEADER) {
             View view = LayoutInflater.from(context).inflate(R.layout.item_system_route_header,
@@ -78,7 +78,7 @@ import java.util.List;
     }
 
     @Override
-    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+    public void onBindViewHolder(RecyclerView.@NonNull ViewHolder holder, int position) {
         SystemRoutesAdapterItem routeItem = getItems().get(position);
         if (routeItem instanceof SystemRoutesSourceItem && holder instanceof HeaderViewHolder) {
             ((HeaderViewHolder) holder).bind((SystemRoutesSourceItem) routeItem);

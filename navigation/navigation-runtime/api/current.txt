@@ -96,12 +96,14 @@ package androidx.navigation {
     method @MainThread public inline <reified T> boolean clearBackStack();
     method @MainThread public final boolean clearBackStack(@IdRes int destinationId);
     method @MainThread public final boolean clearBackStack(String route);
+    method @MainThread public final <T> boolean clearBackStack(kotlin.reflect.KClass<T> route);
     method @MainThread public final <T> boolean clearBackStack(T route);
     method public androidx.navigation.NavDeepLinkBuilder createDeepLink();
     method @SuppressCompatibility @androidx.navigation.NavDeepLinkSaveStateControl public static final void enableDeepLinkSaveState(boolean saveState);
     method public inline <reified T> androidx.navigation.NavBackStackEntry getBackStackEntry();
     method public androidx.navigation.NavBackStackEntry getBackStackEntry(@IdRes int destinationId);
     method public final androidx.navigation.NavBackStackEntry getBackStackEntry(String route);
+    method public final <T> androidx.navigation.NavBackStackEntry getBackStackEntry(kotlin.reflect.KClass<T> route);
     method public final <T> androidx.navigation.NavBackStackEntry getBackStackEntry(T route);
     method public androidx.navigation.NavBackStackEntry? getCurrentBackStackEntry();
     method public final kotlinx.coroutines.flow.Flow<androidx.navigation.NavBackStackEntry> getCurrentBackStackEntryFlow();
@@ -142,6 +144,8 @@ package androidx.navigation {
     method @MainThread public boolean popBackStack(@IdRes int destinationId, boolean inclusive, boolean saveState);
     method @MainThread public final boolean popBackStack(String route, boolean inclusive);
     method @MainThread public final boolean popBackStack(String route, boolean inclusive, optional boolean saveState);
+    method @MainThread public final <T> boolean popBackStack(kotlin.reflect.KClass<T> route, boolean inclusive);
+    method @MainThread public final <T> boolean popBackStack(kotlin.reflect.KClass<T> route, boolean inclusive, optional boolean saveState);
     method @MainThread public final <T> boolean popBackStack(T route, boolean inclusive);
     method @MainThread public final <T> boolean popBackStack(T route, boolean inclusive, optional boolean saveState);
     method public void removeOnDestinationChangedListener(androidx.navigation.NavController.OnDestinationChangedListener listener);

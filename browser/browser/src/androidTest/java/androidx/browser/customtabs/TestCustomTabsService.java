@@ -27,9 +27,8 @@ import android.os.RemoteException;
 import android.support.customtabs.ICustomTabsCallback;
 import android.support.customtabs.ICustomTabsService;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.mockito.Mockito;
 
 import java.io.FileDescriptor;
@@ -149,9 +148,8 @@ public class TestCustomTabsService extends CustomTabsService {
         }
     };
 
-    @NonNull
     @Override
-    public IBinder onBind(Intent intent) {
+    public @NonNull IBinder onBind(Intent intent) {
         sInstance = this;
         return super.onBind(intent);
     }
@@ -178,9 +176,8 @@ public class TestCustomTabsService extends CustomTabsService {
             @NonNull Uri url, @NonNull PrefetchOptions options) {
     }
 
-    @NonNull
     @Override
-    protected Bundle extraCommand(@NonNull String commandName, Bundle args) {
+    protected @NonNull Bundle extraCommand(@NonNull String commandName, Bundle args) {
         return Bundle.EMPTY;
     }
 

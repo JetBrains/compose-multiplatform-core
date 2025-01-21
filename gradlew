@@ -14,16 +14,14 @@ SCRIPT_PATH="$(cd $(dirname $0) && pwd -P)"
 if [ -n "$OUT_DIR" ] ; then
     mkdir -p "$OUT_DIR"
     OUT_DIR="$(cd $OUT_DIR && pwd -P)"
-    export GRADLE_USER_HOME="$OUT_DIR/.gradle"
     export TMPDIR="$OUT_DIR/tmp"
 elif [[ $SCRIPT_PATH == /google/cog/* ]] ; then
     export OUT_DIR="$HOME/androidxout"
-    export GRADLE_USER_HOME=~/.gradle
 else
     CHECKOUT_ROOT="$(cd $SCRIPT_PATH/../.. && pwd -P)"
     export OUT_DIR="$CHECKOUT_ROOT/out"
-    export GRADLE_USER_HOME=~/.gradle
 fi
+export GRADLE_USER_HOME="$OUT_DIR/.gradle"
 
 ORG_GRADLE_JVMARGS="$(cd $SCRIPT_PATH && grep org.gradle.jvmargs gradle.properties | sed 's/^/-D/')"
 if [ -n "$DIST_DIR" ]; then

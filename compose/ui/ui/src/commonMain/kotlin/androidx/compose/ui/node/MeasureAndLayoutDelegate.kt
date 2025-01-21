@@ -424,7 +424,7 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
     private fun remeasureLookaheadRootsInSubtree(layoutNode: LayoutNode) {
         layoutNode.forEachChild {
             if (it.measureAffectsParent) {
-                if (it.isOutMostLookaheadRoot()) {
+                if (it.isOutMostLookaheadRoot) {
                     // This call will walk the subtree to look for lookaheadMeasurePending nodes and
                     // do a recursive lookahead remeasure starting at the root.
                     remeasureOnly(it, affectsLookahead = true)
@@ -679,7 +679,7 @@ internal class MeasureAndLayoutDelegate(private val root: LayoutNode) {
                 // both lookahead invalidation and non-lookahead invalidation, just like a measure()
                 // call from LookaheadRoot's parent would start the two tracks - lookahead and post
                 // lookahead measurements.
-                if (child.isOutMostLookaheadRoot() && !affectsLookahead) {
+                if (child.isOutMostLookaheadRoot && !affectsLookahead) {
                     // Force subtree measure hitting a lookahead root, pending lookahead measure.
                     // This could happen when the "applyChanges" cause nodes to be attached in
                     // lookahead subtree while the "applyChanges" is a part of the ancestor's

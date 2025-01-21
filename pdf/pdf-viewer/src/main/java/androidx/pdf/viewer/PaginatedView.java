@@ -25,8 +25,6 @@ import android.util.SparseArray;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.os.ParcelCompat;
@@ -39,6 +37,9 @@ import androidx.pdf.util.ThreadUtils;
 import androidx.pdf.viewer.PageViewFactory.PageView;
 import androidx.pdf.viewer.loader.PdfLoader;
 import androidx.pdf.widget.ZoomView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.AbstractList;
 import java.util.List;
@@ -108,13 +109,11 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
         mModel = model;
     }
 
-    @NonNull
-    public PaginationModel getModel() {
+    public @NonNull PaginationModel getModel() {
         return mModel;
     }
 
-    @NonNull
-    public PaginationModel resetModels() {
+    public @NonNull PaginationModel resetModels() {
         mModel = new PaginationModel(getContext());
         mPageRangeHandler = new PageRangeHandler(mModel);
         return mModel;
@@ -171,9 +170,8 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
         }
     }
 
-    @Nullable
     @Override
-    protected Parcelable onSaveInstanceState() {
+    protected @Nullable Parcelable onSaveInstanceState() {
         Parcelable superState = super.onSaveInstanceState();
         return new SavedState(superState, mModel);
     }
@@ -190,8 +188,7 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
     /**
      * Returns the current viewport in content coordinates
      */
-    @NonNull
-    public Rect getViewArea() {
+    public @NonNull Rect getViewArea() {
         return mViewArea;
     }
 
@@ -207,13 +204,11 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
         }
     }
 
-    @NonNull
-    public PageRangeHandler getPageRangeHandler() {
+    public @NonNull PageRangeHandler getPageRangeHandler() {
         return mPageRangeHandler;
     }
 
-    @NonNull
-    public PdfSelectionModel getSelectionModel() {
+    public @NonNull PdfSelectionModel getSelectionModel() {
         return mSelectionModel;
     }
 
@@ -222,8 +217,7 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
         mSelectionModel = selectionModel;
     }
 
-    @NonNull
-    public SearchModel getSearchModel() {
+    public @NonNull SearchModel getSearchModel() {
         return mSearchModel;
     }
 
@@ -231,8 +225,7 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
         mSearchModel = searchModel;
     }
 
-    @NonNull
-    public PdfSelectionHandles getSelectionHandles() {
+    public @NonNull PdfSelectionHandles getSelectionHandles() {
         return mSelectionHandles;
     }
 
@@ -244,8 +237,7 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
         mPdfLoader = pdfLoader;
     }
 
-    @NonNull
-    public PageViewFactory getPageViewFactory() {
+    public @NonNull PageViewFactory getPageViewFactory() {
         return mPageViewFactory;
     }
 
@@ -292,8 +284,7 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
     }
 
     /** Return the view of the given page number. */
-    @Nullable
-    public PageView getViewAt(int pageNum) {
+    public @Nullable PageView getViewAt(int pageNum) {
         return mPageViews.get(pageNum);
     }
 
@@ -303,8 +294,7 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
      * <p>The list is backed by this view and will likely change soon, so is only suitable for
      * immediate iteration.
      */
-    @NonNull
-    public List<PageMosaicView> getChildViews() {
+    public @NonNull List<PageMosaicView> getChildViews() {
         return new AbstractList<PageMosaicView>() {
 
             @Override
@@ -405,7 +395,7 @@ public class PaginatedView extends ViewGroup implements PaginationModelObserver 
     /**
      * Refreshes the page range for the visible area.
      */
-    public void refreshPageRangeInVisibleArea(@NonNull ZoomView.ZoomScroll zoomScroll,
+    public void refreshPageRangeInVisibleArea(ZoomView.@NonNull ZoomScroll zoomScroll,
             int parentViewHeight) {
         mPageRangeHandler.refreshVisiblePageRange(zoomScroll.scrollY, zoomScroll.zoom,
                 parentViewHeight);

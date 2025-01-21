@@ -26,5 +26,5 @@ dependencies {
 }
 
 android {
-    namespace "android.support.mediacompat.testlib"
+    namespace = "android.support.mediacompat.testlib"
 }

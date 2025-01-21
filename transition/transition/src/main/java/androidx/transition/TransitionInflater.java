@@ -25,11 +25,11 @@ import android.util.Xml;
 import android.view.InflateException;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.collection.ArrayMap;
 import androidx.core.content.res.TypedArrayUtils;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -54,8 +54,7 @@ public class TransitionInflater {
     /**
      * Obtains the TransitionInflater from the given context.
      */
-    @NonNull
-    public static TransitionInflater from(@NonNull Context context) {
+    public static @NonNull TransitionInflater from(@NonNull Context context) {
         return new TransitionInflater(context);
     }
 
@@ -67,8 +66,7 @@ public class TransitionInflater {
      * @throws android.content.res.Resources.NotFoundException when the
      *                                                         transition cannot be loaded
      */
-    @Nullable
-    public Transition inflateTransition(int resource) {
+    public @Nullable Transition inflateTransition(int resource) {
         XmlResourceParser parser = mContext.getResources().getXml(resource);
         try {
             return createTransitionFromXml(parser, Xml.asAttributeSet(parser), null);
@@ -90,8 +88,8 @@ public class TransitionInflater {
      * @throws android.content.res.Resources.NotFoundException when the
      *                                                         transition manager cannot be loaded
      */
-    @Nullable
-    public TransitionManager inflateTransitionManager(int resource, @NonNull ViewGroup sceneRoot) {
+    public @Nullable TransitionManager inflateTransitionManager(int resource,
+            @NonNull ViewGroup sceneRoot) {
         XmlResourceParser parser = mContext.getResources().getXml(resource);
         try {
             return createTransitionManagerFromXml(parser, Xml.asAttributeSet(parser), sceneRoot);

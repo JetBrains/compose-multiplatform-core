@@ -38,9 +38,9 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 25
+        minSdk = 25
     }
-    namespace "androidx.wear.phone.interactions.samples"
+    namespace = "androidx.wear.phone.interactions.samples"
 }
 
 androidx {

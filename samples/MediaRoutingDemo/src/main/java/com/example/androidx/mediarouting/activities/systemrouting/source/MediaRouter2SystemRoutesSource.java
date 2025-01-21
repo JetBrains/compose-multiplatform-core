@@ -25,12 +25,13 @@ import android.media.RoutingSessionInfo;
 import android.os.Build;
 
 import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 import com.example.androidx.mediarouting.activities.systemrouting.SystemRouteItem;
 import com.example.androidx.mediarouting.activities.systemrouting.SystemRoutesSourceItem;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -46,15 +47,14 @@ import java.util.stream.Collectors;
 @RequiresApi(Build.VERSION_CODES.R)
 public final class MediaRouter2SystemRoutesSource extends SystemRoutesSource {
 
-    @NonNull private final Context mContext;
-    @NonNull private final MediaRouter2 mMediaRouter2;
-    @Nullable private final Method mSuitabilityStatusMethod;
-    @Nullable private final Method mWasTransferInitiatedBySelfMethod;
-    @Nullable private final Method mTransferReasonMethod;
-    @NonNull private final ArrayList<SystemRouteItem> mRouteItems = new ArrayList<>();
+    private final @NonNull Context mContext;
+    private final @NonNull MediaRouter2 mMediaRouter2;
+    private final @Nullable Method mSuitabilityStatusMethod;
+    private final @Nullable Method mWasTransferInitiatedBySelfMethod;
+    private final @Nullable Method mTransferReasonMethod;
+    private final @NonNull ArrayList<SystemRouteItem> mRouteItems = new ArrayList<>();
 
-    @NonNull
-    private final MediaRouter2.RouteCallback mRouteCallback =
+    private final MediaRouter2.@NonNull RouteCallback mRouteCallback =
             new MediaRouter2.RouteCallback() {
                 @Override
                 public void onRoutesUpdated(@NonNull List<MediaRoute2Info> routes) {
@@ -62,19 +62,17 @@ public final class MediaRouter2SystemRoutesSource extends SystemRoutesSource {
                 }
             };
 
-    @NonNull
-    private final MediaRouter2.ControllerCallback mControllerCallback =
+    private final MediaRouter2.@NonNull ControllerCallback mControllerCallback =
             new MediaRouter2.ControllerCallback() {
                 @Override
                 public void onControllerUpdated(
-                        @NonNull MediaRouter2.RoutingController unusedController) {
+                        MediaRouter2.@NonNull RoutingController unusedController) {
                     populateRouteItems(mMediaRouter2.getRoutes());
                 }
             };
 
     /** Returns a new instance. */
-    @NonNull
-    public static MediaRouter2SystemRoutesSource create(@NonNull Context context) {
+    public static @NonNull MediaRouter2SystemRoutesSource create(@NonNull Context context) {
         MediaRouter2 mediaRouter2 = MediaRouter2.getInstance(context);
         return new MediaRouter2SystemRoutesSource(context, mediaRouter2);
     }
@@ -125,15 +123,13 @@ public final class MediaRouter2SystemRoutesSource extends SystemRoutesSource {
         mMediaRouter2.unregisterRouteCallback(mRouteCallback);
     }
 
-    @NonNull
     @Override
-    public SystemRoutesSourceItem getSourceItem() {
+    public @NonNull SystemRoutesSourceItem getSourceItem() {
         return new SystemRoutesSourceItem(/* name= */ "MediaRouter2");
     }
 
-    @NonNull
     @Override
-    public List<SystemRouteItem> fetchSourceRouteItems() {
+    public @NonNull List<SystemRouteItem> fetchSourceRouteItems() {
         return mRouteItems;
     }
 
@@ -193,8 +189,7 @@ public final class MediaRouter2SystemRoutesSource extends SystemRoutesSource {
         mOnRoutesChangedListener.run();
     }
 
-    @NonNull
-    private SystemRouteItem createRouteItemFor(
+    private @NonNull SystemRouteItem createRouteItemFor(
             @NonNull MediaRoute2Info routeInfo,
             boolean isSelectedRoute,
             @Nullable Boolean wasTransferredBySelf,
@@ -224,8 +219,7 @@ public final class MediaRouter2SystemRoutesSource extends SystemRoutesSource {
         return builder.build();
     }
 
-    @NonNull
-    private String getHumanReadableSuitabilityStatus(@Nullable Integer status) {
+    private @NonNull String getHumanReadableSuitabilityStatus(@Nullable Integer status) {
         if (status == null) {
             // The route is not selected, or this Android version doesn't support suitability
             // status.
@@ -243,8 +237,7 @@ public final class MediaRouter2SystemRoutesSource extends SystemRoutesSource {
         }
     }
 
-    @NonNull
-    private String getHumanReadableTransferReason(@Nullable Integer transferReason) {
+    private @NonNull String getHumanReadableTransferReason(@Nullable Integer transferReason) {
         if (transferReason == null) {
             // The route is not selected, or this Android version doesn't support transfer reason.
             return null;

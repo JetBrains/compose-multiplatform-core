@@ -22,9 +22,9 @@ import android.content.res.Resources;
 import android.os.Binder;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.XmlRes;
 
+import org.jspecify.annotations.NonNull;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
@@ -161,8 +161,7 @@ public final class TestAppAuthenticatorBuilder {
     // This is not a setter for the builder but instead a static factory method to obtain a new
     // builder.
     @SuppressLint("BuilderSetStyle")
-    @NonNull
-    public static TestAppAuthenticatorBuilder createFromResource(@NonNull Context context,
+    public static @NonNull TestAppAuthenticatorBuilder createFromResource(@NonNull Context context,
             @XmlRes int xmlResource) {
         Resources resources = context.getResources();
         XmlPullParser parser = resources.getXml(xmlResource);
@@ -182,8 +181,7 @@ public final class TestAppAuthenticatorBuilder {
     // This is not a setter for the builder but instead a static factory method to obtain a new
     // builder.
     @SuppressLint("BuilderSetStyle")
-    @NonNull
-    public static TestAppAuthenticatorBuilder createFromInputStream(
+    public static @NonNull TestAppAuthenticatorBuilder createFromInputStream(
             @NonNull Context context,
             @NonNull InputStream xmlInputStream)
             throws AppAuthenticatorXmlException {
@@ -231,8 +229,7 @@ public final class TestAppAuthenticatorBuilder {
     // The builder allows configuring other options that are not directly controlled by the
     // AppAuthenticator.
     @SuppressLint("MissingGetterMatchingBuilder")
-    @NonNull
-    public TestAppAuthenticatorBuilder setSignatureAcceptedForPackage(
+    public @NonNull TestAppAuthenticatorBuilder setSignatureAcceptedForPackage(
             @NonNull String packageName) {
         mTestPolicy = POLICY_CUSTOM;
         mAppSignatureVerifierBuilder.setSignatureAcceptedForPackage(packageName);
@@ -250,8 +247,7 @@ public final class TestAppAuthenticatorBuilder {
     // The builder allows configuring other options that are not directly controlled by the
     // AppAuthenticator.
     @SuppressLint("MissingGetterMatchingBuilder")
-    @NonNull
-    public TestAppAuthenticatorBuilder setSigningIdentityForPackage(
+    public @NonNull TestAppAuthenticatorBuilder setSigningIdentityForPackage(
             @NonNull String packageName,
             @NonNull String certDigest) {
         mTestPolicy = POLICY_CUSTOM;
@@ -274,8 +270,7 @@ public final class TestAppAuthenticatorBuilder {
     // The builder allows configuring other options that are not directly controlled by the
     // AppAuthenticator.
     @SuppressLint("MissingGetterMatchingBuilder")
-    @NonNull
-    public TestAppAuthenticatorBuilder setUidForPackage(@NonNull String packageName,
+    public @NonNull TestAppAuthenticatorBuilder setUidForPackage(@NonNull String packageName,
             int uid) {
         mAppAuthenticatorUtilsBuilder.setUidForPackage(packageName, uid);
         return this;
@@ -291,8 +286,7 @@ public final class TestAppAuthenticatorBuilder {
     // The builder allows configuring other options that are not directly controlled by the
     // AppAuthenticator.
     @SuppressLint("MissingGetterMatchingBuilder")
-    @NonNull
-    public TestAppAuthenticatorBuilder setPackageNotInstalled(
+    public @NonNull TestAppAuthenticatorBuilder setPackageNotInstalled(
             @NonNull String packageName) {
         mTestPolicy = POLICY_CUSTOM;
         mAppAuthenticatorUtilsBuilder.setPackageNotInstalled(packageName);
@@ -313,8 +307,7 @@ public final class TestAppAuthenticatorBuilder {
     // This class is provided so that apps can inject a configurable AppAuthenticator for their
     // tests, so it needs access to the restricted test APIs.
     @SuppressLint("RestrictedApi")
-    @NonNull
-    public AppAuthenticator build() throws AppAuthenticatorXmlException, IOException {
+    public @NonNull AppAuthenticator build() throws AppAuthenticatorXmlException, IOException {
         // Obtain the config from the AppAuthenticator class to ensure that the provided XML is
         // properly configured.
         AppAuthenticator.AppAuthenticatorConfig config =

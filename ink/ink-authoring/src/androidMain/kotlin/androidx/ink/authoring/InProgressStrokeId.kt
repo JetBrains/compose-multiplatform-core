@@ -33,6 +33,6 @@ public class InProgressStrokeId @VisibleForTesting public constructor() {
         // could
         // serve both testing use cases as well as being called from code in the same module but a
         // different package (e.g. LatencyData).
-        internal fun create(): InProgressStrokeId = InProgressStrokeId()
+        internal fun create() = InProgressStrokeId()
     }
 }

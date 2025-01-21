@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
+import androidx.wear.compose.foundation.lazy.layout.LazyLayoutKeyIndexMap
 import com.google.common.truth.Truth.assertThat
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.Test
@@ -272,6 +273,7 @@ class TransformingLazyColumnCenterBoundsMeasurementStrategyTest {
         measure(
             itemsCount = itemHeights.size,
             measuredItemProvider = makeMeasuredItemProvider(itemHeights, transformedHeight),
+            keyIndexMap = LazyLayoutKeyIndexMap.Empty,
             itemSpacing = itemSpacing,
             containerConstraints = containerConstraints,
             anchorItemIndex = anchorItemIndex,
@@ -310,7 +312,7 @@ class TransformingLazyColumnCenterBoundsMeasurementStrategyTest {
         ) {}
 
         override val parentData: Any?
-            get() = transformedHeight?.let { HeightProviderParentData(it) }
+            get() = transformedHeight?.let { TransformingLazyColumnParentData(it) }
     }
 
     private fun makeMeasuredItemProvider(
@@ -329,7 +331,7 @@ class TransformingLazyColumnCenterBoundsMeasurementStrategyTest {
             containerConstraints = containerConstraints,
             leftPadding = 0,
             rightPadding = 0,
-            scrollProgress = progressProvider(itemHeights[index]),
+            measureScrollProgress = progressProvider(itemHeights[index]),
             horizontalAlignment = Alignment.CenterHorizontally,
             layoutDirection = LayoutDirection.Ltr,
             key = index,

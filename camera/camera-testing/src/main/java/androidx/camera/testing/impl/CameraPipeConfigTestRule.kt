@@ -135,51 +135,14 @@ public class CameraPipeConfigTestRule(
 
         private val allowPresubmitTests =
             listOf(
-                "BasicUITest",
-                "Camera2InteropIntegrationTest",
-                "CameraControlDeviceTest",
-                "CameraDisconnectTest",
-                "CameraInfoDeviceTest",
-                "CameraXInitTest",
-                "CameraXServiceTest",
-                "CaptureOptionSubmissionTest",
-                "ExistingActivityLifecycleTest",
-                "FlashTest",
-                "FocusMeteringDeviceTest",
-                "FovDeviceTest",
-                "androidx.camera.integration.core.ImageAnalysisTest",
-                "ImageCaptureLatencyTest",
-                "androidx.camera.integration.core.ImageCaptureTest",
-                "ImageCaptureWithoutStoragePermissionTest",
-                "androidx.camera.integration.core.camera2.PreviewTest",
-                "ResolutionSelectorDeviceTest",
-                "StreamSharingTest",
-                "SurfaceOrientedMeteringPointFactoryTest",
-                "TakePictureTest",
-                "ToggleButtonUITest",
-                "UseCaseCombinationTest",
-                "VideoRecordingEffectTest",
-                "VideoRecordingFrameDropTest",
-                "ZoomControlDeviceTest",
+                // CoreTestApps
+                "androidx.camera.integration.core.",
                 // Camera-View
-                "CameraControllerDeviceTest",
-                "PreviewViewBitmapTest",
-                "PreviewViewDeviceTest",
-                "PreviewViewStreamStateTest",
+                "androidx.camera.view.",
                 // Camera-Video
-                "AudioEncoderConfigAudioProfileResolverTest",
-                "AudioSettingsAudioProfileResolverTest",
-                "VideoEncoderConfigVideoProfileResolverTest",
-                "VideoEncoderTest",
-                "BackupHdrProfileEncoderProfilesProviderTest",
-                "AudioVideoSyncTest",
-                "RecorderTest",
-                "RecorderVideoCapabilitiesTest",
-                "SupportedQualitiesVerificationTest",
-                "VideoCaptureDeviceTest",
-
-                // TODO(b/122975195): Re-enable test after camera-pipe implement is fixed
-                // "VideoRecordingTest",
+                "androidx.camera.video.",
+                // UIWidgets
+                "androidx.camera.integration.uiwidgets.",
             )
 
         fun log(message: String, throwable: Throwable? = null) {

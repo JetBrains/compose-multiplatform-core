@@ -22,11 +22,12 @@ import android.webkit.ServiceWorkerController;
 import android.webkit.WebStorage;
 
 import androidx.annotation.AnyThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RequiresOptIn;
 import androidx.core.os.CancellationSignal;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -50,9 +51,9 @@ public interface Profile {
      * ProfileStore create methods.
      */
     @AnyThread
-    @NonNull
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @NonNull
     String getName();
 
     /**
@@ -64,9 +65,9 @@ public interface Profile {
      *                               {@link ProfileStore#deleteProfile(String)}}.
      */
     @AnyThread
-    @NonNull
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @NonNull
     CookieManager getCookieManager();
 
     /**
@@ -78,9 +79,9 @@ public interface Profile {
      *                               {@link ProfileStore#deleteProfile(String)}}.
      */
     @AnyThread
-    @NonNull
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @NonNull
     WebStorage getWebStorage();
 
     /**
@@ -92,9 +93,9 @@ public interface Profile {
      *                               {@link ProfileStore#deleteProfile(String)}}.
      */
     @AnyThread
-    @NonNull
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @NonNull
     GeolocationPermissions getGeolocationPermissions();
 
     /**
@@ -106,9 +107,9 @@ public interface Profile {
      *                               {@link ProfileStore#deleteProfile(String)}}.
      */
     @AnyThread
-    @NonNull
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @NonNull
     ServiceWorkerController getServiceWorkerController();
 
     /**
@@ -150,6 +151,7 @@ public interface Profile {
      *                           in-flight prefetch request, However cancellation is not
      *                           guaranteed.
      * @param operationCallback  callbacks for reporting result back to application.
+     * @throws IllegalArgumentException if the url or callback is null.
      */
     @RequiresFeature(name = WebViewFeature.PROFILE_URL_PREFETCH,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -157,7 +159,7 @@ public interface Profile {
     @ExperimentalUrlPrefetch
     void prefetchUrlAsync(@NonNull String url,
             @Nullable CancellationSignal cancellationSignal,
-            @NonNull PrefetchOperationCallback<Void> operationCallback);
+            @NonNull OutcomeReceiverCompat<Void, PrefetchException> operationCallback);
 
     /**
      * Starts a URL prefetch request. Can be called from any thread.
@@ -183,12 +185,13 @@ public interface Profile {
      * All result callbacks will be resolved on the calling thread.
      * <p>
      *
-     * @param url                the url associated with the prefetch request.
-     * @param cancellationSignal will make the best effort to cancel an
-     *                           in-flight prefetch request, However cancellation is not
-     *                           guaranteed.
-     * @param operationCallback  callbacks for reporting result back to application.
-     * @param prefetchParameters custom prefetch parameters.
+     * @param url                          the url associated with the prefetch request.
+     * @param cancellationSignal           will make the best effort to cancel an
+     *                                     in-flight prefetch request, However cancellation is not
+     *                                     guaranteed.
+     * @param speculativeLoadingParameters parameters to customize the prefetch request.
+     * @param operationCallback            callbacks for reporting result back to application.
+     * @throws IllegalArgumentException if the url or callback is null.
      */
     @RequiresFeature(name = WebViewFeature.PROFILE_URL_PREFETCH,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
@@ -196,8 +199,8 @@ public interface Profile {
     @ExperimentalUrlPrefetch
     void prefetchUrlAsync(@NonNull String url,
             @Nullable CancellationSignal cancellationSignal,
-            @NonNull PrefetchOperationCallback<Void> operationCallback,
-            @NonNull PrefetchParameters prefetchParameters);
+            @NonNull SpeculativeLoadingParameters speculativeLoadingParameters,
+            @NonNull OutcomeReceiverCompat<Void, PrefetchException> operationCallback);
 
     /**
      * Removes a cached prefetch response for the provided url
@@ -210,12 +213,13 @@ public interface Profile {
      * @param url               the url associated with the prefetch request.
      * @param operationCallback runs when the clear operation is complete Or and error occurred
      *                          during it.
+     * @throws IllegalArgumentException if the url or callback is null.
      */
     @RequiresFeature(name = WebViewFeature.PROFILE_URL_PREFETCH,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @AnyThread
     @ExperimentalUrlPrefetch
     void clearPrefetchAsync(@NonNull String url,
-            @NonNull PrefetchOperationCallback<Void> operationCallback);
+            @NonNull OutcomeReceiverCompat<Void, PrefetchException> operationCallback);
 
 }

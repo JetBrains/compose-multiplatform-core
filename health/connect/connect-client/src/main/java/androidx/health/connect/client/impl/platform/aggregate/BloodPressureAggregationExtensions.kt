@@ -24,7 +24,8 @@ import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.aggregate.AggregationResult
 import androidx.health.connect.client.records.BloodPressureRecord
 import androidx.health.connect.client.records.metadata.DataOrigin
-import androidx.health.connect.client.time.TimeRangeFilter
+import androidx.health.connect.client.request.AggregateRequest
+import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.units.Pressure
 import kotlin.math.max
 import kotlin.math.min
@@ -40,25 +41,17 @@ private val BLOOD_PRESSURE_METRICS =
     )
 
 internal suspend fun HealthConnectClient.aggregateBloodPressure(
-    bloodPressureMetrics: Set<AggregateMetric<*>>,
-    timeRangeFilter: TimeRangeFilter,
-    dataOriginFilter: Set<DataOrigin>
-) =
-    aggregateBloodPressure(
-        timeRangeFilter,
-        dataOriginFilter,
-        BloodPressureAggregator(bloodPressureMetrics)
-    )
-
-private suspend fun HealthConnectClient.aggregateBloodPressure(
-    timeRangeFilter: TimeRangeFilter,
-    dataOriginFilter: Set<DataOrigin>,
-    aggregator: Aggregator<BloodPressureRecord>
+    aggregateRequest: AggregateRequest
 ): AggregationResult {
-    readRecordsFlow(BloodPressureRecord::class, timeRangeFilter, dataOriginFilter).collect { records
-        ->
-        records.forEach { aggregator += it }
-    }
+    val aggregator = BloodPressureAggregator(aggregateRequest.metrics)
+    readRecordsFlow(
+            ReadRecordsRequest(
+                BloodPressureRecord::class,
+                aggregateRequest.timeRangeFilter,
+                aggregateRequest.dataOriginFilter
+            )
+        )
+        .collect { records -> records.forEach { aggregator += it } }
     return aggregator.getResult()
 }
 

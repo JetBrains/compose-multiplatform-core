@@ -112,6 +112,8 @@ constructor(
     @JvmField
     val multiInstanceInvalidation: Boolean = multiInstanceInvalidationServiceIntent != null
 
+    internal var useTempTrackingTable = true
+
     /**
      * Creates a database configuration with the given values.
      *

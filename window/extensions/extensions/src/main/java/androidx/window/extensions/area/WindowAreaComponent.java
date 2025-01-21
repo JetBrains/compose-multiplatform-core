@@ -20,12 +20,13 @@ import android.app.Activity;
 import android.util.DisplayMetrics;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.window.extensions.RequiresVendorApiLevel;
 import androidx.window.extensions.WindowExtensions;
 import androidx.window.extensions.core.util.function.Consumer;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -247,8 +248,7 @@ public interface WindowAreaComponent {
      * return null.
      */
     @RequiresVendorApiLevel(level = 3)
-    @Nullable
-    default ExtensionWindowAreaPresentation getRearDisplayPresentation() {
+    default @Nullable ExtensionWindowAreaPresentation getRearDisplayPresentation() {
         throw new UnsupportedOperationException("This method must not be called unless there is a"
                 + " corresponding override implementation on the device.");
     }
@@ -261,8 +261,7 @@ public interface WindowAreaComponent {
     @RequiresVendorApiLevel(level = 3)
     // TODO(b/273807238): Investigate how we can provide a listener to get runtime changes in
     //  rear display metrics to better support other form-factors in the future.
-    @NonNull
-    default DisplayMetrics getRearDisplayMetrics() {
+    default @NonNull DisplayMetrics getRearDisplayMetrics() {
         throw new UnsupportedOperationException("This method must not be called unless there is a"
                 + " corresponding override implementation on the device.");
     }

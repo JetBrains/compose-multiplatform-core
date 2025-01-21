@@ -36,7 +36,7 @@ import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Quad
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Rect
 
 internal fun InspectorNode.toComposableNode(context: ConversionContext): ComposableNode {
-    return toNodeBuilder(context).resetSystemFlag().build()
+    return toNodeBuilder(context).build()
 }
 
 private val SELECTOR_EXPR = Regex("(\\\$(lambda-)?[0-9]+)+$")

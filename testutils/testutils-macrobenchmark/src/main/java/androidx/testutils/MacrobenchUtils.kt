@@ -112,15 +112,21 @@ private fun CompilationMode.isPrimary(): Boolean {
     }
 }
 
+private val STARTUP_COMPILATION_MODES =
+    COMPILATION_MODES.filter {
+        // Skip full for startup specifically, as it's not representative
+        Build.VERSION.SDK_INT < 24 || it !is CompilationMode.Full
+    }
+
 fun createStartupCompilationParams(
     startupModes: List<StartupMode> = STARTUP_MODES,
-    compilationModes: List<CompilationMode> = COMPILATION_MODES
+    compilationModes: List<CompilationMode> = STARTUP_COMPILATION_MODES
 ): List<Array<Any>> =
     mutableListOf<Array<Any>>().apply {
         // To save CI resources, avoid measuring startup combinations which have non-primary
         // compilation or startup mode (BP, cold respectively) in the default case
         val minimalIntersection =
-            startupModes == STARTUP_MODES && compilationModes == COMPILATION_MODES
+            startupModes == STARTUP_MODES && compilationModes == STARTUP_COMPILATION_MODES
 
         for (startupMode in startupModes) {
             for (compilationMode in compilationModes) {

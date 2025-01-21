@@ -99,20 +99,20 @@ android {
     }
 
     buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
+        consumerProguardFiles("proguard-rules.pro")
     }
 
     buildFeatures.prefab = true
 
     externalNativeBuild {
         cmake {
-            version libs.versions.cmake.get()
+            version = libs.versions.cmake.get()
             path "src/main/cpp/CMakeLists.txt"
         }
     }
 
     lintOptions {
-        enable 'CameraXQuirksClassDetector'
+        enable("CameraXQuirksClassDetector")
     }
 
     // Use Robolectric 4.+
@@ -121,11 +121,11 @@ android {
     packagingOptions {
         pickFirst "META-INF/support.camera_camera-core.version"
     }
-    namespace "androidx.camera.core"
+    namespace = "androidx.camera.core"
 }
 
 tasks.withType(Test).configureEach { test ->
-    test.maxParallelForks(2)
+    test.maxParallelForks = 2
 }
 
 androidx {

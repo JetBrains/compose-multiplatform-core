@@ -53,6 +53,9 @@ interface XFunSpec {
 
         fun addCode(code: XCodeBlock): Builder
 
+        fun addCode(format: String, vararg args: Any?) =
+            addCode(XCodeBlock.builder().add(format, *args).build())
+
         fun addStatement(format: String, vararg args: Any?) =
             addCode(XCodeBlock.builder().addStatement(format, *args).build())
 
@@ -89,8 +92,9 @@ interface XFunSpec {
             name: String,
             visibility: VisibilityModifier,
             isOpen: Boolean = false,
-            isOverride: Boolean = false
-        ) = builder(XName.of(name), visibility, isOpen, isOverride)
+            isOverride: Boolean = false,
+            addJavaNullabilityAnnotation: Boolean = true
+        ) = builder(XName.of(name), visibility, isOpen, isOverride, addJavaNullabilityAnnotation)
 
         @JvmStatic
         fun builder(

@@ -29,6 +29,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation("androidx.annotation:annotation:1.8.1")
 }
 

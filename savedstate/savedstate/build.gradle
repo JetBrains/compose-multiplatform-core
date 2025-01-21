@@ -164,7 +164,7 @@ android {
     buildTypes.configureEach {
         consumerProguardFiles("proguard-rules.pro")
     }
-    namespace "androidx.savedstate"
+    namespace = "androidx.savedstate"
     experimentalProperties["android.lint.useK2Uast"] = false // TODO(b/345531033)
 }
 

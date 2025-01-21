@@ -53,5 +53,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.dynamicanimation.ktx"
+    namespace = "androidx.dynamicanimation.ktx"
 }

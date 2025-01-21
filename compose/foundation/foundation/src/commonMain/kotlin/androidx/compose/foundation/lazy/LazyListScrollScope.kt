@@ -19,7 +19,6 @@ package androidx.compose.foundation.lazy
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.lazy.layout.LazyLayoutScrollScope
 import androidx.compose.ui.util.fastFirstOrNull
-import androidx.compose.ui.util.fastSumBy
 
 /**
  * An implementation of [LazyLayoutScrollScope] that can be used with LazyLists. Please refer to the
@@ -54,7 +53,7 @@ fun LazyLayoutScrollScope(state: LazyListState, scrollScope: ScrollScope): LazyL
             val layoutInfo = state.layoutInfo
             if (layoutInfo.visibleItemsInfo.isEmpty()) return 0
             return if (targetIndex !in firstVisibleItemIndex..lastVisibleItemIndex) {
-                val averageSize = calculateVisibleItemsAverageSize(layoutInfo)
+                val averageSize = layoutInfo.visibleItemsAverageSize()
                 val indexesDiff = targetIndex - firstVisibleItemIndex
                 (averageSize * indexesDiff) - firstVisibleItemScrollOffset
             } else {
@@ -62,12 +61,6 @@ fun LazyLayoutScrollScope(state: LazyListState, scrollScope: ScrollScope): LazyL
                     layoutInfo.visibleItemsInfo.fastFirstOrNull { it.index == targetIndex }
                 visibleItem?.offset ?: 0
             } + targetOffset
-        }
-
-        private fun calculateVisibleItemsAverageSize(layoutInfo: LazyListLayoutInfo): Int {
-            val visibleItems = layoutInfo.visibleItemsInfo
-            val itemsSum = visibleItems.fastSumBy { it.size }
-            return itemsSum / visibleItems.size + layoutInfo.mainAxisItemSpacing
         }
     }
 }

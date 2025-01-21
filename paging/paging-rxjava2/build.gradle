@@ -63,5 +63,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.paging.rxjava2"
+    namespace = "androidx.paging.rxjava2"
 }

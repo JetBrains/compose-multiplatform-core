@@ -34,6 +34,7 @@ import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.Remeasurement
 import androidx.compose.ui.layout.RemeasurementModifier
 import androidx.compose.ui.unit.Density
+import androidx.wear.compose.foundation.lazy.layout.LazyLayoutItemAnimator
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.math.abs
 import kotlinx.coroutines.CoroutineScope
@@ -63,7 +64,9 @@ class TransformingLazyColumnState() : ScrollableState {
     override suspend fun scroll(
         scrollPriority: MutatePriority,
         block: suspend ScrollScope.() -> Unit
-    ) = scrollableState.scroll(scrollPriority, block)
+    ) {
+        scrollableState.scroll(scrollPriority, block)
+    }
 
     internal val layoutInfoState =
         mutableStateOf(EmptyTransformingLazyColumnMeasureResult, neverEqualPolicy())
@@ -95,14 +98,36 @@ class TransformingLazyColumnState() : ScrollableState {
     override var canScrollBackward: Boolean by mutableStateOf(false)
         private set
 
-    internal var anchorItemIndex by mutableIntStateOf(0)
+    /**
+     * The index of the item that is used in scrolling. For the most cases that is the item closest
+     * to the center of viewport from [TransformingLazyColumnLayoutInfo.visibleItems], however it
+     * might change during scroll.
+     *
+     * Note that this property is observable and if you use it in the composable function it will be
+     * recomposed on every change causing potential performance issues.
+     *
+     * If you need to use it in the composition then consider wrapping the calculation into a
+     * derived state in order to only have recompositions when the derived value changes:
+     *
+     * @sample androidx.wear.compose.foundation.samples.UsingListAnchorItemPositionInCompositionSample
+     */
+    var anchorItemIndex by mutableIntStateOf(0)
+        private set
+
+    /**
+     * The scroll offset of the anchor item. Scrolling forward is positive - i.e., the amount that
+     * the item is offset backwards.
+     *
+     * Note that this property is observable and if you use it in the composable function it will be
+     * recomposed on every scroll causing potential performance issues.
+     *
+     * @see anchorItemIndex for samples with the recommended usage patterns.
+     */
+    var anchorItemScrollOffset by mutableIntStateOf(0)
         private set
 
     internal var nearestRange: IntRange by
         mutableStateOf(IntRange.EMPTY, structuralEqualityPolicy())
-        private set
-
-    internal var anchorItemScrollOffset by mutableIntStateOf(0)
         private set
 
     internal var lastMeasuredAnchorItemHeight: Int = Int.MIN_VALUE
@@ -118,6 +143,8 @@ class TransformingLazyColumnState() : ScrollableState {
                 this@TransformingLazyColumnState.remeasurement = remeasurement
             }
         }
+
+    internal val animator = LazyLayoutItemAnimator<TransformingLazyColumnMeasuredItem>()
 
     internal fun applyMeasureResult(measureResult: TransformingLazyColumnMeasureResult) {
         // TODO(artemiy): Don't consume all scroll.
@@ -177,6 +204,11 @@ class TransformingLazyColumnState() : ScrollableState {
     /**
      * Scrolls the item specified by [index] to the center of the screen.
      *
+     * The scroll position [anchorItemIndex] and [anchorItemScrollOffset] will be updated to take
+     * into account the new layout. There is no guarantee that [index] will become the new
+     * [anchorItemIndex] since requested [scrollOffset] may position item with another index closer
+     * to the anchor point.
+     *
      * This operation happens instantly without animation.
      *
      * @param index The index of the item to scroll to. Must be non-negative.
@@ -193,6 +225,11 @@ class TransformingLazyColumnState() : ScrollableState {
     /**
      * Requests the item at [index] to be at the center of the viewport during the next remeasure,
      * offset by [scrollOffset].
+     *
+     * The scroll position [anchorItemIndex] and [anchorItemScrollOffset] will be updated to take
+     * into account the new layout. There is no guarantee that [index] will become the new
+     * [anchorItemIndex] since requested [scrollOffset] may position item with another index closer
+     * to the anchor point.
      *
      * The scroll position will be updated to the requested position rather than maintain the index
      * based on the center item key (when a data set change will also be applied during the next
@@ -218,6 +255,11 @@ class TransformingLazyColumnState() : ScrollableState {
 
     /**
      * Animate (smooth scroll) to the given item.
+     *
+     * The scroll position [anchorItemIndex] and [anchorItemScrollOffset] will be updated to take
+     * into account the new layout. There is no guarantee that [index] will become the new
+     * [anchorItemIndex] since requested [scrollOffset] may position item with another index closer
+     * to the anchor point.
      *
      * @param index the index to which to scroll. Must be non-negative.
      * @param scrollOffset The offset between the center of the screen and item's center. Positive
@@ -251,8 +293,10 @@ class TransformingLazyColumnState() : ScrollableState {
         if (distance < 0 && !canScrollForward || distance > 0 && !canScrollBackward) {
             return 0f
         }
+
         scrollToBeConsumed += distance
         if (abs(scrollToBeConsumed) > 0.5f) {
+            animator.releaseAnimations()
             remeasurement?.forceRemeasure()
         }
 
@@ -262,6 +306,7 @@ class TransformingLazyColumnState() : ScrollableState {
             // that we consumed the whole thing
             return distance
         } else {
+
             val scrollConsumed = distance - scrollToBeConsumed
 
             // We did not consume all of it - return the rest to be consumed elsewhere (e.g.,

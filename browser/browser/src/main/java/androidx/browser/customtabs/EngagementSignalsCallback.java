@@ -19,7 +19,8 @@ package androidx.browser.customtabs;
 import android.os.Bundle;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A callback class for custom tabs clients to get messages regarding the user's engagement with the

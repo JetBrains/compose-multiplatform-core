@@ -18,12 +18,11 @@ package androidx.webkit.internal;
 
 import android.webkit.WebSettings;
 
-import androidx.annotation.NonNull;
 import androidx.webkit.UserAgentMetadata;
 import androidx.webkit.WebViewMediaIntegrityApiStatusConfig;
 
-
 import org.chromium.support_lib_boundary.WebSettingsBoundaryInterface;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Set;
 
@@ -143,8 +142,7 @@ public class WebSettingsAdapter {
      * Adapter method for
      * {@link androidx.webkit.WebSettingsCompat#getRequestedWithHeaderOriginAllowList(WebSettings)}.
      */
-    @NonNull
-    public Set<String> getRequestedWithHeaderOriginAllowList() {
+    public @NonNull Set<String> getRequestedWithHeaderOriginAllowList() {
         return mBoundaryInterface.getRequestedWithHeaderOriginAllowList();
     }
 
@@ -161,8 +159,7 @@ public class WebSettingsAdapter {
      * Adapter method for
      * {@link androidx.webkit.WebSettingsCompat#getUserAgentMetadata(WebSettings)}.
      */
-    @NonNull
-    public UserAgentMetadata getUserAgentMetadata() {
+    public @NonNull UserAgentMetadata getUserAgentMetadata() {
         return UserAgentMetadataInternal.getUserAgentMetadataFromMap(
                 mBoundaryInterface.getUserAgentMetadataMap());
     }
@@ -207,8 +204,7 @@ public class WebSettingsAdapter {
      * Adapter method for
      * {@link androidx.webkit.WebSettingsCompat#getWebViewMediaIntegrityApiStatus(WebSettings)}
      */
-    @NonNull
-    public WebViewMediaIntegrityApiStatusConfig getWebViewMediaIntegrityApiStatus() {
+    public @NonNull WebViewMediaIntegrityApiStatusConfig getWebViewMediaIntegrityApiStatus() {
         return new WebViewMediaIntegrityApiStatusConfig
                 .Builder(mBoundaryInterface.getWebViewMediaIntegrityApiDefaultStatus())
                 .setOverrideRules(mBoundaryInterface.getWebViewMediaIntegrityApiOverrideRules())

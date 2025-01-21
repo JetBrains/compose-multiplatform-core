@@ -37,8 +37,8 @@ dependencies {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.leanback.tab"
+    compileSdk = 35
+    namespace = "androidx.leanback.tab"
 }
 
 androidx {

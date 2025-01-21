@@ -21,10 +21,11 @@ import android.content.SharedPreferences;
 import android.os.StrictMode;
 import android.os.StrictMode.ThreadPolicy;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
@@ -32,7 +33,7 @@ import java.util.Map;
 @RestrictTo(Scope.LIBRARY_GROUP)
 final class DiskAccessAllowedPrefs {
 
-    @NonNull private final SharedPreferences preferences;
+    private final @NonNull SharedPreferences preferences;
 
     private DiskAccessAllowedPrefs(@NonNull SharedPreferences preferences) {
         this.preferences = preferences;
@@ -42,8 +43,7 @@ final class DiskAccessAllowedPrefs {
      * Returns a simplified version of {@link SharedPreferences} wrapped to ignore disk read and
      * write StrictMode violations.
      */
-    @Nullable
-    static DiskAccessAllowedPrefs wrap(@NonNull Context context, @NonNull String name) {
+    static @Nullable DiskAccessAllowedPrefs wrap(@NonNull Context context, @NonNull String name) {
         ThreadPolicy policy = StrictMode.allowThreadDiskReads();
         try {
             SharedPreferences sharedPref = context.getSharedPreferences(name, Context.MODE_PRIVATE);
@@ -53,8 +53,7 @@ final class DiskAccessAllowedPrefs {
         }
     }
 
-    @Nullable
-    Map<String, ?> getAll() {
+    @Nullable Map<String, ?> getAll() {
         ThreadPolicy policy = StrictMode.allowThreadDiskReads();
         try {
             return preferences.getAll();

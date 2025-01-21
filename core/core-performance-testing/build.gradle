@@ -43,7 +43,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.core.performance.testing"
+    namespace = "androidx.core.performance.testing"
 }
 
 androidx {

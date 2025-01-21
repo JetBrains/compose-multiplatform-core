@@ -55,5 +55,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.room.rxjava2"
+    namespace = "androidx.room.rxjava2"
 }

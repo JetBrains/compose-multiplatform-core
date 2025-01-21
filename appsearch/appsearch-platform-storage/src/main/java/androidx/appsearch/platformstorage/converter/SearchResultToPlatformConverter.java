@@ -60,6 +60,8 @@ public class SearchResultToPlatformConverter {
                 builder.addJoinedResult(toJetpackSearchResult(joinedResult));
             }
         }
+        // TODO(b/332642571): Add informational ranking signal once it is available in platform.
+        // TODO(b/371610934): Set parentTypeMap once it is available in platform.
         return builder.build();
     }
 

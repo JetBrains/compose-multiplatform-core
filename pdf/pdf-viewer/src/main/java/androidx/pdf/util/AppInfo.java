@@ -16,8 +16,9 @@
 
 package androidx.pdf.util;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /** Information about the installed app (package). */
 // TODO: Clean up this class to get package name alternatively
@@ -32,8 +33,7 @@ public class AppInfo {
     private final String mPackageName;
 
     /** Singleton-style getter for the {@link AppInfo} instance. Always non-null. */
-    @NonNull
-    public static AppInfo get() {
+    public static @NonNull AppInfo get() {
         return sAppInfo;
     }
 
@@ -42,13 +42,11 @@ public class AppInfo {
         mAppVersion = NO_VERSION;
     }
 
-    @NonNull
-    public String getAppVersion() {
+    public @NonNull String getAppVersion() {
         return mAppVersion;
     }
 
-    @NonNull
-    public String getPackageName() {
+    public @NonNull String getPackageName() {
         return mPackageName;
     }
 }

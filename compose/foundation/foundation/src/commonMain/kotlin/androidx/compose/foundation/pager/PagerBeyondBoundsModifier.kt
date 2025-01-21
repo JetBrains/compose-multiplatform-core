@@ -49,4 +49,12 @@ internal class PagerBeyondBoundsState(
                 itemCount - 1,
                 state.layoutInfo.visiblePagesInfo.last().index + beyondViewportPageCount
             )
+
+    override fun itemsPerViewport(): Int {
+        val visibleItemCount = state.layoutInfo.visiblePagesInfo.size
+        if (visibleItemCount == 0) return 0
+        val viewportSize = state.layoutInfo.mainAxisViewportSize
+        val averageItemSize = state.layoutInfo.pageSize + state.layoutInfo.pageSpacing
+        return (viewportSize / averageItemSize).coerceAtLeast(1)
+    }
 }

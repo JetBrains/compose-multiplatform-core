@@ -31,17 +31,19 @@ class InsightTest {
         createTempFileFromAsset(prefix = "api35_startup_cold_classinit", suffix = ".perfetto-trace")
             .absolutePath
 
-    // TODO (b/377581661) use deeplink from metric
-    private val deepLink =
+    private val targetPackage = "androidx.compose.integration.hero.macrobenchmark.target"
+
+    // TODO (b/377581661) take time ranges from SlowStartReason
+    private fun startupDeepLinkOf(reasonId: String, tid: Int) =
         TraceDeepLink(
             outputRelativePath = "/fake/output/relative/path.perfetto-trace",
             selectionParams =
-                TraceDeepLink.SelectionParams(
-                    pid = 27246,
-                    tid = 27246,
-                    ts = 351868459760497,
-                    dur = 24573541,
-                    query = "SELECT 🐲\nFROM 🐉\nWHERE \ud83d\udc09.NAME = 'ハク'"
+                TraceDeepLink.StartupSelectionParams(
+                    packageName = targetPackage,
+                    tid = tid,
+                    selectionStart = null,
+                    selectionEnd = null,
+                    reasonId = reasonId,
                 )
         )
 
@@ -49,7 +51,8 @@ class InsightTest {
         listOf(
             Insight(
                 observedLabel = "123305107ns",
-                deepLink = deepLink,
+                deepLink =
+                    startupDeepLinkOf("POTENTIAL_CPU_CONTENTION_WITH_ANOTHER_PROCESS", tid = 27246),
                 iterationIndex = 6,
                 category =
                     Insight.Category(
@@ -61,7 +64,7 @@ class InsightTest {
             ),
             Insight(
                 observedLabel = "328462261ns",
-                deepLink = deepLink,
+                deepLink = startupDeepLinkOf("JIT_ACTIVITY", tid = 27251),
                 iterationIndex = 6,
                 category =
                     Insight.Category(
@@ -72,7 +75,7 @@ class InsightTest {
             ),
             Insight(
                 observedLabel = "150 count",
-                deepLink = deepLink,
+                deepLink = startupDeepLinkOf("JIT_COMPILED_METHODS", tid = 27251),
                 iterationIndex = 6,
                 category =
                     Insight.Category(
@@ -91,7 +94,7 @@ class InsightTest {
                 observedV2 =
                     "seen in iterations: [6](file:///fake/output/relative/path.perfetto-trace)(123305107ns)",
                 observedV3 =
-                    "seen in iterations: [6](uri:///fake/output/relative/path.perfetto-trace?selectionParams=eNoryEyxNTI3MjFTK0Gwim2NTQ0tzCxMTC3NzQxMLM3VUkqLbI1MTM2NTU0M1QpLU4sqbYNdfVydQ7RV3QxULd1ULQ1UnYxUDRzdgvx9kcQsLIFi4R6uQa4ognp-jr5AEWMXbVUjc1VXY1ULIHIDM4xUHd2AggBTViPI)(123305107ns)"
+                    "seen in iterations: [6](uri:///fake/output/relative/path.perfetto-trace?enablePlugins=android_startup&selectionParams=eNodx7EKwyAQANC_yegQSjtlCCIkUFQSS0e56mEk6IWLQz6_pW97B4QdEmooOECNTDleIlA56ESRa8PE0DJVsSGTKBCYPljDVoB30YATtq7lOPSP_nbvGOGk6n-3xint5vHppX15afS_Rvv37CY_auMmtXi7GKnW9Qv6Wi72)(123305107ns)"
             ),
             InsightSummary(
                 category =
@@ -99,7 +102,7 @@ class InsightTest {
                 observedV2 =
                     "seen in iterations: [6](file:///fake/output/relative/path.perfetto-trace)(328462261ns)",
                 observedV3 =
-                    "seen in iterations: [6](uri:///fake/output/relative/path.perfetto-trace?selectionParams=eNoryEyxNTI3MjFTK0Gwim2NTQ0tzCxMTC3NzQxMLM3VUkqLbI1MTM2NTU0M1QpLU4sqbYNdfVydQ7RV3QxULd1ULQ1UnYxUDRzdgvx9kcQsLIFi4R6uQa4ognp-jr5AEWMXbVUjc1VXY1ULIHIDM4xUHd2AggBTViPI)(328462261ns)"
+                    "seen in iterations: [6](uri:///fake/output/relative/path.perfetto-trace?enablePlugins=android_startup&selectionParams=eNoNx7EKhDAMBuC3cQwoyE0OclMdbioHTvJfG2qRJhIz-Pjnt30n0oHCHzSeINm05puStlMvpirOxeBVhXY2pYZk-mNJe4Md5LDC3nnN0_Aaxr4zxqWyPV9C3OZ3DN8Q1z-O5yTF)(328462261ns)"
             ),
             InsightSummary(
                 category =
@@ -107,7 +110,7 @@ class InsightTest {
                 observedV2 =
                     "seen in iterations: [6](file:///fake/output/relative/path.perfetto-trace)(150 count)",
                 observedV3 =
-                    "seen in iterations: [6](uri:///fake/output/relative/path.perfetto-trace?selectionParams=eNoryEyxNTI3MjFTK0Gwim2NTQ0tzCxMTC3NzQxMLM3VUkqLbI1MTM2NTU0M1QpLU4sqbYNdfVydQ7RV3QxULd1ULQ1UnYxUDRzdgvx9kcQsLIFi4R6uQa4ognp-jr5AEWMXbVUjc1VXY1ULIHIDM4xUHd2AggBTViPI)(150 count)"
+                    "seen in iterations: [6](uri:///fake/output/relative/path.perfetto-trace?enablePlugins=android_startup&selectionParams=eNoNx8EKgkAQBuC38TiQEJ08pZCRGeR9-dsd1kV2RsY59Pj13b4dcUPmJyp3kGRa0pei1l0PpiLO2eBFhVY2pYpo-mGJa4Vt5LDM3nhJXXtpz6fGGIdK-P8-LuE6T6_xMfRhGpbb3L9_v1onGA==)(150 count)"
             ),
         )
 
@@ -130,7 +133,7 @@ class InsightTest {
                         helpUrlBase = "https://d.android.com/test#",
                         traceOutputRelativePath = "/fake/output/relative/path.perfetto-trace",
                         iteration = 6,
-                        packageName = "androidx.compose.integration.hero.macrobenchmark.target"
+                        packageName = targetPackage
                     )
                 )
                 .isEqualTo(canonicalTraceInsights)
@@ -140,7 +143,7 @@ class InsightTest {
     @MediumTest
     @Test
     fun createInsightSummaries() {
-        assertThat(canonicalTraceInsights.createInsightSummaries())
-            .isEqualTo(canonicalTraceInsightSummary)
+        assertThat(canonicalTraceInsights.createInsightSummaries().map { it.observedV3 })
+            .isEqualTo(canonicalTraceInsightSummary.map { it.observedV3 })
     }
 }

@@ -35,7 +35,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.wear.tooling.preview"
+    namespace = "androidx.wear.tooling.preview"
 }
 
 androidx {

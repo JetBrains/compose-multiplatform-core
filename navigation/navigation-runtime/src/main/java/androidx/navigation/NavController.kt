@@ -548,10 +548,32 @@ public open class NavController(
     public inline fun <reified T : Any> popBackStack(
         inclusive: Boolean,
         saveState: Boolean = false
+    ): Boolean = popBackStack(T::class, inclusive, saveState)
+
+    /**
+     * Attempts to pop the controller's back stack back to a specific destination.
+     *
+     * @param route The topmost destination to retain with route from a [KClass]. The target
+     *   NavDestination must have been created with route from [KClass].
+     * @param inclusive Whether the given destination should also be popped.
+     * @param saveState Whether the back stack and the state of all destinations between the current
+     *   destination and [route] should be saved for later restoration via
+     *   [NavOptions.Builder.setRestoreState] or the `restoreState` attribute using the same [T]
+     *   (note: this matching ID is true whether [inclusive] is true or false).
+     * @return true if the stack was popped at least once and the user has been navigated to another
+     *   destination, false otherwise
+     */
+    @MainThread
+    @JvmOverloads
+    @OptIn(InternalSerializationApi::class)
+    public fun <T : Any> popBackStack(
+        route: KClass<T>,
+        inclusive: Boolean,
+        saveState: Boolean = false
     ): Boolean {
-        val id = serializer<T>().generateHashCode()
+        val id = route.serializer().generateHashCode().also { println("pop hashcode:$it") }
         requireNotNull(graph.findDestinationComprehensive(id, true)) {
-            "Destination with route ${T::class.simpleName} cannot be found in navigation " +
+            "Destination with route ${route.simpleName} cannot be found in navigation " +
                 "graph $graph"
         }
         return popBackStack(id, inclusive, saveState)
@@ -884,8 +906,21 @@ public open class NavController(
      * @return true if the saved state of the stack associated with [T] was cleared.
      */
     @MainThread
-    public inline fun <reified T : Any> clearBackStack(): Boolean =
-        clearBackStack(serializer<T>().generateHashCode())
+    public inline fun <reified T : Any> clearBackStack(): Boolean = clearBackStack(T::class)
+
+    /**
+     * Clears any saved state associated with KClass [route] that was previously saved via
+     * [popBackStack] when using a `saveState` value of `true`.
+     *
+     * @param route The route from the [KClass] of the destination previously used with
+     *   [popBackStack] with a `saveState`value of `true`. The target NavDestination must have been
+     *   created with route from [KClass].
+     * @return true if the saved state of the stack associated with [route] was cleared.
+     */
+    @OptIn(InternalSerializationApi::class)
+    @MainThread
+    public fun <T : Any> clearBackStack(route: KClass<T>): Boolean =
+        clearBackStack(route.serializer().generateHashCode())
 
     /**
      * Clears any saved state associated with KClass [T] that was previously saved via
@@ -2852,16 +2887,32 @@ public open class NavController(
      *   NavBackStackEntry's [NavDestination] must have been created with route from [KClass].
      * @throws IllegalArgumentException if the destination is not on the back stack
      */
-    public inline fun <reified T : Any> getBackStackEntry(): NavBackStackEntry {
-        val id = serializer<T>().generateHashCode()
+    public inline fun <reified T : Any> getBackStackEntry(): NavBackStackEntry =
+        getBackStackEntry(T::class)
+
+    /**
+     * Gets the topmost [NavBackStackEntry] for a [route] from [KClass].
+     *
+     * This is always safe to use with [the current destination][currentDestination] or
+     * [its parent][NavDestination.parent] or grandparent navigation graphs as these destinations
+     * are guaranteed to be on the back stack.
+     *
+     * @param route route from the [KClass] of destination [T] that exists on the back stack. The
+     *   target NavBackStackEntry's [NavDestination] must have been created with route from
+     *   [KClass].
+     * @throws IllegalArgumentException if the destination is not on the back stack
+     */
+    @OptIn(InternalSerializationApi::class)
+    public fun <T : Any> getBackStackEntry(route: KClass<T>): NavBackStackEntry {
+        val id = route.serializer().generateHashCode()
         requireNotNull(graph.findDestinationComprehensive(id, true)) {
-            "Destination with route ${T::class.simpleName} cannot be found in navigation " +
+            "Destination with route ${route.simpleName} cannot be found in navigation " +
                 "graph $graph"
         }
         val lastFromBackStack =
             currentBackStack.value.lastOrNull { entry -> entry.destination.id == id }
         requireNotNull(lastFromBackStack) {
-            "No destination with route ${T::class.simpleName} is on the NavController's " +
+            "No destination with route ${route.simpleName} is on the NavController's " +
                 "back stack. The current destination is $currentDestination"
         }
         return lastFromBackStack

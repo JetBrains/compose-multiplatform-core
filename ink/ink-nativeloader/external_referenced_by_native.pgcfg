@@ -26,7 +26,7 @@
 }
 
 -if class androidx.ink.nativeloader.NativeLoader
--keep class java.lang.NoSuchElementException {
+-keep class java.util.NoSuchElementException {
     <init>(java.lang.String);
 }
 
@@ -43,4 +43,9 @@
 -if class androidx.ink.nativeloader.NativeLoader
 -keep class java.lang.UnsupportedOperationException {
     <init>(java.lang.String);
+}
+
+-if class androidx.ink.nativeloader.NativeLoader
+-keep class java.lang.Throwable {
+  public java.lang.String getMessage();
 }

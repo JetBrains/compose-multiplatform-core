@@ -353,7 +353,7 @@ internal constructor(
     private fun Any?.toStringForAssert(): String =
         when {
             this == null -> toString()
-            isIntegralBoxedPrimitive() -> "${this::class.qualifiedName}<$this>"
+            isIntegralBoxedPrimitive() -> "${this::class.qName}<$this>"
             else -> toString()
         }
 

@@ -86,13 +86,13 @@ dependencies {
 
 android {
     lintOptions {
-        enable 'CameraXQuirksClassDetector'
+        enable("CameraXQuirksClassDetector")
     }
-    namespace "androidx.camera.camera2.pipe.integration"
+    namespace = "androidx.camera.camera2.pipe.integration"
 }
 
 tasks.withType(Test).configureEach { test ->
-    test.maxParallelForks(2)
+    test.maxParallelForks = 2
 }
 
 ksp {

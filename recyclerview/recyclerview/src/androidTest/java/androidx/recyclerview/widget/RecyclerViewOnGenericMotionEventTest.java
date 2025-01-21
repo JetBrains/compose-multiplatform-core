@@ -328,10 +328,16 @@ public class RecyclerViewOnGenericMotionEventTest {
             return super.onGenericMotionEvent(ev);
         }
 
-        boolean scrollByInternal(int x, int y, MotionEvent ev, int type) {
+        boolean scrollByInternal(
+                int x,
+                int y,
+                int horizontalAxis,
+                int verticalAxis,
+                @Nullable MotionEvent ev,
+                int type) {
             mTotalX += x;
             mTotalY += y;
-            return super.scrollByInternal(x, y, ev, type);
+            return super.scrollByInternal(x, y, horizontalAxis, verticalAxis, ev, type);
         }
 
         void smoothScrollBy(@Px int dx, @Px int dy, @Nullable Interpolator interpolator,

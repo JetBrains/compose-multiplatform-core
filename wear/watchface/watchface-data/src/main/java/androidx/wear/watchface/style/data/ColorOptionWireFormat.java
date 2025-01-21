@@ -18,11 +18,12 @@ package androidx.wear.watchface.style.data;
 
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -35,27 +36,23 @@ import java.util.List;
 public class ColorOptionWireFormat extends OptionWireFormat {
     /** Localized human readable name for the setting, used in the style selection UI. */
     @ParcelField(2)
-    @NonNull
-    public CharSequence mDisplayName = "";
+    public @NonNull CharSequence mDisplayName = "";
 
     @ParcelField(3)
-    @NonNull
-    public CharSequence mScreenReaderName = "";
+    public @NonNull CharSequence mScreenReaderName = "";
 
     @ParcelField(4)
-    @NonNull
-    public List<Integer> mColors;
+    public @NonNull List<Integer> mColors;
 
     @ParcelField(5)
-    @Nullable
-    public Bundle mOnWatchFaceEditorBundle;
+    public @Nullable Bundle mOnWatchFaceEditorBundle;
 
     // WARNING: This class is held in a list and can't change due to flaws in VersionedParcelable.
 
     ColorOptionWireFormat() {}
 
     public ColorOptionWireFormat(
-            @NonNull byte[] id, @NonNull CharSequence displayName,
+            byte @NonNull [] id, @NonNull CharSequence displayName,
             @NonNull CharSequence screenReaderName, @NonNull List<Integer> colors,
             @Nullable Bundle onWatchFaceEditorBundle) {
         super(id);

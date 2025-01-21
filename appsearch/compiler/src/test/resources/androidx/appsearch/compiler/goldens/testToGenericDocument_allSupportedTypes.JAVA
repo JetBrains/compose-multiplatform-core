@@ -2,6 +2,7 @@ package com.example.appsearch;
 
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.DocumentClassFactory;
+import androidx.appsearch.app.DocumentClassMappingContext;
 import androidx.appsearch.app.EmbeddingVector;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.exceptions.AppSearchException;
@@ -17,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import javax.annotation.processing.Generated;
 
 @Generated("androidx.appsearch.compiler.AppSearchCompiler")
@@ -390,7 +390,7 @@ public final class $$__AppSearch__Gift implements DocumentClassFactory<Gift> {
 
   @Override
   public Gift fromGenericDocument(GenericDocument genericDoc,
-      Map<String, List<String>> documentClassMap) throws AppSearchException {
+      DocumentClassMappingContext documentClassMappingContext) throws AppSearchException {
     String namespaceConv = genericDoc.getNamespace();
     String idConv = genericDoc.getId();
     long[] collectLongCopy = genericDoc.getPropertyLongArray("collectLong");
@@ -451,7 +451,7 @@ public final class $$__AppSearch__Gift implements DocumentClassFactory<Gift> {
     if (collectGiftCopy != null) {
       collectGiftConv = new ArrayList<>(collectGiftCopy.length);
       for (int i = 0; i < collectGiftCopy.length; i++) {
-        collectGiftConv.add(collectGiftCopy[i].toDocumentClass(Gift.class, documentClassMap));
+        collectGiftConv.add(collectGiftCopy[i].toDocumentClass(Gift.class, documentClassMappingContext));
       }
     }
     EmbeddingVector[] collectVecCopy = genericDoc.getPropertyEmbeddingArray("collectVec");
@@ -525,7 +525,7 @@ public final class $$__AppSearch__Gift implements DocumentClassFactory<Gift> {
     if (arrGiftCopy != null) {
       arrGiftConv = new Gift[arrGiftCopy.length];
       for (int i = 0; i < arrGiftCopy.length; i++) {
-        arrGiftConv[i] = arrGiftCopy[i].toDocumentClass(Gift.class, documentClassMap);
+        arrGiftConv[i] = arrGiftCopy[i].toDocumentClass(Gift.class, documentClassMappingContext);
       }
     }
     EmbeddingVector[] arrVecConv = genericDoc.getPropertyEmbeddingArray("arrVec");
@@ -572,7 +572,7 @@ public final class $$__AppSearch__Gift implements DocumentClassFactory<Gift> {
     GenericDocument giftCopy = genericDoc.getPropertyDocument("gift");
     Gift giftConv = null;
     if (giftCopy != null) {
-      giftConv = giftCopy.toDocumentClass(Gift.class, documentClassMap);
+      giftConv = giftCopy.toDocumentClass(Gift.class, documentClassMappingContext);
     }
     EmbeddingVector[] vecCopy = genericDoc.getPropertyEmbeddingArray("vec");
     EmbeddingVector vecConv = null;

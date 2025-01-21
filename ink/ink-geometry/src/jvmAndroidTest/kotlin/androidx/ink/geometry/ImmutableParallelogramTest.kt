@@ -72,6 +72,56 @@ class ImmutableParallelogramTest {
     }
 
     @Test
+    fun fromSegmentAndPadding_returnsCorrectParallelogramWithNoRotation() {
+        val parallelogram =
+            ImmutableParallelogram.fromSegmentAndPadding(
+                segment = ImmutableSegment(ImmutableVec(5f, 0f), ImmutableVec(-5f, 0f)),
+                padding = 2f,
+            )
+        val other =
+            Parallelogram.normalizeAndRun(
+                width = 14f,
+                height = 4f,
+                rotation = Angle.ZERO,
+                runBlock = { w: Float, h: Float, r: Float ->
+                    ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+                        ImmutableVec(0f, 0f),
+                        w,
+                        h,
+                        r,
+                        0f,
+                    )
+                },
+            )
+        assertThat(parallelogram.isAlmostEqual(other, tolerance)).isTrue()
+    }
+
+    @Test
+    fun fromSegmentAndPadding_returnsCorrectParallelogramWithRotation() {
+        val parallelogram =
+            ImmutableParallelogram.fromSegmentAndPadding(
+                segment = ImmutableSegment(ImmutableVec(6f, 6f), ImmutableVec(0f, 0f)),
+                padding = 2f,
+            )
+        val other =
+            Parallelogram.normalizeAndRun(
+                width = 12.485281f,
+                height = 4f,
+                rotation = Angle.HALF_TURN_RADIANS / 4.0f,
+                runBlock = { w: Float, h: Float, r: Float ->
+                    ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+                        ImmutableVec(3f, 3f),
+                        w,
+                        h,
+                        r,
+                        0f,
+                    )
+                },
+            )
+        assertThat(parallelogram.isAlmostEqual(other, tolerance)).isTrue()
+    }
+
+    @Test
     fun equals_whenSameInstance_returnsTrueAndSameHashCode() {
         val parallelogram =
             ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
@@ -285,4 +335,6 @@ class ImmutableParallelogramTest {
         assertThat(parallelogramString).contains("rotation")
         assertThat(parallelogramString).contains("shearFactor")
     }
+
+    private val tolerance = 0.000001f
 }

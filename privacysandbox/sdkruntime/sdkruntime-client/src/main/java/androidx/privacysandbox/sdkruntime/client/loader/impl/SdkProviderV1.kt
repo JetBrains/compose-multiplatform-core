@@ -78,7 +78,7 @@ private constructor(
             ): SandboxedSdkCompatBuilderV1 {
                 val sandboxedSdkCompatClass =
                     Class.forName(
-                        SandboxedSdkCompat::class.java.name,
+                        "androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat",
                         /* initialize = */ false,
                         classLoader
                     )
@@ -104,7 +104,10 @@ private constructor(
     ) {
         @SuppressLint("BanUncheckedReflection") // calling method on LoadSdkCompatException class
         fun tryRebuildCompatException(rawException: Throwable): Throwable {
-            if (rawException.javaClass.name != LoadSdkCompatException::class.java.name) {
+            if (
+                rawException.javaClass.name !=
+                    "androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException"
+            ) {
                 return rawException
             }
 
@@ -131,7 +134,7 @@ private constructor(
             fun create(classLoader: ClassLoader): LoadSdkCompatExceptionBuilderV1 {
                 val loadSdkCompatExceptionClass =
                     Class.forName(
-                        LoadSdkCompatException::class.java.name,
+                        "androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException",
                         /* initialize = */ false,
                         classLoader
                     )

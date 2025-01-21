@@ -594,9 +594,11 @@ class MeasureAndLayoutDelegateTest {
         val unplacedNode = node {
             add(node())
             add(node())
-            layoutDelegate.measurePassDelegate.markDetachedFromParentLookaheadPass()
         }
-        val placedNode = node()
+        val placedNode =
+            LayoutNode(isVirtual = true, permitChildrenToDetachFromParentLookahead = true).apply {
+                measurePolicy = MeasureInMeasureBlock()
+            }
         val anotherPlacedNode = node()
         val root = root {
             measurePolicy = MeasurePolicy { measurables, constraints ->
@@ -609,23 +611,33 @@ class MeasureAndLayoutDelegateTest {
                 virtualNode {
                     isVirtualLookaheadRoot = true
                     add(
-                        node { // lookahead root
+                        node {
+                            // lookahead root
                             measurePolicy = MeasurePolicy { measurables, constraints ->
                                 with(MeasureInMeasureBlock()) {
                                     // Skip measure & layout for unplaced node
                                     measure(measurables.drop(1), constraints)
                                 }
                             }
-                            add(unplacedNode)
-                            add(placedNode)
-                            add(anotherPlacedNode)
+                            add(
+                                LayoutNode(
+                                        isVirtual = true,
+                                        permitChildrenToDetachFromParentLookahead = true
+                                    )
+                                    .apply {
+                                        add(unplacedNode)
+                                        unplacedNode.layoutDelegate.measurePassDelegate
+                                            .markDetachedFromParentLookaheadPass()
+                                        add(placedNode)
+                                        add(anotherPlacedNode)
+                                    }
+                            )
+                            add(node())
                         }
                     )
-                    add(node())
                 }
             )
         }
-
         val delegate = createDelegate(root)
         // Unplaced node should maintain its lookahead measure pending status
         assertTrue(unplacedNode.lookaheadMeasurePending)

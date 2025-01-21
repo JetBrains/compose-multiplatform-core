@@ -20,7 +20,7 @@ import android.content.Context
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
-import android.os.HandlerThread
+import android.os.Handler
 import androidx.annotation.RestrictTo
 import androidx.camera.camera2.pipe.CameraPipe.Config
 import androidx.camera.camera2.pipe.compat.AudioRestrictionController
@@ -122,7 +122,7 @@ public interface CameraPipe {
         val defaultBackgroundExecutor: Executor? = null,
         val defaultBlockingExecutor: Executor? = null,
         val defaultCameraExecutor: Executor? = null,
-        val defaultCameraHandler: HandlerThread? = null,
+        val defaultCameraHandler: Handler? = null,
         val testOnlyDispatcher: CoroutineDispatcher? = null,
         val testOnlyScope: CoroutineScope? = null
     )

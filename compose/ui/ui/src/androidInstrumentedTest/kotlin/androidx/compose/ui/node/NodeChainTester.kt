@@ -18,6 +18,7 @@
 
 package androidx.compose.ui.node
 
+import androidx.collection.IntObjectMap
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.Autofill
@@ -388,6 +389,9 @@ private class MockOwner(
         get() = LayoutDirection.Ltr
 
     override val viewConfiguration: ViewConfiguration
+        get() = TODO("Not yet implemented")
+
+    override val layoutNodes: IntObjectMap<LayoutNode>
         get() = TODO("Not yet implemented")
 
     override val rootForTest: RootForTest

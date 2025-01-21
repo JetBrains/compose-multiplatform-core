@@ -24,7 +24,7 @@ import android.util.AtomicFile;
 import android.util.Log;
 import android.util.Pair;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -356,7 +356,7 @@ class CredentialData {
     }
 
     // Returns COSE_Sign1 with payload set to ProofOfOwnership
-    @NonNull byte[] proveOwnership(@NonNull byte[] challenge) {
+    byte @NonNull [] proveOwnership(byte @NonNull [] challenge) {
         PrivateKey key = getCredentialKeyPrivate();
 
         CborBuilder signedDataBuilder = new CborBuilder();

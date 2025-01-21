@@ -53,6 +53,7 @@ internal constructor(
           you meant to compare doubles, use of(Double) instead.""",
             ReplaceWith("this.of(other)"),
         )
+        @Suppress("POTENTIALLY_NON_REPORTED_ANNOTATION")
         override fun equals(other: Any?): Boolean {
             throw UnsupportedOperationException(
                 "If you meant to compare doubles, use of(Double) instead."
@@ -61,6 +62,7 @@ internal constructor(
 
         /** @throws UnsupportedOperationException always */
         @Deprecated("hashCode() is not supported on TolerantDoubleComparison")
+        @Suppress("POTENTIALLY_NON_REPORTED_ANNOTATION")
         override fun hashCode(): Int {
             throw UnsupportedOperationException("Subject.hashCode() is not supported.")
         }

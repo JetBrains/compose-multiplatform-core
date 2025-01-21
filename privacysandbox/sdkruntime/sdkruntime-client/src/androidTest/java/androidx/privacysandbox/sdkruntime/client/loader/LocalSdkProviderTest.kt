@@ -31,6 +31,7 @@ import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkInfo
+import androidx.privacysandbox.sdkruntime.core.SdkSandboxClientImportanceListenerCompat
 import androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandlerCompat
 import androidx.privacysandbox.sdkruntime.core.controller.LoadSdkCallback
 import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat
@@ -281,6 +282,35 @@ internal class LocalSdkProviderTest(
         assertThat(result).isEqualTo(clientPackageName)
     }
 
+    @Test
+    fun registerSdkSandboxClientImportanceListener_delegateToSdkController() {
+        assumeFeatureAvailable(ClientFeature.CLIENT_IMPORTANCE_LISTENER)
+
+        val catchingListener = CatchingClientImportanceListener()
+
+        val testSdk = loadedSdk.loadTestSdk()
+        testSdk.registerSdkSandboxClientImportanceListener(catchingListener)
+        val localListener = controller.clientImportanceListeners.keys.first()
+
+        localListener.onForegroundImportanceChanged(false)
+        localListener.onForegroundImportanceChanged(true)
+
+        assertThat(catchingListener.events).containsExactly(false, true).inOrder()
+    }
+
+    @Test
+    fun unregisterSdkSandboxClientImportanceListener_delegateToSdkController() {
+        assumeFeatureAvailable(ClientFeature.CLIENT_IMPORTANCE_LISTENER)
+
+        val catchingListener = CatchingClientImportanceListener()
+
+        val testSdk = loadedSdk.loadTestSdk()
+        testSdk.registerSdkSandboxClientImportanceListener(catchingListener)
+        testSdk.unregisterSdkSandboxClientImportanceListener(catchingListener)
+
+        assertThat(controller.clientImportanceListeners).isEmpty()
+    }
+
     internal class TestClassLoaderFactory(private val testStorage: TestLocalSdkStorage) :
         SdkLoader.ClassLoaderFactory {
         override fun createClassLoaderFor(
@@ -378,7 +408,10 @@ internal class LocalSdkProviderTest(
 
         var sandboxedSdksResult: List<SandboxedSdkCompat> = emptyList()
         var appOwnedSdksResult: List<AppOwnedSdkSandboxInterfaceCompat> = emptyList()
-        var sdkActivityHandlers: MutableMap<IBinder, SdkSandboxActivityHandlerCompat> =
+        val sdkActivityHandlers: MutableMap<IBinder, SdkSandboxActivityHandlerCompat> =
+            mutableMapOf()
+        val clientImportanceListeners:
+            MutableMap<SdkSandboxClientImportanceListenerCompat, Executor> =
             mutableMapOf()
 
         var lastLoadSdkName: String? = null
@@ -433,5 +466,18 @@ internal class LocalSdkProviderTest(
         }
 
         override fun getClientPackageName(): String = clientPackageNameResult!!
+
+        override fun registerSdkSandboxClientImportanceListener(
+            executor: Executor,
+            listenerCompat: SdkSandboxClientImportanceListenerCompat
+        ) {
+            clientImportanceListeners[listenerCompat] = executor
+        }
+
+        override fun unregisterSdkSandboxClientImportanceListener(
+            listenerCompat: SdkSandboxClientImportanceListenerCompat
+        ) {
+            clientImportanceListeners.remove(listenerCompat)
+        }
     }
 }

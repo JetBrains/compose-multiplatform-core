@@ -1622,6 +1622,62 @@ class AsyncPagingDataDifferTest {
     }
 
     @Test
+    fun resetTempPresenterOnMainThread() = runTest {
+        val workerDispatcher = TestDispatcher()
+        val pager =
+            Pager(
+                config = PagingConfig(pageSize = 3, prefetchDistance = 1, initialLoadSize = 5),
+            ) {
+                TestPagingSource(loadDelay = 500)
+            }
+
+        val differ =
+            AsyncPagingDataDiffer(
+                diffCallback =
+                    object : DiffUtil.ItemCallback<Int>() {
+                        override fun areContentsTheSame(oldItem: Int, newItem: Int): Boolean {
+                            return oldItem == newItem
+                        }
+
+                        override fun areItemsTheSame(oldItem: Int, newItem: Int): Boolean {
+                            return oldItem == newItem
+                        }
+                    },
+                updateCallback = listUpdateCapture,
+                workerDispatcher = workerDispatcher
+            )
+        val collectPager = launch { pager.flow.collectLatest { differ.submitData(it) } }
+
+        // wait refresh
+        advanceUntilIdle()
+        assertThat(differ.snapshot().items.size).isEqualTo(5)
+
+        // append
+        differ.getItem(4)
+        advanceUntilIdle()
+        assertThat(differ.snapshot().items.size).isEqualTo(8)
+
+        // refresh with 5 items loaded
+        differ.refresh()
+        advanceUntilIdle()
+
+        // check that differ delegates to old list
+        assertThat(differ.snapshot().items.size).isEqualTo(8)
+
+        // run compute diff
+        workerDispatcher.executeAll()
+        // check that differ still delegates to old list after computeDiff coroutine completes
+        assertThat(differ.snapshot().items.size).isEqualTo(8)
+
+        // let refresh complete
+        advanceTimeBy(1)
+
+        // diff should switch back to new presenter
+        assertThat(differ.snapshot().items.size).isEqualTo(5)
+        collectPager.cancelAndJoin()
+    }
+
+    @Test
     fun tempPresenterSnapshotPlaceholders() = runTest {
         val workerDispatcher = TestDispatcher()
         val pager =

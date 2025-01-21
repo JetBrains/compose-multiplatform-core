@@ -41,6 +41,6 @@ androidx {
 }
 
 android {
-    namespace "androidx.mediarouter.testing"
+    namespace = "androidx.mediarouter.testing"
 }
 

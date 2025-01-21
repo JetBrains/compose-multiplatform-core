@@ -26,6 +26,7 @@ import androidx.wear.tiles.ResourcesRequestData
 import androidx.wear.tiles.TileAddEventData
 import androidx.wear.tiles.TileCallback
 import androidx.wear.tiles.TileEnterEventData
+import androidx.wear.tiles.TileInteractionEventData
 import androidx.wear.tiles.TileLeaveEventData
 import androidx.wear.tiles.TileProvider
 import androidx.wear.tiles.TileRemoveEventData
@@ -320,6 +321,12 @@ public class TilesConnectionBinderTest {
         }
 
         override fun onTileLeaveEvent(requestData: TileLeaveEventData?) {
+            TODO("Not yet implemented")
+        }
+
+        override fun processRecentInteractionEvents(
+            events: MutableList<TileInteractionEventData>?
+        ) {
             TODO("Not yet implemented")
         }
     }

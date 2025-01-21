@@ -129,6 +129,7 @@ androidXMultiplatform {
 }
 
 dependencies {
+    api(libs.jspecify)
     lintPublish(project(":lifecycle:lifecycle-runtime-lint"))
 }
 
@@ -140,7 +141,7 @@ android {
     // Include `*.java` files into the build
     sourceSets["main"].java.srcDir("src/androidMain/java")
     sourceSets["test"].java.srcDir("src/androidUnitTest/kotlin")
-    namespace "androidx.lifecycle.runtime"
+    namespace = "androidx.lifecycle.runtime"
     // TODO(b/345531033)
     experimentalProperties["android.lint.useK2Uast"] = false
 }
@@ -148,7 +149,7 @@ android {
 androidx {
     name = "Lifecycle Runtime"
     type = LibraryType.PUBLISHED_LIBRARY
-    inceptionYear "2017"
-    description "Android Lifecycle Runtime"
+    inceptionYear = "2017"
+    description = "Android Lifecycle Runtime"
     metalavaK2UastEnabled = false
 }

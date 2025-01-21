@@ -24,10 +24,11 @@ import android.webkit.ServiceWorkerWebSettings;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.webkit.ServiceWorkerClientCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 
@@ -44,24 +45,21 @@ public class ApiHelperForN {
     /**
      * @see Context#getDataDir()
      */
-    @NonNull
-    public static File getDataDir(@NonNull Context context) {
+    public static @NonNull File getDataDir(@NonNull Context context) {
         return context.getDataDir();
     }
 
     /**
      * @see ServiceWorkerController#getInstance()
      */
-    @NonNull
-    public static ServiceWorkerController getServiceWorkerControllerInstance() {
+    public static @NonNull ServiceWorkerController getServiceWorkerControllerInstance() {
         return ServiceWorkerController.getInstance();
     }
 
     /**
      * @see ServiceWorkerController#getServiceWorkerWebSettings()
      */
-    @NonNull
-    public static ServiceWorkerWebSettings getServiceWorkerWebSettings(
+    public static @NonNull ServiceWorkerWebSettings getServiceWorkerWebSettings(
             @NonNull ServiceWorkerController serviceWorkerController) {
         return serviceWorkerController.getServiceWorkerWebSettings();
     }
@@ -69,8 +67,7 @@ public class ApiHelperForN {
     /**
      * @see ServiceWorkerController#getServiceWorkerWebSettings()
      */
-    @NonNull
-    public static ServiceWorkerWebSettingsImpl getServiceWorkerWebSettingsImpl(
+    public static @NonNull ServiceWorkerWebSettingsImpl getServiceWorkerWebSettingsImpl(
             @NonNull ServiceWorkerController serviceWorkerController) {
         return new ServiceWorkerWebSettingsImpl(
                 getServiceWorkerWebSettings(serviceWorkerController));

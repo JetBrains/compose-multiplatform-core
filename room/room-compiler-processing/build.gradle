@@ -21,6 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+import androidx.build.KotlinTarget
 import androidx.build.LibraryType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -105,11 +107,11 @@ tasks.withType(KotlinCompile).configureEach {
 }
 
 tasks.withType(Test).configureEach { test ->
-    test.maxParallelForks(2)
+    test.maxParallelForks = 2
     test.systemProperty("androidx.room.compiler.processing.strict", "true")
     // With the move to K2 and KSP2 the memory usage has increased so we enlarge the heap
     // to prevent OOM while running all the tests in one go.
-    test.maxHeapSize("8g")
+    test.maxHeapSize = "8g"
 }
 
 androidx {
@@ -117,4 +119,5 @@ androidx {
     type = LibraryType.ANNOTATION_PROCESSOR_UTILS
     inceptionYear = "2020"
     description = "Processing Environment Abstraction for AndroidX Room"
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

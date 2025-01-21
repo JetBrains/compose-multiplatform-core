@@ -16,8 +16,8 @@
 
 package androidx.compose.runtime.internal
 
-import androidx.compose.runtime.makeSynchronizedObject
-import androidx.compose.runtime.synchronized
+import androidx.compose.runtime.platform.makeSynchronizedObject
+import androidx.compose.runtime.platform.synchronized
 
 /**
  * This is similar to a [ThreadLocal] but has lower overhead because it avoids a weak reference.

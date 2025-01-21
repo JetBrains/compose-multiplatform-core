@@ -43,7 +43,7 @@ androidx {
 }
 
 android {
-    namespace "<PACKAGE>"
+    namespace = "<PACKAGE>"
     defaultConfig {
         externalNativeBuild {
             cmake {
@@ -54,7 +54,7 @@ android {
     }
     externalNativeBuild {
         cmake {
-            version libs.versions.cmake.get()
+            version = libs.versions.cmake.get()
             path "src/main/cpp/CMakeLists.txt"
         }
     }

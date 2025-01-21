@@ -33,10 +33,11 @@ android {
     buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
-    namespace "androidx.startup"
+    namespace = "androidx.startup"
 }
 
 dependencies {
+    api(libs.jspecify)
     // Ideally startup would depend on profileinstaller so startup gets the benefit of its
     // baseline profile rules, but profileinstaller calls startup APIs, so we have to avoid
     // the circular dependency

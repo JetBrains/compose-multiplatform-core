@@ -36,24 +36,56 @@ class TraceDeepLinkTest {
     }
 
     @Test
-    fun paramLink() {
-        val emptyLink =
+    fun benchmarkParamLink() {
+        val selectionParams =
+            TraceDeepLink.BenchmarkSelectionParams(
+                packageName = Packages.FAKE,
+                tid = null,
+                selectionStart = 0,
+                selectionEnd = 100,
+                query = "select * from slices"
+            )
+        assertThat(selectionParams.buildInnerParamString())
+            .isEqualTo(
+                "packageName=com.notalive.package.notarealapp&selection_start=0&selection_end=100&query=select+*+from+slices"
+            )
+
+        val link =
             TraceDeepLink(
                 outputRelativePath = "foo.perfetto-trace",
-                selectionParams =
-                    TraceDeepLink.SelectionParams(
-                        pid = 1,
-                        tid = null,
-                        ts = 0,
-                        dur = 100,
-                        query = null
-                    )
+                selectionParams = selectionParams
             )
-        assertThat(emptyLink.createMarkdownLink("bar", LinkFormat.V2))
+        assertThat(link.createMarkdownLink("bar", LinkFormat.V2))
             .isEqualTo("[bar](file://foo.perfetto-trace)")
-        assertThat(emptyLink.createMarkdownLink("bar", LinkFormat.V3))
+        assertThat(link.createMarkdownLink("bar", LinkFormat.V3))
             .isEqualTo(
-                "[bar](uri://foo.perfetto-trace?selectionParams=eNoryEyxNVQrKbY1UEspLbI1NDAAADbIBWU=)"
+                "[bar](uri://foo.perfetto-trace?enablePlugins=androidx.benchmark&selectionParams=eNpNyUEKgCAQBdDbuEgQO4BX6AoxTL-Q1DG1oNsXuWn7XibeacNEEY4lmiSNgr9gco8PCihQzqoigJuXNNcXm7M_QVrcaK06TpTbddeDXotEXYNn1AegNihK)"
+            )
+    }
+
+    @Test
+    fun startupParamLink() {
+        val selectionParams =
+            TraceDeepLink.StartupSelectionParams(
+                packageName = Packages.FAKE,
+                tid = null,
+                selectionStart = null,
+                selectionEnd = null,
+                reasonId = "REASON_SAMPLE"
+            )
+        assertThat(selectionParams.buildInnerParamString())
+            .isEqualTo("packageName=com.notalive.package.notarealapp&reason_id=REASON_SAMPLE")
+
+        val link =
+            TraceDeepLink(
+                outputRelativePath = "foo.perfetto-trace",
+                selectionParams = selectionParams
+            )
+        assertThat(link.createMarkdownLink("bar", LinkFormat.V2))
+            .isEqualTo("[bar](file://foo.perfetto-trace)")
+        assertThat(link.createMarkdownLink("bar", LinkFormat.V3))
+            .isEqualTo(
+                "[bar](uri://foo.perfetto-trace?enablePlugins=android_startup&selectionParams=eNorSEzOTkxP9UvMTbVNzs_Vy8svSczJLEvVK4BIgAWKUhNzEgsK1IB0cX5efGaKbZCrY7C_X3ywo2-AjysAgIgZGQ==)"
             )
     }
 }

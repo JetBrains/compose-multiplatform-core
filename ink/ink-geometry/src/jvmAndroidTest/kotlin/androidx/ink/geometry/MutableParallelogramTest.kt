@@ -169,6 +169,71 @@ class MutableParallelogramTest {
     }
 
     @Test
+    fun fromSegmentAndPadding_returnsCorrectParallelogramWithNoRotation() {
+        val parallelogram =
+            MutableParallelogram.fromSegmentAndPadding(
+                segment = ImmutableSegment(MutableVec(5f, 0f), MutableVec(-5f, 0f)),
+                padding = 2f,
+            )
+        val other =
+            Parallelogram.normalizeAndRun(
+                width = 14f,
+                height = 4f,
+                rotation = Angle.ZERO,
+                runBlock = { w: Float, h: Float, r: Float ->
+                    MutableParallelogram.fromCenterDimensionsRotationAndShear(
+                        MutableVec(0f, 0f),
+                        w,
+                        h,
+                        r,
+                        0f
+                    )
+                },
+            )
+        assertThat(parallelogram.isAlmostEqual(other, tolerance)).isTrue()
+    }
+
+    @Test
+    fun fromSegmentAndPadding_returnsCorrectParallelogramWithRotation() {
+        val parallelogram =
+            MutableParallelogram.fromSegmentAndPadding(
+                segment = MutableSegment(MutableVec(6f, 6f), MutableVec(0f, 0f)),
+                padding = 2f,
+            )
+        val other =
+            Parallelogram.normalizeAndRun(
+                width = 12.485281f,
+                height = 4f,
+                rotation = Angle.HALF_TURN_RADIANS / 4.0f,
+                runBlock = { w: Float, h: Float, r: Float ->
+                    MutableParallelogram.fromCenterDimensionsRotationAndShear(
+                        MutableVec(3f, 3f),
+                        w,
+                        h,
+                        r,
+                        0f
+                    )
+                },
+            )
+        assertThat(parallelogram.isAlmostEqual(other, tolerance)).isTrue()
+    }
+
+    @Test
+    fun populateFrom_copiesValuesFromInputParallelogram() {
+        val source =
+            MutableParallelogram.fromCenterDimensionsRotationAndShear(
+                MutableVec(10f, 10f),
+                12f,
+                2f,
+                Angle.HALF_TURN_RADIANS,
+                2f,
+            )
+        val destination = MutableParallelogram()
+        destination.populateFrom(source)
+        assertThat(destination).isEqualTo(source)
+    }
+
+    @Test
     fun equals_whenSameInstance_returnsTrueAndSameHashCode() {
         val parallelogram =
             MutableParallelogram.fromCenterDimensionsRotationAndShear(
@@ -382,4 +447,6 @@ class MutableParallelogramTest {
         assertThat(parallelogramString).contains("rotation")
         assertThat(parallelogramString).contains("shearFactor")
     }
+
+    private val tolerance = 1e-4f
 }

@@ -6,15 +6,15 @@ plugins {
 }
 
 android {
-    namespace 'androidx.compose.material3.integration.macrobenchmark.target'
+    namespace = "androidx.compose.material3.integration.macrobenchmark.target"
 
     buildTypes {
         release {
-            minifyEnabled true
+            minifyEnabled = true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-    compileSdkVersion 35
+    compileSdk = 35
 }
 
 dependencies {

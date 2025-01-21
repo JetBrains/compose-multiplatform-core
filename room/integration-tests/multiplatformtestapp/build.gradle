@@ -105,7 +105,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.room.integration.multiplatformtestapp"
+    namespace = "androidx.room.integration.multiplatformtestapp"
 }
 
 // Copy schema files to the iOS binary output test directory that will be part of the bundle's

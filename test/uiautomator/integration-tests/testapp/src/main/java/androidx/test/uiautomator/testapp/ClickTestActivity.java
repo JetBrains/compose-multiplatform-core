@@ -22,8 +22,8 @@ import android.view.View;
 import android.view.View.OnLongClickListener;
 import android.widget.Button;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public class ClickTestActivity extends Activity {
 

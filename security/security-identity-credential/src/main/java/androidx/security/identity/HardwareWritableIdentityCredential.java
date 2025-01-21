@@ -18,8 +18,9 @@ package androidx.security.identity;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -39,11 +40,11 @@ class HardwareWritableIdentityCredential extends WritableIdentityCredential {
 
     @Override
     public @NonNull Collection<X509Certificate> getCredentialKeyCertificateChain(
-            @NonNull byte[] challenge) {
+            byte @NonNull [] challenge) {
         return mWritableCredential.getCredentialKeyCertificateChain(challenge);
     }
 
-    static @NonNull android.security.identity.PersonalizationData convertPDFromJetpack(
+    static android.security.identity.@NonNull PersonalizationData convertPDFromJetpack(
             @NonNull PersonalizationData personalizationData) {
 
         android.security.identity.PersonalizationData.Builder builder =
@@ -78,8 +79,7 @@ class HardwareWritableIdentityCredential extends WritableIdentityCredential {
     }
 
     @Override
-    @NonNull
-    public byte[] personalize(@NonNull PersonalizationData personalizationData) {
+    public byte @NonNull [] personalize(@NonNull PersonalizationData personalizationData) {
         return mWritableCredential.personalize(convertPDFromJetpack(personalizationData));
     }
 }

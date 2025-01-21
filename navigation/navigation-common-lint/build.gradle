@@ -35,16 +35,18 @@ BundleInsideHelper.forInsideLintJar(project)
 dependencies {
     compileOnly(libs.kotlinCompiler)
     compileOnly(libs.kotlinStdlib)
-    compileOnly(libs.androidLintApiPrevAnalysis)
+    compileOnly(libs.androidLintApiPrevKotlin)
     compileOnly(libs.intellijCore)
     compileOnly(libs.uast)
 
-    bundleInside(project(":navigation:navigation-lint-common"))
+    bundleInside(project(":navigation:lint:common"))
 
-    testImplementation(libs.androidLintPrevAnalysis)
-    testImplementation(libs.androidLintTestsPrevAnalysis)
+    testImplementation(libs.androidLintApiPrevKotlin)
+    testImplementation(libs.androidLintTestsPrevKotlin)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
+    testImplementation(project(":navigation:lint:common-test"))
+
 }
 
 androidx {

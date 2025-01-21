@@ -34,8 +34,9 @@ private const val MAIN_PANEL_ENTITY_CLASS =
 private const val JXR_CORE_SESSION_CLASS = "com.google.vr.androidx.xr.core.Session"
 
 private const val PANEL_ENTITY_CLASS_ANDROIDX = "androidx.xr.scenecore.PanelEntity"
-private const val PANEL_ENTITY_IMPL_CLASS_ANDROIDX = "androidx.xr.scenecore.PanelEntityImpl"
-private const val MAIN_PANEL_ENTITY_CLASS_ANDROIDX = "androidx.xr.scenecore.MainPanelEntityImpl"
+private const val PANEL_ENTITY_IMPL_CLASS_ANDROIDX = "androidx.xr.scenecore.impl.PanelEntityImpl"
+private const val MAIN_PANEL_ENTITY_CLASS_ANDROIDX =
+    "androidx.xr.scenecore.impl.MainPanelEntityImpl"
 private const val JXR_CORE_SESSION_CLASS_ANDROIDX = "androidx.xr.scenecore.Session"
 
 private const val GET_ENTITIES_OF_TYPE_METHOD = "getEntitiesOfType"

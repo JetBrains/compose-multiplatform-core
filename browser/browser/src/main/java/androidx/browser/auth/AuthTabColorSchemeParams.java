@@ -23,8 +23,9 @@ import static androidx.browser.customtabs.CustomTabsIntent.EXTRA_TOOLBAR_COLOR;
 import android.os.Bundle;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Contains visual parameters of an Auth Tab that may depend on the color scheme.
@@ -33,46 +34,40 @@ import androidx.annotation.Nullable;
  */
 public final class AuthTabColorSchemeParams {
     /** Toolbar color. */
-    @Nullable
     @ColorInt
-    private final Integer mToolbarColor;
+    private final @Nullable Integer mToolbarColor;
 
     /** Navigation bar color. */
-    @Nullable
     @ColorInt
-    private final Integer mNavigationBarColor;
+    private final @Nullable Integer mNavigationBarColor;
 
     /** Navigation bar divider color. */
-    @Nullable
     @ColorInt
-    private final Integer mNavigationBarDividerColor;
+    private final @Nullable Integer mNavigationBarDividerColor;
 
-    private AuthTabColorSchemeParams(@Nullable @ColorInt Integer toolbarColor,
-            @Nullable @ColorInt Integer navigationBarColor,
-            @Nullable @ColorInt Integer navigationBarDividerColor) {
+    private AuthTabColorSchemeParams(@ColorInt @Nullable Integer toolbarColor,
+            @ColorInt @Nullable Integer navigationBarColor,
+            @ColorInt @Nullable Integer navigationBarDividerColor) {
         mToolbarColor = toolbarColor;
         mNavigationBarColor = navigationBarColor;
         mNavigationBarDividerColor = navigationBarDividerColor;
     }
 
     @SuppressWarnings("AutoBoxing")
-    @Nullable
     @ColorInt
-    public Integer getToolbarColor() {
+    public @Nullable Integer getToolbarColor() {
         return mToolbarColor;
     }
 
     @SuppressWarnings("AutoBoxing")
-    @Nullable
     @ColorInt
-    public Integer getNavigationBarColor() {
+    public @Nullable Integer getNavigationBarColor() {
         return mNavigationBarColor;
     }
 
     @SuppressWarnings("AutoBoxing")
-    @Nullable
     @ColorInt
-    public Integer getNavigationBarDividerColor() {
+    public @Nullable Integer getNavigationBarDividerColor() {
         return mNavigationBarDividerColor;
     }
 
@@ -81,8 +76,7 @@ public final class AuthTabColorSchemeParams {
      * For backward compatibility and ease of use, the names of keys and the structure of the Bundle
      * are the same as that of Intent extras in {@link CustomTabsIntent}.
      */
-    @NonNull
-    Bundle toBundle() {
+    @NonNull Bundle toBundle() {
         Bundle bundle = new Bundle();
         if (mToolbarColor != null) {
             bundle.putInt(EXTRA_TOOLBAR_COLOR, mToolbarColor);
@@ -100,9 +94,8 @@ public final class AuthTabColorSchemeParams {
      * Unpacks parameters from a {@link Bundle}. Sets all parameters to null if provided bundle is
      * null.
      */
-    @NonNull
     @SuppressWarnings("deprecation")
-    static AuthTabColorSchemeParams fromBundle(@Nullable Bundle bundle) {
+    static @NonNull AuthTabColorSchemeParams fromBundle(@Nullable Bundle bundle) {
         if (bundle == null) {
             bundle = new Bundle(0);
         }
@@ -117,8 +110,7 @@ public final class AuthTabColorSchemeParams {
      * Returns a new {@link AuthTabColorSchemeParams} with the null fields replaced with the
      * provided defaults.
      */
-    @NonNull
-    AuthTabColorSchemeParams withDefaults(@NonNull AuthTabColorSchemeParams defaults) {
+    @NonNull AuthTabColorSchemeParams withDefaults(@NonNull AuthTabColorSchemeParams defaults) {
         return new AuthTabColorSchemeParams(
                 mToolbarColor == null ? defaults.mToolbarColor : mToolbarColor,
                 mNavigationBarColor == null ? defaults.mNavigationBarColor : mNavigationBarColor,
@@ -131,15 +123,12 @@ public final class AuthTabColorSchemeParams {
      * The browser's default colors will be used for any unset value.
      */
     public static final class Builder {
-        @Nullable
         @ColorInt
-        private Integer mToolbarColor;
-        @Nullable
+        private @Nullable Integer mToolbarColor;
         @ColorInt
-        private Integer mNavigationBarColor;
-        @Nullable
+        private @Nullable Integer mNavigationBarColor;
         @ColorInt
-        private Integer mNavigationBarDividerColor;
+        private @Nullable Integer mNavigationBarDividerColor;
 
         /**
          * Sets the toolbar color.
@@ -150,8 +139,7 @@ public final class AuthTabColorSchemeParams {
          *
          * @param color The color integer. The alpha value will be ignored.
          */
-        @NonNull
-        public Builder setToolbarColor(@ColorInt int color) {
+        public @NonNull Builder setToolbarColor(@ColorInt int color) {
             mToolbarColor = color | 0xff000000;
             return this;
         }
@@ -164,8 +152,7 @@ public final class AuthTabColorSchemeParams {
          *
          * @param color The color integer. The alpha value will be ignored.
          */
-        @NonNull
-        public Builder setNavigationBarColor(@ColorInt int color) {
+        public @NonNull Builder setNavigationBarColor(@ColorInt int color) {
             mNavigationBarColor = color | 0xff000000;
             return this;
         }
@@ -175,8 +162,7 @@ public final class AuthTabColorSchemeParams {
          *
          * @param color The color integer.
          */
-        @NonNull
-        public Builder setNavigationBarDividerColor(@ColorInt int color) {
+        public @NonNull Builder setNavigationBarDividerColor(@ColorInt int color) {
             mNavigationBarDividerColor = color;
             return this;
         }
@@ -185,8 +171,7 @@ public final class AuthTabColorSchemeParams {
          * Combines all the options that have been set and returns a new
          * {@link AuthTabColorSchemeParams} object.
          */
-        @NonNull
-        public AuthTabColorSchemeParams build() {
+        public @NonNull AuthTabColorSchemeParams build() {
             return new AuthTabColorSchemeParams(mToolbarColor, mNavigationBarColor,
                     mNavigationBarDividerColor);
         }

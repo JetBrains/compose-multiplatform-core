@@ -23,16 +23,16 @@ plugins {
 
 android {
     defaultConfig {
-        applicationId "androidx.camera.integration.viewfinder"
+        applicationId = "androidx.camera.integration.viewfinder"
     }
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
         }
     }
-    namespace "androidx.camera.integration.viewfinder"
+    namespace = "androidx.camera.integration.viewfinder"
 }
 
 dependencies {

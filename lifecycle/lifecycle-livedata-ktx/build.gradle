@@ -56,5 +56,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.lifecycle.livedata.ktx"
+    namespace = "androidx.lifecycle.livedata.ktx"
 }

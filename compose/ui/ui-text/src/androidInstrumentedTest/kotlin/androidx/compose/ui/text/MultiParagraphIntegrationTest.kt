@@ -196,6 +196,13 @@ class MultiParagraphIntegrationTest {
         paragraph.getPathForRange(textStart, textEnd + 1)
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun getPathForRange_throws_exception_if_end_is_larger_than_last_line_end() {
+        val paragraph = simpleMultiParagraph("ab", "cd", maxLines = 1)
+
+        paragraph.getPathForRange(3, 4) // path for "d"
+    }
+
     @Test
     fun getOffsetForPosition() {
         with(defaultDensity) {
@@ -1852,6 +1859,24 @@ class MultiParagraphIntegrationTest {
     ): MultiParagraph {
         return MultiParagraph(
             annotatedString = createAnnotatedString(text),
+            style = TextStyle(fontFamily = fontFamilyMeasureFont, fontSize = fontSize).merge(style),
+            maxLines = maxLines,
+            constraints = Constraints(maxWidth = width.ceilToInt()),
+            density = defaultDensity,
+            fontFamilyResolver = UncachedFontFamilyResolver(context),
+            overflow = TextOverflow.Clip
+        )
+    }
+
+    private fun simpleMultiParagraph(
+        vararg text: String,
+        style: TextStyle? = null,
+        fontSize: TextUnit = TextUnit.Unspecified,
+        maxLines: Int = Int.MAX_VALUE,
+        width: Float = Float.MAX_VALUE
+    ): MultiParagraph {
+        return MultiParagraph(
+            annotatedString = createAnnotatedString(text.toList()),
             style = TextStyle(fontFamily = fontFamilyMeasureFont, fontSize = fontSize).merge(style),
             maxLines = maxLines,
             constraints = Constraints(maxWidth = width.ceilToInt()),

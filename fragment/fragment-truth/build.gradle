@@ -49,5 +49,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.fragment.truth"
+    namespace = "androidx.fragment.truth"
 }

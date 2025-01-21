@@ -127,13 +127,15 @@ public abstract class Segment internal constructor() {
         // Sometimes start is not exactly equal to the end, but close enough that the
         // magnitude-squared still is not positive due to floating-point
         // loss-of-precision.
-        val magnitudeSquared = computeDisplacement().computeMagnitudeSquared()
+        val displacementX = end.x - start.x
+        val displacementY = end.y - start.y
+        val magnitudeSquared = displacementX * displacementX + displacementY * displacementY
         if (magnitudeSquared <= 0) {
             throw IllegalArgumentException("Projecting onto a segment of zero length is undefined.")
         }
-        val temp = MutableVec()
-        Vec.subtract(pointToProject, start, temp)
-        return Vec.dotProduct(temp, computeDisplacement()) / magnitudeSquared
+        val scaledDifferenceX = (pointToProject.x - start.x) * displacementX
+        val scaledDifferenceY = (pointToProject.y - start.y) * displacementY
+        return (scaledDifferenceX + scaledDifferenceY) / magnitudeSquared
     }
 
     /**

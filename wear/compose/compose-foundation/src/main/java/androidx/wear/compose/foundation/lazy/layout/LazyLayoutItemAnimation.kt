@@ -34,6 +34,7 @@ import androidx.compose.ui.node.ParentDataModifierNode
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -41,7 +42,8 @@ import kotlinx.coroutines.launch
 internal class LazyLayoutItemAnimation(
     private val coroutineScope: CoroutineScope,
     private val graphicsContext: GraphicsContext? = null,
-    private val onLayerPropertyChanged: () -> Unit = {}
+    private val onLayerPropertyChanged: () -> Unit = {},
+    private val containerHeight: Int
 ) {
     var fadeInSpec: FiniteAnimationSpec<Float>? = null
     var placementSpec: FiniteAnimationSpec<IntOffset>? = null
@@ -78,6 +80,9 @@ internal class LazyLayoutItemAnimation(
      */
     var rawOffset: IntOffset = NotInitialized
 
+    /** Updated by the item as needed. */
+    var transformedHeight: Int = 0
+
     /**
      * The final offset the placeable associated with this animations was placed at. Unlike
      * [rawOffset] it takes into account things like reverse layout and content padding.
@@ -98,6 +103,21 @@ internal class LazyLayoutItemAnimation(
      */
     var placementDelta by mutableStateOf(IntOffset.Zero)
         private set
+
+    /**
+     * When there is an animation going, this represent the scroll progress of the item. If there is
+     * no animation going, this is null. Note that this uses [placementDelta], which is a state
+     * variable, so clients reading this will subscribe to be updated during the animation.
+     */
+    val animatedScrollProgress: TransformingLazyColumnItemScrollProgress
+        get() =
+            if (rawOffset != NotInitialized)
+                TransformingLazyColumnItemScrollProgress.bottomItemScrollProgress(
+                    rawOffset.y + placementDelta.y,
+                    transformedHeight,
+                    containerHeight
+                )
+            else TransformingLazyColumnItemScrollProgress.Unspecified
 
     /** Cancels the ongoing placement animation if there is one. */
     fun cancelPlacementAnimation() {

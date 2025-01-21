@@ -22,18 +22,18 @@ plugins {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
 
-    namespace "androidx.tv.integration.macrobenchmark.target"
+    namespace = "androidx.tv.integration.macrobenchmark.target"
 
     defaultConfig {
-        minSdkVersion 28
+        minSdk = 28
     }
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"),
                     "proguard-rules.pro"
         }

@@ -41,5 +41,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.navigation.ui.ktx"
+    namespace = "androidx.navigation.ui.ktx"
 }

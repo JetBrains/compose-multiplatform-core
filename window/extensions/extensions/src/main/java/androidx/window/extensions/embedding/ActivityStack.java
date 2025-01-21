@@ -23,9 +23,10 @@ import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.window.extensions.RequiresVendorApiLevel;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,16 +38,13 @@ import java.util.Objects;
  */
 public class ActivityStack {
 
-    @NonNull
-    private final List<Activity> mActivities;
+    private final @NonNull List<Activity> mActivities;
 
     private final boolean mIsEmpty;
 
-    @NonNull
-    private final Token mToken;
+    private final @NonNull Token mToken;
 
-    @Nullable
-    private final String mTag;
+    private final @Nullable String mTag;
 
     /**
      * The {@code ActivityStack} constructor
@@ -79,8 +77,7 @@ public class ActivityStack {
      * in the list.
      * </p>
      */
-    @NonNull
-    public List<Activity> getActivities() {
+    public @NonNull List<Activity> getActivities() {
         return new ArrayList<>(mActivities);
     }
 
@@ -101,8 +98,7 @@ public class ActivityStack {
      * Returns a token uniquely identifying the container.
      */
     @RequiresVendorApiLevel(level = 5)
-    @NonNull
-    public Token getActivityStackToken() {
+    public @NonNull Token getActivityStackToken() {
         return mToken;
     }
 
@@ -110,8 +106,7 @@ public class ActivityStack {
      * Returns the associated tag if specified. Otherwise, returns {@code null}.
      */
     @RequiresVendorApiLevel(level = OVERLAY_FEATURE_API_LEVEL)
-    @Nullable
-    public String getTag() {
+    public @Nullable String getTag() {
         return mTag;
     }
 
@@ -136,9 +131,8 @@ public class ActivityStack {
         return result;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "ActivityStack{" + "mActivities=" + mActivities
                 + ", mIsEmpty=" + mIsEmpty
                 + ", mToken=" + mToken
@@ -154,8 +148,7 @@ public class ActivityStack {
         /**
          * An invalid token to provide compatibility value before vendor API level 5.
          */
-        @NonNull
-        public static final Token INVALID_ACTIVITY_STACK_TOKEN = new Token(new Binder());
+        public static final @NonNull Token INVALID_ACTIVITY_STACK_TOKEN = new Token(new Binder());
 
         private static final String KEY_ACTIVITY_STACK_RAW_TOKEN = "androidx.window.extensions"
                 + ".embedding.ActivityStack.Token";
@@ -172,8 +165,7 @@ public class ActivityStack {
          * @param token the raw binder used by OEM Extensions implementation.
          */
         @RequiresVendorApiLevel(level = 5)
-        @NonNull
-        public static Token createFromBinder(@NonNull IBinder token) {
+        public static @NonNull Token createFromBinder(@NonNull IBinder token) {
             return new Token(token);
         }
 
@@ -184,8 +176,7 @@ public class ActivityStack {
          * @throws IllegalArgumentException if the {@code bundle} isn't valid.
          */
         @RequiresVendorApiLevel(level = 5)
-        @NonNull
-        public static Token readFromBundle(@NonNull Bundle bundle) {
+        public static @NonNull Token readFromBundle(@NonNull Bundle bundle) {
             final IBinder token = bundle.getBinder(KEY_ACTIVITY_STACK_RAW_TOKEN);
 
             if (token == null) {
@@ -200,15 +191,13 @@ public class ActivityStack {
          * See {@link ActivityEmbeddingOptionsProperties#KEY_ACTIVITY_STACK_TOKEN} for sample usage.
          */
         @RequiresVendorApiLevel(level = 5)
-        @NonNull
-        public Bundle toBundle() {
+        public @NonNull Bundle toBundle() {
             final Bundle bundle = new Bundle();
             bundle.putBinder(KEY_ACTIVITY_STACK_RAW_TOKEN, mToken);
             return bundle;
         }
 
-        @NonNull
-        IBinder getRawToken() {
+        @NonNull IBinder getRawToken() {
             return mToken;
         }
 
@@ -225,9 +214,8 @@ public class ActivityStack {
             return Objects.hash(mToken);
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return "Token{"
                     + "mToken=" + mToken
                     + '}';

@@ -60,7 +60,7 @@ public class MediaRouteProviderTest {
 
     @Test
     @SmallTest
-    public void onCreateDynamicGroupRouteControllerWithParameters_shouldProvideParameters() {
+    public void onCreateDynamicGroupRouteControllerWithOptions_shouldProvideOptions() {
         MediaRouteProvider mediaRouteProvider = new TestMediaRouteProvider(mContext);
         TestDynamicGroupRouteController groupRouteController =
                 (TestDynamicGroupRouteController)
@@ -71,6 +71,7 @@ public class MediaRouteProviderTest {
                 groupRouteController.getRouteControllerOptions();
         assertEquals(ROUTE_ID, groupRouteController.getInitialMemberRouteId());
         assertEquals(mRouteControllerOptions, routeControllerOptions);
+        assertEquals(mRouteControllerOptions.asBundle(), routeControllerOptions.asBundle());
         assertEquals(
                 mRouteControllerOptions.getControlHints(),
                 routeControllerOptions.getControlHints());
@@ -78,9 +79,8 @@ public class MediaRouteProviderTest {
 
     @Test
     @SmallTest
-    public void onCreateDynamicGroupRouteController_shouldWorkWithoutParameters() {
-        MediaRouteProvider mediaRouteProvider =
-                new TestMediaRouteProviderWithoutParameters(mContext);
+    public void onCreateDynamicGroupRouteController_shouldWorkWithoutOptions() {
+        MediaRouteProvider mediaRouteProvider = new TestMediaRouteProviderWithoutOptions(mContext);
         TestDynamicGroupRouteController groupRouteController =
                 (TestDynamicGroupRouteController)
                         mediaRouteProvider.onCreateDynamicGroupRouteController(
@@ -109,9 +109,9 @@ public class MediaRouteProviderTest {
         }
     }
 
-    private static class TestMediaRouteProviderWithoutParameters extends MediaRouteProvider {
+    private static class TestMediaRouteProviderWithoutOptions extends MediaRouteProvider {
 
-        TestMediaRouteProviderWithoutParameters(Context context) {
+        TestMediaRouteProviderWithoutOptions(Context context) {
             super(context);
         }
 

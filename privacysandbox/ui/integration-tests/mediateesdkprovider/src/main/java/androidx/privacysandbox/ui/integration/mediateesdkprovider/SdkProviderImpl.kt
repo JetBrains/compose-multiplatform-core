@@ -16,25 +16,19 @@
 
 package androidx.privacysandbox.ui.integration.mediateesdkprovider
 
-import android.annotation.SuppressLint
-import android.app.sdksandbox.SandboxedSdk
-import android.app.sdksandbox.SandboxedSdkProvider
 import android.content.Context
 import android.os.Bundle
-import android.os.ext.SdkExtensions
 import android.view.View
-import androidx.annotation.RequiresExtension
+import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
+import androidx.privacysandbox.sdkruntime.core.SandboxedSdkProviderCompat
 import androidx.privacysandbox.ui.integration.sdkproviderutils.MediateeSdkApiImpl
 
-// TODO(b/257429573): Remove this line once fixed.
-@SuppressLint("ClassVerificationFailure")
-@RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 5)
-class SdkProviderImpl : SandboxedSdkProvider() {
-    override fun onLoadSdk(p0: Bundle): SandboxedSdk {
-        return SandboxedSdk(MediateeSdkApiImpl(context!!))
+class SdkProviderImpl : SandboxedSdkProviderCompat() {
+    override fun onLoadSdk(params: Bundle): SandboxedSdkCompat {
+        return SandboxedSdkCompat(MediateeSdkApiImpl(context!!))
     }
 
-    override fun getView(p0: Context, p1: Bundle, p2: Int, p3: Int): View {
+    override fun getView(windowContext: Context, params: Bundle, width: Int, height: Int): View {
         throw IllegalStateException("This getView method will not be used.")
     }
 }

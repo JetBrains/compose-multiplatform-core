@@ -63,7 +63,7 @@ android {
     buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
-    namespace "androidx.mediarouter"
+    namespace = "androidx.mediarouter"
 }
 
 androidx {

@@ -16,12 +16,10 @@
 
 package androidx.ink.authoring
 
-import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.Matrix
-import android.os.SystemClock
 import android.view.MotionEvent
-import androidx.annotation.ColorInt
+import android.view.MotionEvent.PointerCoords
+import android.view.MotionEvent.PointerProperties
 import androidx.ink.authoring.testing.InputStreamBuilder
 import androidx.ink.authoring.testing.MultiTouchInputBuilder
 import androidx.ink.brush.Brush
@@ -30,57 +28,18 @@ import androidx.ink.brush.StockBrushes
 import androidx.ink.strokes.MutableStrokeInputBatch
 import androidx.ink.strokes.Stroke
 import androidx.ink.strokes.StrokeInput
-import androidx.test.core.app.ApplicationProvider
-import androidx.test.espresso.Espresso.onIdle
-import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.screenshot.AndroidXScreenshotTestRule
-import androidx.test.screenshot.assertAgainstGolden
 import com.google.common.truth.Truth.assertThat
-import java.util.concurrent.TimeUnit
-import org.junit.After
 import org.junit.Assert.assertThrows
-import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 /** Emulator-based test of [InProgressStrokesView]. */
 @RunWith(AndroidJUnit4::class)
 @LargeTest
-class InProgressStrokesViewTest {
-
-    @get:Rule
-    val activityScenarioRule = ActivityScenarioRule(InProgressStrokesViewTestActivity::class.java)
-
-    private val context = ApplicationProvider.getApplicationContext<Context>()
-
-    private val finishedStrokeCohorts = mutableListOf<Map<InProgressStrokeId, Stroke>>()
-    private val onStrokesFinishedListener =
-        object : InProgressStrokesFinishedListener {
-            override fun onStrokesFinished(strokes: Map<InProgressStrokeId, Stroke>) {
-                finishedStrokeCohorts.add(strokes)
-            }
-        }
-
-    @get:Rule val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_DIRECTORY)
-
-    /**
-     * Accumulates results for the entire test to minimize how often the tests need to be repeated
-     * when updates to the goldens are necessary.
-     */
-    private val screenshotFailureMessages = mutableListOf<String>()
-
-    @Before
-    fun setup() {
-        activityScenarioRule.scenario.onActivity { activity ->
-            activity.inProgressStrokesView.addFinishedStrokesListener(onStrokesFinishedListener)
-            activity.inProgressStrokesView.eagerInit()
-        }
-        yieldingSleep()
-    }
+class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
 
     @Test
     fun startStroke_showsStrokeWithNoCallback() {
@@ -165,7 +124,12 @@ class InProgressStrokesViewTest {
                 activity.inProgressStrokesView.startStroke(
                     downEvent,
                     pointerId = downEvent.getPointerId(0),
-                    basicBrush(TestColors.AVOCADO_GREEN),
+                    Brush.createWithColorIntArgb(
+                        family = StockBrushes.markerLatest,
+                        colorIntArgb = TestColors.AVOCADO_GREEN,
+                        size = 0.5F,
+                        epsilon = 0.001F,
+                    ),
                     // MotionEvent space uses pixels, so this transform sets world units equal to
                     // inches.
                     motionEventToWorldTransform =
@@ -177,7 +141,7 @@ class InProgressStrokesViewTest {
             activity.inProgressStrokesView.finishStroke(upEvent, upEvent.getPointerId(0), strokeId)
         }
 
-        yieldingSleep()
+        assertThatTakingScreenshotMatchesGolden("start_and_finish_non_identity")
         assertThat(finishedStrokeCohorts).hasSize(1)
         assertThat(finishedStrokeCohorts[0]).hasSize(1)
         val stroke = finishedStrokeCohorts[0].values.iterator().next()
@@ -238,6 +202,158 @@ class InProgressStrokesViewTest {
             activity.inProgressStrokesView.cancelStroke(strokeId, stylusInputStream.getUpEvent())
         }
         assertThatTakingScreenshotMatchesGolden("start_and_cancel")
+        assertThat(finishedStrokeCohorts).isEmpty()
+    }
+
+    @Test
+    fun startAndCancelUnfinishedStrokes_hidesStrokeWithNoCallback() {
+        val getMotionEvent =
+            {
+                action: Int,
+                eventTime: Long,
+                pointerProperties: Array<PointerProperties>,
+                pointerCoords: Array<PointerCoords> ->
+                MotionEvent.obtain(
+                    /*downTime=*/ 0L,
+                    /*eventTime=*/ eventTime,
+                    /*action=*/ action,
+                    /*pointerCount=*/ pointerProperties.size,
+                    /*pointerProperties=*/ pointerProperties,
+                    /*pointerCoords=*/ pointerCoords,
+                    /*metaState=*/ 0,
+                    /*buttonState=*/ 0,
+                    /*xPrecision=*/ 1f,
+                    /*yPrecision=*/ 1f,
+                    /*deviceId=*/ 0,
+                    /*edgeFlags=*/ 0,
+                    /*source=*/ 0,
+                    /*flags=*/ 0,
+                )
+            }
+        val downEvent =
+            getMotionEvent(
+                MotionEvent.ACTION_DOWN,
+                0L,
+                arrayOf(
+                    PointerProperties().apply { id = 9 },
+                    PointerProperties().apply { id = 10 }
+                ),
+                arrayOf(
+                    PointerCoords().apply {
+                        x = 25f
+                        y = 25f
+                    },
+                    PointerCoords().apply {
+                        x = 50f
+                        y = 25f
+                    },
+                ),
+            )
+        activityScenarioRule.scenario.onActivity { activity ->
+            // Two strokes get started with different pointerIds.
+            @Suppress("CheckReturnValue")
+            activity.inProgressStrokesView.startStroke(
+                downEvent,
+                9,
+                basicBrush(TestColors.AVOCADO_GREEN)
+            )
+            @Suppress("CheckReturnValue")
+            activity.inProgressStrokesView.startStroke(downEvent, 10, basicBrush(TestColors.RED))
+        }
+        assertThatTakingScreenshotMatchesGolden("cancel_unfinished_strokes_two_strokes_started")
+        assertThat(finishedStrokeCohorts).isEmpty()
+
+        activityScenarioRule.scenario.onActivity { activity ->
+            activity.inProgressStrokesView.cancelUnfinishedStrokes()
+        }
+        assertThatTakingScreenshotMatchesGolden("cancel_unfinished_strokes_both_strokes_canceled")
+        assertThat(finishedStrokeCohorts).isEmpty()
+    }
+
+    @Test
+    fun startAndCancelStroke_hidesStrokeWithNoCallback_simplifiedApiImplicitStrokeId() {
+        var eventTime = 0L
+        val getMotionEvent =
+            {
+                action: Int,
+                pointerProperties: Array<PointerProperties>,
+                pointerCoords: Array<PointerCoords> ->
+                MotionEvent.obtain(
+                        /*downTime=*/ 0L,
+                        /*eventTime=*/ eventTime,
+                        /*action=*/ action,
+                        /*pointerCount=*/ pointerProperties.size,
+                        /*pointerProperties=*/ pointerProperties,
+                        /*pointerCoords=*/ pointerCoords,
+                        /*metaState=*/ 0,
+                        /*buttonState=*/ 0,
+                        /*xPrecision=*/ 1f,
+                        /*yPrecision=*/ 1f,
+                        /*deviceId=*/ 0,
+                        /*edgeFlags=*/ 0,
+                        /*source=*/ 0,
+                        /*flags=*/ 0,
+                    )
+                    .also { eventTime += 1000L }
+            }
+        val downEvent =
+            getMotionEvent(
+                MotionEvent.ACTION_DOWN,
+                arrayOf(
+                    PointerProperties().apply { id = 9 },
+                    PointerProperties().apply { id = 10 }
+                ),
+                arrayOf(
+                    PointerCoords().apply {
+                        x = 25f
+                        y = 25f
+                    },
+                    PointerCoords().apply {
+                        x = 50f
+                        y = 25f
+                    },
+                ),
+            )
+        activityScenarioRule.scenario.onActivity { activity ->
+            // Two strokes get started with different pointerIds.
+            assertThat(activity.inProgressStrokesView.hasUnfinishedStrokes()).isFalse()
+            activity.inProgressStrokesView.startStroke(
+                downEvent,
+                9,
+                basicBrush(TestColors.AVOCADO_GREEN)
+            )
+            assertThat(activity.inProgressStrokesView.hasUnfinishedStrokes()).isTrue()
+            activity.inProgressStrokesView.startStroke(downEvent, 10, basicBrush(TestColors.RED))
+        }
+        assertThatTakingScreenshotMatchesGolden("cancel_strokes_simplified_api_two_strokes_started")
+        assertThat(finishedStrokeCohorts).isEmpty()
+
+        // In practice, CANCEL events will have only one pointer. But this method doesn't actually
+        // care whether or not it's a cancel event and it cancels all pointers present.
+        val cancelEvent =
+            getMotionEvent(
+                MotionEvent.ACTION_CANCEL,
+                arrayOf(
+                    PointerProperties().apply { id = 9 },
+                    // If the pointerId doesn't correspond to a started stroke, it's ignored.
+                    PointerProperties().apply { id = 3 },
+                ),
+                arrayOf(PointerCoords(), PointerCoords(), PointerCoords()),
+            )
+        activityScenarioRule.scenario.onActivity { activity ->
+            assertThat(activity.inProgressStrokesView.cancelStroke(cancelEvent, 9)).isTrue()
+            assertThat(activity.inProgressStrokesView.cancelStroke(cancelEvent, 3)).isFalse()
+            assertThat(activity.inProgressStrokesView.hasUnfinishedStrokes()).isTrue()
+        }
+        assertThatTakingScreenshotMatchesGolden(
+            "cancel_strokes_simplified_api_green_stroke_canceled"
+        )
+        assertThat(finishedStrokeCohorts).isEmpty()
+
+        activityScenarioRule.scenario.onActivity { activity ->
+            activity.inProgressStrokesView.cancelUnfinishedStrokes()
+            assertThat(activity.inProgressStrokesView.hasUnfinishedStrokes()).isFalse()
+        }
         assertThat(finishedStrokeCohorts).isEmpty()
     }
 
@@ -315,6 +431,173 @@ class InProgressStrokesViewTest {
         }
 
         assertThatTakingScreenshotMatchesGolden("start_and_add_and_finish_stroke_input_api")
+        assertThat(finishedStrokeCohorts).hasSize(1)
+        assertThat(finishedStrokeCohorts[0]).hasSize(1)
+    }
+
+    @Test
+    fun startAndAddToAndFinishStroke_withTransform_showsStrokeAndSendsCallback_strokeInputApi() {
+        activityScenarioRule.scenario.onActivity { activity ->
+            val strokeId =
+                activity.inProgressStrokesView.startStroke(
+                    StrokeInput.create(
+                        x = 25f,
+                        y = 25f,
+                        elapsedTimeMillis = 0,
+                        toolType = InputToolType.STYLUS,
+                    ),
+                    brush = basicBrush(TestColors.AVOCADO_GREEN),
+                    strokeToViewTransform =
+                        Matrix().apply {
+                            postScale(2F, 3F)
+                            postTranslate(100F, 200F)
+                            postRotate(15F)
+                        },
+                )
+            activity.inProgressStrokesView.addToStroke(
+                MutableStrokeInputBatch().apply {
+                    addOrThrow(
+                        StrokeInput.create(
+                            x = 45f,
+                            y = 70f,
+                            elapsedTimeMillis = 5,
+                            toolType = InputToolType.STYLUS,
+                        )
+                    )
+                    addOrThrow(
+                        StrokeInput.create(
+                            x = 65f,
+                            y = 115f,
+                            elapsedTimeMillis = 10,
+                            toolType = InputToolType.STYLUS,
+                        )
+                    )
+                },
+                strokeId,
+            )
+            activity.inProgressStrokesView.finishStroke(
+                StrokeInput.create(
+                    x = 105f,
+                    y = 205f,
+                    elapsedTimeMillis = 20,
+                    toolType = InputToolType.STYLUS,
+                ),
+                strokeId,
+            )
+        }
+
+        assertThatTakingScreenshotMatchesGolden(
+            "start_and_add_and_finish_stroke_input_api_with_transform"
+        )
+        assertThat(finishedStrokeCohorts).hasSize(1)
+        assertThat(finishedStrokeCohorts[0]).hasSize(1)
+    }
+
+    @Test
+    fun startAndAddToAndFinishStroke_implicitStrokeIdSimplifiedApi() {
+        var eventTime = 0L
+        val getMotionEvent =
+            {
+                action: Int,
+                pointerProperties: Array<PointerProperties>,
+                pointerCoords: Array<PointerCoords> ->
+                MotionEvent.obtain(
+                        /*downTime=*/ 0L,
+                        /*eventTime=*/ eventTime,
+                        /*action=*/ action,
+                        /*pointerCount=*/ pointerProperties.size,
+                        /*pointerProperties=*/ pointerProperties,
+                        /*pointerCoords=*/ pointerCoords,
+                        /*metaState=*/ 0,
+                        /*buttonState=*/ 0,
+                        /*xPrecision=*/ 1f,
+                        /*yPrecision=*/ 1f,
+                        /*deviceId=*/ 0,
+                        /*edgeFlags=*/ 0,
+                        /*source=*/ 0,
+                        /*flags=*/ 0,
+                    )
+                    .also { eventTime += 1000L }
+            }
+        val downEvent =
+            getMotionEvent(
+                MotionEvent.ACTION_DOWN,
+                arrayOf(PointerProperties().apply { id = 9 }),
+                arrayOf(
+                    PointerCoords().apply {
+                        x = 100f
+                        y = 100f
+                    }
+                ),
+            )
+        // Need to validate we're storing and looking up strokeId=9 and using that as a strokeId.
+        // Not storing strokeIndex=0 (so we put that pointer at a different index) and not trying
+        // to use the strokeId as an index.
+        val moveEvent =
+            getMotionEvent(
+                MotionEvent.ACTION_MOVE,
+                arrayOf(PointerProperties().apply { id = 0 }, PointerProperties().apply { id = 9 }),
+                arrayOf(
+                    PointerCoords().apply {
+                        // Should not use this
+                        x = 0f
+                        y = 0f
+                    },
+                    PointerCoords().apply {
+                        // Should use this
+                        x = 200f
+                        y = 100f
+                    },
+                ),
+            )
+        val upEvent =
+            getMotionEvent(
+                MotionEvent.ACTION_UP,
+                arrayOf(PointerProperties().apply { id = 0 }, PointerProperties().apply { id = 9 }),
+                arrayOf(
+                    PointerCoords().apply {
+                        // Should not use this
+                        x = 0f
+                        y = 0f
+                    },
+                    PointerCoords().apply {
+                        // Should use this
+                        x = 200f
+                        y = 200f
+                    },
+                ),
+            )
+        activityScenarioRule.scenario.onActivity { activity ->
+            activity.inProgressStrokesView.startStroke(
+                event = downEvent,
+                pointerId = 9,
+                brush = basicBrush(TestColors.AVOCADO_GREEN),
+            )
+
+            // Updates for pointers that are not part of a started stroke are ignored.
+            assertThat(
+                    activity.inProgressStrokesView.addToStroke(
+                        moveEvent,
+                        pointerId = 0,
+                        prediction = null
+                    )
+                )
+                .isFalse()
+            assertThat(activity.inProgressStrokesView.finishStroke(upEvent, pointerId = 0))
+                .isFalse()
+
+            assertThat(
+                    activity.inProgressStrokesView.addToStroke(
+                        moveEvent,
+                        pointerId = 9,
+                        prediction = null
+                    )
+                )
+                .isTrue()
+            assertThat(activity.inProgressStrokesView.finishStroke(upEvent, pointerId = 9)).isTrue()
+        }
+
+        assertThatTakingScreenshotMatchesGolden("start_and_add_and_finish_simplified_api")
         assertThat(finishedStrokeCohorts).hasSize(1)
         assertThat(finishedStrokeCohorts[0]).hasSize(1)
     }
@@ -463,13 +746,14 @@ class InProgressStrokesViewTest {
             "five_simultaneous_after_${action}_stroke$strokeCount"
 
         val stylusInputStreams =
-            BRUSH_COLORS.indices.map { strokeIndex ->
+            BRUSH_COLORS.indices.mapIndexed { i, strokeIndex ->
                 val strokeCount = strokeIndex + 1
                 InputStreamBuilder.stylusLine(
                     startX = 15F * strokeCount,
                     startY = 45F * strokeCount,
                     endX = 400F - 10F * strokeCount,
                     endY = 600F - 35F * strokeCount,
+                    pointerId = i,
                 )
             }
         val strokeIds = Array<InProgressStrokeId?>(stylusInputStreams.size) { null }
@@ -574,135 +858,5 @@ class InProgressStrokesViewTest {
             activity.inProgressStrokesView.removeFinishedStrokes(strokeIds)
         }
         assertThatTakingScreenshotMatchesGolden("remove_finished")
-    }
-
-    private fun runMultiTouchGesture(
-        inputStream: MultiTouchInputBuilder,
-        actionToCancel: Int? = null,
-    ) {
-        activityScenarioRule.scenario.onActivity { activity ->
-            val pointerIdToStrokeId = mutableMapOf<Int, InProgressStrokeId>()
-            inputStream.runGestureWith { event ->
-                when (event.actionMasked) {
-                    MotionEvent.ACTION_DOWN,
-                    MotionEvent.ACTION_POINTER_DOWN -> {
-                        val pointerIndex = event.actionIndex
-                        val pointerId = event.getPointerId(pointerIndex)
-                        pointerIdToStrokeId[pointerId] =
-                            activity.inProgressStrokesView.startStroke(
-                                event,
-                                pointerId,
-                                basicBrush(color = BRUSH_COLORS[pointerIdToStrokeId.size]),
-                            )
-                    }
-                    MotionEvent.ACTION_MOVE -> {
-                        for (pointerIndex in 0 until event.pointerCount) {
-                            val pointerId = event.getPointerId(pointerIndex)
-                            val strokeId = checkNotNull(pointerIdToStrokeId[pointerId])
-                            activity.inProgressStrokesView.addToStroke(
-                                event,
-                                pointerId,
-                                strokeId,
-                                prediction = null,
-                            )
-                        }
-                    }
-                    MotionEvent.ACTION_POINTER_UP,
-                    MotionEvent.ACTION_UP -> {
-                        val pointerIndex = event.actionIndex
-                        val pointerId = event.getPointerId(pointerIndex)
-                        val strokeId = checkNotNull(pointerIdToStrokeId[pointerId])
-                        if (event.actionMasked == actionToCancel) {
-                            activity.inProgressStrokesView.cancelStroke(strokeId, event)
-                        } else {
-                            activity.inProgressStrokesView.finishStroke(event, pointerId, strokeId)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Waits for actions to complete, both on the render thread and the UI thread, for a specified
-     * period of time. The default time is 1 second.
-     */
-    private fun yieldingSleep(timeMs: Long = 1000) {
-        activityScenarioRule.scenario.onActivity { activity ->
-            // Ensures that everything in the action queue before this point has been processed.
-            activity.inProgressStrokesView.sync(timeMs, TimeUnit.MILLISECONDS)
-        }
-        repeat((timeMs / SLEEP_INTERVAL_MS).toInt()) {
-            onIdle()
-            SystemClock.sleep(SLEEP_INTERVAL_MS)
-        }
-    }
-
-    /**
-     * Take screenshots of the entire device rather than just a View in order to include all layers
-     * being composed on screen. This will include the front buffer layer.
-     * [InProgressStrokesViewTestActivity] is set up to exclude parts of the screen that are
-     * irrelevant and may just cause flakes, such as the status bar and toolbar.
-     */
-    private fun assertThatTakingScreenshotMatchesGolden(key: String) {
-        // Save just one failure message despite multiple attempts to improve the signal-to-noise
-        // ratio.
-        var lastFailureMessage: String? = null
-        for (attempt in 0 until SCREENSHOT_RETRY_COUNT) {
-            val bitmap = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
-            if (bitmap != null) {
-                lastFailureMessage = compareAgainstGolden(bitmap, key) ?: return
-            }
-            yieldingSleep(500L * (1 shl attempt))
-        }
-        // Don't fail right away, but accumulate results for the entire test.
-        screenshotFailureMessages.add(checkNotNull(lastFailureMessage))
-    }
-
-    /**
-     * Returns `null` if [bitmap] matches the golden image for [key], or a non-null error message if
-     * they do not match.
-     */
-    private fun compareAgainstGolden(bitmap: Bitmap, key: String): String? {
-        // The only function available is an assertion, so wrap the thrown exception and treat it as
-        // a single failure in a sequence of retries. Will be rethrown at the end of the test if
-        // appropriate (see `cleanup`).
-        try {
-            bitmap.assertAgainstGolden(screenshotRule, "${this::class.simpleName}_$key")
-            return null
-        } catch (e: AssertionError) {
-            return e.message ?: "Image comparison failure"
-        }
-    }
-
-    @After
-    fun cleanup() {
-        if (screenshotFailureMessages.isNotEmpty()) {
-            throw AssertionError(
-                "At least one screenshot did not match goldens:\n$screenshotFailureMessages"
-            )
-        }
-    }
-
-    private fun basicBrush(@ColorInt color: Int) =
-        Brush.createWithColorIntArgb(
-            family = StockBrushes.markerLatest,
-            colorIntArgb = color,
-            size = 25F,
-            epsilon = 0.1F,
-        )
-
-    private companion object {
-        const val SLEEP_INTERVAL_MS = 100L
-        const val SCREENSHOT_RETRY_COUNT = 4
-
-        val BRUSH_COLORS =
-            listOf(
-                TestColors.AVOCADO_GREEN,
-                TestColors.HOT_PINK,
-                TestColors.COBALT_BLUE,
-                TestColors.ORANGE,
-                TestColors.DEEP_PURPLE,
-            )
     }
 }

@@ -16,11 +16,11 @@
 
 package androidx.webkit.internal;
 
-import androidx.annotation.NonNull;
 import androidx.webkit.WebViewRenderProcess;
 
 import org.chromium.support_lib_boundary.WebViewRendererBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationHandler;
@@ -42,7 +42,7 @@ public class WebViewRenderProcessImpl extends WebViewRenderProcess {
     }
 
     public WebViewRenderProcessImpl(
-                @NonNull android.webkit.WebViewRenderProcess frameworkRenderer) {
+                android.webkit.@NonNull WebViewRenderProcess frameworkRenderer) {
         mFrameworkObject = new WeakReference<>(frameworkRenderer);
     }
 
@@ -67,7 +67,7 @@ public class WebViewRenderProcessImpl extends WebViewRenderProcess {
      * Get a support library WebViewRenderProcess object that is 1:1 with the framework object.
      */
     public static @NonNull WebViewRenderProcessImpl forFrameworkObject(
-            @NonNull android.webkit.WebViewRenderProcess frameworkRenderer) {
+            android.webkit.@NonNull WebViewRenderProcess frameworkRenderer) {
         WebViewRenderProcessImpl renderer = sFrameworkMap.get(frameworkRenderer);
         if (renderer != null) {
             return renderer;

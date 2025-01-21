@@ -30,8 +30,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
@@ -125,8 +125,7 @@ public class ChangeImageTransform extends Transition {
     }
 
     @Override
-    @NonNull
-    public String[] getTransitionProperties() {
+    public String @NonNull [] getTransitionProperties() {
         return sTransitionProperties;
     }
 
@@ -140,9 +139,8 @@ public class ChangeImageTransform extends Transition {
      * @return An Animator to move an ImageView or null if the View is not an ImageView,
      * the Drawable changed, the View is not VISIBLE, or there was no change.
      */
-    @Nullable
     @Override
-    public Animator createAnimator(@NonNull ViewGroup sceneRoot,
+    public @Nullable Animator createAnimator(@NonNull ViewGroup sceneRoot,
             @Nullable TransitionValues startValues,
             final @Nullable TransitionValues endValues) {
         if (startValues == null || endValues == null) {
@@ -190,8 +188,7 @@ public class ChangeImageTransform extends Transition {
         return animator;
     }
 
-    @NonNull
-    private ObjectAnimator createNullAnimator(@NonNull ImageView imageView) {
+    private @NonNull ObjectAnimator createNullAnimator(@NonNull ImageView imageView) {
         return ObjectAnimator.ofObject(imageView, ANIMATED_TRANSFORM_PROPERTY,
                 NULL_MATRIX_EVALUATOR, MatrixUtils.IDENTITY_MATRIX, MatrixUtils.IDENTITY_MATRIX);
     }
@@ -202,8 +199,7 @@ public class ChangeImageTransform extends Transition {
                 new TransitionUtils.MatrixEvaluator(), startMatrix, endMatrix);
     }
 
-    @NonNull
-    private static Matrix copyImageMatrix(@NonNull ImageView view) {
+    private static @NonNull Matrix copyImageMatrix(@NonNull ImageView view) {
         final Drawable image = view.getDrawable();
         if (image.getIntrinsicWidth() > 0 && image.getIntrinsicHeight() > 0) {
             switch (view.getScaleType()) {

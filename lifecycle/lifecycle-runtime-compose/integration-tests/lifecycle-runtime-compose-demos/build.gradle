@@ -42,5 +42,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.lifecycle.runtime.compose.demos"
+    namespace = "androidx.lifecycle.runtime.compose.demos"
 }

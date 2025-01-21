@@ -66,6 +66,7 @@ interface XPropertySpec {
             typeName: XTypeName,
             visibility: VisibilityModifier,
             isMutable: Boolean = false,
+            addJavaNullabilityAnnotation: Boolean = true
         ): Builder =
             XPropertySpecImpl.Builder(
                 name,
@@ -76,12 +77,14 @@ interface XPropertySpec {
                     JPropertySpec.builder(typeName.java, name).apply {
                         val visibilityModifier = visibility.toJavaVisibilityModifier()
                         addModifiers(visibilityModifier)
-                        // TODO(b/247242374) Add nullability annotations for private fields
-                        if (visibilityModifier != JModifier.PRIVATE) {
-                            if (typeName.nullability == XNullability.NULLABLE) {
-                                addAnnotation(NULLABLE_ANNOTATION)
-                            } else if (typeName.nullability == XNullability.NONNULL) {
-                                addAnnotation(NONNULL_ANNOTATION)
+                        if (addJavaNullabilityAnnotation) {
+                            // TODO(b/247242374) Add nullability annotations for private fields
+                            if (visibilityModifier != JModifier.PRIVATE) {
+                                if (typeName.nullability == XNullability.NULLABLE) {
+                                    addAnnotation(NULLABLE_ANNOTATION)
+                                } else if (typeName.nullability == XNullability.NONNULL) {
+                                    addAnnotation(NONNULL_ANNOTATION)
+                                }
                             }
                         }
                         if (!isMutable) {

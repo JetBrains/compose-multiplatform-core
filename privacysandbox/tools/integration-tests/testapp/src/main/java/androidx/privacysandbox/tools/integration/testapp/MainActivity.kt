@@ -23,8 +23,8 @@ import androidx.privacysandbox.sdkruntime.client.SdkSandboxManagerCompat
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
 import androidx.privacysandbox.tools.integration.testsdk.MySdk
 import androidx.privacysandbox.tools.integration.testsdk.MySdkFactory.wrapToMySdk
-import androidx.privacysandbox.ui.client.view.SandboxedSdkUiSessionState
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
+import androidx.privacysandbox.ui.client.view.SandboxedSdkViewEventListener
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.idling.CountingIdlingResource
 import kotlinx.coroutines.launch
@@ -70,12 +70,16 @@ class MainActivity : AppCompatActivity() {
 
         runOnUiThread {
             sandboxedSdkView.setAdapter(textViewAd)
-
-            sandboxedSdkView.addStateChangedListener { state ->
-                if (state is SandboxedSdkUiSessionState.Active) {
+            class TestEventListener : SandboxedSdkViewEventListener {
+                override fun onUiDisplayed() {
                     idlingResource.decrement()
                 }
+
+                override fun onUiError(error: Throwable) {}
+
+                override fun onUiClosed() {}
             }
+            sandboxedSdkView.setEventListener(TestEventListener())
         }
     }
 }

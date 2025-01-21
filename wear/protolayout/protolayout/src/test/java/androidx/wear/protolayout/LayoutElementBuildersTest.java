@@ -35,10 +35,10 @@ import static org.junit.Assert.assertThrows;
 import android.graphics.Color;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.wear.protolayout.expression.AppDataKey;
-import androidx.wear.protolayout.expression.DynamicBuilders;
 import androidx.wear.protolayout.LayoutElementBuilders.DashedArcLine;
 import androidx.wear.protolayout.LayoutElementBuilders.DashedLinePattern;
+import androidx.wear.protolayout.expression.AppDataKey;
+import androidx.wear.protolayout.expression.DynamicBuilders;
 import androidx.wear.protolayout.proto.ColorProto;
 import androidx.wear.protolayout.proto.DimensionProto;
 import androidx.wear.protolayout.proto.LayoutElementProto;

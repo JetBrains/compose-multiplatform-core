@@ -31,7 +31,6 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.Icon;
 import android.os.Build;
 
-import androidx.core.os.BuildCompat;
 import androidx.credentials.provider.BiometricPromptData;
 import androidx.credentials.provider.CreateEntry;
 import androidx.test.core.app.ApplicationProvider;
@@ -183,7 +182,7 @@ public class CreateEntryJavaTest {
                 .setPasswordCredentialCount(PASSWORD_COUNT)
                 .setPublicKeyCredentialCount(PUBLIC_KEY_CREDENTIAL_COUNT)
                 .setTotalCredentialCount(TOTAL_COUNT);
-        if (BuildCompat.isAtLeastV()) {
+        if (Build.VERSION.SDK_INT >= 35) {
             BiometricPromptData biometricPromptData = null;
             if (!nullBiometricPromptData) {
                 biometricPromptData = testBiometricPromptData();
@@ -201,7 +200,7 @@ public class CreateEntryJavaTest {
         assertThat(PASSWORD_COUNT).isEqualTo(entry.getPasswordCredentialCount());
         assertThat(PUBLIC_KEY_CREDENTIAL_COUNT).isEqualTo(entry.getPublicKeyCredentialCount());
         assertThat(TOTAL_COUNT).isEqualTo(entry.getTotalCredentialCount());
-        if (BuildCompat.isAtLeastV() && entry.getBiometricPromptData() != null) {
+        if (Build.VERSION.SDK_INT >= 35 && entry.getBiometricPromptData() != null) {
             assertAboveApiV(entry);
         } else {
             assertThat(entry.getBiometricPromptData()).isNull();
@@ -209,7 +208,7 @@ public class CreateEntryJavaTest {
     }
 
     private static void assertAboveApiV(CreateEntry entry) {
-        if (BuildCompat.isAtLeastV()) {
+        if (Build.VERSION.SDK_INT >= 35) {
             assertThat(entry.getBiometricPromptData().getAllowedAuthenticators()).isEqualTo(
                     testBiometricPromptData().getAllowedAuthenticators());
         }

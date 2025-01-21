@@ -157,7 +157,6 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
         return mFeatures;
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @Override
     public void registerObserverCallback(
             @NonNull String targetPackageName,

@@ -18,6 +18,7 @@ package androidx.pdf.service.connect
 
 import android.content.ComponentName
 import android.content.Context
+import android.net.Uri
 import android.os.IBinder
 import androidx.pdf.PdfDocumentRemote
 import androidx.pdf.adapter.PdfDocumentRendererFactoryImpl
@@ -29,7 +30,7 @@ class FakePdfServiceConnection(
     override var documentBinder: PdfDocumentRemote? = null,
     private val onServiceConnected: () -> Unit = {}
 ) : PdfServiceConnection {
-    override suspend fun bindAndConnect() {
+    override suspend fun bindAndConnect(uri: Uri) {
         documentBinder = PdfDocumentRemoteImpl(PdfDocumentRendererFactoryImpl())
         onServiceConnected(null, null)
     }

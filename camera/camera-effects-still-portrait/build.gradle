@@ -26,7 +26,7 @@ dependencies {
 }
 android {
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.camera.effects.stillportrait"
+    namespace = "androidx.camera.effects.stillportrait"
 }
 androidx {
     name = "Camera Effects: Still Portrait"

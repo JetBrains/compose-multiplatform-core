@@ -65,7 +65,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.navigation.dynamicfeatures.fragment"
+    namespace = "androidx.navigation.dynamicfeatures.fragment"
 }
 
 androidx {

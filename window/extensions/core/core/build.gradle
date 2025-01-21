@@ -42,7 +42,7 @@ android {
     buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
-    namespace "androidx.window.extensions.core"
+    namespace = "androidx.window.extensions.core"
 }
 
 tasks.withType(KotlinCompile).configureEach {

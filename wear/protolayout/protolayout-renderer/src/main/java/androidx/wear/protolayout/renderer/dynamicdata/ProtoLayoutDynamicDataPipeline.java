@@ -32,8 +32,6 @@ import android.view.ViewTreeObserver;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.view.animation.AnimationSet;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.UiThread;
@@ -70,6 +68,9 @@ import androidx.wear.protolayout.renderer.dynamicdata.NodeInfo.ResolvedAvd;
 
 import com.google.common.collect.ImmutableList;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -90,20 +91,19 @@ import java.util.stream.Collectors;
  */
 @RestrictTo(Scope.LIBRARY_GROUP)
 public class ProtoLayoutDynamicDataPipeline {
-    @NonNull private static final String TAG = "DynamicDataPipeline";
+    private static final @NonNull String TAG = "DynamicDataPipeline";
 
-    @NonNull
-    private static final QuotaManager DISABLED_ANIMATIONS_QUOTA_MANAGER =
+    private static final @NonNull QuotaManager DISABLED_ANIMATIONS_QUOTA_MANAGER =
             new FixedQuotaManagerImpl(/* quotaCap= */ 0, "disabled animations");
 
-    @NonNull final PositionIdTree<NodeInfo> mPositionIdTree = new PositionIdTree<>();
-    @NonNull final List<QuotaAwareAnimationSet> mEnterAnimations = new ArrayList<>();
-    @NonNull final List<QuotaAwareAnimationSet> mExitAnimations = new ArrayList<>();
+    final @NonNull PositionIdTree<NodeInfo> mPositionIdTree = new PositionIdTree<>();
+    final @NonNull List<QuotaAwareAnimationSet> mEnterAnimations = new ArrayList<>();
+    final @NonNull List<QuotaAwareAnimationSet> mExitAnimations = new ArrayList<>();
     final boolean mEnableAnimations;
     boolean mFullyVisible;
-    @NonNull final QuotaManager mAnimationQuotaManager;
-    @NonNull private final DynamicTypeEvaluator mEvaluator;
-    @NonNull private final PlatformTimeUpdateNotifierImpl mTimeNotifier;
+    final @NonNull QuotaManager mAnimationQuotaManager;
+    private final @NonNull DynamicTypeEvaluator mEvaluator;
+    private final @NonNull PlatformTimeUpdateNotifierImpl mTimeNotifier;
 
     /** Creates a {@link ProtoLayoutDynamicDataPipeline} without animation support. */
     @RestrictTo(Scope.LIBRARY_GROUP)
@@ -183,9 +183,8 @@ public class ProtoLayoutDynamicDataPipeline {
     }
 
     /** Build {@link PipelineMaker}. */
-    @NonNull
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public PipelineMaker newPipelineMaker(
+    public @NonNull PipelineMaker newPipelineMaker(
             @NonNull BiFunction<EnterTransition, View, AnimationSet> enterAnimationInflator,
             @NonNull BiFunction<ExitTransition, View, AnimationSet> exitAnimationInflator) {
         return new PipelineMaker(this, enterAnimationInflator, exitAnimationInflator, mEvaluator);
@@ -196,8 +195,7 @@ public class ProtoLayoutDynamicDataPipeline {
      * inflators.
      */
     @VisibleForTesting
-    @NonNull
-    public PipelineMaker newPipelineMaker() {
+    public @NonNull PipelineMaker newPipelineMaker() {
         return newPipelineMaker(
                 (enterTransition, view) -> new AnimationSet(/* shareInterpolator= */ false),
                 (exitTransition, view) -> new AnimationSet(/* shareInterpolator= */ false));
@@ -235,20 +233,20 @@ public class ProtoLayoutDynamicDataPipeline {
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
     public static final class PipelineMaker {
-        @NonNull private final ProtoLayoutDynamicDataPipeline mPipeline;
+        private final @NonNull ProtoLayoutDynamicDataPipeline mPipeline;
 
-        @NonNull
-        private final BiFunction<EnterTransition, View, AnimationSet> mEnterAnimationInflator;
+        private final @NonNull BiFunction<EnterTransition, View, AnimationSet>
+                mEnterAnimationInflator;
 
-        @NonNull
-        private final BiFunction<ExitTransition, View, AnimationSet> mExitAnimationInflator;
+        private final @NonNull BiFunction<ExitTransition, View, AnimationSet>
+                mExitAnimationInflator;
 
         // Stores pending nodes that are committed to the pipeline after a successful layout update.
-        @NonNull private final Map<String, NodeInfo> mPosIdToNodeInfo = new ArrayMap<>();
-        @NonNull private final List<String> mNodesPendingChildrenRemoval = new ArrayList<>();
-        @NonNull private final Set<String> mChangedNodes = new ArraySet<>();
-        @NonNull private final Set<String> mParentsOfChangedNodes = new ArraySet<>();
-        @NonNull private final DynamicTypeEvaluator mEvaluator;
+        private final @NonNull Map<String, NodeInfo> mPosIdToNodeInfo = new ArrayMap<>();
+        private final @NonNull List<String> mNodesPendingChildrenRemoval = new ArrayList<>();
+        private final @NonNull Set<String> mChangedNodes = new ArraySet<>();
+        private final @NonNull Set<String> mParentsOfChangedNodes = new ArraySet<>();
+        private final @NonNull DynamicTypeEvaluator mEvaluator;
         private int mExitAnimationsCounter = 0;
 
         PipelineMaker(
@@ -502,8 +500,7 @@ public class ProtoLayoutDynamicDataPipeline {
             }
         }
 
-        @NonNull
-        private NodeInfo getNodeInfo(@NonNull String posId) {
+        private @NonNull NodeInfo getNodeInfo(@NonNull String posId) {
             return mPosIdToNodeInfo.computeIfAbsent(
                     posId, k -> new NodeInfo(posId, mPipeline.mAnimationQuotaManager));
         }
@@ -514,8 +511,7 @@ public class ProtoLayoutDynamicDataPipeline {
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @SuppressWarnings("RestrictTo")
-        @NonNull
-        public PipelineMaker addPipelineFor(
+        public @NonNull PipelineMaker addPipelineFor(
                 @NonNull DynamicString stringSource,
                 @NonNull Locale locale,
                 @NonNull String posId,
@@ -533,8 +529,7 @@ public class ProtoLayoutDynamicDataPipeline {
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @SuppressWarnings("RestrictTo")
-        @NonNull
-        public PipelineMaker addPipelineFor(
+        public @NonNull PipelineMaker addPipelineFor(
                 @NonNull DynamicInt32 int32Source,
                 @NonNull String posId,
                 @NonNull DynamicTypeValueReceiver<Integer> consumer) {
@@ -550,8 +545,7 @@ public class ProtoLayoutDynamicDataPipeline {
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @SuppressWarnings("RestrictTo")
-        @NonNull
-        public PipelineMaker addPipelineFor(
+        public @NonNull PipelineMaker addPipelineFor(
                 @NonNull DynamicString stringSource,
                 @NonNull String invalidData,
                 @NonNull Locale locale,
@@ -567,8 +561,7 @@ public class ProtoLayoutDynamicDataPipeline {
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @SuppressWarnings("RestrictTo")
-        @NonNull
-        public PipelineMaker addPipelineFor(
+        public @NonNull PipelineMaker addPipelineFor(
                 @NonNull DynamicFloat floatSource,
                 @NonNull String posId,
                 @NonNull DynamicTypeValueReceiver<Float> consumer) {
@@ -584,8 +577,7 @@ public class ProtoLayoutDynamicDataPipeline {
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @SuppressWarnings("RestrictTo")
-        @NonNull
-        public PipelineMaker addPipelineFor(
+        public @NonNull PipelineMaker addPipelineFor(
                 @NonNull DynamicFloat floatSource,
                 float invalidData,
                 @NonNull String posId,
@@ -600,8 +592,7 @@ public class ProtoLayoutDynamicDataPipeline {
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @SuppressWarnings("RestrictTo")
-        @NonNull
-        public PipelineMaker addPipelineFor(
+        public @NonNull PipelineMaker addPipelineFor(
                 @NonNull DynamicColor colorSource,
                 @NonNull String posId,
                 @NonNull DynamicTypeValueReceiver<Integer> consumer) {
@@ -616,8 +607,7 @@ public class ProtoLayoutDynamicDataPipeline {
          * {@link PipelineMaker} is committed with {@link PipelineMaker#commit}.
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public PipelineMaker addPipelineFor(
+        public @NonNull PipelineMaker addPipelineFor(
                 @NonNull DynamicBool boolSource,
                 @NonNull String posId,
                 @NonNull Runnable triggerAnimationRunnable) {
@@ -633,8 +623,7 @@ public class ProtoLayoutDynamicDataPipeline {
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @SuppressWarnings("RestrictTo")
-        @NonNull
-        public PipelineMaker addPipelineFor(
+        public @NonNull PipelineMaker addPipelineFor(
                 @NonNull DynamicBool boolSource,
                 @NonNull String posId,
                 @NonNull DynamicTypeValueReceiver<Boolean> consumer) {
@@ -650,8 +639,7 @@ public class ProtoLayoutDynamicDataPipeline {
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @SuppressWarnings("RestrictTo")
-        @NonNull
-        public PipelineMaker addPipelineFor(
+        public @NonNull PipelineMaker addPipelineFor(
                 @NonNull DynamicBool boolSource,
                 boolean invalidData,
                 @NonNull String posId,
@@ -664,9 +652,8 @@ public class ProtoLayoutDynamicDataPipeline {
          * Add the given source to the pipeline for future evaluation. Evaluation will start when
          * {@link PipelineMaker} is committed with {@link PipelineMaker#commit}.
          */
-        @NonNull
         @RestrictTo(Scope.LIBRARY_GROUP)
-        public PipelineMaker addPipelineFor(
+        public @NonNull PipelineMaker addPipelineFor(
                 @NonNull DpProp dpProp,
                 @NonNull String posId,
                 @NonNull DynamicTypeValueReceiver<Float> consumer) {
@@ -683,8 +670,7 @@ public class ProtoLayoutDynamicDataPipeline {
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @SuppressWarnings("RestrictTo")
-        @NonNull
-        public PipelineMaker addPipelineFor(
+        public @NonNull PipelineMaker addPipelineFor(
                 @NonNull DegreesProp degreesProp,
                 @NonNull String posId,
                 @NonNull DynamicTypeValueReceiver<Float> consumer) {
@@ -701,8 +687,7 @@ public class ProtoLayoutDynamicDataPipeline {
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @SuppressWarnings("RestrictTo")
-        @NonNull
-        public PipelineMaker addPipelineFor(
+        public @NonNull PipelineMaker addPipelineFor(
                 @NonNull ColorProp colorProp,
                 @NonNull String posId,
                 @NonNull DynamicTypeValueReceiver<Integer> consumer) {
@@ -719,8 +704,7 @@ public class ProtoLayoutDynamicDataPipeline {
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @SuppressWarnings("RestrictTo")
-        @NonNull
-        public PipelineMaker addPipelineFor(
+        public @NonNull PipelineMaker addPipelineFor(
                 @NonNull BoolProp boolProp,
                 @NonNull String posId,
                 @NonNull DynamicTypeValueReceiver<Boolean> consumer) {
@@ -737,8 +721,7 @@ public class ProtoLayoutDynamicDataPipeline {
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @SuppressWarnings("RestrictTo")
-        @NonNull
-        public PipelineMaker addPipelineFor(
+        public @NonNull PipelineMaker addPipelineFor(
                 @NonNull DpProp dpProp,
                 float invalidData,
                 @NonNull String posId,
@@ -752,8 +735,7 @@ public class ProtoLayoutDynamicDataPipeline {
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @SuppressWarnings("RestrictTo")
-        @NonNull
-        public PipelineMaker addPipelineFor(
+        public @NonNull PipelineMaker addPipelineFor(
                 @NonNull DegreesProp degreesProp,
                 float invalidData,
                 @NonNull String posId,
@@ -768,8 +750,7 @@ public class ProtoLayoutDynamicDataPipeline {
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @SuppressWarnings("RestrictTo")
-        @NonNull
-        public PipelineMaker addPipelineFor(
+        public @NonNull PipelineMaker addPipelineFor(
                 @NonNull ColorProp colorProp,
                 int invalidData,
                 @NonNull String posId,
@@ -784,8 +765,7 @@ public class ProtoLayoutDynamicDataPipeline {
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @SuppressWarnings("RestrictTo")
-        @NonNull
-        public PipelineMaker addPipelineFor(
+        public @NonNull PipelineMaker addPipelineFor(
                 @NonNull BoolProp boolProp,
                 boolean invalidData,
                 @NonNull String posId,
@@ -810,8 +790,7 @@ public class ProtoLayoutDynamicDataPipeline {
         /** This store method shall be called during the layout inflation in a background thread. */
         @RestrictTo(Scope.LIBRARY_GROUP)
         @SuppressLint("CheckReturnValue") // (b/247804720)
-        @NonNull
-        public PipelineMaker addResolvedAnimatedImage(
+        public @NonNull PipelineMaker addResolvedAnimatedImage(
                 @NonNull AnimatedVectorDrawable drawable,
                 @NonNull Trigger trigger,
                 @NonNull String posId) {
@@ -829,8 +808,7 @@ public class ProtoLayoutDynamicDataPipeline {
          * adds given {@link DynamicBool} to the pipeline too.
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public PipelineMaker addResolvedAnimatedImageWithBoolTrigger(
+        public @NonNull PipelineMaker addResolvedAnimatedImageWithBoolTrigger(
                 @NonNull AnimatedVectorDrawable drawable,
                 @NonNull Trigger trigger,
                 @NonNull String posId,
@@ -851,9 +829,8 @@ public class ProtoLayoutDynamicDataPipeline {
         }
 
         /** This store method shall be called during the layout inflation in a background thread. */
-        @NonNull
         @RestrictTo(Scope.LIBRARY_GROUP)
-        public PipelineMaker addResolvedSeekableAnimatedImage(
+        public @NonNull PipelineMaker addResolvedSeekableAnimatedImage(
                 @NonNull SeekableAnimatedVectorDrawable seekableDrawable,
                 @NonNull DynamicFloat boundProgress,
                 @NonNull String posId) {
@@ -879,9 +856,8 @@ public class ProtoLayoutDynamicDataPipeline {
         }
 
         /** Stores the {@link AnimatedVisibility} associated with the {@code posId}. */
-        @NonNull
         @RestrictTo(Scope.LIBRARY_GROUP)
-        public PipelineMaker storeAnimatedVisibilityFor(
+        public @NonNull PipelineMaker storeAnimatedVisibilityFor(
                 @NonNull String posId, @NonNull AnimatedVisibility animatedVisibility) {
             if (!mPipeline.mEnableAnimations) {
                 Log.w(TAG, "Can't use AnimatedVisibility; animations are disabled.");
@@ -900,8 +876,7 @@ public class ProtoLayoutDynamicDataPipeline {
          *     as changed too. This is used for triggering Exit animations.
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public PipelineMaker markNodeAsChanged(
+        public @NonNull PipelineMaker markNodeAsChanged(
                 @NonNull String posId, boolean includePreviousChildren) {
             if (mPipeline.mEnableAnimations) {
                 mChangedNodes.add(posId);
@@ -910,9 +885,10 @@ public class ProtoLayoutDynamicDataPipeline {
             return this;
         }
 
-        @NonNull
-        private static DynamicTypeValueReceiver<Boolean> buildBooleanConditionTriggerCallback(
-                @NonNull Runnable triggerAnimationRunnable, @NonNull QuotaManager quotaManager) {
+        private static @NonNull DynamicTypeValueReceiver<Boolean>
+                buildBooleanConditionTriggerCallback(
+                        @NonNull Runnable triggerAnimationRunnable,
+                        @NonNull QuotaManager quotaManager) {
             return new DynamicTypeValueReceiver<Boolean>() {
                 private boolean mCurrent;
 
@@ -930,8 +906,7 @@ public class ProtoLayoutDynamicDataPipeline {
             };
         }
 
-        @NonNull
-        private <T> DynamicTypeValueReceiver<T> buildStateUpdateCallback(
+        private <T> @NonNull DynamicTypeValueReceiver<T> buildStateUpdateCallback(
                 @NonNull T invalidData, @NonNull Consumer<T> consumer) {
             return new DynamicTypeValueReceiver<T>() {
                 @Override
@@ -950,17 +925,15 @@ public class ProtoLayoutDynamicDataPipeline {
          * Add the given source to the pipeline for future evaluation. Evaluation will start when
          * {@link PipelineMaker} is committed with {@link PipelineMaker#commit}.
          */
-        @NonNull
         @RestrictTo(Scope.LIBRARY_GROUP)
-        public PipelineMaker markForChildRemoval(@NonNull String nodePosId) {
+        public @NonNull PipelineMaker markForChildRemoval(@NonNull String nodePosId) {
             mNodesPendingChildrenRemoval.add(nodePosId);
             return this;
         }
 
         /** Stores a node if doesn't exist. Otherwise does nothing. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public PipelineMaker rememberNode(@NonNull String nodePosId) {
+        public @NonNull PipelineMaker rememberNode(@NonNull String nodePosId) {
             NodeInfo ignored = getNodeInfo(nodePosId);
             return this;
         }
@@ -1016,7 +989,7 @@ public class ProtoLayoutDynamicDataPipeline {
     /** Play the animation with the given trigger type. */
     @RestrictTo(Scope.LIBRARY_GROUP)
     @VisibleForTesting
-    public void playAvdAnimations(@NonNull Trigger.InnerCase triggerCase) {
+    public void playAvdAnimations(Trigger.@NonNull InnerCase triggerCase) {
         mPositionIdTree.forEach(info -> info.playAvdAnimations(triggerCase));
     }
 
@@ -1030,7 +1003,7 @@ public class ProtoLayoutDynamicDataPipeline {
     @UiThread
     @VisibleForTesting
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public void resetAvdAnimations(@NonNull Trigger.InnerCase triggerCase) {
+    public void resetAvdAnimations(Trigger.@NonNull InnerCase triggerCase) {
         mPositionIdTree.forEach(info -> info.resetAvdAnimations(triggerCase));
     }
 
@@ -1038,7 +1011,7 @@ public class ProtoLayoutDynamicDataPipeline {
     @UiThread
     @VisibleForTesting
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public void stopAvdAnimations(@NonNull Trigger.InnerCase triggerCase) {
+    public void stopAvdAnimations(Trigger.@NonNull InnerCase triggerCase) {
         mPositionIdTree.forEach(info -> info.stopAvdAnimations(triggerCase));
     }
 
@@ -1087,8 +1060,7 @@ public class ProtoLayoutDynamicDataPipeline {
      * StateSource with the given key name; or null if no such SourceKey exists.
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @Nullable
-    public Long getSeekableAnimationTotalDurationMillis(@NonNull String sourceKey) {
+    public @Nullable Long getSeekableAnimationTotalDurationMillis(@NonNull String sourceKey) {
         NodeInfo node =
                 mPositionIdTree.findFirst(
                         nodeInfo ->
@@ -1105,8 +1077,7 @@ public class ProtoLayoutDynamicDataPipeline {
      * {@code posId}
      */
     @UiThread
-    @NonNull
-    List<NodeInfo> getNodesAffectedBy(
+    @NonNull List<NodeInfo> getNodesAffectedBy(
             @NonNull String posId, @NonNull Predicate<NodeInfo> predicate) {
         List<NodeInfo> affectedNodes = mPositionIdTree.findAncestorsFor(posId, predicate);
         NodeInfo currentNode = mPositionIdTree.get(posId);

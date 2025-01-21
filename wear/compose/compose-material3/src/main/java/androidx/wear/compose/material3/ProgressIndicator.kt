@@ -17,6 +17,8 @@
 package androidx.wear.compose.material3
 
 import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.keyframes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -28,6 +30,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.lerp
 import androidx.wear.compose.material3.tokens.ColorSchemeKeyTokens
+import androidx.wear.compose.material3.tokens.MotionTokens
 import androidx.wear.compose.materialcore.toRadians
 import kotlin.math.absoluteValue
 import kotlin.math.cos
@@ -411,6 +414,64 @@ internal fun Float.isFullInt(): Boolean = (round(this) == this)
 
 internal fun Float.equalsWithTolerance(number: Float, tolerance: Float = 0.1f) =
     (this - number).absoluteValue < tolerance
+
+/**
+ * Animation spec for over 100% Progress animations.
+ *
+ * Consists of 3 phases:
+ * 1) Intro: A time-based animation that accelerates the progression from 0 degrees per second to
+ *    the peak speed over a fixed duration using easing.
+ * 2) Peak Speed: A rotation at a constant speed, defined in degrees per second, with a variable
+ *    duration.
+ * 3) Outro: A time-based animation that decelerates the progression from the peak speed back to 0
+ *    degrees per second over a fixed duration using easing.
+ */
+internal fun createOverflowProgressAnimationSpec(
+    newProgress: Float,
+    oldProgress: Float
+): AnimationSpec<Float> {
+    val progressDiff = newProgress - oldProgress
+    val peakSpeed = OverflowProgressMiddlePhaseSpeed
+
+    // Calculate intro and outro progress distance from the area under the CubicBezier curve.
+    val introProgressDistance =
+        IntroCubicBezierCurveAreaFactor * peakSpeed * (OverflowProgressIntroPhaseDuration / 1000f)
+    val outroProgressDistance =
+        OutroCubicBezierCurveAreaFactor * peakSpeed * (OverflowProgressOutroPhaseDuration / 1000f)
+    val introProgress = if (progressDiff > 0) introProgressDistance else -introProgressDistance
+    val outroProgress = if (progressDiff > 0) outroProgressDistance else -outroProgressDistance
+    val midProgress = progressDiff - introProgress - outroProgress
+    // Calculate the duration of the middle phase by dividing distance(progress) with speed.
+    val midDuration = (midProgress.absoluteValue / peakSpeed * 1000).toInt()
+
+    return keyframes {
+        durationMillis =
+            OverflowProgressIntroPhaseDuration + OverflowProgressOutroPhaseDuration + midDuration
+        // Intro phase
+        oldProgress at 0 using OverflowProgressIntroPhaseEasing
+        // Middle phase
+        oldProgress + introProgress at OverflowProgressIntroPhaseDuration using LinearEasing
+        // Outro phase
+        oldProgress + introProgress + midProgress at
+            OverflowProgressIntroPhaseDuration + midDuration using
+            OverflowProgressOutroPhaseEasing
+    }
+}
+
+// The determinate circular indicator progress animation constants for progress over 100%
+internal val OverflowProgressIntroPhaseDuration = MotionTokens.DurationMedium1 // 250ms
+internal val OverflowProgressIntroPhaseEasing = MotionTokens.EasingStandardAccelerate
+internal val OverflowProgressOutroPhaseDuration = MotionTokens.DurationMedium4 // 400ms
+internal val OverflowProgressOutroPhaseEasing = MotionTokens.EasingStandardDecelerate
+internal val OverflowProgressMiddlePhaseSpeed = 2f // Full progress circle rotations per second
+
+/**
+ * The area under the Bezier curve for [MotionTokens.EasingStandardAccelerate], see
+ * https://github.com/Pomax/BezierInfo-2/issues/238 for how this is calculated.
+ */
+internal const val IntroCubicBezierCurveAreaFactor = 0.41f
+/** The area under the Bezier curve for [MotionTokens.EasingStandardDecelerate]. */
+internal const val OutroCubicBezierCurveAreaFactor = 0.2f
 
 /** Progress animation spec for determinate [CircularProgressIndicator] */
 internal val determinateCircularProgressAnimationSpec: AnimationSpec<Float>

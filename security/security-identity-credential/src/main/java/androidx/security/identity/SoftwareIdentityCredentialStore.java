@@ -19,8 +19,8 @@ package androidx.security.identity;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -41,8 +41,8 @@ class SoftwareIdentityCredentialStore extends IdentityCredentialStore {
     }
 
     @SuppressWarnings("deprecation")
-    public static @NonNull IdentityCredentialStore getDirectAccessInstance(@NonNull
-            Context context) {
+    public static @NonNull IdentityCredentialStore getDirectAccessInstance(
+            @NonNull Context context) {
         throw new RuntimeException("Direct-access IdentityCredential is not supported");
     }
 
@@ -53,7 +53,7 @@ class SoftwareIdentityCredentialStore extends IdentityCredentialStore {
 
     @SuppressWarnings("deprecation")
     @Override
-    public @NonNull String[] getSupportedDocTypes() {
+    public String @NonNull [] getSupportedDocTypes() {
         Set<String> docTypeSet = getCapabilities().getSupportedDocTypes();
         String[] docTypes = new String[docTypeSet.size()];
         int n = 0;
@@ -66,8 +66,7 @@ class SoftwareIdentityCredentialStore extends IdentityCredentialStore {
     SimpleIdentityCredentialStoreCapabilities mCapabilities = null;
 
     @Override
-    public @NonNull
-    IdentityCredentialStoreCapabilities getCapabilities() {
+    public     @NonNull IdentityCredentialStoreCapabilities getCapabilities() {
         if (mCapabilities == null) {
             LinkedHashSet<String> supportedDocTypesSet = new LinkedHashSet<>();
             mCapabilities = SimpleIdentityCredentialStoreCapabilities.getFeatureVersion202101(
@@ -100,7 +99,7 @@ class SoftwareIdentityCredentialStore extends IdentityCredentialStore {
 
     @SuppressWarnings("deprecation")
     @Override
-    public @Nullable byte[] deleteCredentialByName(@NonNull String credentialName) {
+    public byte @Nullable [] deleteCredentialByName(@NonNull String credentialName) {
         return SoftwareIdentityCredential.delete(mContext, credentialName);
     }
 }

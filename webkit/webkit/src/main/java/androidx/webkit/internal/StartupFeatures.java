@@ -16,6 +16,8 @@
 
 package androidx.webkit.internal;
 
+import androidx.annotation.RestrictTo;
+
 /**
  * Class containing all the startup features the AndroidX library can support.
  * The constants defined in this file should not be modified as their value is used in the
@@ -33,4 +35,9 @@ public class StartupFeatures {
     // ProcessGlobalConfig#setDirectoryBasePath(String)
     public static final String STARTUP_FEATURE_SET_DIRECTORY_BASE_PATH =
             "STARTUP_FEATURE_SET_DIRECTORY_BASE_PATH";
+
+    // ProcessGlobalConfig#setPartitionedCookiesEnabled(boolean)
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public static final String STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES =
+            "STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES";
 }

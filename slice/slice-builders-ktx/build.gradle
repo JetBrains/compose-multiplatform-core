@@ -33,7 +33,7 @@ plugins {
 android {
     defaultConfig {
     }
-    namespace "androidx.slice.builders.ktx"
+    namespace = "androidx.slice.builders.ktx"
 }
 
 dependencies {

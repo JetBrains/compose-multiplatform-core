@@ -351,6 +351,162 @@ src/com/example/test/Foo.kt:10: Error: Unsafe call to observe with Fragment inst
     }
 
     @Test
+    fun externalCallFails_recursionViaInline() {
+        check(
+                kotlin(
+                    """
+package com.example
+
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.MutableLiveData
+import com.example.test.Foo
+
+class TestFragment : Fragment {
+
+    override fun onCreateView() {
+        test()
+    }
+
+    private fun test() {
+        val foo = Foo()
+        foo.observeData(false, this)
+    }
+}
+            """
+                ),
+                kotlin(
+                    """
+package com.example.test
+
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.MutableLiveData
+
+class Foo {
+    inline fun <reified T> observeData(flag: T, fragment: Fragment) {
+        if (flag is Boolean)
+            anotherObserveData(flag, fragment)
+        val liveData = MutableLiveData<String>()
+        liveData.observe(fragment, Observer<String> {})
+    }
+
+    inline fun <reified T> anotherObserveData(flag: T, fragment: Fragment) {
+        observeData(flag, fragment)
+    }
+}
+            """
+                )
+            )
+            .expect(
+                """
+src/com/example/test/Foo.kt:12: Error: Unsafe call to observe with Fragment instance as LifecycleOwner from TestFragment.onCreateView. [FragmentLiveDataObserve]
+        liveData.observe(fragment, Observer<String> {})
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 errors, 0 warnings
+            """
+            )
+    }
+
+    @Test
+    fun externalCallFails_butTooDeep() {
+        check(
+                kotlin(
+                    """
+package com.example
+
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.MutableLiveData
+import com.example.test.Foo
+
+class TestFragment : Fragment {
+
+    override fun onCreateView() {
+        test()
+    }
+
+    private fun test() {
+        val foo = Foo()
+        foo.f1(this)
+    }
+}
+            """
+                ),
+                kotlin(
+                    """
+package com.example.test
+
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.MutableLiveData
+
+class Foo {
+    fun f1(fragment: Fragment) {
+        f2(fragment)
+    }
+    fun f2(fragment: Fragment) {
+        f3(fragment)
+    }
+    fun f3(fragment: Fragment) {
+        f4(fragment)
+    }
+    fun f4(fragment: Fragment) {
+        f5(fragment)
+    }
+    fun f5(fragment: Fragment) {
+        f6(fragment)
+    }
+    fun f6(fragment: Fragment) {
+        f7(fragment)
+    }
+    fun f7(fragment: Fragment) {
+        f8(fragment)
+    }
+    fun f8(fragment: Fragment) {
+        f9(fragment)
+    }
+    fun f9(fragment: Fragment) {
+        f10(fragment)
+    }
+    fun f10(fragment: Fragment) {
+        f11(fragment)
+    }
+    fun f11(fragment: Fragment) {
+        f12(fragment)
+    }
+    fun f12(fragment: Fragment) {
+        f13(fragment)
+    }
+    fun f13(fragment: Fragment) {
+        f14(fragment)
+    }
+    fun f14(fragment: Fragment) {
+        f15(fragment)
+    }
+    fun f15(fragment: Fragment) {
+        f16(fragment)
+    }
+    fun f16(fragment: Fragment) {
+        f17(fragment)
+    }
+    fun f17(fragment: Fragment) {
+        f18(fragment)
+    }
+    fun f18(fragment: Fragment) {
+        f19(fragment)
+    }
+    fun f19(fragment: Fragment) {
+        f20(fragment)
+    }
+    fun f20(fragment: Fragment) {
+        val liveData = MutableLiveData<String>()
+        liveData.observe(fragment, Observer<String> {})
+    }
+}
+            """
+                )
+            )
+            .expectClean()
+    }
+
+    @Test
     fun externalHelperMethodFails() {
         check(
                 kotlin(

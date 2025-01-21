@@ -176,6 +176,7 @@ internal fun featureDistSquared(f1: Feature, f2: Feature): Float {
     return (featureRepresentativePoint(f1) - featureRepresentativePoint(f2)).getDistanceSquared()
 }
 
+// TODO: b/378441547 - Move to explicit parameter / expose?
 internal fun featureRepresentativePoint(feature: Feature): Point {
     val x = (feature.cubics.first().anchor0X + feature.cubics.last().anchor1X) / 2f
     val y = (feature.cubics.first().anchor0Y + feature.cubics.last().anchor1Y) / 2f

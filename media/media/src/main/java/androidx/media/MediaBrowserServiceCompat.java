@@ -81,13 +81,14 @@ import android.util.Log;
 import androidx.annotation.CallSuper;
 import androidx.annotation.IntDef;
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.collection.ArrayMap;
 import androidx.core.util.Pair;
 import androidx.media.MediaSessionManager.RemoteUserInfo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -233,7 +234,7 @@ public abstract class MediaBrowserServiceCompat extends Service {
         }
 
         @Override
-        public void notifyChildrenChanged(@NonNull final String parentId, final Bundle options) {
+        public void notifyChildrenChanged(final @NonNull String parentId, final Bundle options) {
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -246,8 +247,8 @@ public abstract class MediaBrowserServiceCompat extends Service {
         }
 
         @Override
-        public void notifyChildrenChanged(@NonNull final RemoteUserInfo remoteUserInfo,
-                @NonNull final String parentId, final Bundle options) {
+        public void notifyChildrenChanged(final @NonNull RemoteUserInfo remoteUserInfo,
+                final @NonNull String parentId, final Bundle options) {
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -539,7 +540,7 @@ public abstract class MediaBrowserServiceCompat extends Service {
             final Result<MediaBrowserCompat.MediaItem> result =
                     new Result<MediaBrowserCompat.MediaItem>(itemId) {
                         @Override
-                        void onResultSent(@Nullable MediaBrowserCompat.MediaItem item) {
+                        void onResultSent(MediaBrowserCompat.@Nullable MediaItem item) {
                             if (item == null) {
                                 resultWrapper.sendResult(null);
                             } else {
@@ -672,7 +673,7 @@ public abstract class MediaBrowserServiceCompat extends Service {
     private static final class ServiceHandler extends Handler {
 
         // Must only be accessed on the main thread.
-        @Nullable private MediaBrowserServiceCompat mService;
+        private @Nullable MediaBrowserServiceCompat mService;
 
         @MainThread
         ServiceHandler(@NonNull MediaBrowserServiceCompat service) {
@@ -1478,8 +1479,7 @@ public abstract class MediaBrowserServiceCompat extends Service {
      * Gets the session token, or null if it has not yet been created
      * or if it has been destroyed.
      */
-    @Nullable
-    public MediaSessionCompat.Token getSessionToken() {
+    public MediaSessionCompat.@Nullable Token getSessionToken() {
         return mSession;
     }
 
@@ -1509,8 +1509,7 @@ public abstract class MediaBrowserServiceCompat extends Service {
      *             {@link #onLoadChildren} or {@link #onLoadItem}.
      * @see MediaSessionManager#isTrustedForMediaControl(RemoteUserInfo)
      */
-    @NonNull
-    public final RemoteUserInfo getCurrentBrowserInfo() {
+    public final @NonNull RemoteUserInfo getCurrentBrowserInfo() {
         return mImpl.getCurrentBrowserInfo();
     }
 
@@ -1816,7 +1815,7 @@ public abstract class MediaBrowserServiceCompat extends Service {
         final Result<MediaBrowserCompat.MediaItem> result =
                 new Result<MediaBrowserCompat.MediaItem>(itemId) {
                     @Override
-                    void onResultSent(@Nullable MediaBrowserCompat.MediaItem item) {
+                    void onResultSent(MediaBrowserCompat.@Nullable MediaItem item) {
                         if ((getFlags() & RESULT_FLAG_ON_LOAD_ITEM_NOT_IMPLEMENTED) != 0) {
                             receiver.send(RESULT_ERROR, null);
                             return;

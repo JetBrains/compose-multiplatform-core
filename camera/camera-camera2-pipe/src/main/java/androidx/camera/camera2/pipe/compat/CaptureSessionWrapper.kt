@@ -111,7 +111,7 @@ internal interface CameraCaptureSessionWrapper : UnsafeWrapper, AutoCloseable {
     fun finalizeOutputConfigurations(outputConfigs: List<OutputConfigurationWrapper>): Boolean
 
     /** @see CameraCaptureSession.StateCallback */
-    interface StateCallback : OnSessionFinalized {
+    interface StateCallback : SessionStateCallback {
         /** @see CameraCaptureSession.StateCallback.onActive */
         fun onActive(session: CameraCaptureSessionWrapper)
 
@@ -145,7 +145,7 @@ internal interface CameraConstrainedHighSpeedCaptureSessionWrapper : CameraCaptu
 internal class AndroidCaptureSessionStateCallback(
     private val device: CameraDeviceWrapper,
     private val stateCallback: CameraCaptureSessionWrapper.StateCallback,
-    lastStateCallback: OnSessionFinalized?,
+    lastStateCallback: SessionStateCallback?,
     private val cameraErrorListener: CameraErrorListener,
     private val interopSessionStateCallback: CameraCaptureSession.StateCallback? = null,
     private val callbackHandler: Handler

@@ -22,19 +22,18 @@ plugins {
 }
 
 android {
-    compileSdkVersion 35
+    compileSdk = 35
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
-    namespace "androidx.constraintlayout.compose.integration.macrobenchmark.target"
+    namespace = "androidx.constraintlayout.compose.integration.macrobenchmark.target"
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"),
                     'proguard-rules.pro'
-            signingConfig signingConfigs.debug
         }
     }
 }

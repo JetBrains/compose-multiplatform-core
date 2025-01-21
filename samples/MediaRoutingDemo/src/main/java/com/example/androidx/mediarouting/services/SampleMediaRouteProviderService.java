@@ -16,11 +16,12 @@
 
 package com.example.androidx.mediarouting.services;
 
-import androidx.annotation.NonNull;
 import androidx.mediarouter.media.MediaRouteProvider;
 import androidx.mediarouter.media.MediaRouteProviderService;
 
 import com.example.androidx.mediarouting.providers.SampleMediaRouteProvider;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Demonstrates how to register a custom media route provider service
@@ -29,9 +30,8 @@ import com.example.androidx.mediarouting.providers.SampleMediaRouteProvider;
  * @see SampleMediaRouteProvider
  */
 public class SampleMediaRouteProviderService extends MediaRouteProviderService {
-    @NonNull
     @Override
-    public MediaRouteProvider onCreateMediaRouteProvider() {
+    public @NonNull MediaRouteProvider onCreateMediaRouteProvider() {
         return new SampleMediaRouteProvider(this);
     }
 }

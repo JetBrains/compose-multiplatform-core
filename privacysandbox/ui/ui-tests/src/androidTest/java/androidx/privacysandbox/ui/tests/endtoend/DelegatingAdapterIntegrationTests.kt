@@ -21,14 +21,13 @@ import android.widget.LinearLayout
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
 import androidx.privacysandbox.ui.core.DelegatingSandboxedUiAdapter
 import androidx.privacysandbox.ui.core.ExperimentalFeatures
-import androidx.privacysandbox.ui.tests.endtoend.IntegrationTests.TestStateChangeListener
+import androidx.privacysandbox.ui.integration.testingutils.TestEventListener
 import androidx.privacysandbox.ui.tests.util.TestSessionManager
 import androidx.privacysandbox.ui.tests.util.TestSessionManager.TestDelegatingAdapterWithDelegate
 import androidx.privacysandbox.ui.tests.util.TestSessionManager.TestSandboxedUiAdapter
 import androidx.test.core.app.ActivityScenario
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
-import java.util.concurrent.CountDownLatch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -57,8 +56,7 @@ class DelegatingAdapterIntegrationTests(invokeBackwardsCompatFlow: Boolean) {
 
     private lateinit var context: Context
     private lateinit var view: SandboxedSdkView
-    private lateinit var stateChangeListener: TestStateChangeListener
-    private lateinit var errorLatch: CountDownLatch
+    private lateinit var eventListener: TestEventListener
     private lateinit var linearLayout: LinearLayout
     private lateinit var sessionManager: TestSessionManager
     private lateinit var activityScenario: ActivityScenario<MainActivity>
@@ -67,8 +65,7 @@ class DelegatingAdapterIntegrationTests(invokeBackwardsCompatFlow: Boolean) {
     fun setup() {
         context = rule.context
         view = rule.view
-        stateChangeListener = rule.stateChangeListener
-        errorLatch = rule.errorLatch
+        eventListener = rule.eventListener
         linearLayout = rule.linearLayout
         sessionManager = rule.sessionManager
         activityScenario = rule.activityScenario

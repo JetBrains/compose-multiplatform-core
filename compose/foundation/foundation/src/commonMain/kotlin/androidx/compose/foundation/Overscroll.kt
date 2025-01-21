@@ -312,8 +312,12 @@ private class OverscrollModifierElement(
 
 private class OverscrollModifierNode(private var overscrollNode: DelegatableNode?) :
     DelegatingNode() {
-    init {
+    override fun onAttach() {
         attachIfNeeded()
+    }
+
+    override fun onDetach() {
+        overscrollNode?.let { undelegate(it) }
     }
 
     fun update(overscrollNode: DelegatableNode?) {

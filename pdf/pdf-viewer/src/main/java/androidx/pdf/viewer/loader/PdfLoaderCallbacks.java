@@ -19,7 +19,6 @@ package androidx.pdf.viewer.loader;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.data.DisplayData;
 import androidx.pdf.data.PdfStatus;
@@ -29,6 +28,8 @@ import androidx.pdf.models.LinkRects;
 import androidx.pdf.models.MatchRects;
 import androidx.pdf.models.PageSelection;
 import androidx.pdf.util.TileBoard.TileInfo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 

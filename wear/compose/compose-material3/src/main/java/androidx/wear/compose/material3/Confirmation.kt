@@ -61,6 +61,7 @@ import androidx.wear.compose.foundation.CurvedLayout
 import androidx.wear.compose.foundation.CurvedModifier
 import androidx.wear.compose.foundation.CurvedScope
 import androidx.wear.compose.foundation.CurvedTextStyle
+import androidx.wear.compose.foundation.LocalReduceMotion
 import androidx.wear.compose.foundation.padding
 import androidx.wear.compose.material3.tokens.ColorSchemeKeyTokens
 import androidx.wear.compose.material3.tokens.MotionTokens.DurationShort2
@@ -191,6 +192,7 @@ fun Confirmation(
         }
     }
 
+    val reduceMotionEnabled = LocalReduceMotion.current.enabled()
     Dialog(
         show = show,
         modifier = modifier,
@@ -200,7 +202,7 @@ fun Confirmation(
         val alphaAnimatable = remember { Animatable(0f) }
         val textOpacityAnimationSpec = TextOpacityAnimationSpec
         LaunchedEffect(Unit) {
-            delay(DurationShort2.toLong())
+            animatedDelay(DurationShort2.toLong(), reduceMotionEnabled)
             alphaAnimatable.animateTo(1f, textOpacityAnimationSpec)
         }
 
@@ -353,8 +355,10 @@ fun FailureConfirmation(
         durationMillis = durationMillis,
     ) {
         val translationXAnimatable = remember { Animatable(FailureContentTransition[0]) }
+        val reduceMotionEnabled = LocalReduceMotion.current.enabled()
+
         LaunchedEffect(Unit) {
-            delay(DurationShort3.toLong())
+            animatedDelay(DurationShort3.toLong(), reduceMotionEnabled)
             translationXAnimatable.animateTo(
                 FailureContentTransition[1],
                 FailureContentAnimationSpecs[0]
@@ -405,8 +409,10 @@ object ConfirmationDefaults {
         val animation =
             AnimatedImageVector.animatedVectorResource(R.drawable.wear_m3c_check_animation)
         var atEnd by remember { mutableStateOf(false) }
+        val reduceMotionEnabled = LocalReduceMotion.current.enabled()
+
         LaunchedEffect(Unit) {
-            delay(IconDelay)
+            animatedDelay(IconDelay, reduceMotionEnabled)
             atEnd = true
         }
         Icon(
@@ -425,8 +431,10 @@ object ConfirmationDefaults {
         val animation =
             AnimatedImageVector.animatedVectorResource(R.drawable.wear_m3c_failure_animation)
         var atEnd by remember { mutableStateOf(false) }
+        val reduceMotionEnabled = LocalReduceMotion.current.enabled()
+
         LaunchedEffect(Unit) {
-            delay(IconDelay)
+            animatedDelay(IconDelay, reduceMotionEnabled)
             atEnd = true
         }
         Icon(
@@ -662,8 +670,10 @@ internal fun ConfirmationImpl(
     ) {
         val alphaAnimatable = remember { Animatable(0f) }
         val textOpacityAnimationSpec = TextOpacityAnimationSpec
+        val reduceMotionEnabled = LocalReduceMotion.current.enabled()
+
         LaunchedEffect(Unit) {
-            delay(DurationShort2.toLong())
+            animatedDelay(DurationShort2.toLong(), reduceMotionEnabled)
             alphaAnimatable.animateTo(1f, textOpacityAnimationSpec)
         }
         Box(modifier = Modifier.fillMaxSize()) {
@@ -705,8 +715,10 @@ private fun confirmationIconContainer(
         MaterialTheme.motionScheme.defaultSpatialSpec()
     val heroShapeRotationAnimationSpec: AnimationSpec<Float> =
         MaterialTheme.motionScheme.slowEffectsSpec()
+    val reduceMotionEnabled = LocalReduceMotion.current.enabled()
+
     LaunchedEffect(Unit) {
-        delay(DurationShort2.toLong())
+        animatedDelay(DurationShort2.toLong(), reduceMotionEnabled)
         launch { shapeAnimatable.animateTo(1f, heroShapeMorphAnimationSpec) }
         rotateAnimatable.animateTo(0f, heroShapeRotationAnimationSpec)
     }
@@ -728,9 +740,10 @@ private fun successIconContainer(color: Color): @Composable BoxScope.() -> Unit 
 
     val targetHeight = screenHeightDp() * SuccessHeightFraction.toFloat()
     val heightAnimatable = remember { Animatable(width) }
+    val reduceMotionEnabled = LocalReduceMotion.current.enabled()
 
     LaunchedEffect(Unit) {
-        delay(DurationShort2.toLong())
+        animatedDelay(DurationShort2.toLong(), reduceMotionEnabled)
         heightAnimatable.animateTo(targetHeight, SuccessContainerAnimationSpec)
     }
     Box(
@@ -756,8 +769,10 @@ private fun failureIconContainer(color: Color): @Composable BoxScope.() -> Unit 
         }
     val failureContainerAnimationSpec: AnimationSpec<Float> =
         MaterialTheme.motionScheme.fastEffectsSpec()
+    val reduceMotionEnabled = LocalReduceMotion.current.enabled()
+
     LaunchedEffect(Unit) {
-        delay(DurationShort2.toLong())
+        animatedDelay(DurationShort2.toLong(), reduceMotionEnabled)
         shapeAnimatable.animateTo(1f, failureContainerAnimationSpec)
     }
 

@@ -24,6 +24,7 @@ ext {
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation(project(":emoji2:emoji2"))
     implementation(project(":emoji2:emoji2-bundled"))
     implementation(project(":emoji2:emoji2-views-helper"))
@@ -32,9 +33,9 @@ dependencies {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
     sourceSets {
         main.assets.srcDirs = [new File(fontDir, "supported-emojis").getAbsolutePath()]
     }
-    namespace "com.example.android.support.text.emoji"
+    namespace = "com.example.android.support.text.emoji"
 }

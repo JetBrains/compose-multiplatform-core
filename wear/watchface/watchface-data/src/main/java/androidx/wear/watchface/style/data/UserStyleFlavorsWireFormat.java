@@ -20,12 +20,13 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,8 +36,7 @@ import java.util.List;
 @SuppressLint("BanParcelableUsage") // TODO(b/169214666): Remove Parcelable
 public class UserStyleFlavorsWireFormat implements VersionedParcelable, Parcelable {
     @ParcelField(1)
-    @NonNull
-    public List<UserStyleFlavorWireFormat> mFlavors = new ArrayList<>();
+    public @NonNull List<UserStyleFlavorWireFormat> mFlavors = new ArrayList<>();
 
     UserStyleFlavorsWireFormat() {}
 

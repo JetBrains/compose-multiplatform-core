@@ -47,5 +47,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.core.animation"
+    namespace = "androidx.core.animation"
 }

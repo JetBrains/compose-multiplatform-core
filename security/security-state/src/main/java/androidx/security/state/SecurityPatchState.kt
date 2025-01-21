@@ -658,34 +658,6 @@ constructor(
     }
 
     /**
-     * Retrieves the available security patch level for a specified component for current device.
-     * Available patch level comes from updates that were not downloaded or installed yet, but have
-     * been released by device manufacturer to the current device. If no updates are found, it
-     * returns the current device security patch level.
-     *
-     * The information about updates is supplied by update clients through dedicated update
-     * information content providers. If no providers are specified, it defaults to predefined URIs,
-     * consisting of Google OTA and Play system components update clients.
-     *
-     * @param component The component for which the available patch level is requested.
-     * @param providers Optional list of URIs representing update providers; if null, defaults are
-     *   used. Contact authors of custom OTA update clients included on a tested device to obtain
-     *   content provider URIs.
-     * @return A [SecurityPatchLevel] representing the available patch level for updates.
-     */
-    @JvmOverloads
-    public open fun getAvailableSecurityPatchLevel(
-        @Component component: String,
-        providers: List<Uri> = listOf()
-    ): SecurityPatchLevel {
-        val updates = listAvailableUpdates(providers)
-        return updates
-            .filter { it.component == component }
-            .maxOfOrNull { getComponentSecurityPatchLevel(it.component, it.securityPatchLevel) }
-            ?: getDeviceSecurityPatchLevel(component)
-    }
-
-    /**
      * Lists all security fixes applied on the current device since the baseline Android release of
      * the current system image, filtered for a specified component and patch level, categorized by
      * severity.
@@ -775,59 +747,6 @@ constructor(
             }
             else -> throw exception
         }
-    }
-
-    /**
-     * Fetches available updates from specified update providers. If no providers are specified, it
-     * defaults to predefined URIs. This method queries each provider URI and processes the response
-     * to gather update data relevant to the system's components.
-     *
-     * @param providers An optional list of [Uri] objects representing update providers. If null or
-     *   empty, default providers are used.
-     * @return A list of [UpdateInfo] objects, each representing an available update.
-     */
-    public open fun listAvailableUpdates(providers: List<Uri>? = null): List<UpdateInfo> {
-        val updateInfoProviders: List<Uri> =
-            if (providers.isNullOrEmpty()) {
-                // TODO(musashi): Update when content providers are ready.
-                listOf(Uri.parse("content://com.google.android.gms.apk/updateinfo"))
-            } else {
-                providers
-            }
-
-        val updates = mutableListOf<UpdateInfo>()
-        val contentResolver = context.contentResolver
-
-        updateInfoProviders.forEach { providerUri ->
-            val cursor = contentResolver.query(providerUri, arrayOf("json"), null, null, null)
-            cursor?.use {
-                while (it.moveToNext()) {
-                    val json = it.getString(it.getColumnIndexOrThrow("json"))
-                    try {
-                        val serializableUpdateInfo =
-                            Json.decodeFromString<SerializableUpdateInfo>(json)
-                        val updateInfo: UpdateInfo = serializableUpdateInfo.toUpdateInfo()
-                        val component = updateInfo.component
-                        val deviceSpl = getDeviceSecurityPatchLevel(component)
-
-                        if (
-                            deviceSpl >=
-                                getComponentSecurityPatchLevel(
-                                    component,
-                                    updateInfo.securityPatchLevel
-                                )
-                        ) {
-                            continue
-                        }
-                        updates.add(updateInfo)
-                    } catch (e: Exception) {
-                        throw IllegalStateException("Wrong format of UpdateInfo: {$e}")
-                    }
-                }
-            }
-        }
-
-        return updates
     }
 
     /**

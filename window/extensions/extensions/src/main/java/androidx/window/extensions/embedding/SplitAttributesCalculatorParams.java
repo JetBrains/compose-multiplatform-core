@@ -19,10 +19,11 @@ package androidx.window.extensions.embedding;
 import android.content.res.Configuration;
 import android.view.WindowMetrics;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.window.extensions.RequiresVendorApiLevel;
 import androidx.window.extensions.layout.WindowLayoutInfo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The parameter container used to report the current device and window state in
@@ -34,27 +35,20 @@ import androidx.window.extensions.layout.WindowLayoutInfo;
  */
 @RequiresVendorApiLevel(level = 2)
 public class SplitAttributesCalculatorParams {
-    @NonNull
-    private final WindowMetrics mParentWindowMetrics;
-    @NonNull
-    private final Configuration mParentConfiguration;
-    @NonNull
-    private final WindowLayoutInfo mParentWindowLayoutInfo;
-    @NonNull
-    private final SplitAttributes mDefaultSplitAttributes;
+    private final @NonNull WindowMetrics mParentWindowMetrics;
+    private final @NonNull Configuration mParentConfiguration;
+    private final @NonNull WindowLayoutInfo mParentWindowLayoutInfo;
+    private final @NonNull SplitAttributes mDefaultSplitAttributes;
     private final boolean mAreDefaultConstraintsSatisfied;
-    @Nullable
-    private final String mSplitRuleTag;
+    private final @Nullable String mSplitRuleTag;
 
     /** Returns the parent container's {@link WindowMetrics} */
-    @NonNull
-    public WindowMetrics getParentWindowMetrics() {
+    public @NonNull WindowMetrics getParentWindowMetrics() {
         return mParentWindowMetrics;
     }
 
     /** Returns the parent container's {@link Configuration} */
-    @NonNull
-    public Configuration getParentConfiguration() {
+    public @NonNull Configuration getParentConfiguration() {
         return new Configuration(mParentConfiguration);
     }
 
@@ -66,8 +60,7 @@ public class SplitAttributesCalculatorParams {
      * the {@code splitRatio} and {@code splitLayoutDirection} attributes from static rule
      * definitions.
      */
-    @NonNull
-    public SplitAttributes getDefaultSplitAttributes() {
+    public @NonNull SplitAttributes getDefaultSplitAttributes() {
         return mDefaultSplitAttributes;
     }
 
@@ -86,8 +79,7 @@ public class SplitAttributesCalculatorParams {
     }
 
     /** Returns the parent container's {@link WindowLayoutInfo} */
-    @NonNull
-    public WindowLayoutInfo getParentWindowLayoutInfo() {
+    public @NonNull WindowLayoutInfo getParentWindowLayoutInfo() {
         return mParentWindowLayoutInfo;
     }
 
@@ -95,8 +87,7 @@ public class SplitAttributesCalculatorParams {
      * Returns {@link SplitRule#getTag()} to apply the {@link SplitAttributes} result if it was
      * set.
      */
-    @Nullable
-    public String getSplitRuleTag() {
+    public @Nullable String getSplitRuleTag() {
         return mSplitRuleTag;
     }
 
@@ -116,9 +107,8 @@ public class SplitAttributesCalculatorParams {
         mSplitRuleTag = splitRuleTag;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return getClass().getSimpleName() + ":{"
                 + "windowMetrics=" + WindowMetricsCompat.toString(mParentWindowMetrics)
                 + ", configuration=" + mParentConfiguration

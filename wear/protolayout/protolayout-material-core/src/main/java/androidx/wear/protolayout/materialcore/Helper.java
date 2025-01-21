@@ -18,8 +18,6 @@ package androidx.wear.protolayout.materialcore;
 
 import static androidx.wear.protolayout.DimensionBuilders.dp;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.wear.protolayout.DeviceParametersBuilders;
 import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters;
 import androidx.wear.protolayout.DimensionBuilders.DpProp;
@@ -27,6 +25,9 @@ import androidx.wear.protolayout.ModifiersBuilders.ElementMetadata;
 import androidx.wear.protolayout.ModifiersBuilders.Modifiers;
 import androidx.wear.protolayout.TypeBuilders.FloatProp;
 import androidx.wear.protolayout.TypeBuilders.StringProp;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -37,8 +38,7 @@ public class Helper {
     private Helper() {}
 
     /** Returns given value if not null or throws {@code NullPointerException} otherwise. */
-    @NonNull
-    public static <T> T checkNotNull(@Nullable T value) {
+    public static <T> @NonNull T checkNotNull(@Nullable T value) {
         if (value == null) {
             throw new NullPointerException();
         }
@@ -46,32 +46,27 @@ public class Helper {
     }
 
     /** Returns radius in {@link DpProp} of the given diameter. */
-    @NonNull
-    public static DpProp radiusOf(@NonNull DpProp diameter) {
+    public static @NonNull DpProp radiusOf(@NonNull DpProp diameter) {
         return dp(diameter.getValue() / 2);
     }
 
     /** Returns String representation of tag from byte array. */
-    @NonNull
-    public static String getTagName(@NonNull byte[] tagData) {
+    public static @NonNull String getTagName(byte @NonNull [] tagData) {
         return new String(tagData, StandardCharsets.UTF_8);
     }
 
     /** Returns byte array representation of tag from String. */
-    @NonNull
-    public static byte[] getTagBytes(@NonNull String tagName) {
+    public static byte @NonNull [] getTagBytes(@NonNull String tagName) {
         return tagName.getBytes(StandardCharsets.UTF_8);
     }
 
     /** Returns the String representation of metadata tag from the given ElementMetadata. */
-    @NonNull
-    public static String getMetadataTagName(@NonNull ElementMetadata metadata) {
+    public static @NonNull String getMetadataTagName(@NonNull ElementMetadata metadata) {
         return getTagName(getMetadataTagBytes(metadata));
     }
 
     /** Returns the metadata tag from the given ElementMetadata. */
-    @NonNull
-    public static byte[] getMetadataTagBytes(@NonNull ElementMetadata metadata) {
+    public static byte @NonNull [] getMetadataTagBytes(@NonNull ElementMetadata metadata) {
         return checkNotNull(metadata).getTagData();
     }
 
@@ -98,7 +93,8 @@ public class Helper {
      * given String and its length is of the given base array.
      */
     public static boolean checkTag(
-            @Nullable Modifiers modifiers, @NonNull String validPrefix, @NonNull byte[] validBase) {
+            @Nullable Modifiers modifiers, @NonNull String validPrefix,
+            byte @NonNull [] validBase) {
         if (modifiers == null || modifiers.getMetadata() == null) {
             return false;
         }
@@ -113,14 +109,12 @@ public class Helper {
     }
 
     /** Returns a {@link StringProp} for the given string value. */
-    @NonNull
-    public static StringProp staticString(@NonNull String value) {
+    public static @NonNull StringProp staticString(@NonNull String value) {
         return new StringProp.Builder(value).build();
     }
 
     /** Returns a {@link FloatProp} for the given float value. */
-    @NonNull
-    public static FloatProp staticFloat(float staticValue) {
+    public static @NonNull FloatProp staticFloat(float staticValue) {
         return new FloatProp.Builder(staticValue).build();
     }
 }

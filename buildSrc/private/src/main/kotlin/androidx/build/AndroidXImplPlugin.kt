@@ -241,6 +241,8 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
         project.configureSamplesProject()
         project.configureMaxDepVersions(androidXExtension)
         project.configureUnzipChromeBuildService()
+
+        project.plugins.apply("com.autonomousapps.dependency-analysis")
     }
 
     private fun initializeAndroidXExtension(project: Project): AndroidXExtension {
@@ -674,6 +676,9 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
             excludeVersionFiles(packaging.resources)
         }
 
+        project.extensions.getByType(AndroidComponentsExtension::class.java).apply {
+            onVariants { it.configureLocalAsbSigning(project.getKeystore()) }
+        }
         project.configureJavaCompilationWarnings(androidXExtension)
     }
 

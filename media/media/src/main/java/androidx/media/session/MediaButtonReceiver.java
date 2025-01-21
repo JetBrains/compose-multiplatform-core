@@ -36,11 +36,12 @@ import android.support.v4.media.session.PlaybackStateCompat.MediaKeyAction;
 import android.util.Log;
 import android.view.KeyEvent;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.content.ContextCompat;
 import androidx.media.MediaBrowserServiceCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 

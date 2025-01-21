@@ -29,7 +29,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-
 /**
  * Instrumentation tests for pre-33 dark mode behavior.
  */

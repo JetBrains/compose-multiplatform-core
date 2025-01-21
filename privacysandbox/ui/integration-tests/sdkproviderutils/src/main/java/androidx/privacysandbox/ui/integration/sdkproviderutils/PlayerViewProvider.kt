@@ -18,6 +18,7 @@ package androidx.privacysandbox.ui.integration.sdkproviderutils
 
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -107,7 +108,11 @@ class PlayerViewProvider {
                     .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
                     .build()
 
-            player = ExoPlayer.Builder(context).setAudioAttributes(audioAttributes, true).build()
+            val handleAudioFocus = Build.VERSION.SDK_INT != Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+            player =
+                ExoPlayer.Builder(context)
+                    .setAudioAttributes(audioAttributes, handleAudioFocus)
+                    .build()
             player?.apply {
                 setPlayWhenReady(autoPlay)
                 setMediaItem(MediaItem.fromUri(Uri.parse(videoUrl)))

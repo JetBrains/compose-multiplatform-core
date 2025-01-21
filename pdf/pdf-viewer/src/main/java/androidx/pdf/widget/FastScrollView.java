@@ -28,8 +28,6 @@ import android.view.WindowInsets;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.graphics.Insets;
@@ -40,6 +38,9 @@ import androidx.pdf.util.MathUtils;
 import androidx.pdf.util.ObservableValue.ValueObserver;
 import androidx.pdf.viewer.PaginationModel;
 import androidx.pdf.viewer.PaginationModelObserver;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link FrameLayout} that draws a draggable scrollbar over its child views. It is tightly
@@ -87,8 +88,8 @@ public class FastScrollView extends FrameLayout implements PaginationModelObserv
     private final ValueObserver<ZoomView.ZoomScroll> mZoomScrollObserver =
             new ValueObserver<ZoomView.ZoomScroll>() {
                 @Override
-                public void onChange(@Nullable ZoomView.ZoomScroll oldValue,
-                        @Nullable ZoomView.ZoomScroll newValue) {
+                public void onChange(ZoomView.@Nullable ZoomScroll oldValue,
+                        ZoomView.@Nullable ZoomScroll newValue) {
                     if (mPaginationModel == null || !mPaginationModel.isInitialized()
                             || newValue == null || mPaginationModel.getSize() == 0) {
                         return;
@@ -234,14 +235,12 @@ public class FastScrollView extends FrameLayout implements PaginationModelObserv
     }
 
     @VisibleForTesting
-    @NonNull
-    public View getDragHandle() {
+    public @NonNull View getDragHandle() {
         return mDragHandle;
     }
 
     @VisibleForTesting
-    @NonNull
-    public TextView getPageIndicator() {
+    public @NonNull TextView getPageIndicator() {
         return mPageIndicator.getTextView();
     }
 

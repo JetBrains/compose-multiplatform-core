@@ -24,6 +24,12 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -44,9 +50,14 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.util.Pair;
+import androidx.core.view.InputDeviceCompat;
+import androidx.core.view.ScrollFeedbackProviderCompat;
+import androidx.core.view.ViewCompat;
 import androidx.recyclerview.test.R;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 
 import org.junit.Before;
@@ -65,6 +76,8 @@ import java.util.UUID;
 public class RecyclerViewBasicTest {
 
     RecyclerView mRecyclerView;
+
+    ScrollFeedbackProviderCompat mScrollFeedbackProvider;
 
     @Before
     public void setUp() throws Exception {
@@ -145,6 +158,76 @@ public class RecyclerViewBasicTest {
         measure();
         layout();
         mRecyclerView.scrollToPosition(5);
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    public void scrollFeedbackCallbacks() {
+        mScrollFeedbackProvider = mock(ScrollFeedbackProviderCompat.class);
+        mRecyclerView.mScrollFeedbackProvider = mScrollFeedbackProvider;
+        mRecyclerView.setAdapter(new MockAdapter(20));
+        MockLayoutManager layoutManager = new MockLayoutManager();
+        mRecyclerView.setLayoutManager(layoutManager);
+        measure();
+        layout();
+
+        MotionEvent ev = TouchUtils.createMotionEvent(
+                /* inputDeviceId= */ 1,
+                InputDeviceCompat.SOURCE_TOUCHSCREEN,
+                MotionEvent.ACTION_MOVE,
+                List.of(
+                    Pair.create(MotionEvent.AXIS_X, 10),
+                    Pair.create(MotionEvent.AXIS_Y, -20)));
+        layoutManager.mConsumedHorizontalScroll = 3;
+        layoutManager.mConsumedVerticalScroll = -20;
+        mRecyclerView.scrollByInternal(
+                /* x= */ 10,
+                /* y= */ -20,
+                /* horizontalAxis= */ MotionEvent.AXIS_X,
+                /* verticalAxis= */ MotionEvent.AXIS_Y,
+                ev,
+                ViewCompat.TYPE_TOUCH);
+
+        // Verify onScrollProgress calls equating to the amount of consumed pixels on each axis.
+        verify(mScrollFeedbackProvider).onScrollProgress(
+                /* inputDeviceId= */ 1, InputDeviceCompat.SOURCE_TOUCHSCREEN, MotionEvent.AXIS_X,
+                /* deltaInPixels= */ 3);
+        verify(mScrollFeedbackProvider).onScrollProgress(
+                /* inputDeviceId= */ 1, InputDeviceCompat.SOURCE_TOUCHSCREEN, MotionEvent.AXIS_Y,
+                /* deltaInPixels= */ -20);
+        // Part of the X scroll was not consumed, so expect an onScrollLimit call.
+        verify(mScrollFeedbackProvider).onScrollLimit(
+                /* inputDeviceId= */ 1, InputDeviceCompat.SOURCE_TOUCHSCREEN, MotionEvent.AXIS_X,
+                /* isStart= */ false);
+        // All of the Y scroll was consumed. So expect no onScrollLimit call.
+        verify(mScrollFeedbackProvider, never()).onScrollLimit(
+                /* inputDeviceId= */ anyInt(), anyInt(), eq(MotionEvent.AXIS_Y),
+                /* isStart= */ eq(false));
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    public void scrollFeedbackCallbacks_motionEventUnavailable() {
+        mScrollFeedbackProvider = mock(ScrollFeedbackProviderCompat.class);
+        mRecyclerView.mScrollFeedbackProvider = mScrollFeedbackProvider;
+        mRecyclerView.setAdapter(new MockAdapter(20));
+        MockLayoutManager layoutManager = new MockLayoutManager();
+        mRecyclerView.setLayoutManager(layoutManager);
+        measure();
+        layout();
+
+        mRecyclerView.scrollByInternal(
+                /* x= */ 10,
+                /* y= */ -20,
+                /* horizontalAxis= */ -1,
+                /* verticalAxis= */ -1,
+                null,
+                ViewCompat.TYPE_TOUCH);
+
+        verify(mScrollFeedbackProvider, never()).onScrollProgress(
+                anyInt(), anyInt(), anyInt(), anyInt());
+        verify(mScrollFeedbackProvider, never()).onScrollLimit(
+                anyInt(), anyInt(), anyInt(), anyBoolean());
     }
 
     @Test
@@ -614,6 +697,9 @@ public class RecyclerViewBasicTest {
         int mAdapterChangedCount = 0;
         int mItemsChangedCount = 0;
 
+        int mConsumedHorizontalScroll = Integer.MIN_VALUE;
+        int mConsumedVerticalScroll = Integer.MIN_VALUE;
+
         RecyclerView.Adapter mPrevAdapter;
 
         RecyclerView.Adapter mNextAdapter;
@@ -675,13 +761,13 @@ public class RecyclerViewBasicTest {
         @Override
         public int scrollHorizontallyBy(int dx, RecyclerView.Recycler recycler,
                 RecyclerView.State state) {
-            return dx;
+            return mConsumedHorizontalScroll != Integer.MIN_VALUE ? mConsumedHorizontalScroll : dx;
         }
 
         @Override
         public int scrollVerticallyBy(int dy, RecyclerView.Recycler recycler,
                 RecyclerView.State state) {
-            return dy;
+            return mConsumedVerticalScroll != Integer.MIN_VALUE ? mConsumedVerticalScroll : dy;
         }
 
         @Override

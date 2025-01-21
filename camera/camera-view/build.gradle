@@ -80,7 +80,7 @@ android {
     }
 
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.camera.view"
+    namespace = "androidx.camera.view"
 }
 androidx {
     name = "Camera View"

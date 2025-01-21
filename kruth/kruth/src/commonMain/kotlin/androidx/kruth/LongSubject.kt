@@ -106,6 +106,7 @@ internal constructor(
             "Not supported on TolerantLongComparison. " +
                 "If you meant to compare longs, use `of(Long)` instead."
         )
+        @Suppress("POTENTIALLY_NON_REPORTED_ANNOTATION")
         override fun equals(other: Any?): Boolean {
             throw UnsupportedOperationException(
                 "If you meant to compare longs, use of(Long) instead."
@@ -114,6 +115,7 @@ internal constructor(
 
         /** @throws UnsupportedOperationException always */
         @Deprecated("Not supported on TolerantLongComparison")
+        @Suppress("POTENTIALLY_NON_REPORTED_ANNOTATION")
         override fun hashCode(): Int {
             throw UnsupportedOperationException("Subject.hashCode() is not supported.")
         }

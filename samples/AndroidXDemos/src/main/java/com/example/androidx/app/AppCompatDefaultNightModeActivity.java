@@ -20,11 +20,12 @@ package com.example.androidx.app;
 import android.os.Bundle;
 import android.view.View;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 
 import com.example.androidx.R;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * This demonstrates idiomatic usage of AppCompatActivity with Theme.AppCompat.DayNight

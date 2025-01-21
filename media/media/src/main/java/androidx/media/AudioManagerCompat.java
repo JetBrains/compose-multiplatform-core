@@ -21,9 +21,10 @@ import android.media.AudioManager;
 import android.os.Build;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat.StreamType;
+
+import org.jspecify.annotations.NonNull;
 
 /** Compatibility library for {@link AudioManager} with fallbacks for older platforms. */
 public final class AudioManagerCompat {

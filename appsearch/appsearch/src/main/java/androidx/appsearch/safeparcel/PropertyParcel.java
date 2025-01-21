@@ -23,9 +23,12 @@ import android.os.Parcelable;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
+import androidx.appsearch.app.AppSearchBlobHandle;
 import androidx.appsearch.app.EmbeddingVector;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -77,9 +80,15 @@ public final class PropertyParcel extends AbstractSafeParcelable implements Parc
     @Field(id = 8, getter = "getEmbeddingValues")
     private final EmbeddingVector[] mEmbeddingValues;
 
+    @Nullable
+    @Field(id = 9, getter = "getBlobHandleValues")
+    @ExperimentalAppSearchApi
+    private final AppSearchBlobHandle[] mBlobHandleValues;
+
     @Nullable private Integer mHashCode;
 
     @Constructor
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     PropertyParcel(
             @Param(id = 1) @NonNull String propertyName,
             @Param(id = 2) @Nullable String[] stringValues,
@@ -88,7 +97,8 @@ public final class PropertyParcel extends AbstractSafeParcelable implements Parc
             @Param(id = 5) @Nullable boolean[] booleanValues,
             @Param(id = 6) @Nullable byte[][] bytesValues,
             @Param(id = 7) @Nullable GenericDocumentParcel[] documentValues,
-            @Param(id = 8) @Nullable EmbeddingVector[] embeddingValues) {
+            @Param(id = 8) @Nullable EmbeddingVector[] embeddingValues,
+            @Param(id = 9) @Nullable AppSearchBlobHandle[] blobHandleValues) {
         mPropertyName = Objects.requireNonNull(propertyName);
         mStringValues = stringValues;
         mLongValues = longValues;
@@ -97,6 +107,7 @@ public final class PropertyParcel extends AbstractSafeParcelable implements Parc
         mBytesValues = bytesValues;
         mDocumentValues = documentValues;
         mEmbeddingValues = embeddingValues;
+        mBlobHandleValues = blobHandleValues;
         checkOnlyOneArrayCanBeSet();
     }
 
@@ -148,12 +159,20 @@ public final class PropertyParcel extends AbstractSafeParcelable implements Parc
         return mEmbeddingValues;
     }
 
+    /** Returns {@link AppSearchBlobHandle}s in an array. */
+    @Nullable
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
+    public AppSearchBlobHandle[] getBlobHandleValues() {
+        return mBlobHandleValues;
+    }
+
     /**
      * Returns the held values in an array for this property.
      *
      * <p>Different from other getter methods, this one will return an {@link Object}.
      */
     @Nullable
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public Object getValues() {
         if (mStringValues != null) {
             return mStringValues;
@@ -176,6 +195,9 @@ public final class PropertyParcel extends AbstractSafeParcelable implements Parc
         if (mEmbeddingValues != null) {
             return mEmbeddingValues;
         }
+        if (mBlobHandleValues != null) {
+            return mBlobHandleValues;
+        }
         return null;
     }
 
@@ -184,6 +206,7 @@ public final class PropertyParcel extends AbstractSafeParcelable implements Parc
      *
      * @throws IllegalArgumentException if 0, or more than 1 arrays are set.
      */
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     private void checkOnlyOneArrayCanBeSet() {
         int notNullCount = 0;
         if (mStringValues != null) {
@@ -207,6 +230,9 @@ public final class PropertyParcel extends AbstractSafeParcelable implements Parc
         if (mEmbeddingValues != null) {
             ++notNullCount;
         }
+        if (mBlobHandleValues != null) {
+            ++notNullCount;
+        }
         if (notNullCount == 0 || notNullCount > 1) {
             throw new IllegalArgumentException(
                     "One and only one type array can be set in PropertyParcel");
@@ -214,6 +240,7 @@ public final class PropertyParcel extends AbstractSafeParcelable implements Parc
     }
 
     @Override
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public int hashCode() {
         if (mHashCode == null) {
             int hashCode = 0;
@@ -231,6 +258,8 @@ public final class PropertyParcel extends AbstractSafeParcelable implements Parc
                 hashCode = Arrays.hashCode(mDocumentValues);
             } else if (mEmbeddingValues != null) {
                 hashCode = Arrays.deepHashCode(mEmbeddingValues);
+            } else if (mBlobHandleValues != null) {
+                hashCode = Arrays.deepHashCode(mBlobHandleValues);
             }
             mHashCode = Objects.hash(mPropertyName, hashCode);
         }
@@ -238,6 +267,7 @@ public final class PropertyParcel extends AbstractSafeParcelable implements Parc
     }
 
     @Override
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public boolean equals(@Nullable Object other) {
         if (this == other) {
             return true;
@@ -255,7 +285,8 @@ public final class PropertyParcel extends AbstractSafeParcelable implements Parc
                 && Arrays.equals(mBooleanValues, otherPropertyParcel.mBooleanValues)
                 && Arrays.deepEquals(mBytesValues, otherPropertyParcel.mBytesValues)
                 && Arrays.equals(mDocumentValues, otherPropertyParcel.mDocumentValues)
-                && Arrays.deepEquals(mEmbeddingValues, otherPropertyParcel.mEmbeddingValues);
+                && Arrays.deepEquals(mEmbeddingValues, otherPropertyParcel.mEmbeddingValues)
+                && Arrays.deepEquals(mBlobHandleValues, otherPropertyParcel.mBlobHandleValues);
     }
 
     @Override
@@ -264,6 +295,7 @@ public final class PropertyParcel extends AbstractSafeParcelable implements Parc
     }
 
     /** Builder for {@link PropertyParcel}. */
+    @ExperimentalAppSearchApi
     public static final class Builder {
         private String mPropertyName;
         private String[] mStringValues;
@@ -273,6 +305,7 @@ public final class PropertyParcel extends AbstractSafeParcelable implements Parc
         private byte[][] mBytesValues;
         private GenericDocumentParcel[] mDocumentValues;
         private EmbeddingVector[] mEmbeddingValues;
+        private AppSearchBlobHandle[] mBlobHandleValues;
 
         public Builder(@NonNull String propertyName) {
             mPropertyName = Objects.requireNonNull(propertyName);
@@ -334,6 +367,14 @@ public final class PropertyParcel extends AbstractSafeParcelable implements Parc
             return this;
         }
 
+        /** Sets {@link AppSearchBlobHandle} values. */
+        @CanIgnoreReturnValue
+        @NonNull
+        public Builder setBlobHandleValues(@NonNull AppSearchBlobHandle[] blobHandleValues) {
+            mBlobHandleValues = Objects.requireNonNull(blobHandleValues);
+            return this;
+        }
+
         /** Builds a {@link PropertyParcel}. */
         @NonNull
         public PropertyParcel build() {
@@ -345,7 +386,8 @@ public final class PropertyParcel extends AbstractSafeParcelable implements Parc
                     mBooleanValues,
                     mBytesValues,
                     mDocumentValues,
-                    mEmbeddingValues);
+                    mEmbeddingValues,
+                    mBlobHandleValues);
         }
     }
 }

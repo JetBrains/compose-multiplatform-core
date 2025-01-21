@@ -48,6 +48,15 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".InsightActivity"
+            android:exported="true"
+            android:label="C Insight">
+            <intent-filter>
+                <action android:name="androidx.compose.integration.macrobenchmark.target.INSIGHT_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
             android:name=".StaticScrollingContentWithChromeInitialCompositionActivity"
             android:exported="true"
             android:label="C StaticScrollingWithChrome Init">

@@ -16,7 +16,7 @@
 
 package androidx.security.identity;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Thrown if trying to use a cipher suite which isn't supported.

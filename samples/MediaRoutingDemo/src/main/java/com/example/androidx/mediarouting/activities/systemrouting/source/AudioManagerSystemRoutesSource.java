@@ -22,11 +22,12 @@ import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
 import com.example.androidx.mediarouting.activities.systemrouting.SystemRouteItem;
 import com.example.androidx.mediarouting.activities.systemrouting.SystemRoutesSourceItem;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,11 +36,9 @@ import java.util.List;
 @RequiresApi(Build.VERSION_CODES.M)
 public final class AudioManagerSystemRoutesSource extends SystemRoutesSource {
 
-    @NonNull
-    private final AudioManager mAudioManager;
+    private final @NonNull AudioManager mAudioManager;
 
-    @NonNull
-    private final AudioDeviceCallback mAudioDeviceCallback =
+    private final @NonNull AudioDeviceCallback mAudioDeviceCallback =
             new AudioDeviceCallback() {
                 @Override
                 public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
@@ -53,8 +52,7 @@ public final class AudioManagerSystemRoutesSource extends SystemRoutesSource {
             };
 
     /** Returns a new instance. */
-    @NonNull
-    public static AudioManagerSystemRoutesSource create(@NonNull Context context) {
+    public static @NonNull AudioManagerSystemRoutesSource create(@NonNull Context context) {
         AudioManager audioManager = context.getSystemService(AudioManager.class);
         return new AudioManagerSystemRoutesSource(audioManager);
     }
@@ -73,15 +71,13 @@ public final class AudioManagerSystemRoutesSource extends SystemRoutesSource {
         mAudioManager.unregisterAudioDeviceCallback(mAudioDeviceCallback);
     }
 
-    @NonNull
     @Override
-    public SystemRoutesSourceItem getSourceItem() {
+    public @NonNull SystemRoutesSourceItem getSourceItem() {
         return new SystemRoutesSourceItem(/* name= */ "AudioManager");
     }
 
-    @NonNull
     @Override
-    public List<SystemRouteItem> fetchSourceRouteItems() {
+    public @NonNull List<SystemRouteItem> fetchSourceRouteItems() {
         List<SystemRouteItem> out = new ArrayList<>();
 
         AudioDeviceInfo[] deviceInfos = mAudioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
@@ -97,8 +93,7 @@ public final class AudioManagerSystemRoutesSource extends SystemRoutesSource {
         throw new UnsupportedOperationException();
     }
 
-    @NonNull
-    private SystemRouteItem createRouteItemFor(@NonNull AudioDeviceInfo audioDeviceInfo) {
+    private @NonNull SystemRouteItem createRouteItemFor(@NonNull AudioDeviceInfo audioDeviceInfo) {
         SystemRouteItem.Builder builder =
                 new SystemRouteItem.Builder(getSourceId(), String.valueOf(audioDeviceInfo.getId()))
                         .setName(audioDeviceInfo.getProductName().toString());

@@ -48,7 +48,6 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
-import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.wear.protolayout.expression.pipeline.StateStore;
 import androidx.wear.protolayout.proto.LayoutElementProto.Layout;
@@ -63,6 +62,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -680,8 +680,7 @@ public class ProtoLayoutViewInstanceTest {
         mInstanceUnderTest = new ProtoLayoutViewInstance(config);
     }
 
-    @NonNull
-    private Config.Builder createInstanceConfig(boolean adaptiveUpdateRatesEnabled) {
+    private Config.@NonNull Builder createInstanceConfig(boolean adaptiveUpdateRatesEnabled) {
         FakeExecutorService uiThreadExecutor =
                 new FakeExecutorService(new Handler(Looper.getMainLooper()));
         ListeningExecutorService listeningExecutorService =

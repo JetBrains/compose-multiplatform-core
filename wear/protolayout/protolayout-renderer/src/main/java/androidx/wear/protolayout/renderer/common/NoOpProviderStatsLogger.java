@@ -19,10 +19,11 @@ package androidx.wear.protolayout.renderer.common;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.wear.protolayout.proto.StateProto.State;
 import androidx.wear.protolayout.renderer.common.Constants.UpdateRequestReason;
+
+import org.jspecify.annotations.NonNull;
 
 /** A No-Op implementation of {@link ProviderStatsLogger}. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -52,8 +53,7 @@ public class NoOpProviderStatsLogger implements ProviderStatsLogger {
 
     /** No-op method. */
     @Override
-    @NonNull
-    public InflaterStatsLogger createInflaterStatsLogger() {
+    public @NonNull InflaterStatsLogger createInflaterStatsLogger() {
         return new NoOpInflaterStatsLogger();
     }
 

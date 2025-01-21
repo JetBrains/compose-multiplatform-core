@@ -32,6 +32,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -39,6 +41,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import androidx.wear.compose.foundation.pager.HorizontalPager
+import androidx.wear.compose.foundation.pager.rememberPagerState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -62,6 +66,32 @@ class EdgeButtonScreenshotTest {
             }
         }
     }
+
+    @Test
+    fun edge_button_shape_in_pager() =
+        verifyScreenshot(
+            performActions = {
+                // Swipe left twice
+                rule.onNodeWithTag("Pager").performTouchInput { swipeLeft() }
+                rule.onNodeWithTag("Pager").performTouchInput { swipeLeft() }
+            }
+        ) {
+            val pagerState = rememberPagerState(pageCount = { 10 })
+
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.testTag("Pager"),
+                swipeToDismissEdgeZoneFraction = 0f,
+            ) { page ->
+                EdgeButton(
+                    // Only check the EdgeButton on the third page (index == 2)
+                    modifier = Modifier.testTag(if (page == 2) TEST_TAG else ""),
+                    onClick = {},
+                ) {
+                    BasicText("Page $page")
+                }
+            }
+        }
 
     @Test
     fun edge_button_xsmall() = verifyScreenshot {
@@ -178,6 +208,7 @@ class EdgeButtonScreenshotTest {
 
     private fun verifyScreenshot(
         layoutDirection: LayoutDirection = LayoutDirection.Ltr,
+        performActions: () -> Unit = {},
         content: @Composable () -> Unit
     ) {
         rule.setContentWithTheme {
@@ -187,6 +218,8 @@ class EdgeButtonScreenshotTest {
                 }
             }
         }
+
+        performActions()
 
         rule
             .onNodeWithTag(TEST_TAG)

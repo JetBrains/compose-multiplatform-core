@@ -45,25 +45,25 @@ android {
 
     externalNativeBuild {
         cmake {
-            version libs.versions.cmake.get()
+            version = libs.versions.cmake.get()
             path "${yuvSourceDir}/CMakeLists.txt"
         }
     }
 
     // Enable generation of Prefab packages and include them in the library's AAR.
     buildFeatures {
-        prefabPublishing true
+        prefabPublishing = true
     }
 
     // Include the "libyuv" module from the native build system in the AAR,
     // and export the headers in include to its consumers
     prefab {
         libyuv {
-            headers "${yuvSourceDir}/include"
-            name "yuv"
+            headers = "${yuvSourceDir}/include"
+            name = "yuv"
         }
     }
-    namespace "com.google.libyuv"
+    namespace = "com.google.libyuv"
 }
 
 androidx {

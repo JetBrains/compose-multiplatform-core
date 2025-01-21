@@ -9,6 +9,7 @@ GRADLE_USER_HOME=\$GRADLE_USER_HOME
 Downloading file\:\$SUPPORT\/gradle\/wrapper\/.*
 [.]+10%[.]+20%[.]+30%[.]+40%[.]+50%[.]+60%[.]+70%[.]+80%[.]+90%[.]+100%
 Daemon will be stopped at the end of the build
+\[Incubating\] Problems report is available at\:.*
 # > Configure project :appsearch:appsearch\-local\-backend
 Configuration on demand is an incubating feature\.
 # > Task :listTaskOutputs
@@ -327,7 +328,7 @@ warning Ignored scripts due to flag.
 # Due to https://github.com/google/ksp/issues/1797
 (.*)\[ksp\] loaded provider\(s\):(.*)
 # https://youtrack.jetbrains.com/issue/KT-69929
-e: The daemon has terminated unexpectedly on startup attempt #1 with error code: 0\. The daemon process output:
+e: The daemon has terminated unexpectedly on startup attempt #1 with error code: Unknown\. The daemon process output:
 1\. Kotlin compile daemon is ready
 # b/359449191
 > Transform sdk\-interface\-descriptors\.jar \(project :privacysandbox:tools:integration\-tests:testsdk\-asb\) with ExtractCompileSdkShimTransform
@@ -345,3 +346,6 @@ Critical dependency: Accessing import\.meta directly is unsupported.*
 # Comes up after test execution or after Karma attempts to kill the browser and it takes too long
 # Can be ignored as the test is complete by the time the message is printed
 ChromeHeadless was not killed in.*
+For more details, see: https://kotl\.in/gradle/internal\-compiler\-symbols
+# https://youtrack.jetbrains.com/issue/KT-72471/
+.*SubclassOptInRequired\.<init>.*

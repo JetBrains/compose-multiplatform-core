@@ -18,6 +18,10 @@ package androidx.wear.compose.material3.demos
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -26,8 +30,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.wear.compose.integration.demos.common.Centralize
 import androidx.wear.compose.integration.demos.common.ComposableDemo
+import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.LevelIndicator
 import androidx.wear.compose.material3.LevelIndicatorDefaults
 import androidx.wear.compose.material3.Stepper
@@ -61,6 +67,8 @@ fun DisabledStepperDemo() {
             valueRange = valueRange,
             steps = 7,
             enabled = false,
+            decreaseIcon = { DecreaseIcon(StepperDefaults.IconSize) },
+            increaseIcon = { IncreaseIcon(StepperDefaults.IconSize) },
         ) {
             Text(String.format("Value: %.1f".format(value)))
         }
@@ -93,6 +101,8 @@ fun CustomColorsStepperDemo() {
                     disabledButtonContainerColor = Color.Green.copy(alpha = 0.5f),
                     disabledButtonIconColor = Color.Black.copy(alpha = 0.5f),
                 ),
+            decreaseIcon = { DecreaseIcon(StepperDefaults.IconSize) },
+            increaseIcon = { IncreaseIcon(StepperDefaults.IconSize) },
         ) {
             Text(String.format("Value: %.1f".format(value)))
         }
@@ -108,3 +118,19 @@ fun CustomColorsStepperDemo() {
         )
     }
 }
+
+@Composable
+internal fun DecreaseIcon(size: Dp) =
+    Icon(
+        imageVector = Icons.Filled.KeyboardArrowDown,
+        contentDescription = "Decrease",
+        modifier = Modifier.size(size)
+    )
+
+@Composable
+internal fun IncreaseIcon(size: Dp) =
+    Icon(
+        imageVector = Icons.Filled.KeyboardArrowUp,
+        contentDescription = "Increase",
+        modifier = Modifier.size(size)
+    )

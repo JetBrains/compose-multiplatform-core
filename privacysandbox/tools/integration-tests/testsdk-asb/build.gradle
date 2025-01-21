@@ -27,7 +27,8 @@ android {
     // TODO(b/357865033): AndroidXPlugin should eventually set compileSdkVersion and
     //  buildToolsVersion for this plugin. We shouldn't be setting these manually.
     compileSdk = 35
-    buildToolsVersion AndroidXConfig.getDefaultAndroidConfig(project).getBuildToolsVersion()
+    compileSdkExtension = 14
+    buildToolsVersion = AndroidXConfig.getDefaultAndroidConfig(project).getBuildToolsVersion()
 
     bundle {
         packageName = "androidx.privacysandbox.tools.integration.sdk"

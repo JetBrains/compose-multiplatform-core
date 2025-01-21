@@ -4,9 +4,12 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 import android.text.style.ImageSpan;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.lang.ref.WeakReference;
 
 // Android's normal ImageSpan (well, DynamicDrawableSpan) applies baseline alignment incorrectly
@@ -15,7 +18,7 @@ import java.lang.ref.WeakReference;
 // hold. Instead, the "y" parameter is the Y coordinate of the baseline, so base the baseline
 // alignment on that rather than "bottom".
 class FixedImageSpan extends ImageSpan {
-  @Nullable private WeakReference<Drawable> mDrawableRef;
+  private @Nullable WeakReference<Drawable> mDrawableRef;
 
   FixedImageSpan(@NonNull Drawable drawable) {
     super(drawable);

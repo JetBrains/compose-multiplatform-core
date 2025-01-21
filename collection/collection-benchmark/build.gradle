@@ -126,8 +126,8 @@ darwinBenchmark {
 }
 
 android {
-    namespace "androidx.collection.benchmark"
+    namespace = "androidx.collection.benchmark"
     defaultConfig {
-        minSdkVersion 22 // b/294570164
+        minSdk = 22 // b/294570164
     }
 }

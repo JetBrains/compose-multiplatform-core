@@ -29,6 +29,13 @@ import androidx.appsearch.compiler.annotationwrapper.PropertyAnnotation;
 import com.google.auto.value.AutoValue;
 import com.squareup.javapoet.ClassName;
 
+import kotlin.Metadata;
+import kotlin.metadata.Attributes;
+import kotlin.metadata.KmClass;
+import kotlin.metadata.KmProperty;
+import kotlin.metadata.jvm.KotlinClassHeader;
+import kotlin.metadata.jvm.KotlinClassMetadata;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -104,6 +111,9 @@ public class IntrospectionHelper {
 
     static final ClassName RESTRICT_TO_SCOPE_CLASS =
             RESTRICT_TO_ANNOTATION_CLASS.nestedClass("Scope");
+
+    static final ClassName DOCUMENT_CLASS_MAPPING_CONTEXT_CLASS =
+            ClassName.get(APPSEARCH_PKG, "DocumentClassMappingContext");
 
     public final TypeMirror mStringType;
     public final TypeMirror mLongPrimitiveType;
@@ -549,5 +559,41 @@ public class IntrospectionHelper {
             generateClassHierarchyHelper(leafElement, asTypeElement(implementedInterface),
                     hierarchy, visited);
         }
+    }
+
+    /**
+     * Determines if a field is from Kotlin and is NonNull by checking for a Metadata annotation.
+     */
+    public static boolean isNonNullKotlinField(@NonNull AnnotatedGetterOrField getterOrField) {
+        Objects.requireNonNull(getterOrField);
+        Metadata metadata = getterOrField.getElement().getEnclosingElement()
+                .getAnnotation(Metadata.class);
+        if (metadata != null) {
+            // The kotlin metadata annotation contains information about the class, but we first
+            // need to parse it with KotlinClassHeader
+            KotlinClassHeader header = new KotlinClassHeader(
+                    /*kind=*/metadata.k(),
+                    /*metadataVersion=*/metadata.mv(),
+                    /*data1=*/metadata.d1(),
+                    /*data2=*/metadata.d2(),
+                    /*extraString=*/metadata.xs(),
+                    /*packageName=*/metadata.pn(),
+                    /*extraInt=*/metadata.xi()
+            );
+            KotlinClassMetadata kotlinMetadata = KotlinClassMetadata.readStrict(header);
+
+            if (kotlinMetadata instanceof KotlinClassMetadata.Class) {
+                KmClass kmClass = ((KotlinClassMetadata.Class) kotlinMetadata).getKmClass();
+
+                List<KmProperty> properties = kmClass.getProperties();
+                for (KmProperty property : properties) {
+                    if (property.getName().equals(getterOrField.getJvmName())) {
+                        return !Attributes.isNullable(property.getReturnType());
+                    }
+                }
+            }
+        }
+        // It is not a kotlin property.
+        return false;
     }
 }

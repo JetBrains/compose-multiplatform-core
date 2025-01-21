@@ -19,14 +19,15 @@ android {
     }
     buildTypes.configureEach {
         stableAidl {
-            version 1
+            version = 1
         }
     }
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.browser"
+    namespace = "androidx.browser"
 }
 
 dependencies {
+    api(libs.jspecify)
     api("androidx.core:core:1.10.0")
     api("androidx.annotation:annotation:1.8.1")
     api("androidx.annotation:annotation-experimental:1.4.1")

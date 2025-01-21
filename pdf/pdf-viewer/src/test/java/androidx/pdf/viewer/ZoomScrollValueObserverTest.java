@@ -25,8 +25,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.pdf.ViewState;
 import androidx.pdf.data.Range;
 import androidx.pdf.find.FindInFileView;
@@ -40,11 +38,12 @@ import androidx.test.filters.SmallTest;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-
 
 @SmallTest
 @RunWith(RobolectricTestRunner.class)
@@ -88,15 +87,13 @@ public class ZoomScrollValueObserverTest {
         when(mMockPaginationModel.getSize()).thenReturn(1);
         when(mMockPaginatedView.getSelectionModel()).thenReturn(mMockSelectionModel);
         when(mMockSelectionModel.selection()).thenReturn(new ObservableValue<PageSelection>() {
-            @Nullable
             @Override
-            public PageSelection get() {
+            public @Nullable PageSelection get() {
                 return mMockPageSelection;
             }
 
-            @NonNull
             @Override
-            public Object addObserver(ValueObserver<PageSelection> observer) {
+            public @NonNull Object addObserver(ValueObserver<PageSelection> observer) {
                 return 1;
             }
 

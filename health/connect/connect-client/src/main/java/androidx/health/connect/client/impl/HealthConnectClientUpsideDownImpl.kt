@@ -45,7 +45,7 @@ import androidx.health.connect.client.feature.ExperimentalFeatureAvailabilityApi
 import androidx.health.connect.client.feature.HealthConnectFeaturesPlatformImpl
 import androidx.health.connect.client.impl.platform.aggregate.AGGREGATE_METRICS_ADDED_IN_SDK_EXT_10
 import androidx.health.connect.client.impl.platform.aggregate.aggregateFallback
-import androidx.health.connect.client.impl.platform.aggregate.platformMetrics
+import androidx.health.connect.client.impl.platform.aggregate.isPlatformSupportedMetric
 import androidx.health.connect.client.impl.platform.aggregate.plus
 import androidx.health.connect.client.impl.platform.records.toPlatformRecord
 import androidx.health.connect.client.impl.platform.records.toPlatformRecordClass
@@ -222,7 +222,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
 
         val fallbackResponse = aggregateFallback(request)
 
-        if (request.platformMetrics.isEmpty()) {
+        if (request.metrics.none { it.isPlatformSupportedMetric() }) {
             return fallbackResponse
         }
 
@@ -236,7 +236,7 @@ class HealthConnectClientUpsideDownImpl : HealthConnectClient, PermissionControl
                         )
                     }
                 }
-                .toSdkResponse(request.platformMetrics)
+                .toSdkResponse(request.metrics.filter { it.isPlatformSupportedMetric() }.toSet())
 
         return platformResponse + fallbackResponse
     }

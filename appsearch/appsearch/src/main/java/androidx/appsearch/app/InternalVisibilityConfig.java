@@ -21,6 +21,7 @@ import android.os.Parcelable;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
 import androidx.appsearch.flags.FlaggedApi;
@@ -51,7 +52,7 @@ public final class InternalVisibilityConfig extends AbstractSafeParcelable {
             new InternalVisibilityConfigCreator();
 
     /**
-     * Build the List of {@link InternalVisibilityConfig}s from visibility settings.
+     * Build the List of {@link InternalVisibilityConfig}s from given {@link SetSchemaRequest}.
      */
     @NonNull
     public static List<InternalVisibilityConfig> toInternalVisibilityConfigs(
@@ -95,6 +96,43 @@ public final class InternalVisibilityConfig extends AbstractSafeParcelable {
             }
 
             Set<SchemaVisibilityConfig> visibleToConfigs = schemasVisibleToConfigs.get(schemaType);
+            if (visibleToConfigs != null) {
+                for (SchemaVisibilityConfig schemaVisibilityConfig : visibleToConfigs) {
+                    builder.addVisibleToConfig(schemaVisibilityConfig);
+                }
+            }
+
+            result.add(builder.build());
+        }
+        return result;
+    }
+
+    /**
+     * Build the List of {@link InternalVisibilityConfig}s from given
+     * {@link SetBlobVisibilityRequest}.
+     */
+    @NonNull
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
+    public static List<InternalVisibilityConfig> toInternalVisibilityConfigs(
+            @NonNull SetBlobVisibilityRequest setBlobVisibilityRequest) {
+
+        Set<String> blobNamespacesNotDisplayedBySystem =
+                setBlobVisibilityRequest.getNamespacesNotDisplayedBySystem();
+        Map<String, Set<SchemaVisibilityConfig>> blobNamespacesVisibleToConfigs =
+                setBlobVisibilityRequest.getNamespacesVisibleToConfigs();
+
+        Set<String> allBlobNamespaces = new ArraySet<>(blobNamespacesNotDisplayedBySystem);
+        allBlobNamespaces.addAll(blobNamespacesVisibleToConfigs.keySet());
+
+        List<InternalVisibilityConfig> result = new ArrayList<>();
+        for (String namespace : allBlobNamespaces) {
+            InternalVisibilityConfig.Builder builder =
+                    new InternalVisibilityConfig.Builder(namespace)
+                            .setNotDisplayedBySystem(
+                                    blobNamespacesNotDisplayedBySystem.contains(namespace));
+
+            Set<SchemaVisibilityConfig> visibleToConfigs =
+                    blobNamespacesVisibleToConfigs.get(namespace);
             if (visibleToConfigs != null) {
                 for (SchemaVisibilityConfig schemaVisibilityConfig : visibleToConfigs) {
                     builder.addVisibleToConfig(schemaVisibilityConfig);

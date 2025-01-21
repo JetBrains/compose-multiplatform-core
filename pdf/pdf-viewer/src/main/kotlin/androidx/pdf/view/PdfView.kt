@@ -19,18 +19,20 @@ package androidx.pdf.view
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Point
+import android.graphics.PointF
 import android.graphics.Rect
 import android.os.Looper
+import android.os.Parcelable
 import android.util.AttributeSet
 import android.util.Range
-import android.util.SparseArray
 import android.view.MotionEvent
 import android.view.View
 import androidx.annotation.RestrictTo
 import androidx.core.os.HandlerCompat
-import androidx.core.util.keyIterator
 import androidx.pdf.PdfDocument
+import androidx.pdf.util.ZoomUtils
 import java.util.concurrent.Executors
+import kotlin.math.round
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
@@ -85,8 +87,22 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             onZoomChanged()
         }
 
+    /**
+     * A set of areas to be highlighted. Each [Highlight] may be a different color. Setting this
+     * property overrides any previous highlights, there is no merging behavior of new and previous
+     * values.
+     */
+    public var highlights: List<Highlight> = listOf()
+        set(value) {
+            checkMainThread()
+            val localPageManager =
+                pageManager
+                    ?: throw IllegalStateException("Can't highlightAreas without PdfDocument")
+            localPageManager.setHighlights(value)
+        }
+
     private val visiblePages: Range<Int>
-        get() = paginationManager?.visiblePages?.value ?: Range(0, 0)
+        get() = pageLayoutManager?.visiblePages?.value ?: Range(0, 0)
 
     /** The first page in the viewport, including partially-visible pages. 0-indexed. */
     public val firstVisiblePage: Int
@@ -103,11 +119,20 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     internal val backgroundScope: CoroutineScope =
         CoroutineScope(Executors.newFixedThreadPool(5).asCoroutineDispatcher() + SupervisorJob())
 
-    private var paginationManager: PaginationManager? = null
+    private var pageLayoutManager: PageLayoutManager? = null
+    private var pageManager: PageManager? = null
     private var visiblePagesCollector: Job? = null
     private var dimensionsCollector: Job? = null
+    private var invalidationCollector: Job? = null
 
-    private val pages = SparseArray<Page>()
+    private var deferredScrollPage: Int? = null
+    private var deferredScrollPosition: PdfPoint? = null
+
+    /** Used to restore saved state */
+    private var stateToRestore: PdfViewSavedState? = null
+    private var awaitingFirstLayout: Boolean = true
+    private var scrollPositionToRestore: PointF? = null
+    private var zoomToRestore: Float? = null
 
     private val gestureHandler = ZoomScrollGestureHandler(this@PdfView)
     private val gestureTracker = GestureTracker(context).apply { delegate = gestureHandler }
@@ -115,16 +140,133 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     // To avoid allocations during drawing
     private val visibleAreaRect = Rect()
 
+    /**
+     * Scrolls to the 0-indexed [pageNum], optionally animating the scroll
+     *
+     * This View cannot scroll to a page until it knows its dimensions. If [pageNum] is distant from
+     * the currently-visible page in a large PDF, there may be some delay while dimensions are being
+     * loaded from the PDF.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    public fun scrollToPage(pageNum: Int, animateScroll: Boolean = false) {
+        checkMainThread()
+        val localPageLayoutManager =
+            pageLayoutManager
+                ?: throw IllegalStateException("Can't scrollToPage without PdfDocument")
+        require(pageNum < (pdfDocument?.pageCount ?: Int.MIN_VALUE)) {
+            "Page $pageNum not in document"
+        }
+
+        if (localPageLayoutManager.reach >= pageNum) {
+            gotoPage(pageNum)
+        } else {
+            localPageLayoutManager.increaseReach(pageNum)
+            deferredScrollPage = pageNum
+            deferredScrollPosition = null
+        }
+    }
+
+    /**
+     * Scrolls to [position], optionally animating the scroll
+     *
+     * This View cannot scroll to a page until it knows its dimensions. If [position] is distant
+     * from the currently-visible page in a large PDF, there may be some delay while dimensions are
+     * being loaded from the PDF.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    public fun scrollToPosition(position: PdfPoint, animateScroll: Boolean = false) {
+        checkMainThread()
+        val localPageLayoutManager =
+            pageLayoutManager
+                ?: throw IllegalStateException("Can't scrollToPage without PdfDocument")
+        require(position.pageNum < (pdfDocument?.pageCount ?: Int.MIN_VALUE)) {
+            "Page ${position.pageNum} not in document"
+        }
+
+        if (localPageLayoutManager.reach >= position.pageNum) {
+            gotoPoint(position)
+        } else {
+            localPageLayoutManager.increaseReach(position.pageNum)
+            deferredScrollPosition = position
+            deferredScrollPage = null
+        }
+    }
+
+    private fun gotoPage(pageNum: Int) {
+        checkMainThread()
+        val localPageLayoutManager =
+            pageLayoutManager
+                ?: throw IllegalStateException("Can't scrollToPage without PdfDocument")
+        check(pageNum <= localPageLayoutManager.reach) { "Can't gotoPage that's not laid out" }
+
+        val pageRect =
+            localPageLayoutManager.getPageLocation(pageNum, getVisibleAreaInContentCoords())
+        // Zoom should match the width of the page
+        val zoom =
+            ZoomUtils.calculateZoomToFit(
+                viewportWidth.toFloat(),
+                viewportHeight.toFloat(),
+                pageRect.width().toFloat(),
+                1f
+            )
+        val x = round((pageRect.left + pageRect.width() / 2f) * zoom - (viewportWidth / 2f))
+        val y = round((pageRect.top + pageRect.height() / 2f) * zoom - (viewportHeight / 2f))
+
+        // Scroll to the center of the page, then set zoom to fit the width of the page
+        // TODO(b/376136621) - Animate scrolling if requested by scrollToPage API
+        scrollTo(x.toInt(), y.toInt())
+        this.zoom = zoom
+    }
+
+    private fun gotoPoint(position: PdfPoint) {
+        checkMainThread()
+        val localPageLayoutManager =
+            pageLayoutManager
+                ?: throw IllegalStateException("Can't scrollToPage without PdfDocument")
+        check(position.pageNum <= localPageLayoutManager.reach) {
+            "Can't gotoPoint on page that's not laid out"
+        }
+
+        val pageRect =
+            localPageLayoutManager.getPageLocation(
+                position.pageNum,
+                getVisibleAreaInContentCoords()
+            )
+        // Zoom should match the width of the page
+        val zoom =
+            ZoomUtils.calculateZoomToFit(
+                viewportWidth.toFloat(),
+                viewportHeight.toFloat(),
+                pageRect.width().toFloat(),
+                1f
+            )
+
+        val x = round((pageRect.left + pageRect.width() / 2f) * zoom - (viewportWidth / 2f))
+        val y = round((pageRect.top + position.pagePoint.y) * zoom - (viewportHeight / 2f))
+
+        // Scroll to the requested Y position on the page, then set zoom to fit the width of the
+        // page
+        // TODO(b/376136621) - Animate scrolling if requested by scrollToPage API
+        scrollTo(
+            toViewCoord(x, this.zoom, scrollX).toInt(),
+            toViewCoord(y, this.zoom, scrollY).toInt()
+        )
+        this.zoom = zoom
+    }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val localPaginationManager = paginationManager ?: return
+        val localPaginationManager = pageLayoutManager ?: return
+        canvas.save()
         canvas.scale(zoom, zoom)
         for (i in visiblePages.lower..visiblePages.upper) {
-            pages[i]?.draw(
+            pageManager?.drawPage(
+                i,
                 canvas,
                 localPaginationManager.getPageLocation(i, getVisibleAreaInContentCoords())
             )
         }
+        canvas.restore()
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
@@ -134,17 +276,27 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        paginationManager?.onViewportChanged(scrollY, height, zoom)
+        pageLayoutManager?.onViewportChanged(scrollY, height, zoom)
     }
 
     override fun onScrollChanged(l: Int, t: Int, oldl: Int, oldt: Int) {
         super.onScrollChanged(l, t, oldl, oldt)
-        paginationManager?.onViewportChanged(scrollY, height, zoom)
+        pageLayoutManager?.onViewportChanged(scrollY, height, zoom)
+    }
+
+    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        super.onLayout(changed, left, top, right, bottom)
+        val localScrollPositionToRestore = scrollPositionToRestore
+        if (awaitingFirstLayout && localScrollPositionToRestore != null) {
+            scrollToRestoredPosition(localScrollPositionToRestore, zoomToRestore ?: zoom)
+        }
+        awaitingFirstLayout = false
     }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         stopCollectingData()
+        awaitingFirstLayout = true
     }
 
     override fun onWindowVisibilityChanged(visibility: Int) {
@@ -155,12 +307,81 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         stopCollectingData()
+        awaitingFirstLayout = true
+        pageManager?.onDetached()
+    }
+
+    override fun onSaveInstanceState(): Parcelable? {
+        val superState = super.onSaveInstanceState()
+        val state = PdfViewSavedState(superState)
+        state.contentCenterX = scrollX.toFloat() + width / 2
+        state.contentCenterY = scrollY.toFloat() + height / 2
+        state.zoom = zoom
+        state.documentUri = pdfDocument?.uri
+        state.paginationModel = pageLayoutManager?.paginationModel
+        return state
+    }
+
+    override fun onRestoreInstanceState(state: Parcelable?) {
+        if (state !is PdfViewSavedState) {
+            super.onRestoreInstanceState(state)
+            return
+        }
+        super.onRestoreInstanceState(state.superState)
+        stateToRestore = state
+        if (pdfDocument != null) {
+            maybeRestoreState()
+        }
+    }
+
+    /**
+     * Returns true if we are able to restore a previous state from savedInstanceState
+     *
+     * We are not be able to restore our previous state if it pertains to a different document, or
+     * if it is missing critical data like page layout information.
+     */
+    private fun maybeRestoreState(): Boolean {
+        val localStateToRestore = stateToRestore ?: return false
+        val localPdfDocument = pdfDocument ?: return false
+        if (
+            localPdfDocument.uri != localStateToRestore.documentUri ||
+                !localStateToRestore.hasEnoughStateToRestore
+        ) {
+            stateToRestore = null
+            return false
+        }
+        pageLayoutManager =
+            PageLayoutManager(
+                    localPdfDocument,
+                    backgroundScope,
+                    DEFAULT_PAGE_PREFETCH_RADIUS,
+                    paginationModel = localStateToRestore.paginationModel!!
+                )
+                .apply { onViewportChanged(scrollY, height, zoom) }
+        val positionToRestore =
+            PointF(localStateToRestore.contentCenterX, localStateToRestore.contentCenterY)
+        if (awaitingFirstLayout) {
+            scrollPositionToRestore = positionToRestore
+            zoomToRestore = localStateToRestore.zoom
+        } else {
+            scrollToRestoredPosition(positionToRestore, localStateToRestore.zoom)
+        }
+
+        stateToRestore = null
+        return true
+    }
+
+    private fun scrollToRestoredPosition(position: PointF, zoom: Float) {
+        scrollTo(round(position.x - width / 2f).toInt(), round(position.y - height / 2f).toInt())
+        this.zoom = zoom
+        scrollPositionToRestore = null
+        zoomToRestore = null
     }
 
     private fun startCollectingData() {
         val mainScope =
             CoroutineScope(HandlerCompat.createAsync(handler.looper).asCoroutineDispatcher())
-        paginationManager?.let { manager ->
+        pageLayoutManager?.let { manager ->
             // Don't let two copies of this run concurrently
             val dimensionsToJoin = dimensionsCollector?.apply { cancel() }
             dimensionsCollector =
@@ -182,22 +403,33 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     }
                 }
         }
+        pageManager?.let { manager ->
+            val invalidationToJoin = invalidationCollector?.apply { cancel() }
+            invalidationCollector =
+                mainScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                    // Prevent 2 copies from running concurrently
+                    invalidationToJoin?.join()
+                    manager.invalidationSignalFlow.collect { invalidate() }
+                }
+        }
     }
 
     private fun stopCollectingData() {
         dimensionsCollector?.cancel()
         visiblePagesCollector?.cancel()
+        invalidationCollector?.cancel()
     }
 
     /** Start using the [PdfDocument] to present PDF content */
     private fun onDocumentSet() {
         val localPdfDocument = pdfDocument ?: return
-        paginationManager =
-            PaginationManager(
-                    localPdfDocument,
-                    backgroundScope,
-                )
-                .apply { onViewportChanged(scrollY, height, zoom) }
+        pageManager = PageManager(localPdfDocument, backgroundScope, DEFAULT_PAGE_PREFETCH_RADIUS)
+        // We'll either create our layout manager from restored state, or instantiate a new one
+        if (!maybeRestoreState()) {
+            pageLayoutManager =
+                PageLayoutManager(localPdfDocument, backgroundScope, DEFAULT_PAGE_PREFETCH_RADIUS)
+                    .apply { onViewportChanged(scrollY, height, zoom) }
+        }
         // If not, we'll start doing this when we _are_ attached to a visible window
         if (isAttachedToVisibleWindow) {
             startCollectingData()
@@ -212,47 +444,42 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
      * position or size changes.
      */
     internal fun onZoomChanged() {
-        paginationManager?.onViewportChanged(scrollY, height, zoom)
-        // If scale changed, update already-visible pages so they can re-render and redraw
-        // themselves accordingly
+        pageLayoutManager?.onViewportChanged(scrollY, height, zoom)
         if (!gestureHandler.scaleInProgress && !gestureHandler.scrollInProgress) {
-            for (i in visiblePages.lower..visiblePages.upper) {
-                pages[i]?.maybeRender()
-            }
+            pageManager?.maybeUpdateBitmaps(visiblePages, zoom)
         }
     }
 
     private fun reset() {
         scrollTo(0, 0)
         zoom = DEFAULT_INIT_ZOOM
-        pages.clear()
+        pageManager = null
+        pageLayoutManager = null
         backgroundScope.coroutineContext.cancelChildren()
         stopCollectingData()
     }
 
     /** React to a change in visible pages (load new pages and clean up old ones) */
     private fun onVisiblePagesChanged() {
-        for (i in visiblePages.lower..visiblePages.upper) {
-            pages[i]?.isVisible = true
-        }
-
-        // Clean up pages that are no longer visible
-        for (pageIndex in pages.keyIterator()) {
-            if (pageIndex < visiblePages.lower || pageIndex > visiblePages.upper) {
-                pages[pageIndex]?.isVisible = false
-            }
-        }
+        pageManager?.maybeUpdateBitmaps(visiblePages, zoom)
     }
 
     /** React to a page's dimensions being made available */
     private fun onPageDimensionsReceived(pageNum: Int, size: Point) {
-        if (!pages.contains(pageNum)) {
-            pages[pageNum] = Page(pageNum, size, this)
-            if (visiblePages.contains(pageNum)) pages[pageNum].isVisible = true
-        }
+        pageManager?.onPageSizeReceived(pageNum, size, visiblePages.contains(pageNum), zoom)
         // Learning the dimensions of a page can change our understanding of the content that's in
         // the viewport
-        paginationManager?.onViewportChanged(scrollY, height, zoom)
+        pageLayoutManager?.onViewportChanged(scrollY, height, zoom)
+
+        val localDeferredPosition = deferredScrollPosition
+        val localDeferredPage = deferredScrollPage
+        if (localDeferredPosition != null && localDeferredPosition.pageNum <= pageNum) {
+            gotoPoint(localDeferredPosition)
+            deferredScrollPosition = null
+        } else if (localDeferredPage != null && localDeferredPage <= pageNum) {
+            gotoPage(pageNum)
+            deferredScrollPage = null
+        }
     }
 
     /** Set the zoom, using the given point as a pivot point to zoom in or out of */
@@ -328,6 +555,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         public const val DEFAULT_INIT_ZOOM: Float = 1.0f
         public const val DEFAULT_MAX_ZOOM: Float = 25.0f
         public const val DEFAULT_MIN_ZOOM: Float = 0.1f
+
+        private const val DEFAULT_PAGE_PREFETCH_RADIUS: Int = 2
 
         private fun checkMainThread() {
             check(Looper.myLooper() == Looper.getMainLooper()) {

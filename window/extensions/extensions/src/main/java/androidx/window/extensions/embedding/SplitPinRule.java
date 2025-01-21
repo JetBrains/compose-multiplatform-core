@@ -18,10 +18,11 @@ package androidx.window.extensions.embedding;
 
 import android.view.WindowMetrics;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.window.extensions.RequiresVendorApiLevel;
 import androidx.window.extensions.core.util.function.Predicate;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -64,13 +65,10 @@ public class SplitPinRule extends SplitRule {
      * Builder for {@link SplitPinRule}.
      */
     public static final class Builder {
-        @NonNull
-        private final SplitAttributes mDefaultSplitAttributes;
-        @NonNull
-        private final Predicate<WindowMetrics> mParentWindowMetricsPredicate;
+        private final @NonNull SplitAttributes mDefaultSplitAttributes;
+        private final @NonNull Predicate<WindowMetrics> mParentWindowMetricsPredicate;
         private boolean mIsSticky;
-        @Nullable
-        private String mTag;
+        private @Nullable String mTag;
 
         /**
          * The {@link SplitPinRule} builder constructor.
@@ -92,8 +90,7 @@ public class SplitPinRule extends SplitRule {
          *
          * @see SplitPinRule#isSticky()
          */
-        @NonNull
-        public Builder setSticky(boolean isSticky) {
+        public @NonNull Builder setSticky(boolean isSticky) {
             mIsSticky = isSticky;
             return this;
         }
@@ -101,8 +98,7 @@ public class SplitPinRule extends SplitRule {
         /**
          * @see SplitPinRule#getTag()
          */
-        @NonNull
-        public Builder setTag(@NonNull String tag) {
+        public @NonNull Builder setTag(@NonNull String tag) {
             mTag =  Objects.requireNonNull(tag);
             return this;
         }
@@ -110,8 +106,7 @@ public class SplitPinRule extends SplitRule {
         /**
          * Builds a new instance of {@link SplitPinRule}.
          */
-        @NonNull
-        public SplitPinRule build() {
+        public @NonNull SplitPinRule build() {
             return new SplitPinRule(mDefaultSplitAttributes, mParentWindowMetricsPredicate,
                     mIsSticky, mTag);
         }
@@ -133,9 +128,8 @@ public class SplitPinRule extends SplitRule {
         return result;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "SplitPinRule{"
                 + "mTag=" + getTag()
                 + ", mDefaultSplitAttributes=" + getDefaultSplitAttributes()

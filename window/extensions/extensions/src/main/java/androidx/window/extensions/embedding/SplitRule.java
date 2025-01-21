@@ -21,12 +21,13 @@ import android.os.Build;
 import android.view.WindowMetrics;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.window.extensions.RequiresVendorApiLevel;
 import androidx.window.extensions.core.util.function.Predicate;
 import androidx.window.extensions.embedding.SplitAttributes.SplitType;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -40,11 +41,9 @@ import java.util.Objects;
  * the device.
  */
 public abstract class SplitRule extends EmbeddingRule {
-    @NonNull
-    private final Predicate<WindowMetrics> mParentWindowMetricsPredicate;
+    private final @NonNull Predicate<WindowMetrics> mParentWindowMetricsPredicate;
 
-    @NonNull
-    private final SplitAttributes mDefaultSplitAttributes;
+    private final @NonNull SplitAttributes mDefaultSplitAttributes;
 
     /**
      * Never finish the associated container.
@@ -142,8 +141,7 @@ public abstract class SplitRule extends EmbeddingRule {
      * {@link #checkParentMetrics(WindowMetrics)} is {@code true}.
      */
     @RequiresVendorApiLevel(level = 2)
-    @NonNull
-    public SplitAttributes getDefaultSplitAttributes() {
+    public @NonNull SplitAttributes getDefaultSplitAttributes() {
         return mDefaultSplitAttributes;
     }
 
@@ -165,9 +163,8 @@ public abstract class SplitRule extends EmbeddingRule {
         return result;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "SplitRule{"
                 + "mTag=" + getTag()
                 + ", mDefaultSplitAttributes=" + mDefaultSplitAttributes

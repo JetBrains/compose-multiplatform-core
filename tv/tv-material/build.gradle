@@ -61,8 +61,8 @@ dependencies {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.tv.material"
+    compileSdk = 35
+    namespace = "androidx.tv.material"
     sourceSets.androidTest.assets.srcDirs +=
              project.rootDir.absolutePath + "/../../golden/tv/compose/material3"
 }

@@ -46,11 +46,11 @@ dependencies {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
     buildFeatures {
-        viewBinding true
+        viewBinding = true
     }
-    namespace "androidx.compose.ui.demos"
+    namespace = "androidx.compose.ui.demos"
     // TODO(b/349411310)?
     experimentalProperties["android.lint.useK2Uast"] = false
 }

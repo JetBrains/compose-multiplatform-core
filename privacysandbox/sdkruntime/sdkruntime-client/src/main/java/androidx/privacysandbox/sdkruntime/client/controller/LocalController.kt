@@ -20,9 +20,11 @@ import android.content.Context
 import android.os.Bundle
 import android.os.IBinder
 import androidx.privacysandbox.sdkruntime.client.activity.LocalSdkActivityHandlerRegistry
+import androidx.privacysandbox.sdkruntime.client.controller.impl.LocalClientImportanceListenerRegistry
 import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
+import androidx.privacysandbox.sdkruntime.core.SdkSandboxClientImportanceListenerCompat
 import androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandlerCompat
 import androidx.privacysandbox.sdkruntime.core.controller.LoadSdkCallback
 import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat
@@ -70,4 +72,17 @@ internal class LocalController(
     }
 
     override fun getClientPackageName(): String = applicationContext.getPackageName()
+
+    override fun registerSdkSandboxClientImportanceListener(
+        executor: Executor,
+        listenerCompat: SdkSandboxClientImportanceListenerCompat
+    ) {
+        LocalClientImportanceListenerRegistry.register(sdkPackageName, executor, listenerCompat)
+    }
+
+    override fun unregisterSdkSandboxClientImportanceListener(
+        listenerCompat: SdkSandboxClientImportanceListenerCompat
+    ) {
+        LocalClientImportanceListenerRegistry.unregister(listenerCompat)
+    }
 }

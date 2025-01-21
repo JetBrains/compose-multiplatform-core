@@ -21,8 +21,8 @@ plugins {
 }
 
 android {
-    namespace "androidx.fragment.testapp"
-    compileSdk 35
+    namespace = "androidx.fragment.testapp"
+    compileSdk = 35
 }
 
 dependencies {

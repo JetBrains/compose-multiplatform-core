@@ -21,7 +21,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.R;
 import androidx.pdf.models.PageSelection;
@@ -32,6 +31,8 @@ import androidx.pdf.util.Accessibility;
 import androidx.pdf.util.Preconditions;
 import androidx.pdf.widget.ZoomView;
 import androidx.pdf.widget.ZoomableSelectionHandles;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Implementation of SelectionHandles for PdfViewer.
@@ -109,13 +110,11 @@ public class PdfSelectionHandles extends ZoomableSelectionHandles<PageSelection>
                 mSelection.getText());
     }
 
-    @NonNull
-    public ImageView getStartHandle() {
+    public @NonNull ImageView getStartHandle() {
         return mStartHandle;
     }
 
-    @NonNull
-    public ImageView getStopHandle() {
+    public @NonNull ImageView getStopHandle() {
         return mStopHandle;
     }
 }

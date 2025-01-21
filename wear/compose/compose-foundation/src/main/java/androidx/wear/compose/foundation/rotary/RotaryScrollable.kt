@@ -16,6 +16,8 @@
 
 package androidx.wear.compose.foundation.rotary
 
+import android.os.Build
+import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.ViewConfiguration
 import androidx.compose.animation.core.AnimationState
@@ -386,15 +388,17 @@ private fun flingBehavior(
     viewConfiguration: ViewConfiguration
 ): RotaryScrollableBehavior {
 
-    fun rotaryFlingHandler() =
+    fun rotaryFlingHandler(inputDeviceId: Int, initialTimestamp: Long) =
         flingBehavior?.run {
             RotaryFlingHandler(
-                scrollableState,
-                flingBehavior,
-                viewConfiguration,
+                scrollableState = scrollableState,
+                flingBehavior = flingBehavior,
                 flingTimeframe =
                     if (isLowRes) RotaryScrollableDefaults.LowResFlingTimeframe
-                    else RotaryScrollableDefaults.HighResFlingTimeframe
+                    else RotaryScrollableDefaults.HighResFlingTimeframe,
+                viewConfiguration = viewConfiguration,
+                inputDeviceId = inputDeviceId,
+                initialTimestamp = initialTimestamp
             )
         }
 
@@ -403,7 +407,9 @@ private fun flingBehavior(
     return FlingRotaryScrollableBehavior(
         isLowRes,
         rotaryHaptics,
-        rotaryFlingHandlerFactory = { rotaryFlingHandler() },
+        rotaryFlingHandlerFactory = { inputDeviceId: Int, initialTimestamp: Long ->
+            rotaryFlingHandler(inputDeviceId, initialTimestamp)
+        },
         scrollHandlerFactory = { scrollHandler() }
     )
 }
@@ -699,15 +705,22 @@ internal fun Modifier.rotaryHandler(
  * Class responsible for Fling behaviour with rotary. It tracks rotary events and produces fling
  * when necessary.
  *
- * @param flingTimeframe represents a time interval (in milliseconds) used to determine whether a
+ * @param scrollableState The [ScrollableState] used to perform the fling.
+ * @param flingBehavior The [FlingBehavior] used to control the fling animation.
+ * @param flingTimeframe Represents a time interval (in milliseconds) used to determine whether a
  *   rotary input should trigger a fling. If no new events come during this interval, then the fling
  *   is triggered.
+ * @param viewConfiguration The [ViewConfiguration] used to obtain fling velocity thresholds.
+ * @param inputDeviceId The ID of the input device generating the rotary events.
+ * @param initialTimestamp The initial timestamp of the fling tracking session.
  */
 internal class RotaryFlingHandler(
     private val scrollableState: ScrollableState,
     private val flingBehavior: FlingBehavior,
+    private val flingTimeframe: Long,
     viewConfiguration: ViewConfiguration,
-    private val flingTimeframe: Long
+    inputDeviceId: Int,
+    initialTimestamp: Long
 ) {
     private var flingJob: Job = CompletableDeferred<Unit>()
 
@@ -722,18 +735,29 @@ internal class RotaryFlingHandler(
 
     private val rotaryVelocityTracker = RotaryVelocityTracker()
 
-    private val minFlingSpeed = viewConfiguration.scaledMinimumFlingVelocity.toFloat()
-    private val maxFlingSpeed = viewConfiguration.scaledMaximumFlingVelocity.toFloat()
+    private val minFlingSpeed: Float
+    private val maxFlingSpeed: Float
     private var latestEventTimestamp: Long = 0
 
     private var flingVelocity: Float = 0f
     private var flingTimestamp: Long = 0
 
-    /** Starts a new fling tracking session with specified timestamp */
-    fun startFlingTracking(timestamp: Long) {
-        rotaryVelocityTracker.start(timestamp)
-        latestEventTimestamp = timestamp
-        previousVelocity = 0f
+    init {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            minFlingSpeed =
+                viewConfiguration
+                    .getScaledMinimumFlingVelocity(inputDeviceId, AxisScroll, RotaryInputSource)
+                    .toFloat()
+            maxFlingSpeed =
+                viewConfiguration
+                    .getScaledMaximumFlingVelocity(inputDeviceId, AxisScroll, RotaryInputSource)
+                    .toFloat()
+        } else {
+            minFlingSpeed = viewConfiguration.scaledMinimumFlingVelocity.toFloat()
+            maxFlingSpeed = viewConfiguration.scaledMaximumFlingVelocity.toFloat()
+        }
+
+        startFlingTracking(initialTimestamp)
     }
 
     fun cancelFlingIfActive() {
@@ -754,6 +778,13 @@ internal class RotaryFlingHandler(
         cancelFlingIfActive()
 
         flingJob = coroutineScope.async { trackFling(beforeFling, edgeReached) }
+    }
+
+    /** Starts a new fling tracking session with specified timestamp */
+    private fun startFlingTracking(timestamp: Long) {
+        rotaryVelocityTracker.start(timestamp)
+        latestEventTimestamp = timestamp
+        previousVelocity = 0f
     }
 
     /**
@@ -819,12 +850,13 @@ internal class RotaryFlingHandler(
 internal class FlingRotaryScrollableBehavior(
     private val isLowRes: Boolean,
     private val rotaryHaptics: RotaryHapticHandler,
-    private val rotaryFlingHandlerFactory: () -> RotaryFlingHandler?,
+    private val rotaryFlingHandlerFactory:
+        (inputDeviceId: Int, initialTimestamp: Long) -> RotaryFlingHandler?,
     private val scrollHandlerFactory: () -> RotaryScrollHandler,
 ) : BaseRotaryScrollableBehavior() {
     private var rotaryScrollDistance = 0f
 
-    private var rotaryFlingHandler: RotaryFlingHandler? = rotaryFlingHandlerFactory()
+    private var rotaryFlingHandler: RotaryFlingHandler? = null
     private var scrollHandler: RotaryScrollHandler = scrollHandlerFactory()
 
     override suspend fun CoroutineScope.performScroll(
@@ -838,7 +870,7 @@ internal class FlingRotaryScrollableBehavior(
         if (isNewScrollEvent(timestampMillis)) {
             debugLog { "New scroll event" }
             resetScrolling()
-            resetFlingTracking(timestampMillis)
+            resetFlingTracking(timestampMillis, inputDeviceId)
         } else {
             // Due to the physics of high-res Rotary side button, some events might come
             // with an opposite axis value - either at the start or at the end of the motion.
@@ -876,10 +908,9 @@ internal class FlingRotaryScrollableBehavior(
         rotaryScrollDistance = 0f
     }
 
-    private fun resetFlingTracking(timestamp: Long) {
+    private fun resetFlingTracking(timestamp: Long, inputDeviceId: Int) {
         rotaryFlingHandler?.cancelFlingIfActive()
-        rotaryFlingHandler = rotaryFlingHandlerFactory()
-        rotaryFlingHandler?.startFlingTracking(timestamp)
+        rotaryFlingHandler = rotaryFlingHandlerFactory(inputDeviceId, timestamp)
     }
 
     private fun isOppositeValueAfterScroll(delta: Float): Boolean =
@@ -1303,6 +1334,8 @@ internal enum class RotarySnapSensitivity(
 }
 
 private const val AxisScroll = MotionEvent.AXIS_SCROLL
+
+private const val RotaryInputSource = InputDevice.SOURCE_ROTARY_ENCODER
 
 /** Debug logging that can be enabled. */
 private const val DEBUG = false

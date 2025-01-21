@@ -63,7 +63,10 @@ public class CameraNoResponseWhenEnablingFlashQuirk implements UseTorchAsFlashQu
             "SM-N920X",
 
             // Galaxy J5
-            "SM-J510FN"
+            "SM-J510FN",
+
+            // Vivo 1610
+            "VIVO 1610"
     );
 
     static boolean load(@NonNull CameraCharacteristicsCompat characteristics) {

@@ -33,16 +33,16 @@ import androidx.compose.ui.window.Dialog
 /** Object that indicates the features that can be handled by the [AnimatedNavDisplay] */
 public object AnimatedNavDisplay {
     /**
-     * Function to be called on the [Record.featureMap] to notify the [AnimatedNavDisplay] that the
-     * content should be animated using the provided transitions.
+     * Function to be called on the [NavRecord.featureMap] to notify the [AnimatedNavDisplay] that
+     * the content should be animated using the provided transitions.
      */
     public fun transition(enter: EnterTransition?, exit: ExitTransition?): Map<String, Any> =
         if (enter == null || exit == null) emptyMap()
         else mapOf(ENTER_TRANSITION_KEY to enter, EXIT_TRANSITION_KEY to exit)
 
     /**
-     * Function to be called on the [Record.featureMap] to notify the [NavDisplay] that the content
-     * should be displayed inside of a [Dialog]
+     * Function to be called on the [NavRecord.featureMap] to notify the [NavDisplay] that the
+     * content should be displayed inside of a [Dialog]
      */
     public fun isDialog(boolean: Boolean): Map<String, Any> =
         if (!boolean) emptyMap() else mapOf(DIALOG_KEY to true)
@@ -58,15 +58,15 @@ public object AnimatedNavDisplay {
  *
  * The AnimatedNavDisplay displays the content associated with the last key on the back stack in
  * most circumstances. If that content wants to be displayed as a dialog, as communicated by adding
- * [NavDisplay.isDialog] to a [Record.featureMap], then the last key's content is a dialog and the
- * second to last key is a displayed in the background.
+ * [NavDisplay.isDialog] to a [NavRecord.featureMap], then the last key's content is a dialog and
+ * the second to last key is a displayed in the background.
  *
  * @param backstack the collection of keys that represents the state that needs to be handled
  * @param wrapperManager the manager that combines all of the [NavContentWrapper]s
  * @param modifier the modifier to be applied to the layout.
  * @param contentAlignment The [Alignment] of the [AnimatedContent]
  * @param onBack a callback for handling system back presses
- * @param recordProvider lambda used to construct each possible [Record]
+ * @param recordProvider lambda used to construct each possible [NavRecord]
  * @sample androidx.navigation3.samples.AnimatedNav
  */
 @Composable
@@ -77,7 +77,7 @@ public fun <T : Any> AnimatedNavDisplay(
     contentAlignment: Alignment = Alignment.TopStart,
     sizeTransform: SizeTransform? = null,
     onBack: () -> Unit = {},
-    recordProvider: (key: T) -> Record<out T>
+    recordProvider: (key: T) -> NavRecord<out T>
 ) {
     BackHandler(backstack.size > 1, onBack)
     wrapperManager.PrepareBackStack(backStack = backstack)

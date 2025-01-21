@@ -63,12 +63,12 @@ public class NavWrapperManager(navContentWrappers: List<NavContentWrapper>) {
      * should not be called directly.
      */
     @Composable
-    public fun <T : Any> ContentForRecord(record: Record<T>) {
+    public fun <T : Any> ContentForRecord(record: NavRecord<T>) {
         val key = record.key
         finalWrappers
             .distinct()
             .foldRight(record.content) { wrapper, contentLambda ->
-                { wrapper.WrapContent(Record(key, record.featureMap, content = contentLambda)) }
+                { wrapper.WrapContent(NavRecord(key, record.featureMap, content = contentLambda)) }
             }
             .invoke(key)
     }

@@ -34,8 +34,6 @@ import android.util.Xml;
 import androidx.annotation.ColorInt;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.collection.SimpleArrayMap;
 import androidx.core.animation.Animator;
 import androidx.core.animation.AnimatorInflater;
@@ -44,6 +42,8 @@ import androidx.core.animation.AnimatorSet;
 import androidx.core.animation.ObjectAnimator;
 import androidx.core.content.res.TypedArrayUtils;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -240,9 +240,8 @@ public class SeekableAnimatedVectorDrawable extends Drawable implements Animatab
     /**
      * mutate() is not supported. This method simply returns {@code this}.
      */
-    @NonNull
     @Override
-    public Drawable mutate() {
+    public @NonNull Drawable mutate() {
         return this;
     }
 
@@ -253,8 +252,7 @@ public class SeekableAnimatedVectorDrawable extends Drawable implements Animatab
      * @param resId   the resource ID for SeekableAnimatedVectorDrawable object.
      * @return a new SeekableAnimatedVectorDrawable or null if parsing error is found.
      */
-    @Nullable
-    public static SeekableAnimatedVectorDrawable create(
+    public static @Nullable SeekableAnimatedVectorDrawable create(
             @NonNull Context context,
             @DrawableRes int resId
     ) {
@@ -285,8 +283,7 @@ public class SeekableAnimatedVectorDrawable extends Drawable implements Animatab
      * document, tries to create a Drawable from that tag. Returns {@code null}
      * if the tag is not a valid drawable.
      */
-    @NonNull
-    public static SeekableAnimatedVectorDrawable createFromXmlInner(
+    public static @NonNull SeekableAnimatedVectorDrawable createFromXmlInner(
             @NonNull Resources r,
             @NonNull XmlPullParser parser,
             @NonNull AttributeSet attrs,
@@ -297,9 +294,8 @@ public class SeekableAnimatedVectorDrawable extends Drawable implements Animatab
         return drawable;
     }
 
-    @Nullable
     @Override
-    public ConstantState getConstantState() {
+    public @Nullable ConstantState getConstantState() {
         // We can't support constant state in older platform.
         // We need Context to create the animator, and we can't save the context in the constant
         // state.
@@ -325,7 +321,7 @@ public class SeekableAnimatedVectorDrawable extends Drawable implements Animatab
     }
 
     @Override
-    protected boolean onStateChange(@NonNull int[] state) {
+    protected boolean onStateChange(int @NonNull [] state) {
         return mAnimatedVectorState.mVectorDrawable.setState(state);
     }
 
@@ -350,9 +346,8 @@ public class SeekableAnimatedVectorDrawable extends Drawable implements Animatab
         mAnimatedVectorState.mVectorDrawable.setColorFilter(colorFilter);
     }
 
-    @Nullable
     @Override
-    public ColorFilter getColorFilter() {
+    public @Nullable ColorFilter getColorFilter() {
         return mAnimatedVectorState.mVectorDrawable.getColorFilter();
     }
 
@@ -367,7 +362,7 @@ public class SeekableAnimatedVectorDrawable extends Drawable implements Animatab
     }
 
     @Override
-    public void setTintMode(@Nullable PorterDuff.Mode tintMode) {
+    public void setTintMode(PorterDuff.@Nullable Mode tintMode) {
         mAnimatedVectorState.mVectorDrawable.setTintMode(tintMode);
     }
 
@@ -542,15 +537,13 @@ public class SeekableAnimatedVectorDrawable extends Drawable implements Animatab
             }
         }
 
-        @NonNull
         @Override
-        public Drawable newDrawable() {
+        public @NonNull Drawable newDrawable() {
             throw new IllegalStateException("No constant state support for SDK < 24.");
         }
 
-        @NonNull
         @Override
-        public Drawable newDrawable(Resources res) {
+        public @NonNull Drawable newDrawable(Resources res) {
             throw new IllegalStateException("No constant state support for SDK < 24.");
         }
 

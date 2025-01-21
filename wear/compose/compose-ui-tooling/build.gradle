@@ -38,7 +38,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.wear.compose.ui.tooling"
+    namespace = "androidx.wear.compose.ui.tooling"
 }
 
 androidx {

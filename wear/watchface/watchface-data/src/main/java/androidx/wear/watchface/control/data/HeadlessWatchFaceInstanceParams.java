@@ -21,14 +21,15 @@ import android.content.ComponentName;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
 import androidx.wear.watchface.data.DeviceConfig;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Parameters for {@link IWatchFaceControlService#createHeadlessWatchFaceInstance}.
@@ -41,13 +42,11 @@ public class HeadlessWatchFaceInstanceParams implements VersionedParcelable, Par
 
     /** The {@link ComponentName} of the watchface family to create. */
     @ParcelField(1)
-    @NonNull
-    ComponentName mWatchFaceName;
+    @NonNull ComponentName mWatchFaceName;
 
     /** The {@link DeviceConfig} for the host wearable. */
     @ParcelField(2)
-    @NonNull
-    DeviceConfig mDeviceConfig;
+    @NonNull DeviceConfig mDeviceConfig;
 
     /** The desired width for screenshots. */
     @ParcelField(3)
@@ -93,13 +92,11 @@ public class HeadlessWatchFaceInstanceParams implements VersionedParcelable, Par
         mInstanceId = instanceId;
     }
 
-    @NonNull
-    public ComponentName getWatchFaceName() {
+    public @NonNull ComponentName getWatchFaceName() {
         return mWatchFaceName;
     }
 
-    @NonNull
-    public DeviceConfig getDeviceConfig() {
+    public @NonNull DeviceConfig getDeviceConfig() {
         return mDeviceConfig;
     }
 
@@ -111,8 +108,7 @@ public class HeadlessWatchFaceInstanceParams implements VersionedParcelable, Par
         return mHeight;
     }
 
-    @Nullable
-    public String getInstanceId() {
+    public @Nullable String getInstanceId() {
         return mInstanceId;
     }
 

@@ -46,5 +46,5 @@ dependencies {
 }
 
 android {
-    namespace "androidx.datastore.benchmark"
+    namespace = "androidx.datastore.benchmark"
 }

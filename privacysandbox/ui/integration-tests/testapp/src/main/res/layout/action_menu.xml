@@ -24,4 +24,7 @@
     <item
         android:id="@+id/item_pooling_container"
         android:title="@string/poolingcontainer_cuj" />
+    <item
+        android:id="@+id/item_fullscreen"
+        android:title="@string/fullscreen_cuj" />
 </menu>

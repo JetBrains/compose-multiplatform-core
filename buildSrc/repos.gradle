@@ -34,12 +34,12 @@ def addMavenRepositories(RepositoryHandler handler) {
     if (metalavaRepoOverride != null) {
         for(extraRepo in metalavaRepoOverride.split(File.pathSeparator)) {
             handler.maven {
-                url extraRepo
+                url = extraRepo
             }
         }
     }
     handler.maven {
-        url("${repos.prebuiltsRoot}/androidx/internal")
+        url = "${repos.prebuiltsRoot}/androidx/internal"
         metadataSources {
             mavenPom()
             artifact()
@@ -51,7 +51,7 @@ def addMavenRepositories(RepositoryHandler handler) {
         }
     }
     handler.maven {
-        url("${repos.prebuiltsRoot}/androidx/external")
+        url = "${repos.prebuiltsRoot}/androidx/external"
         metadataSources {
             mavenPom()
             artifact()
@@ -59,7 +59,7 @@ def addMavenRepositories(RepositoryHandler handler) {
         if (metalavaRepoOverride != null) {
             // When using custom metalava repo, do not resolve metalava artifacts from this repo
             content {
-                excludeGroup "com.android.tools.metalava"
+                excludeGroup = "com.android.tools.metalava"
             }
         }
     }
@@ -68,7 +68,7 @@ def addMavenRepositories(RepositoryHandler handler) {
         handler.google()
         handler.gradlePluginPortal()
         handler.maven {
-               url("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+               url = "https://maven.pkg.jetbrains.space/public/p/compose/dev"
         }
         handler.mavenLocal()
     }
@@ -77,7 +77,7 @@ def addMavenRepositories(RepositoryHandler handler) {
     if (androidPluginRepoOverride != null) {
         for(extraRepo in androidPluginRepoOverride.split(File.pathSeparator)) {
             handler.maven {
-                url extraRepo
+                url = extraRepo
             }
         }
     }

@@ -108,6 +108,12 @@ internal class CanvasInProgressStrokesRenderHelperV33(
 
     private var currentViewport: Viewport? = null
 
+    /**
+     * The amount of calls to [requestDraw] that occurred while [currentViewport] was null. Owned by
+     * the render thread.
+     */
+    private var pendingDrawCalls = 0
+
     private val viewListener =
         object : View.OnAttachStateChangeListener {
             @UiThread
@@ -145,9 +151,22 @@ internal class CanvasInProgressStrokesRenderHelperV33(
             override fun surfaceRedrawNeeded(holder: SurfaceHolder) = Unit
         }
 
+    private val processPendingDrawCallsRenderThreadRunnable = Runnable {
+        assertOnRenderThread()
+        // If we don't actually have a viewport yet, don't do anything.
+        val viewport = currentViewport ?: return@Runnable
+        repeat(pendingDrawCalls) { viewport.handleDraw() }
+        pendingDrawCalls = 0
+    }
+
     private val requestDrawRenderThreadRunnable = Runnable {
         assertOnRenderThread()
-        currentViewport?.handleDraw()
+        val viewport = currentViewport
+        if (viewport == null) {
+            pendingDrawCalls++
+        } else {
+            viewport.handleDraw()
+        }
     }
 
     /**
@@ -263,6 +282,10 @@ internal class CanvasInProgressStrokesRenderHelperV33(
         val newViewport = Viewport(newBounds)
         currentViewport = newViewport
         newViewport.init()
+        if (oldViewport == null) {
+            // If any calls to requestDraw came in before there was a viewport, process them now.
+            renderThreadExecutor.execute(processPendingDrawCallsRenderThreadRunnable)
+        }
     }
 
     @UiThread
@@ -366,6 +389,16 @@ internal class CanvasInProgressStrokesRenderHelperV33(
             onInactiveBufferHidden()
         }
 
+        private val processPendingDraws = Runnable {
+            assertOnRenderThread()
+            if (discarded.get()) return@Runnable
+            if (renderThreadState.drawsPending > 0) {
+                // Just kick off one handleDraw, and it will trigger the rest.
+                renderThreadState.drawsPending--
+                handleDraw()
+            }
+        }
+
         @UiThread
         fun init() {
             assertOnUiThread()
@@ -406,6 +439,12 @@ internal class CanvasInProgressStrokesRenderHelperV33(
                                             inactiveIsReady = true,
                                         )
                                     buffersState.checkAndSet(expectedValue = null, newState)
+                                    // Some draws might have been interrupted by buffersState not
+                                    // being set yet, so
+                                    // give them a chance to kick off if pending. That state is
+                                    // managed by the render
+                                    // thread.
+                                    renderThreadExecutor.execute(processPendingDraws)
                                     SurfaceControlCompat.Transaction()
                                         .setAndShow(newState.active, buffer1, initialRenderFence1)
                                         .setAndShow(newState.inactive, buffer2, initialRenderFence2)
@@ -468,7 +507,7 @@ internal class CanvasInProgressStrokesRenderHelperV33(
                 ) {
                     DESIRED_USAGE_FLAGS
                 } else {
-                    BASE_USAGE_FLAGS
+                    ALTERNATE_USAGE_FLAGS
                 }
             return CanvasBufferedRenderer.Builder(bounds.bufferWidth, bounds.bufferHeight)
                 .setMaxBuffers(1)
@@ -997,7 +1036,21 @@ internal class CanvasInProgressStrokesRenderHelperV33(
             HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE or
                 HardwareBuffer.USAGE_GPU_COLOR_OUTPUT or
                 HardwareBuffer.USAGE_COMPOSER_OVERLAY
+
+        /**
+         * The preferred flags to pass to [HardwareBuffer.create] for best performance. If not
+         * supported, use [ALTERNATE_USAGE_FLAGS] instead.
+         */
         private const val DESIRED_USAGE_FLAGS =
             HardwareBuffer.USAGE_FRONT_BUFFER or BASE_USAGE_FLAGS
+
+        /**
+         * The flags passed to [HardwareBuffer.create] if [DESIRED_USAGE_FLAGS] are not supported.
+         *
+         * This fallback prevents ARM frame buffer compression from causing visual artifacts on
+         * certain devices like Samsung Galaxy Tab S6 Lite. See b/365131024 for more information.
+         */
+        private const val ALTERNATE_USAGE_FLAGS =
+            HardwareBuffer.USAGE_CPU_WRITE_OFTEN or BASE_USAGE_FLAGS
     }
 }

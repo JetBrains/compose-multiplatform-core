@@ -79,7 +79,11 @@ private constructor(
     companion object {
         fun createFor(classLoader: ClassLoader): ActivityHolderProxyFactory {
             val activityHolderClass =
-                Class.forName(ActivityHolder::class.java.name, /* initialize= */ false, classLoader)
+                Class.forName(
+                    "androidx.privacysandbox.sdkruntime.core.activity.ActivityHolder",
+                    /* initialize= */ false,
+                    classLoader
+                )
 
             val lifecycleRegistryProxyFactory = LifecycleRegistryProxyFactory.createFor(classLoader)
             val backPressedDispatcherProxyFactory =

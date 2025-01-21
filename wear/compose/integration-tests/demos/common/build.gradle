@@ -30,9 +30,9 @@ dependencies {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
     defaultConfig {
-        minSdkVersion 25
+        minSdk = 25
     }
-    namespace "androidx.wear.compose.integration.demos.common"
+    namespace = "androidx.wear.compose.integration.demos.common"
 }

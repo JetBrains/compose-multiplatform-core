@@ -288,14 +288,4 @@
         <location
             file="src/main/java/androidx/biometric/BiometricManager.java"/>
     </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 35"
-        errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/biometric/CryptoObjectUtils.java"/>
-    </issue>
-
 </issues>

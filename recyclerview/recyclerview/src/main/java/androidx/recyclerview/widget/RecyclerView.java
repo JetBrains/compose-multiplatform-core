@@ -82,6 +82,7 @@ import androidx.core.view.MotionEventCompat;
 import androidx.core.view.NestedScrollingChild2;
 import androidx.core.view.NestedScrollingChild3;
 import androidx.core.view.NestedScrollingChildHelper;
+import androidx.core.view.ScrollFeedbackProviderCompat;
 import androidx.core.view.ScrollingView;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.ViewConfigurationCompat;
@@ -768,6 +769,11 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
     @VisibleForTesting
     DifferentialMotionFlingController mDifferentialMotionFlingController =
             new DifferentialMotionFlingController(getContext(), mDifferentialMotionFlingTarget);
+
+    @VisibleForTesting
+    @Nullable
+    ScrollFeedbackProviderCompat mScrollFeedbackProvider;
+
     public RecyclerView(@NonNull Context context) {
         this(context, null);
     }
@@ -2060,7 +2066,12 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
         final boolean canScrollHorizontal = mLayout.canScrollHorizontally();
         final boolean canScrollVertical = mLayout.canScrollVertically();
         if (canScrollHorizontal || canScrollVertical) {
-            scrollByInternal(canScrollHorizontal ? x : 0, canScrollVertical ? y : 0, null,
+            scrollByInternal(
+                    canScrollHorizontal ? x : 0,
+                    canScrollVertical ? y : 0,
+                    /* horizontalAxis= */ -1,
+                    /* verticalAxis= */ -1,
+                    /* ev= */ null,
                     TYPE_TOUCH);
         }
     }
@@ -2072,21 +2083,32 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
      * @see androidx.core.view.NestedScrollingChild
      */
     public void nestedScrollBy(int x, int y) {
-        nestedScrollByInternal(x, y, null, TYPE_NON_TOUCH);
+        nestedScrollByInternal(x, y, -1, -1, null, TYPE_NON_TOUCH);
     }
 
     /**
-     * Similar to {@link RecyclerView#scrollByInternal(int, int, MotionEvent, int)}, but fully
-     * participates in nested scrolling "end to end", meaning that it will start nested scrolling,
-     * participate in nested scrolling, and then end nested scrolling all within one call.
+     * Similar to {@link RecyclerView#scrollByInternal(int, int, int, int, MotionEvent, int)}, but
+     * fully participates in nested scrolling "end to end", meaning that it will start nested
+     * scrolling, participate in nested scrolling, and then end nested scrolling all within one
+     * call.
+     *
      * @param x The amount of horizontal scroll requested.
      * @param y The amount of vertical scroll requested.
+     * @param horizontalAxis the {@link MotionEvent} axis that caused the {@code x} scroll, or -1 if
+     *      not known.
+     * @param verticalAxis the {@link MotionEvent} axis that caused the {@code y} scroll, or -1 if
+     *      not known.
      * @param motionEvent The originating MotionEvent if any.
      * @param type The type of nested scrolling to engage in (TYPE_TOUCH or TYPE_NON_TOUCH).
      */
     @SuppressWarnings("SameParameterValue")
-    private void nestedScrollByInternal(int x, int y, @Nullable MotionEvent motionEvent, int type) {
-
+    private void nestedScrollByInternal(
+            int x,
+            int y,
+            int horizontalAxis,
+            int verticalAxis,
+            @Nullable MotionEvent motionEvent,
+            int type) {
         if (mLayout == null) {
             Log.e(TAG, "Cannot scroll without a LayoutManager set. "
                     + "Call setLayoutManager with a non-null argument.");
@@ -2126,6 +2148,8 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
         scrollByInternal(
                 canScrollHorizontal ? x : 0,
                 canScrollVertical ? y : 0,
+                horizontalAxis,
+                verticalAxis,
                 motionEvent, type);
         if (mGapWorker != null && (x != 0 || y != 0)) {
             mGapWorker.postFromTraversal(this, x, y);
@@ -2243,11 +2267,21 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
      *
      * @param x  The amount of horizontal scroll request
      * @param y  The amount of vertical scroll request
-     * @param ev The originating MotionEvent, or null if not from a touch event.
+     * @param horizontalAxis the {@link MotionEvent} axis that caused the {@code x} scroll, or -1 if
+     *      not known.
+     * @param verticalAxis the {@link MotionEvent} axis that caused the {@code y} scroll, or -1 if
+     *      not known.
+     * @param ev The originating MotionEvent, or null if unknown.
      * @param type NestedScrollType, TOUCH or NON_TOUCH.
      * @return Whether any scroll was consumed in either direction.
      */
-    boolean scrollByInternal(int x, int y, MotionEvent ev, int type) {
+    boolean scrollByInternal(
+            int x,
+            int y,
+            int horizontalAxis,
+            int verticalAxis,
+            @Nullable MotionEvent ev,
+            int type) {
         int unconsumedX = 0;
         int unconsumedY = 0;
         int consumedX = 0;
@@ -2281,9 +2315,21 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
         mNestedOffsets[0] += mScrollOffset[0];
         mNestedOffsets[1] += mScrollOffset[1];
 
+        if (ev != null) {
+            if (consumedX != 0) {
+                getScrollFeedbackProvider().onScrollProgress(
+                        ev.getDeviceId(), ev.getSource(), horizontalAxis, consumedX);
+            }
+            if (consumedY != 0) {
+                getScrollFeedbackProvider().onScrollProgress(
+                        ev.getDeviceId(), ev.getSource(), verticalAxis, consumedY);
+            }
+        }
+
         if (getOverScrollMode() != View.OVER_SCROLL_NEVER) {
             if (ev != null && !MotionEventCompat.isFromSource(ev, InputDevice.SOURCE_MOUSE)) {
-                pullGlows(ev.getX(), unconsumedX, ev.getY(), unconsumedY);
+                pullGlows(ev, ev.getX(), horizontalAxis, unconsumedX, ev.getY(), verticalAxis,
+                        unconsumedY);
                 // For rotary encoders, we release stretch EdgeEffects after they are pulled, to
                 // avoid the effects being stuck pulled.
                 if (Build.VERSION.SDK_INT >= 31
@@ -3061,27 +3107,50 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
     /**
      * Apply a pull to relevant overscroll glow effects
      */
-    private void pullGlows(float x, float overscrollX, float y, float overscrollY) {
+    private void pullGlows(
+            MotionEvent ev,
+            float x,
+            int horizontalAxis,
+            float overscrollX,
+            float y,
+            int verticalAxis,
+            float overscrollY) {
         boolean invalidate = false;
         if (overscrollX < 0) {
             ensureLeftGlow();
             EdgeEffectCompat.onPullDistance(mLeftGlow, -overscrollX / getWidth(),
                     1f - y / getHeight());
+            if (ev != null) {
+                getScrollFeedbackProvider().onScrollLimit(
+                        ev.getDeviceId(), ev.getSource(), horizontalAxis, /* isStart= */ true);
+            }
             invalidate = true;
         } else if (overscrollX > 0) {
             ensureRightGlow();
             EdgeEffectCompat.onPullDistance(mRightGlow, overscrollX / getWidth(), y / getHeight());
+            if (ev != null) {
+                getScrollFeedbackProvider().onScrollLimit(
+                        ev.getDeviceId(), ev.getSource(), horizontalAxis, /* isStart= */ false);
+            }
             invalidate = true;
         }
 
         if (overscrollY < 0) {
             ensureTopGlow();
             EdgeEffectCompat.onPullDistance(mTopGlow, -overscrollY / getHeight(), x / getWidth());
+            if (ev != null) {
+                getScrollFeedbackProvider().onScrollLimit(
+                        ev.getDeviceId(), ev.getSource(), verticalAxis, /* isStart= */ true);
+            }
             invalidate = true;
         } else if (overscrollY > 0) {
             ensureBottomGlow();
             EdgeEffectCompat.onPullDistance(mBottomGlow, overscrollY / getHeight(),
                     1f - x / getWidth());
+            if (ev != null) {
+                getScrollFeedbackProvider().onScrollLimit(
+                        ev.getDeviceId(), ev.getSource(), verticalAxis, /* isStart= */ false);
+            }
             invalidate = true;
         }
 
@@ -3969,6 +4038,8 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
                     if (scrollByInternal(
                             canScrollHorizontally ? dx : 0,
                             canScrollVertically ? dy : 0,
+                            MotionEvent.AXIS_X,
+                            MotionEvent.AXIS_Y,
                             e, TYPE_TOUCH)) {
                         getParent().requestDisallowInterceptTouchEvent(true);
                     }
@@ -4047,6 +4118,8 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
         }
 
         int flingAxis = 0;
+        int horizontalAxis = 0;
+        int verticalAxis = 0;
         boolean useSmoothScroll = false;
         if (event.getAction() == MotionEvent.ACTION_SCROLL) {
             final float vScroll, hScroll;
@@ -4055,11 +4128,13 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
                     // Inverse the sign of the vertical scroll to align the scroll orientation
                     // with AbsListView.
                     vScroll = -event.getAxisValue(MotionEvent.AXIS_VSCROLL);
+                    verticalAxis = MotionEvent.AXIS_VSCROLL;
                 } else {
                     vScroll = 0f;
                 }
                 if (mLayout.canScrollHorizontally()) {
                     hScroll = event.getAxisValue(MotionEvent.AXIS_HSCROLL);
+                    horizontalAxis = MotionEvent.AXIS_HSCROLL;
                 } else {
                     hScroll = 0f;
                 }
@@ -4069,10 +4144,12 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
                     // Invert the sign of the vertical scroll to align the scroll orientation
                     // with AbsListView.
                     vScroll = -axisScroll;
+                    verticalAxis = MotionEvent.AXIS_SCROLL;
                     hScroll = 0f;
                 } else if (mLayout.canScrollHorizontally()) {
                     vScroll = 0f;
                     hScroll = axisScroll;
+                    horizontalAxis = MotionEvent.AXIS_SCROLL;
                 } else {
                     vScroll = 0f;
                     hScroll = 0f;
@@ -4097,7 +4174,8 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
                 smoothScrollBy(scaledHScroll, scaledVScroll, /* interpolator= */ null,
                         UNDEFINED_DURATION, /* withNestedScrolling= */ true);
             } else {
-                nestedScrollByInternal(scaledHScroll, scaledVScroll, event, TYPE_NON_TOUCH);
+                nestedScrollByInternal(scaledHScroll, scaledVScroll, horizontalAxis,
+                        verticalAxis, event, TYPE_NON_TOUCH);
             }
 
             if (flingAxis != 0 && !useSmoothScroll) {
@@ -14643,6 +14721,13 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
             mScrollingChildHelper = new NestedScrollingChildHelper(this);
         }
         return mScrollingChildHelper;
+    }
+
+    private ScrollFeedbackProviderCompat getScrollFeedbackProvider() {
+        if (mScrollFeedbackProvider == null) {
+            mScrollFeedbackProvider = ScrollFeedbackProviderCompat.createProvider(this);
+        }
+        return mScrollFeedbackProvider;
     }
 
     @RequiresApi(35)

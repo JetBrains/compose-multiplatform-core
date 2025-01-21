@@ -38,7 +38,7 @@ android {
         enable 'CameraXQuirksClassDetector'
     }
 
-    namespace "androidx.camera.extensions.impl"
+    namespace = "androidx.camera.extensions.impl"
 }
 
 androidx {

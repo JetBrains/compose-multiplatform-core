@@ -21,8 +21,6 @@ import static com.google.common.truth.Truth.assertThat;
 import android.content.Intent;
 import android.os.IBinder;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.wear.protolayout.ResourceBuilders;
@@ -30,6 +28,8 @@ import androidx.wear.protolayout.ResourceBuilders;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -71,27 +71,24 @@ public class CompositeTileUpdateRequesterTest {
     }
 
     private static class FakeService extends TileService {
-        @NonNull
         @Override
-        protected ListenableFuture<TileBuilders.Tile> onTileRequest(
-                @NonNull RequestBuilders.TileRequest requestParams) {
+        protected @NonNull ListenableFuture<TileBuilders.Tile> onTileRequest(
+                RequestBuilders.@NonNull TileRequest requestParams) {
             ResolvableFuture<TileBuilders.Tile> f = ResolvableFuture.create();
             f.set(null);
             return f;
         }
 
-        @NonNull
         @Override
-        protected ListenableFuture<ResourceBuilders.Resources> onTileResourcesRequest(
-                @NonNull RequestBuilders.ResourcesRequest requestParams) {
+        protected @NonNull ListenableFuture<ResourceBuilders.Resources> onTileResourcesRequest(
+                RequestBuilders.@NonNull ResourcesRequest requestParams) {
             ResolvableFuture<ResourceBuilders.Resources> f = ResolvableFuture.create();
             f.set(null);
             return f;
         }
 
-        @Nullable
         @Override
-        public IBinder onBind(Intent intent) {
+        public @Nullable IBinder onBind(Intent intent) {
             return null;
         }
     }

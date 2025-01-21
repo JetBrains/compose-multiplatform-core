@@ -25,6 +25,7 @@ import androidx.benchmark.macro.Metric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.testutils.createCompilationParams
 import androidx.wear.compose.material3.macrobenchmark.common.MacrobenchmarkScreen
+import androidx.wear.compose.material3.macrobenchmark.metric.FrameCostMetric
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -38,6 +39,7 @@ abstract class BenchmarkTestBase(
     private val compilationMode: CompilationMode,
     private val metrics: List<Metric> =
         listOf(
+            FrameCostMetric(),
             FrameTimingGfxInfoMetric(),
             MemoryUsageMetric(MemoryUsageMetric.Mode.Last),
         ),

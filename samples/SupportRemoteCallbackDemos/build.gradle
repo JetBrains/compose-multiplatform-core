@@ -27,8 +27,8 @@ dependencies {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
     defaultConfig {
     }
-    namespace "com.example.androidx.remotecallback.demos"
+    namespace = "com.example.androidx.remotecallback.demos"
 }

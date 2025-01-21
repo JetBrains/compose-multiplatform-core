@@ -16,6 +16,7 @@
 
 package androidx.room.compiler.codegen.kotlin
 
+import androidx.room.compiler.codegen.KFunSpec
 import androidx.room.compiler.codegen.KTypeSpecBuilder
 import androidx.room.compiler.codegen.VisibilityModifier
 import androidx.room.compiler.codegen.XAnnotationSpec
@@ -75,9 +76,27 @@ internal class KotlinTypeSpec(internal val actual: KTypeSpec) : XSpec(), XTypeSp
 
         override fun setPrimaryConstructor(functionSpec: XFunSpec) = apply {
             require(functionSpec is XFunSpecImpl)
-            actual.primaryConstructor(functionSpec.kotlin.actual)
-            functionSpec.kotlin.actual.delegateConstructorArguments.forEach {
-                actual.addSuperclassConstructorParameter(it)
+            if (
+                functionSpec.kotlin.actual.delegateConstructor != null ||
+                    functionSpec.kotlin.actual.delegateConstructorArguments.isNotEmpty()
+            ) {
+                // If ctor has super call, create a new spec without the super call as
+                // KotlinPoet disallows it and instead add the super params to the type spec.
+                // See https://github.com/square/kotlinpoet/pull/1859
+                val currentSpec = functionSpec.kotlin.actual
+                val newSpec =
+                    KFunSpec.constructorBuilder()
+                        .addModifiers(currentSpec.modifiers)
+                        .addAnnotations(currentSpec.annotations)
+                        .addParameters(currentSpec.parameters)
+                        .addCode(currentSpec.body)
+                        .build()
+                actual.primaryConstructor(newSpec)
+                currentSpec.delegateConstructorArguments.forEach {
+                    actual.addSuperclassConstructorParameter(it)
+                }
+            } else {
+                actual.primaryConstructor(functionSpec.kotlin.actual)
             }
         }
 

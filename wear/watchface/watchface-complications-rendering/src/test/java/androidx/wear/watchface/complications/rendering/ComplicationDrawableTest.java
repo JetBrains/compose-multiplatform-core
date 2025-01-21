@@ -46,7 +46,6 @@ import android.support.wearable.complications.ComplicationData;
 import android.support.wearable.complications.ComplicationText;
 import android.view.SurfaceHolder;
 
-import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.wear.watchface.CanvasType;
 import androidx.wear.watchface.ComplicationHelperActivity;
@@ -63,6 +62,7 @@ import androidx.wear.watchface.style.CurrentUserStyleRepository;
 import kotlin.coroutines.Continuation;
 
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;

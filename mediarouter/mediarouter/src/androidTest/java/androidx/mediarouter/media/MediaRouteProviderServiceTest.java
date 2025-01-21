@@ -25,7 +25,6 @@ import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -34,11 +33,12 @@ import android.os.Message;
 import android.os.Messenger;
 import android.text.TextUtils;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.mediarouter.media.MediaRouteProviderService.ClientInfo;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
-import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 import androidx.test.rule.ServiceTestRule;
 
@@ -70,8 +70,8 @@ public class MediaRouteProviderServiceTest {
     private static final String FAKE_MEDIA_ROUTE_NAME_4 = "fakeMediaRouteName4";
     private static final long TIME_OUT_MS = 3000;
 
-    @Rule
-    public final ServiceTestRule mServiceRule = new ServiceTestRule();
+    @Rule public final ServiceTestRule mServiceRule = new ServiceTestRule();
+
     private IBinder mService;
     private Messenger mServiceMessenger;
     private Messenger mReceiveMessenger1;
@@ -83,8 +83,10 @@ public class MediaRouteProviderServiceTest {
     private static CountDownLatch sPassiveScanCountDownLatch;
     private static CountDownLatch sClientInfoListenerAdditionCountDownLatch;
     private static CountDownLatch sClientInfoListenerRemovalCountDownLatch;
+    private static CountDownLatch sRouteCreationCountDownLatch;
     private static MediaRouteDiscoveryRequest sLastDiscoveryRequest;
     private static List<ClientInfo> sLatestClientInfo = new ArrayList<>();
+    private static MediaRouteProvider.RouteControllerOptions sRouteControllerOptions;
 
     @Before
     public void setUp() throws Exception {
@@ -99,12 +101,15 @@ public class MediaRouteProviderServiceTest {
         mServiceMessenger = new Messenger(mService);
         mReceiveMessenger1 = new Messenger(new Handler(Looper.getMainLooper()));
         mReceiveMessenger2 = new Messenger(new Handler(Looper.getMainLooper()));
-        mSelector = new MediaRouteSelector.Builder()
-                .addControlCategory(MediaControlIntent.CATEGORY_LIVE_VIDEO).build();
+        mSelector =
+                new MediaRouteSelector.Builder()
+                        .addControlCategory(MediaControlIntent.CATEGORY_LIVE_VIDEO)
+                        .build();
         registerClient(mReceiveMessenger1);
         registerClient(mReceiveMessenger2);
-        assertTrue(sClientInfoListenerAdditionCountDownLatch.await(
-                TIME_OUT_MS, TimeUnit.MILLISECONDS));
+        assertTrue(
+                sClientInfoListenerAdditionCountDownLatch.await(
+                        TIME_OUT_MS, TimeUnit.MILLISECONDS));
     }
 
     @After
@@ -113,21 +118,13 @@ public class MediaRouteProviderServiceTest {
         unregisterClient(mReceiveMessenger2);
         mServiceRule.unbindService();
         sLastDiscoveryRequest = null;
+        sRouteControllerOptions = null;
     }
 
     @Test
     @SmallTest
-    public void testCreateDescriptorBundleForClientVersion() {
-        MediaRouteProviderDescriptor.Builder builder = new MediaRouteProviderDescriptor.Builder();
-        builder.addRoute(new MediaRouteDescriptor.Builder(FAKE_MEDIA_ROUTE_ID_1,
-                FAKE_MEDIA_ROUTE_NAME_1).setMaxClientVersion(15).setMinClientVersion(10).build());
-        builder.addRoute(new MediaRouteDescriptor.Builder(FAKE_MEDIA_ROUTE_ID_2,
-                FAKE_MEDIA_ROUTE_NAME_2).setMaxClientVersion(18).setMinClientVersion(11).build());
-        builder.addRoute(new MediaRouteDescriptor.Builder(FAKE_MEDIA_ROUTE_ID_3,
-                FAKE_MEDIA_ROUTE_NAME_3).setMaxClientVersion(25).setMinClientVersion(16).build());
-        builder.addRoute(new MediaRouteDescriptor.Builder(FAKE_MEDIA_ROUTE_ID_4,
-                FAKE_MEDIA_ROUTE_NAME_4).setMaxClientVersion(12).setMinClientVersion(4).build());
-        MediaRouteProviderDescriptor descriptor = builder.build();
+    public void createDescriptorBundleForClientVersion() {
+        MediaRouteProviderDescriptor descriptor = createMediaRouteProviderDescriptor();
 
         Bundle bundle = MediaRouteProviderService
                 .createDescriptorBundleForClientVersion(descriptor, 3);
@@ -194,8 +191,7 @@ public class MediaRouteProviderServiceTest {
 
     @LargeTest
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
-    public void setEmptyPassiveDiscoveryRequest_shouldNotScan() throws Exception {
+    public void testSetEmptyPassiveDiscoveryRequest_shouldNotRequestScan() throws Exception {
         sendDiscoveryRequest(
                 mReceiveMessenger1,
                 new MediaRouteDiscoveryRequest(MediaRouteSelector.EMPTY, false));
@@ -207,10 +203,11 @@ public class MediaRouteProviderServiceTest {
 
     @LargeTest
     @Test
-    public void testSetEmptyActiveDiscoveryRequest_shouldRequestScan() throws Exception {
+    public void setEmptyActiveDiscoveryRequest_shouldRequestScan() throws Exception {
         resetActiveAndPassiveScanCountDownLatches();
-        sendDiscoveryRequest(mReceiveMessenger1,
-                new MediaRouteDiscoveryRequest(MediaRouteSelector.EMPTY, true));
+        sendDiscoveryRequest(
+                mReceiveMessenger1,
+                new MediaRouteDiscoveryRequest(mSelector, /* activeScan= */ true));
 
         assertTrue(sActiveScanCountDownLatch.await(TIME_OUT_MS, TimeUnit.MILLISECONDS));
     }
@@ -220,15 +217,18 @@ public class MediaRouteProviderServiceTest {
     public void testRequestActiveScan_suppressActiveScanAfter30Seconds() throws Exception {
         // Request active discovery.
         resetActiveAndPassiveScanCountDownLatches();
-        sendDiscoveryRequest(mReceiveMessenger1, new MediaRouteDiscoveryRequest(mSelector, true));
+        sendDiscoveryRequest(
+                mReceiveMessenger1,
+                new MediaRouteDiscoveryRequest(mSelector, /* activeScane= */ true));
 
         // Active scan should be true.
         assertTrue(sActiveScanCountDownLatch.await(TIME_OUT_MS, TimeUnit.MILLISECONDS));
 
         // Right before active scan duration passes, active scan flag should still be true.
         resetActiveAndPassiveScanCountDownLatches();
-        assertFalse(sPassiveScanCountDownLatch.await(
-                MAX_ACTIVE_SCAN_DURATION_MS - 1000, TimeUnit.MILLISECONDS));
+        assertFalse(
+                sPassiveScanCountDownLatch.await(
+                        MAX_ACTIVE_SCAN_DURATION_MS - 1000, TimeUnit.MILLISECONDS));
 
         // After active scan duration passed, active scan flag should be false.
         resetActiveAndPassiveScanCountDownLatches();
@@ -244,8 +244,9 @@ public class MediaRouteProviderServiceTest {
 
         // Right before active scan duration passes, active scan flag should still be true.
         resetActiveAndPassiveScanCountDownLatches();
-        assertFalse(sPassiveScanCountDownLatch.await(
-                MAX_ACTIVE_SCAN_DURATION_MS - 1000, TimeUnit.MILLISECONDS));
+        assertFalse(
+                sPassiveScanCountDownLatch.await(
+                        MAX_ACTIVE_SCAN_DURATION_MS - 1000, TimeUnit.MILLISECONDS));
 
         // After active scan duration passed, active scan flag should be false.
         resetActiveAndPassiveScanCountDownLatches();
@@ -268,8 +269,9 @@ public class MediaRouteProviderServiceTest {
 
         // Right before the last client times out, active scan flag should still be true.
         resetActiveAndPassiveScanCountDownLatches();
-        assertFalse(sActiveScanCountDownLatch.await(
-                MAX_ACTIVE_SCAN_DURATION_MS - 1000, TimeUnit.MILLISECONDS));
+        assertFalse(
+                sActiveScanCountDownLatch.await(
+                        MAX_ACTIVE_SCAN_DURATION_MS - 1000, TimeUnit.MILLISECONDS));
 
         // Right after the active scan duration passed, active scan flag should be false.
         resetActiveAndPassiveScanCountDownLatches();
@@ -291,14 +293,45 @@ public class MediaRouteProviderServiceTest {
         assertEquals(1, sLatestClientInfo.size() - initialCount);
         Context context = ApplicationProvider.getApplicationContext();
         for (ClientInfo clientInfo : sLatestClientInfo) {
-            assertTrue(TextUtils.equals(
-                    context.getPackageName(), clientInfo.getPackageName()));
+            assertTrue(TextUtils.equals(context.getPackageName(), clientInfo.getPackageName()));
         }
 
         unregisterClient(messenger);
         assertTrue(
                 sClientInfoListenerRemovalCountDownLatch.await(TIME_OUT_MS, TimeUnit.MILLISECONDS));
         assertEquals(initialCount, sLatestClientInfo.size());
+    }
+
+    @LargeTest
+    @Test
+    public void onCreateDynamicGroupRouteController_shouldProvideRouteControllerOptions()
+            throws Exception {
+        sRouteCreationCountDownLatch = new CountDownLatch(1);
+        // Request active discovery.
+        resetActiveAndPassiveScanCountDownLatches();
+        sendDiscoveryRequest(
+                mReceiveMessenger1,
+                new MediaRouteDiscoveryRequest(mSelector, /* activeScan= */ true));
+
+        // Active scan should be true.
+        assertTrue(sActiveScanCountDownLatch.await(TIME_OUT_MS, TimeUnit.MILLISECONDS));
+
+        final String key = "key";
+        final String value = "value";
+        Bundle controlHints = new Bundle();
+        controlHints.putString(key, value);
+        MediaRouteProvider.RouteControllerOptions routeControllerOptions =
+                new MediaRouteProvider.RouteControllerOptions.Builder()
+                        .setControlHints(controlHints)
+                        .build();
+
+        sendCreateDynamicGroupRouteController(
+                mReceiveMessenger1, FAKE_MEDIA_ROUTE_ID_1, routeControllerOptions);
+
+        // A dynamic group route controller is created.
+        assertTrue(sRouteCreationCountDownLatch.await(TIME_OUT_MS, TimeUnit.MILLISECONDS));
+
+        assertEquals(value, sRouteControllerOptions.getControlHints().getString(key));
     }
 
     private void registerClient(Messenger receiveMessenger) throws Exception {
@@ -319,8 +352,8 @@ public class MediaRouteProviderServiceTest {
         mServiceMessenger.send(msg);
     }
 
-    private void sendDiscoveryRequest(Messenger receiveMessenger,
-            MediaRouteDiscoveryRequest request) throws Exception {
+    private void sendDiscoveryRequest(
+            Messenger receiveMessenger, MediaRouteDiscoveryRequest request) throws Exception {
         Message msg = Message.obtain();
         msg.what = MediaRouteProviderProtocol.CLIENT_MSG_SET_DISCOVERY_REQUEST;
         msg.arg1 = mRequestId++;
@@ -330,23 +363,50 @@ public class MediaRouteProviderServiceTest {
         mServiceMessenger.send(msg);
     }
 
+    private void sendCreateDynamicGroupRouteController(
+            Messenger receiveMessenger,
+            String routeId,
+            MediaRouteProvider.RouteControllerOptions routeControllerOptions)
+            throws Exception {
+        Bundle data = new Bundle();
+        data.putString(MediaRouteProviderProtocol.CLIENT_DATA_MEMBER_ROUTE_ID, routeId);
+        data.putParcelable(
+                MediaRouteProviderProtocol.CLIENT_DATA_ROUTE_CONTROLLER_OPTIONS,
+                routeControllerOptions.asBundle());
+
+        Message msg = Message.obtain();
+        msg.what = MediaRouteProviderProtocol.CLIENT_MSG_CREATE_DYNAMIC_GROUP_ROUTE_CONTROLLER;
+        msg.arg1 = mRequestId++;
+        msg.setData(data);
+        msg.replyTo = receiveMessenger;
+
+        mServiceMessenger.send(msg);
+    }
+
     /** Fake {@link MediaRouteProviderService} implementation. */
     public static final class MediaRouteProviderServiceImpl extends MediaRouteProviderService {
-
         @Override
         public void onCreate() {
             super.onCreate();
+            if (sClientInfoListenerAdditionCountDownLatch == null
+                    || sClientInfoListenerRemovalCountDownLatch == null) {
+                // This test resets both CountDownLatches to non-null at the test setup. If they are
+                // null, then the onCreate comes from other tests.
+                return;
+            }
             sLatestClientInfo.clear();
-            addClientInfoListener(Executors.newSingleThreadExecutor(), clients -> {
-                int previousSize = sLatestClientInfo.size();
-                int newSize = clients.size();
-                sLatestClientInfo = clients;
-                if (newSize > previousSize) {
-                    sClientInfoListenerAdditionCountDownLatch.countDown();
-                } else if (previousSize > newSize) {
-                    sClientInfoListenerRemovalCountDownLatch.countDown();
-                }
-            });
+            addClientInfoListener(
+                    Executors.newSingleThreadExecutor(),
+                    clients -> {
+                        int previousSize = sLatestClientInfo.size();
+                        int newSize = clients.size();
+                        sLatestClientInfo = clients;
+                        if (newSize > previousSize) {
+                            sClientInfoListenerAdditionCountDownLatch.countDown();
+                        } else if (previousSize > newSize) {
+                            sClientInfoListenerRemovalCountDownLatch.countDown();
+                        }
+                    });
         }
 
         @Override
@@ -363,19 +423,63 @@ public class MediaRouteProviderServiceTest {
 
         @Override
         public void onDiscoveryRequestChanged(MediaRouteDiscoveryRequest discoveryRequest) {
+            if (sActiveScanCountDownLatch == null || sPassiveScanCountDownLatch == null) {
+                // This test resets both active and passive scan CountDownLatch to non-null at the
+                // test setup. If they are null, then the discovery request comes from other tests.
+                return;
+            }
             boolean wasActiveScan =
                     (sLastDiscoveryRequest != null) ? sLastDiscoveryRequest.isActiveScan() : false;
             boolean isActiveScan =
                     (discoveryRequest != null) ? discoveryRequest.isActiveScan() : false;
             if (wasActiveScan != isActiveScan) {
                 if (isActiveScan) {
+                    setDescriptor(createMediaRouteProviderDescriptor());
                     sActiveScanCountDownLatch.countDown();
                 } else {
+                    MediaRouteProviderDescriptor emptyDescriptor =
+                            new MediaRouteProviderDescriptor.Builder().build();
+                    setDescriptor(emptyDescriptor);
                     sPassiveScanCountDownLatch.countDown();
                 }
             }
             sLastDiscoveryRequest = discoveryRequest;
         }
+
+        @Override
+        @Nullable
+        public DynamicGroupRouteController onCreateDynamicGroupRouteController(
+                @NonNull String initialMemberRouteId,
+                @NonNull RouteControllerOptions routeControllerOptions) {
+            sRouteControllerOptions = routeControllerOptions;
+            sRouteCreationCountDownLatch.countDown();
+            return null;
+        }
+    }
+
+    private static MediaRouteProviderDescriptor createMediaRouteProviderDescriptor() {
+        MediaRouteProviderDescriptor.Builder builder = new MediaRouteProviderDescriptor.Builder();
+        builder.addRoute(
+                new MediaRouteDescriptor.Builder(FAKE_MEDIA_ROUTE_ID_1, FAKE_MEDIA_ROUTE_NAME_1)
+                        .setMaxClientVersion(15)
+                        .setMinClientVersion(10)
+                        .build());
+        builder.addRoute(
+                new MediaRouteDescriptor.Builder(FAKE_MEDIA_ROUTE_ID_2, FAKE_MEDIA_ROUTE_NAME_2)
+                        .setMaxClientVersion(18)
+                        .setMinClientVersion(11)
+                        .build());
+        builder.addRoute(
+                new MediaRouteDescriptor.Builder(FAKE_MEDIA_ROUTE_ID_3, FAKE_MEDIA_ROUTE_NAME_3)
+                        .setMaxClientVersion(25)
+                        .setMinClientVersion(16)
+                        .build());
+        builder.addRoute(
+                new MediaRouteDescriptor.Builder(FAKE_MEDIA_ROUTE_ID_4, FAKE_MEDIA_ROUTE_NAME_4)
+                        .setMaxClientVersion(12)
+                        .setMinClientVersion(4)
+                        .build());
+        return builder.build();
     }
 
     private void resetActiveAndPassiveScanCountDownLatches() {

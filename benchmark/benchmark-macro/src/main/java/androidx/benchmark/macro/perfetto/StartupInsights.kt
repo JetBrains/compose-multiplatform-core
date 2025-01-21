@@ -20,20 +20,34 @@ import androidx.benchmark.Insight
 import androidx.benchmark.TraceDeepLink
 import androidx.benchmark.inMemoryTrace
 import androidx.benchmark.perfetto.PerfettoTraceProcessor
-import androidx.benchmark.perfetto.Row
 import perfetto.protos.AndroidStartupMetric.SlowStartReason
 import perfetto.protos.AndroidStartupMetric.ThresholdValue.ThresholdUnit
 import perfetto.protos.TraceMetrics
+
+private fun SlowStartReason.getDeepLinkSelectionParams(
+    packageName: String
+): TraceDeepLink.SelectionParams {
+    return TraceDeepLink.StartupSelectionParams(
+        packageName = packageName,
+        // TODO: Populate from SlowStartReason more elegantly
+        tid =
+            trace_thread_sections?.thread_section?.first()?.thread_tid
+                ?: trace_slice_sections?.slice_section?.first()?.thread_tid,
+        selectionStart = null, // TODO: Populate from SlowStartReason
+        selectionEnd = null, // TODO: Populate from SlowStartReason
+        reasonId = reason_id?.name
+    )
+}
 
 /**
  * Convert the SlowStartReason concept from Perfetto's android_startup metric to the Macrobenchmark
  * generic Insight format
  */
 private fun SlowStartReason.toInsight(
+    packageName: String,
     helpUrlBase: String?,
     traceOutputRelativePath: String,
     iterationIndex: Int,
-    defaultStartupInsightSelectionParams: TraceDeepLink.SelectionParams?
 ): Insight {
     val thresholdUnit = expected_value!!.unit!!
     val unitSuffix =
@@ -89,7 +103,7 @@ private fun SlowStartReason.toInsight(
         deepLink =
             TraceDeepLink(
                 outputRelativePath = traceOutputRelativePath,
-                selectionParams = defaultStartupInsightSelectionParams
+                selectionParams = getDeepLinkSelectionParams(packageName = packageName)
             ),
         iterationIndex = iterationIndex,
         category = category,
@@ -103,8 +117,6 @@ internal fun PerfettoTraceProcessor.Session.queryStartupInsights(
     packageName: String
 ): List<Insight> =
     inMemoryTrace("extract insights") {
-        val defaultStartupInsightSelectionParams =
-            extractStartupSliceSelectionParams(packageName = packageName)
         TraceMetrics.ADAPTER.decode(queryMetricsProtoBinary(listOf("android_startup")))
             .android_startup
             ?.startup
@@ -112,60 +124,10 @@ internal fun PerfettoTraceProcessor.Session.queryStartupInsights(
             ?.flatMap { it.slow_start_reason_with_details }
             ?.map {
                 it.toInsight(
+                    packageName = packageName,
                     helpUrlBase = helpUrlBase,
                     traceOutputRelativePath = traceOutputRelativePath,
-                    defaultStartupInsightSelectionParams = defaultStartupInsightSelectionParams,
                     iterationIndex = iteration
                 )
             } ?: emptyList()
     }
-
-/**
- * Construct's [TraceDeepLink.SelectionParams] based on the last `Startup` slice. Temporary hack
- * until we get this information directly from [SlowStartReason].
- *
- * TODO (b/377581661) remove, and instead construct deeplink from [SlowStartReason]
- */
-internal fun PerfettoTraceProcessor.Session.extractStartupSliceSelectionParams(
-    packageName: String
-): TraceDeepLink.SelectionParams? {
-    inMemoryTrace("extractStartupSliceSelectionParams") {
-        // note: not using utid, upid as not stable between trace processor releases
-        // also note: https://perfetto.dev/docs/analysis/sql-tables#process
-        // also note: https://perfetto.dev/docs/analysis/sql-tables#thread
-        val query =
-            """
-                    select
-                        process.pid as pid,
-                        thread.tid as tid,
-                        slice.ts,
-                        slice.dur,
-                        slice.name, -- left for debugging, can be removed
-                        process.name as process_name -- left for debugging, can be removed
-                    from slice
-                        join thread_track on thread_track.id = slice.track_id
-                        join thread using(utid)
-                        join process using(upid)
-                    where slice.name = 'Startup' and process.name like '${packageName}%'
-                    """
-                .trimIndent()
-
-        val events = query(query).toList()
-        if (events.isEmpty()) {
-            return null
-        } else {
-            val queryResult: Row = events.first()
-            return TraceDeepLink.SelectionParams(
-                pid = queryResult.long("pid"),
-                tid = queryResult.long("tid"),
-                ts = queryResult.long("ts"),
-                dur = queryResult.long("dur"),
-                // query belongs in the [SlowStartReason] object (to be added there)
-                // we can't do anything here now, so setting it to something that will test
-                // that we're handling Unicode correctly
-                // see: http://shortn/_yWn9yR2OHr
-                query = "SELECT 🐲\nFROM 🐉\nWHERE \ud83d\udc09.NAME = 'ハク'"
-            )
-        }
-    }
-}

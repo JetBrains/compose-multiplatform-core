@@ -215,15 +215,6 @@ constructor(
         @JvmField
         public val SPRING_MODEL: InputModel = SpringModel
 
-        /**
-         * The legacy spring-based input modeler, provided for backwards compatibility with existing
-         * Ink clients.
-         */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
-        @ExperimentalInkCustomBrushApi
-        @JvmField
-        public val LEGACY_SPRING_MODEL: InputModel = LegacySpringModel
-
         /** The default [InputModel] that will be used by a [BrushFamily] when none is specified. */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
         @ExperimentalInkCustomBrushApi
@@ -240,10 +231,6 @@ constructor(
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     @ExperimentalInkCustomBrushApi
     public abstract class InputModel internal constructor() {}
-
-    internal object LegacySpringModel : InputModel() {
-        override fun toString(): String = "LegacySpringModel"
-    }
 
     internal object SpringModel : InputModel() {
         override fun toString(): String = "SpringModel"

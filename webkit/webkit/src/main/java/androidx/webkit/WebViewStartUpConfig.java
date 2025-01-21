@@ -16,7 +16,7 @@
 
 package androidx.webkit;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -31,18 +31,36 @@ import java.util.concurrent.Executor;
 @WebViewCompat.ExperimentalAsyncStartUp
 public final class WebViewStartUpConfig {
     private final Executor mExecutor;
+    private final boolean mShouldRunUiThreadStartUpTasks;
 
-    private WebViewStartUpConfig(@NonNull Executor executor) {
+    private WebViewStartUpConfig(
+            @NonNull Executor executor, boolean shouldRunUiThreadStartUpTasks) {
         mExecutor = executor;
+        mShouldRunUiThreadStartUpTasks = shouldRunUiThreadStartUpTasks;
     }
 
     public @NonNull Executor getBackgroundExecutor() {
         return mExecutor;
     }
 
+    /**
+     * Whether to run only parts of startup that doesn't block the UI thread.
+     * <p>
+     * WebView startup tasks that are required to run on the UI thread are not attempted when
+     * {@link WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
+     * is called if set to {@code false}.
+     * <p>
+     * Defaults to `true`. If not set to `false`, UI thread startup tasks will be
+     * run.
+     */
+    public boolean shouldRunUiThreadStartUpTasks() {
+        return mShouldRunUiThreadStartUpTasks;
+    }
+
     @WebViewCompat.ExperimentalAsyncStartUp
     public static final class Builder {
         private final Executor mExecutor;
+        private boolean mShouldRunUiThreadStartUpTasks = true;
 
         /**
          * Builder for {@link WebViewStartUpConfig}.
@@ -52,7 +70,23 @@ public final class WebViewStartUpConfig {
          */
         public Builder(@NonNull Executor executor) {
             mExecutor = executor;
-        };
+        }
+
+        /**
+         * Setter to run only parts of startup that doesn't block the UI thread.
+         * <p>
+         * WebView startup tasks that are required to run on the UI thread are not attempted when
+         * {@link WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
+         * is called if set to {@code false}.
+         * <p>
+         * Defaults to `true`. If not set to `false`, UI thread startup tasks will be
+         * run.
+         */
+        public @NonNull Builder setShouldRunUiThreadStartUpTasks(
+                boolean shouldRunUiThreadStartUpTasks) {
+            mShouldRunUiThreadStartUpTasks = shouldRunUiThreadStartUpTasks;
+            return this;
+        }
 
         /**
          * Build and return a {@link WebViewStartUpConfig} object.
@@ -60,7 +94,7 @@ public final class WebViewStartUpConfig {
          * @return immutable {@link WebViewStartUpConfig} object.
          */
         public @NonNull WebViewStartUpConfig build() {
-            return new WebViewStartUpConfig(mExecutor);
+            return new WebViewStartUpConfig(mExecutor, mShouldRunUiThreadStartUpTasks);
         }
     }
 }

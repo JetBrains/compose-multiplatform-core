@@ -35,7 +35,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
-
 @SmallTest
 @RunWith(RobolectricTestRunner.class)
 public class PageSelectionValueObserverTest {

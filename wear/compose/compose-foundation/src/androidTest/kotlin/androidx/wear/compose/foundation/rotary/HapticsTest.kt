@@ -177,12 +177,14 @@ class HapticsTest {
                                         scrollableState,
                                         scrollFeedbackProvider
                                     ),
-                                rotaryFlingHandlerFactory = {
+                                rotaryFlingHandlerFactory = { inputDeviceId, initialTimestamp ->
                                     RotaryFlingHandler(
                                         scrollableState = scrollableState,
                                         flingBehavior = flingBehavior,
                                         viewConfiguration = viewConfiguration,
-                                        flingTimeframe = 20
+                                        flingTimeframe = 20,
+                                        inputDeviceId = inputDeviceId,
+                                        initialTimestamp = initialTimestamp
                                     )
                                 },
                                 scrollHandlerFactory = { RotaryScrollHandler(scrollableState) }

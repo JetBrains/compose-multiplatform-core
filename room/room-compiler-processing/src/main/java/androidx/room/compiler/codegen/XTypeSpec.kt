@@ -149,5 +149,19 @@ interface XTypeSpec {
                 ),
                 KotlinTypeSpec.Builder(KTypeSpec.companionObjectBuilder())
             )
+
+        @JvmStatic
+        fun objectBuilder(name: String): Builder =
+            XTypeSpecImpl.Builder(
+                JavaTypeSpec.Builder(JTypeSpec.classBuilder(name)),
+                KotlinTypeSpec.Builder(KTypeSpec.objectBuilder(name))
+            )
+
+        @JvmStatic
+        fun objectBuilder(className: XClassName): Builder =
+            XTypeSpecImpl.Builder(
+                JavaTypeSpec.Builder(JTypeSpec.classBuilder(className.java)),
+                KotlinTypeSpec.Builder(KTypeSpec.objectBuilder(className.kotlin))
+            )
     }
 }

@@ -41,4 +41,9 @@
         <package-name>androidx.privacysandbox.sdkruntime.testsdk.v6</package-name>
         <version-major>6</version-major>
     </runtime-enabled-sdk>
+    <runtime-enabled-sdk>
+        <compat-config-path>RuntimeEnabledSdks/v7.xml</compat-config-path>
+        <package-name>androidx.privacysandbox.sdkruntime.testsdk.v7</package-name>
+        <version-major>7</version-major>
+    </runtime-enabled-sdk>
 </runtime-enabled-sdk-table>

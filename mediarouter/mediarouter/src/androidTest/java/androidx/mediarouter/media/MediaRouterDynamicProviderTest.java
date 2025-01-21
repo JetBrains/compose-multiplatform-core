@@ -16,12 +16,18 @@
 
 package androidx.mediarouter.media;
 
+import static androidx.mediarouter.media.StubDynamicMediaRouteProviderService.ROUTE_ID_1;
+import static androidx.mediarouter.media.StubDynamicMediaRouteProviderService.ROUTE_ID_2;
 import static androidx.mediarouter.media.StubDynamicMediaRouteProviderService.ROUTE_ID_GROUP;
+import static androidx.mediarouter.media.StubDynamicMediaRouteProviderService.ROUTE_NAME_1;
+import static androidx.mediarouter.media.StubDynamicMediaRouteProviderService.ROUTE_NAME_2;
 import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
@@ -41,6 +47,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -53,17 +60,57 @@ import java.util.Set;
 @SmallTest
 public final class MediaRouterDynamicProviderTest {
 
+    private enum RouteConnectionState {
+        STATE_UNKNOWN,
+        STATE_CONNECTED,
+        STATE_DISCONNECTED
+    }
+
     private Context mContext;
     private MediaRouter mRouter;
+    private MediaRouteSelector mSelector;
+    private MediaRouterCallbackImpl mCallback;
+    private MediaRouter.RouteInfo mRoute1;
+    private MediaRouter.RouteInfo mRoute2;
+    private RouteConnectionState mRouteConnectionState;
+    private MediaRouter.RouteInfo mConnectedRoute;
+    private MediaRouter.RouteInfo mRequestedRoute;
+    private int mRouteDisconnectedReason;
 
     @Before
     public void setUp() {
+        mRouteConnectionState = RouteConnectionState.STATE_UNKNOWN;
+        mSelector =
+                new MediaRouteSelector.Builder()
+                        .addControlCategory(
+                                StubDynamicMediaRouteProviderService.CATEGORY_DYNAMIC_PROVIDER_TEST)
+                        .build();
+        mCallback = new MediaRouterCallbackImpl();
         getInstrumentation()
                 .runOnMainSync(
                         () -> {
                             mContext = getApplicationContext();
                             mRouter = MediaRouter.getInstance(mContext);
+                            mRouter.addCallback(
+                                    mSelector,
+                                    mCallback,
+                                    MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
                         });
+        Map<String, MediaRouter.RouteInfo> routeSnapshot =
+                mCallback.waitForRoutes(ROUTE_ID_1, ROUTE_ID_1);
+        mRoute1 = routeSnapshot.get(ROUTE_ID_1);
+        Objects.requireNonNull(mRoute1);
+        MediaRouteDescriptor mediaRouteDescriptor1 = mRoute1.getMediaRouteDescriptor();
+        Objects.requireNonNull(mediaRouteDescriptor1);
+        assertEquals(ROUTE_ID_1, mediaRouteDescriptor1.getId());
+        assertEquals(ROUTE_NAME_1, mediaRouteDescriptor1.getName());
+
+        mRoute2 = routeSnapshot.get(ROUTE_ID_2);
+        Objects.requireNonNull(mRoute2);
+        MediaRouteDescriptor mediaRouteDescriptor2 = mRoute2.getMediaRouteDescriptor();
+        Objects.requireNonNull(mediaRouteDescriptor2);
+        assertEquals(ROUTE_ID_2, mediaRouteDescriptor2.getId());
+        assertEquals(ROUTE_NAME_2, mediaRouteDescriptor2.getName());
     }
 
     @After
@@ -75,30 +122,73 @@ public final class MediaRouterDynamicProviderTest {
 
     @Test()
     public void selectDynamicRoute_doesNotMarkMemberAsSelected() {
-        MediaRouteSelector selector =
-                new MediaRouteSelector.Builder()
-                        .addControlCategory(
-                                StubDynamicMediaRouteProviderService.CATEGORY_DYNAMIC_PROVIDER_TEST)
-                        .build();
-        MediaRouterCallbackImpl callback = new MediaRouterCallbackImpl();
-        getInstrumentation()
-                .runOnMainSync(
-                        () ->
-                                mRouter.addCallback(
-                                        selector,
-                                        callback,
-                                        MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN));
-        Map<String, MediaRouter.RouteInfo> routeSnapshot =
-                callback.waitForRoutes(
-                        StubDynamicMediaRouteProviderService.ROUTE_ID_1,
-                        StubDynamicMediaRouteProviderService.ROUTE_ID_1);
-        MediaRouter.RouteInfo routeToSelect =
-                routeSnapshot.get(StubDynamicMediaRouteProviderService.ROUTE_ID_1);
-        Objects.requireNonNull(routeToSelect);
-        MediaRouter.RouteInfo newSelectedRoute = callback.selectAndWaitForOnSelected(routeToSelect);
+        MediaRouter.RouteInfo newSelectedRoute = mCallback.selectAndWaitForOnSelected(mRoute1);
+
         assertEquals(ROUTE_ID_GROUP, newSelectedRoute.getDescriptorId());
-        assertFalse(runBlockingOnMainThreadWithResult(routeToSelect::isSelected));
+        assertFalse(runBlockingOnMainThreadWithResult(mRoute1::isSelected));
         assertTrue(runBlockingOnMainThreadWithResult(newSelectedRoute::isSelected));
+    }
+
+    @Test()
+    public void connectDynamicRoute_shouldNotifyRouteConnected() {
+        assertEquals(RouteConnectionState.STATE_UNKNOWN, mRouteConnectionState);
+        List<MediaRouter.RouteInfo> connectedRoutes =
+                mCallback.connectAndWaitForOnConnected(mRoute2);
+
+        assertNotNull(mConnectedRoute);
+        assertEquals(ROUTE_ID_GROUP, mConnectedRoute.getDescriptorId());
+        assertEquals(1, connectedRoutes.size());
+        MediaRouter.RouteInfo connectedRoute = connectedRoutes.get(0);
+        assertEquals(ROUTE_ID_GROUP, connectedRoute.getDescriptorId());
+        assertTrue(runBlockingOnMainThreadWithResult(connectedRoute::isConnected));
+
+        assertNotNull(mRequestedRoute);
+        assertEquals(ROUTE_ID_2, mRequestedRoute.getDescriptorId());
+        assertFalse(runBlockingOnMainThreadWithResult(mRequestedRoute::isConnected));
+        assertFalse(runBlockingOnMainThreadWithResult(mRoute2::isConnected));
+        assertEquals(RouteConnectionState.STATE_CONNECTED, mRouteConnectionState);
+    }
+
+    @Test()
+    public void disconnectDynamicRoute_shouldNotifyRouteDisconnected() {
+        assertEquals(RouteConnectionState.STATE_UNKNOWN, mRouteConnectionState);
+        List<MediaRouter.RouteInfo> connectedRoutes =
+                mCallback.connectAndWaitForOnConnected(mRoute2);
+        assertEquals(RouteConnectionState.STATE_CONNECTED, mRouteConnectionState);
+        assertEquals(1, connectedRoutes.size());
+
+        connectedRoutes = mCallback.disconnectAndWaitForOnDisconnected(mRoute2);
+
+        assertNull(mConnectedRoute);
+        assertEquals(0, connectedRoutes.size());
+
+        assertNotNull(mRequestedRoute);
+        assertEquals(ROUTE_ID_2, mRequestedRoute.getDescriptorId());
+        assertFalse(runBlockingOnMainThreadWithResult(mRequestedRoute::isConnected));
+        assertFalse(runBlockingOnMainThreadWithResult(mRoute2::isConnected));
+        assertEquals(RouteConnectionState.STATE_DISCONNECTED, mRouteConnectionState);
+        assertEquals(MediaRouter.REASON_DISCONNECTED, mRouteDisconnectedReason);
+    }
+
+    @Test()
+    public void connectDynamicRoute_failedToConnect_shouldNotifyRouteDisconnected() {
+        assertEquals(RouteConnectionState.STATE_UNKNOWN, mRouteConnectionState);
+        MediaRouter.RouteInfo selectedRoute = mCallback.selectAndWaitForOnSelected(mRoute1);
+        assertEquals(ROUTE_ID_GROUP, selectedRoute.getDescriptorId());
+        assertFalse(runBlockingOnMainThreadWithResult(mRoute1::isSelected));
+        assertTrue(runBlockingOnMainThreadWithResult(selectedRoute::isSelected));
+
+        List<MediaRouter.RouteInfo> connectedRoutes =
+                mCallback.connectAndWaitForOnConnected(selectedRoute);
+
+        assertNull(mConnectedRoute);
+        assertEquals(0, connectedRoutes.size());
+
+        assertNotNull(mRequestedRoute);
+        assertEquals(ROUTE_ID_GROUP, mRequestedRoute.getDescriptorId());
+        assertFalse(runBlockingOnMainThreadWithResult(mRequestedRoute::isConnected));
+        assertFalse(runBlockingOnMainThreadWithResult(selectedRoute::isConnected));
+        assertEquals(RouteConnectionState.STATE_DISCONNECTED, mRouteConnectionState);
     }
 
     // Internal methods.
@@ -140,8 +230,10 @@ public final class MediaRouterDynamicProviderTest {
         private final Set<String> mRouteIdsPending = new HashSet<>();
         private final ConditionVariable mSelectedRouteChangeConditionVariable =
                 new ConditionVariable(/* state= */ true);
+        private final ConditionVariable mRouteConnectionConditionVariable =
+                new ConditionVariable(/* state= */ true);
 
-        public Map<String, MediaRouter.RouteInfo> waitForRoutes(String... routeIds) {
+        private Map<String, MediaRouter.RouteInfo> waitForRoutes(String... routeIds) {
             Set<String> routesIdsSet = new HashSet<>(Arrays.asList(routeIds));
             getInstrumentation()
                     .runOnMainSync(
@@ -167,6 +259,22 @@ public final class MediaRouterDynamicProviderTest {
             return runBlockingOnMainThreadWithResult(() -> mRouter.getSelectedRoute());
         }
 
+        public List<MediaRouter.RouteInfo> connectAndWaitForOnConnected(
+                MediaRouter.RouteInfo routeToConnect) {
+            mRouteConnectionConditionVariable.close();
+            getInstrumentation().runOnMainSync(routeToConnect::connect);
+            mRouteConnectionConditionVariable.block();
+            return runBlockingOnMainThreadWithResult(() -> mRouter.getConnectedRoutes());
+        }
+
+        public List<MediaRouter.RouteInfo> disconnectAndWaitForOnDisconnected(
+                MediaRouter.RouteInfo routeToDisconnect) {
+            mRouteConnectionConditionVariable.close();
+            getInstrumentation().runOnMainSync(routeToDisconnect::disconnect);
+            mRouteConnectionConditionVariable.block();
+            return runBlockingOnMainThreadWithResult(() -> mRouter.getConnectedRoutes());
+        }
+
         @Override
         public void onRouteSelected(
                 @NonNull MediaRouter router,
@@ -182,6 +290,27 @@ public final class MediaRouterDynamicProviderTest {
             if (getCurrentRoutesAsMap().keySet().containsAll(mRouteIdsPending)) {
                 mPendingRoutesConditionVariable.open();
             }
+        }
+
+        @Override
+        public void onRouteConnected(
+                @NonNull MediaRouter router,
+                @NonNull MediaRouter.RouteInfo connectedRoute,
+                @NonNull MediaRouter.RouteInfo requestedRoute) {
+            mRouteConnectionState = RouteConnectionState.STATE_CONNECTED;
+            mConnectedRoute = connectedRoute;
+            mRequestedRoute = requestedRoute;
+            mRouteConnectionConditionVariable.open();
+        }
+
+        @Override
+        public void onRouteDisconnected(
+                @NonNull MediaRouter router, @NonNull MediaRouter.RouteInfo route, int reason) {
+            mRouteConnectionState = RouteConnectionState.STATE_DISCONNECTED;
+            mConnectedRoute = null;
+            mRequestedRoute = route;
+            mRouteDisconnectedReason = reason;
+            mRouteConnectionConditionVariable.open();
         }
     }
 }

@@ -72,12 +72,11 @@ public class ImeViewCompatMultiWindowTest {
     }
 
     /**
-     * This test is using a deprecated codepath that doesn't support the workaround, so it is
-     * expected to fail hiding the IME. The workaround is no longer needed on API version 35.
+     * On SDK 35 and above, this test is expected to succeed.
+     * <p>
      * See b/280532442 for details.
      */
-    @Test(expected = AssertionError.class)
-    @SdkSuppress(minSdkVersion = 31, maxSdkVersion = 35)
+    @SdkSuppress(minSdkVersion = 34)
     public void testImeShowAndHide_splitScreen() {
         if (Build.VERSION.SDK_INT < 32) {
             // FLAG_ACTIVITY_LAUNCH_ADJACENT is not support before Sdk 32, using the
@@ -119,6 +118,18 @@ public class ImeViewCompatMultiWindowTest {
             WindowInsets insets = wm.getCurrentWindowMetrics().getWindowInsets();
             return !insets.isVisible(WindowInsetsCompat.Type.ime());
         });
+    }
+
+    /**
+     * On SDKs 31 thru 34, this test is using a deprecated codepath that doesn't support the
+     * workaround, so it is expected to fail hiding the IME.
+     * <p>
+     * See b/280532442 for details.
+     */
+    @Test(expected = AssertionError.class)
+    @SdkSuppress(minSdkVersion = 31, maxSdkVersion = 34)
+    public void testImeShowAndHide_splitScreen_failsOnAssertion() {
+        testImeShowAndHide_splitScreen();
     }
 
     private UiObject2 waitForFindObject(String resId) {

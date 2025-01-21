@@ -44,6 +44,8 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.nativeKeyCode
 import androidx.compose.ui.node.RootForTest
 import androidx.compose.ui.platform.ViewRootForTest
+import androidx.compose.ui.test.platform.makeSynchronizedObject
+import androidx.compose.ui.test.platform.synchronized
 import androidx.core.view.InputDeviceCompat.SOURCE_MOUSE
 import androidx.core.view.InputDeviceCompat.SOURCE_ROTARY_ENCODER
 import androidx.core.view.InputDeviceCompat.SOURCE_TOUCHSCREEN
@@ -90,7 +92,7 @@ internal class AndroidInputDispatcher(
     private val sendEvent: (InputEvent) -> Unit
 ) : InputDispatcher(testContext, root) {
 
-    private val batchLock = Any()
+    private val batchLock = makeSynchronizedObject()
     private var batchedEvents = mutableListOf<InputEvent>()
     private var disposed = false
     private var currentClockTime = currentTime

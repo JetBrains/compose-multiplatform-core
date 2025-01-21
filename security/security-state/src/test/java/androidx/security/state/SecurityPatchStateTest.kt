@@ -16,22 +16,12 @@
 
 package androidx.security.state
 
-import android.annotation.SuppressLint
-import android.content.ContentResolver
 import android.content.Context
-import android.content.SharedPreferences
-import android.content.pm.PackageInfo
-import android.content.pm.PackageManager
-import android.database.Cursor
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.annotation.RequiresApi
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import java.time.LocalDate
-import java.time.ZoneOffset
-import java.util.Date
-import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -48,69 +38,7 @@ import org.robolectric.annotation.Config
 @RunWith(AndroidJUnit4::class)
 class SecurityPatchStateTest {
 
-    @SuppressLint("NewApi")
-    private val updateInfo =
-        UpdateInfo.Builder()
-            .setUri("content://example.com/updateinfo")
-            .setComponent(SecurityPatchState.COMPONENT_SYSTEM.toString())
-            .setSecurityPatchLevel("2022-01-01")
-            .setPublishedDate(Date.from(LocalDate.now().atStartOfDay().toInstant(ZoneOffset.UTC)))
-            .build()
-    private val updateInfoJson =
-        Json.encodeToString(
-            SerializableUpdateInfo.serializer(),
-            updateInfo.toSerializableUpdateInfo()
-        )
-    private val mockEmptyEditor: SharedPreferences.Editor = mock<SharedPreferences.Editor> {}
-    private val mockEditor: SharedPreferences.Editor =
-        mock<SharedPreferences.Editor> {
-            on { putString(Mockito.anyString(), Mockito.anyString()) } doReturn mockEmptyEditor
-            on { remove(Mockito.anyString()) } doReturn mockEmptyEditor
-        }
-    private val mockPrefs: SharedPreferences =
-        mock<SharedPreferences> {
-            on { edit() } doReturn mockEditor
-            on { all } doReturn mapOf(Pair("key", updateInfoJson))
-        }
-    private val mockPackageManager: PackageManager =
-        mock<PackageManager> {
-            on { getPackageInfo(Mockito.anyString(), Mockito.eq(0)) } doReturn
-                PackageInfo().apply { versionName = "" }
-        }
-    private val mockCursor: Cursor = mock<Cursor> {}
-    private val mockCursorWithData: Cursor =
-        mock<Cursor> {
-            on { moveToNext() } doReturn true doReturn false doReturn true doReturn false
-            on { getColumnIndexOrThrow(Mockito.eq("json")) } doReturn 123
-            on { getString(Mockito.eq(123)) } doReturn updateInfoJson
-        }
-    private val mockContentResolver: ContentResolver =
-        mock<ContentResolver> {
-            on {
-                query(
-                    Uri.parse("content://com.google.android.gms.apk/updateinfo"),
-                    arrayOf("json"),
-                    null,
-                    null,
-                    null
-                )
-            } doReturn mockCursor
-            on {
-                query(
-                    Uri.parse("content://example.com/updateinfo"),
-                    arrayOf("json"),
-                    null,
-                    null,
-                    null
-                )
-            } doReturn mockCursorWithData
-        }
-    private val mockContext: Context =
-        mock<Context> {
-            on { getSharedPreferences("UpdateInfoPrefs", Context.MODE_PRIVATE) } doReturn mockPrefs
-            on { packageManager } doReturn mockPackageManager
-            on { contentResolver } doReturn mockContentResolver
-        }
+    private val mockContext: Context = mock<Context>()
     private val mockSecurityStateManager: SecurityStateManager = mock<SecurityStateManager> {}
     private lateinit var securityState: SecurityPatchState
 
@@ -570,50 +498,6 @@ class SecurityPatchStateTest {
         val versions =
             securityState.getPublishedSecurityPatchLevel(SecurityPatchState.COMPONENT_KERNEL)
         assertTrue(versions.isEmpty())
-    }
-
-    @Test
-    fun testGetAvailableSpl_ReturnsUpdateWhenHigherThanCurrent() {
-        val availableSpl = SecurityPatchState.DateBasedSecurityPatchLevel(2023, 2, 1)
-        val component = SecurityPatchState.COMPONENT_SYSTEM
-        val availableUpdateJson =
-            """
-            {
-                "uri": "content://example.com/updateinfo",
-                "component": "SYSTEM",
-                "securityPatchLevel": "2023-02-01",
-                "publishedDate": "2023-02-01T00:00:00Z"
-            }
-            """
-                .trimIndent()
-        val bundle = Bundle()
-        bundle.putString("system_spl", "2023-01-01")
-
-        `when`(mockSecurityStateManager.getGlobalSecurityState(anyString())).thenReturn(bundle)
-        `when`(mockCursor.moveToNext()).thenReturn(true).thenReturn(false)
-        `when`(mockCursor.getColumnIndexOrThrow("json")).thenReturn(0)
-        `when`(mockCursor.getString(0)).thenReturn(availableUpdateJson)
-        securityState.loadVulnerabilityReport(generateMockReport("system", "2023-02-01"))
-
-        val result = securityState.getAvailableSecurityPatchLevel(component)
-
-        assertEquals(availableSpl.toString(), result.toString())
-    }
-
-    @Test
-    fun testGetAvailableSpl_FallsBackToCurrentWhenNoHigherUpdate() {
-        val currentSpl = SecurityPatchState.DateBasedSecurityPatchLevel(2023, 5, 15)
-        val component = SecurityPatchState.COMPONENT_SYSTEM
-        val bundle = Bundle()
-        bundle.putString("system_spl", "2023-05-15")
-
-        `when`(mockCursor.moveToNext()).thenReturn(false)
-        `when`(mockSecurityStateManager.getGlobalSecurityState(anyString())).thenReturn(bundle)
-        securityState.loadVulnerabilityReport(generateMockReport("system", "2023-04-01"))
-
-        val result = securityState.getAvailableSecurityPatchLevel(component)
-
-        assertEquals(currentSpl.toString(), result.toString())
     }
 
     private fun generateMockReport(component: String, date: String): String {

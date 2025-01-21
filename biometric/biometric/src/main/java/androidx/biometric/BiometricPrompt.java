@@ -21,6 +21,8 @@ import static android.Manifest.permission.SET_BIOMETRIC_DIALOG_ADVANCED;
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.os.Build;
+import android.security.identity.IdentityCredential;
+import android.security.identity.PresentationSession;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -53,10 +55,10 @@ import javax.crypto.Mac;
 /**
  * A class that manages a system-provided biometric prompt. On devices running Android 9.0 (API 28)
  * and above, this will show a system-provided authentication prompt, using one of the device's
- * supported biometric modalities (fingerprint, iris, face, etc). Prior to Android 9.0, this will
- * instead show a custom fingerprint authentication dialog. The prompt will persist across
- * configuration changes unless explicitly canceled. For security reasons, the prompt will be
- * dismissed when the client application is no longer in the foreground.
+ * supported biometric modalities (fingerprint, iris, face, etc) with Class 2 or Class 3 strength.
+ * Prior to Android 9.0, this will instead show a custom fingerprint authentication dialog. The
+ * prompt will persist across configuration changes unless explicitly canceled. For security
+ * reasons, the prompt will be dismissed when the client application is no longer in the foreground.
  *
  * <p>To persist authentication across configuration changes, developers should (re)create the
  * prompt every time the activity/fragment is created. Instantiating the prompt with a new
@@ -290,8 +292,10 @@ public class BiometricPrompt {
          *
          * @param identityCredential The identity credential to be associated with this crypto
          *                           object.
+         * @deprecated Use {@link CryptoObject#CryptoObject(PresentationSession)} instead.
          */
         @RequiresApi(Build.VERSION_CODES.R)
+        @Deprecated
         public CryptoObject(
                 @NonNull android.security.identity.IdentityCredential identityCredential) {
             mSignature = null;
@@ -370,9 +374,11 @@ public class BiometricPrompt {
          * Gets the identity credential object associated with this crypto object.
          *
          * @return The identity credential, or {@code null} if none is associated with this object.
+         * @deprecated Use {@link PresentationSession} instead of {@link IdentityCredential}.
          */
         @RequiresApi(Build.VERSION_CODES.R)
         @Nullable
+        @Deprecated
         public android.security.identity.IdentityCredential getIdentityCredential() {
             return mIdentityCredential;
         }

@@ -20,7 +20,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
-import android.graphics.Rect
 import android.os.IBinder
 import android.view.SurfaceView
 import android.view.View
@@ -28,19 +27,13 @@ import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams
 import android.view.ViewTreeObserver
 import android.widget.LinearLayout
-import android.widget.ScrollView
 import android.widget.TextView
 import androidx.lifecycle.Lifecycle
-import androidx.privacysandbox.ui.client.view.SandboxedSdkUiSessionState
-import androidx.privacysandbox.ui.client.view.SandboxedSdkUiSessionStateChangedListener
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
 import androidx.privacysandbox.ui.core.BackwardCompatUtil
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
+import androidx.privacysandbox.ui.integration.testingutils.TestEventListener
 import androidx.privacysandbox.ui.provider.AbstractSandboxedUiAdapter
-import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
-import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -80,7 +73,8 @@ class SandboxedSdkViewTest {
     private lateinit var view: SandboxedSdkView
     private lateinit var layoutParams: LayoutParams
     private lateinit var testSandboxedUiAdapter: TestSandboxedUiAdapter
-    private lateinit var stateChangedListener: StateChangedListener
+    private lateinit var eventListener: TestEventListener
+    private lateinit var linearLayout: LinearLayout
     private var mainLayoutWidth = -1
     private var mainLayoutHeight = -1
 
@@ -100,23 +94,13 @@ class SandboxedSdkViewTest {
         }
     }
 
-    open class StateChangedListener : SandboxedSdkUiSessionStateChangedListener {
-        var currentState: SandboxedSdkUiSessionState? = null
-        var latch: CountDownLatch = CountDownLatch(1)
-
-        override fun onStateChanged(state: SandboxedSdkUiSessionState) {
-            currentState = state
-            latch.countDown()
-        }
-    }
-
     @Before
     fun setup() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
         activityScenarioRule.withActivity {
             view = SandboxedSdkView(this)
-            stateChangedListener = StateChangedListener()
-            view.addStateChangedListener(stateChangedListener)
+            eventListener = TestEventListener()
+            view.setEventListener(eventListener)
             layoutParams =
                 LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -130,44 +114,56 @@ class SandboxedSdkViewTest {
     }
 
     @Test
-    fun addAndRemoveStateChangeListenerTest() {
-        // Initial state (Idle) should be sent to listener
-        var stateListenerManager: SandboxedSdkView.StateListenerManager = view.stateListenerManager
-        assertThat(stateChangedListener.latch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
-        assertThat(stateChangedListener.currentState).isEqualTo(SandboxedSdkUiSessionState.Idle)
-
-        // While registered, listener should receive state change
-        stateChangedListener.latch = CountDownLatch(1)
-        stateListenerManager.currentUiSessionState = SandboxedSdkUiSessionState.Active
-        assertThat(stateChangedListener.latch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
-        assertThat(stateChangedListener.currentState).isEqualTo(SandboxedSdkUiSessionState.Active)
-
-        // While unregistered, listener should not receive state change
-        stateChangedListener.latch = CountDownLatch(1)
-        view.removeStateChangedListener(stateChangedListener)
-        stateListenerManager.currentUiSessionState = SandboxedSdkUiSessionState.Loading
-        assertThat(stateChangedListener.latch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isFalse()
+    fun eventListenerErrorTest() {
+        activityScenarioRule.withActivity { view.setAdapter(FailingTestSandboxedUiAdapter()) }
+        addViewToLayout()
+        assertThat(eventListener.errorLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
+        assertThat(eventListener.error?.message).isEqualTo("Error in openSession()")
     }
 
     @Test
-    fun reentrantDispatchTest() {
-        val latch = CountDownLatch(2)
-        var currentState: SandboxedSdkUiSessionState? = SandboxedSdkUiSessionState.Idle
+    fun addAndRemoveEventListenerTest() {
+        // Initially no events are received when the session is not open.
+        assertThat(eventListener.uiDisplayedLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isFalse()
 
-        val listener1 = SandboxedSdkUiSessionStateChangedListener {
-            if (it != currentState) {
-                currentState = it
-                view.stateListenerManager.currentUiSessionState = SandboxedSdkUiSessionState.Active
-                latch.countDown()
-            }
-        }
+        // When session is open, the events are received
+        addViewToLayout()
+        assertThat(eventListener.uiDisplayedLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
 
-        view.addStateChangedListener(listener1)
-        assertThat(currentState).isEqualTo(SandboxedSdkUiSessionState.Idle)
+        // Remove the view from layout to close the session.
+        removeAllViewsFromLayout()
+        assertThat(eventListener.sessionClosedLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
 
-        view.stateListenerManager.currentUiSessionState = SandboxedSdkUiSessionState.Loading
-        assertThat(latch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
-        assertThat(currentState).isEqualTo(SandboxedSdkUiSessionState.Active)
+        eventListener.uiDisplayedLatch = CountDownLatch(1)
+
+        // Remove the listener from the view.
+        view.setEventListener(null)
+
+        // Add view to layout again to start the session. The latches will not count down this time.
+        addViewToLayout()
+        assertThat(eventListener.uiDisplayedLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isFalse()
+    }
+
+    @Test
+    fun newEventListenerOverridesOldListenerTest() {
+        val eventListener1 = TestEventListener()
+        val eventListener2 = TestEventListener()
+        view.setEventListener(eventListener1)
+        view.setEventListener(eventListener2)
+
+        activityScenarioRule.withActivity { view.setAdapter(FailingTestSandboxedUiAdapter()) }
+        addViewToLayout()
+        assertThat(eventListener1.errorLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isFalse()
+        assertThat(eventListener2.errorLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
+
+        activityScenarioRule.withActivity { view.setAdapter(testSandboxedUiAdapter) }
+        assertThat(eventListener1.uiDisplayedLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isFalse()
+        assertThat(eventListener2.uiDisplayedLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
+
+        removeAllViewsFromLayout()
+        assertThat(eventListener1.sessionClosedLatch.await(TIMEOUT, TimeUnit.MILLISECONDS))
+            .isFalse()
+        assertThat(eventListener2.sessionClosedLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
     }
 
     @Test
@@ -534,59 +530,6 @@ class SandboxedSdkViewTest {
         assertThat(testSandboxedUiAdapter.inputToken).isEqualTo(token)
     }
 
-    @Test
-    fun getBoundingParent_withoutScrollParent() {
-        addViewToLayout()
-        onView(withId(R.id.mainlayout)).check(matches(isDisplayed()))
-        activityScenarioRule.withActivity {
-            val boundingRect = Rect()
-            assertThat(view.maybeUpdateClippingBounds(boundingRect)).isTrue()
-            val rootView: ViewGroup = findViewById(android.R.id.content)
-            val rootRect = Rect()
-            rootView.getGlobalVisibleRect(rootRect)
-            assertThat(boundingRect).isEqualTo(rootRect)
-        }
-    }
-
-    @Test
-    fun getBoundingParent_withScrollParent() {
-        lateinit var scrollView: ScrollView
-        activityScenarioRule.withActivity {
-            scrollView = findViewById<ScrollView>(R.id.scroll_view)
-            scrollView.visibility = View.VISIBLE
-            scrollView.addView(view)
-        }
-        onView(withId(R.id.scroll_view)).check(matches(isDisplayed()))
-
-        val scrollViewRect = Rect()
-        assertThat(scrollView.getGlobalVisibleRect(scrollViewRect)).isTrue()
-        val boundingRect = Rect()
-        assertThat(view.maybeUpdateClippingBounds(boundingRect)).isTrue()
-        assertThat(scrollViewRect).isEqualTo(boundingRect)
-    }
-
-    /**
-     * Ensures that ACTIVE will only be sent to registered state change listeners after the next
-     * frame commit.
-     */
-    @Test
-    fun activeStateOnlySentAfterNextFrameCommitted() {
-        addViewToLayout()
-        var latch = CountDownLatch(1)
-        view.addStateChangedListener {
-            if (it == SandboxedSdkUiSessionState.Active) {
-                latch.countDown()
-            }
-        }
-        assertThat(latch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
-
-        // Manually set state to IDLE.
-        // Subsequent frame commits should not flip the state back to ACTIVE.
-        view.stateListenerManager.currentUiSessionState = SandboxedSdkUiSessionState.Idle
-        latch = CountDownLatch(1)
-        assertThat(latch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isFalse()
-    }
-
     @Ignore("b/307829956")
     @Test
     fun requestResizeWithMeasureSpecAtMost_withinParentBounds() {
@@ -821,19 +764,23 @@ class SandboxedSdkViewTest {
 
     private fun addViewToLayout(waitToBeActive: Boolean = false, viewToAdd: View = view) {
         activityScenarioRule.withActivity {
-            val mainLayout: LinearLayout = findViewById(R.id.mainlayout)
-            mainLayoutWidth = mainLayout.width
-            mainLayoutHeight = mainLayout.height
-            mainLayout.addView(viewToAdd)
+            linearLayout = findViewById(R.id.mainlayout)
+            mainLayoutWidth = linearLayout.width
+            mainLayoutHeight = linearLayout.height
+            linearLayout.addView(viewToAdd)
         }
         if (waitToBeActive) {
-            val latch = CountDownLatch(1)
-            view.addStateChangedListener {
-                if (it == SandboxedSdkUiSessionState.Active) {
-                    latch.countDown()
-                }
-            }
-            assertThat(latch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
+            val eventListener = TestEventListener()
+            view.setEventListener(eventListener)
+            assertThat(eventListener.uiDisplayedLatch.await(TIMEOUT, TimeUnit.MILLISECONDS))
+                .isTrue()
+        }
+    }
+
+    private fun removeAllViewsFromLayout() {
+        activityScenarioRule.withActivity {
+            val mainLayout: LinearLayout = findViewById(R.id.mainlayout)
+            mainLayout.removeAllViews()
         }
     }
 

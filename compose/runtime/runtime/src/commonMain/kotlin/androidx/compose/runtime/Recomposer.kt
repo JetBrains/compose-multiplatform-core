@@ -33,6 +33,9 @@ import androidx.compose.runtime.internal.AtomicReference
 import androidx.compose.runtime.internal.SnapshotThreadLocal
 import androidx.compose.runtime.internal.logError
 import androidx.compose.runtime.internal.trace
+import androidx.compose.runtime.platform.SynchronizedObject
+import androidx.compose.runtime.platform.makeSynchronizedObject
+import androidx.compose.runtime.platform.synchronized
 import androidx.compose.runtime.snapshots.MutableSnapshot
 import androidx.compose.runtime.snapshots.ReaderKind
 import androidx.compose.runtime.snapshots.Snapshot
@@ -1595,6 +1598,9 @@ class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionContext(
     ): MovableContentState? =
         synchronized(stateLock) { movableContentStatesAvailable.remove(reference) }
 
+    override val composition: Composition?
+        get() = null
+
     /**
      * hack: the companion object is thread local in Kotlin/Native to avoid freezing
      * [_runningRecomposers] with the current memory model. As a side effect, recomposers are now
@@ -1616,6 +1622,10 @@ class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionContext(
          */
         val runningRecomposers: StateFlow<Set<RecomposerInfo>>
             get() = _runningRecomposers
+
+        internal fun currentRunningRecomposers(): Set<RecomposerInfo> {
+            return _runningRecomposers.value
+        }
 
         internal fun setHotReloadEnabled(value: Boolean) {
             _hotReloadEnabled.set(value)

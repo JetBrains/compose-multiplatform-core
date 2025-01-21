@@ -40,7 +40,6 @@ import java.util.concurrent.TimeUnit;
 
 import okhttp3.mockwebserver.MockWebServer;
 
-
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class ProxyControllerTest {

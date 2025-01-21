@@ -41,8 +41,8 @@ dependencies {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.savedstate.samples"
+    compileSdk = 35
+    namespace = "androidx.savedstate.samples"
 }
 
 androidx {

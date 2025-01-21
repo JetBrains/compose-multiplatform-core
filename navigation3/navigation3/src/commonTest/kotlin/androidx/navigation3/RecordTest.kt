@@ -23,14 +23,14 @@ class RecordTest {
 
     @Test
     fun getKey() {
-        val record = Record(key = "myKey", content = {})
+        val record = NavRecord(key = "myKey", content = {})
         assertThat(record.key).isEqualTo("myKey")
     }
 
     @Test
     fun getFeatureMap() {
         val record =
-            Record(
+            NavRecord(
                 key = "myKey",
                 featureMap = mapOf("feature1" to 1, "feature2" to MyObject),
                 content = {}

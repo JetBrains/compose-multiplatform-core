@@ -31,7 +31,7 @@ internal fun runGradle(
         GradleRunner.create()
             .withProjectDir(projectDir)
             .withPluginClasspath()
-            .withDebug(true)
+            .withDebug(false)
             // workaround for b/231154556
             .withArguments("-Dorg.gradle.jvmargs=-Xmx1g -XX:MaxMetaspaceSize=512m", *args)
     return if (expectFailure) {

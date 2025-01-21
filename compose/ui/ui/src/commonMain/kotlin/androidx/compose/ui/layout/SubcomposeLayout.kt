@@ -421,6 +421,7 @@ internal class LayoutNodeSubcompositionsState(
 
     // SlotHandles precomposed in the post-lookahead pass.
     private val approachPrecomposeSlotHandleMap = mutableScatterMapOf<Any?, PrecomposedSlotHandle>()
+
     // Slot ids _composed_ in post-lookahead. The valid slot ids are stored between 0 and
     // currentApproachIndex - 1, beyond index currentApproachIndex are obsolete ids.
     private val approachComposedSlotIds = mutableVectorOf<Any?>()
@@ -884,9 +885,11 @@ internal class LayoutNodeSubcompositionsState(
     }
 
     private fun createNodeAt(index: Int) =
-        LayoutNode(isVirtual = true).also { node ->
-            ignoreRemeasureRequests { root.insertAt(index, node) }
-        }
+        LayoutNode(
+                isVirtual = true,
+                permitChildrenToDetachFromParentLookahead = true,
+            )
+            .also { node -> ignoreRemeasureRequests { root.insertAt(index, node) } }
 
     private fun move(from: Int, to: Int, count: Int = 1) {
         ignoreRemeasureRequests { root.move(from, to, count) }

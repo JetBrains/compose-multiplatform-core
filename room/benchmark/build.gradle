@@ -49,7 +49,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.room.benchmark"
+    namespace = "androidx.room.benchmark"
 }
 
 androidx {

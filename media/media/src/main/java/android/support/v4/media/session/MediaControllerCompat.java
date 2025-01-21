@@ -48,8 +48,6 @@ import android.util.Log;
 import android.view.KeyEvent;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.media.AudioAttributesCompat;
@@ -58,6 +56,9 @@ import androidx.media.VolumeProviderCompat;
 import androidx.media.utils.MediaConstants;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -222,7 +223,7 @@ public final class MediaControllerCompat {
      *
      * @param sessionToken The token of the session to be controlled.
      */
-    public MediaControllerCompat(Context context, @NonNull MediaSessionCompat.Token sessionToken) {
+    public MediaControllerCompat(Context context, MediaSessionCompat.@NonNull Token sessionToken) {
         if (sessionToken == null) {
             throw new IllegalArgumentException("sessionToken must not be null");
         }
@@ -490,8 +491,7 @@ public final class MediaControllerCompat {
      * @return The session's token as VersionedParcelable.
      */
     @RestrictTo(LIBRARY)
-    @Nullable
-    public VersionedParcelable getSession2Token() {
+    public @Nullable VersionedParcelable getSession2Token() {
         return mToken.getSession2Token();
     }
 
@@ -639,8 +639,7 @@ public final class MediaControllerCompat {
      * @see #isSessionReady
      * @see Callback#onSessionReady
      */
-    @NonNull
-    public Bundle getSessionInfo() {
+    public @NonNull Bundle getSessionInfo() {
         return mImpl.getSessionInfo();
     }
 
@@ -1406,8 +1405,7 @@ public final class MediaControllerCompat {
          *
          * @return The attributes for this session.
          */
-        @NonNull
-        public AudioAttributesCompat getAudioAttributes() {
+        public @NonNull AudioAttributesCompat getAudioAttributes() {
             return mAudioAttrsCompat;
         }
 
@@ -2298,8 +2296,7 @@ public final class MediaControllerCompat {
             activity.setMediaController(controllerFwk);
         }
 
-        @Nullable
-        static MediaControllerCompat getMediaController(@NonNull Activity activity) {
+        static @Nullable MediaControllerCompat getMediaController(@NonNull Activity activity) {
             MediaController controllerFwk = activity.getMediaController();
             if (controllerFwk == null) {
                 return null;

@@ -20,6 +20,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation(project(":vectordrawable:vectordrawable"))
     implementation(project(":vectordrawable:vectordrawable-animated"))
     implementation(project(":vectordrawable:vectordrawable-seekable"))
@@ -28,10 +29,10 @@ dependencies {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
     defaultConfig {
         vectorDrawables.useSupportLibrary = true
     }
-    namespace "com.example.android.support.vectordrawable"
+    namespace = "com.example.android.support.vectordrawable"
 }
 

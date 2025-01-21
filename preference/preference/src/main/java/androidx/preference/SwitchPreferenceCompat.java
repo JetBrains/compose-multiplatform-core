@@ -26,11 +26,12 @@ import android.view.accessibility.AccessibilityManager;
 import android.widget.Checkable;
 import android.widget.CompoundButton;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.content.res.TypedArrayUtils;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link Preference} that provides a two-state toggleable option.
@@ -156,8 +157,7 @@ public class SwitchPreferenceCompat extends TwoStatePreference {
     /**
      * @return The text that will be displayed on the switch widget in the on state
      */
-    @Nullable
-    public CharSequence getSwitchTextOn() {
+    public @Nullable CharSequence getSwitchTextOn() {
         return mSwitchOn;
     }
 
@@ -174,8 +174,7 @@ public class SwitchPreferenceCompat extends TwoStatePreference {
     /**
      * @return The text that will be displayed on the switch widget in the off state
      */
-    @Nullable
-    public CharSequence getSwitchTextOff() {
+    public @Nullable CharSequence getSwitchTextOff() {
         return mSwitchOff;
     }
 

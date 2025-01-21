@@ -56,5 +56,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.preference.ktx"
+    namespace = "androidx.preference.ktx"
 }

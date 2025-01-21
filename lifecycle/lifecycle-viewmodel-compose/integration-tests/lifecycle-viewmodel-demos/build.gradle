@@ -42,5 +42,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.lifecycle.viewmodel.compose.demos"
+    namespace = "androidx.lifecycle.viewmodel.compose.demos"
 }

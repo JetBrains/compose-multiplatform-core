@@ -26,7 +26,7 @@ android {
             minifyEnabled = true
         }
     }
-    compileSdkVersion 35
+    compileSdk = 35
     defaultConfig {
         javaCompileOptions {
             annotationProcessorOptions {
@@ -40,7 +40,7 @@ android {
             useSupportLibrary = true
         }
     }
-    namespace "androidx.work.integration.testapp"
+    namespace = "androidx.work.integration.testapp"
 }
 
 dependencies {

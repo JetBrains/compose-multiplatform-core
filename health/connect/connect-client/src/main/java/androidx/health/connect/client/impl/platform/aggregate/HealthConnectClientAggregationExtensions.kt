@@ -20,7 +20,6 @@ package androidx.health.connect.client.impl.platform.aggregate
 
 import androidx.annotation.RequiresApi
 import androidx.health.connect.client.HealthConnectClient
-import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.aggregate.AggregationResult
 import androidx.health.connect.client.impl.converters.datatype.RECORDS_CLASS_NAME_MAP
 import androidx.health.connect.client.impl.platform.toInstantWithDefaultZoneFallback
@@ -32,7 +31,6 @@ import androidx.health.connect.client.records.NutritionRecord
 import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.records.SpeedRecord
 import androidx.health.connect.client.records.StepsCadenceRecord
-import androidx.health.connect.client.records.metadata.DataOrigin
 import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
@@ -60,12 +58,7 @@ internal suspend fun HealthConnectClient.aggregateFallback(
 
     for (recordType in AGGREGATION_FALLBACK_RECORD_TYPES) {
         aggregationResult +=
-            aggregate(
-                recordType,
-                request.fallbackMetrics,
-                request.timeRangeFilter,
-                request.dataOriginFilter
-            )
+            aggregate(recordType, request.withFilteredMetrics { !it.isPlatformSupportedMetric() })
     }
 
     return aggregationResult
@@ -73,51 +66,45 @@ internal suspend fun HealthConnectClient.aggregateFallback(
 
 private suspend fun <T : Record> HealthConnectClient.aggregate(
     recordType: KClass<T>,
-    metrics: Set<AggregateMetric<*>>,
-    timeRangeFilter: TimeRangeFilter,
-    dataOriginFilter: Set<DataOrigin>
+    request: AggregateRequest,
 ): AggregationResult {
     val dataTypeName = RECORDS_CLASS_NAME_MAP[recordType]
-    val recordTypeMetrics = metrics.filter { it.dataTypeName == dataTypeName }.toSet()
+    val recordTypeRequest = request.withFilteredMetrics { it.dataTypeName == dataTypeName }
 
-    if (recordTypeMetrics.isEmpty()) {
+    if (recordTypeRequest.metrics.isEmpty()) {
         return emptyAggregationResult()
     }
 
     return when (recordType) {
-        BloodPressureRecord::class ->
-            aggregateBloodPressure(recordTypeMetrics, timeRangeFilter, dataOriginFilter)
+        BloodPressureRecord::class -> aggregateBloodPressure(recordTypeRequest)
         CyclingPedalingCadenceRecord::class ->
-            aggregateCyclingPedalingCadence(recordTypeMetrics, timeRangeFilter, dataOriginFilter)
-        NutritionRecord::class -> aggregateNutritionTransFatTotal(timeRangeFilter, dataOriginFilter)
-        SpeedRecord::class -> aggregateSpeed(recordTypeMetrics, timeRangeFilter, dataOriginFilter)
+            aggregateSeriesRecord(CyclingPedalingCadenceRecord::class, recordTypeRequest) {
+                samples.map { SampleInfo(it.time, it.revolutionsPerMinute) }
+            }
+        NutritionRecord::class -> aggregateNutritionTransFatTotal(recordTypeRequest)
+        SpeedRecord::class ->
+            aggregateSeriesRecord(SpeedRecord::class, recordTypeRequest) {
+                samples.map { SampleInfo(it.time, it.speed.inMetersPerSecond) }
+            }
         StepsCadenceRecord::class ->
-            aggregateStepsCadence(recordTypeMetrics, timeRangeFilter, dataOriginFilter)
+            aggregateSeriesRecord(StepsCadenceRecord::class, recordTypeRequest) {
+                samples.map { SampleInfo(it.time, it.rate) }
+            }
         else -> error("Invalid record type for aggregation fallback: $recordType")
     }
 }
 
-/** Reads all existing records that satisfy [timeRangeFilter] and [dataOriginFilter]. */
-suspend fun <T : Record> HealthConnectClient.readRecordsFlow(
-    recordType: KClass<T>,
-    timeRangeFilter: TimeRangeFilter,
-    dataOriginFilter: Set<DataOrigin>
+/** Reads all existing records that satisfy [request]. */
+fun <T : Record> HealthConnectClient.readRecordsFlow(
+    request: ReadRecordsRequest<T>
 ): Flow<List<T>> {
     return flow {
-        var pageToken: String? = null
+        var currentRequest = request
         do {
-            val response =
-                readRecords(
-                    ReadRecordsRequest(
-                        recordType = recordType,
-                        timeRangeFilter = timeRangeFilter,
-                        dataOriginFilter = dataOriginFilter,
-                        pageToken = pageToken
-                    )
-                )
+            val response = readRecords(currentRequest)
             emit(response.records)
-            pageToken = response.pageToken
-        } while (pageToken != null)
+            currentRequest = currentRequest.withPageToken(response.pageToken)
+        } while (currentRequest.pageToken != null)
     }
 }
 

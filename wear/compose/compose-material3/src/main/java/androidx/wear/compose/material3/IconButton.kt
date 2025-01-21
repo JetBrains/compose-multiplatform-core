@@ -352,7 +352,7 @@ internal fun IconButtonImpl(
         animateButtonShape(
             defaultShape = shapes.shape,
             pressedShape = shapes.pressed,
-            onPressAnimationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+            onPressAnimationSpec = MaterialTheme.motionScheme.fastSpatialSpec<Float>().faster(200f),
             onReleaseAnimationSpec = MaterialTheme.motionScheme.slowSpatialSpec(),
             interactionSource = interactionSource
         )

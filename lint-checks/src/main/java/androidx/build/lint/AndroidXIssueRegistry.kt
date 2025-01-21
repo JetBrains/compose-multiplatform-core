@@ -71,7 +71,6 @@ class AndroidXIssueRegistry : IssueRegistry() {
                     PrivateConstructorForUtilityClassDetector.ISSUE,
                     IdeaSuppressionDetector.ISSUE,
                     CameraXQuirksClassDetector.ISSUE,
-                    NullabilityAnnotationsDetector.ISSUE,
                     IgnoreClassLevelDetector.ISSUE,
                     ExperimentalPropertyAnnotationDetector.ISSUE,
                     BanRestrictToTestsScope.ISSUE,

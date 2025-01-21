@@ -20,9 +20,10 @@ import android.content.Context;
 import android.os.Build;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -156,8 +157,8 @@ public abstract class IdentityCredentialStore {
      * @return the {@link IdentityCredentialStore} or {@code null} if direct access is not
      *     supported on this device.
      */
-    public static @NonNull IdentityCredentialStore getDirectAccessInstance(@NonNull
-            Context context) {
+    public static @NonNull IdentityCredentialStore getDirectAccessInstance(
+            @NonNull Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             Context appContext = context.getApplicationContext();
             IdentityCredentialStore store = HardwareIdentityCredentialStore.getDirectAccessInstance(
@@ -206,7 +207,7 @@ public abstract class IdentityCredentialStore {
      * @deprecated Use {@link IdentityCredentialStoreCapabilities#getSupportedDocTypes()} instead.
      */
     @Deprecated
-    public abstract @NonNull String[] getSupportedDocTypes();
+    public abstract String @NonNull [] getSupportedDocTypes();
 
     /**
      * Creates a new credential.
@@ -257,7 +258,7 @@ public abstract class IdentityCredentialStore {
      * @deprecated Use {@link IdentityCredential#delete(byte[])} instead.
      */
     @Deprecated
-    public abstract @Nullable byte[] deleteCredentialByName(@NonNull String credentialName);
+    public abstract byte @Nullable [] deleteCredentialByName(@NonNull String credentialName);
 
     @Retention(RetentionPolicy.SOURCE)
     @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -270,8 +271,7 @@ public abstract class IdentityCredentialStore {
      *
      * @return the capabilities of the store
      */
-    @NonNull
-    public IdentityCredentialStoreCapabilities getCapabilities() {
+    public @NonNull IdentityCredentialStoreCapabilities getCapabilities() {
         throw new UnsupportedOperationException();
     }
 
@@ -283,8 +283,7 @@ public abstract class IdentityCredentialStore {
      * of Android Keystore.
      */
     @SuppressWarnings("deprecation")
-    public static @NonNull IdentityCredentialStore getSoftwareInstance(@NonNull
-            Context context) {
+    public static @NonNull IdentityCredentialStore getSoftwareInstance(@NonNull Context context) {
         return SoftwareIdentityCredentialStore.getInstance(context);
     }
 
@@ -301,8 +300,7 @@ public abstract class IdentityCredentialStore {
      * Credential HAL.
      */
     @SuppressWarnings("deprecation")
-    public static @Nullable IdentityCredentialStore getHardwareInstance(@NonNull
-            Context context) {
+    public static @Nullable IdentityCredentialStore getHardwareInstance(@NonNull Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             return HardwareIdentityCredentialStore.getInstance(context);
         }

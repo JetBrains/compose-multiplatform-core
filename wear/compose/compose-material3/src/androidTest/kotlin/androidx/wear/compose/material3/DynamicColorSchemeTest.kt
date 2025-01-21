@@ -38,10 +38,7 @@ class DynamicColorSchemeTest {
         var actualTertiary: Color = Color.Unspecified
 
         rule.setContent {
-            MaterialTheme(
-                colorScheme =
-                    dynamicColorScheme(LocalContext.current, defaultColorScheme = expected)
-            ) {
+            MaterialTheme(colorScheme = dynamicColorScheme(LocalContext.current) ?: expected) {
                 actualPrimary = MaterialTheme.colorScheme.primary
                 actualSecondary = MaterialTheme.colorScheme.secondary
                 actualTertiary = MaterialTheme.colorScheme.tertiary

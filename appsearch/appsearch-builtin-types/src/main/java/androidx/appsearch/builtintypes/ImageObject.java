@@ -20,7 +20,9 @@ import static androidx.core.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.appsearch.annotation.Document;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.builtintypes.properties.Keyword;
 
 import java.util.ArrayList;
@@ -53,6 +55,7 @@ public final class ImageObject extends Thing {
     @Document.BytesProperty
     private final byte[] mBytes;
 
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     ImageObject(@NonNull String namespace, @NonNull String id, int documentScore,
             long creationTimestampMillis, long documentTtlMillis, @Nullable String name,
             @Nullable List<String> alternateNames, @Nullable String description,

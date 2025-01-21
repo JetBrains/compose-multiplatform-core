@@ -21,12 +21,14 @@ import static androidx.wear.protolayout.DimensionBuilders.em;
 import static androidx.wear.protolayout.DimensionBuilders.sp;
 
 import androidx.annotation.Dimension;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.DimensionBuilders.EmProp;
 import androidx.wear.protolayout.DimensionBuilders.SpProp;
 import androidx.wear.protolayout.LayoutElementBuilders.FontSetting;
+
+import org.jspecify.annotations.NonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,22 +36,22 @@ import java.util.List;
 @RestrictTo(Scope.LIBRARY)
 public class TextStyle {
   /** Font family, such as "Roboto". */
-  @NonNull public final String fontFamily;
+  public final @NonNull String fontFamily;
 
   /** The size of the font, in scaled pixels. */
-  @NonNull public final SpProp size;
+  public final @NonNull SpProp size;
 
   /** The explicit height between lines of text. */
-  @NonNull public final SpProp lineHeight;
+  public final @NonNull SpProp lineHeight;
 
   /**
    * The text letter spacing. Positive numbers increase the space between letters while negative
    * numbers tighten the space.
    */
-  @NonNull public final EmProp letterSpacing;
+  public final @NonNull EmProp letterSpacing;
 
   /** List of {@link FontSetting} option for font, such as weight, width. */
-  @NonNull public final List<FontSetting> fontSettings;
+  public final @NonNull List<FontSetting> fontSettings;
 
   public TextStyle(
       @NonNull String fontFamily,

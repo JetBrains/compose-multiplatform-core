@@ -16,22 +16,18 @@
 
 package androidx.privacysandbox.ui.integration.testsdkprovider
 
-import android.app.sdksandbox.SandboxedSdk
-import android.app.sdksandbox.SandboxedSdkProvider
 import android.content.Context
 import android.os.Bundle
-import android.os.ext.SdkExtensions
 import android.view.View
-import androidx.annotation.RequiresExtension
+import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
+import androidx.privacysandbox.sdkruntime.core.SandboxedSdkProviderCompat
 
-// TODO(b/257429573): Remove this line once fixed.
-@RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 5)
-class SdkProviderImpl : SandboxedSdkProvider() {
-    override fun onLoadSdk(p0: Bundle): SandboxedSdk {
-        return SandboxedSdk(SdkApi(context!!))
+class SdkProviderImpl : SandboxedSdkProviderCompat() {
+    override fun onLoadSdk(params: Bundle): SandboxedSdkCompat {
+        return SandboxedSdkCompat(SdkApi(context!!))
     }
 
-    override fun getView(p0: Context, p1: Bundle, p2: Int, p3: Int): View {
+    override fun getView(windowContext: Context, params: Bundle, width: Int, height: Int): View {
         TODO("Not yet implemented")
     }
 }

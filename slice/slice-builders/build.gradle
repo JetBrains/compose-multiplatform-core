@@ -53,5 +53,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.slice.builders"
+    namespace = "androidx.slice.builders"
 }

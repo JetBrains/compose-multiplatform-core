@@ -54,8 +54,8 @@ dependencies {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.security.state"
+    compileSdk = 35
+    namespace = "androidx.security.state"
 }
 
 androidx {

@@ -16,7 +16,7 @@
 
 package androidx.pdf.util;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Closeable;
 import java.io.IOException;

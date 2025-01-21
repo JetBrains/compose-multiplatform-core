@@ -30,8 +30,8 @@ plugins {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.core.splashscreen"
+    compileSdk = 35
+    namespace = "androidx.core.splashscreen"
 }
 
 dependencies {

@@ -18,6 +18,7 @@
 
 package androidx.compose.ui.layout
 
+import androidx.collection.IntObjectMap
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.autofill.Autofill
@@ -162,6 +163,9 @@ private class FakeOwner(
     override fun onDetach(node: LayoutNode) {}
 
     override val root: LayoutNode
+        get() = TODO("Not yet implemented")
+
+    override val layoutNodes: IntObjectMap<LayoutNode>
         get() = TODO("Not yet implemented")
 
     override val sharedDrawScope: LayoutNodeDrawScope

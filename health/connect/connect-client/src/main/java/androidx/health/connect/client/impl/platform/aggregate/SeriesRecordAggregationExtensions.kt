@@ -30,6 +30,8 @@ import androidx.health.connect.client.records.SeriesRecord
 import androidx.health.connect.client.records.SpeedRecord
 import androidx.health.connect.client.records.StepsCadenceRecord
 import androidx.health.connect.client.records.metadata.DataOrigin
+import androidx.health.connect.client.request.AggregateRequest
+import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import java.time.Instant
 import java.time.ZoneOffset
@@ -59,74 +61,21 @@ private val RECORDS_TO_AGGREGATE_METRICS_INFO_MAP =
             )
     )
 
-internal suspend fun HealthConnectClient.aggregateCyclingPedalingCadence(
-    metrics: Set<AggregateMetric<*>>,
-    timeRangeFilter: TimeRangeFilter,
-    dataOriginFilter: Set<DataOrigin>
-) =
-    aggregateSeriesRecord(
-        recordType = CyclingPedalingCadenceRecord::class,
-        aggregateMetrics = metrics,
-        timeRangeFilter = timeRangeFilter,
-        dataOriginFilter = dataOriginFilter
-    ) {
-        samples.map { SampleInfo(time = it.time, value = it.revolutionsPerMinute) }
-    }
-
-internal suspend fun HealthConnectClient.aggregateSpeed(
-    metrics: Set<AggregateMetric<*>>,
-    timeRangeFilter: TimeRangeFilter,
-    dataOriginFilter: Set<DataOrigin>
-) =
-    aggregateSeriesRecord(
-        recordType = SpeedRecord::class,
-        aggregateMetrics = metrics,
-        timeRangeFilter = timeRangeFilter,
-        dataOriginFilter = dataOriginFilter
-    ) {
-        samples.map { SampleInfo(time = it.time, value = it.speed.inMetersPerSecond) }
-    }
-
-internal suspend fun HealthConnectClient.aggregateStepsCadence(
-    metrics: Set<AggregateMetric<*>>,
-    timeRangeFilter: TimeRangeFilter,
-    dataOriginFilter: Set<DataOrigin>
-) =
-    aggregateSeriesRecord(
-        recordType = StepsCadenceRecord::class,
-        aggregateMetrics = metrics,
-        timeRangeFilter = timeRangeFilter,
-        dataOriginFilter = dataOriginFilter
-    ) {
-        samples.map { SampleInfo(time = it.time, value = it.rate) }
-    }
-
-@VisibleForTesting
 internal suspend fun <T : SeriesRecord<*>> HealthConnectClient.aggregateSeriesRecord(
     recordType: KClass<T>,
-    aggregateMetrics: Set<AggregateMetric<*>>,
-    timeRangeFilter: TimeRangeFilter,
-    dataOriginFilter: Set<DataOrigin>,
-    getSampleInfo: T.() -> List<SampleInfo>
-) =
-    aggregateSeriesRecord(
-        recordType,
-        timeRangeFilter,
-        dataOriginFilter,
-        SeriesAggregator(recordType, aggregateMetrics),
-        getSampleInfo
-    )
-
-private suspend fun <T : SeriesRecord<*>> HealthConnectClient.aggregateSeriesRecord(
-    recordType: KClass<T>,
-    timeRangeFilter: TimeRangeFilter,
-    dataOriginFilter: Set<DataOrigin>,
-    aggregator: Aggregator<RecordInfo>,
+    aggregateRequest: AggregateRequest,
     getSampleInfo: T.() -> List<SampleInfo>
 ): AggregationResult {
     val readRecordsFlow =
-        readRecordsFlow(recordType, timeRangeFilter.withBufferedStart(), dataOriginFilter)
+        readRecordsFlow(
+            ReadRecordsRequest(
+                recordType,
+                aggregateRequest.timeRangeFilter.withBufferedStart(),
+                aggregateRequest.dataOriginFilter
+            )
+        )
 
+    val aggregator = SeriesAggregator(recordType, aggregateRequest.metrics)
     readRecordsFlow.collect { records ->
         records
             .asSequence()
@@ -136,7 +85,7 @@ private suspend fun <T : SeriesRecord<*>> HealthConnectClient.aggregateSeriesRec
                     samples =
                         it.getSampleInfo().filter { sample ->
                             sample.isWithin(
-                                timeRangeFilter = timeRangeFilter,
+                                timeRangeFilter = aggregateRequest.timeRangeFilter,
                                 zoneOffset = it.startZoneOffset
                             )
                         }
@@ -207,7 +156,6 @@ internal data class AggregateMetricsInfo<T : Any>(
 @VisibleForTesting
 internal data class RecordInfo(val dataOrigin: DataOrigin, val samples: List<SampleInfo>)
 
-@VisibleForTesting
 internal data class SampleInfo(val time: Instant, val value: Double) {
     fun isWithin(timeRangeFilter: TimeRangeFilter, zoneOffset: ZoneOffset?): Boolean {
         if (timeRangeFilter.useLocalTime()) {

@@ -30,6 +30,9 @@ import androidx.appsearch.app.SearchResults;
 import androidx.appsearch.localstorage.visibilitystore.CallerAccess;
 import androidx.appsearch.localstorage.visibilitystore.VisibilityChecker;
 import androidx.appsearch.localstorage.visibilitystore.VisibilityStore;
+import androidx.appsearch.testutil.flags.DeviceFlagsValueProvider;
+
+import org.junit.rules.RuleChain;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -185,6 +188,13 @@ public class AppSearchTestUtils {
         MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
         messageDigest.update(data);
         return messageDigest.digest();
+    }
+
+    /** Returns a rule chain of common test rules for tests. */
+    @NonNull
+    public static RuleChain createCommonTestRules() {
+        // We don't have another common test rule yet, but we can add one later with .around() here
+        return RuleChain.outerRule(DeviceFlagsValueProvider.createCheckFlagsRule());
     }
 
     private AppSearchTestUtils() {

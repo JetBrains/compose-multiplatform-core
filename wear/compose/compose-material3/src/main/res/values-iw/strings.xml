@@ -43,8 +43,6 @@
     <string name="wear_m3c_picker_next_button_content_description" msgid="3346011303652897029">"הבא"</string>
     <string name="wear_m3c_slider_decrease_content_description" msgid="8242572466064289486">"הפחתה"</string>
     <string name="wear_m3c_slider_increase_content_description" msgid="3329631766954416834">"הגברה"</string>
-    <string name="wear_m3c_stepper_decrease_content_description" msgid="6939134411425530620">"הפחתה"</string>
-    <string name="wear_m3c_stepper_increase_content_description" msgid="6513575827514139918">"העלאה"</string>
     <string name="wear_m3c_alert_dialog_content_description_confirm_button" msgid="7776845597891182382">"אישור"</string>
     <string name="wear_m3c_alert_dialog_content_description_dismiss_button" msgid="3572467833850785688">"סגירה"</string>
     <string name="wear_m3c_confirmation_failure_message" msgid="6690105830380889949">"הפעולה נכשלה"</string>

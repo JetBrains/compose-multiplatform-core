@@ -29,6 +29,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     api("androidx.annotation:annotation:1.8.1")
     api(project(":arch:core:core-common"))
 }
@@ -41,5 +42,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.arch.core"
+    namespace = "androidx.arch.core"
 }

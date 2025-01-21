@@ -16,26 +16,24 @@
 
 package androidx.webkit.internal;
 
-import android.util.Log;
 import android.webkit.CookieManager;
 import android.webkit.GeolocationPermissions;
 import android.webkit.ServiceWorkerController;
 import android.webkit.WebStorage;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.os.CancellationSignal;
+import androidx.webkit.OutcomeReceiverCompat;
 import androidx.webkit.PrefetchException;
-import androidx.webkit.PrefetchOperationCallback;
-import androidx.webkit.PrefetchParameters;
 import androidx.webkit.Profile;
+import androidx.webkit.SpeculativeLoadingParameters;
 
-import org.chromium.support_lib_boundary.PrefetchOperationResultBoundaryInterface;
-import org.chromium.support_lib_boundary.PrefetchStatusCodeBoundaryInterface;
 import org.chromium.support_lib_boundary.ProfileBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationHandler;
+
 
 /**
  * Internal implementation of Profile.
@@ -54,8 +52,7 @@ public class ProfileImpl implements Profile {
     }
 
     @Override
-    @NonNull
-    public String getName() {
+    public @NonNull String getName() {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.MULTI_PROFILE;
         if (feature.isSupportedByWebView()) {
             return mProfileImpl.getName();
@@ -65,8 +62,7 @@ public class ProfileImpl implements Profile {
     }
 
     @Override
-    @NonNull
-    public CookieManager getCookieManager() throws IllegalStateException {
+    public @NonNull CookieManager getCookieManager() throws IllegalStateException {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.MULTI_PROFILE;
         if (feature.isSupportedByWebView()) {
             return mProfileImpl.getCookieManager();
@@ -76,8 +72,7 @@ public class ProfileImpl implements Profile {
     }
 
     @Override
-    @NonNull
-    public WebStorage getWebStorage() throws IllegalStateException {
+    public @NonNull WebStorage getWebStorage() throws IllegalStateException {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.MULTI_PROFILE;
         if (feature.isSupportedByWebView()) {
             return mProfileImpl.getWebStorage();
@@ -86,9 +81,9 @@ public class ProfileImpl implements Profile {
         }
     }
 
-    @NonNull
     @Override
-    public GeolocationPermissions getGeolocationPermissions() throws IllegalStateException {
+    public @NonNull GeolocationPermissions getGeolocationPermissions()
+            throws IllegalStateException {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.MULTI_PROFILE;
         if (feature.isSupportedByWebView()) {
             return mProfileImpl.getGeoLocationPermissions();
@@ -97,9 +92,9 @@ public class ProfileImpl implements Profile {
         }
     }
 
-    @NonNull
     @Override
-    public ServiceWorkerController getServiceWorkerController() throws IllegalStateException {
+    public @NonNull ServiceWorkerController getServiceWorkerController()
+            throws IllegalStateException {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.MULTI_PROFILE;
         if (feature.isSupportedByWebView()) {
             return mProfileImpl.getServiceWorkerController();
@@ -111,24 +106,20 @@ public class ProfileImpl implements Profile {
     @Override
     public void prefetchUrlAsync(@NonNull String url,
             @Nullable CancellationSignal cancellationSignal,
-            @NonNull PrefetchOperationCallback<Void> operationCallback,
-            @Nullable PrefetchParameters params) {
+            @NonNull SpeculativeLoadingParameters params,
+            @NonNull OutcomeReceiverCompat<Void, PrefetchException> callback) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.PROFILE_URL_PREFETCH;
         if (feature.isSupportedByWebView()) {
-            try {
-                InvocationHandler paramsBoundaryInterface =
-                        BoundaryInterfaceReflectionUtil.createInvocationHandlerFor(
-                                new PrefetchParametersAdapter(params));
+            InvocationHandler paramsBoundaryInterface =
+                    BoundaryInterfaceReflectionUtil.createInvocationHandlerFor(
+                            new SpeculativeLoadingParametersAdapter(params));
 
-                mProfileImpl.prefetchUrl(url, paramsBoundaryInterface,
-                        value -> mapOperationResult(value, operationCallback));
+            mProfileImpl.prefetchUrl(url, paramsBoundaryInterface,
+                    PrefetchOperationCallbackAdapter.buildInvocationHandler(callback));
 
-            } catch (Exception e) {
-                operationCallback.onError(e);
-            }
             if (cancellationSignal != null) {
                 cancellationSignal.setOnCancelListener(() -> mProfileImpl.cancelPrefetch(url,
-                        value -> mapOperationResult(value, operationCallback)));
+                        null));
             }
         } else {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
@@ -138,41 +129,30 @@ public class ProfileImpl implements Profile {
     @Override
     public void prefetchUrlAsync(@NonNull String url,
             @Nullable CancellationSignal cancellationSignal,
-            @NonNull PrefetchOperationCallback<Void> operationCallback) {
-        prefetchUrlAsync(url, cancellationSignal, operationCallback, null);
-    }
-
-    @Override
-    public void clearPrefetchAsync(@NonNull String url,
-            @NonNull PrefetchOperationCallback<Void> operationCallback) {
+            @NonNull OutcomeReceiverCompat<Void, PrefetchException> callback) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.PROFILE_URL_PREFETCH;
         if (feature.isSupportedByWebView()) {
-            try {
-                mProfileImpl.clearPrefetch(url,
-                        value -> mapOperationResult(value, operationCallback));
-            } catch (Exception e) {
-                operationCallback.onError(e);
+            mProfileImpl.prefetchUrl(url,
+                    PrefetchOperationCallbackAdapter.buildInvocationHandler(callback));
+
+            if (cancellationSignal != null) {
+                cancellationSignal.setOnCancelListener(() -> mProfileImpl.cancelPrefetch(url,
+                        null));
             }
         } else {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
         }
     }
 
-    private void mapOperationResult(InvocationHandler resultInvocation,
-            PrefetchOperationCallback<Void> operationCallback) {
-        PrefetchOperationResultBoundaryInterface result =
-                BoundaryInterfaceReflectionUtil.castToSuppLibClass(
-                        PrefetchOperationResultBoundaryInterface.class, resultInvocation);
-        assert result != null;
-        switch (result.getStatusCode()) {
-            case PrefetchStatusCodeBoundaryInterface.SUCCESS:
-                operationCallback.onSuccess(null);
-                break;
-            case PrefetchStatusCodeBoundaryInterface.FAILURE:
-                operationCallback.onError(new PrefetchException("An unexpected error occurred."));
-                break;
-            default:
-                Log.e("Prefetch", "Unsupported status code received");
+    @Override
+    public void clearPrefetchAsync(@NonNull String url,
+            @NonNull OutcomeReceiverCompat<Void, PrefetchException> callback) {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.PROFILE_URL_PREFETCH;
+        if (feature.isSupportedByWebView()) {
+            mProfileImpl.clearPrefetch(url,
+                    PrefetchOperationCallbackAdapter.buildInvocationHandler(callback));
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
         }
     }
 

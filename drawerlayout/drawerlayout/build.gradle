@@ -36,5 +36,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.drawerlayout"
+    namespace = "androidx.drawerlayout"
 }

@@ -11,6 +11,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation(project(":leanback:leanback"))
     implementation(project(":leanback:leanback-preference"))
     implementation(project(":leanback:leanback-paging"))
@@ -25,6 +26,6 @@ dependencies {
 }
 
 android {
-    compileSdk 35
-    namespace "com.example.android.leanback"
+    compileSdk = 35
+    namespace = "com.example.android.leanback"
 }

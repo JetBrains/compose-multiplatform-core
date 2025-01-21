@@ -25,11 +25,10 @@ import android.view.ViewGroup;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
-
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
+import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -94,13 +93,11 @@ public class WebSettingsCompatDarkModeTestBase<T extends WebViewTestActivity> {
         }
     }
 
-    @NonNull
-    public WebViewOnUiThread getWebViewOnUiThread() {
+    public @NonNull WebViewOnUiThread getWebViewOnUiThread() {
         return mWebViewOnUiThread;
     }
 
-    @NonNull
-    public WebSettings getSettingsOnUiThread() {
+    public @NonNull WebSettings getSettingsOnUiThread() {
         return getWebViewOnUiThread().getSettings();
     }
 
@@ -164,8 +161,7 @@ public class WebSettingsCompatDarkModeTestBase<T extends WebViewTestActivity> {
     /**
      * Returns a matcher to check if a color int is mostly green.
      */
-    @NonNull
-    public static Matcher<Integer> isGreen() {
+    public static @NonNull Matcher<Integer> isGreen() {
         return new TypeSafeMatcher<Integer>() {
             private int mPageColor;
 

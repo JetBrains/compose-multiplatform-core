@@ -21,8 +21,6 @@ import static java.util.Collections.emptyMap;
 import android.annotation.SuppressLint;
 import android.icu.util.ULocale;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.VisibleForTesting;
@@ -84,6 +82,9 @@ import androidx.wear.protolayout.expression.proto.DynamicProto.DynamicInt32;
 import androidx.wear.protolayout.expression.proto.DynamicProto.DynamicString;
 import androidx.wear.protolayout.expression.proto.DynamicProto.DynamicZonedDateTime;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -122,8 +123,7 @@ public class DynamicTypeEvaluator {
                 public void releaseQuota(int quota) {}
             };
 
-    @NonNull
-    private static final QuotaManager DISABLED_ANIMATIONS_QUOTA_MANAGER =
+    private static final @NonNull QuotaManager DISABLED_ANIMATIONS_QUOTA_MANAGER =
             new QuotaManager() {
                 @Override
                 public boolean tryAcquireQuota(int quota) {
@@ -144,26 +144,25 @@ public class DynamicTypeEvaluator {
         }
     }
 
-    @NonNull private static final StateStore EMPTY_STATE_STORE = new StateStore(emptyMap());
+    private static final @NonNull StateStore EMPTY_STATE_STORE = new StateStore(emptyMap());
 
-    @NonNull private final StateStore mStateStore;
-    @NonNull private final PlatformDataStore mPlatformDataStore;
-    @NonNull private final QuotaManager mAnimationQuotaManager;
-    @NonNull private final QuotaManager mDynamicTypesQuotaManager;
-    @NonNull private final EpochTimePlatformDataSource mTimeDataSource;
+    private final @NonNull StateStore mStateStore;
+    private final @NonNull PlatformDataStore mPlatformDataStore;
+    private final @NonNull QuotaManager mAnimationQuotaManager;
+    private final @NonNull QuotaManager mDynamicTypesQuotaManager;
+    private final @NonNull EpochTimePlatformDataSource mTimeDataSource;
 
     /** Configuration for creating {@link DynamicTypeEvaluator}. */
     public static final class Config {
-        @Nullable private final StateStore mStateStore;
-        @Nullable private final QuotaManager mAnimationQuotaManager;
-        @Nullable private final QuotaManager mDynamicTypesQuotaManager;
+        private final @Nullable StateStore mStateStore;
+        private final @Nullable QuotaManager mAnimationQuotaManager;
+        private final @Nullable QuotaManager mDynamicTypesQuotaManager;
 
-        @NonNull
-        private final Map<PlatformDataKey<?>, PlatformDataProvider> mSourceKeyToDataProviders =
-                new ArrayMap<>();
+        private final @NonNull Map<PlatformDataKey<?>, PlatformDataProvider>
+                        mSourceKeyToDataProviders = new ArrayMap<>();
 
-        @Nullable private final PlatformTimeUpdateNotifier mPlatformTimeUpdateNotifier;
-        @Nullable private final Supplier<Instant> mClock;
+        private final @Nullable PlatformTimeUpdateNotifier mPlatformTimeUpdateNotifier;
+        private final @Nullable Supplier<Instant> mClock;
 
         Config(
                 @Nullable StateStore stateStore,
@@ -182,16 +181,15 @@ public class DynamicTypeEvaluator {
 
         /** Builds a {@link DynamicTypeEvaluator.Config}. */
         public static final class Builder {
-            @Nullable private StateStore mStateStore = null;
-            @Nullable private QuotaManager mAnimationQuotaManager = null;
-            @Nullable private QuotaManager mDynamicTypesQuotaManager = null;
+            private @Nullable StateStore mStateStore = null;
+            private @Nullable QuotaManager mAnimationQuotaManager = null;
+            private @Nullable QuotaManager mDynamicTypesQuotaManager = null;
 
-            @NonNull
-            private final Map<PlatformDataKey<?>, PlatformDataProvider> mSourceKeyToDataProviders =
-                    new ArrayMap<>();
+            private final @NonNull Map<PlatformDataKey<?>, PlatformDataProvider>
+                    mSourceKeyToDataProviders = new ArrayMap<>();
 
-            @Nullable private PlatformTimeUpdateNotifier mPlatformTimeUpdateNotifier = null;
-            @Nullable private Supplier<Instant> mClock = null;
+            private @Nullable PlatformTimeUpdateNotifier mPlatformTimeUpdateNotifier = null;
+            private @Nullable Supplier<Instant> mClock = null;
 
             /**
              * Sets the state store that will be used for dereferencing the state keys in the
@@ -200,8 +198,7 @@ public class DynamicTypeEvaluator {
              * <p>If not set, it's the equivalent of setting an empty state store (state bindings
              * will trigger {@link DynamicTypeValueReceiver#onInvalidated()}).
              */
-            @NonNull
-            public Builder setStateStore(@NonNull StateStore value) {
+            public @NonNull Builder setStateStore(@NonNull StateStore value) {
                 mStateStore = value;
                 return this;
             }
@@ -213,8 +210,7 @@ public class DynamicTypeEvaluator {
              * <p>If not set, animations are disabled and non-infinite animations will have the end
              * value immediately.
              */
-            @NonNull
-            public Builder setAnimationQuotaManager(@NonNull QuotaManager value) {
+            public @NonNull Builder setAnimationQuotaManager(@NonNull QuotaManager value) {
                 mAnimationQuotaManager = value;
                 return this;
             }
@@ -225,8 +221,7 @@ public class DynamicTypeEvaluator {
              *
              * <p>If not set, number of dynamic types will not be restricted.
              */
-            @NonNull
-            public Builder setDynamicTypesQuotaManager(@NonNull QuotaManager value) {
+            public @NonNull Builder setDynamicTypesQuotaManager(@NonNull QuotaManager value) {
                 mDynamicTypesQuotaManager = value;
                 return this;
             }
@@ -242,8 +237,7 @@ public class DynamicTypeEvaluator {
              *     or if a key has multiple data providers.
              */
             @SuppressLint("MissingGetterMatchingBuilder")
-            @NonNull
-            public Builder addPlatformDataProvider(
+            public @NonNull Builder addPlatformDataProvider(
                     @NonNull PlatformDataProvider platformDataProvider,
                     @NonNull Set<PlatformDataKey<?>> supportedDataKeys) {
                 if (supportedDataKeys.isEmpty()) {
@@ -268,8 +262,7 @@ public class DynamicTypeEvaluator {
              * Sets the notifier used for updating the platform time data. If not set, by default
              * platform time will be updated at 1Hz using a {@code Handler} on the main thread.
              */
-            @NonNull
-            public Builder setPlatformTimeUpdateNotifier(
+            public @NonNull Builder setPlatformTimeUpdateNotifier(
                     @NonNull PlatformTimeUpdateNotifier notifier) {
                 this.mPlatformTimeUpdateNotifier = notifier;
                 return this;
@@ -281,14 +274,12 @@ public class DynamicTypeEvaluator {
              * {@link Instant#now()}.
              */
             @VisibleForTesting
-            @NonNull
-            public Builder setClock(@NonNull Supplier<Instant> clock) {
+            public @NonNull Builder setClock(@NonNull Supplier<Instant> clock) {
                 this.mClock = clock;
                 return this;
             }
 
-            @NonNull
-            public Config build() {
+            public @NonNull Config build() {
                 return new Config(
                         mStateStore,
                         mAnimationQuotaManager,
@@ -304,8 +295,7 @@ public class DynamicTypeEvaluator {
          * types, or {@code null} which is equivalent to an empty state store (state bindings will
          * trigger {@link DynamicTypeValueReceiver#onInvalidated()}).
          */
-        @Nullable
-        public StateStore getStateStore() {
+        public @Nullable StateStore getStateStore() {
             return mStateStore;
         }
 
@@ -314,8 +304,7 @@ public class DynamicTypeEvaluator {
          * or {@code null} if animations are disabled, causing non-infinite animations to have to
          * the end value immediately.
          */
-        @Nullable
-        public QuotaManager getAnimationQuotaManager() {
+        public @Nullable QuotaManager getAnimationQuotaManager() {
             return mAnimationQuotaManager;
         }
 
@@ -324,14 +313,12 @@ public class DynamicTypeEvaluator {
          * pipeline, or {@code null} if there are no restriction on the number of dynamic types. If
          * present, the quota manager is used to prevent unreasonably expensive expressions.
          */
-        @Nullable
-        public QuotaManager getDynamicTypesQuotaManager() {
+        public @Nullable QuotaManager getDynamicTypesQuotaManager() {
             return mDynamicTypesQuotaManager;
         }
 
         /** Returns any available mapping between source key and its data provider. */
-        @NonNull
-        public Map<PlatformDataKey<?>, PlatformDataProvider> getPlatformDataProviders() {
+        public @NonNull Map<PlatformDataKey<?>, PlatformDataProvider> getPlatformDataProviders() {
             return new ArrayMap<>(
                     (ArrayMap<PlatformDataKey<?>, PlatformDataProvider>) mSourceKeyToDataProviders);
         }
@@ -342,14 +329,12 @@ public class DynamicTypeEvaluator {
          * set to {@link Instant#now()}.
          */
         @VisibleForTesting
-        @Nullable
-        public Supplier<Instant> getClock() {
+        public @Nullable Supplier<Instant> getClock() {
             return mClock;
         }
 
         /** Gets the notifier used for updating the platform time data. */
-        @Nullable
-        public PlatformTimeUpdateNotifier getPlatformTimeUpdateNotifier() {
+        public @Nullable PlatformTimeUpdateNotifier getPlatformTimeUpdateNotifier() {
             return mPlatformTimeUpdateNotifier;
         }
     }
@@ -385,8 +370,7 @@ public class DynamicTypeEvaluator {
      * @throws EvaluationException when {@link QuotaManager} fails to allocate enough quota to bind
      *     the {@link DynamicTypeBindingRequest}.
      */
-    @NonNull
-    public BoundDynamicType bind(@NonNull DynamicTypeBindingRequest request)
+    public @NonNull BoundDynamicType bind(@NonNull DynamicTypeBindingRequest request)
             throws EvaluationException {
         BoundDynamicTypeImpl boundDynamicType = request.callBindOn(this);
         if (!mDynamicTypesQuotaManager.tryAcquireQuota(boundDynamicType.getDynamicNodeCost())) {
@@ -397,9 +381,8 @@ public class DynamicTypeEvaluator {
         return boundDynamicType;
     }
 
-    @NonNull
     @RestrictTo(Scope.LIBRARY_GROUP)
-    BoundDynamicTypeImpl bindInternal(
+    @NonNull BoundDynamicTypeImpl bindInternal(
             @NonNull DynamicString stringSource,
             @NonNull ULocale locale,
             @NonNull DynamicTypeValueReceiverWithPreUpdate<String> consumer) {
@@ -408,9 +391,8 @@ public class DynamicTypeEvaluator {
         return new BoundDynamicTypeImpl(resultBuilder, mDynamicTypesQuotaManager);
     }
 
-    @NonNull
     @RestrictTo(Scope.LIBRARY_GROUP)
-    BoundDynamicTypeImpl bindInternal(
+    @NonNull BoundDynamicTypeImpl bindInternal(
             @NonNull DynamicInt32 int32Source,
             @NonNull DynamicTypeValueReceiverWithPreUpdate<Integer> consumer) {
         List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
@@ -418,9 +400,8 @@ public class DynamicTypeEvaluator {
         return new BoundDynamicTypeImpl(resultBuilder, mDynamicTypesQuotaManager);
     }
 
-    @NonNull
     @RestrictTo(Scope.LIBRARY_GROUP)
-    BoundDynamicTypeImpl bindInternal(
+    @NonNull BoundDynamicTypeImpl bindInternal(
             @NonNull DynamicFloat floatSource,
             @NonNull DynamicTypeValueReceiverWithPreUpdate<Float> consumer) {
         List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
@@ -428,9 +409,8 @@ public class DynamicTypeEvaluator {
         return new BoundDynamicTypeImpl(resultBuilder, mDynamicTypesQuotaManager);
     }
 
-    @NonNull
     @RestrictTo(Scope.LIBRARY_GROUP)
-    BoundDynamicTypeImpl bindInternal(
+    @NonNull BoundDynamicTypeImpl bindInternal(
             @NonNull DynamicColor colorSource,
             @NonNull DynamicTypeValueReceiverWithPreUpdate<Integer> consumer) {
         List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
@@ -438,9 +418,8 @@ public class DynamicTypeEvaluator {
         return new BoundDynamicTypeImpl(resultBuilder, mDynamicTypesQuotaManager);
     }
 
-    @NonNull
     @RestrictTo(Scope.LIBRARY_GROUP)
-    BoundDynamicTypeImpl bindInternal(
+    @NonNull BoundDynamicTypeImpl bindInternal(
             @NonNull DynamicDuration durationSource,
             @NonNull DynamicTypeValueReceiverWithPreUpdate<Duration> consumer) {
         List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
@@ -448,9 +427,8 @@ public class DynamicTypeEvaluator {
         return new BoundDynamicTypeImpl(resultBuilder, mDynamicTypesQuotaManager);
     }
 
-    @NonNull
     @RestrictTo(Scope.LIBRARY_GROUP)
-    BoundDynamicTypeImpl bindInternal(
+    @NonNull BoundDynamicTypeImpl bindInternal(
             @NonNull DynamicInstant instantSource,
             @NonNull DynamicTypeValueReceiverWithPreUpdate<Instant> consumer) {
         List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
@@ -458,9 +436,8 @@ public class DynamicTypeEvaluator {
         return new BoundDynamicTypeImpl(resultBuilder, mDynamicTypesQuotaManager);
     }
 
-    @NonNull
     @RestrictTo(Scope.LIBRARY_GROUP)
-    BoundDynamicTypeImpl bindInternal(
+    @NonNull BoundDynamicTypeImpl bindInternal(
             @NonNull DynamicZonedDateTime zdtSource,
             @NonNull DynamicTypeValueReceiverWithPreUpdate<ZonedDateTime> consumer) {
         List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();
@@ -468,9 +445,8 @@ public class DynamicTypeEvaluator {
         return new BoundDynamicTypeImpl(resultBuilder, mDynamicTypesQuotaManager);
     }
 
-    @NonNull
     @RestrictTo(Scope.LIBRARY_GROUP)
-    BoundDynamicTypeImpl bindInternal(
+    @NonNull BoundDynamicTypeImpl bindInternal(
             @NonNull DynamicBool boolSource,
             @NonNull DynamicTypeValueReceiverWithPreUpdate<Boolean> consumer) {
         List<DynamicDataNode<?>> resultBuilder = new ArrayList<>();

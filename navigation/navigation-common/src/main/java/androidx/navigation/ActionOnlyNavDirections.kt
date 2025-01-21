@@ -15,7 +15,8 @@
  */
 package androidx.navigation
 
-import android.os.Bundle
+import androidx.savedstate.SavedState
+import androidx.savedstate.savedState
 
 /**
  * An implementation of [NavDirections] without any arguments.
@@ -24,7 +25,7 @@ import android.os.Bundle
  * Args plugin.
  */
 public data class ActionOnlyNavDirections(override val actionId: Int) : NavDirections {
-    override val arguments: Bundle = Bundle()
+    override val arguments: SavedState = savedState()
 
     public override fun equals(other: Any?): Boolean {
         if (this === other) {

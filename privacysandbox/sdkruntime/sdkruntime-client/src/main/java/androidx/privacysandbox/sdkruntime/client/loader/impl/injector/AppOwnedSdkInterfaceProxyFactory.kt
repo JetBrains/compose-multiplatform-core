@@ -43,7 +43,7 @@ internal class AppOwnedSdkInterfaceProxyFactory(
         fun createFor(classLoader: ClassLoader): AppOwnedSdkInterfaceProxyFactory {
             val appOwnedSdkSandboxInterfaceCompatClass =
                 Class.forName(
-                    AppOwnedSdkSandboxInterfaceCompat::class.java.name,
+                    "androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat",
                     /* initialize = */ false,
                     classLoader
                 )

@@ -53,9 +53,9 @@ androidx {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
     defaultConfig {
-        minSdkVersion 25
+        minSdk = 25
     }
-    namespace "androidx.wear.compose.material3.demos"
+    namespace = "androidx.wear.compose.material3.demos"
 }

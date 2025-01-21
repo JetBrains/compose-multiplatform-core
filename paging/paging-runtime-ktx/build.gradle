@@ -43,5 +43,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.paging.runtime.ktx"
+    namespace = "androidx.paging.runtime.ktx"
 }

@@ -32,11 +32,12 @@ plugins {
 
 dependencies {
     api(libs.kotlinStdlib)
-    implementation(libs.kotlinCompiler)
+    compileOnly(libs.kotlinCompiler)
     implementation(libs.binaryCompatibilityValidator)
     testImplementation(libs.truth)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinTest)
+    testImplementation(libs.kotlinCompiler)
 }
 
 androidx {

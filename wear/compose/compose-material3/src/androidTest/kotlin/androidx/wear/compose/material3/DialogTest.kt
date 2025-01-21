@@ -26,6 +26,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeRight
 import org.junit.Assert
@@ -41,6 +42,22 @@ class DialogTest {
             Dialog(show = true, modifier = Modifier.testTag(TEST_TAG), onDismissRequest = {}) {}
         }
         rule.onNodeWithTag(TEST_TAG).assertExists()
+    }
+
+    @Test
+    fun dialogContent_composedOnce() {
+        var recomposeCounter = 0
+        rule.setContentWithTheme {
+            var show by remember { mutableStateOf(false) }
+            Button(modifier = Modifier.testTag(SHOW_BUTTON_TAG), onClick = { show = true }) {}
+
+            Dialog(show = show, modifier = Modifier.testTag(TEST_TAG), onDismissRequest = {}) {
+                recomposeCounter++
+            }
+        }
+        rule.onNodeWithTag(SHOW_BUTTON_TAG).performClick()
+        rule.waitForIdle()
+        Assert.assertEquals(1, recomposeCounter)
     }
 
     @Test
@@ -99,3 +116,5 @@ class DialogTest {
         rule.onNodeWithTag(TEST_TAG).assertDoesNotExist()
     }
 }
+
+private const val SHOW_BUTTON_TAG = "show-button"

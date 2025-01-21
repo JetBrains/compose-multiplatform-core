@@ -34,7 +34,6 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.test.core.app.ApplicationProvider;
@@ -42,6 +41,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 import androidx.test.filters.SdkSuppress;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -412,6 +412,32 @@ public class WebViewCompatTest {
         }
     }
 
+    /**
+     * Test that setting a TrafficStats tag does not break WebView.
+     */
+    @Test
+    public void testSetTrafficStatsTag_UrlLoads() throws Exception {
+        WebkitUtils.checkFeature(WebViewFeature.DEFAULT_TRAFFICSTATS_TAGGING);
+
+        WebViewCompat.setDefaultTrafficStatsTag(0x123456);
+        try (MockWebServer server = new MockWebServer()) {
+            server.start();
+            server.setDispatcher(new Dispatcher() {
+                @Override
+                public MockResponse dispatch(RecordedRequest request) {
+                    return new MockResponse().setResponseCode(200);
+                }
+            });
+            HttpUrl url = server.url("/");
+            mWebViewOnUiThread.loadUrl(url.toString());
+
+            // Assert request was served successfully
+            assertNotNull(server.takeRequest(WebkitUtils.TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS));
+        }
+
+        // TODO(crbug.com/374694125): Update this test to confirm that the bytes transferred were
+        //  tagged.
+    }
 
     /**
      * ApiHelper class to ensure that the CompletableFuture is not classloaded on API < N.

@@ -35,11 +35,13 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.wear.compose.material3.internal.Strings
+import androidx.wear.compose.material3.samples.DatePickerMinDateMaxDateSample
 import androidx.wear.compose.material3.samples.DatePickerSample
 import androidx.wear.compose.material3.samples.DatePickerYearMonthDaySample
 import com.google.common.truth.Truth.assertThat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -68,6 +70,7 @@ class DatePickerTest {
         rule.setContentWithTheme {
             DatePickerSample()
             DatePickerYearMonthDaySample()
+            DatePickerMinDateMaxDateSample()
         }
     }
 
@@ -264,14 +267,16 @@ class DatePickerTest {
     fun date_picked_between_minDate_and_maxDate() {
         lateinit var pickedDate: LocalDate
         val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15)
+        val minDate = LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 1)
+        val maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 12, /* dayOfMonth= */ 6)
         val expectedDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 5)
         rule.setContentWithTheme {
             DatePicker(
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.DayMonthYear,
-                minDate = LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 1),
-                maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 12, /* dayOfMonth= */ 6)
+                minDate = minDate,
+                maxDate = maxDate
             )
         }
 
@@ -300,43 +305,71 @@ class DatePickerTest {
     }
 
     @Test
-    fun auto_scroll_day_to_minDate() {
+    fun start_from_min_year_when_provided() {
         lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 6)
-        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15)
+        val initialDate = LocalDate.of(/* year= */ 2025, /* month= */ 10, /* dayOfMonth= */ 20)
+        val minDate = LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15)
+        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 20)
         rule.setContentWithTheme {
             DatePicker(
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15),
+                minDate = minDate,
             )
         }
 
         rule
             .onNodeWithDateValue(
-                selectedValue = initialDate.monthValue,
-                selectionMode = SelectionMode.Month
+                selectedValue = initialDate.year,
+                selectionMode = SelectionMode.Year
             )
             .performScrollToIndex(0)
         rule.nextButton().performClick()
         rule.confirmButton().performClick()
-        rule.waitForIdle()
 
         assertThat(pickedDate).isEqualTo(expectedDate)
     }
 
     @Test
-    fun auto_scroll_month_to_minDate_month() {
+    fun end_with_max_year_when_provided() {
+        lateinit var pickedDate: LocalDate
+        val initialDate = LocalDate.of(/* year= */ 2023, /* month= */ 7, /* dayOfMonth= */ 20)
+        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 7, /* dayOfMonth= */ 20)
+        val maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15)
+        rule.setContentWithTheme {
+            DatePicker(
+                onDatePicked = { pickedDate = it },
+                initialDate = initialDate,
+                datePickerType = DatePickerType.YearMonthDay,
+                maxDate = maxDate,
+            )
+        }
+
+        rule
+            .onNodeWithDateValue(
+                selectedValue = initialDate.year,
+                selectionMode = SelectionMode.Year
+            )
+            .performScrollToIndex(2025 - 1900)
+        rule.nextButton().performClick()
+        rule.confirmButton().performClick()
+
+        assertThat(pickedDate).isEqualTo(expectedDate)
+    }
+
+    @Test
+    fun autoScroll_month_to_minDate_month() {
         lateinit var pickedDate: LocalDate
         val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 7, /* dayOfMonth= */ 15)
+        val minDate = LocalDate.of(/* year= */ 2023, /* month= */ 8, /* dayOfMonth= */ 5)
         val expectedDate = LocalDate.of(/* year= */ 2023, /* month= */ 8, /* dayOfMonth= */ 15)
         rule.setContentWithTheme {
             DatePicker(
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2023, /* month= */ 8, /* dayOfMonth= */ 5),
+                minDate = minDate,
             )
         }
 
@@ -348,22 +381,109 @@ class DatePickerTest {
             .performScrollToIndex(0)
         rule.nextButton().performClick()
         rule.confirmButton().performClick()
+
+        assertThat(pickedDate).isEqualTo(expectedDate)
+    }
+
+    @Test
+    fun autoScroll_month_to_maxDate_month() {
+        lateinit var pickedDate: LocalDate
+        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 5, /* dayOfMonth= */ 4)
+        val maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 4)
+        val expectedDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 4)
+        rule.setContentWithTheme {
+            DatePicker(
+                onDatePicked = { pickedDate = it },
+                initialDate = initialDate,
+                datePickerType = DatePickerType.YearMonthDay,
+                maxDate = maxDate
+            )
+        }
+
+        rule
+            .onNodeWithDateValue(
+                selectedValue = initialDate.year,
+                selectionMode = SelectionMode.Year
+            )
+            .performScrollToIndex(2025 - 1900)
+        rule.nextButton().performClick()
+        rule.confirmButton().performClick()
+
+        assertThat(pickedDate).isEqualTo(expectedDate)
+    }
+
+    @Ignore("b/381532962")
+    @Test
+    fun autoScroll_day_to_minDate_day() {
+        lateinit var pickedDate: LocalDate
+        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 12)
+        val minDate = LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15)
+        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15)
+        rule.setContentWithTheme {
+            DatePicker(
+                onDatePicked = { pickedDate = it },
+                initialDate = initialDate,
+                datePickerType = DatePickerType.YearMonthDay,
+                minDate = minDate,
+            )
+        }
+
+        rule
+            .onNodeWithDateValue(
+                selectedValue = initialDate.monthValue,
+                selectionMode = SelectionMode.Month
+            )
+            .performScrollToIndex(7)
+        rule.waitForIdle()
+        rule.nextButton().performClick()
+        rule.waitForIdle()
+        rule.confirmButton().performClick()
+        rule.waitForIdle()
+
+        assertThat(pickedDate).isEqualTo(expectedDate)
+    }
+
+    @Ignore("b/381532962")
+    @Test
+    fun autoScroll_day_to_maxDate_day() {
+        lateinit var pickedDate: LocalDate
+        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 2, /* dayOfMonth= */ 12)
+        val maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 4)
+        val expectedDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 4)
+        rule.setContentWithTheme {
+            DatePicker(
+                onDatePicked = { pickedDate = it },
+                initialDate = initialDate,
+                datePickerType = DatePickerType.YearMonthDay,
+                maxDate = maxDate
+            )
+        }
+
+        rule
+            .onNodeWithDateValue(
+                selectedValue = initialDate.year,
+                selectionMode = SelectionMode.Year
+            )
+            .performScrollToIndex(2025 - 1900)
+        rule.nextButton().performClick()
+        rule.confirmButton().performClick()
         rule.waitForIdle()
 
         assertThat(pickedDate).isEqualTo(expectedDate)
     }
 
     @Test
-    fun auto_scroll_month_and_day_to_minDate() {
+    fun autoScroll_month_and_day_to_minDate() {
         lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 6)
+        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 12)
+        val minDate = LocalDate.of(/* year= */ 2023, /* month= */ 10, /* dayOfMonth= */ 15)
         val expectedDate = LocalDate.of(/* year= */ 2023, /* month= */ 10, /* dayOfMonth= */ 15)
         rule.setContentWithTheme {
             DatePicker(
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2023, /* month= */ 10, /* dayOfMonth= */ 15),
+                minDate = minDate,
             )
         }
 
@@ -381,16 +501,143 @@ class DatePickerTest {
     }
 
     @Test
-    fun auto_scroll_month_to_maxDate_month() {
+    fun autoScroll_month_and_day_to_maxDate() {
+        lateinit var pickedDate: LocalDate
+        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 5, /* dayOfMonth= */ 10)
+        val maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 4)
+        val expectedDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 4)
+        rule.setContentWithTheme {
+            DatePicker(
+                onDatePicked = { pickedDate = it },
+                initialDate = initialDate,
+                datePickerType = DatePickerType.YearMonthDay,
+                maxDate = maxDate,
+            )
+        }
+
+        rule
+            .onNodeWithDateValue(
+                selectedValue = initialDate.year,
+                selectionMode = SelectionMode.Year
+            )
+            .performScrollToIndex(2025 - 1900)
+        rule.nextButton().performClick()
+        rule.confirmButton().performClick()
+        rule.waitForIdle()
+
+        assertThat(pickedDate).isEqualTo(expectedDate)
+    }
+
+    @Ignore("b/381532962")
+    @Test
+    fun autoScroll_back_to_minDate_when_scroll_over_minDate() {
+        lateinit var pickedDate: LocalDate
+        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 20)
+        val minDate = LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15)
+        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15)
+        rule.setContentWithTheme {
+            DatePicker(
+                onDatePicked = { pickedDate = it },
+                initialDate = initialDate,
+                datePickerType = DatePickerType.YearMonthDay,
+                minDate = minDate,
+            )
+        }
+
+        rule
+            .onNodeWithDateValue(
+                selectedValue = initialDate.monthValue,
+                selectionMode = SelectionMode.Month
+            )
+            .performScrollToIndex(6)
+        rule
+            .onNodeWithDateValue(
+                selectedValue = initialDate.dayOfMonth,
+                selectionMode = SelectionMode.Day
+            )
+            .performScrollToIndex(14)
+        rule.confirmButton().performClick()
+
+        assertThat(pickedDate).isEqualTo(expectedDate)
+    }
+
+    @Ignore("b/381532962")
+    @Test
+    fun autoScroll_back_to_maxDate_when_scroll_over_maxDate() {
+        lateinit var pickedDate: LocalDate
+        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 7, /* dayOfMonth= */ 10)
+        val maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15)
+        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15)
+        rule.setContentWithTheme {
+            DatePicker(
+                onDatePicked = { pickedDate = it },
+                initialDate = initialDate,
+                datePickerType = DatePickerType.YearMonthDay,
+                maxDate = maxDate,
+            )
+        }
+
+        rule
+            .onNodeWithDateValue(
+                selectedValue = initialDate.monthValue,
+                selectionMode = SelectionMode.Month
+            )
+            .performScrollToIndex(8)
+        rule
+            .onNodeWithDateValue(
+                selectedValue = initialDate.dayOfMonth,
+                selectionMode = SelectionMode.Day
+            )
+            .performScrollToIndex(16)
+        rule.confirmButton().performClick()
+
+        assertThat(pickedDate).isEqualTo(expectedDate)
+    }
+
+    @Test
+    fun autoScroll_to_closest_valid_month_first_month_in_max_year() {
         lateinit var pickedDate: LocalDate
         val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 2)
+        val maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 4)
+        val expectedDate = LocalDate.of(/* year= */ 2025, /* month= */ 1, /* dayOfMonth= */ 2)
+        rule.setContentWithTheme {
+            DatePicker(
+                onDatePicked = { pickedDate = it },
+                initialDate = initialDate,
+                datePickerType = DatePickerType.YearMonthDay,
+                maxDate = maxDate,
+            )
+        }
+
+        rule
+            .onNodeWithDateValue(
+                selectedValue = initialDate.year,
+                selectionMode = SelectionMode.Year
+            )
+            .performScrollToIndex(2025 - 1900)
+        rule.waitForIdle()
+
+        rule.nextButton().performClick()
+        rule.waitForIdle()
+
+        rule.confirmButton().performClick()
+        rule.waitForIdle()
+
+        assertThat(pickedDate).isEqualTo(expectedDate)
+    }
+
+    @Test
+    fun autoScroll_to_closest_valid_month_last_month_in_max_year() {
+        lateinit var pickedDate: LocalDate
+        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 5, /* dayOfMonth= */ 2)
+        val maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 4)
         val expectedDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 2)
         rule.setContentWithTheme {
             DatePicker(
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 4)
+                maxDate = maxDate,
             )
         }
 
@@ -408,71 +655,19 @@ class DatePickerTest {
     }
 
     @Test
-    fun auto_scroll_day_to_maxDate() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 2, /* dayOfMonth= */ 12)
-        val expectedDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 4)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 4)
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.year,
-                selectionMode = SelectionMode.Year
-            )
-            .performScrollToIndex(2025 - 1900)
-        rule.nextButton().performClick()
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun auto_scroll_month_and_day_to_maxDate() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 10)
-        val expectedDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 4)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 4)
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.year,
-                selectionMode = SelectionMode.Year
-            )
-            .performScrollToIndex(2025 - 1900)
-        rule.nextButton().performClick()
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun no_repeat_day_picker_single_option() {
+    fun day_picker_single_valid_option() {
         lateinit var pickedDate: LocalDate
         val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 15)
+        val minDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 15)
+        val maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 15)
         val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 15)
         rule.setContentWithTheme {
             DatePicker(
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 15),
-                maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 15),
+                minDate = minDate,
+                maxDate = maxDate,
             )
         }
 
@@ -482,6 +677,7 @@ class DatePickerTest {
                 selectionMode = SelectionMode.Day
             )
             .performClick()
+        rule.waitForIdle()
         rule.confirmButton().performClick()
         rule.waitForIdle()
 
@@ -489,99 +685,17 @@ class DatePickerTest {
     }
 
     @Test
-    fun no_repeat_day_picker_two_options() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 15)
-        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 16)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 15),
-                maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 16),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.dayOfMonth,
-                selectionMode = SelectionMode.Day
-            )
-            .performScrollToIndex(2) // Scroll to the max option index 1.
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun single_month_repeat_day_picker_options() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 15)
-        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 14)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 14),
-                maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 16),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.dayOfMonth,
-                selectionMode = SelectionMode.Day
-            )
-            .performScrollToIndex(3)
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_to_single_option_minMonth() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 30)
-        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 30)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 30),
-                maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 30),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.monthValue,
-                selectionMode = SelectionMode.Month
-            )
-            .performScrollToIndex(0)
-        rule.nextButton().performClick()
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_to_no_repeat_two_options_minMonth_without_autoscroll() {
+    fun scroll_to_valid_date_in_minMonth_does_not_trigger_autoScroll() {
         lateinit var pickedDate: LocalDate
         val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 29)
+        val minDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 28)
         val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 30)
         rule.setContentWithTheme {
             DatePicker(
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 29),
-                maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 30),
+                minDate = minDate,
             )
         }
 
@@ -590,200 +704,32 @@ class DatePickerTest {
                 selectedValue = initialDate.monthValue,
                 selectionMode = SelectionMode.Month
             )
-            .performScrollToIndex(0)
+            .performScrollToIndex(8)
         rule
             .onNodeWithDateValue(
                 selectedValue = initialDate.dayOfMonth,
                 selectionMode = SelectionMode.Day
             )
-            // Try over scroll on no-repeat picker, result in index 1.
-            .performScrollToIndex(2)
+            // Scroll to day 30.
+            .performScrollToIndex(29)
         rule.confirmButton().performClick()
-        rule.waitForIdle()
 
         assertThat(pickedDate).isEqualTo(expectedDate)
     }
 
+    @Ignore("b/381532962")
     @Test
-    fun scroll_to_no_repeat_two_options_minMonth_with_autoscroll() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 28)
-        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 29)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 29),
-                maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 30),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.monthValue,
-                selectionMode = SelectionMode.Month
-            )
-            .performScrollToIndex(0)
-        rule.nextButton().performClick()
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_to_repeat_options_minMonth_without_autoscroll() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 29)
-        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 30)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 28),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.monthValue,
-                selectionMode = SelectionMode.Month
-            )
-            .performScrollToIndex(0)
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.dayOfMonth,
-                selectionMode = SelectionMode.Day
-            )
-            // Scroll to day 30 in a repeat picker.
-            .performScrollToIndex(5)
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_to_repeat_options_minMonth_with_autoscroll() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 25)
-        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 28)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 28),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.monthValue,
-                selectionMode = SelectionMode.Month
-            )
-            .performScrollToIndex(0)
-        rule.nextButton().performClick()
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_to_single_option_maxMonth() {
+    fun scroll_to_valid_date_in_maxMonth_does_not_trigger_autoScroll() {
         lateinit var pickedDate: LocalDate
         val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 15)
-        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 1)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 1),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.monthValue,
-                selectionMode = SelectionMode.Month
-            )
-            .performScrollToIndex(9)
-        rule.nextButton().performClick()
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_to_no_repeat_two_options_maxMonth_with_autoscroll() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 15)
-        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 2)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 2),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.monthValue,
-                selectionMode = SelectionMode.Month
-            )
-            .performScrollToIndex(9)
-        rule.nextButton().performClick()
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_to_no_repeat_two_options_maxMonth_without_autoscroll() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 1)
-        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 1)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 2),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.monthValue,
-                selectionMode = SelectionMode.Month
-            )
-            .performScrollToIndex(9)
-        rule.nextButton().performClick()
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_to_repeat_options_maxMonth_without_autoscroll() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 15)
+        val maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 20)
         val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 20)
         rule.setContentWithTheme {
             DatePicker(
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 20),
+                maxDate = maxDate,
             )
         }
 
@@ -798,8 +744,8 @@ class DatePickerTest {
                 selectedValue = initialDate.dayOfMonth,
                 selectionMode = SelectionMode.Day
             )
-            // Index 39 will be day 20 in a repeat picker.
-            .performScrollToIndex(39)
+            // Scroll to 20th.
+            .performScrollToIndex(20)
         rule.confirmButton().performClick()
         rule.waitForIdle()
 
@@ -807,308 +753,19 @@ class DatePickerTest {
     }
 
     @Test
-    fun scroll_to_repeat_options_maxMonth_with_autoscroll() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 30)
-        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 20)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 20),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.monthValue,
-                selectionMode = SelectionMode.Month
-            )
-            .performScrollToIndex(9)
-        rule.nextButton().performClick()
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_from_no_repeat_minMonth() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 31)
-        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 12, /* dayOfMonth= */ 30)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 30),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.monthValue,
-                selectionMode = SelectionMode.Month
-            )
-            .performScrollToIndex(10)
-        rule.waitForIdle()
-        rule
-            .onNodeWithDateValue(selectedValue = 11, selectionMode = SelectionMode.Month)
-            .performScrollToIndex(11)
-        rule
-            .onNodeWithDateValue(selectedValue = 30, selectionMode = SelectionMode.Day)
-            .performClick()
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_from_repeat_minMonth() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 31)
-        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 12, /* dayOfMonth= */ 30)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 6),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.monthValue,
-                selectionMode = SelectionMode.Month
-            )
-            .performScrollToIndex(10)
-        rule.waitForIdle()
-        rule
-            .onNodeWithDateValue(selectedValue = 11, selectionMode = SelectionMode.Month)
-            .performScrollToIndex(11)
-        rule
-            .onNodeWithDateValue(selectedValue = 30, selectionMode = SelectionMode.Day)
-            .performClick()
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_from_no_repeat_maxMonth() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 1)
-        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 7, /* dayOfMonth= */ 16)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 2),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.monthValue,
-                selectionMode = SelectionMode.Month
-            )
-            .performScrollToIndex(6)
-        rule
-            .onNodeWithDateValue(selectedValue = 1, selectionMode = SelectionMode.Day)
-            .performScrollToIndex(15)
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_from_repeat_maxMonth() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 1)
-        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 7, /* dayOfMonth= */ 16)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 3),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.monthValue,
-                selectionMode = SelectionMode.Month
-            )
-            .performScrollToIndex(6)
-        rule
-            .onNodeWithDateValue(selectedValue = 1, selectionMode = SelectionMode.Day)
-            .performScrollToIndex(15)
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun no_repeat_month_picker_two_options() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 20)
-        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 15)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 15),
-                maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 15),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.monthValue,
-                selectionMode = SelectionMode.Month
-            )
-            // Over scroll to reach the max month.
-            .performScrollToIndex(3)
-        rule.nextButton().performClick()
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_to_single_option_minYear() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 15)
-        val expectedDate = LocalDate.of(/* year= */ 2023, /* month= */ 12, /* dayOfMonth= */ 15)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2023, /* month= */ 12, /* dayOfMonth= */ 1),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.year,
-                selectionMode = SelectionMode.Year
-            )
-            .performScrollToIndex(0)
-        rule.nextButton().performClick()
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_to_no_repeat_option_minYear_with_autoscroll() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2025, /* month= */ 9, /* dayOfMonth= */ 2)
-        val expectedDate = LocalDate.of(/* year= */ 2023, /* month= */ 11, /* dayOfMonth= */ 15)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2023, /* month= */ 11, /* dayOfMonth= */ 15),
-                maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 11, /* dayOfMonth= */ 15),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.year,
-                selectionMode = SelectionMode.Year
-            )
-            .performScrollToIndex(0)
-        rule.nextButton().performClick()
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_to_no_repeat_option_minYear_without_autoscroll() {
+    fun scroll_to_valid_date_in_minYear_does_not_trigger_autoScroll() {
         lateinit var pickedDate: LocalDate
         val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 11, /* dayOfMonth= */ 20)
+        val minDate = LocalDate.of(/* year= */ 2023, /* month= */ 8, /* dayOfMonth= */ 15)
+        val maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 11, /* dayOfMonth= */ 15)
         val expectedDate = LocalDate.of(/* year= */ 2023, /* month= */ 11, /* dayOfMonth= */ 20)
         rule.setContentWithTheme {
             DatePicker(
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2023, /* month= */ 11, /* dayOfMonth= */ 15),
-                maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 11, /* dayOfMonth= */ 15),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.year,
-                selectionMode = SelectionMode.Year
-            )
-            .performScrollToIndex(0)
-        rule.nextButton().performClick()
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_to_repeat_option_minYear_with_autoscroll() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2025, /* month= */ 8, /* dayOfMonth= */ 2)
-        val expectedDate = LocalDate.of(/* year= */ 2023, /* month= */ 9, /* dayOfMonth= */ 15)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2023, /* month= */ 9, /* dayOfMonth= */ 15),
-                maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 11, /* dayOfMonth= */ 15),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.year,
-                selectionMode = SelectionMode.Year
-            )
-            .performScrollToIndex(0)
-        rule.nextButton().performClick()
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_to_repeat_option_minYear_without_autoscroll() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 11, /* dayOfMonth= */ 20)
-        val expectedDate = LocalDate.of(/* year= */ 2023, /* month= */ 11, /* dayOfMonth= */ 20)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2023, /* month= */ 8, /* dayOfMonth= */ 15),
-                maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 11, /* dayOfMonth= */ 15),
+                minDate = minDate,
+                maxDate = maxDate,
             )
         }
 
@@ -1121,78 +778,24 @@ class DatePickerTest {
             .performScrollToIndex(0)
         rule.nextButton().performClick()
         rule.confirmButton().performClick()
-        rule.waitForIdle()
 
         assertThat(pickedDate).isEqualTo(expectedDate)
     }
 
     @Test
-    fun scroll_to_single_option_maxYear() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2023, /* month= */ 11, /* dayOfMonth= */ 15)
-        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 15)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 23),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.year,
-                selectionMode = SelectionMode.Year
-            )
-            .performScrollToIndex(2024 - 1900)
-        rule.nextButton().performClick()
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_to_no_repeat_options_maxYear_with_autoscroll() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 30)
-        val expectedDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 15)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2023, /* month= */ 11, /* dayOfMonth= */ 15),
-                maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 15),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.year,
-                selectionMode = SelectionMode.Year
-            )
-            .performScrollToIndex(2)
-        rule.nextButton().performClick()
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_to_no_repeat_options_maxYear_without_autoscroll() {
+    fun scroll_to_valid_date_in_maxYear_does_not_trigger_autoScroll() {
         lateinit var pickedDate: LocalDate
         val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 2, /* dayOfMonth= */ 10)
+        val minDate = LocalDate.of(/* year= */ 2023, /* month= */ 11, /* dayOfMonth= */ 15)
+        val maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 4, /* dayOfMonth= */ 15)
         val expectedDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 10)
         rule.setContentWithTheme {
             DatePicker(
                 onDatePicked = { pickedDate = it },
                 initialDate = initialDate,
                 datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2023, /* month= */ 11, /* dayOfMonth= */ 15),
-                maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 15),
+                minDate = minDate,
+                maxDate = maxDate,
             )
         }
 
@@ -1204,124 +807,6 @@ class DatePickerTest {
             .performScrollToIndex(2)
         rule.nextButton().performClick()
         rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_to_repeat_options_maxYear_with_autoscroll() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 9, /* dayOfMonth= */ 30)
-        val expectedDate = LocalDate.of(/* year= */ 2025, /* month= */ 4, /* dayOfMonth= */ 15)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2023, /* month= */ 11, /* dayOfMonth= */ 15),
-                maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 4, /* dayOfMonth= */ 15),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.year,
-                selectionMode = SelectionMode.Year
-            )
-            .performScrollToIndex(2)
-        rule.nextButton().performClick()
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_to_repeat_options_maxYear_without_autoscroll() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2024, /* month= */ 2, /* dayOfMonth= */ 10)
-        val expectedDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 10)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2023, /* month= */ 11, /* dayOfMonth= */ 15),
-                maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 4, /* dayOfMonth= */ 15),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.year,
-                selectionMode = SelectionMode.Year
-            )
-            .performScrollToIndex(2)
-        rule.nextButton().performClick()
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_to_repeat_options_year() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2020, /* month= */ 10, /* dayOfMonth= */ 10)
-        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 10)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2020, /* month= */ 9, /* dayOfMonth= */ 15),
-                maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 4, /* dayOfMonth= */ 15),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.year,
-                selectionMode = SelectionMode.Year
-            )
-            .performScrollToIndex(4)
-        rule.nextButton().performClick()
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
-
-        assertThat(pickedDate).isEqualTo(expectedDate)
-    }
-
-    @Test
-    fun scroll_to_repeat_options_year_from_no_repeat_year() {
-        lateinit var pickedDate: LocalDate
-        val initialDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 2)
-        val expectedDate = LocalDate.of(/* year= */ 2024, /* month= */ 10, /* dayOfMonth= */ 2)
-        rule.setContentWithTheme {
-            DatePicker(
-                onDatePicked = { pickedDate = it },
-                initialDate = initialDate,
-                datePickerType = DatePickerType.YearMonthDay,
-                minDate = LocalDate.of(/* year= */ 2020, /* month= */ 9, /* dayOfMonth= */ 15),
-                maxDate = LocalDate.of(/* year= */ 2025, /* month= */ 2, /* dayOfMonth= */ 3),
-            )
-        }
-
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.year,
-                selectionMode = SelectionMode.Year
-            )
-            .performScrollToIndex(4)
-        rule
-            .onNodeWithDateValue(
-                selectedValue = initialDate.monthValue,
-                selectionMode = SelectionMode.Month
-            )
-            .performScrollToIndex(9)
-        rule.confirmButton().performClick()
-        rule.waitForIdle()
 
         assertThat(pickedDate).isEqualTo(expectedDate)
     }

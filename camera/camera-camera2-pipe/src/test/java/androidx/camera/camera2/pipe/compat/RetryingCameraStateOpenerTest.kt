@@ -100,6 +100,7 @@ class RetryingCameraStateOpenerTest {
             }
         }
 
+    private val fakeCamera2Quirks = Camera2Quirks(camera2MetadataProvider)
     private val fakeTimeSource = FakeTimeSource()
     private val cameraDeviceCloser = FakeCamera2DeviceCloser()
 
@@ -122,7 +123,7 @@ class RetryingCameraStateOpenerTest {
             cameraOpener,
             camera2MetadataProvider,
             fakeCameraErrorListener,
-            cameraDeviceCloser,
+            fakeCamera2Quirks,
             fakeTimeSource,
             cameraInteropConfig = null,
             FakeThreads.fromTestScope(TestScope())
@@ -615,6 +616,7 @@ class RetryingCameraStateOpenerTest {
                 cameraId0,
                 1,
                 Timestamps.now(fakeTimeSource),
+                cameraDeviceCloser,
                 audioRestrictionController
             )
 
@@ -629,6 +631,7 @@ class RetryingCameraStateOpenerTest {
                 cameraId0,
                 1,
                 Timestamps.now(fakeTimeSource),
+                cameraDeviceCloser,
                 audioRestrictionController
             )
 
@@ -661,6 +664,7 @@ class RetryingCameraStateOpenerTest {
                     cameraId0,
                     1,
                     Timestamps.now(fakeTimeSource),
+                    cameraDeviceCloser,
                     audioRestrictionController
                 )
             assertThat(result.errorCode).isEqualTo(ERROR_DO_NOT_DISTURB_ENABLED)
@@ -674,7 +678,9 @@ class RetryingCameraStateOpenerTest {
     fun retryingCameraStateOpenerRetriesCorrectlyOnCameraInUse() = runTest {
         whenever(fakeDevicePolicyManager.camerasDisabled).thenReturn(false)
         cameraOpener.toThrow = CameraAccessException(CameraAccessException.CAMERA_IN_USE)
-        val result = async { retryingCameraStateOpener.openCameraWithRetry(cameraId0) }
+        val result = async {
+            retryingCameraStateOpener.openCameraWithRetry(cameraId0, cameraDeviceCloser)
+        }
 
         // Advance virtual clock to move past the retry timeout.
         advanceTimeBy(30_000)
@@ -698,7 +704,9 @@ class RetryingCameraStateOpenerTest {
     fun retryingCameraStateOpenerRetriesCorrectlyOnCameraLimitExceeded() = runTest {
         whenever(fakeDevicePolicyManager.camerasDisabled).thenReturn(false)
         cameraOpener.toThrow = CameraAccessException(CameraAccessException.MAX_CAMERAS_IN_USE)
-        val result = async { retryingCameraStateOpener.openCameraWithRetry(cameraId0) }
+        val result = async {
+            retryingCameraStateOpener.openCameraWithRetry(cameraId0, cameraDeviceCloser)
+        }
 
         // Advance virtual clock to move past the retry timeout.
         advanceTimeBy(30_000)
@@ -718,7 +726,9 @@ class RetryingCameraStateOpenerTest {
     fun retryingCameraStateOpenerRetriesCorrectlyOnCameraDisabledWhenDpcCameraDisabled() = runTest {
         whenever(fakeDevicePolicyManager.camerasDisabled).thenReturn(true)
         cameraOpener.toThrow = CameraAccessException(CameraAccessException.CAMERA_DISABLED)
-        val result = async { retryingCameraStateOpener.openCameraWithRetry(cameraId0) }
+        val result = async {
+            retryingCameraStateOpener.openCameraWithRetry(cameraId0, cameraDeviceCloser)
+        }
 
         // Advance virtual clock with just enough time for 1 camera retry (we wait 500ms before the
         // next retry).
@@ -738,7 +748,9 @@ class RetryingCameraStateOpenerTest {
     fun retryingCameraStateOpenerRetriesCorrectlyOnCameraDisabledWhenDpcCameraEnabled() = runTest {
         whenever(fakeDevicePolicyManager.camerasDisabled).thenReturn(false)
         cameraOpener.toThrow = CameraAccessException(CameraAccessException.CAMERA_DISABLED)
-        val result = async { retryingCameraStateOpener.openCameraWithRetry(cameraId0) }
+        val result = async {
+            retryingCameraStateOpener.openCameraWithRetry(cameraId0, cameraDeviceCloser)
+        }
 
         // Advance virtual clock to move past the retry timeout.
         advanceTimeBy(30_000)
@@ -758,7 +770,9 @@ class RetryingCameraStateOpenerTest {
     fun retryingCameraStateOpenerRetriesCorrectlyOnCameraDisconnected() = runTest {
         whenever(fakeDevicePolicyManager.camerasDisabled).thenReturn(false)
         cameraOpener.toThrow = CameraAccessException(CameraAccessException.CAMERA_DISCONNECTED)
-        val result = async { retryingCameraStateOpener.openCameraWithRetry(cameraId0) }
+        val result = async {
+            retryingCameraStateOpener.openCameraWithRetry(cameraId0, cameraDeviceCloser)
+        }
 
         // Advance virtual clock to move past the retry timeout.
         advanceTimeBy(30_000)
@@ -778,7 +792,9 @@ class RetryingCameraStateOpenerTest {
     fun retryingCameraStateOpenerRetriesCorrectlyOnIllegalArgumentException() = runTest {
         whenever(fakeDevicePolicyManager.camerasDisabled).thenReturn(false)
         cameraOpener.toThrow = IllegalArgumentException()
-        val result = async { retryingCameraStateOpener.openCameraWithRetry(cameraId0) }
+        val result = async {
+            retryingCameraStateOpener.openCameraWithRetry(cameraId0, cameraDeviceCloser)
+        }
 
         // Advance virtual clock to move past the retry timeout.
         advanceTimeBy(30_000)
@@ -798,7 +814,9 @@ class RetryingCameraStateOpenerTest {
     fun retryingCameraStateOpenerRetriesCorrectlyOnSecurityException() = runTest {
         whenever(fakeDevicePolicyManager.camerasDisabled).thenReturn(false)
         cameraOpener.toThrow = SecurityException()
-        val result = async { retryingCameraStateOpener.openCameraWithRetry(cameraId0) }
+        val result = async {
+            retryingCameraStateOpener.openCameraWithRetry(cameraId0, cameraDeviceCloser)
+        }
 
         // Advance virtual clock with just enough time for 1 camera retry (we wait 500ms before the
         // next retry).

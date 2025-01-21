@@ -24,8 +24,8 @@ dependencies {
     implementation(project(":core:core"))
 }
 android {
-    compileSdk 35
-    namespace "androidx.core.samples"
+    compileSdk = 35
+    namespace = "androidx.core.samples"
 }
 androidx {
     name = "AndroidX Core Samples"

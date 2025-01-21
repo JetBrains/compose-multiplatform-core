@@ -27,18 +27,16 @@ import androidx.compose.ui.graphics.Color
  *
  * Use this function to create a color scheme based on the current watchface. If the user changes
  * the watchface colors, this color scheme will change accordingly. This function checks whether the
- * dynamic color scheme can be used and returns [defaultColorScheme] otherwise.
+ * dynamic color scheme can be used and returns null otherwise. It is expected that callers will
+ * check the return value and fallback to their own default color scheme if it is null.
  *
  * @param context The context required to get system resource data.
- * @param defaultColorScheme The fallback [ColorScheme] to return if the dynamic color scheme is
- *   switched off or unavailable on this device.
  */
 fun dynamicColorScheme(
     context: Context,
-    defaultColorScheme: ColorScheme = ColorScheme()
-): ColorScheme =
+): ColorScheme? =
     if (!isDynamicColorSchemeEnabled(context)) {
-        defaultColorScheme
+        null
     } else {
         ColorScheme(
             primary = ResourceHelper.getColor(context, android.R.color.system_primary_fixed),
@@ -96,15 +94,9 @@ fun dynamicColorScheme(
     }
 
 /** Returns whether dynamic color is currently enabled on this device. */
-fun isDynamicColorSchemeEnabled(context: Context): Boolean {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-        val overlaySetting =
-            Settings.Secure.getString(context.contentResolver, THEME_CUSTOMIZATION_OVERLAY_PACKAGES)
-        return overlaySetting != null && overlaySetting.isNotEmpty() && overlaySetting != "{}"
-    }
-
-    return false
-}
+private fun isDynamicColorSchemeEnabled(context: Context): Boolean =
+    (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) &&
+        (Settings.Global.getInt(context.contentResolver, DYNAMIC_THEMING_SETTING_NAME, 0) == 1)
 
 private object ResourceHelper {
     fun getColor(context: Context, @ColorRes id: Int): Color {
@@ -112,4 +104,4 @@ private object ResourceHelper {
     }
 }
 
-private const val THEME_CUSTOMIZATION_OVERLAY_PACKAGES = "theme_customization_overlay_packages"
+private const val DYNAMIC_THEMING_SETTING_NAME = "dynamic_color_theme_enabled"

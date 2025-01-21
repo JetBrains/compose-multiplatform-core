@@ -6,7 +6,7 @@ package androidx.ink.geometry {
     method public final androidx.ink.geometry.MutableParallelogram applyTransform(androidx.ink.geometry.Parallelogram parallelogram, androidx.ink.geometry.MutableParallelogram outParallelogram);
     method public final androidx.ink.geometry.MutableSegment applyTransform(androidx.ink.geometry.Segment segment, androidx.ink.geometry.MutableSegment outSegment);
     method public final androidx.ink.geometry.MutableTriangle applyTransform(androidx.ink.geometry.Triangle triangle, androidx.ink.geometry.MutableTriangle outTriangle);
-    method public final androidx.ink.geometry.MutableVec applyTransform(androidx.ink.geometry.Vec vec, androidx.ink.geometry.MutableVec outVec);
+    method public final androidx.ink.geometry.MutableVec applyTransform(androidx.ink.geometry.Vec point, androidx.ink.geometry.MutableVec outVec);
     method public final androidx.ink.geometry.MutableAffineTransform computeInverse(androidx.ink.geometry.MutableAffineTransform outAffineTransform);
     method @Size(min=6L) public final float[] getValues();
     method @Size(min=6L) public final float[] getValues(optional @Size(min=6L) float[] outArray);

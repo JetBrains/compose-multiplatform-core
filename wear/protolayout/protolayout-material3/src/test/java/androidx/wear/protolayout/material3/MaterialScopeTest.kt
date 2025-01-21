@@ -32,6 +32,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 @DoNotInstrument
 class MaterialScopeTest {
     @Test
+    @Config(minSdk = VERSION_CODES.VANILLA_ICE_CREAM)
     fun testDynamicThemeEnabled_returnsTrue() {
         enableDynamicTheme()
 
@@ -39,8 +40,8 @@ class MaterialScopeTest {
     }
 
     @Test
-    @Config(minSdk = VERSION_CODES.UPSIDE_DOWN_CAKE)
-    fun scopeWithDefaultTheme_defaultOptInDynamicColor_dynamicThemeEnabled_api34() {
+    @Config(minSdk = VERSION_CODES.VANILLA_ICE_CREAM)
+    fun scopeWithDefaultTheme_defaultOptInDynamicColor_dynamicThemeEnabled_api35() {
         enableDynamicTheme()
 
         val scopeWithDefaultTheme =
@@ -53,7 +54,8 @@ class MaterialScopeTest {
                         colorScheme = dynamicColorScheme(context = getApplicationContext())
                     ),
                 defaultTextElementStyle = TextElementStyle(),
-                defaultIconStyle = IconStyle()
+                defaultIconStyle = IconStyle(),
+                defaultBackgroundImageStyle = BackgroundImageStyle()
             )
 
         assertThat(scopeWithDefaultTheme.deviceConfiguration).isEqualTo(DEVICE_PARAMETERS)
@@ -83,7 +85,8 @@ class MaterialScopeTest {
                     ),
                 allowDynamicTheme = false,
                 defaultTextElementStyle = TextElementStyle(),
-                defaultIconStyle = IconStyle()
+                defaultIconStyle = IconStyle(),
+                defaultBackgroundImageStyle = BackgroundImageStyle()
             )
 
         assertThat(materialScope.deviceConfiguration).isEqualTo(DEVICE_PARAMETERS)
@@ -115,7 +118,8 @@ class MaterialScopeTest {
                             )
                     ),
                 defaultTextElementStyle = TextElementStyle(),
-                defaultIconStyle = IconStyle()
+                defaultIconStyle = IconStyle(),
+                defaultBackgroundImageStyle = BackgroundImageStyle()
             )
 
         assertThat(isDynamicColorSchemeEnabled(materialScope.context)).isFalse()

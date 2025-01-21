@@ -32,6 +32,10 @@ import kotlin.test.Test
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.serializer
 
 internal class SavedStateRegistryOwnerDelegatesTest : RobolectricTest() {
@@ -254,6 +258,54 @@ internal class SavedStateRegistryOwnerDelegatesTest : RobolectricTest() {
         assertThat(property2).isEqualTo(Float.MAX_VALUE)
     }
 
+    @Test
+    fun saved_setBeforeGet_doesNotInit() {
+        val owner =
+            FakeSavedStateRegistryOwner().apply {
+                savedStateRegistryController.performAttach()
+                savedStateRegistryController.performRestore(savedState = null)
+                lifecycleRegistry.currentState = State.CREATED
+            }
+
+        var property: Int by
+            owner.saved(serializer = noDeserializeSerializer()) {
+                error("Unexpected initializer call")
+            }
+        property = 2
+        assertThat(property).isEqualTo(2)
+    }
+
+    @Test
+    fun saved_setBeforeGet_afterRestoreState_doesNotInit() {
+        val owner =
+            FakeSavedStateRegistryOwner().apply {
+                savedStateRegistryController.performAttach()
+                savedStateRegistryController.performRestore(savedState = null)
+                lifecycleRegistry.currentState = State.CREATED
+            }
+
+        var property: Int by
+            owner.saved(serializer = noDeserializeSerializer()) {
+                error("Unexpected initializer call")
+            }
+        property = 2
+        val actualState = savedState()
+        owner.savedStateRegistryController.performSave(actualState)
+        // Simulate configuration change.
+        val newOwner =
+            FakeSavedStateRegistryOwner().apply {
+                savedStateRegistryController.performAttach()
+                savedStateRegistryController.performRestore(savedState = actualState)
+                lifecycleRegistry.currentState = State.CREATED
+            }
+        var newProperty: Int by
+            newOwner.saved(serializer = noDeserializeSerializer(), key = "property") {
+                error("Unexpected initializer call")
+            }
+        newProperty = 3
+        assertThat(newProperty).isEqualTo(3)
+    }
+
     private companion object TestUtils {
 
         private const val CONSUME_RESTORED_STATE_FOR_KEY_BEFORE_CREATED_ERROR_MESSAGE =
@@ -292,5 +344,19 @@ internal class SavedStateRegistryOwnerDelegatesTest : RobolectricTest() {
             override val savedStateRegistry: SavedStateRegistry =
                 savedStateRegistryController.savedStateRegistry
         }
+
+        private inline fun <reified T> noDeserializeSerializer(): KSerializer<T> =
+            object : KSerializer<T> {
+                override val descriptor: SerialDescriptor =
+                    buildClassSerialDescriptor("NoDeserialize")
+
+                override fun serialize(encoder: Encoder, value: T) {
+                    serializer<T>().serialize(encoder, value)
+                }
+
+                override fun deserialize(decoder: Decoder): T {
+                    error("Unexpected deserialize call")
+                }
+            }
     }
 }

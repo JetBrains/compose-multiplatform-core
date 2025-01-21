@@ -22,13 +22,17 @@ import android.os.RemoteException
 import android.os.ext.SdkExtensions
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.Spinner
+import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresExtension
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.drawerlayout.widget.DrawerLayout.DrawerListener
 import androidx.privacysandbox.sdkruntime.client.SdkSandboxManagerCompat
@@ -54,6 +58,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewabilityToggleButton: SwitchMaterial
     private lateinit var mediationDropDownMenu: Spinner
     private lateinit var adTypeDropDownMenu: Spinner
+    private lateinit var titleBar: TextView
 
     @AdType
     private val adType
@@ -75,6 +80,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        titleBar = findViewById(R.id.title_bar)
         drawerLayout = findViewById(R.id.drawer)
         navigationView = findViewById(R.id.navigation_view)
         zOrderToggleButton = findViewById(R.id.zorder_below_switch)
@@ -115,6 +121,7 @@ class MainActivity : AppCompatActivity() {
                 // TODO(b/337793172): Replace with a default fragment
                 switchContentFragment(ResizeFragment(), "Resize CUJ")
 
+                setWindowsInsetsListener()
                 initializeOptionsButton()
                 initializeDrawer()
             } catch (e: LoadSdkCompatException) {
@@ -141,6 +148,18 @@ class MainActivity : AppCompatActivity() {
                 Log.i(TAG, "Sandbox died")
                 Toast.makeText(applicationContext, "Sandbox died", Toast.LENGTH_LONG).show()
             }
+        }
+    }
+
+    private fun setWindowsInsetsListener() {
+        val params = titleBar.layoutParams as ViewGroup.MarginLayoutParams
+        ViewCompat.setOnApplyWindowInsetsListener(titleBar) { view, insets ->
+            val systemWindowInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+            params.topMargin = systemWindowInsets.top
+            view.layoutParams = params
+
+            insets
         }
     }
 
@@ -253,6 +272,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.item_scroll -> switchContentFragment(ScrollFragment(), it.title)
                 R.id.item_pooling_container ->
                     switchContentFragment(PoolingContainerFragment(), it.title)
+                R.id.item_fullscreen -> switchContentFragment(FullscreenSetupFragment(), it.title)
                 else -> {
                     Log.e(TAG, "Invalid fragment option")
                     true
@@ -269,7 +289,7 @@ class MainActivity : AppCompatActivity() {
             .replace(R.id.content_fragment_container, fragment)
             .commit()
         currentFragment = fragment
-        title?.let { runOnUiThread { setTitle(it) } }
+        title?.let { runOnUiThread { titleBar.text = title } }
         return true
     }
 
@@ -296,8 +316,8 @@ class MainActivity : AppCompatActivity() {
         private const val TAG = "TestSandboxClient"
 
         /** Name of the SDK to be loaded. */
-        private const val SDK_NAME = "androidx.privacysandbox.ui.integration.testsdkprovider"
+        private const val SDK_NAME = "androidx.privacysandbox.ui.integration.testsdkproviderwrapper"
         private const val MEDIATEE_SDK_NAME =
-            "androidx.privacysandbox.ui.integration.mediateesdkprovider"
+            "androidx.privacysandbox.ui.integration.mediateesdkproviderwrapper"
     }
 }

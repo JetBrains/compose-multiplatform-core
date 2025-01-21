@@ -22,6 +22,9 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.BringIntoViewSpec
+import androidx.compose.foundation.gestures.BringIntoViewSpec.Companion.DefaultBringIntoViewSpec
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.TargetedFlingBehavior
 import androidx.compose.foundation.gestures.snapping.SnapPosition
@@ -140,6 +143,7 @@ open class BasePagerTest(private val config: ParamConfig) :
         flingBehavior: TargetedFlingBehavior? = null,
         prefetchScheduler: PrefetchScheduler? = null,
         userLookahead: Boolean = config.useLookahead,
+        bringIntoViewSpec: BringIntoViewSpec = DefaultBringIntoViewSpec,
         pageContent: @Composable PagerScope.(page: Int) -> Unit = { Page(index = it) }
     ) {
 
@@ -166,6 +170,7 @@ open class BasePagerTest(private val config: ParamConfig) :
                 focusManager = LocalFocusManager.current
                 CompositionLocalProvider(
                     LocalLayoutDirection provides config.layoutDirection,
+                    LocalBringIntoViewSpec provides bringIntoViewSpec
                 ) {
                     val resolvedFlingBehavior =
                         flingBehavior

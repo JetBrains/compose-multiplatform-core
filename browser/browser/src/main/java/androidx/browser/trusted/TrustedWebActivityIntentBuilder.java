@@ -22,8 +22,6 @@ import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.browser.customtabs.CustomTabColorSchemeParams;
 import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.browser.customtabs.CustomTabsSession;
@@ -31,6 +29,9 @@ import androidx.browser.customtabs.TrustedWebUtils;
 import androidx.browser.trusted.sharing.ShareData;
 import androidx.browser.trusted.sharing.ShareTarget;
 import androidx.browser.trusted.splashscreens.SplashScreenParamKey;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -76,23 +77,16 @@ public class TrustedWebActivityIntentBuilder {
     public static final String EXTRA_SCREEN_ORIENTATION =
             "androidx.browser.trusted.extra.SCREEN_ORIENTATION";
 
-    @NonNull
-    private final Uri mUri;
-    @NonNull
-    private final CustomTabsIntent.Builder mIntentBuilder = new CustomTabsIntent.Builder();
+    private final @NonNull Uri mUri;
+    private final CustomTabsIntent.@NonNull Builder mIntentBuilder = new CustomTabsIntent.Builder();
 
-    @Nullable
-    private List<String> mAdditionalTrustedOrigins;
-    @Nullable
-    private Bundle mSplashScreenParams;
+    private @Nullable List<String> mAdditionalTrustedOrigins;
+    private @Nullable Bundle mSplashScreenParams;
 
-    @Nullable
-    private ShareData mShareData;
-    @Nullable
-    private ShareTarget mShareTarget;
+    private @Nullable ShareData mShareData;
+    private @Nullable ShareTarget mShareTarget;
 
-    @NonNull
-    private TrustedWebActivityDisplayMode mDisplayMode =
+    private @NonNull TrustedWebActivityDisplayMode mDisplayMode =
             new TrustedWebActivityDisplayMode.DefaultMode();
 
     @ScreenOrientation.LockType
@@ -118,8 +112,7 @@ public class TrustedWebActivityIntentBuilder {
      * @deprecated Use {@link #setDefaultColorSchemeParams} instead.
      */
     @Deprecated
-    @NonNull
-    public TrustedWebActivityIntentBuilder setToolbarColor(@ColorInt int color) {
+    public @NonNull TrustedWebActivityIntentBuilder setToolbarColor(@ColorInt int color) {
         mIntentBuilder.setToolbarColor(color);
         return this;
     }
@@ -130,8 +123,7 @@ public class TrustedWebActivityIntentBuilder {
      * @deprecated Use {@link #setDefaultColorSchemeParams} instead.
      */
     @Deprecated
-    @NonNull
-    public TrustedWebActivityIntentBuilder setNavigationBarColor(@ColorInt int color) {
+    public @NonNull TrustedWebActivityIntentBuilder setNavigationBarColor(@ColorInt int color) {
         mIntentBuilder.setNavigationBarColor(color);
         return this;
     }
@@ -143,8 +135,8 @@ public class TrustedWebActivityIntentBuilder {
      * @deprecated Use {@link #setDefaultColorSchemeParams} instead.
      */
     @Deprecated
-    @NonNull
-    public TrustedWebActivityIntentBuilder setNavigationBarDividerColor(@ColorInt int color) {
+    public @NonNull TrustedWebActivityIntentBuilder setNavigationBarDividerColor(
+            @ColorInt int color) {
         mIntentBuilder.setNavigationBarDividerColor(color);
         return this;
     }
@@ -158,8 +150,7 @@ public class TrustedWebActivityIntentBuilder {
      *                    {@link CustomTabsIntent#COLOR_SCHEME_LIGHT}, and
      *                    {@link CustomTabsIntent#COLOR_SCHEME_DARK}.
      */
-    @NonNull
-    public TrustedWebActivityIntentBuilder setColorScheme(
+    public @NonNull TrustedWebActivityIntentBuilder setColorScheme(
             @CustomTabsIntent.ColorScheme int colorScheme) {
         mIntentBuilder.setColorScheme(colorScheme);
         return this;
@@ -171,8 +162,7 @@ public class TrustedWebActivityIntentBuilder {
      * Trusted Web Activity will automatically apply the correct color according to current system
      * settings. For more details see {@link CustomTabsIntent.Builder#setColorSchemeParams}.
      */
-    @NonNull
-    public TrustedWebActivityIntentBuilder setColorSchemeParams(
+    public @NonNull TrustedWebActivityIntentBuilder setColorSchemeParams(
             @CustomTabsIntent.ColorScheme int colorScheme,
             @NonNull CustomTabColorSchemeParams params) {
         mIntentBuilder.setColorSchemeParams(colorScheme, params);
@@ -187,8 +177,7 @@ public class TrustedWebActivityIntentBuilder {
      *
      * @param params An instance of {@link CustomTabColorSchemeParams}.
      */
-    @NonNull
-    public TrustedWebActivityIntentBuilder setDefaultColorSchemeParams(
+    public @NonNull TrustedWebActivityIntentBuilder setDefaultColorSchemeParams(
             @NonNull CustomTabColorSchemeParams params) {
         mIntentBuilder.setDefaultColorSchemeParams(params);
         return this;
@@ -206,8 +195,7 @@ public class TrustedWebActivityIntentBuilder {
      * Alternatively, use {@link CustomTabsSession#validateRelationship} to validate additional
      * origins asynchronously, but that would delay launching the Trusted Web Activity.
      */
-    @NonNull
-    public TrustedWebActivityIntentBuilder setAdditionalTrustedOrigins(
+    public @NonNull TrustedWebActivityIntentBuilder setAdditionalTrustedOrigins(
             @NonNull List<String> origins) {
         mAdditionalTrustedOrigins = origins;
         return this;
@@ -228,8 +216,7 @@ public class TrustedWebActivityIntentBuilder {
      * The splash screen will be removed on the first paint of the page, or when the page load
      * fails.
      */
-    @NonNull
-    public TrustedWebActivityIntentBuilder setSplashScreenParams(
+    public @NonNull TrustedWebActivityIntentBuilder setSplashScreenParams(
             @NonNull Bundle splashScreenParams) {
         mSplashScreenParams = splashScreenParams;
         return this;
@@ -242,8 +229,7 @@ public class TrustedWebActivityIntentBuilder {
      * @param shareData   A {@link ShareData} object containing the data to be sent to the Web Share
      *                    Target.
      */
-    @NonNull
-    public TrustedWebActivityIntentBuilder setShareParams(@NonNull ShareTarget shareTarget,
+    public @NonNull TrustedWebActivityIntentBuilder setShareParams(@NonNull ShareTarget shareTarget,
             @NonNull ShareData shareData) {
         mShareTarget = shareTarget;
         mShareData = shareData;
@@ -255,8 +241,7 @@ public class TrustedWebActivityIntentBuilder {
      * (see {@link TrustedWebActivityDisplayMode.ImmersiveMode}. Not setting it means
      * {@link TrustedWebActivityDisplayMode.DefaultMode} will be used.
      */
-    @NonNull
-    public TrustedWebActivityIntentBuilder setDisplayMode(
+    public @NonNull TrustedWebActivityIntentBuilder setDisplayMode(
             @NonNull TrustedWebActivityDisplayMode displayMode) {
         mDisplayMode = displayMode;
         return this;
@@ -269,8 +254,7 @@ public class TrustedWebActivityIntentBuilder {
      * @param orientation A {@link ScreenOrientation} lock type for a Trusted Web Activity.
      *                    Not setting it means {@link ScreenOrientation#DEFAULT} will be used.
      */
-    @NonNull
-    public TrustedWebActivityIntentBuilder setScreenOrientation(
+    public @NonNull TrustedWebActivityIntentBuilder setScreenOrientation(
             @ScreenOrientation.LockType int orientation) {
         mScreenOrientation = orientation;
         return this;
@@ -281,8 +265,7 @@ public class TrustedWebActivityIntentBuilder {
      *
      * @param session The {@link CustomTabsSession} to use for launching a Trusted Web Activity.
      */
-    @NonNull
-    public TrustedWebActivityIntent build(@NonNull CustomTabsSession session) {
+    public @NonNull TrustedWebActivityIntent build(@NonNull CustomTabsSession session) {
         if (session == null) {
             throw new NullPointerException("CustomTabsSession is required for launching a TWA");
         }
@@ -317,24 +300,21 @@ public class TrustedWebActivityIntentBuilder {
      * Can be useful for falling back to Custom Tabs when Trusted Web Activity providers are
      * unavailable.
      */
-    @NonNull
-    public CustomTabsIntent buildCustomTabsIntent() {
+    public @NonNull CustomTabsIntent buildCustomTabsIntent() {
         return mIntentBuilder.build();
     }
 
     /**
      * Returns the {@link Uri} to be launched with this Builder.
      */
-    @NonNull
-    public Uri getUri() {
+    public @NonNull Uri getUri() {
         return mUri;
     }
 
     /**
      * Returns {@link TrustedWebActivityDisplayMode} set on this Builder.
      */
-    @NonNull
-    public TrustedWebActivityDisplayMode getDisplayMode() {
+    public @NonNull TrustedWebActivityDisplayMode getDisplayMode() {
         return mDisplayMode;
     }
 }

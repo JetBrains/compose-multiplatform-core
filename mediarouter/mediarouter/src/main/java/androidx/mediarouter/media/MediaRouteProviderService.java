@@ -18,6 +18,7 @@ package androidx.mediarouter.media;
 
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_DATA_MEMBER_ROUTE_ID;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_DATA_MEMBER_ROUTE_IDS;
+import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_DATA_ROUTE_CONTROLLER_OPTIONS;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_DATA_ROUTE_ID;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_DATA_ROUTE_LIBRARY_GROUP;
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_DATA_UNSELECT_REASON;
@@ -85,6 +86,7 @@ import androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController
 import androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController.DynamicRouteDescriptor;
 import androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController.OnDynamicRoutesChangedListener;
 import androidx.mediarouter.media.MediaRouteProvider.RouteController;
+import androidx.mediarouter.media.MediaRouteProvider.RouteControllerOptions;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -154,8 +156,14 @@ public abstract class MediaRouteProviderService extends Service {
         boolean onUnregisterClient(Messenger messenger, int requestId);
         boolean onCreateRouteController(Messenger messenger, int requestId,
                 int controllerId, String routeId, String routeGroupId);
-        boolean onCreateDynamicGroupRouteController(Messenger messenger, int requestId,
-                int controllerId, String initialMemberRouteId);
+
+        boolean onCreateDynamicGroupRouteController(
+                Messenger messenger,
+                int requestId,
+                int controllerId,
+                String initialMemberRouteId,
+                RouteControllerOptions routeControllerOptions);
+
         boolean onAddMemberRoute(Messenger messenger, int requestId, int controllerId,
                 String memberId);
         boolean onRemoveMemberRoute(Messenger messenger, int requestId, int controllerId,
@@ -468,9 +476,20 @@ public abstract class MediaRouteProviderService extends Service {
 
                     case CLIENT_MSG_CREATE_DYNAMIC_GROUP_ROUTE_CONTROLLER: {
                         String initialMemberId = data.getString(CLIENT_DATA_MEMBER_ROUTE_ID);
+                        Bundle routeControllerOptionsBundle =
+                                data.getParcelable(CLIENT_DATA_ROUTE_CONTROLLER_OPTIONS);
+                        RouteControllerOptions routeControllerOptions =
+                                (routeControllerOptionsBundle != null)
+                                        ? new RouteControllerOptions(
+                                                routeControllerOptionsBundle)
+                                        : RouteControllerOptions.EMPTY;
                         if (initialMemberId != null) {
                             return service.mImpl.onCreateDynamicGroupRouteController(
-                                    messenger, requestId, arg, initialMemberId);
+                                    messenger,
+                                    requestId,
+                                    arg,
+                                    initialMemberId,
+                                    routeControllerOptions);
                         }
                         break;
                     }
@@ -662,9 +681,15 @@ public abstract class MediaRouteProviderService extends Service {
             if (client != null) {
                 if (client.createRouteController(routeId, routeGroupId, controllerId)) {
                     if (DEBUG) {
-                        Log.d(TAG, client + ": Route controller created, controllerId="
-                                + controllerId + ", routeId=" + routeId
-                                + ", routeGroupId=" + routeGroupId);
+                        Log.d(
+                                TAG,
+                                client
+                                        + ": Route controller created, controllerId="
+                                        + controllerId
+                                        + ", routeId="
+                                        + routeId
+                                        + ", routeGroupId="
+                                        + routeGroupId);
                     }
                     sendGenericSuccess(messenger, requestId);
                     return true;
@@ -674,12 +699,17 @@ public abstract class MediaRouteProviderService extends Service {
         }
 
         @Override
-        public boolean onCreateDynamicGroupRouteController(Messenger messenger, int requestId,
-                int controllerId, String initialMemberRouteId) {
+        public boolean onCreateDynamicGroupRouteController(
+                Messenger messenger,
+                int requestId,
+                int controllerId,
+                String initialMemberRouteId,
+                RouteControllerOptions routeControllerOptions) {
             ClientRecord client = getClient(messenger);
             if (client != null) {
-                Bundle bundle = client.createDynamicGroupRouteController(
-                        initialMemberRouteId, controllerId);
+                Bundle bundle =
+                        client.createDynamicGroupRouteController(
+                                initialMemberRouteId, routeControllerOptions, controllerId);
                 if (bundle != null) {
                     if (DEBUG) {
                         Log.d(TAG, client + ": Route controller created, controllerId="
@@ -1082,13 +1112,14 @@ public abstract class MediaRouteProviderService extends Service {
             }
 
             public Bundle createDynamicGroupRouteController(
-                    String initialMemberRouteId, int controllerId) {
+                    String initialMemberRouteId,
+                    RouteControllerOptions routeControllerOptions,
+                    int controllerId) {
                 if (mControllers.indexOfKey(controllerId) < 0) {
                     MediaRouteProvider.DynamicGroupRouteController controller =
                             mService.getMediaRouteProvider()
                                     .onCreateDynamicGroupRouteController(
-                                            initialMemberRouteId,
-                                            MediaRouteProvider.RouteControllerOptions.EMPTY);
+                                            initialMemberRouteId, routeControllerOptions);
                     if (controller != null) {
                         controller.setOnDynamicRoutesChangedListener(
                                 ContextCompat.getMainExecutor(mService.getApplicationContext()),
@@ -1356,9 +1387,12 @@ public abstract class MediaRouteProviderService extends Service {
 
             @Override
             public Bundle createDynamicGroupRouteController(
-                    String initialMemberRouteId, int controllerId) {
+                    String initialMemberRouteId,
+                    RouteControllerOptions routeControllerOptions,
+                    int controllerId) {
                 Bundle result =
-                        super.createDynamicGroupRouteController(initialMemberRouteId, controllerId);
+                        super.createDynamicGroupRouteController(
+                                initialMemberRouteId, routeControllerOptions, controllerId);
                 if (result != null && mPackageName != null) {
                     mMR2ProviderServiceAdapter.notifyRouteControllerAdded(
                             this, mControllers.get(controllerId),

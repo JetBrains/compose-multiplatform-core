@@ -64,6 +64,8 @@ import android.view.translation.ViewTranslationResponse
 import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
+import androidx.collection.MutableIntObjectMap
+import androidx.collection.mutableIntObjectMapOf
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -158,15 +160,18 @@ import androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.internal.checkPreconditionNotNull
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.PlacementScope
 import androidx.compose.ui.layout.RootMeasurePolicy
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.modifier.ModifierLocalManager
 import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.LayoutNode.UsageByParent
 import androidx.compose.ui.node.LayoutNodeDrawScope
 import androidx.compose.ui.node.MeasureAndLayoutDelegate
+import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.Nodes
 import androidx.compose.ui.node.OwnedLayer
 import androidx.compose.ui.node.Owner
@@ -176,6 +181,7 @@ import androidx.compose.ui.node.visitSubtree
 import androidx.compose.ui.platform.MotionEventVerifierApi29.isValidMotionEvent
 import androidx.compose.ui.platform.coreshims.ContentCaptureSessionCompat
 import androidx.compose.ui.platform.coreshims.ViewCompatShims
+import androidx.compose.ui.relocation.BringIntoViewModifierNode
 import androidx.compose.ui.scrollcapture.ScrollCapture
 import androidx.compose.ui.semantics.EmptySemanticsElement
 import androidx.compose.ui.semantics.EmptySemanticsModifier
@@ -258,6 +264,22 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
 
     private val rootSemanticsNode = EmptySemanticsModifier()
     private val semanticsModifier = EmptySemanticsElement(rootSemanticsNode)
+    private val bringIntoViewNode =
+        object : ModifierNodeElement<BringIntoViewOnScreenResponderNode>() {
+            override fun create() = BringIntoViewOnScreenResponderNode(this@AndroidComposeView)
+
+            override fun update(node: BringIntoViewOnScreenResponderNode) {
+                node.view = this@AndroidComposeView
+            }
+
+            override fun InspectorInfo.inspectableProperties() {
+                name = "BringIntoViewOnScreen"
+            }
+
+            override fun hashCode(): Int = this@AndroidComposeView.hashCode()
+
+            override fun equals(other: Any?) = other === this
+        }
 
     override val focusOwner: FocusOwner =
         FocusOwnerImpl(
@@ -428,7 +450,10 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                     .then(keyInputModifier)
                     .then(focusOwner.modifier)
                     .then(dragAndDropManager.modifier)
+                    .then(bringIntoViewNode)
         }
+
+    override val layoutNodes: MutableIntObjectMap<LayoutNode> = mutableIntObjectMapOf()
 
     override val rootForTest: RootForTest = this
 
@@ -1026,9 +1051,12 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         composeAccessibilityDelegate.SendRecurringAccessibilityEventsIntervalMillis = intervalMillis
     }
 
-    override fun onAttach(node: LayoutNode) {}
+    override fun onAttach(node: LayoutNode) {
+        layoutNodes[node.semanticsId] = node
+    }
 
     override fun onDetach(node: LayoutNode) {
+        layoutNodes.remove(node.semanticsId)
         measureAndLayoutDelegate.onNodeDetached(node)
         requestClearInvalidObservations()
         @OptIn(ExperimentalComposeUiApi::class)
@@ -1606,6 +1634,12 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         if (ComposeUiFlags.isRectTrackingEnabled) {
             rectManager.remove(layoutNode)
         }
+    }
+
+    override fun onLayoutNodeReused(layoutNode: LayoutNode, oldSemanticsId: Int) {
+        // Keep the mapping up to date when the semanticsId changes
+        layoutNodes.remove(oldSemanticsId)
+        layoutNodes[layoutNode.semanticsId] = layoutNode
     }
 
     override fun onInteropViewLayoutChange(view: InteropView) {
@@ -2852,4 +2886,18 @@ private fun View.getContentCaptureSessionCompat(): ContentCaptureSessionCompat? 
         ViewCompatShims.IMPORTANT_FOR_CONTENT_CAPTURE_YES
     )
     return ViewCompatShims.getContentCaptureSession(this)
+}
+
+private class BringIntoViewOnScreenResponderNode(var view: ViewGroup) :
+    Modifier.Node(), BringIntoViewModifierNode {
+    override suspend fun bringIntoView(
+        childCoordinates: LayoutCoordinates,
+        boundsProvider: () -> androidx.compose.ui.geometry.Rect?
+    ) {
+        val childOffset = childCoordinates.positionInRoot()
+        val rootRect = boundsProvider()?.translate(childOffset)
+        if (rootRect != null) {
+            view.requestRectangleOnScreen(rootRect.toAndroidRect(), false)
+        }
+    }
 }

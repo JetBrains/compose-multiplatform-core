@@ -50,8 +50,8 @@ androidx {
 }
 
 android {
-    namespace "androidx.bluetooth.testing"
+    namespace = "androidx.bluetooth.testing"
     defaultConfig {
-        minSdkVersion 33
+        minSdk = 33
     }
 }

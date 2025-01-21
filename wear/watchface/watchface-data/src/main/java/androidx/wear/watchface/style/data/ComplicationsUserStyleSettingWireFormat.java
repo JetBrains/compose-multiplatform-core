@@ -19,11 +19,12 @@ package androidx.wear.watchface.style.data;
 import android.graphics.drawable.Icon;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -35,9 +36,8 @@ import java.util.List;
 @VersionedParcelize
 public class ComplicationsUserStyleSettingWireFormat extends UserStyleSettingWireFormat {
 
-    @Nullable
     @ParcelField(104)
-    public List<CharSequence> mPerOptionScreenReaderNames;
+    public @Nullable List<CharSequence> mPerOptionScreenReaderNames;
 
     ComplicationsUserStyleSettingWireFormat() {}
 

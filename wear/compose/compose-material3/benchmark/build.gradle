@@ -32,15 +32,15 @@ plugins {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
 
     defaultConfig {
-        minSdkVersion 25
+        minSdk = 25
     }
     buildTypes.configureEach {
         consumerProguardFiles "benchmark-proguard-rules.pro"
     }
-    namespace "androidx.wear.compose.material3.benchmark"
+    namespace = "androidx.wear.compose.material3.benchmark"
 }
 
 dependencies {

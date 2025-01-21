@@ -31,8 +31,6 @@ import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.Switch;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 import androidx.mediarouter.media.MediaRouter;
@@ -44,9 +42,11 @@ import com.example.androidx.mediarouting.R;
 import com.example.androidx.mediarouting.RoutesManager;
 import com.example.androidx.mediarouting.activities.systemrouting.SystemRoutingActivity;
 import com.example.androidx.mediarouting.services.SampleDynamicGroupMediaRouteProviderService;
-import com.example.androidx.mediarouting.services.SampleMediaRouteProviderService;
 import com.example.androidx.mediarouting.ui.RoutesAdapter;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Allows the user to control dialog types, enabling or disabling Dynamic Groups, enabling or
@@ -140,7 +140,6 @@ public final class SettingsActivity extends AppCompatActivity {
     private void setUpViews() {
         setUpDynamicGroupsEnabledSwitch();
         setUpTransferToLocalSwitch();
-        setUpSimpleProviderEnabledSwitch();
         setUpDynamicProviderEnabledSwitch();
         setUpDialogTypeDropDownList();
         setUpNewRouteButton();
@@ -170,25 +169,6 @@ public final class SettingsActivity extends AppCompatActivity {
                             new MediaRouterParams.Builder(mMediaRouter.getRouterParams());
                     builder.setTransferToLocalEnabled(enabled);
                     mMediaRouter.setRouterParams(builder.build());
-                });
-    }
-
-    private void setUpSimpleProviderEnabledSwitch() {
-        Switch simpleProviderEnabledSwitch = findViewById(R.id.enable_simple_provider_switch);
-        ComponentName simpleProviderComponentName =
-                new ComponentName(/* context= */ this, SampleMediaRouteProviderService.class);
-        simpleProviderEnabledSwitch.setChecked(
-                mPackageManager.getComponentEnabledSetting(simpleProviderComponentName)
-                        != PackageManager.COMPONENT_ENABLED_STATE_DISABLED);
-        simpleProviderEnabledSwitch.setOnCheckedChangeListener(
-                (compoundButton, enabled) -> {
-                    mPackageManager
-                            .setComponentEnabledSetting(
-                                    simpleProviderComponentName,
-                                    enabled
-                                            ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-                                            : PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                                    /* flags= */ PackageManager.DONT_KILL_APP);
                 });
     }
 
@@ -268,7 +248,7 @@ public final class SettingsActivity extends AppCompatActivity {
 
     private static class ProviderServiceConnection implements ServiceConnection {
 
-        @Nullable private SampleDynamicGroupMediaRouteProviderService mService;
+        private @Nullable SampleDynamicGroupMediaRouteProviderService mService;
 
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {

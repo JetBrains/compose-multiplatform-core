@@ -654,7 +654,7 @@ class TextToggleButtonTest {
             checkedShape,
             1f,
             100,
-            color = { TextToggleButtonDefaults.textToggleButtonColors().checkedContainerColor },
+            color = { shapeColor(checked = true) },
             antiAliasingGap = 4f,
         ) { modifier ->
             var checked by remember { mutableStateOf(false) }
@@ -678,7 +678,7 @@ class TextToggleButtonTest {
             uncheckedShape,
             1f,
             100,
-            color = { TextToggleButtonDefaults.textToggleButtonColors().uncheckedContainerColor },
+            color = { shapeColor(checked = false) },
             antiAliasingGap = 4f,
         ) { modifier ->
             var checked by remember { mutableStateOf(true) }
@@ -691,10 +691,126 @@ class TextToggleButtonTest {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
+    @Test
+    fun changes_to_unchecked_pressed_shape_when_pressed_on_unchecked() {
+        val uncheckedShape = RoundedCornerShape(20.dp)
+        val checkedShape = RoundedCornerShape(10.dp)
+        val uncheckedPressedShape = RoundedCornerShape(0.dp)
+        val checkedPressedShape = RoundedCornerShape(5.dp)
+
+        rule.verifyRoundedButtonTapAnimationEnd(
+            uncheckedShape,
+            uncheckedPressedShape,
+            1f,
+            100,
+            color = { shapeColor(checked = false) },
+            releaseAfterTap = false,
+        ) { modifier ->
+            CompositionLocalProvider(LocalContentColor provides shapeColor(checked = false)) {
+                TextToggleButton(
+                    checked = false,
+                    onCheckedChange = {},
+                    modifier = modifier,
+                    shapes =
+                        TextToggleButtonShapes(
+                            uncheckedShape,
+                            checkedShape,
+                            uncheckedPressedShape,
+                            checkedPressedShape
+                        ),
+                ) {}
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    @Test
+    fun changes_to_checked_pressed_shape_when_pressed_on_checked() {
+        val uncheckedShape = RoundedCornerShape(10.dp)
+        val checkedShape = RoundedCornerShape(20.dp)
+        val uncheckedPressedShape = RoundedCornerShape(5.dp)
+        val checkedPressedShape = RoundedCornerShape(0.dp)
+
+        rule.verifyRoundedButtonTapAnimationEnd(
+            checkedShape,
+            checkedPressedShape,
+            1f,
+            100,
+            color = { shapeColor(checked = true) },
+            releaseAfterTap = false,
+        ) { modifier ->
+            CompositionLocalProvider(LocalContentColor provides shapeColor(checked = true)) {
+                TextToggleButton(
+                    checked = true,
+                    onCheckedChange = {},
+                    modifier = modifier,
+                    shapes =
+                        TextToggleButtonShapes(
+                            uncheckedShape,
+                            checkedShape,
+                            uncheckedPressedShape,
+                            checkedPressedShape
+                        ),
+                ) {}
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    @Test
+    fun changes_unchecked_to_checked_shape_when_checked_changed() {
+        val uncheckedShape = RoundedCornerShape(20.dp)
+        val checkedShape = RoundedCornerShape(10.dp)
+        val pressedShape = RoundedCornerShape(0.dp)
+        val checked = mutableStateOf(false)
+
+        rule.verifyCheckedStateChange(
+            updateState = { checked.value = !checked.value },
+            startShape = uncheckedShape,
+            endShape = checkedShape,
+            uncheckedColorComposable = { shapeColor(checked = false) },
+            checkedColorComposable = { shapeColor(checked = true) },
+            content = {
+                IconToggleButton(
+                    checked = checked.value,
+                    onCheckedChange = { checked.value = !checked.value },
+                    shapes = IconToggleButtonShapes(uncheckedShape, checkedShape, pressedShape),
+                    modifier = Modifier.testTag(TEST_TAG),
+                ) {}
+            }
+        )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    @Test
+    fun changes_checked_to_unchecked_shape_when_checked_changed() {
+        val uncheckedShape = RoundedCornerShape(20.dp)
+        val checkedShape = RoundedCornerShape(10.dp)
+        val pressedShape = RoundedCornerShape(0.dp)
+        val checked = mutableStateOf(false)
+
+        rule.verifyCheckedStateChange(
+            updateState = { checked.value = !checked.value },
+            startShape = uncheckedShape,
+            endShape = checkedShape,
+            uncheckedColorComposable = { shapeColor(checked = false) },
+            checkedColorComposable = { shapeColor(checked = true) },
+            content = {
+                IconToggleButton(
+                    checked = checked.value,
+                    onCheckedChange = { checked.value = !checked.value },
+                    shapes = IconToggleButtonShapes(uncheckedShape, checkedShape, pressedShape),
+                    modifier = Modifier.testTag(TEST_TAG),
+                ) {}
+            }
+        )
+    }
+
     @Composable
-    private fun shapeColor(): Color {
+    private fun shapeColor(checked: Boolean = true): Color {
         return TextToggleButtonDefaults.textToggleButtonColors()
-            .containerColor(enabled = true, checked = true)
+            .containerColor(enabled = true, checked = checked)
             .value
     }
 
@@ -788,5 +904,61 @@ class TextToggleButtonTest {
         onNodeWithTag(TEST_TAG)
             .assertHeightIsEqualTo(expectedSize)
             .assertWidthIsEqualTo(expectedSize)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun ComposeContentTestRule.verifyCheckedStateChange(
+        updateState: () -> Unit,
+        startShape: Shape,
+        endShape: Shape,
+        padding: Dp = 0.dp,
+        backgroundColor: Color = Color.White,
+        antiAliasingGap: Float = 2f,
+        uncheckedColorComposable: @Composable () -> Color,
+        checkedColorComposable: @Composable () -> Color,
+        content: @Composable (Modifier) -> Unit
+    ) {
+        var uncheckedColor = Color.Transparent
+        var checkedColor = Color.Transparent
+        rule.setContentWithTheme {
+            uncheckedColor = uncheckedColorComposable()
+            checkedColor = checkedColorComposable()
+            Box(Modifier.padding(padding).background(backgroundColor)) {
+                content(Modifier.testTag(TEST_TAG))
+            }
+        }
+        this.waitForIdle()
+
+        // Confirm that the start state is correct
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .captureToImage()
+            .assertShape(
+                density = rule.density,
+                horizontalPadding = padding,
+                verticalPadding = padding,
+                shapeColor = uncheckedColor,
+                backgroundColor = backgroundColor,
+                antiAliasingGap = antiAliasingGap,
+                shape = startShape,
+            )
+
+        // Update state
+        updateState()
+        this.waitForIdle()
+
+        // Confirm that the end state is correct
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .captureToImage()
+            .assertShape(
+                density = rule.density,
+                horizontalPadding = padding,
+                verticalPadding = padding,
+                shapeColor = checkedColor,
+                backgroundColor = backgroundColor,
+                antiAliasingGap = antiAliasingGap,
+                shape = endShape,
+            )
     }
 }

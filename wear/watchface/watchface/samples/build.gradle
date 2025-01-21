@@ -48,7 +48,7 @@ androidx {
 
 android {
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
-    namespace "androidx.wear.watchface.samples"
+    namespace = "androidx.wear.watchface.samples"
 }

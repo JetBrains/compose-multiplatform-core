@@ -47,9 +47,9 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 24
+        minSdk = 24
     }
-    namespace "androidx.core.performance.play.services"
+    namespace = "androidx.core.performance.play.services"
 }
 
 androidx {

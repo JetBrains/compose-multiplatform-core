@@ -52,5 +52,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.testutils.navigation"
+    namespace = "androidx.testutils.navigation"
 }

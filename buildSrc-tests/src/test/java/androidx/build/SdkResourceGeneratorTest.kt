@@ -33,8 +33,8 @@ class SdkResourceGeneratorTest {
         project.extensions.create(
             "androidXConfiguration",
             AndroidXConfigImpl::class.java,
-            project.provider { KotlinVersion.KOTLIN_1_7 },
-            project.provider { "1.7.10" },
+            project.provider { KotlinVersion.KOTLIN_1_8 },
+            project.provider { "1.8.21" },
         )
 
         project.setSupportRootFolder(File("files/support"))

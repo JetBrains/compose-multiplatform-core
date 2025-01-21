@@ -170,8 +170,9 @@ internal fun startRuntimeMethodTracing(
     InstrumentationResults.reportAdditionalFileToCopy("profiling_trace", path)
 
     val bufferSize = 16 * 1024 * 1024
-    if (sampled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        startMethodTracingSampling(path, bufferSize, Arguments.profilerSampleFrequency)
+    if (sampled) {
+        val intervalUs = (1_000_000.0 / Arguments.profilerSampleFrequencyHz).toInt()
+        Debug.startMethodTracingSampling(path, bufferSize, intervalUs)
     } else {
         // NOTE: 0x10 flag enables low-overhead wall clock timing when ART module version supports
         // it. Note that this doesn't affect trace parsing, since this doesn't affect wall clock,
@@ -317,7 +318,7 @@ internal object StackSamplingSimpleperf : Profiler() {
                 Shell.executeScriptSilent(it.findSimpleperf() + " api-prepare")
                 it.startRecording(
                     RecordOptions()
-                        .setSampleFrequency(Arguments.profilerSampleFrequency)
+                        .setSampleFrequency(Arguments.profilerSampleFrequencyHz)
                         .recordDwarfCallGraph() // enable Java/Kotlin callstacks
                         .setEvent("cpu-clock") // Required on API 33 to enable traceOffCpu
                         .traceOffCpu() // track time sleeping
@@ -351,7 +352,7 @@ internal object StackSamplingSimpleperf : Profiler() {
     override fun config(packageNames: List<String>) =
         StackSamplingConfig(
             packageNames = packageNames,
-            frequency = Arguments.profilerSampleFrequency.toLong(),
+            frequency = Arguments.profilerSampleFrequencyHz.toLong(),
             duration = Arguments.profilerSampleDurationSeconds,
         )
 

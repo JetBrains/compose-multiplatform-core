@@ -18,7 +18,7 @@ package androidx.browser.trusted;
 
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents display mode of a Trusted Web Activity.
@@ -29,8 +29,7 @@ public interface TrustedWebActivityDisplayMode {
     String KEY_ID = "androidx.browser.trusted.displaymode.KEY_ID";
 
     /** Unpacks the object from a {@link Bundle}. */
-    @NonNull
-    static TrustedWebActivityDisplayMode fromBundle(@NonNull Bundle bundle) {
+    static @NonNull TrustedWebActivityDisplayMode fromBundle(@NonNull Bundle bundle) {
         switch (bundle.getInt(KEY_ID)) {
             case ImmersiveMode.ID:
                 return ImmersiveMode.fromBundle(bundle);
@@ -41,8 +40,7 @@ public interface TrustedWebActivityDisplayMode {
     }
 
     /** Packs the object into a {@link Bundle}. */
-    @NonNull
-    Bundle toBundle();
+    @NonNull Bundle toBundle();
 
     /**
      * Default mode: the system UI (status bar, navigation bar) is shown, and the browser
@@ -51,9 +49,8 @@ public interface TrustedWebActivityDisplayMode {
     class DefaultMode implements TrustedWebActivityDisplayMode {
         private static final int ID = 0;
 
-        @NonNull
         @Override
-        public Bundle toBundle() {
+        public @NonNull Bundle toBundle() {
             Bundle bundle = new Bundle();
             bundle.putInt(KEY_ID, ID);
             return bundle;
@@ -100,15 +97,13 @@ public interface TrustedWebActivityDisplayMode {
         }
 
         @SuppressWarnings("WeakerAccess") /* synthetic access */
-        @NonNull
-        static TrustedWebActivityDisplayMode fromBundle(@NonNull Bundle bundle) {
+        static @NonNull TrustedWebActivityDisplayMode fromBundle(@NonNull Bundle bundle) {
             return new ImmersiveMode(bundle.getBoolean(KEY_STICKY),
                     bundle.getInt(KEY_CUTOUT_MODE));
         }
 
-        @NonNull
         @Override
-        public Bundle toBundle() {
+        public @NonNull Bundle toBundle() {
             Bundle bundle = new Bundle();
             bundle.putInt(KEY_ID, ID);
             bundle.putBoolean(KEY_STICKY, mIsSticky);

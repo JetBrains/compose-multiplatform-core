@@ -19,8 +19,9 @@ package androidx.pdf.util;
 import android.os.Handler;
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /** Thread-related utilities. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)

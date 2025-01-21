@@ -20,11 +20,16 @@ import android.content.Context
 import android.os.Bundle
 import androidx.privacysandbox.sdkruntime.client.TestSdkConfigs
 import androidx.privacysandbox.sdkruntime.client.activity.LocalSdkActivityHandlerRegistry
+import androidx.privacysandbox.sdkruntime.client.loader.CatchingClientImportanceListener
 import androidx.privacysandbox.sdkruntime.client.loader.CatchingSdkActivityHandler
+import androidx.privacysandbox.sdkruntime.client.loader.VersionHandshake
 import androidx.privacysandbox.sdkruntime.client.loader.asTestSdk
 import androidx.privacysandbox.sdkruntime.client.loader.extractSdkProviderFieldValue
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
+import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkInfo
+import androidx.privacysandbox.sdkruntime.core.internal.ClientApiVersion
+import androidx.privacysandbox.sdkruntime.core.internal.ClientFeature
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
@@ -176,5 +181,35 @@ class LocalSdkRegistryTest {
 
         val registeredAfter = LocalSdkActivityHandlerRegistry.isRegistered(token)
         assertThat(registeredAfter).isFalse()
+    }
+
+    @Test
+    fun unloadSdk_unregisterClientImportanceListeners() {
+        val packageName = TestSdkConfigs.CURRENT.packageName
+        val localSdk = localSdkRegistry.loadSdkWithFeature(ClientFeature.CLIENT_IMPORTANCE_LISTENER)
+        val testSdk = localSdk.asTestSdk()
+
+        val listener = CatchingClientImportanceListener()
+        testSdk.registerSdkSandboxClientImportanceListener(listener)
+
+        val registeredBefore = LocalClientImportanceListenerRegistry.hasListenersForSdk(packageName)
+        assertThat(registeredBefore).isTrue()
+
+        localSdkRegistry.unloadSdk(packageName)
+
+        val registeredAfter = LocalClientImportanceListenerRegistry.hasListenersForSdk(packageName)
+        assertThat(registeredAfter).isFalse()
+    }
+
+    private fun LocalSdkRegistry.loadSdkWithFeature(
+        clientFeature: ClientFeature
+    ): SandboxedSdkCompat {
+        return if (clientFeature.availableFrom <= ClientApiVersion.CURRENT_VERSION) {
+            loadSdk(TestSdkConfigs.CURRENT.packageName, Bundle())
+        } else {
+            val customHandshake =
+                VersionHandshake(overrideApiVersion = clientFeature.availableFrom.apiLevel)
+            loadSdk(TestSdkConfigs.CURRENT.packageName, Bundle(), customHandshake)
+        }
     }
 }

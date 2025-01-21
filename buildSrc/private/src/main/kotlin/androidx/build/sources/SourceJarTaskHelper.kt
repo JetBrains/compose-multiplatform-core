@@ -56,10 +56,13 @@ fun Project.configureSourceJarForAndroid(
     libraryVariant: LibraryVariant,
     samplesProjects: MutableCollection<Project>
 ) {
+    val allSources =
+        project.files(libraryVariant.sources.java?.all) +
+            project.files(libraryVariant.sources.kotlin?.all)
     val sourceJar =
         tasks.register("sourceJar${libraryVariant.name.capitalize()}", Jar::class.java) { task ->
             task.archiveClassifier.set("sources")
-            task.from(libraryVariant.sources.java!!.all)
+            task.from(allSources)
             task.exclude { it.file.path.contains("generated") }
             // Do not allow source files with duplicate names, information would be lost
             // otherwise.

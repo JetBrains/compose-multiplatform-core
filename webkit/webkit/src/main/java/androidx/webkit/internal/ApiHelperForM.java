@@ -25,12 +25,13 @@ import android.webkit.WebResourceError;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.webkit.WebMessageCompat;
 import androidx.webkit.WebMessagePortCompat;
 import androidx.webkit.WebViewCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Utility class to use new APIs that were added in M (API level 23).
@@ -62,7 +63,7 @@ public class ApiHelperForM {
      * @see WebMessagePort#setWebMessageCallback(WebMessagePort.WebMessageCallback)
      */
     public static void setWebMessageCallback(@NonNull WebMessagePort frameworksImpl,
-            @NonNull WebMessagePortCompat.WebMessageCallbackCompat callback) {
+            WebMessagePortCompat.@NonNull WebMessageCallbackCompat callback) {
         frameworksImpl.setWebMessageCallback(new WebMessagePort.WebMessageCallback() {
             @Override
             public void onMessage(WebMessagePort port, WebMessage message) {
@@ -78,7 +79,7 @@ public class ApiHelperForM {
      * Wraps the passed callback in the framework callback type to isolate new types in this class.
      */
     public static void setWebMessageCallback(@NonNull WebMessagePort frameworksImpl,
-            @NonNull WebMessagePortCompat.WebMessageCallbackCompat callback,
+            WebMessagePortCompat.@NonNull WebMessageCallbackCompat callback,
             @Nullable Handler handler) {
         frameworksImpl.setWebMessageCallback(new WebMessagePort.WebMessageCallback() {
             @Override
@@ -92,8 +93,7 @@ public class ApiHelperForM {
     /**
      * @see WebMessage#WebMessage(String, WebMessagePort[])}  WebMessage
      */
-    @NonNull
-    public static WebMessage createWebMessage(@NonNull WebMessageCompat message) {
+    public static @NonNull WebMessage createWebMessage(@NonNull WebMessageCompat message) {
         return new WebMessage(message.getData(),
                 WebMessagePortImpl.compatToPorts(message.getPorts()));
     }
@@ -101,8 +101,7 @@ public class ApiHelperForM {
     /**
      * @see WebMessageCompat#WebMessageCompat(String, WebMessagePortCompat[])
      */
-    @NonNull
-    public static WebMessageCompat createWebMessageCompat(@NonNull WebMessage webMessage) {
+    public static @NonNull WebMessageCompat createWebMessageCompat(@NonNull WebMessage webMessage) {
         return new WebMessageCompat(webMessage.getData(),
                 WebMessagePortImpl.portsToCompat(webMessage.getPorts()));
     }
@@ -118,8 +117,7 @@ public class ApiHelperForM {
     /**
      * @see WebResourceError#getDescription()
      */
-    @NonNull
-    public static CharSequence getDescription(@NonNull WebResourceError webResourceError) {
+    public static @NonNull CharSequence getDescription(@NonNull WebResourceError webResourceError) {
         return webResourceError.getDescription();
     }
 
@@ -142,7 +140,7 @@ public class ApiHelperForM {
      * @see WebView#postVisualStateCallback(long, WebView.VisualStateCallback)
      */
     public static void postVisualStateCallback(@NonNull WebView webView, long requestId,
-            final @NonNull WebViewCompat.VisualStateCallback callback) {
+            final WebViewCompat.@NonNull VisualStateCallback callback) {
         webView.postVisualStateCallback(requestId, new WebView.VisualStateCallback() {
             @Override
             public void onComplete(long l) {
@@ -162,8 +160,7 @@ public class ApiHelperForM {
     /**
      * @see WebView#createWebMessageChannel()
      */
-    @NonNull
-    public static WebMessagePort[] createWebMessageChannel(@NonNull WebView webView) {
+    public static WebMessagePort @NonNull [] createWebMessageChannel(@NonNull WebView webView) {
         return webView.createWebMessageChannel();
     }
 }

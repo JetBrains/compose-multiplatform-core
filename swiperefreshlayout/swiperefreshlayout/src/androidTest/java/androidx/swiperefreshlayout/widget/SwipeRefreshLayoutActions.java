@@ -25,7 +25,6 @@ import androidx.test.espresso.ViewAction;
 
 import org.hamcrest.Matcher;
 
-
 public class SwipeRefreshLayoutActions {
     public static ViewAction setRefreshing() {
         return new ViewAction() {

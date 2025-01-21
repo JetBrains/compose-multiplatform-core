@@ -21,9 +21,10 @@ import android.webkit.WebView;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -194,8 +195,7 @@ public abstract class ServiceWorkerWebSettingsCompat {
      */
     @RequiresFeature(name = WebViewFeature.REQUESTED_WITH_HEADER_ALLOW_LIST,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @NonNull
-    public abstract Set<String> getRequestedWithHeaderOriginAllowList();
+    public abstract @NonNull Set<String> getRequestedWithHeaderOriginAllowList();
 
     /**
      * Set an allow-list of origins to receive the {@code X-Requested-With} HTTP header from

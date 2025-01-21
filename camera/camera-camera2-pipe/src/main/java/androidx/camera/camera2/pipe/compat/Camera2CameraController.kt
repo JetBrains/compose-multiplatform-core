@@ -27,14 +27,12 @@ import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraSurfaceManager
-import androidx.camera.camera2.pipe.GraphState
 import androidx.camera.camera2.pipe.StreamGraph
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.SurfaceTracker
 import androidx.camera.camera2.pipe.config.Camera2ControllerScope
 import androidx.camera.camera2.pipe.core.DurationNs
 import androidx.camera.camera2.pipe.core.Log
-import androidx.camera.camera2.pipe.core.Threading.runBlockingCheckedOrNull
 import androidx.camera.camera2.pipe.core.Threads
 import androidx.camera.camera2.pipe.core.TimeSource
 import androidx.camera.camera2.pipe.core.TimestampNs
@@ -44,7 +42,6 @@ import androidx.camera.camera2.pipe.internal.CameraStatusMonitor.CameraStatus
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -71,6 +68,7 @@ constructor(
     private val captureSequenceProcessorFactory: Camera2CaptureSequenceProcessorFactory,
     private val camera2DeviceManager: Camera2DeviceManager,
     private val cameraSurfaceManager: CameraSurfaceManager,
+    private val camera2Quirks: Camera2Quirks,
     private val timeSource: TimeSource,
     override val cameraGraphId: CameraGraphId
 ) : CameraController {
@@ -217,6 +215,7 @@ constructor(
                 cameraSurfaceManager,
                 timeSource,
                 graphConfig.flags,
+                threads.backgroundDispatcher,
                 scope
             )
         currentSession = session
@@ -253,12 +252,15 @@ constructor(
 
         controllerState = ControllerState.STOPPING
         Log.debug { "Stopping Camera2CameraController" }
-        disconnectSessionAndCamera(session, camera)
+        detachSessionAndCamera(session, camera)
     }
 
     private fun onCameraStatusChanged(cameraStatus: CameraStatus) {
         Log.debug { "$this ($cameraId) camera status changed: $cameraStatus" }
         synchronized(lock) {
+            if (controllerState == ControllerState.CLOSED) {
+                return
+            }
             when (cameraStatus) {
                 is CameraStatus.CameraAvailable -> cameraAvailability = cameraStatus
                 is CameraStatus.CameraUnavailable -> cameraAvailability = cameraStatus
@@ -292,8 +294,11 @@ constructor(
             cameraPrioritiesJob = null
             cameraStatusMonitor.close()
 
-            disconnectSessionAndCamera(session, camera)
-            if (graphConfig.flags.closeCameraDeviceOnClose) {
+            detachSessionAndCamera(session, camera)
+            if (
+                graphConfig.flags.closeCameraDeviceOnClose ||
+                    camera2Quirks.shouldCloseCameraBeforeCreatingCaptureSession(cameraId)
+            ) {
                 Log.debug { "Quirk: Closing all camera devices" }
                 camera2DeviceManager.closeAll()
             }
@@ -339,10 +344,10 @@ constructor(
                         session.cameraDevice = cameraState.cameraDevice
                     }
                     is CameraStateClosing -> {
-                        session.disconnect()
+                        session.shutdown()
                     }
                     is CameraStateClosed -> {
-                        session.disconnect()
+                        session.shutdown()
                         onStateClosed(cameraState)
                     }
                     else -> {
@@ -355,13 +360,12 @@ constructor(
 
     private fun onStateClosed(cameraState: CameraStateClosed) {
         synchronized(lock) {
+            if (controllerState == ControllerState.CLOSED) {
+                return
+            }
             if (cameraState.cameraErrorCode != null) {
                 lastCameraError = cameraState.cameraErrorCode
-                if (
-                    cameraState.cameraErrorCode == CameraError.ERROR_CAMERA_DISCONNECTED ||
-                        cameraState.cameraErrorCode == CameraError.ERROR_CAMERA_IN_USE ||
-                        cameraState.cameraErrorCode == CameraError.ERROR_CAMERA_LIMIT_EXCEEDED
-                ) {
+                if (cameraState.cameraErrorCode.isDisconnected()) {
                     controllerState = ControllerState.DISCONNECTED
                     Log.debug { "$this is disconnected" }
                 } else {
@@ -377,40 +381,14 @@ constructor(
         }
     }
 
-    private fun disconnectSessionAndCamera(session: CaptureSessionState?, camera: VirtualCamera?) {
-        val deferred =
-            scope.async {
-                session?.disconnect()
-                camera?.disconnect()
-            }
-        if (
-            graphConfig.flags.abortCapturesOnStop ||
-                graphConfig.flags.closeCaptureSessionOnDisconnect
-        ) {
-            // It seems that on certain devices, CameraCaptureSession.close() can block for an
-            // extended period of time [1]. Wrap the await call with a timeout to prevent us from
-            // getting blocked for too long.
-            //
-            // [1] b/307594946 - [ANR] at Camera2CameraController.disconnectSessionAndCamera
-            runBlockingCheckedOrNull(threads.backgroundDispatcher, DISCONNECT_TIMEOUT_MS) {
-                deferred.await()
-            }
-                ?: run {
-                    Log.warn { "Timeout when disconnecting session and camera for $session" }
-                    Log.info { "Force finalizing current capture session" }
-                    session?.finalizeSession(delayMs = 0)
-                    graphListener.onGraphError(
-                        GraphState.GraphStateError(
-                            CameraError.ERROR_CAMERA_DEVICE,
-                            willAttemptRetry = false
-                        )
-                    )
-                }
+    private fun detachSessionAndCamera(session: CaptureSessionState?, camera: VirtualCamera?) {
+        scope.launch {
+            session?.shutdown()
+            camera?.disconnect()
         }
     }
 
     companion object {
-        private const val DISCONNECT_TIMEOUT_MS = 5000L // 5s
         private const val RESTART_TIMEOUT_WHEN_ENABLED_MS = 700L // 0.7s
         private const val MS_TO_NS = 1_000_000
         private val PRIORITIES_CHANGED_THRESHOLD_NS = DurationNs(200_000_000L) // 200ms

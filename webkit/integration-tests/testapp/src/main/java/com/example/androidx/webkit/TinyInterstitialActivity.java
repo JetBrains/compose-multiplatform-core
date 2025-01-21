@@ -19,8 +19,9 @@ package com.example.androidx.webkit;
 import android.os.Bundle;
 import android.webkit.WebView;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link android.app.Activity} to demonstrate tiny interstitials.

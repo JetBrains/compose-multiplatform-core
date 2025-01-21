@@ -32,7 +32,8 @@ androidXMultiplatform {
     androidMain {
       dependencies {
         implementation("androidx.collection:collection:1.4.3")
-        implementation(project(":core:core"))
+        implementation("androidx.core:core:1.1.0")
+        implementation("androidx.core:core-ktx:1.12.0")
         implementation(project(":ink:ink-nativeloader"))
         implementation(project(":ink:ink-geometry"))
         implementation(project(":ink:ink-brush"))

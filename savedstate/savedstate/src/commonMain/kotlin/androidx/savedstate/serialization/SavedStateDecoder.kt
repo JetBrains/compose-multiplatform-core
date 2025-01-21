@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalSerializationApi::class)
-
 package androidx.savedstate.serialization
 
 import androidx.savedstate.SavedState
@@ -66,11 +64,12 @@ inline fun <reified T : Any> decodeFromSavedState(savedState: SavedState): T =
  *
  * @property savedState The [SavedState] to decode from.
  */
-private class SavedStateDecoder(
-    private val savedState: SavedState,
-) : AbstractDecoder() {
+@OptIn(ExperimentalSerializationApi::class)
+internal class SavedStateDecoder(internal val savedState: SavedState) : AbstractDecoder() {
     override val serializersModule: SerializersModule = EmptySerializersModule()
-    private var key: String = ""
+    internal var key: String = ""
+        private set
+
     private var index = 0
 
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int {

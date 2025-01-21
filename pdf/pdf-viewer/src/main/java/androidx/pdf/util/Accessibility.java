@@ -21,8 +21,9 @@ import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper methods for interacting with accessibility services. Could be a static utility, but
@@ -36,8 +37,7 @@ public class Accessibility {
     /**
      *
      */
-    @NonNull
-    public static final Accessibility get() {
+    public static final @NonNull Accessibility get() {
         return INSTANCE;
     }
 

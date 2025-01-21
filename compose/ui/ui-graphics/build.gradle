@@ -127,8 +127,8 @@ androidxCompose {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.compose.ui.graphics"
+    compileSdk = 35
+    namespace = "androidx.compose.ui.graphics"
     buildTypes.configureEach {
         consumerProguardFiles("proguard-rules.pro")
     }

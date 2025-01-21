@@ -42,7 +42,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.security.ktx"
+    namespace = "androidx.security.ktx"
 }
 
 androidx {

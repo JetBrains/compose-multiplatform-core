@@ -20,9 +20,9 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Icon
+import android.os.Build
 import android.os.Bundle
 import android.service.credentials.CredentialEntry
-import androidx.core.os.BuildCompat
 import androidx.credentials.CredentialOption
 import androidx.credentials.PasswordCredential
 import androidx.credentials.R
@@ -322,7 +322,7 @@ class PasswordCredentialEntryTest {
     }
 
     private fun constructEntryWithAllParams(): PasswordCredentialEntry {
-        return if (BuildCompat.isAtLeastV()) {
+        return if (Build.VERSION.SDK_INT >= 35) {
             PasswordCredentialEntry(
                 mContext,
                 USERNAME,
@@ -376,7 +376,7 @@ class PasswordCredentialEntryTest {
         assertThat(entry.affiliatedDomain).isEqualTo(AFFILIATED_DOMAIN)
         assertThat(entry.isDefaultIconPreferredAsSingleProvider).isEqualTo(SINGLE_PROVIDER_ICON_BIT)
         assertThat(entry.entryGroupId).isEqualTo(USERNAME)
-        if (BuildCompat.isAtLeastV()) {
+        if (Build.VERSION.SDK_INT >= 35) {
             // TODO(b/325469910) : Add cryptoObject tests once opId is retrievable
             assertThat(entry.biometricPromptData!!.allowedAuthenticators)
                 .isEqualTo(testBiometricPromptData().allowedAuthenticators)

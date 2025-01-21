@@ -19,13 +19,14 @@ package androidx.webkit;
 import android.content.Context;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresFeature;
+import androidx.annotation.RestrictTo;
 import androidx.webkit.internal.ApiHelperForP;
 import androidx.webkit.internal.StartupApiFeature;
 import androidx.webkit.internal.WebViewFeatureInternal;
 
 import org.chromium.support_lib_boundary.ProcessGlobalConfigConstants;
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -68,6 +69,7 @@ public class ProcessGlobalConfig {
     String mDataDirectorySuffix;
     String mDataDirectoryBasePath;
     String mCacheDirectoryBasePath;
+    Boolean mPartitionedCookiesEnabled;
 
     /**
      * Creates a {@link ProcessGlobalConfig} object.
@@ -111,8 +113,7 @@ public class ProcessGlobalConfig {
     @RequiresFeature(name = WebViewFeature.STARTUP_FEATURE_SET_DATA_DIRECTORY_SUFFIX,
             enforcement =
                     "androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)")
-    @NonNull
-    public ProcessGlobalConfig setDataDirectorySuffix(@NonNull Context context,
+    public @NonNull ProcessGlobalConfig setDataDirectorySuffix(@NonNull Context context,
             @NonNull String suffix) {
         final StartupApiFeature.P feature =
                 WebViewFeatureInternal.STARTUP_FEATURE_SET_DATA_DIRECTORY_SUFFIX;
@@ -169,8 +170,7 @@ public class ProcessGlobalConfig {
             WebViewFeature.STARTUP_FEATURE_SET_DIRECTORY_BASE_PATHS,
             enforcement =
                     "androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)")
-    @NonNull
-    public ProcessGlobalConfig setDirectoryBasePaths(@NonNull Context context,
+    public @NonNull ProcessGlobalConfig setDirectoryBasePaths(@NonNull Context context,
             @NonNull File dataDirectoryBasePath, @NonNull File cacheDirectoryBasePath) {
         final StartupApiFeature.NoFramework feature =
                 WebViewFeatureInternal.STARTUP_FEATURE_SET_DIRECTORY_BASE_PATH;
@@ -187,6 +187,28 @@ public class ProcessGlobalConfig {
         }
         mDataDirectoryBasePath = dataDirectoryBasePath.getAbsolutePath();
         mCacheDirectoryBasePath = cacheDirectoryBasePath.getAbsolutePath();
+        return this;
+    }
+
+    /**
+     * Configures whether partitioned cookies {@see https://github.com/privacycg/CHIPS}
+     * should be enabled or not.
+     *
+     * Partitioned cookies will be enabled by default for apps that target Android B and above.
+     * For apps that target below Android B, this is disabled.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RequiresFeature(name = WebViewFeature.STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES,
+            enforcement =
+                    "androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)")
+    public @NonNull ProcessGlobalConfig setPartitionedCookiesEnabled(
+            @NonNull Context context, boolean isEnabled) {
+        final StartupApiFeature.NoFramework feature =
+                WebViewFeatureInternal.STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES;
+        if (!feature.isSupported(context)) {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+        mPartitionedCookiesEnabled = isEnabled;
         return this;
     }
 
@@ -247,6 +269,10 @@ public class ProcessGlobalConfig {
         if (config.mCacheDirectoryBasePath != null) {
             configMap.put(ProcessGlobalConfigConstants.CACHE_DIRECTORY_BASE_PATH,
                     config.mCacheDirectoryBasePath);
+        }
+        if (config.mPartitionedCookiesEnabled != null) {
+            configMap.put(ProcessGlobalConfigConstants.CONFIGURE_PARTITIONED_COOKIES,
+                    config.mPartitionedCookiesEnabled);
         }
         if (!sProcessGlobalConfig.compareAndSet(null, configMap)) {
             throw new RuntimeException("Attempting to set ProcessGlobalConfig"

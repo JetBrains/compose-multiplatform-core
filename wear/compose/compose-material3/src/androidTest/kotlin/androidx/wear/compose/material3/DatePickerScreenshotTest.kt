@@ -34,12 +34,13 @@ import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.wear.compose.material3.internal.Strings
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import java.time.LocalDate
 import org.junit.Rule
 import org.junit.Test
@@ -47,7 +48,7 @@ import org.junit.rules.TestName
 import org.junit.runner.RunWith
 
 @MediumTest
-@RunWith(AndroidJUnit4::class)
+@RunWith(TestParameterInjector::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 class DatePickerScreenshotTest {
     @get:Rule val rule = createComposeRule()
@@ -57,11 +58,12 @@ class DatePickerScreenshotTest {
     @get:Rule val testName = TestName()
 
     @Test
-    fun datePicker_dayMonthYear_ltr() {
+    fun datePicker_dayMonthYear(@TestParameter screenSize: ScreenSize) {
         rule.verifyDatePickerScreenshot(
-            methodName = testName.methodName,
+            testName = testName,
             screenshotRule = screenshotRule,
             layoutDirection = LayoutDirection.Ltr,
+            screenSize = screenSize,
             content = { DatePickerDayMonthYear() }
         )
     }
@@ -69,7 +71,7 @@ class DatePickerScreenshotTest {
     @Test
     fun datePicker_dayMonthYear_rtl() {
         rule.verifyDatePickerScreenshot(
-            methodName = testName.methodName,
+            testName = testName,
             screenshotRule = screenshotRule,
             layoutDirection = LayoutDirection.Rtl,
             content = { DatePickerDayMonthYear() }
@@ -77,29 +79,21 @@ class DatePickerScreenshotTest {
     }
 
     @Test
-    fun datePicker_dayMonthYear_largeScreen() {
+    fun datePicker_dayMonthYear_monthFocused(@TestParameter screenSize: ScreenSize) {
         rule.verifyDatePickerScreenshot(
-            methodName = testName.methodName,
-            screenshotRule = screenshotRule,
-            isLargeScreen = true,
-            content = { DatePickerDayMonthYear() }
-        )
-    }
-
-    @Test
-    fun datePicker_dayMonthYear_monthFocused_ltr() =
-        rule.verifyDatePickerScreenshot(
-            methodName = testName.methodName,
+            testName = testName,
             screenshotRule = screenshotRule,
             layoutDirection = LayoutDirection.Ltr,
+            screenSize = screenSize,
             action = { rule.nextButton().performClick() },
             content = { DatePickerDayMonthYear() }
         )
+    }
 
     @Test
     fun datePicker_dayMonthYear_monthFocused_rtl() =
         rule.verifyDatePickerScreenshot(
-            methodName = testName.methodName,
+            testName = testName,
             screenshotRule = screenshotRule,
             layoutDirection = LayoutDirection.Rtl,
             action = { rule.nextButton().performClick() },
@@ -107,32 +101,24 @@ class DatePickerScreenshotTest {
         )
 
     @Test
-    fun datePicker_dayMonthYear_monthFocused_largeScreen() =
+    fun datePicker_dayMonthYear_yearFocused(@TestParameter screenSize: ScreenSize) {
         rule.verifyDatePickerScreenshot(
-            methodName = testName.methodName,
-            screenshotRule = screenshotRule,
-            isLargeScreen = true,
-            action = { rule.nextButton().performClick() },
-            content = { DatePickerDayMonthYear() }
-        )
-
-    @Test
-    fun datePicker_dayMonthYear_yearFocused_ltr() =
-        rule.verifyDatePickerScreenshot(
-            methodName = testName.methodName,
+            testName = testName,
             screenshotRule = screenshotRule,
             layoutDirection = LayoutDirection.Ltr,
+            screenSize = screenSize,
             action = {
                 rule.nextButton().performClick()
                 rule.nextButton().performClick()
             },
             content = { DatePickerDayMonthYear() }
         )
+    }
 
     @Test
-    fun datePicker_dayMonthYear_yearFocused_rtl() =
+    fun datePicker_dayMonthYear_yearFocused_rtl() {
         rule.verifyDatePickerScreenshot(
-            methodName = testName.methodName,
+            testName = testName,
             screenshotRule = screenshotRule,
             layoutDirection = LayoutDirection.Rtl,
             action = {
@@ -141,52 +127,34 @@ class DatePickerScreenshotTest {
             },
             content = { DatePickerDayMonthYear() }
         )
+    }
 
     @Test
-    fun datePicker_dayMonthYear_yearFocused_largeScreen() =
+    fun datePicker_monthDayYear(@TestParameter screenSize: ScreenSize) {
         rule.verifyDatePickerScreenshot(
-            methodName = testName.methodName,
-            screenshotRule = screenshotRule,
-            isLargeScreen = true,
-            action = {
-                rule.nextButton().performClick()
-                rule.nextButton().performClick()
-            },
-            content = { DatePickerDayMonthYear() }
-        )
-
-    @Test
-    fun datePicker_monthDayYear_ltr() =
-        rule.verifyDatePickerScreenshot(
-            methodName = testName.methodName,
+            testName = testName,
             screenshotRule = screenshotRule,
             layoutDirection = LayoutDirection.Ltr,
+            screenSize = screenSize,
             content = { DatePickerMonthDayYear() }
         )
+    }
 
     @Test
     fun datePicker_monthDayYear_rtl() =
         rule.verifyDatePickerScreenshot(
-            methodName = testName.methodName,
+            testName = testName,
             screenshotRule = screenshotRule,
             layoutDirection = LayoutDirection.Rtl,
             content = { DatePickerMonthDayYear() }
         )
 
     @Test
-    fun datePicker_monthDayYear_largeScreen() =
+    fun datePicker_yearMonthDay(@TestParameter screenSize: ScreenSize) {
         rule.verifyDatePickerScreenshot(
-            methodName = testName.methodName,
+            testName = testName,
             screenshotRule = screenshotRule,
-            isLargeScreen = true,
-            content = { DatePickerMonthDayYear() }
-        )
-
-    @Test
-    fun datePicker_yearMonthDay_ltr() {
-        rule.verifyDatePickerScreenshot(
-            methodName = testName.methodName,
-            screenshotRule = screenshotRule,
+            screenSize = screenSize,
             layoutDirection = LayoutDirection.Ltr,
             content = { DatePickerYearMonthDay() }
         )
@@ -195,7 +163,7 @@ class DatePickerScreenshotTest {
     @Test
     fun datePicker_yearMonthDay_rtl() {
         rule.verifyDatePickerScreenshot(
-            methodName = testName.methodName,
+            testName = testName,
             screenshotRule = screenshotRule,
             layoutDirection = LayoutDirection.Rtl,
             content = { DatePickerYearMonthDay() }
@@ -203,19 +171,44 @@ class DatePickerScreenshotTest {
     }
 
     @Test
-    fun datePicker_yearMonthDay_largeScreen() {
+    fun datePicker_dayMonthYear_maxDate() {
         rule.verifyDatePickerScreenshot(
-            methodName = testName.methodName,
+            testName = testName,
             screenshotRule = screenshotRule,
-            isLargeScreen = true,
-            content = { DatePickerYearMonthDay() }
+            content = {
+                DatePicker(
+                    onDatePicked = {},
+                    modifier = Modifier.testTag(TEST_TAG),
+                    datePickerType = DatePickerType.DayMonthYear,
+                    initialDate =
+                        LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15),
+                    maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15),
+                )
+            }
         )
     }
 
     @Test
-    fun datePicker_yearMonthDay_year_does_not_repeat() =
+    fun datePicker_dayMonthYear_minDate() =
         rule.verifyDatePickerScreenshot(
-            methodName = testName.methodName,
+            testName = testName,
+            screenshotRule = screenshotRule,
+            content = {
+                DatePicker(
+                    onDatePicked = {},
+                    modifier = Modifier.testTag(TEST_TAG),
+                    datePickerType = DatePickerType.DayMonthYear,
+                    initialDate =
+                        LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15),
+                    minDate = LocalDate.of(/* year= */ 2024, /* month= */ 8, /* dayOfMonth= */ 15),
+                )
+            }
+        )
+
+    @Test
+    fun datePicker_yearMonthDay_single_year_option() =
+        rule.verifyDatePickerScreenshot(
+            testName = testName,
             screenshotRule = screenshotRule,
             content = {
                 DatePicker(
@@ -231,9 +224,9 @@ class DatePickerScreenshotTest {
         )
 
     @Test
-    fun datePicker_monthYearDay_month_does_not_repeat() =
+    fun datePicker_monthYearDay_single_month_valid() {
         rule.verifyDatePickerScreenshot(
-            methodName = testName.methodName,
+            testName = testName,
             screenshotRule = screenshotRule,
             content = {
                 DatePicker(
@@ -243,15 +236,16 @@ class DatePickerScreenshotTest {
                     initialDate =
                         LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 15),
                     minDate = LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 1),
-                    maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 2, /* dayOfMonth= */ 15),
+                    maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 15),
                 )
             }
         )
+    }
 
     @Test
-    fun datePicker_dayMonthYear_day_does_not_repeat() =
+    fun datePicker_dayMonthYear_single_day_valid() {
         rule.verifyDatePickerScreenshot(
-            methodName = testName.methodName,
+            testName = testName,
             screenshotRule = screenshotRule,
             content = {
                 DatePicker(
@@ -259,11 +253,13 @@ class DatePickerScreenshotTest {
                     modifier = Modifier.testTag(TEST_TAG),
                     datePickerType = DatePickerType.DayMonthYear,
                     initialDate =
-                        LocalDate.of(/* year= */ 2024, /* month= */ 2, /* dayOfMonth= */ 1),
-                    maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 2, /* dayOfMonth= */ 1),
+                        LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 15),
+                    minDate = LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 15),
+                    maxDate = LocalDate.of(/* year= */ 2024, /* month= */ 1, /* dayOfMonth= */ 15),
                 )
             }
         )
+    }
 
     @Composable
     private fun DatePickerDayMonthYear() {
@@ -306,17 +302,16 @@ class DatePickerScreenshotTest {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun ComposeContentTestRule.verifyDatePickerScreenshot(
-        methodName: String,
+        testName: TestName,
         screenshotRule: AndroidXScreenshotTestRule,
         testTag: String = TEST_TAG,
         layoutDirection: LayoutDirection = LayoutDirection.Ltr,
-        isLargeScreen: Boolean = false,
+        screenSize: ScreenSize = ScreenSize.SMALL,
         action: (() -> Unit)? = null,
         content: @Composable () -> Unit
     ) {
-        val screenSizeDp = if (isLargeScreen) SCREENSHOT_SIZE_LARGE else SCREENSHOT_SIZE
         setContentWithTheme {
-            ScreenConfiguration(screenSizeDp) {
+            ScreenConfiguration(screenSize.size) {
                 CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
                     content()
                 }
@@ -325,9 +320,8 @@ class DatePickerScreenshotTest {
         action?.let { it() }
         rule.waitForIdle()
 
-        onNodeWithTag(testTag).captureToImage().assertAgainstGolden(screenshotRule, methodName)
+        onNodeWithTag(testTag)
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, testName.goldenIdentifier())
     }
 }
-
-private const val SCREENSHOT_SIZE = 192
-private const val SCREENSHOT_SIZE_LARGE = 228

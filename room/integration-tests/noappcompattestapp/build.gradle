@@ -32,7 +32,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.room.integration.noappcompat"
+    namespace = "androidx.room.integration.noappcompat"
 }
 
 // Enable parameter names to support Room incremental when its a project() dep.

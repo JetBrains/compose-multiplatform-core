@@ -123,8 +123,8 @@ androidx {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.compose.ui.tooling"
+    compileSdk = 35
+    namespace = "androidx.compose.ui.tooling"
     // TODO(b/345531033)
     experimentalProperties["android.lint.useK2Uast"] = false
 }

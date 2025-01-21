@@ -21,7 +21,7 @@ import android.os.Bundle;
 import android.os.RemoteException;
 import android.support.customtabs.ICustomTabsCallback;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 

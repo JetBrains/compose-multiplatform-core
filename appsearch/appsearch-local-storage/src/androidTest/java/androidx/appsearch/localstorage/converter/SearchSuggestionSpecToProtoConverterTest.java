@@ -19,6 +19,7 @@ package androidx.appsearch.localstorage.converter;
 import static com.google.common.truth.Truth.assertThat;
 
 import androidx.appsearch.app.SearchSuggestionSpec;
+import androidx.appsearch.localstorage.NamespaceCache;
 import androidx.appsearch.localstorage.SchemaCache;
 import androidx.appsearch.localstorage.util.PrefixUtil;
 
@@ -51,10 +52,10 @@ public class SearchSuggestionSpecToProtoConverterTest {
                 /*queryExpression=*/"prefix",
                 searchSuggestionSpec,
                 /*prefixes=*/ImmutableSet.of(prefix1),
-                /*namespaceMap=*/ImmutableMap.of(
+                new NamespaceCache(ImmutableMap.of(
                 prefix1, ImmutableSet.of(
                         prefix1 + "namespace1",
-                        prefix1 + "namespace2")),
+                        prefix1 + "namespace2"))),
                 new SchemaCache(/*schemaMap=*/ImmutableMap.of(
                         prefix1, ImmutableMap.of(
                                 prefix1 + "typeA", configProto,
@@ -88,7 +89,7 @@ public class SearchSuggestionSpecToProtoConverterTest {
                 /*queryExpression=*/"prefix",
                 searchSuggestionSpec,
                 /*prefixes=*/ImmutableSet.of(prefix1),
-                /*namespaceMap=*/ImmutableMap.of(),
+                new NamespaceCache(ImmutableMap.of()),
                 new SchemaCache(/*schemaMap=*/ImmutableMap.of(
                         prefix1, ImmutableMap.of(
                                 prefix1 + "typeA", configProto,

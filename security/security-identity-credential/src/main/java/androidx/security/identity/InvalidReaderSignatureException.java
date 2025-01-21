@@ -16,7 +16,7 @@
 
 package androidx.security.identity;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Thrown if the reader signature is invalid, or it doesn't contain a certificate chain, or if the

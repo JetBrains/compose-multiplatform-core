@@ -30,7 +30,7 @@ plugins {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
@@ -40,7 +40,7 @@ android {
         //   desugared twice in some workflows, which fails. Decide how to handle this (e.g.
         //   splitting targets, continuing with the consumerProguardFiles solution here, fixing the
         //   flows that perform duplicate desugaring, or something else).
-        minifyEnabled false
+        minifyEnabled = false
         consumerProguardFiles "proguard-rules.pro"
     }
     // TODO(b/161205849): We've had to move libicing.so compilation into appsearch:appsearch to get
@@ -59,11 +59,11 @@ android {
     }
     externalNativeBuild {
         cmake {
-            version libs.versions.cmake.get()
+            version = libs.versions.cmake.get()
             path "../../../../external/icing/CMakeLists.txt"
         }
     }
-    namespace "androidx.appsearch.localstorage"
+    namespace = "androidx.appsearch.localstorage"
 }
 
 // Bundles dependency in bundleInside() inside of the libs/ directory of the aar.

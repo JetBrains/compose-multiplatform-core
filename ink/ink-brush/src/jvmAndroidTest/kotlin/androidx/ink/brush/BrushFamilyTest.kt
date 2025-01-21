@@ -49,61 +49,47 @@ class BrushFamilyTest {
 
     @Test
     fun inputModelHashCode_isSameForIdenticalModels() {
-        assertThat(BrushFamily.LEGACY_SPRING_MODEL.hashCode())
-            .isEqualTo(BrushFamily.LEGACY_SPRING_MODEL.hashCode())
         assertThat(BrushFamily.SPRING_MODEL.hashCode())
             .isEqualTo(BrushFamily.SPRING_MODEL.hashCode())
-
-        assertThat(BrushFamily.LEGACY_SPRING_MODEL.hashCode())
-            .isNotEqualTo(BrushFamily.SPRING_MODEL.hashCode())
     }
 
     @Test
     fun equals_comparesValues() {
-        val brushFamily =
-            BrushFamily(customTip, customPaint, customUri, BrushFamily.LEGACY_SPRING_MODEL)
+        val brushFamily = BrushFamily(customTip, customPaint, customUri, BrushFamily.SPRING_MODEL)
         val differentCoat = BrushCoat(BrushTip(), BrushPaint())
         val differentUri = null
 
         // same values are equal.
         assertThat(brushFamily)
-            .isEqualTo(
-                BrushFamily(customTip, customPaint, customUri, BrushFamily.LEGACY_SPRING_MODEL)
-            )
+            .isEqualTo(BrushFamily(customTip, customPaint, customUri, BrushFamily.SPRING_MODEL))
 
         // different values are not equal.
         assertThat(brushFamily).isNotEqualTo(null)
         assertThat(brushFamily).isNotEqualTo(Any())
         assertThat(brushFamily).isNotEqualTo(brushFamily.copy(coat = differentCoat))
         assertThat(brushFamily).isNotEqualTo(brushFamily.copy(uri = differentUri))
-        assertThat(brushFamily)
-            .isNotEqualTo(brushFamily.copy(inputModel = BrushFamily.SPRING_MODEL))
     }
 
     @Test
     fun inputModelEquals_comparesModels() {
-        assertThat(BrushFamily.LEGACY_SPRING_MODEL).isEqualTo(BrushFamily.LEGACY_SPRING_MODEL)
         assertThat(BrushFamily.SPRING_MODEL).isEqualTo(BrushFamily.SPRING_MODEL)
-
-        assertThat(BrushFamily.LEGACY_SPRING_MODEL).isNotEqualTo(BrushFamily.SPRING_MODEL)
-        assertThat(BrushFamily.SPRING_MODEL).isNotEqualTo(BrushFamily.LEGACY_SPRING_MODEL)
     }
 
     @Test
     fun toString_returnsExpectedValues() {
-        assertThat(BrushFamily(inputModel = BrushFamily.LEGACY_SPRING_MODEL).toString())
+        assertThat(BrushFamily(inputModel = BrushFamily.SPRING_MODEL).toString())
             .isEqualTo(
                 "BrushFamily(coats=[BrushCoat(tips=[BrushTip(scale=(1.0, 1.0), " +
                     "cornerRounding=1.0, slant=0.0, pinch=0.0, rotation=0.0, opacityMultiplier=1.0, " +
                     "particleGapDistanceScale=0.0, particleGapDurationMillis=0, " +
                     "behaviors=[])], paint=BrushPaint(textureLayers=[]))], uri=null, " +
-                    "inputModel=LegacySpringModel)"
+                    "inputModel=SpringModel)"
             )
     }
 
     @Test
     fun inputModelToString_returnsExpectedValues() {
-        assertThat(BrushFamily.LEGACY_SPRING_MODEL.toString()).isEqualTo("LegacySpringModel")
+
         assertThat(BrushFamily.SPRING_MODEL.toString()).isEqualTo("SpringModel")
     }
 
@@ -156,10 +142,10 @@ class BrushFamilyTest {
         BrushBehavior(
             source = BrushBehavior.Source.TILT_IN_RADIANS,
             target = BrushBehavior.Target.HEIGHT_MULTIPLIER,
-            sourceValueRangeLowerBound = 0.2f,
-            sourceValueRangeUpperBound = .8f,
-            targetModifierRangeLowerBound = 1.1f,
-            targetModifierRangeUpperBound = 1.7f,
+            sourceValueRangeStart = 0.2f,
+            sourceValueRangeEnd = .8f,
+            targetModifierRangeStart = 1.1f,
+            targetModifierRangeEnd = 1.7f,
             sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.MIRROR,
             responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
             responseTimeMillis = 1L,

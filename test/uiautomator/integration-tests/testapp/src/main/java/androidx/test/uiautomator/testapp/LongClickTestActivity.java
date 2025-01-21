@@ -20,7 +20,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.widget.Button;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class LongClickTestActivity extends Activity {
 

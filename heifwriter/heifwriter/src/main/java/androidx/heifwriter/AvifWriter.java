@@ -21,31 +21,23 @@ import static android.media.MediaMuxer.OutputFormat.MUXER_OUTPUT_HEIF;
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.media.MediaCodec;
-import android.media.MediaFormat;
 import android.media.MediaMuxer;
 import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.Looper;
-import android.os.Process;
 import android.util.Log;
-import android.util.Pair;
 import android.view.Surface;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class writes one or more still images (of the same dimensions) into
@@ -313,7 +305,7 @@ public final class AvifWriter extends WriterBase {
      * @throws IllegalStateException if not started or not configured to use buffer input.
      */
     @Override
-    public void addYuvBuffer(int format, @NonNull byte[] data) {
+    public void addYuvBuffer(int format, byte @NonNull [] data) {
         super.addYuvBuffer(format, data);
     }
 
@@ -370,7 +362,7 @@ public final class AvifWriter extends WriterBase {
      * @param length length of the Exif data block.
      */
     @Override
-    public void addExifData(int imageIndex, @NonNull byte[] exifData, int offset, int length) {
+    public void addExifData(int imageIndex, byte @NonNull [] exifData, int offset, int length) {
         super.addExifData(imageIndex, exifData, offset, length);
     }
 

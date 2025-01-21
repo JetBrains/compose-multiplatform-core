@@ -28,9 +28,12 @@ import androidx.privacysandbox.ui.core.SandboxedUiAdapter
 import androidx.privacysandbox.ui.integration.sdkproviderutils.PlayerViewProvider
 import androidx.privacysandbox.ui.integration.sdkproviderutils.PlayerViewabilityHandler
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdType
+import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.BackNavigation
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.MediationOption
+import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.ScreenOrientation
 import androidx.privacysandbox.ui.integration.sdkproviderutils.TestAdapters
 import androidx.privacysandbox.ui.integration.sdkproviderutils.ViewabilityHandler
+import androidx.privacysandbox.ui.integration.sdkproviderutils.fullscreen.FullscreenAd
 import androidx.privacysandbox.ui.integration.testaidl.IMediateeSdkApi
 import androidx.privacysandbox.ui.integration.testaidl.ISdkApi
 import androidx.privacysandbox.ui.provider.toCoreLibInfo
@@ -109,6 +112,17 @@ class SdkApi(private val sdkContext: Context) : ISdkApi.Stub() {
                     handler.postDelayed(this@UpdateDelegateTask, UPDATE_DELEGATE_INTERVAL)
                 }
             }
+        }
+    }
+
+    override fun launchFullscreenAd(
+        launcherInfo: Bundle,
+        @ScreenOrientation screenOrientation: Int,
+        @BackNavigation backButtonNavigation: Int
+    ) {
+        val coroutineScope = MainScope()
+        coroutineScope.launch {
+            FullscreenAd(sdkContext).show(launcherInfo, screenOrientation, backButtonNavigation)
         }
     }
 
@@ -234,7 +248,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi.Stub() {
 
     companion object {
         private const val MEDIATEE_SDK =
-            "androidx.privacysandbox.ui.integration.mediateesdkprovider"
+            "androidx.privacysandbox.ui.integration.mediateesdkproviderwrapper"
         private const val UPDATE_DELEGATE_INTERVAL: Long = 5000L
     }
 }

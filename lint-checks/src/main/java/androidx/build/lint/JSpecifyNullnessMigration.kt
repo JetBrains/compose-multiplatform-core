@@ -172,7 +172,7 @@ class JSpecifyNullnessMigration : Detector(), Detector.UastScanner {
 
                 // Combine the two elements of the fix.
                 return fix()
-                    .name("Move annotation")
+                    .name("Replace annotation")
                     .composite()
                     .add(removeOriginalAnnotation)
                     .add(addNewAnnotation)
@@ -185,8 +185,10 @@ class JSpecifyNullnessMigration : Detector(), Detector.UastScanner {
     companion object {
         val nullnessAnnotations =
             mapOf(
-                "androidx.annotation.NonNull" to "NonNull",
-                "androidx.annotation.Nullable" to "Nullable",
+                "androidx.annotation.NonNull" to "org.jspecify.annotations.NonNull",
+                "androidx.annotation.Nullable" to "org.jspecify.annotations.Nullable",
+                "org.jetbrains.annotations.NotNull" to "org.jspecify.annotations.NonNull",
+                "org.jetbrains.annotations.Nullable" to "org.jspecify.annotations.Nullable",
             )
         val ISSUE =
             Issue.create(

@@ -46,6 +46,9 @@ import androidx.compose.ui.unit.LayoutDirection.Rtl
 /**
  * This modifier is used to measure and place additional items when the lazy layout receives a
  * request to layout items beyond the visible bounds.
+ *
+ * We will layout a limited number of items (currently the number of items in the viewport times a
+ * constant) so the focus search may give up if focusable items are too far apart.
  */
 internal fun Modifier.lazyLayoutBeyondBoundsModifier(
     state: LazyLayoutBeyondBoundsState,
@@ -146,12 +149,21 @@ internal class LazyLayoutBeyondBoundsModifierNode(
             }
         var interval = beyondBoundsInfo.addInterval(startIndex, startIndex)
         var found: T? = null
-        while (found == null && interval.hasMoreContent(direction)) {
+        // Layout at most one viewport worth of items (times BeyondBoundsViewportFactor).
+        val maxItemsToLayout =
+            (BeyondBoundsViewportFactor * state.itemsPerViewport()).coerceAtMost(state.itemCount)
+        var itemsCreatedSoFar = 0
+        while (
+            found == null &&
+                interval.hasMoreContent(direction) &&
+                itemsCreatedSoFar < maxItemsToLayout
+        ) {
             // Add one extra beyond bounds item.
             interval =
                 addNextInterval(interval, direction).also {
                     beyondBoundsInfo.removeInterval(interval)
                 }
+            itemsCreatedSoFar++
             remeasureSync()
 
             // When we invoke this block, the beyond bounds items are present.
@@ -235,3 +247,5 @@ internal class LazyLayoutBeyondBoundsModifierNode(
 
 private fun unsupportedDirection(): Nothing =
     error("Lazy list does not support beyond bounds layout for the specified direction")
+
+private const val BeyondBoundsViewportFactor = 2

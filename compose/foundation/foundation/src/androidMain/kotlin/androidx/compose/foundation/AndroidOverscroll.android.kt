@@ -205,14 +205,21 @@ private class StretchOverscrollNode(
     @Suppress("KotlinConstantConditions")
     override fun ContentDrawScope.draw() {
         overscrollEffect.updateSize(size)
+        val canvas = drawContext.canvas.nativeCanvas
+        overscrollEffect.redrawSignal.value // <-- value read to redraw if needed
         if (size.isEmpty()) {
             // Draw any out of bounds content
             drawContent()
             return
         }
-        overscrollEffect.redrawSignal.value // <-- value read to redraw if needed
+        // Render node / stretch effect is not supported in software rendering, so end the effect
+        // and draw the content normally - this is what happens in EdgeEffect.
+        if (!canvas.isHardwareAccelerated) {
+            edgeEffectWrapper.finishAll()
+            drawContent()
+            return
+        }
         val maxElevation = MaxSupportedElevation.toPx()
-        val canvas = drawContext.canvas.nativeCanvas
         var needsInvalidate = false
         with(edgeEffectWrapper) {
             val shouldDrawVerticalStretch = shouldDrawVerticalStretch()
@@ -942,6 +949,18 @@ private class EdgeEffectWrapper(
         bottomEffect?.let(action)
         leftEffect?.let(action)
         rightEffect?.let(action)
+    }
+
+    /** Immediately finishes / resets all effects (and corresponding negations) */
+    fun finishAll() {
+        topEffect?.finish()
+        bottomEffect?.finish()
+        leftEffect?.finish()
+        rightEffect?.finish()
+        topEffectNegation?.finish()
+        bottomEffectNegation?.finish()
+        leftEffectNegation?.finish()
+        rightEffectNegation?.finish()
     }
 
     fun isTopStretched(): Boolean = topEffect.isStretched

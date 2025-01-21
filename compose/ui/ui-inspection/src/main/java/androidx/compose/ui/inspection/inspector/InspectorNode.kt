@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.IntRect
 internal const val UNDEFINED_ID = 0L
 
 internal val emptyBox = IntRect(0, 0, 0, 0)
-internal val outsideBox = IntRect(Int.MAX_VALUE, Int.MIN_VALUE, Int.MAX_VALUE, Int.MIN_VALUE)
 
 /** Node representing a Composable for the Layout Inspector. */
 class InspectorNode
@@ -66,9 +65,6 @@ internal constructor(
 
     /** The UTF-16 offset in the file where the Composable was called */
     val offset: Int,
-
-    /** The number of UTF-16 code point comprise the Composable call */
-    val length: Int,
 
     /** The bounding box of the Composable. */
     internal val box: IntRect,
@@ -127,22 +123,7 @@ data class QuadBounds(
     val y2: Int,
     val x3: Int,
     val y3: Int,
-) {
-    val xMin: Int
-        get() = sequenceOf(x0, x1, x2, x3).minOrNull()!!
-
-    val xMax: Int
-        get() = sequenceOf(x0, x1, x2, x3).maxOrNull()!!
-
-    val yMin: Int
-        get() = sequenceOf(y0, y1, y2, y3).minOrNull()!!
-
-    val yMax: Int
-        get() = sequenceOf(y0, y1, y2, y3).maxOrNull()!!
-
-    val outerBox: IntRect
-        get() = IntRect(xMin, yMin, xMax, yMax)
-}
+)
 
 /** Parameter definition with a raw value reference. */
 class RawParameter(val name: String, val value: Any?)
@@ -160,14 +141,12 @@ internal class MutableInspectorNode {
     var packageHash = -1
     var lineNumber = 0
     var offset = 0
-    var length = 0
     var box: IntRect = emptyBox
     var bounds: QuadBounds? = null
     var inlined = false
     val parameters = mutableListOf<RawParameter>()
     var viewId = UNDEFINED_ID
     val children = mutableListOf<InspectorNode>()
-    var outerBox: IntRect = outsideBox
 
     fun reset() {
         markUnwanted()
@@ -181,21 +160,20 @@ internal class MutableInspectorNode {
         box = emptyBox
         bounds = null
         inlined = false
-        outerBox = outsideBox
         children.clear()
     }
 
-    fun markUnwanted() {
+    fun markUnwanted(): MutableInspectorNode {
         name = ""
         fileName = ""
         packageHash = -1
         lineNumber = 0
         offset = 0
-        length = 0
         parameters.clear()
+        return this
     }
 
-    fun shallowCopy(node: InspectorNode): MutableInspectorNode = apply {
+    fun shallowCopy(node: MutableInspectorNode): MutableInspectorNode = apply {
         id = node.id
         key = node.key
         anchorId = node.anchorId
@@ -206,7 +184,6 @@ internal class MutableInspectorNode {
         packageHash = node.packageHash
         lineNumber = node.lineNumber
         offset = node.offset
-        length = node.length
         box = node.box
         bounds = node.bounds
         inlined = node.inlined
@@ -214,6 +191,18 @@ internal class MutableInspectorNode {
         viewId = node.viewId
         children.addAll(node.children)
     }
+
+    val isUnwanted: Boolean
+        get() = name.isEmpty()
+
+    val hostingAndroidView: Boolean
+        get() = viewId != UNDEFINED_ID
+
+    val hasLayerId: Boolean
+        get() = id > UNDEFINED_ID
+
+    val hasAssignedId: Boolean
+        get() = id != UNDEFINED_ID
 
     fun build(withSemantics: Boolean = true): InspectorNode =
         InspectorNode(
@@ -225,7 +214,6 @@ internal class MutableInspectorNode {
             packageHash,
             lineNumber,
             offset,
-            length,
             box,
             bounds,
             inlined,

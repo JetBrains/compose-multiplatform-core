@@ -57,6 +57,7 @@ import androidx.camera.core.UseCase
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
 import androidx.camera.core.impl.CameraConfig
+import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.Config
 import androidx.camera.core.impl.ExtendedCameraConfigProviderStore
 import androidx.camera.core.impl.Identifier
@@ -69,6 +70,7 @@ import androidx.camera.core.impl.SessionProcessor
 import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.core.impl.utils.CameraOrientationUtil
 import androidx.camera.core.impl.utils.Exif
+import androidx.camera.core.internal.compat.quirk.SoftwareJpegEncodingPreferredQuirk
 import androidx.camera.core.internal.compat.workaround.ExifRotationAvailability
 import androidx.camera.core.internal.compat.workaround.InvalidJpegDataParser
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
@@ -330,6 +332,15 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
     @Test
     fun canCaptureImageWithFlashModeOn() {
         canTakeImages(defaultBuilder.setFlashMode(ImageCapture.FLASH_MODE_ON))
+    }
+
+    @Test
+    fun canCaptureMaxQualityImageWithFlashModeOn() {
+        canTakeImages(
+            defaultBuilder
+                .setFlashMode(ImageCapture.FLASH_MODE_ON)
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+        )
     }
 
     @Test
@@ -1606,12 +1617,6 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
     fun returnJpegImage_whenSoftwareJpegIsEnabled() = runBlocking {
         val builder = ImageCapture.Builder()
 
-        // Enables software Jpeg
-        builder.mutableConfig.insertOption(
-            ImageCaptureConfig.OPTION_USE_SOFTWARE_JPEG_ENCODER,
-            true
-        )
-
         val useCase = builder.build()
         var camera: Camera
         withContext(Dispatchers.Main) {
@@ -1625,6 +1630,9 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
                     }
                 )
         }
+
+        // TODO - Check before binding for further optimization
+        camera.assumeSoftwareJpegEnabled()
 
         val callback = FakeOnImageCapturedCallback(captureCount = 1)
         useCase.takePicture(mainExecutor, callback)
@@ -1646,11 +1654,6 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
     fun canSaveJpegFileWithRotation_whenSoftwareJpegIsEnabled() = runBlocking {
         val builder = ImageCapture.Builder()
 
-        // Enables software Jpeg
-        builder.mutableConfig.insertOption(
-            ImageCaptureConfig.OPTION_USE_SOFTWARE_JPEG_ENCODER,
-            true
-        )
         val useCase = builder.build()
         var camera: Camera
         withContext(Dispatchers.Main) {
@@ -1664,6 +1667,9 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
                     }
                 )
         }
+
+        // TODO - Check before binding for further optimization
+        camera.assumeSoftwareJpegEnabled()
 
         val saveLocation = temporaryFolder.newFile("test.jpg")
         val callback = FakeImageSavedCallback(capturesCount = 1)
@@ -1717,12 +1723,6 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
     fun returnYuvImage_whenSoftwareJpegIsEnabledWithYuvBufferFormat() = runBlocking {
         val builder = ImageCapture.Builder().setBufferFormat(ImageFormat.YUV_420_888)
 
-        // Enables software Jpeg
-        builder.mutableConfig.insertOption(
-            ImageCaptureConfig.OPTION_USE_SOFTWARE_JPEG_ENCODER,
-            true
-        )
-
         val useCase = builder.build()
         var camera: Camera
         withContext(Dispatchers.Main) {
@@ -1736,6 +1736,9 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
                     }
                 )
         }
+
+        // TODO - Check before binding for further optimization
+        camera.assumeSoftwareJpegEnabled()
 
         val callback = FakeOnImageCapturedCallback(captureCount = 1)
         useCase.takePicture(mainExecutor, callback)
@@ -2308,6 +2311,15 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
      */
     private fun isRotationOptionSupportedDevice() =
         ExifRotationAvailability().isRotationOptionSupported
+
+    private fun Camera.assumeSoftwareJpegEnabled() {
+        assumeTrue(
+            "Software JPEG is not enabled in this device",
+            (cameraInfo as CameraInfoInternal)
+                .cameraQuirks
+                .contains(SoftwareJpegEncodingPreferredQuirk::class.java)
+        )
+    }
 
     private class ImageProperties(
         val size: Size? = null,

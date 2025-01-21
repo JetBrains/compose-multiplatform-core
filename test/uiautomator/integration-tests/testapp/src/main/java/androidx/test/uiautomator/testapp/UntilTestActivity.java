@@ -24,7 +24,7 @@ import android.widget.CheckBox;
 import android.widget.HorizontalScrollView;
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * {@link Activity} for testing {@link androidx.test.uiautomator.Until} functionality. Contains

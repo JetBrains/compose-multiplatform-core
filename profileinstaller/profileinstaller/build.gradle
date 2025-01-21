@@ -29,6 +29,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     annotationProcessor(libs.nullaway)
     api("androidx.startup:startup-runtime:1.1.1")
     api(libs.guavaListenableFuture)
@@ -47,5 +48,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.profileinstaller"
+    namespace = "androidx.profileinstaller"
 }

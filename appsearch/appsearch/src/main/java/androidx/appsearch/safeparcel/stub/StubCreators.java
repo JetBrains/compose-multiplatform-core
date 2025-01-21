@@ -17,16 +17,17 @@ package androidx.appsearch.safeparcel.stub;
 
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchBlobHandle;
-import androidx.appsearch.app.AppSearchCommitBlobResponse;
-import androidx.appsearch.app.AppSearchOpenBlobForReadResponse;
-import androidx.appsearch.app.AppSearchOpenBlobForWriteResponse;
 import androidx.appsearch.app.AppSearchSchema;
+import androidx.appsearch.app.CommitBlobResponse;
 import androidx.appsearch.app.EmbeddingVector;
 import androidx.appsearch.app.GetByDocumentIdRequest;
 import androidx.appsearch.app.GetSchemaResponse;
 import androidx.appsearch.app.InternalSetSchemaResponse;
 import androidx.appsearch.app.InternalVisibilityConfig;
 import androidx.appsearch.app.JoinSpec;
+import androidx.appsearch.app.OpenBlobForReadResponse;
+import androidx.appsearch.app.OpenBlobForWriteResponse;
+import androidx.appsearch.app.RemoveBlobResponse;
 import androidx.appsearch.app.RemoveByDocumentIdRequest;
 import androidx.appsearch.app.ReportUsageRequest;
 import androidx.appsearch.app.SchemaVisibilityConfig;
@@ -205,18 +206,23 @@ public class StubCreators {
             AbstractCreator<AppSearchBlobHandle> {
     }
 
-    /** Stub creator for {@link AppSearchOpenBlobForWriteResponse}. */
+    /** Stub creator for {@link OpenBlobForWriteResponse}. */
     public static class OpenBlobForWriteResponseCreator extends
-            AbstractCreator<AppSearchOpenBlobForWriteResponse> {
+            AbstractCreator<OpenBlobForWriteResponse> {
     }
 
-    /** Stub creator for {@link AppSearchCommitBlobResponse}. */
+    /** Stub creator for {@link CommitBlobResponse}. */
     public static class CommitBlobResponseCreator extends
-            AbstractCreator<AppSearchCommitBlobResponse> {
+            AbstractCreator<CommitBlobResponse> {
     }
 
-    /** Stub creator for {@link AppSearchOpenBlobForReadResponse}. */
+    /** Stub creator for {@link OpenBlobForReadResponse}. */
     public static class OpenBlobForReadResponseCreator extends
-            AbstractCreator<AppSearchOpenBlobForReadResponse> {
+            AbstractCreator<OpenBlobForReadResponse> {
+    }
+
+    /** Stub creator for {@link RemoveBlobResponse}. */
+    public static class RemoveBlobResponseCreator extends
+            AbstractCreator<RemoveBlobResponse> {
     }
 }

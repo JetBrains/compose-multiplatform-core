@@ -24,16 +24,17 @@ plugins {
 
 dependencies {
     api(project(":wear:protolayout:protolayout-material3"))
-
     compileOnly(project(":annotation:annotation-sampled"))
 }
 
 android {
+    compileSdk = 35
+
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
 
-    namespace "androidx.wear.protolayout.material3.samples"
+    namespace = "androidx.wear.protolayout.material3.samples"
 }
 
 androidx {

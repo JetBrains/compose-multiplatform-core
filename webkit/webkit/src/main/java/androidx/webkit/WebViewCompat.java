@@ -31,8 +31,6 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import androidx.annotation.AnyThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RequiresOptIn;
 import androidx.annotation.RestrictTo;
@@ -53,6 +51,8 @@ import androidx.webkit.internal.WebViewRenderProcessClientFrameworkAdapter;
 import androidx.webkit.internal.WebViewRenderProcessImpl;
 
 import org.chromium.support_lib_boundary.WebViewProviderBoundaryInterface;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -177,7 +177,7 @@ public class WebViewCompat {
     @RequiresFeature(name = WebViewFeature.VISUAL_STATE_CALLBACK,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     public static void postVisualStateCallback(@NonNull WebView webview, long requestId,
-            @NonNull final VisualStateCallback callback) {
+            final @NonNull VisualStateCallback callback) {
         ApiFeature.M feature = WebViewFeatureInternal.VISUAL_STATE_CALLBACK;
         if (feature.isSupportedByFramework()) {
             ApiHelperForM.postVisualStateCallback(webview, requestId, callback);
@@ -333,10 +333,9 @@ public class WebViewCompat {
      * @return the url pointing to a privacy policy document which can be displayed to users.
      */
     @AnyThread
-    @NonNull
     @RequiresFeature(name = WebViewFeature.SAFE_BROWSING_PRIVACY_POLICY_URL,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    public static Uri getSafeBrowsingPrivacyPolicyUrl() {
+    public static @NonNull Uri getSafeBrowsingPrivacyPolicyUrl() {
         ApiFeature.O_MR1 feature =
                 WebViewFeatureInternal.SAFE_BROWSING_PRIVACY_POLICY_URL;
         if (feature.isSupportedByFramework()) {
@@ -362,8 +361,7 @@ public class WebViewCompat {
     // Note that this API is not protected by a {@link androidx.webkit.WebViewFeature} since
     // this feature is not dependent on the WebView APK.
     @AnyThread
-    @Nullable
-    public static PackageInfo getCurrentWebViewPackage(@NonNull Context context) {
+    public static @Nullable PackageInfo getCurrentWebViewPackage(@NonNull Context context) {
         PackageInfo info = getCurrentLoadedWebViewPackage();
         if (info != null) return info;
 
@@ -378,9 +376,8 @@ public class WebViewCompat {
      * @return the loaded WebView package, or null if no WebView is created.
      */
     @AnyThread
-    @Nullable
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public static PackageInfo getCurrentLoadedWebViewPackage() {
+    public static @Nullable PackageInfo getCurrentLoadedWebViewPackage() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             return ApiHelperForO.getCurrentWebViewPackage();
         } else { // L-N
@@ -462,7 +459,7 @@ public class WebViewCompat {
     @UiThread
     @RequiresFeature(name = WebViewFeature.CREATE_WEB_MESSAGE_CHANNEL,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    public static @NonNull WebMessagePortCompat[] createWebMessageChannel(
+    public static WebMessagePortCompat @NonNull [] createWebMessageChannel(
             @NonNull WebView webview) {
         final ApiFeature.M feature = WebViewFeatureInternal.CREATE_WEB_MESSAGE_CHANNEL;
         if (feature.isSupportedByFramework()) {
@@ -958,7 +955,7 @@ public class WebViewCompat {
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     public static void setWebViewRenderProcessClient(
             @NonNull WebView webview,
-            @NonNull /* @CallbackExecutor */ Executor executor,
+            /* @CallbackExecutor */ @NonNull Executor executor,
             @NonNull WebViewRenderProcessClient webViewRenderProcessClient) {
         final ApiFeature.Q feature =
                 WebViewFeatureInternal.WEB_VIEW_RENDERER_CLIENT_BASIC_USAGE;
@@ -1138,11 +1135,10 @@ public class WebViewCompat {
      * @throws IllegalStateException if the WebView has been destroyed.
      */
     @UiThread
-    @NonNull
     @RequiresFeature(
             name = WebViewFeature.MULTI_PROFILE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    public static Profile getProfile(@NonNull WebView webView) {
+    public static @NonNull Profile getProfile(@NonNull WebView webView) {
         final ApiFeature.NoFramework feature = WebViewFeatureInternal.MULTI_PROFILE;
         if (feature.isSupportedByWebView()) {
             return getProvider(webView).getProfile();
@@ -1205,7 +1201,7 @@ public class WebViewCompat {
      * {@link WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewStartUpCallback)}.
      */
     @ExperimentalAsyncStartUp
-    public interface WebViewStartUpCallback {
+    public interface  WebViewStartUpCallback {
         /**
          * Called when WebView startup completes successfully.
          *
@@ -1217,9 +1213,9 @@ public class WebViewCompat {
     /**
      * Asynchronously trigger WebView startup.
      * <p>
-     * WebView startup is a time-consuming process that is  normally triggered during the first
+     * WebView startup is a time-consuming process that is normally triggered during the first
      * usage of WebView related APIs. WebView startup happens once per process.
-     * For example, the first call to `new WebView()` can take longer to
+     * For example, the first call to {@code new WebView()} can take longer to
      * complete than future calls due to WebView startup being triggered. The Android
      * UI thread remains blocked till the startup completes.
      * <p>
@@ -1229,8 +1225,8 @@ public class WebViewCompat {
      * This method ensures that the portions of WebView startup which are able to run in the
      * background will do so. Other portions of startup will still run on the UI thread.
      * <p>
-     * Any APIs in `android.webkit` and `androidx.webkit` (including
-     * {@link WebViewFeature} MUST only be called after the callback is invoked in order to
+     * Any APIs in {@code android.webkit} and {@code androidx.webkit} (including
+     * {@link WebViewFeature}) MUST only be called after the callback is invoked in order to
      * ensure the maximum benefit.
      * There is no feature check or call to {@link WebViewFeature} required for using this method.
      * <p>
@@ -1249,14 +1245,87 @@ public class WebViewCompat {
     public static void startUpWebView(
             @NonNull WebViewStartUpConfig config, @NonNull WebViewStartUpCallback callback) {
         config.getBackgroundExecutor().execute(() -> {
-            // We never access the context in Chromium-based WebView and `startUpWebView` will
-            // only be called on Android API versions where the WebView is Chromium-based, so
-            // passing `null`.
-            WebSettings.getDefaultUserAgent(null);
+            // Invoke provider init.
+            WebViewGlueCommunicator.getWebViewClassLoader();
+            if (WebViewFeatureInternal.ASYNC_WEBVIEW_STARTUP.isSupportedByWebView()) {
+                // We want to ensure that the callback is run on the Android main looper. The callee
+                // doesn't guarantee this. It's also desirable to post it to make sure that we don't
+                // run the app's callback synchronously from inside startChromiumLocked:
+                // - This helps avoid making the blocking task longer.
+                // - If the app's callback has a problem the stack trace will hopefully make it
+                // clearer that it's not WebView's fault since WebView code will not be in the
+                // stack trace.
+                getFactory().startUpWebView(config, (result) -> {
+                    new Handler(Looper.getMainLooper()).post(() -> callback.onSuccess(result));
+                });
+                return;
+            }
+            if (config.shouldRunUiThreadStartUpTasks()) {
+                // We never access the context in Chromium-based WebView and `startUpWebView` will
+                // only be called on Android API versions where the WebView is Chromium-based, so
+                // passing `null`.
+                // This method implicitly does WebView startup.
+                WebSettings.getDefaultUserAgent(null);
+            } else {
+                // On versions of WebView without the underlying support for the API the only part
+                // of startup we can do without blocking the UI thread already happened during
+                // `getWebViewClassLoader` above and so there's nothing more to do.
+            }
             // Trigger the callback from the main looper.
-            new Handler(Looper.getMainLooper()).post(() -> callback.onSuccess(
-                    new WebViewStartUpResult() {}));
+            // The framework doesn't support providing any diagnostic information, therefore,
+            // returning `null` for every method.
+            new Handler(Looper.getMainLooper()).post(
+                    () -> callback.onSuccess(new NullReturningWebViewStartUpResult()));
         });
+    }
+
+    /**
+     * Sets the default {@link android.net.TrafficStats} tag to use when accounting socket traffic
+     * caused by WebView. If set, this tag is global for all requests sent by the WebView library
+     * within your app.
+     *
+     * <p>If no tag is set (e.g. this method isn't called), then Android accounts for the socket
+     * traffic caused by WebView as if the tag value were set to 0. See
+     * {@link android.net.TrafficStats#setThreadStatsTag(int)} for more information.
+     *
+     * <p><b>NOTE</b>: Setting a tag disallows sharing of sockets with requests with other tags,
+     * which may adversely affect performance by prohibiting connection sharing. In other words, use
+     * of multiplexed sockets (e.g. HTTP/2 and QUIC) will only be allowed if all requests have
+     * the same socket tag. To minimize impact, you should not change the value of this tag often.
+     *
+     * @param tag the tag value used when accounting for socket traffic caused by the WebView
+     *            library in your app. <em>Tags between {@code 0xFFFFFF00} and {@code 0xFFFFFFFF}
+     *            are reserved and used internally by system services like
+     *            {@link android.app.DownloadManager} when performing traffic on behalf of an
+     *            application</em>.
+     */
+    @AnyThread
+    @RequiresFeature(name = WebViewFeature.DEFAULT_TRAFFICSTATS_TAGGING,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    public static void setDefaultTrafficStatsTag(int tag) {
+        final ApiFeature.NoFramework feature = WebViewFeatureInternal.DEFAULT_TRAFFICSTATS_TAGGING;
+        if (feature.isSupportedByWebView()) {
+            getFactory().getStatics().setDefaultTrafficStatsTag(tag);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    private static class NullReturningWebViewStartUpResult implements WebViewStartUpResult {
+        @Override
+        public Long getTotalTimeInUiThreadMillis() {
+            return null;
+        }
+
+        @Override
+        public Long getMaxTimePerTaskInUiThreadMillis() {
+            return null;
+        }
+
+        @Override
+        public List<BlockingStartUpLocation> getBlockingStartUpLocations() {
+            return null;
+        }
     }
 
     private static WebViewProviderFactory getFactory() {

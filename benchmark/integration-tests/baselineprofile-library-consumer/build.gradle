@@ -22,7 +22,7 @@ plugins {
 }
 
 android {
-    namespace "androidx.benchmark.integration.baselineprofile.library.consumer"
+    namespace = "androidx.benchmark.integration.baselineprofile.library.consumer"
 }
 
 dependencies {

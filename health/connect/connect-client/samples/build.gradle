@@ -47,9 +47,9 @@ androidx {
 }
 
 android {
-    namespace "androidx.health.connect.client.samples"
+    namespace = "androidx.health.connect.client.samples"
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
     compileSdk = 35
 }

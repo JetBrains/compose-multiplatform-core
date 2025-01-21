@@ -13,6 +13,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     api("androidx.annotation:annotation:1.8.1")
     api("androidx.core:core:1.1.0")
     androidTestImplementation(project(":appcompat:appcompat"))
@@ -33,5 +34,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.asynclayoutinflater"
+    namespace = "androidx.asynclayoutinflater"
 }

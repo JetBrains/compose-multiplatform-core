@@ -57,5 +57,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.lifecycle.reactivestreams"
+    namespace = "androidx.lifecycle.reactivestreams"
 }

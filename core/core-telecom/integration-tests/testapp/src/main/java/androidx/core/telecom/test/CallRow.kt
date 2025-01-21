@@ -16,4 +16,6 @@
 
 package androidx.core.telecom.test
 
-data class CallRow(val callNumber: Int, val callObject: VoipCall)
+import androidx.core.telecom.util.ExperimentalAppActions
+
+@ExperimentalAppActions data class CallRow(val callNumber: Int, val callObject: VoipCall)

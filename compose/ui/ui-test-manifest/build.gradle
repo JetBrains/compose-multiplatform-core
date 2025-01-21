@@ -44,5 +44,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.compose.ui.test.manifest"
+    namespace = "androidx.compose.ui.test.manifest"
 }

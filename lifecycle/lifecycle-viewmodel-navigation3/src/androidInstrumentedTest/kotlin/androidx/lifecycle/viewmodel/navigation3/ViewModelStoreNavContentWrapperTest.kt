@@ -23,7 +23,7 @@ import androidx.kruth.assertWithMessage
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.NavDisplay
-import androidx.navigation3.Record
+import androidx.navigation3.NavRecord
 import androidx.navigation3.rememberNavWrapperManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -44,12 +44,12 @@ class ViewModelStoreNavContentWrapperTest {
         val record1Arg = "record1 Arg"
         val record2Arg = "record2 Arg"
         val record1 =
-            Record("key1") {
+            NavRecord("key1") {
                 viewModel1 = viewModel<MyViewModel>()
                 viewModel1.myArg = record1Arg
             }
         val record2 =
-            Record("key2") {
+            NavRecord("key2") {
                 viewModel2 = viewModel<MyViewModel>()
                 viewModel2.myArg = record2Arg
             }
@@ -81,10 +81,10 @@ class ViewModelStoreNavContentWrapperTest {
             ) { key ->
                 when (key) {
                     "Home" -> {
-                        Record(key) { viewModel<HomeViewModel>() }
+                        NavRecord(key) { viewModel<HomeViewModel>() }
                     }
                     "AnotherScreen" -> {
-                        Record(key) { viewModel<HomeViewModel>() }
+                        NavRecord(key) { viewModel<HomeViewModel>() }
                     }
                     else -> error("Unknown key: $key")
                 }

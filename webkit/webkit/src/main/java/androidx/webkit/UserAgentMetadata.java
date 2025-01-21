@@ -16,9 +16,10 @@
 
 package androidx.webkit;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,8 +77,7 @@ public final class UserAgentMetadata {
      * @see Builder#setBrandVersionList
      *
      */
-    @NonNull
-    public List<BrandVersion> getBrandVersionList() {
+    public @NonNull List<BrandVersion> getBrandVersionList() {
         return mBrandVersionList;
     }
 
@@ -87,8 +87,7 @@ public final class UserAgentMetadata {
      * @see Builder#setFullVersion
      *
      */
-    @Nullable
-    public String getFullVersion() {
+    public @Nullable String getFullVersion() {
         return mFullVersion;
     }
 
@@ -98,8 +97,7 @@ public final class UserAgentMetadata {
      * @see Builder#setPlatform
      *
      */
-    @Nullable
-    public String getPlatform() {
+    public @Nullable String getPlatform() {
         return mPlatform;
     }
 
@@ -110,8 +108,7 @@ public final class UserAgentMetadata {
      *
      * @return Platform version string.
      */
-    @Nullable
-    public String getPlatformVersion() {
+    public @Nullable String getPlatformVersion() {
         return mPlatformVersion;
     }
 
@@ -121,8 +118,7 @@ public final class UserAgentMetadata {
      * @see Builder#setArchitecture
      *
      */
-    @Nullable
-    public String getArchitecture() {
+    public @Nullable String getArchitecture() {
         return mArchitecture;
     }
 
@@ -132,8 +128,7 @@ public final class UserAgentMetadata {
      * @see Builder#setModel
      *
      */
-    @Nullable
-    public String getModel() {
+    public @Nullable String getModel() {
         return mModel;
     }
 
@@ -221,8 +216,7 @@ public final class UserAgentMetadata {
          * Returns the brand of user-agent brand version tuple.
          *
          */
-        @NonNull
-        public String getBrand() {
+        public @NonNull String getBrand() {
             return mBrand;
         }
 
@@ -230,8 +224,7 @@ public final class UserAgentMetadata {
          * Returns the major version of user-agent brand version tuple.
          *
          */
-        @NonNull
-        public String getMajorVersion() {
+        public @NonNull String getMajorVersion() {
             return mMajorVersion;
         }
 
@@ -239,14 +232,12 @@ public final class UserAgentMetadata {
          * Returns the full version of user-agent brand version tuple.
          *
          */
-        @NonNull
-        public String getFullVersion() {
+        public @NonNull String getFullVersion() {
             return mFullVersion;
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return mBrand + "," + mMajorVersion + "," + mFullVersion;
         }
 
@@ -308,8 +299,7 @@ public final class UserAgentMetadata {
              * @throws IllegalStateException If any of the value in brand, majorVersion and
              *                               fullVersion is null or blank.
              */
-            @NonNull
-            public BrandVersion build() {
+            public @NonNull BrandVersion build() {
                 if (mBrand == null || mBrand.trim().isEmpty()
                         || mMajorVersion == null || mMajorVersion.trim().isEmpty()
                         || mFullVersion == null || mFullVersion.trim().isEmpty()) {
@@ -326,8 +316,7 @@ public final class UserAgentMetadata {
              *              {@code sec-ch-ua} and {@code sec-ch-ua-full-version-list}.
              *
              */
-            @NonNull
-            public BrandVersion.Builder setBrand(@NonNull String brand) {
+            public BrandVersion.@NonNull Builder setBrand(@NonNull String brand) {
                 if (brand.trim().isEmpty()) {
                     throw new IllegalArgumentException("Brand should not be blank.");
                 }
@@ -342,8 +331,7 @@ public final class UserAgentMetadata {
              *                     {@code sec-ch-ua}.
              *
              */
-            @NonNull
-            public BrandVersion.Builder setMajorVersion(@NonNull String majorVersion) {
+            public BrandVersion.@NonNull Builder setMajorVersion(@NonNull String majorVersion) {
                 if (majorVersion.trim().isEmpty()) {
                     throw new IllegalArgumentException("MajorVersion should not be blank.");
                 }
@@ -358,8 +346,7 @@ public final class UserAgentMetadata {
              *                    {@code sec-ch-ua-full-version-list}.
              *
              */
-            @NonNull
-            public BrandVersion.Builder setFullVersion(@NonNull String fullVersion) {
+            public BrandVersion.@NonNull Builder setFullVersion(@NonNull String fullVersion) {
                 if (fullVersion.trim().isEmpty()) {
                     throw new IllegalArgumentException("FullVersion should not be blank.");
                 }
@@ -431,8 +418,7 @@ public final class UserAgentMetadata {
          *
          * @return The UserAgentMetadata object represented by this Builder
          */
-        @NonNull
-        public UserAgentMetadata build() {
+        public @NonNull UserAgentMetadata build() {
             return new UserAgentMetadata(mBrandVersionList, mFullVersion, mPlatform,
                     mPlatformVersion, mArchitecture, mModel, mMobile, mBitness, mWow64);
         }
@@ -447,8 +433,7 @@ public final class UserAgentMetadata {
          *                     hints {@code sec-cu-ua} and {@code sec-ch-ua-full-version-list}.
          *
          */
-        @NonNull
-        public Builder setBrandVersionList(@NonNull List<BrandVersion> brandVersions) {
+        public @NonNull Builder setBrandVersionList(@NonNull List<BrandVersion> brandVersions) {
             mBrandVersionList = brandVersions;
             return this;
         }
@@ -465,8 +450,7 @@ public final class UserAgentMetadata {
          *                    {@code sec-ch-ua-full-version}.
          *
          */
-        @NonNull
-        public Builder setFullVersion(@Nullable String fullVersion) {
+        public @NonNull Builder setFullVersion(@Nullable String fullVersion) {
             if (fullVersion == null) {
                 mFullVersion = null;
                 return this;
@@ -486,8 +470,7 @@ public final class UserAgentMetadata {
          *                 {@code sec-ch-ua-platform}.
          *
          */
-        @NonNull
-        public Builder setPlatform(@Nullable String platform) {
+        public @NonNull Builder setPlatform(@Nullable String platform) {
             if (platform == null) {
                 mPlatform = null;
                 return this;
@@ -507,8 +490,7 @@ public final class UserAgentMetadata {
          *                        hint {@code sec-ch-ua-platform-version}.
          *
          */
-        @NonNull
-        public Builder setPlatformVersion(@Nullable String platformVersion) {
+        public @NonNull Builder setPlatformVersion(@Nullable String platformVersion) {
             mPlatformVersion = platformVersion;
             return this;
         }
@@ -521,8 +503,7 @@ public final class UserAgentMetadata {
          *                     {@code sec-ch-ua-arch}.
          *
          */
-        @NonNull
-        public Builder setArchitecture(@Nullable String architecture) {
+        public @NonNull Builder setArchitecture(@Nullable String architecture) {
             mArchitecture = architecture;
             return this;
         }
@@ -535,8 +516,7 @@ public final class UserAgentMetadata {
          *              {@code sec-ch-ua-model}.
          *
          */
-        @NonNull
-        public Builder setModel(@Nullable String model) {
+        public @NonNull Builder setModel(@Nullable String model) {
             mModel = model;
             return this;
         }
@@ -548,8 +528,7 @@ public final class UserAgentMetadata {
          *               {@code sec-ch-ua-mobile}.
          *
          */
-        @NonNull
-        public Builder setMobile(boolean mobile) {
+        public @NonNull Builder setMobile(boolean mobile) {
             mMobile = mobile;
             return this;
         }
@@ -563,8 +542,7 @@ public final class UserAgentMetadata {
          *                {@code sec-ch-ua-bitness}.
          *
          */
-        @NonNull
-        public Builder setBitness(int bitness) {
+        public @NonNull Builder setBitness(int bitness) {
             mBitness = bitness;
             return this;
         }
@@ -576,8 +554,7 @@ public final class UserAgentMetadata {
          *              {@code sec-ch-ua-wow64}.
          *
          */
-        @NonNull
-        public Builder setWow64(boolean wow64) {
+        public @NonNull Builder setWow64(boolean wow64) {
             mWow64 = wow64;
             return this;
         }

@@ -42,7 +42,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.core.viewtree"
+    namespace = "androidx.core.viewtree"
 }
 
 androidx {

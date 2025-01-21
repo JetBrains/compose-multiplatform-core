@@ -18,7 +18,6 @@ package androidx.navigation
 import android.content.Context
 import android.content.res.Resources
 import android.net.Uri
-import android.os.Bundle
 import android.util.AttributeSet
 import androidx.annotation.CallSuper
 import androidx.annotation.IdRes
@@ -30,6 +29,10 @@ import androidx.core.content.res.use
 import androidx.core.net.toUri
 import androidx.navigation.common.R
 import androidx.navigation.serialization.generateHashCode
+import androidx.savedstate.SavedState
+import androidx.savedstate.read
+import androidx.savedstate.savedState
+import androidx.savedstate.write
 import java.util.regex.Pattern
 import kotlin.reflect.KClass
 import kotlinx.serialization.InternalSerializationApi
@@ -68,7 +71,7 @@ public open class NavDestination(
     public class DeepLinkMatch(
         public val destination: NavDestination,
         @get:Suppress("NullableCollection") // Needed for nullable bundle
-        public val matchingArgs: Bundle?,
+        public val matchingArgs: SavedState?,
         private val isExactDeepLink: Boolean,
         private val matchingPathSegments: Int,
         private val hasMatchingAction: Boolean,
@@ -94,7 +97,8 @@ public open class NavDestination(
                 return -1
             }
             if (matchingArgs != null) {
-                val sizeDifference = matchingArgs.size() - other.matchingArgs!!.size()
+                val sizeDifference =
+                    matchingArgs.read { size() } - other.matchingArgs!!.read { size() }
                 if (sizeDifference > 0) {
                     return 1
                 } else if (sizeDifference < 0) {
@@ -122,12 +126,12 @@ public open class NavDestination(
          * @param [arguments] The arguments to match with the matchingArgs stored in this
          *   DeepLinkMatch.
          */
-        public fun hasMatchingArgs(arguments: Bundle?): Boolean {
+        public fun hasMatchingArgs(arguments: SavedState?): Boolean {
             if (arguments == null || matchingArgs == null) return false
 
             matchingArgs.keySet().forEach { key ->
                 // the arguments must at least contain every argument stored in this deep link
-                if (!arguments.containsKey(key)) return false
+                if (!arguments.read { contains(key) }) return false
 
                 val type = destination._arguments[key]?.type
                 val matchingArgValue = type?.get(matchingArgs, key)
@@ -299,8 +303,8 @@ public open class NavDestination(
      * - Uris without a scheme are assumed as http and https. For example, `www.example.com` will
      *   match `http://www.example.com` and `https://www.example.com`.
      * - Placeholders in the form of `{placeholder_name}` matches 1 or more characters. The parsed
-     *   value of the placeholder will be available in the arguments [Bundle] with a key of the same
-     *   name. For example, `http://www.example.com/users/{id}` will match
+     *   value of the placeholder will be available in the arguments [SavedState] with a key of the
+     *   same name. For example, `http://www.example.com/users/{id}` will match
      *   `http://www.example.com/users/4`.
      * - The `.*` wildcard can be used to match 0 or more characters.
      *
@@ -330,7 +334,7 @@ public open class NavDestination(
      * Uris without a scheme are assumed as http and https. For example, `www.example.com` will
      * match `http://www.example.com` and `https://www.example.com`. Placeholders in the form of
      * `{placeholder_name}` matches 1 or more characters. The String value of the placeholder will
-     * be available in the arguments [Bundle] with a key of the same name. For example,
+     * be available in the arguments [SavedState] with a key of the same name. For example,
      * `http://www.example.com/users/{id}` will match `http://www.example.com/users/4`. The `.*`
      * wildcard can be used to match 0 or more characters.
      *
@@ -396,7 +400,7 @@ public open class NavDestination(
      * Determines if this NavDestination has a deep link matching the given Uri.
      *
      * @param navDeepLinkRequest The request to match against all deep links added in [addDeepLink]
-     * @return The matching [NavDestination] and the appropriate [Bundle] of arguments extracted
+     * @return The matching [NavDestination] and the appropriate [SavedState] of arguments extracted
      *   from the Uri, or null if no match was found.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -445,7 +449,7 @@ public open class NavDestination(
     ): Boolean {
         val matchingArgs = deepLink.getMatchingPathAndQueryArgs(uri, arguments)
         val missingRequiredArguments =
-            arguments.missingRequiredArguments { key -> !matchingArgs.containsKey(key) }
+            arguments.missingRequiredArguments { key -> !matchingArgs.read { contains(key) } }
         return missingRequiredArguments.isEmpty()
     }
 
@@ -499,7 +503,7 @@ public open class NavDestination(
      *   destination
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun hasRoute(route: String, arguments: Bundle?): Boolean {
+    public fun hasRoute(route: String, arguments: SavedState?): Boolean {
         // this matches based on routePattern
         if (this.route == route) return true
 
@@ -602,16 +606,16 @@ public open class NavDestination(
      */
     @Suppress("NullableCollection") // Needed for nullable bundle
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun addInDefaultArgs(args: Bundle?): Bundle? {
+    public fun addInDefaultArgs(args: SavedState?): SavedState? {
         if (args == null && _arguments.isEmpty()) {
             return null
         }
-        val defaultArgs = Bundle()
+        val defaultArgs = savedState()
         for ((key, value) in _arguments) {
             value.putDefaultValue(key, defaultArgs)
         }
         if (args != null) {
-            defaultArgs.putAll(args)
+            defaultArgs.write { putAll(args) }
             // Don't verify unknown default values - these default values are only available
             // during deserialization for safe args.
             for ((key, value) in _arguments) {
@@ -637,34 +641,35 @@ public open class NavDestination(
      * Returns the original label if the label was a static string.
      *
      * @param context Context used to resolve a resource's name
-     * @param bundle Bundle containing the arguments used in the label
+     * @param bundle SavedState containing the arguments used in the label
      * @return The parsed string or null if the label is null
      * @throws IllegalArgumentException if an argument provided in the label cannot be found in the
      *   bundle, or if the label contains a string template but the bundle is null
      */
-    public fun fillInLabel(context: Context, bundle: Bundle?): String? {
+    public fun fillInLabel(context: Context, bundle: SavedState?): String? {
         val label = label ?: return null
 
         val fillInPattern = Pattern.compile("\\{(.+?)\\}")
         val matcher = fillInPattern.matcher(label)
         val builder = StringBuffer()
 
+        val args = bundle?.read { toMap() } ?: emptyMap()
         while (matcher.find()) {
             val argName = matcher.group(1)
-            if (bundle != null && bundle.containsKey(argName)) {
-                matcher.appendReplacement(builder, "")
-                val argType = argName?.let { _arguments[argName]?.type }
-                if (argType == NavType.ReferenceType) {
-                    val value = context.getString(bundle.getInt(argName))
-                    builder.append(value)
-                } else {
-                    @Suppress("DEPRECATION") builder.append(bundle[argName].toString())
-                }
-            } else {
-                throw IllegalArgumentException(
-                    "Could not find \"$argName\" in $bundle to fill label \"$label\""
-                )
+            require(argName != null && argName in args) {
+                "Could not find \"$argName\" in $bundle to fill label \"$label\""
             }
+
+            matcher.appendReplacement(builder, /* replacement= */ "")
+
+            val argType = _arguments[argName]?.type
+            val argValue =
+                if (argType == NavType.ReferenceType) {
+                    context.getString(/* resId= */ args[argName] as Int)
+                } else {
+                    args[argName].toString()
+                }
+            builder.append(argValue)
         }
         matcher.appendTail(builder)
         return builder.toString()
@@ -727,9 +732,7 @@ public open class NavDestination(
         actions.valueIterator().forEach { value ->
             result = 31 * result + value.destinationId
             result = 31 * result + value.navOptions.hashCode()
-            value.defaultArguments?.keySet()?.forEach {
-                result = 31 * result + value.defaultArguments!!.get(it).hashCode()
-            }
+            value.defaultArguments?.read { result = 31 * result + contentDeepHashCode() }
         }
         _arguments.keys.forEach {
             result = 31 * result + it.hashCode()

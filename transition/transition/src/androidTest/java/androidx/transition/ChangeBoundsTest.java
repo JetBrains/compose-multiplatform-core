@@ -31,7 +31,6 @@ import android.view.ViewGroup;
 import android.view.animation.LinearInterpolator;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
 import androidx.test.annotation.UiThreadTest;
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.SdkSuppress;
@@ -39,6 +38,7 @@ import androidx.transition.test.R;
 
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;

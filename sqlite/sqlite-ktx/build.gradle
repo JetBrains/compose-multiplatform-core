@@ -45,5 +45,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.sqlite.db.ktx"
+    namespace = "androidx.sqlite.db.ktx"
 }

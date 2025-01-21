@@ -41,6 +41,6 @@ androidx {
 }
 
 android {
-    namespace "androidx.navigation.fragment.ktx"
+    namespace = "androidx.navigation.fragment.ktx"
 }
 

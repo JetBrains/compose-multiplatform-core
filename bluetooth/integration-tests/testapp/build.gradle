@@ -33,9 +33,9 @@ plugins {
 
 android {
     buildFeatures {
-        viewBinding true
+        viewBinding = true
     }
-    namespace "androidx.bluetooth.integration.testapp"
+    namespace = "androidx.bluetooth.integration.testapp"
 }
 
 dependencies {

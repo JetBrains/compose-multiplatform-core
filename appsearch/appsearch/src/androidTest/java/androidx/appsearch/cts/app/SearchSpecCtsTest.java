@@ -28,10 +28,9 @@ import androidx.appsearch.app.EmbeddingVector;
 import androidx.appsearch.app.JoinSpec;
 import androidx.appsearch.app.PropertyPath;
 import androidx.appsearch.app.SearchSpec;
-import androidx.appsearch.flags.CheckFlagsRule;
-import androidx.appsearch.flags.DeviceFlagsValueProvider;
 import androidx.appsearch.flags.Flags;
-import androidx.appsearch.flags.RequiresFlagsEnabled;
+import androidx.appsearch.testutil.AppSearchTestUtils;
+import androidx.appsearch.testutil.flags.RequiresFlagsEnabled;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -39,6 +38,7 @@ import com.google.common.collect.ImmutableSet;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.RuleChain;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -48,7 +48,7 @@ import java.util.Set;
 
 public class SearchSpecCtsTest {
     @Rule
-    public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
+    public final RuleChain mRuleChain = AppSearchTestUtils.createCommonTestRules();
 
     @Test
     public void testBuildSearchSpecWithoutTermMatch() {
@@ -128,6 +128,80 @@ public class SearchSpecCtsTest {
     }
 
     @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCORABLE_PROPERTY)
+    public void testBuildSearchSpec_scorablePropertyRanking() {
+        List<String> expectedPropertyPaths1 = ImmutableList.of("path1", "path2");
+        List<String> expectedPropertyPaths2 = ImmutableList.of("path3", "path4");
+        Map<String, Double> expectedPropertyWeights = ImmutableMap.of("property1", 1.0,
+                "property2", 2.0);
+        Map<PropertyPath, Double> expectedPropertyWeightPaths =
+                ImmutableMap.of(new PropertyPath("property1.nested"), 1.0);
+
+        SearchSpec searchSpec = new SearchSpec.Builder()
+                .setTermMatch(SearchSpec.TERM_MATCH_PREFIX)
+                .addFilterNamespaces("namespace1", "namespace2")
+                .addFilterNamespaces(ImmutableList.of("namespace3"))
+                .addFilterSchemas("schemaTypes1", "schemaTypes2")
+                .addFilterSchemas(ImmutableList.of("schemaTypes3"))
+                .addFilterPackageNames("package1", "package2")
+                .addFilterPackageNames(ImmutableList.of("package3"))
+                .setSnippetCount(5)
+                .setSnippetCountPerProperty(10)
+                .setMaxSnippetSize(15)
+                .setResultCountPerPage(42)
+                .setOrder(SearchSpec.ORDER_ASCENDING)
+                .setRankingStrategy(SearchSpec.RANKING_STRATEGY_RELEVANCE_SCORE)
+                .setResultGrouping(SearchSpec.GROUPING_TYPE_PER_NAMESPACE
+                        | SearchSpec.GROUPING_TYPE_PER_PACKAGE, /*limit=*/ 37)
+                .addProjection("schemaTypes1", expectedPropertyPaths1)
+                .addProjection("schemaTypes2", expectedPropertyPaths2)
+                .setPropertyWeights("schemaTypes1", expectedPropertyWeights)
+                .setPropertyWeightPaths("schemaTypes2", expectedPropertyWeightPaths)
+                .setNumericSearchEnabled(true)
+                .setVerbatimSearchEnabled(true)
+                .setListFilterQueryLanguageEnabled(true)
+                .setScorablePropertyRankingEnabled(true)
+                .build();
+
+        assertThat(searchSpec.getTermMatch()).isEqualTo(SearchSpec.TERM_MATCH_PREFIX);
+        assertThat(searchSpec.getFilterNamespaces())
+                .containsExactly("namespace1", "namespace2", "namespace3").inOrder();
+        assertThat(searchSpec.getFilterSchemas())
+                .containsExactly("schemaTypes1", "schemaTypes2", "schemaTypes3").inOrder();
+        assertThat(searchSpec.getFilterPackageNames())
+                .containsExactly("package1", "package2", "package3").inOrder();
+        assertThat(searchSpec.getSnippetCount()).isEqualTo(5);
+        assertThat(searchSpec.getSnippetCountPerProperty()).isEqualTo(10);
+        assertThat(searchSpec.getMaxSnippetSize()).isEqualTo(15);
+        assertThat(searchSpec.getResultCountPerPage()).isEqualTo(42);
+        assertThat(searchSpec.getOrder()).isEqualTo(SearchSpec.ORDER_ASCENDING);
+        assertThat(searchSpec.getRankingStrategy())
+                .isEqualTo(SearchSpec.RANKING_STRATEGY_RELEVANCE_SCORE);
+        assertThat(searchSpec.getResultGroupingTypeFlags())
+                .isEqualTo(SearchSpec.GROUPING_TYPE_PER_NAMESPACE
+                        | SearchSpec.GROUPING_TYPE_PER_PACKAGE);
+        assertThat(searchSpec.getProjections())
+                .containsExactly("schemaTypes1", expectedPropertyPaths1, "schemaTypes2",
+                        expectedPropertyPaths2);
+        assertThat(searchSpec.getResultGroupingLimit()).isEqualTo(37);
+        assertThat(searchSpec.getPropertyWeights().keySet()).containsExactly("schemaTypes1",
+                "schemaTypes2");
+        assertThat(searchSpec.getPropertyWeights().get("schemaTypes1"))
+                .containsExactly("property1", 1.0, "property2", 2.0);
+        assertThat(searchSpec.getPropertyWeights().get("schemaTypes2"))
+                .containsExactly("property1.nested", 1.0);
+        assertThat(searchSpec.getPropertyWeightPaths().get("schemaTypes1"))
+                .containsExactly(new PropertyPath("property1"), 1.0,
+                        new PropertyPath("property2"), 2.0);
+        assertThat(searchSpec.getPropertyWeightPaths().get("schemaTypes2"))
+                .containsExactly(new PropertyPath("property1.nested"), 1.0);
+        assertThat(searchSpec.isNumericSearchEnabled()).isTrue();
+        assertThat(searchSpec.isVerbatimSearchEnabled()).isTrue();
+        assertThat(searchSpec.isListFilterQueryLanguageEnabled()).isTrue();
+        assertThat(searchSpec.isScorablePropertyRankingEnabled()).isTrue();
+    }
+
+    @Test
     public void testBuildSearchSpec_searchSourceLogTag() {
         SearchSpec searchSpec = new SearchSpec.Builder()
                 .setTermMatch(SearchSpec.TERM_MATCH_PREFIX)
@@ -171,6 +245,24 @@ public class SearchSpecCtsTest {
         assertThat(searchSpec.isVerbatimSearchEnabled()).isTrue();
         assertThat(searchSpec.isListFilterQueryLanguageEnabled()).isTrue();
         assertThat(searchSpec.isListFilterHasPropertyFunctionEnabled()).isTrue();
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION)
+    public void testBuildSearchSpec_matchScoreExpression() {
+        SearchSpec searchSpec = new SearchSpec.Builder()
+                .setNumericSearchEnabled(true)
+                .setVerbatimSearchEnabled(true)
+                .setListFilterQueryLanguageEnabled(true)
+                .setListFilterHasPropertyFunctionEnabled(true)
+                .setListFilterMatchScoreExpressionFunctionEnabled(true)
+                .build();
+
+        assertThat(searchSpec.isNumericSearchEnabled()).isTrue();
+        assertThat(searchSpec.isVerbatimSearchEnabled()).isTrue();
+        assertThat(searchSpec.isListFilterQueryLanguageEnabled()).isTrue();
+        assertThat(searchSpec.isListFilterHasPropertyFunctionEnabled()).isTrue();
+        assertThat(searchSpec.isListFilterMatchScoreExpressionFunctionEnabled()).isTrue();
     }
 
     @Test
@@ -477,6 +569,25 @@ public class SearchSpecCtsTest {
                 .build();
         assertThat(searchSpec.isListFilterQueryLanguageEnabled()).isFalse();
         assertThat(searchSpec.isListFilterHasPropertyFunctionEnabled()).isFalse();
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION)
+    public void testSetFeatureEnabledToFalse_matchScoreExpression() {
+        SearchSpec.Builder builder = new SearchSpec.Builder();
+        SearchSpec searchSpec = builder
+                .setListFilterQueryLanguageEnabled(true)
+                .setListFilterMatchScoreExpressionFunctionEnabled(true)
+                .build();
+        assertThat(searchSpec.isListFilterQueryLanguageEnabled()).isTrue();
+        assertThat(searchSpec.isListFilterMatchScoreExpressionFunctionEnabled()).isTrue();
+
+        searchSpec = builder
+                .setListFilterQueryLanguageEnabled(false)
+                .setListFilterMatchScoreExpressionFunctionEnabled(false)
+                .build();
+        assertThat(searchSpec.isListFilterQueryLanguageEnabled()).isFalse();
+        assertThat(searchSpec.isListFilterMatchScoreExpressionFunctionEnabled()).isFalse();
     }
 
     @Test
@@ -934,6 +1045,76 @@ public class SearchSpecCtsTest {
     }
 
     @Test
+    @RequiresFlagsEnabled({
+            Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS,
+            Flags.FLAG_ENABLE_SCORABLE_PROPERTY
+    })
+    public void testSearchSpecBuilder_copyConstructorWithScorableProperty() {
+        List<String> expectedPropertyPaths1 = ImmutableList.of("path1", "path2");
+        List<String> expectedPropertyPaths2 = ImmutableList.of("path3", "path4");
+        Map<String, Double> expectedPropertyWeights = ImmutableMap.of("property1", 1.0,
+                "property2", 2.0);
+        Map<PropertyPath, Double> expectedPropertyWeightPaths =
+                ImmutableMap.of(new PropertyPath("property1.nested"), 1.0);
+
+        SearchSpec searchSpec = new SearchSpec.Builder()
+                .setTermMatch(SearchSpec.TERM_MATCH_PREFIX)
+                .addFilterNamespaces("namespace1", "namespace2")
+                .addFilterNamespaces(ImmutableList.of("namespace3"))
+                .addFilterSchemas("schemaTypes1", "schemaTypes2")
+                .addFilterSchemas(ImmutableList.of("schemaTypes3"))
+                .addFilterPackageNames("package1", "package2")
+                .addFilterPackageNames(ImmutableList.of("package3"))
+                .setSnippetCount(5)
+                .setSnippetCountPerProperty(10)
+                .setMaxSnippetSize(15)
+                .setResultCountPerPage(42)
+                .setOrder(SearchSpec.ORDER_ASCENDING)
+                .setRankingStrategy(SearchSpec.RANKING_STRATEGY_RELEVANCE_SCORE)
+                .setResultGrouping(SearchSpec.GROUPING_TYPE_PER_NAMESPACE
+                        | SearchSpec.GROUPING_TYPE_PER_PACKAGE, /*limit=*/ 37)
+                .addProjection("schemaTypes1", expectedPropertyPaths1)
+                .addProjection("schemaTypes2", expectedPropertyPaths2)
+                .setPropertyWeights("schemaTypes1", expectedPropertyWeights)
+                .setPropertyWeightPaths("schemaTypes2", expectedPropertyWeightPaths)
+                .setNumericSearchEnabled(true)
+                .setVerbatimSearchEnabled(true)
+                .setListFilterQueryLanguageEnabled(true)
+                .setScorablePropertyRankingEnabled(true)
+                .build();
+        SearchSpec searchSpecCopy = new SearchSpec.Builder(searchSpec).build();
+        assertThat(searchSpecCopy.getTermMatch()).isEqualTo(searchSpec.getTermMatch());
+        assertThat(searchSpecCopy.getFilterNamespaces()).isEqualTo(
+                searchSpec.getFilterNamespaces());
+        assertThat(searchSpecCopy.getFilterSchemas()).isEqualTo(searchSpec.getFilterSchemas());
+        assertThat(searchSpecCopy.getFilterPackageNames()).isEqualTo(
+                searchSpec.getFilterPackageNames());
+        assertThat(searchSpecCopy.getSnippetCount()).isEqualTo(searchSpec.getSnippetCount());
+        assertThat(searchSpecCopy.getSnippetCountPerProperty()).isEqualTo(
+                searchSpec.getSnippetCountPerProperty());
+        assertThat(searchSpecCopy.getMaxSnippetSize()).isEqualTo(searchSpec.getMaxSnippetSize());
+        assertThat(searchSpecCopy.getResultCountPerPage()).isEqualTo(
+                searchSpec.getResultCountPerPage());
+        assertThat(searchSpecCopy.getOrder()).isEqualTo(searchSpec.getOrder());
+        assertThat(searchSpecCopy.getRankingStrategy()).isEqualTo(searchSpec.getRankingStrategy());
+        assertThat(searchSpecCopy.getResultGroupingTypeFlags()).isEqualTo(
+                searchSpec.getResultGroupingTypeFlags());
+        assertThat(searchSpecCopy.getProjections()).isEqualTo(searchSpec.getProjections());
+        assertThat(searchSpecCopy.getResultGroupingLimit()).isEqualTo(
+                searchSpec.getResultGroupingLimit());
+        assertThat(searchSpecCopy.getPropertyWeights()).isEqualTo(searchSpec.getPropertyWeights());
+        assertThat(searchSpecCopy.getPropertyWeightPaths()).isEqualTo(
+                searchSpec.getPropertyWeightPaths());
+        assertThat(searchSpecCopy.isNumericSearchEnabled()).isEqualTo(
+                searchSpec.isNumericSearchEnabled());
+        assertThat(searchSpecCopy.isVerbatimSearchEnabled()).isEqualTo(
+                searchSpec.isVerbatimSearchEnabled());
+        assertThat(searchSpecCopy.isListFilterQueryLanguageEnabled()).isEqualTo(
+                searchSpec.isListFilterQueryLanguageEnabled());
+        assertThat(searchSpecCopy.isScorablePropertyRankingEnabled()).isTrue();
+    }
+
+    @Test
     @RequiresFlagsEnabled({Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS,
             Flags.FLAG_ENABLE_SEARCH_SPEC_FILTER_PROPERTIES})
     public void testSearchSpecBuilder_clearBuilderParameters() {
@@ -1078,5 +1259,29 @@ public class SearchSpecCtsTest {
                 .clearFilterDocumentIds()
                 .build();
         assertThat(searchSpec.getFilterDocumentIds()).isEmpty();
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCORABLE_PROPERTY)
+    public void testSetAndGetEnableScorablePropertyRanking() {
+        SearchSpec defaultSearchSpec = new SearchSpec.Builder().build();
+        assertThat(defaultSearchSpec.isScorablePropertyRankingEnabled()).isFalse();
+
+        SearchSpec searchSpecWithScorablePropertyEnabled = new SearchSpec.Builder()
+                .setScorablePropertyRankingEnabled(true).build();
+        assertThat(
+                searchSpecWithScorablePropertyEnabled.isScorablePropertyRankingEnabled()).isTrue();
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCORABLE_PROPERTY)
+    public void testGetIsScorablePropertyRankingEnabled_copyFromSearchSpecBuilder() {
+        SearchSpec searchSpec = new SearchSpec.Builder()
+                .setScorablePropertyRankingEnabled(true)
+                .build();
+
+        SearchSpec.Builder newSearchSpecBuilder = new SearchSpec.Builder(searchSpec);
+        SearchSpec newSearchSpecCopied = newSearchSpecBuilder.build();
+        assertThat(newSearchSpecCopied.isScorablePropertyRankingEnabled()).isTrue();
     }
 }

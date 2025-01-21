@@ -150,7 +150,10 @@ object LevelIndicatorDefaults {
             disabledTrackColor = disabledTrackColor,
         )
 
-    /** The sweep angle for the curved [LevelIndicator]. */
+    /**
+     * The sweep angle for the curved [LevelIndicator], measured up to the centers of the stroke
+     * caps. The default value of 72 degrees equates to 20% of the circumference, i.e. 360/5.
+     */
     const val SweepAngle = 72f
 
     /** The default stroke width for the indicator and track strokes */

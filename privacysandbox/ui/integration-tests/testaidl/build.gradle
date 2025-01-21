@@ -21,11 +21,11 @@ plugins {
 }
 
 android {
-    namespace "androidx.privacysandbox.ui.integration.testaidl"
+    namespace = "androidx.privacysandbox.ui.integration.testaidl"
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled = false
         }
     }
     buildFeatures {

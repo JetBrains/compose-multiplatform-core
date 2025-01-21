@@ -36,8 +36,8 @@ import android.support.customtabs.ICustomTabsService;
 import android.text.TextUtils;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -244,7 +244,7 @@ public class CustomTabsClient {
      *         use this to relay session specific calls.
      *         Null if the service failed to respond (threw a RemoteException).
      */
-    public @Nullable CustomTabsSession newSession(@Nullable final CustomTabsCallback callback) {
+    public @Nullable CustomTabsSession newSession(final @Nullable CustomTabsCallback callback) {
         return newSessionInternal(callback, null);
     }
 
@@ -266,7 +266,7 @@ public class CustomTabsClient {
      *         If {@code null} is returned, attempt using {@link #newSession(CustomTabsCallback)}
      *         which is supported with older browsers.
      */
-    public @Nullable CustomTabsSession newSession(@Nullable final CustomTabsCallback callback,
+    public @Nullable CustomTabsSession newSession(final @Nullable CustomTabsCallback callback,
             int id) {
         return newSessionInternal(callback, createSessionId(mApplicationContext, id));
     }
@@ -278,16 +278,15 @@ public class CustomTabsClient {
      * {@see PendingSession}
      */
     @ExperimentalPendingSession
-    @NonNull
-    public static CustomTabsSession.PendingSession newPendingSession(
-            @NonNull Context context, @Nullable final CustomTabsCallback callback, int id) {
+    public static CustomTabsSession.@NonNull PendingSession newPendingSession(
+            @NonNull Context context, final @Nullable CustomTabsCallback callback, int id) {
         PendingIntent sessionId = createSessionId(context, id);
 
         return new CustomTabsSession.PendingSession(callback, sessionId);
     }
 
     private @Nullable CustomTabsSession newSessionInternal(
-            @Nullable final CustomTabsCallback callback, @Nullable PendingIntent sessionId) {
+            final @Nullable CustomTabsCallback callback, @Nullable PendingIntent sessionId) {
         ICustomTabsCallback.Stub wrapper = createCallbackWrapper(callback);
 
         try {
@@ -322,7 +321,7 @@ public class CustomTabsClient {
     }
 
     private ICustomTabsCallback.Stub createCallbackWrapper(
-            @Nullable final CustomTabsCallback callback) {
+            final @Nullable CustomTabsCallback callback) {
         return new ICustomTabsCallback.Stub() {
             private Handler mHandler = new Handler(Looper.getMainLooper());
 
@@ -467,8 +466,8 @@ public class CustomTabsClient {
      */
     @ExperimentalPendingSession
     @SuppressWarnings("NullAway") // TODO: b/141869399
-    @Nullable
-    public CustomTabsSession attachSession(@NonNull CustomTabsSession.PendingSession session) {
+    public @Nullable CustomTabsSession attachSession(
+            CustomTabsSession.@NonNull PendingSession session) {
         return newSessionInternal(session.getCallback(), session.getId());
     }
 

@@ -22,13 +22,13 @@ plugins {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
 
-    namespace "androidx.wear.compose.material3.macrobenchmark.target"
+    namespace = "androidx.wear.compose.material3.macrobenchmark.target"
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles(getDefaultProguardFile('proguard-android-optimize.txt'),
                     "proguard-benchmark.pro")
         }
@@ -45,4 +45,4 @@ dependencies {
     implementation(project(":wear:compose:compose-material3-macrobenchmark-common"))
 }
 
-android.defaultConfig.minSdkVersion 25
+android.defaultConfig.minSdk = 25

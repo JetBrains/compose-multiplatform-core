@@ -119,7 +119,7 @@ internal fun DataProto.DataPoint.SubTypeDataList.toDeltasList(): List<SkinTemper
     return valuesList.map {
         SkinTemperatureRecord.Delta(
             time = Instant.ofEpochMilli(it.startTimeMillis),
-            delta = TemperatureDelta.celsius(it.valuesMap["delta"]?.doubleVal ?: 0.0),
+            delta = TemperatureDelta.celsius(it.valuesMap["temperatureDelta"]?.doubleVal ?: 0.0),
         )
     }
 }

@@ -54,9 +54,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
 }
 android {
-    compileSdk 35
-    namespace 'com.example.datastorecomposesamples'
+    compileSdk = 35
+    namespace = "com.example.datastorecomposesamples"
     defaultConfig {
-        minSdk 28
+        minSdk = 28
     }
 }

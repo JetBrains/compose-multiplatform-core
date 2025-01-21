@@ -45,6 +45,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.InputDeviceCompat.SOURCE_ROTARY_ENCODER
 import androidx.core.view.ViewConfigurationCompat.getScaledHorizontalScrollFactor
 import androidx.core.view.ViewConfigurationCompat.getScaledVerticalScrollFactor
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.core.view.MotionEventBuilder
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -280,6 +281,9 @@ class RotaryScrollEventTest {
 
     @Test
     fun verticalRotaryEventContainsDeviceId() {
+        // Ignore on all devices which doesn't have rotary input.
+        Assume.assumeTrue(findRotaryInputDevice() != 0)
+
         // Arrange.
         ContentWithInitialFocus {
             Box(
@@ -291,8 +295,6 @@ class RotaryScrollEventTest {
                         .focusable(initiallyFocused = true)
             )
         }
-        // Ignore on all devices which doesn't have rotary input.
-        Assume.assumeTrue(hasRotaryInputDevice())
 
         // Act.
         @OptIn(ExperimentalTestApi::class)
@@ -304,6 +306,9 @@ class RotaryScrollEventTest {
 
     @Test
     fun horizontalRotaryEventContainsDeviceId() {
+        // Ignore on all devices which doesn't have rotary input.
+        Assume.assumeTrue(findRotaryInputDevice() != 0)
+
         // Arrange.
         ContentWithInitialFocus {
             Box(
@@ -315,8 +320,6 @@ class RotaryScrollEventTest {
                         .focusable(initiallyFocused = true)
             )
         }
-        // Ignore on all devices which doesn't have rotary input.
-        Assume.assumeTrue(hasRotaryInputDevice())
 
         // Act.
         @OptIn(ExperimentalTestApi::class)
@@ -562,19 +565,22 @@ class RotaryScrollEventTest {
     private val verticalScrollFactor: Float
         get() =
             getScaledVerticalScrollFactor(ViewConfiguration.get(rootView.context), rootView.context)
+}
 
-    private fun hasRotaryInputDevice(): Boolean {
-        with(rootView.context.getSystemService(Context.INPUT_SERVICE) as InputManager) {
-            inputDeviceIds.forEach { deviceId ->
-                getInputDevice(deviceId)?.apply {
-                    motionRanges
-                        .find { it.source == SOURCE_ROTARY_ENCODER }
-                        ?.let {
-                            return true
-                        }
-                }
+internal fun findRotaryInputDevice(): Int {
+    with(
+        ApplicationProvider.getApplicationContext<Context>().getSystemService(Context.INPUT_SERVICE)
+            as InputManager
+    ) {
+        inputDeviceIds.forEach { deviceId ->
+            getInputDevice(deviceId)?.apply {
+                motionRanges
+                    .find { it.source == SOURCE_ROTARY_ENCODER }
+                    ?.let {
+                        return deviceId
+                    }
             }
         }
-        return false
     }
+    return 0
 }

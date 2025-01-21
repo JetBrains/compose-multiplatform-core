@@ -23,11 +23,12 @@ import android.content.ServiceConnection;
 import android.net.Uri;
 import android.os.IBinder;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.models.PdfDocumentRemote;
 import androidx.pdf.service.PdfDocumentService;
 import androidx.pdf.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -83,8 +84,7 @@ public class PdfConnection implements ServiceConnection {
      * Returns a {@link PdfDocumentRemote} if the service is bound. It could be still initializing
      * (see {@link #setDocumentLoaded}).
      */
-    @NonNull
-    public PdfDocumentRemote getPdfDocument(@NonNull String forTask) {
+    public @NonNull PdfDocumentRemote getPdfDocument(@NonNull String forTask) {
         Preconditions.checkState(mCurrentTask == null, "already locked: " + mCurrentTask);
         mCurrentTask = forTask;
         return mPdfRemote;

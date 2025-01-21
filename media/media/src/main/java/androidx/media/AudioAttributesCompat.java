@@ -24,12 +24,13 @@ import android.os.Build;
 import android.util.SparseIntArray;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -275,8 +276,7 @@ public class AudioAttributesCompat implements VersionedParcelable {
      *
      * @return the underlying {@link AudioAttributes} object or null
      */
-    @Nullable
-    public Object unwrap() {
+    public @Nullable Object unwrap() {
         return mImpl.getAudioAttributes();
     }
 
@@ -296,8 +296,7 @@ public class AudioAttributesCompat implements VersionedParcelable {
      * @param aa an instance of {@link AudioAttributes}.
      * @return the new <code>AudioAttributesCompat</code>, or <code>null</code> on API &lt; 21
      */
-    @Nullable
-    public static AudioAttributesCompat wrap(@NonNull final Object aa) {
+    public static @Nullable AudioAttributesCompat wrap(final @NonNull Object aa) {
         if (sForceLegacyBehavior) {
             return null;
         }

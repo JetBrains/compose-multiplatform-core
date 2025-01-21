@@ -55,5 +55,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.paging.guava"
+    namespace = "androidx.paging.guava"
 }

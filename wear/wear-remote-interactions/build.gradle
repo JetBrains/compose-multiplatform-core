@@ -61,12 +61,12 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 23
+        minSdk = 23
     }
 
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.wear.remote.interactions"
+    namespace = "androidx.wear.remote.interactions"
 }
 
 androidx {

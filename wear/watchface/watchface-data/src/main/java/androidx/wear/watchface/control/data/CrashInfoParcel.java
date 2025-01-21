@@ -23,8 +23,9 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.StringBuilderPrinter;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Used for sending details of an exception over aidl.
@@ -33,7 +34,7 @@ import androidx.annotation.RestrictTo;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @SuppressLint("BanParcelableUsage")
 public class CrashInfoParcel implements Parcelable {
-    @NonNull public final CrashInfo crashInfo;
+    public final @NonNull CrashInfo crashInfo;
 
     public CrashInfoParcel(@NonNull Throwable exception) {
         crashInfo = new CrashInfo(exception);
@@ -66,9 +67,8 @@ public class CrashInfoParcel implements Parcelable {
                 }
             };
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         StringBuilder sb = new StringBuilder();
         StringBuilderPrinter pr = new StringBuilderPrinter(sb);
         crashInfo.dump(pr, "");

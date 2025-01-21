@@ -22,9 +22,10 @@ import static androidx.profileinstaller.ProfileTranscoder.MAGIC_PROFM;
 import android.content.res.AssetManager;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -58,27 +59,17 @@ import java.util.concurrent.Executor;
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class DeviceProfileWriter {
 
-    @NonNull
-    private final AssetManager mAssetManager;
-    @NonNull
-    private final Executor mExecutor;
-    @NonNull
-    private final ProfileInstaller.DiagnosticsCallback mDiagnostics;
-    @Nullable
-    private final byte[] mDesiredVersion;
-    @NonNull
-    private final File mCurProfile;
-    @NonNull
-    private final String mApkName;
-    @NonNull
-    private final String mProfileSourceLocation;
-    @NonNull
-    private final String mProfileMetaSourceLocation;
+    private final @NonNull AssetManager mAssetManager;
+    private final @NonNull Executor mExecutor;
+    private final ProfileInstaller.@NonNull DiagnosticsCallback mDiagnostics;
+    private final byte @Nullable [] mDesiredVersion;
+    private final @NonNull File mCurProfile;
+    private final @NonNull String mApkName;
+    private final @NonNull String mProfileSourceLocation;
+    private final @NonNull String mProfileMetaSourceLocation;
     private boolean mDeviceSupportsAotProfile = false;
-    @Nullable
-    private DexProfileData[] mProfile;
-    @Nullable
-    private byte[] mTranscodedProfile;
+    private DexProfileData @Nullable [] mProfile;
+    private byte @Nullable [] mTranscodedProfile;
 
     private void result(@ProfileInstaller.ResultCode int code, @Nullable Object data) {
         mExecutor.execute(() -> mDiagnostics.onResultReceived(code, data));
@@ -90,7 +81,7 @@ public class DeviceProfileWriter {
     public DeviceProfileWriter(
             @NonNull AssetManager assetManager,
             @NonNull Executor executor,
-            @NonNull ProfileInstaller.DiagnosticsCallback diagnosticsCallback,
+            ProfileInstaller.@NonNull DiagnosticsCallback diagnosticsCallback,
             @NonNull String apkName,
             @NonNull String profileSourceLocation,
             @NonNull String profileMetaSourceLocation,
@@ -164,9 +155,8 @@ public class DeviceProfileWriter {
      *
      * @return this to chain call to transcodeIfNeeded
      */
-    @NonNull
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public DeviceProfileWriter read() {
+    public @NonNull DeviceProfileWriter read() {
         assertDeviceAllowsProfileInstallerAotWritesCalled();
         if (mDesiredVersion == null) {
             return this;
@@ -217,7 +207,7 @@ public class DeviceProfileWriter {
      *
      * @param profileStream The {@link InputStream} containing the baseline profile data.
      */
-    private @Nullable DexProfileData[] readProfileInternal(InputStream profileStream) {
+    private DexProfileData @Nullable [] readProfileInternal(InputStream profileStream) {
         DexProfileData[] profile = null;
         try {
             byte[] baselineVersion = ProfileTranscoder.readHeader(profileStream, MAGIC_PROF);
@@ -242,8 +232,8 @@ public class DeviceProfileWriter {
      *
      * @return Baseline profile with metaadata.
      */
-    @Nullable
-    private DeviceProfileWriter addMetadata(DexProfileData[] profile, byte[] desiredVersion) {
+    private @Nullable DeviceProfileWriter addMetadata(DexProfileData[] profile,
+            byte[] desiredVersion) {
         try (InputStream is = mAssetManager
                 .openFd(mProfileMetaSourceLocation)
                 .createInputStream()) {
@@ -285,9 +275,8 @@ public class DeviceProfileWriter {
      *
      * @return this to chain call call writeIfNeeded()
      */
-    @NonNull
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public DeviceProfileWriter transcodeIfNeeded() {
+    public @NonNull DeviceProfileWriter transcodeIfNeeded() {
         DexProfileData[] profile = mProfile;
         byte[] desiredVersion = mDesiredVersion;
         if (profile == null || desiredVersion == null) {
@@ -359,7 +348,7 @@ public class DeviceProfileWriter {
         return false;
     }
 
-    private static @Nullable byte[] desiredVersion() {
+    private static byte @Nullable [] desiredVersion() {
         // If SDK is pre or post supported version, we don't want to do anything, so return null.
         if (Build.VERSION.SDK_INT < ProfileVersion.MIN_SUPPORTED_SDK) {
             return null;

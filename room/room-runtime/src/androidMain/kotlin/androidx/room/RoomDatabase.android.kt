@@ -169,6 +169,8 @@ actual abstract class RoomDatabase {
 
     private val typeConverters: MutableMap<KClass<*>, Any> = mutableMapOf()
 
+    internal var useTempTrackingTable: Boolean = true
+
     /**
      * Gets the instance of the given Type Converter.
      *
@@ -277,6 +279,8 @@ actual abstract class RoomDatabase {
                 configuration.multiInstanceInvalidationServiceIntent
             )
         }
+
+        useTempTrackingTable = configuration.useTempTrackingTable
     }
 
     /**
@@ -893,6 +897,8 @@ actual abstract class RoomDatabase {
 
         private var driver: SQLiteDriver? = null
         private var queryCoroutineContext: CoroutineContext? = null
+
+        private var inMemoryTrackingTableMode = true
 
         /**
          * Configures Room to create and open the database using a pre-packaged database located in
@@ -1569,6 +1575,22 @@ actual abstract class RoomDatabase {
         }
 
         /**
+         * Sets whether Room will use an in-memory table or a persisted table to track invalidation.
+         *
+         * An in-memory table is used by default. Using an in-memory tables is more performant,
+         * reduces the journal file size but has an increased memory footprint, where as using a
+         * real table has the opposite effect.
+         *
+         * @param inMemory True if in-memory tables should be used, false otherwise.
+         * @return This [Builder] instance
+         */
+        @ExperimentalRoomApi
+        @Suppress("MissingGetterMatchingBuilder")
+        fun setInMemoryTrackingMode(inMemory: Boolean) = apply {
+            this.inMemoryTrackingTableMode = inMemory
+        }
+
+        /**
          * Creates the databases and initializes it.
          *
          * By default, all RoomDatabases use in memory storage for TEMP tables and enables recursive
@@ -1674,29 +1696,31 @@ actual abstract class RoomDatabase {
                     }
             val configuration =
                 DatabaseConfiguration(
-                    context = context,
-                    name = name,
-                    sqliteOpenHelperFactory = supportOpenHelperFactory,
-                    migrationContainer = migrationContainer,
-                    callbacks = callbacks,
-                    allowMainThreadQueries = allowMainThreadQueries,
-                    journalMode = journalMode.resolve(context),
-                    queryExecutor = requireNotNull(queryExecutor),
-                    transactionExecutor = requireNotNull(transactionExecutor),
-                    multiInstanceInvalidationServiceIntent = multiInstanceInvalidationIntent,
-                    requireMigration = requireMigration,
-                    allowDestructiveMigrationOnDowngrade = allowDestructiveMigrationOnDowngrade,
-                    migrationNotRequiredFrom = migrationsNotRequiredFrom,
-                    copyFromAssetPath = copyFromAssetPath,
-                    copyFromFile = copyFromFile,
-                    copyFromInputStream = copyFromInputStream,
-                    prepackagedDatabaseCallback = prepackagedDatabaseCallback,
-                    typeConverters = typeConverters,
-                    autoMigrationSpecs = autoMigrationSpecs,
-                    allowDestructiveMigrationForAllTables = allowDestructiveMigrationForAllTables,
-                    sqliteDriver = driver,
-                    queryCoroutineContext = queryCoroutineContext,
-                )
+                        context = context,
+                        name = name,
+                        sqliteOpenHelperFactory = supportOpenHelperFactory,
+                        migrationContainer = migrationContainer,
+                        callbacks = callbacks,
+                        allowMainThreadQueries = allowMainThreadQueries,
+                        journalMode = journalMode.resolve(context),
+                        queryExecutor = requireNotNull(queryExecutor),
+                        transactionExecutor = requireNotNull(transactionExecutor),
+                        multiInstanceInvalidationServiceIntent = multiInstanceInvalidationIntent,
+                        requireMigration = requireMigration,
+                        allowDestructiveMigrationOnDowngrade = allowDestructiveMigrationOnDowngrade,
+                        migrationNotRequiredFrom = migrationsNotRequiredFrom,
+                        copyFromAssetPath = copyFromAssetPath,
+                        copyFromFile = copyFromFile,
+                        copyFromInputStream = copyFromInputStream,
+                        prepackagedDatabaseCallback = prepackagedDatabaseCallback,
+                        typeConverters = typeConverters,
+                        autoMigrationSpecs = autoMigrationSpecs,
+                        allowDestructiveMigrationForAllTables =
+                            allowDestructiveMigrationForAllTables,
+                        sqliteDriver = driver,
+                        queryCoroutineContext = queryCoroutineContext,
+                    )
+                    .apply { this.useTempTrackingTable = inMemoryTrackingTableMode }
             val db = factory?.invoke() ?: findAndInstantiateDatabaseImpl(klass.java)
             db.init(configuration)
             return db

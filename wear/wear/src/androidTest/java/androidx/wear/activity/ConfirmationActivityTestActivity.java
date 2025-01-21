@@ -21,8 +21,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 
-import androidx.annotation.Nullable;
 import androidx.wear.test.R;
+
+import org.jspecify.annotations.Nullable;
 
 public class ConfirmationActivityTestActivity extends Activity {
 
@@ -43,7 +44,7 @@ public class ConfirmationActivityTestActivity extends Activity {
     }
 
     private int mDuration = ConfirmationActivity.DEFAULT_ANIMATION_DURATION_MILLIS;
-    @Nullable private String mMessage = "";
+    private @Nullable String mMessage = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

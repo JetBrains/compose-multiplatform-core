@@ -22,6 +22,12 @@ import androidx.health.connect.client.aggregate.AggregationResultGroupedByPeriod
 import androidx.health.connect.client.request.AggregateGroupByDurationRequest
 import androidx.health.connect.client.request.AggregateGroupByPeriodRequest
 import androidx.health.connect.client.request.AggregateRequest
+import androidx.health.connect.client.request.ChangesTokenRequest
+import androidx.health.connect.client.request.ReadRecordsRequest
+import androidx.health.connect.client.response.ChangesResponse
+import androidx.health.connect.client.response.InsertRecordsResponse
+import androidx.health.connect.client.response.ReadRecordResponse
+import androidx.health.connect.client.response.ReadRecordsResponse
 import androidx.health.connect.client.testing.stubs.Stub
 
 /**
@@ -53,16 +59,29 @@ import androidx.health.connect.client.testing.stubs.Stub
  *   [FakeHealthConnectClient.aggregateGroupByPeriod].
  */
 public class FakeHealthConnectClientOverrides(
-    /*  Changes stubs, only used to throw exceptions */
-    public var getChanges: Stub<Nothing?, Nothing>? = null,
-    public var getChangesToken: Stub<Nothing?, Nothing>? = null,
 
-    /*  Records stubs, only used to throw exceptions */
-    public var readRecords: Stub<Nothing?, Nothing>? = null,
-    public var readRecord: Stub<Nothing?, Nothing>? = null,
-    public var insertRecords: Stub<Nothing?, Nothing>? = null,
-    public var updateRecords: Stub<Nothing?, Nothing>? = null,
-    public var deleteRecords: Stub<Nothing?, Nothing>? = null,
+    /** A [Stub] used to set the next responses used in [getChanges]. */
+    public var getChanges: Stub<String, ChangesResponse>? = null,
+
+    /** A [Stub] used to set the next responses used in [getChangesToken]. */
+    public var getChangesToken: Stub<ChangesTokenRequest, String>? = null,
+
+    /*  Records stubs */
+
+    /** A [Stub] used to set the next responses used in [readRecords]. */
+    public var readRecords: Stub<ReadRecordsRequest<*>, ReadRecordsResponse<*>>? = null,
+
+    /** A [Stub] used to set the next responses used in [readRecord]. */
+    public var readRecord: Stub<String, ReadRecordResponse<*>>? = null,
+
+    /** A [Stub] used to set the next responses used in [insertRecords]. */
+    public var insertRecords: Stub<List<*>, InsertRecordsResponse>? = null,
+
+    /** A [Stub] used only to throw exceptions in [updateRecords]. */
+    public var updateRecords: Stub<Any, Nothing>? = null,
+
+    /** A [Stub] used only to throw exceptions in [deleteRecords]. */
+    public var deleteRecords: Stub<Any, Nothing>? = null,
 
     /*  Aggregation stubs */
     /**

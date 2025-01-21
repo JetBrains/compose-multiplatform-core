@@ -18,10 +18,11 @@ package androidx.security.identity;
 
 import android.icu.util.Calendar;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.biometric.BiometricPrompt;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
@@ -51,7 +52,7 @@ public abstract class IdentityCredential {
      *
      * @return ephemeral key pair to use to establish a secure channel with a reader.
      */
-    public @NonNull abstract KeyPair createEphemeralKeyPair();
+    public abstract @NonNull KeyPair createEphemeralKeyPair();
 
     /**
      * Set the ephemeral public key provided by the reader. This must be called before
@@ -72,7 +73,7 @@ public abstract class IdentityCredential {
      *
      * @param sessionTranscript the session transcript.
      */
-    public abstract void setSessionTranscript(@NonNull byte[] sessionTranscript);
+    public abstract void setSessionTranscript(byte @NonNull [] sessionTranscript);
 
     /**
      * Encrypt a message for transmission to the reader.
@@ -84,7 +85,7 @@ public abstract class IdentityCredential {
      * @param messagePlaintext unencrypted message to encrypt.
      * @return encrypted message.
      */
-    public @NonNull abstract byte[] encryptMessageToReader(@NonNull byte[] messagePlaintext);
+    public abstract byte @NonNull [] encryptMessageToReader(byte @NonNull [] messagePlaintext);
 
     /**
      * Decrypt a message received from the reader.
@@ -97,7 +98,7 @@ public abstract class IdentityCredential {
      * @return decrypted message.
      * @throws MessageDecryptionException if the ciphertext couldn't be decrypted.
      */
-    public @NonNull abstract byte[] decryptMessageFromReader(@NonNull byte[] messageCiphertext)
+    public abstract byte @NonNull [] decryptMessageFromReader(byte @NonNull [] messageCiphertext)
             throws MessageDecryptionException;
 
     /**
@@ -110,7 +111,7 @@ public abstract class IdentityCredential {
      *
      * @return the certificate chain for this credential's CredentialKey.
      */
-    public @NonNull abstract Collection<X509Certificate> getCredentialKeyCertificateChain();
+    public abstract @NonNull Collection<X509Certificate> getCredentialKeyCertificateChain();
 
     /**
      * Sets whether to allow using an authentication key which use count has been exceeded if no
@@ -163,8 +164,7 @@ public abstract class IdentityCredential {
      * @return A {@link BiometricPrompt.CryptoObject} which can be used with
      * {@link BiometricPrompt} or {@code null}.
      */
-    @Nullable
-    public abstract BiometricPrompt.CryptoObject getCryptoObject();
+    public abstract BiometricPrompt.@Nullable CryptoObject getCryptoObject();
 
     /**
      * Retrieve data entries and associated data from this {@code IdentityCredential}.
@@ -287,9 +287,9 @@ public abstract class IdentityCredential {
      *                                                the session transcript.
      */
     public abstract @NonNull ResultData getEntries(
-            @Nullable byte[] requestMessage,
+            byte @Nullable [] requestMessage,
             @NonNull Map<String, Collection<String>> entriesToRequest,
-            @Nullable byte[] readerSignature)
+            byte @Nullable [] readerSignature)
             throws NoAuthenticationKeyAvailableException,
             InvalidReaderSignatureException, EphemeralPublicKeyNotFoundException,
             InvalidRequestMessageException;
@@ -353,7 +353,7 @@ public abstract class IdentityCredential {
      * @return A collection of X.509 certificates for dynamic authentication keys that need issuer
      * certification.
      */
-    public @NonNull abstract Collection<X509Certificate> getAuthKeysNeedingCertification();
+    public abstract @NonNull Collection<X509Certificate> getAuthKeysNeedingCertification();
 
     /**
      * Store authentication data associated with a dynamic authentication key.
@@ -373,7 +373,7 @@ public abstract class IdentityCredential {
     @Deprecated
     public abstract void storeStaticAuthenticationData(
             @NonNull X509Certificate authenticationKey,
-            @NonNull byte[] staticAuthData)
+            byte @NonNull [] staticAuthData)
             throws UnknownAuthenticationKeyException;
 
     /**
@@ -397,7 +397,7 @@ public abstract class IdentityCredential {
     public void storeStaticAuthenticationData(
             @NonNull X509Certificate authenticationKey,
             @NonNull Calendar expirationDate,
-            @NonNull byte[] staticAuthData)
+            byte @NonNull [] staticAuthData)
             throws UnknownAuthenticationKeyException {
         throw new UnsupportedOperationException();
     }
@@ -407,7 +407,7 @@ public abstract class IdentityCredential {
      *
      * @return int array of dynamic authentication key usage counts.
      */
-    public @NonNull abstract int[] getAuthenticationDataUsageCount();
+    public abstract int @NonNull [] getAuthenticationDataUsageCount();
 
 
     /**
@@ -435,7 +435,7 @@ public abstract class IdentityCredential {
      *                  returned proof is fresh.
      * @return the COSE_Sign1 data structure above
      */
-    public @NonNull byte[] proveOwnership(@NonNull byte[] challenge)  {
+    public byte @NonNull [] proveOwnership(byte @NonNull [] challenge)  {
         throw new UnsupportedOperationException();
     }
 
@@ -464,7 +464,7 @@ public abstract class IdentityCredential {
      *                  returned proof is fresh.
      * @return the COSE_Sign1 data structure above
      */
-    public @NonNull byte[] delete(@NonNull byte[] challenge)  {
+    public byte @NonNull [] delete(byte @NonNull [] challenge)  {
         throw new UnsupportedOperationException();
     }
 
@@ -489,7 +489,7 @@ public abstract class IdentityCredential {
      *                              and data elements and their values, grouped into namespaces.
      * @return A COSE_Sign1 data structure, see above.
      */
-    public @NonNull byte[] update(@NonNull PersonalizationData personalizationData) {
+    public byte @NonNull [] update(@NonNull PersonalizationData personalizationData) {
         throw new UnsupportedOperationException();
     }
 }

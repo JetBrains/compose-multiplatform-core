@@ -45,7 +45,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.graphics.path"
+    namespace = "androidx.graphics.path"
 
     defaultConfig {
         externalNativeBuild {
@@ -77,7 +77,7 @@ android {
     externalNativeBuild {
         cmake {
             path file('src/main/cpp/CMakeLists.txt')
-            version libs.versions.cmake.get()
+            version = libs.versions.cmake.get()
         }
     }
 }

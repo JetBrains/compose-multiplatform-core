@@ -21,13 +21,14 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -90,8 +91,7 @@ public class RenderParametersWireFormat implements VersionedParcelable, Parcelab
      * #ELEMENT_TYPE_USER_STYLE}.
      */
     @ParcelField(5)
-    @Nullable
-    String mElementUserStyleSettingId;
+    @Nullable String mElementUserStyleSettingId;
 
     /**
      * Specifies the tint for the highlighted element. Only used when {@link #mElementType} isn't
@@ -113,8 +113,7 @@ public class RenderParametersWireFormat implements VersionedParcelable, Parcelab
 
     /** Optional set of ComplicationSlots to render as pressed. */
     @ParcelField(9)
-    @Nullable
-    List<IdAndTapEventWireFormat> mIdAndTapEventWireFormats;
+    @Nullable List<IdAndTapEventWireFormat> mIdAndTapEventWireFormats;
 
     RenderParametersWireFormat() {}
 
@@ -166,8 +165,7 @@ public class RenderParametersWireFormat implements VersionedParcelable, Parcelab
         return mElementComplicationSlotId;
     }
 
-    @Nullable
-    public String getElementUserStyleSettingId() {
+    public @Nullable String getElementUserStyleSettingId() {
         return mElementUserStyleSettingId;
     }
 
@@ -181,8 +179,7 @@ public class RenderParametersWireFormat implements VersionedParcelable, Parcelab
         return mBackgroundTint;
     }
 
-    @Nullable
-    public List<IdAndTapEventWireFormat> getIdAndTapEventWireFormat() {
+    public @Nullable List<IdAndTapEventWireFormat> getIdAndTapEventWireFormat() {
         return mIdAndTapEventWireFormats;
     }
 

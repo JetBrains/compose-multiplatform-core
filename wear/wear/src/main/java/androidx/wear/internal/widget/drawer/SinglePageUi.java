@@ -27,12 +27,13 @@ import android.widget.Toast;
 
 import androidx.annotation.IdRes;
 import androidx.annotation.LayoutRes;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.R;
 import androidx.wear.widget.CircledImageView;
 import androidx.wear.widget.drawer.WearableNavigationDrawerView;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * Handles view logic for the single page style {@link WearableNavigationDrawerView}.
@@ -81,8 +82,7 @@ public class SinglePageUi implements SinglePagePresenter.Ui {
     /**
      * Indicates currently selected item. {@code null} when the layout lacks space to display it.
      */
-    @Nullable
-    private TextView mTextView;
+    private @Nullable TextView mTextView;
 
     public SinglePageUi(WearableNavigationDrawerView navigationDrawer) {
         if (navigationDrawer == null) {

@@ -20,7 +20,6 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.lazy.layout.LazyLayoutScrollScope
 import androidx.compose.ui.util.fastFirstOrNull
-import androidx.compose.ui.util.fastSumBy
 
 /**
  * An implementation of [LazyLayoutScrollScope] that can be used with LazyStaggeredGrids.
@@ -60,8 +59,7 @@ fun LazyLayoutScrollScope(
             val visibleItem =
                 layoutInfo.visibleItemsInfo.fastFirstOrNull { it.index == targetIndex }
             return if (visibleItem == null) {
-                val averageMainAxisItemSize = calculateVisibleItemsAverageSize(layoutInfo)
-
+                val averageMainAxisItemSize = layoutInfo.visibleItemsAverageSize()
                 val laneCount = state.laneCount
                 val lineDiff = targetIndex / laneCount - firstVisibleItemIndex / laneCount
                 averageMainAxisItemSize * lineDiff - firstVisibleItemScrollOffset
@@ -72,19 +70,6 @@ fun LazyLayoutScrollScope(
                     visibleItem.offset.x
                 }
             } + targetOffset
-        }
-
-        private fun calculateVisibleItemsAverageSize(layoutInfo: LazyStaggeredGridLayoutInfo): Int {
-            val visibleItems = layoutInfo.visibleItemsInfo
-            val itemSizeSum =
-                visibleItems.fastSumBy {
-                    if (layoutInfo.orientation == Orientation.Vertical) {
-                        it.size.height
-                    } else {
-                        it.size.width
-                    }
-                }
-            return itemSizeSum / visibleItems.size + layoutInfo.mainAxisItemSpacing
         }
     }
 }

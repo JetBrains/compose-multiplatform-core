@@ -70,8 +70,8 @@ androidx {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.compose.integration.docs"
+    compileSdk = 35
+    namespace = "androidx.compose.integration.docs"
 }
 
-android.buildFeatures.viewBinding true
+android.buildFeatures.viewBinding = true

@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.LevelIndicator
 import androidx.wear.compose.material3.Stepper
+import androidx.wear.compose.material3.StepperDefaults
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.rangeSemantics
 import androidx.wear.compose.material3.samples.icons.HeadphoneIcon
@@ -45,7 +46,14 @@ fun StepperSample() {
     var value by remember { mutableFloatStateOf(2f) }
     val valueRange = 0f..4f
     Box(modifier = Modifier.fillMaxSize()) {
-        Stepper(value = value, onValueChange = { value = it }, valueRange = valueRange, steps = 7) {
+        Stepper(
+            value = value,
+            onValueChange = { value = it },
+            valueRange = valueRange,
+            steps = 7,
+            decreaseIcon = { VolumeDownIcon(StepperDefaults.IconSize) },
+            increaseIcon = { VolumeUpIcon(StepperDefaults.IconSize) },
+        ) {
             Text(String.format("Value: %.1f".format(value)))
         }
         LevelIndicator(
@@ -65,7 +73,9 @@ fun StepperWithIntegerSample() {
         Stepper(
             value = value,
             onValueChange = { value = it },
-            valueProgression = valueProgression
+            valueProgression = valueProgression,
+            decreaseIcon = { VolumeDownIcon(StepperDefaults.IconSize) },
+            increaseIcon = { VolumeUpIcon(StepperDefaults.IconSize) },
         ) {
             Text(String.format("Value: %d".format(value)))
         }
@@ -91,6 +101,8 @@ fun StepperWithRangeSemanticsSample() {
             valueRange = valueRange,
             modifier = Modifier.rangeSemantics(value, true, onValueChange, valueRange, steps),
             steps = steps,
+            decreaseIcon = { VolumeDownIcon(StepperDefaults.IconSize) },
+            increaseIcon = { VolumeUpIcon(StepperDefaults.IconSize) },
         ) {
             Text("Value: $value")
         }
@@ -112,8 +124,8 @@ fun StepperWithButtonSample() {
             value = value,
             onValueChange = { value = it },
             valueRange = valueRange,
-            increaseIcon = { VolumeUpIcon(24.dp) },
-            decreaseIcon = { VolumeDownIcon(24.dp) },
+            increaseIcon = { VolumeUpIcon(StepperDefaults.IconSize) },
+            decreaseIcon = { VolumeDownIcon(StepperDefaults.IconSize) },
             steps = 7
         ) {
             Text(String.format("Value: %.1f".format(value)))

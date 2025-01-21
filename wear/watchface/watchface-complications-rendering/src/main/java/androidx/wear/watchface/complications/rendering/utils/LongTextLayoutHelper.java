@@ -27,8 +27,9 @@ import android.support.wearable.complications.ComplicationData;
 import android.text.Layout;
 import android.view.Gravity;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Layout helper for {@link ComplicationData#TYPE_LONG_TEXT}.
@@ -91,9 +92,8 @@ public class LongTextLayoutHelper extends LayoutHelper {
         }
     }
 
-    @NonNull
     @Override
-    public Layout.Alignment getLongTextAlignment() {
+    public Layout.@NonNull Alignment getLongTextAlignment() {
         getBounds(mBounds);
         if (shouldShowTextOnly(mBounds)) {
             return Layout.Alignment.ALIGN_CENTER;
@@ -127,9 +127,8 @@ public class LongTextLayoutHelper extends LayoutHelper {
         }
     }
 
-    @NonNull
     @Override
-    public Layout.Alignment getLongTitleAlignment() {
+    public Layout.@NonNull Alignment getLongTitleAlignment() {
         return getLongTextAlignment();
     }
 

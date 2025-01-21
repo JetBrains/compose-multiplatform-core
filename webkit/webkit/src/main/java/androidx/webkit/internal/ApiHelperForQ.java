@@ -21,10 +21,11 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewRenderProcess;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.webkit.WebViewRenderProcessClient;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executor;
 
@@ -59,8 +60,7 @@ public class ApiHelperForQ {
     /**
      * @see WebView#getWebViewRenderProcess()
      */
-    @Nullable
-    public static WebViewRenderProcess getWebViewRenderProcess(@NonNull WebView webView) {
+    public static @Nullable WebViewRenderProcess getWebViewRenderProcess(@NonNull WebView webView) {
         return webView.getWebViewRenderProcess();
     }
 
@@ -96,8 +96,7 @@ public class ApiHelperForQ {
     /**
      * @see WebView#getWebViewRenderProcessClient()
      */
-    @Nullable
-    public static android.webkit.WebViewRenderProcessClient getWebViewRenderProcessClient(
+    public static android.webkit.@Nullable WebViewRenderProcessClient getWebViewRenderProcessClient(
             @NonNull WebView webView) {
         return webView.getWebViewRenderProcessClient();
     }

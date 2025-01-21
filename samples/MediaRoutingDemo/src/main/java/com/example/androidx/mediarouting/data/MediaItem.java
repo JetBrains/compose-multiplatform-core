@@ -18,7 +18,7 @@ package com.example.androidx.mediarouting.data;
 
 import android.net.Uri;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * MediaItem helps keep track of the media items before adding to playlist.

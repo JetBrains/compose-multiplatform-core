@@ -17,7 +17,6 @@
 package androidx.compose.ui.semantics
 
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.geometry.Offset
@@ -101,8 +100,7 @@ object SemanticsProperties {
         replaceWith = ReplaceWith("HideFromAccessibility")
     )
     @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:ExperimentalComposeUiApi
-    @ExperimentalComposeUiApi
+    // Retain for binary compatibility with aosp/3341487 in 1.7
     val InvisibleToUser =
         SemanticsPropertyKey<Unit>(
             name = "InvisibleToUser",
@@ -896,7 +894,7 @@ var SemanticsPropertyReceiver.isTraversalGroup by SemanticsProperties.IsTraversa
     replaceWith = ReplaceWith("hideFromAccessibility()"),
 )
 @Suppress("DEPRECATION")
-@ExperimentalComposeUiApi
+// Retain for binary compatibility with aosp/3341487 in 1.7
 fun SemanticsPropertyReceiver.invisibleToUser() {
     this[SemanticsProperties.InvisibleToUser] = Unit
 }

@@ -60,6 +60,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionOnScreen
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -499,211 +500,237 @@ fun SwipeToReveal(
 
     var globalPosition by remember { mutableStateOf<LayoutCoordinates?>(null) }
 
-    Box(
-        modifier =
-            modifier
-                .onGloballyPositioned { layoutCoordinates -> globalPosition = layoutCoordinates }
-                .swipeableV2(
-                    state = state.swipeableState,
-                    orientation = Orientation.Horizontal,
-                    enabled =
-                        state.currentValue != RevealValue.LeftRevealed &&
-                            state.currentValue != RevealValue.RightRevealed,
-                )
-                .swipeAnchors(
-                    state = state.swipeableState,
-                    possibleValues = state.swipeAnchors.keys
-                ) { value, layoutSize ->
-                    val swipeableWidth = layoutSize.width.toFloat()
-                    // Update the total width which will be used to calculate the anchors
-                    revealScope.width.floatValue = swipeableWidth
-                    // Multiply the anchor with -1f to get the actual swipeable anchor
-                    -state.swipeAnchors[value]!! * swipeableWidth
-                }
-                // NestedScrollDispatcher sends the scroll/fling events from the node to its parent
-                // and onwards including the modifier chain. Apply it in the end to let nested
-                // scroll
-                // connection applied before this modifier consume the scroll/fling events.
-                .nestedScroll(noOpNestedScrollConnection, state.nestedScrollDispatcher)
+    CustomTouchSlopProvider(
+        newTouchSlop = LocalViewConfiguration.current.touchSlop * CustomTouchSlopMultiplier
     ) {
-        val swipeCompleted =
-            state.currentValue == RevealValue.RightRevealed ||
-                state.currentValue == RevealValue.LeftRevealed
-        val lastActionIsSecondary = state.lastActionType == RevealActionType.SecondaryAction
-        val isWithinRevealOffset by remember {
-            derivedStateOf { abs(state.offset) <= revealScope.revealOffset }
-        }
-        val canSwipeRight = (state.swipeAnchors.minOfOrNull { (_, offset) -> offset } ?: 0f) < 0f
+        Box(
+            modifier =
+                modifier
+                    .onGloballyPositioned { layoutCoordinates ->
+                        globalPosition = layoutCoordinates
+                    }
+                    .swipeableV2(
+                        state = state.swipeableState,
+                        orientation = Orientation.Horizontal,
+                        enabled =
+                            state.currentValue != RevealValue.LeftRevealed &&
+                                state.currentValue != RevealValue.RightRevealed,
+                    )
+                    .swipeAnchors(
+                        state = state.swipeableState,
+                        possibleValues = state.swipeAnchors.keys
+                    ) { value, layoutSize ->
+                        val swipeableWidth = layoutSize.width.toFloat()
+                        // Update the total width which will be used to calculate the anchors
+                        revealScope.width.floatValue = swipeableWidth
+                        // Multiply the anchor with -1f to get the actual swipeable anchor
+                        -state.swipeAnchors[value]!! * swipeableWidth
+                    }
+                    // NestedScrollDispatcher sends the scroll/fling events from the node to its
+                    // parent
+                    // and onwards including the modifier chain. Apply it in the end to let nested
+                    // scroll
+                    // connection applied before this modifier consume the scroll/fling events.
+                    .nestedScroll(noOpNestedScrollConnection, state.nestedScrollDispatcher)
+        ) {
+            val swipeCompleted =
+                state.currentValue == RevealValue.RightRevealed ||
+                    state.currentValue == RevealValue.LeftRevealed
+            val lastActionIsSecondary = state.lastActionType == RevealActionType.SecondaryAction
+            val isWithinRevealOffset by remember {
+                derivedStateOf { abs(state.offset) <= revealScope.revealOffset }
+            }
+            val canSwipeRight =
+                (state.swipeAnchors.minOfOrNull { (_, offset) -> offset } ?: 0f) < 0f
 
-        // Determines whether the secondary action will be visible based on the current
-        // reveal offset
-        val showSecondaryAction = isWithinRevealOffset || lastActionIsSecondary
+            // Determines whether the secondary action will be visible based on the current
+            // reveal offset
+            val showSecondaryAction = isWithinRevealOffset || lastActionIsSecondary
 
-        // Determines whether both primary and secondary action should be hidden, usually the case
-        // when secondary action is clicked
-        val hideActions = !isWithinRevealOffset && lastActionIsSecondary
+            // Determines whether both primary and secondary action should be hidden, usually the
+            // case
+            // when secondary action is clicked
+            val hideActions = !isWithinRevealOffset && lastActionIsSecondary
 
-        val swipingRight by remember { derivedStateOf { state.offset > 0 } }
+            val swipingRight by remember { derivedStateOf { state.offset > 0 } }
 
-        // Don't draw actions on the left side if the user cannot swipe right, and they are
-        // currently swiping right
-        val shouldDrawActions by remember {
-            derivedStateOf { abs(state.offset) > 0 && (canSwipeRight || !swipingRight) }
-        }
+            // Don't draw actions on the left side if the user cannot swipe right, and they are
+            // currently swiping right
+            val shouldDrawActions by remember {
+                derivedStateOf { abs(state.offset) > 0 && (canSwipeRight || !swipingRight) }
+            }
 
-        // Draw the buttons only when offset is greater than zero.
-        if (shouldDrawActions) {
-            Box(
-                modifier = Modifier.matchParentSize(),
-                contentAlignment =
-                    if (swipingRight) AbsoluteAlignment.CenterLeft
-                    else AbsoluteAlignment.CenterRight
-            ) {
-                AnimatedContent(
-                    targetState = swipeCompleted && undoAction != null,
-                    transitionSpec = {
-                        if (targetState) { // Fade in the Undo composable and fade out actions
-                            fadeInUndo()
-                        } else { // Fade in the actions and fade out the undo composable
-                            fadeOutUndo()
-                        }
-                    },
-                    label = "AnimatedContentS2R"
-                ) { displayUndo ->
-                    if (displayUndo && undoAction != null) {
-                        val undoActionAlpha =
-                            animateFloatAsState(
-                                targetValue = if (swipeCompleted) 1f else 0f,
-                                animationSpec =
-                                    tween(
-                                        durationMillis = RAPID_ANIMATION,
-                                        delayMillis = FLASH_ANIMATION,
-                                        easing = STANDARD_IN_OUT,
-                                    ),
-                                label = "UndoActionAlpha"
-                            )
-                        Row(
-                            modifier =
-                                Modifier.graphicsLayer { alpha = undoActionAlpha.value }
-                                    .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            ActionSlot(revealScope, content = undoAction)
-                        }
-                    } else {
-                        // Animate weight for secondary action slot.
-                        val secondaryActionWeight =
-                            animateFloatAsState(
-                                targetValue = if (showSecondaryAction) 1f else 0f,
-                                animationSpec = tween(durationMillis = QUICK_ANIMATION),
-                                label = "SecondaryActionAnimationSpec"
-                            )
-                        val secondaryActionAlpha =
-                            animateFloatAsState(
-                                targetValue = if (!showSecondaryAction || hideActions) 0f else 1f,
-                                animationSpec =
-                                    tween(durationMillis = QUICK_ANIMATION, easing = LinearEasing),
-                                label = "SecondaryActionAlpha"
-                            )
-                        val primaryActionAlpha =
-                            animateFloatAsState(
-                                targetValue = if (hideActions) 0f else 1f,
-                                animationSpec = tween(durationMillis = 100, easing = LinearEasing),
-                                label = "PrimaryActionAlpha"
-                            )
-                        val revealedContentAlpha =
-                            animateFloatAsState(
-                                targetValue = if (swipeCompleted) 0f else 1f,
-                                animationSpec =
-                                    tween(durationMillis = FLASH_ANIMATION, easing = LinearEasing),
-                                label = "RevealedContentAlpha"
-                            )
-                        var revealedContentHeight by remember { mutableIntStateOf(0) }
-                        Row(
-                            modifier =
-                                Modifier.graphicsLayer { alpha = revealedContentAlpha.value }
-                                    .onSizeChanged { revealedContentHeight = it.height }
-                                    .layout { measurable, constraints ->
-                                        val placeable =
-                                            measurable.measure(
-                                                constraints.copy(
-                                                    maxWidth =
-                                                        if (hideActions) {
-                                                                revealScope.revealOffset
-                                                            } else {
-                                                                abs(state.offset)
-                                                            }
-                                                            .roundToInt()
+            // Draw the buttons only when offset is greater than zero.
+            if (shouldDrawActions) {
+                Box(
+                    modifier = Modifier.matchParentSize(),
+                    contentAlignment =
+                        if (swipingRight) AbsoluteAlignment.CenterLeft
+                        else AbsoluteAlignment.CenterRight
+                ) {
+                    AnimatedContent(
+                        targetState = swipeCompleted && undoAction != null,
+                        transitionSpec = {
+                            if (targetState) { // Fade in the Undo composable and fade out actions
+                                fadeInUndo()
+                            } else { // Fade in the actions and fade out the undo composable
+                                fadeOutUndo()
+                            }
+                        },
+                        label = "AnimatedContentS2R"
+                    ) { displayUndo ->
+                        if (displayUndo && undoAction != null) {
+                            val undoActionAlpha =
+                                animateFloatAsState(
+                                    targetValue = if (swipeCompleted) 1f else 0f,
+                                    animationSpec =
+                                        tween(
+                                            durationMillis = RAPID_ANIMATION,
+                                            delayMillis = FLASH_ANIMATION,
+                                            easing = STANDARD_IN_OUT,
+                                        ),
+                                    label = "UndoActionAlpha"
+                                )
+                            Row(
+                                modifier =
+                                    Modifier.graphicsLayer { alpha = undoActionAlpha.value }
+                                        .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                ActionSlot(revealScope, content = undoAction)
+                            }
+                        } else {
+                            // Animate weight for secondary action slot.
+                            val secondaryActionWeight =
+                                animateFloatAsState(
+                                    targetValue = if (showSecondaryAction) 1f else 0f,
+                                    animationSpec = tween(durationMillis = QUICK_ANIMATION),
+                                    label = "SecondaryActionAnimationSpec"
+                                )
+                            val secondaryActionAlpha =
+                                animateFloatAsState(
+                                    targetValue =
+                                        if (!showSecondaryAction || hideActions) 0f else 1f,
+                                    animationSpec =
+                                        tween(
+                                            durationMillis = QUICK_ANIMATION,
+                                            easing = LinearEasing
+                                        ),
+                                    label = "SecondaryActionAlpha"
+                                )
+                            val primaryActionAlpha =
+                                animateFloatAsState(
+                                    targetValue = if (hideActions) 0f else 1f,
+                                    animationSpec =
+                                        tween(durationMillis = 100, easing = LinearEasing),
+                                    label = "PrimaryActionAlpha"
+                                )
+                            val revealedContentAlpha =
+                                animateFloatAsState(
+                                    targetValue = if (swipeCompleted) 0f else 1f,
+                                    animationSpec =
+                                        tween(
+                                            durationMillis = FLASH_ANIMATION,
+                                            easing = LinearEasing
+                                        ),
+                                    label = "RevealedContentAlpha"
+                                )
+                            var revealedContentHeight by remember { mutableIntStateOf(0) }
+                            Row(
+                                modifier =
+                                    Modifier.graphicsLayer { alpha = revealedContentAlpha.value }
+                                        .onSizeChanged { revealedContentHeight = it.height }
+                                        .layout { measurable, constraints ->
+                                            val placeable =
+                                                measurable.measure(
+                                                    constraints.copy(
+                                                        maxWidth =
+                                                            if (hideActions) {
+                                                                    revealScope.revealOffset
+                                                                } else {
+                                                                    abs(state.offset)
+                                                                }
+                                                                .roundToInt()
+                                                    )
                                                 )
-                                            )
-                                        layout(placeable.width, placeable.height) {
-                                            placeable.placeRelative(
-                                                0,
-                                                calculateVerticalOffsetBasedOnScreenPosition(
-                                                    revealedContentHeight,
-                                                    globalPosition
+                                            layout(placeable.width, placeable.height) {
+                                                placeable.placeRelative(
+                                                    0,
+                                                    calculateVerticalOffsetBasedOnScreenPosition(
+                                                        revealedContentHeight,
+                                                        globalPosition
+                                                    )
                                                 )
-                                            )
-                                        }
-                                    },
-                            horizontalArrangement = Arrangement.Absolute.Right
-                        ) {
-                            if (!swipingRight) {
-                                // weight cannot be 0 so remove the composable when weight becomes 0
-                                if (secondaryAction != null && secondaryActionWeight.value > 0) {
+                                            }
+                                        },
+                                horizontalArrangement = Arrangement.Absolute.Right
+                            ) {
+                                if (!swipingRight) {
+                                    // weight cannot be 0 so remove the composable when weight
+                                    // becomes 0
+                                    if (
+                                        secondaryAction != null && secondaryActionWeight.value > 0
+                                    ) {
+                                        Spacer(Modifier.size(SwipeToRevealDefaults.padding))
+                                        ActionSlot(
+                                            revealScope,
+                                            weight = secondaryActionWeight.value,
+                                            opacity = secondaryActionAlpha,
+                                            content = secondaryAction,
+                                        )
+                                    }
                                     Spacer(Modifier.size(SwipeToRevealDefaults.padding))
                                     ActionSlot(
                                         revealScope,
-                                        weight = secondaryActionWeight.value,
-                                        opacity = secondaryActionAlpha,
-                                        content = secondaryAction,
+                                        content = primaryAction,
+                                        opacity = primaryActionAlpha
                                     )
-                                }
-                                Spacer(Modifier.size(SwipeToRevealDefaults.padding))
-                                ActionSlot(
-                                    revealScope,
-                                    content = primaryAction,
-                                    opacity = primaryActionAlpha
-                                )
-                            } else {
-                                ActionSlot(
-                                    revealScope,
-                                    content = primaryAction,
-                                    opacity = primaryActionAlpha
-                                )
-                                Spacer(Modifier.size(SwipeToRevealDefaults.padding))
-                                // weight cannot be 0 so remove the composable when weight becomes 0
-                                if (secondaryAction != null && secondaryActionWeight.value > 0) {
+                                } else {
                                     ActionSlot(
                                         revealScope,
-                                        weight = secondaryActionWeight.value,
-                                        opacity = secondaryActionAlpha,
-                                        content = secondaryAction,
+                                        content = primaryAction,
+                                        opacity = primaryActionAlpha
                                     )
                                     Spacer(Modifier.size(SwipeToRevealDefaults.padding))
+                                    // weight cannot be 0 so remove the composable when weight
+                                    // becomes 0
+                                    if (
+                                        secondaryAction != null && secondaryActionWeight.value > 0
+                                    ) {
+                                        ActionSlot(
+                                            revealScope,
+                                            weight = secondaryActionWeight.value,
+                                            opacity = secondaryActionAlpha,
+                                            content = secondaryAction,
+                                        )
+                                        Spacer(Modifier.size(SwipeToRevealDefaults.padding))
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        }
-        Row(
-            modifier =
-                Modifier.absoluteOffset {
-                    val xOffset = state.requireOffset().roundToInt()
-                    IntOffset(x = if (canSwipeRight) xOffset else xOffset.coerceAtMost(0), y = 0)
-                }
-        ) {
-            content()
-        }
-        LaunchedEffect(state.currentValue) {
-            if (
-                (state.currentValue == RevealValue.LeftRevealed ||
-                    state.currentValue == RevealValue.RightRevealed) &&
-                    state.lastActionType == RevealActionType.None
+            Row(
+                modifier =
+                    Modifier.absoluteOffset {
+                        val xOffset = state.requireOffset().roundToInt()
+                        IntOffset(
+                            x = if (canSwipeRight) xOffset else xOffset.coerceAtMost(0),
+                            y = 0
+                        )
+                    }
             ) {
-                onFullSwipe()
+                content()
+            }
+            LaunchedEffect(state.currentValue) {
+                if (
+                    (state.currentValue == RevealValue.LeftRevealed ||
+                        state.currentValue == RevealValue.RightRevealed) &&
+                        state.lastActionType == RevealActionType.None
+                ) {
+                    onFullSwipe()
+                }
             }
         }
     }
@@ -849,3 +876,5 @@ private fun calculateVerticalOffsetBasedOnScreenPosition(
     val actualCenter = parentTop + parentHeight / 2
     return desiredCenter - actualCenter
 }
+
+internal const val CustomTouchSlopMultiplier = 1.20f

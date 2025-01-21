@@ -6,12 +6,12 @@ plugins {
 
 android {
     defaultConfig {
-        minSdkVersion 23
+        minSdk = 23
     }
     testOptions {
         animationsDisabled = false
     }
-    namespace 'androidx.compose.material3.integration.macrobenchmark'
+    namespace = "androidx.compose.material3.integration.macrobenchmark"
     targetProjectPath = ":compose:material3:integration-tests:macrobenchmark-target"
     experimentalProperties["android.experimental.self-instrumenting"] = true
 }

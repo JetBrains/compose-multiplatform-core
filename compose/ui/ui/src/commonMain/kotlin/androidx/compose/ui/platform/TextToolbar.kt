@@ -34,6 +34,8 @@ interface TextToolbar {
      *   paste option will not be shown.
      * @param onCutRequested callback to cut text and copy the text into ClipBoardManager. If null,
      *   the cut option will not be shown.
+     * @param onSelectAllRequested callback to select all the text content. If null, the select all
+     *   option will not be shown.
      * @param onAutofillRequested callback to autofill the field. If null, the autofill option will
      *   not be shown.
      */
@@ -66,6 +68,8 @@ interface TextToolbar {
      *   paste option will not be shown.
      * @param onCutRequested callback to cut text and copy the text into ClipBoardManager. If null,
      *   the cut option will not be shown.
+     * @param onSelectAllRequested callback to select all the text content. If null, the select all
+     *   option will not be shown.
      */
     fun showMenu(
         rect: Rect,

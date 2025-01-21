@@ -64,7 +64,7 @@ android {
     }
     externalNativeBuild {
         cmake {
-            version libs.versions.cmake.get()
+            version = libs.versions.cmake.get()
             path "src/main/cpp/CMakeLists.txt"
         }
         experimentalProperties["prefab.junit-gtest.exportLibraries"] = [
@@ -76,15 +76,15 @@ android {
 
     buildFeatures {
         prefab = true
-        prefabPublishing true
+        prefabPublishing = true
     }
 
     prefab {
         junitgtest {
-            name "junit-gtest"
+            name = "junit-gtest"
         }
     }
-    namespace "androidx.test.ext.junitgtest"
+    namespace = "androidx.test.ext.junitgtest"
 
     packagingOptions {
         jniLibs {

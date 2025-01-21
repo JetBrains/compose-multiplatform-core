@@ -21,11 +21,11 @@ import static com.google.common.truth.Truth.assertThat;
 import android.content.pm.PackageInfo;
 import android.os.Build;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 import junit.framework.TestCase;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

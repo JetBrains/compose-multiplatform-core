@@ -82,7 +82,11 @@ internal class LayoutNode(
     private val isVirtual: Boolean = false,
     // The unique semantics ID that is used by all semantics modifiers attached to this LayoutNode.
     // TODO(b/281907968): Implement this with a getter that returns the compositeKeyHash.
-    override var semanticsId: Int = generateSemanticsId()
+    override var semanticsId: Int = generateSemanticsId(),
+    // Permit children to detach from parent's lookahead by not being measured or placed in
+    // lookahead even when these children are measured and/or placed in approach. In these
+    // situations, we will do a make-up lookahead pass for the children in the approach pass.
+    private val permitChildrenToDetachFromParentLookahead: Boolean = false
 ) :
     ComposeNodeLifecycleCallback,
     Remeasurement,
@@ -208,6 +212,16 @@ internal class LayoutNode(
      * attached to a hierarchy or is the root of the hierarchy.
      */
     private var _foldedParent: LayoutNode? = null
+
+    internal val isPermittedToDetachFromParentLookahead: Boolean
+        get() =
+            _foldedParent?.isVirtual == true &&
+                (_foldedParent?.permitChildrenToDetachFromParentLookahead == true ||
+                    // In the rare case where there's another layer of virtual node in between the
+                    // node
+                    // that permits children to detach and the non-virtual child, we recursively
+                    // search for a virtual parent that permits detaching from lookahead.
+                    _foldedParent?.isPermittedToDetachFromParentLookahead == true)
 
     /*
      * The parent node in the LayoutNode hierarchy, skipping over virtual nodes.
@@ -448,10 +462,8 @@ internal class LayoutNode(
         }
         val parent = this.parent
         if (parent == null) {
-            // it is a root node and attached root nodes are always placed (as there is no parent
-            // to place them explicitly)
             measurePassDelegate.isPlaced = true
-            lookaheadPassDelegate?.let { it.isPlaced = true }
+            lookaheadPassDelegate?.onAttachedToNullParent()
         }
 
         // Use the inner coordinator of first non-virtual parent
@@ -1287,8 +1299,10 @@ internal class LayoutNode(
         } else {
             resetModifierState()
         }
-        // resetModifierState detaches all nodes, so we need to re-attach them upon reuse.
+        val oldSemanticsId = semanticsId
         semanticsId = generateSemanticsId()
+        owner?.onLayoutNodeReused(this, oldSemanticsId)
+        // resetModifierState detaches all nodes, so we need to re-attach them upon reuse.
         nodes.markAsAttached()
         nodes.runAttachLifecycle()
         rescheduleRemeasureOrRelayout(this)

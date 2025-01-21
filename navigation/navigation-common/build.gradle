@@ -36,7 +36,7 @@ android {
     buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
-    namespace "androidx.navigation.common"
+    namespace = "androidx.navigation.common"
 }
 
 dependencies {

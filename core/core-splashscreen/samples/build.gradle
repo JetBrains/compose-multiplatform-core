@@ -31,11 +31,11 @@ plugins {
 }
 
 android {
-    compileSdkVersion 35
+    compileSdk = 35
     defaultConfig {
-        applicationId "androidx.core.splashscreen.samples"
+        applicationId = "androidx.core.splashscreen.samples"
     }
-    namespace "androidx.core.splashscreen.sample"
+    namespace = "androidx.core.splashscreen.sample"
 }
 
 dependencies {

@@ -59,10 +59,10 @@ dependencies {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
 
     defaultConfig {
-        minSdkVersion 25
+        minSdk = 25
     }
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
@@ -71,7 +71,7 @@ android {
     buildTypes.configureEach {
         consumerProguardFiles("proguard-rules.pro")
     }
-    namespace "androidx.wear.compose.material.core"
+    namespace = "androidx.wear.compose.material.core"
 }
 
 androidx {

@@ -16,8 +16,9 @@
 
 package androidx.pdf.util;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * Interface for an observable property value, which can be exposed by a Subject. Clients can read
@@ -46,8 +47,7 @@ public interface ObservableValue<T> extends Observable<ObservableValue.ValueObse
      * @return the value, supposedly immutable (if T is a mutable object, it's not meant to be
      * mutated by clients).
      */
-    @Nullable
-    T get();
+    @Nullable T get();
 
     /**
      * Interface to be provided by observers of this value.

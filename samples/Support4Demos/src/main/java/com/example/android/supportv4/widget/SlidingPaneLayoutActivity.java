@@ -31,12 +31,13 @@ import android.widget.TextView;
 
 import androidx.activity.ComponentActivity;
 import androidx.activity.OnBackPressedCallback;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.slidingpanelayout.widget.SlidingPaneLayout;
 
 import com.example.android.supportv4.LoremIpsum;
 import com.example.android.supportv4.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This example illustrates a common usage of SlidingPaneLayout in the Android support library.

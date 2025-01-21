@@ -16,8 +16,8 @@
 
 package androidx.wear.protolayout.expression.pipeline;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /** Dynamic data nodes which yield result based on the given condition. */
 class ConditionalOpNode<T> implements DynamicDataNode<T> {

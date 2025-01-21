@@ -53,7 +53,7 @@ internal interface CameraExtensionSessionWrapper :
     override fun stopRepeating(): Boolean
 
     /** @see CameraExtensionSession.StateCallback */
-    interface StateCallback : OnSessionFinalized {
+    interface StateCallback : SessionStateCallback {
         /** @see CameraExtensionSession.StateCallback.onClosed */
         fun onClosed(session: CameraExtensionSessionWrapper)
 
@@ -71,7 +71,7 @@ internal interface CameraExtensionSessionWrapper :
 internal class AndroidExtensionSessionStateCallback(
     private val device: CameraDeviceWrapper,
     private val stateCallback: CameraExtensionSessionWrapper.StateCallback,
-    lastStateCallback: OnSessionFinalized?,
+    lastStateCallback: SessionStateCallback?,
     private val cameraErrorListener: CameraErrorListener,
     private val interopSessionStateCallback: CameraExtensionSession.StateCallback? = null,
     private val callbackExecutor: Executor

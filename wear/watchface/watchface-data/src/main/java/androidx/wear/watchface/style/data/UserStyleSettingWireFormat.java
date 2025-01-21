@@ -22,13 +22,14 @@ import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,23 +44,19 @@ import java.util.List;
 public class UserStyleSettingWireFormat implements VersionedParcelable, Parcelable {
     /** Identifier for the element, must be unique. */
     @ParcelField(1)
-    @NonNull
-    public String mId = "";
+    public @NonNull String mId = "";
 
     /** Localized human readable name for the element, used in the userStyle selection UI. */
     @ParcelField(2)
-    @NonNull
-    public CharSequence mDisplayName = "";
+    public @NonNull CharSequence mDisplayName = "";
 
     /** Localized description string displayed under the displayName. */
     @ParcelField(3)
-    @NonNull
-    public CharSequence mDescription = "";
+    public @NonNull CharSequence mDescription = "";
 
     /** Icon for use in the style selection UI. */
     @ParcelField(4)
-    @Nullable
-    public Icon mIcon = null;
+    public @Nullable Icon mIcon = null;
 
     /** The default option index, used if nothing has been selected within the options list. */
     @ParcelField(5)
@@ -67,8 +64,7 @@ public class UserStyleSettingWireFormat implements VersionedParcelable, Parcelab
 
     /** Used by the style configuration UI. Describes which rendering layers this style affects. */
     @ParcelField(6)
-    @NonNull
-    public List<Integer> mAffectsLayers;
+    public @NonNull List<Integer> mAffectsLayers;
 
     /**
      * List of options for this UserStyleCategory. Depending on the type of UserStyleCategory this
@@ -80,29 +76,25 @@ public class UserStyleSettingWireFormat implements VersionedParcelable, Parcelab
      * (including elements of this list) will get corrupted.
      */
     @ParcelField(100)
-    @NonNull
-    public List<OptionWireFormat> mOptions = new ArrayList<>();
+    public @NonNull List<OptionWireFormat> mOptions = new ArrayList<>();
 
     /**
      * Flattened list of child settings for each option. Note this ID must always be a list of
      * Integers.
      */
-    @Nullable
     @ParcelField(101)
-    public List<Integer> mOptionChildIndices = null;
+    public @Nullable List<Integer> mOptionChildIndices = null;
 
     /** Contains OnWatchFaceData. */
-    @Nullable
     @ParcelField(102)
-    public Bundle mOnWatchFaceEditorBundle = null;
+    public @Nullable Bundle mOnWatchFaceEditorBundle = null;
 
     /**
      * Per option OnWatchFaceData. Ideally this would be in OptionWireFormat, but
      * VersionedParcellable doesn't support us adding that in a backwards compatible way.
      */
-    @Nullable
     @ParcelField(103)
-    public List<Bundle> mPerOptionOnWatchFaceEditorBundles = new ArrayList<>();
+    public @Nullable List<Bundle> mPerOptionOnWatchFaceEditorBundles = new ArrayList<>();
 
     // Field 104 is reserved.
 

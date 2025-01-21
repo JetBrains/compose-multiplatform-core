@@ -25,9 +25,10 @@ import android.os.Bundle;
 import android.provider.MediaStore.MediaColumns;
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.FileNotFoundException;
 
@@ -47,8 +48,7 @@ public class ContentUriOpener {
     }
 
     /** Opens an image preview (of the given size) of this content. */
-    @NonNull
-    public AssetFileDescriptor openPreview(@NonNull Uri contentUri, @NonNull Point size)
+    public @NonNull AssetFileDescriptor openPreview(@NonNull Uri contentUri, @NonNull Point size)
             throws FileNotFoundException {
         Preconditions.checkNotRunOnUIThread();
         Bundle extraSize = new Bundle();
@@ -78,8 +78,7 @@ public class ContentUriOpener {
      * @param contentUri  the content Uri
      * @param contentType the requested content type. If null, will use the default.
      */
-    @NonNull
-    public AssetFileDescriptor open(@NonNull Uri contentUri, @NonNull String contentType)
+    public @NonNull AssetFileDescriptor open(@NonNull Uri contentUri, @NonNull String contentType)
             throws FileNotFoundException {
         Preconditions.checkNotRunOnUIThread();
         if (contentType == null) {
@@ -91,8 +90,7 @@ public class ContentUriOpener {
     /**
      *
      */
-    @Nullable
-    public String getContentType(@NonNull Uri contentUri) {
+    public @Nullable String getContentType(@NonNull Uri contentUri) {
         try {
             String[] availableTypes = mContentResolver.getStreamTypes(contentUri, "*/*");
             String declaredType = mContentResolver.getType(contentUri);
@@ -124,8 +122,7 @@ public class ContentUriOpener {
      * is no
      * guarantee the corresponding content can be streamed.
      */
-    @Nullable
-    public String[] getAvailableTypes(@NonNull Uri contentUri) {
+    public String @Nullable [] getAvailableTypes(@NonNull Uri contentUri) {
         Preconditions.checkArgument(Uris.isContentUri(contentUri),
                 "Can't handle Uri " + contentUri.getScheme());
         try {
@@ -143,8 +140,7 @@ public class ContentUriOpener {
     /**
      *
      */
-    @Nullable
-    public static String extractContentName(@NonNull ContentResolver contentResolver,
+    public static @Nullable String extractContentName(@NonNull ContentResolver contentResolver,
             @NonNull Uri contentUri) {
         Cursor cursor = null;
         String[] queryColumn = new String[1];
@@ -172,8 +168,7 @@ public class ContentUriOpener {
         return name;
     }
 
-    @Nullable
-    private static String extractColumn(Cursor cursor, String columnName) {
+    private static @Nullable String extractColumn(Cursor cursor, String columnName) {
         int columnIndex = cursor.getColumnIndex(columnName);
         if (columnIndex >= 0) {
             String result = cursor.getString(columnIndex);

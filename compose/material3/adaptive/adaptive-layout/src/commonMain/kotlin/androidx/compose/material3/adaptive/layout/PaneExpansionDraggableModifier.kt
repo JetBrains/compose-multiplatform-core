@@ -48,7 +48,7 @@ internal data class MinTouchTargetSizeElement(val size: Dp) :
 
 internal class MinTouchTargetSizeNode(var size: Dp) : ParentDataModifierNode, Modifier.Node() {
     override fun Density.modifyParentData(parentData: Any?) =
-        ((parentData as? PaneScaffoldParentData) ?: PaneScaffoldParentData()).also {
+        ((parentData as? PaneScaffoldParentDataImpl) ?: PaneScaffoldParentDataImpl()).also {
             it.minTouchTargetSize = size
         }
 }

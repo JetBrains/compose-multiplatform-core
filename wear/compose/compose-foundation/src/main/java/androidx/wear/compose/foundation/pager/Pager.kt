@@ -35,7 +35,6 @@ import androidx.compose.foundation.pager.PagerScope
 import androidx.compose.foundation.pager.PagerSnapDistance
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,11 +46,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalViewConfiguration
-import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.semantics.ScrollAxisRange
 import androidx.compose.ui.semantics.horizontalScrollAxisRange
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.CustomTouchSlopProvider
 import androidx.wear.compose.foundation.HierarchicalFocusCoordinator
 import androidx.wear.compose.foundation.rememberActiveFocusRequester
 import androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior
@@ -333,24 +332,6 @@ object PagerDefaults {
      * the Pager's snap animation
      */
     const val Stiffness = 2000f
-}
-
-@Composable
-private fun CustomTouchSlopProvider(newTouchSlop: Float, content: @Composable () -> Unit) {
-    CompositionLocalProvider(
-        value =
-            LocalViewConfiguration provides
-                CustomTouchSlop(newTouchSlop, LocalViewConfiguration.current),
-        content = content
-    )
-}
-
-private class CustomTouchSlop(
-    private val customTouchSlop: Float,
-    currentConfiguration: ViewConfiguration
-) : ViewConfiguration by currentConfiguration {
-    override val touchSlop: Float
-        get() = customTouchSlop
 }
 
 internal const val CustomTouchSlopMultiplier = 1.10f

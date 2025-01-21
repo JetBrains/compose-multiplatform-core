@@ -16,6 +16,10 @@
 
 package androidx.wear.compose.foundation.lazy
 
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.lazy.layout.LazyLayoutIntervalContent
 import androidx.compose.foundation.lazy.layout.MutableIntervalList
@@ -26,7 +30,10 @@ import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.util.fastFirstOrNull
+import androidx.wear.compose.foundation.lazy.layout.LazyLayoutAnimateItemElement
+import androidx.wear.compose.foundation.lazy.layout.LazyLayoutAnimationSpecsNode
 
 /** Receiver scope being used by the item content parameter of [TransformingLazyColumn]. */
 @TransformingLazyColumnScopeMarker
@@ -66,6 +73,32 @@ sealed interface TransformingLazyColumnItemScope {
     fun TransformExclusion(content: @Composable TransformingLazyColumnItemScope.() -> Unit) {
         CompositionLocalProvider(LocalTransformingLazyColumnItemScope provides null) { content() }
     }
+
+    /**
+     * This modifier animates item appearance (fade in), disappearance (fade out) and placement
+     * changes (such as an item reordering).
+     *
+     * You should also provide a unique key via [TransformingLazyColumnScope.item]/
+     * [TransformingLazyColumnScope.items] for this modifier to enable animations.
+     *
+     * @sample androidx.wear.compose.foundation.samples.TransformingLazyColumnAnimateItemSample
+     * @param fadeInSpec an animation spec to use for animating the item appearance. When null is
+     *   provided the item will appear without animations.
+     * @param placementSpec an animation spec that will be used to animate the item placement. Aside
+     *   from item reordering all other position changes caused by events like arrangement or
+     *   alignment changes will also be animated. When null is provided no animations will happen.
+     * @param fadeOutSpec an animation spec to use for animating the item disappearance. When null
+     *   is provided the item will be disappearance without animations.
+     */
+    fun Modifier.animateItem(
+        fadeInSpec: FiniteAnimationSpec<Float>? = spring(stiffness = Spring.StiffnessMediumLow),
+        placementSpec: FiniteAnimationSpec<IntOffset>? =
+            spring(
+                stiffness = Spring.StiffnessMediumLow,
+                visibilityThreshold = IntOffset.VisibilityThreshold
+            ),
+        fadeOutSpec: FiniteAnimationSpec<Float>? = spring(stiffness = Spring.StiffnessMediumLow),
+    ): Modifier
 }
 
 /** Receiver scope which is used by [TransformingLazyColumn]. */
@@ -185,16 +218,37 @@ internal class TransformingLazyColumnItemScopeImpl(
 
     override fun Modifier.transformedHeight(
         heightProvider: (Int, TransformingLazyColumnItemScrollProgress) -> Int
+    ): Modifier = this then TransformingLazyColumnCompositeParentDataModifier(heightProvider)
+
+    override fun Modifier.animateItem(
+        fadeInSpec: FiniteAnimationSpec<Float>?,
+        placementSpec: FiniteAnimationSpec<IntOffset>?,
+        fadeOutSpec: FiniteAnimationSpec<Float>?,
     ): Modifier =
-        this then
-            object : ParentDataModifier {
-                override fun Density.modifyParentData(parentData: Any?): Any =
-                    HeightProviderParentData(heightProvider)
-            }
+        if (fadeInSpec == null && placementSpec == null && fadeOutSpec == null) {
+            this
+        } else {
+            this then LazyLayoutAnimateItemElement(fadeInSpec, placementSpec, fadeOutSpec)
+        }
 }
 
-internal data class HeightProviderParentData(
-    val heightProvider: (Int, TransformingLazyColumnItemScrollProgress) -> Int
+internal class TransformingLazyColumnCompositeParentDataModifier(
+    val heightProvider: (Int, TransformingLazyColumnItemScrollProgress) -> Int,
+) : ParentDataModifier {
+    override fun Density.modifyParentData(parentData: Any?): Any {
+        if (parentData is LazyLayoutAnimationSpecsNode) {
+            return TransformingLazyColumnParentData(heightProvider, parentData)
+        }
+        if (parentData is TransformingLazyColumnParentData) {
+            return parentData.copy(heightProvider = heightProvider)
+        }
+        return TransformingLazyColumnParentData(heightProvider)
+    }
+}
+
+internal data class TransformingLazyColumnParentData(
+    val heightProvider: ((Int, TransformingLazyColumnItemScrollProgress) -> Int)? = null,
+    val animationSpecs: LazyLayoutAnimationSpecsNode? = null,
 )
 
 @OptIn(ExperimentalFoundationApi::class)

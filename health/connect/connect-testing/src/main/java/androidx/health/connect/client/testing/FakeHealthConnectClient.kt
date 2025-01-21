@@ -40,7 +40,6 @@ import androidx.health.connect.client.response.ChangesResponse
 import androidx.health.connect.client.response.InsertRecordsResponse
 import androidx.health.connect.client.response.ReadRecordResponse
 import androidx.health.connect.client.response.ReadRecordsResponse
-import androidx.health.connect.client.testing.stubs.throwOrContinue
 import androidx.health.connect.client.time.TimeRangeFilter
 import java.time.Clock
 import kotlin.reflect.KClass
@@ -114,8 +113,10 @@ public class FakeHealthConnectClient(
      * precedence.
      */
     override suspend fun insertRecords(records: List<Record>): InsertRecordsResponse {
-        // Stub that only throws
-        overrides.insertRecords?.throwOrContinue(null)
+        // Stubs
+        overrides.insertRecords?.next(records)?.let {
+            return it
+        }
 
         // Fake implementation
         val recordIdsList = mutableListOf<String>()
@@ -145,8 +146,8 @@ public class FakeHealthConnectClient(
     }
 
     override suspend fun updateRecords(records: List<Record>) {
-        // Stub that throws if set
-        overrides.updateRecords?.throwOrContinue(null)
+        // Stubs
+        overrides.updateRecords?.next(records)
 
         // Check if all records belong to the package
         if (records.any { it.packageName != packageName }) {
@@ -171,8 +172,8 @@ public class FakeHealthConnectClient(
         recordIdsList: List<String>,
         clientRecordIdsList: List<String>
     ) {
-        // Stub that throws if set
-        overrides.deleteRecords?.throwOrContinue(null)
+        // Stubs
+        overrides.deleteRecords?.next(Unit)
 
         // Check if all records belong to the package
         if (
@@ -213,8 +214,8 @@ public class FakeHealthConnectClient(
         recordType: KClass<out Record>,
         timeRangeFilter: TimeRangeFilter
     ) {
-        // Stub that throws if set
-        overrides.deleteRecords?.throwOrContinue(null)
+        // Stubs
+        overrides.deleteRecords?.next(Unit)
 
         // Fake implementation
         val recordIdsToRemove =
@@ -237,7 +238,9 @@ public class FakeHealthConnectClient(
         recordId: String
     ): ReadRecordResponse<T> {
         // Stubs
-        overrides.readRecord?.throwOrContinue(null)
+        overrides.readRecord?.next(recordId)?.let {
+            return it as ReadRecordResponse<T>
+        }
 
         // Fake implementation
         return ReadRecordResponse(idsToRecords[recordId.toRecordId(packageName)] as T)
@@ -258,7 +261,9 @@ public class FakeHealthConnectClient(
             TODO("Not yet implemented")
         }
         // Stubs
-        overrides.readRecords?.throwOrContinue(null)
+        overrides.readRecords?.next(request)?.let {
+            return it as ReadRecordsResponse<T>
+        }
 
         // Fake implementation
         val startIndex = request.pageToken?.toIntOrNull() ?: 0
@@ -333,7 +338,10 @@ public class FakeHealthConnectClient(
      * track changes from the moment this function is called.
      */
     override suspend fun getChangesToken(request: ChangesTokenRequest): String {
-        overrides.getChangesToken?.throwOrContinue(null)
+        // Stubs
+        overrides.getChangesToken?.next(request)?.let {
+            return it
+        }
 
         if (request.recordTypes.isEmpty()) {
             throw IllegalArgumentException("Record types must not be empty")
@@ -373,7 +381,9 @@ public class FakeHealthConnectClient(
 
     override suspend fun getChanges(changesToken: String): ChangesResponse {
         // Stubs
-        overrides.getChanges?.throwOrContinue(null)
+        overrides.getChanges?.next(changesToken)?.let {
+            return it
+        }
 
         // Fake implementation
 

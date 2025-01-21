@@ -21,8 +21,8 @@ import android.view.View.OnAttachStateChangeListener;
 import android.view.ViewTreeObserver;
 import android.view.ViewTreeObserver.OnPreDrawListener;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.function.Supplier;
 
@@ -35,9 +35,9 @@ import java.util.function.Supplier;
  */
 class OneOffPreDrawListener implements OnPreDrawListener, OnAttachStateChangeListener {
 
-    @NonNull private final View mView;
-    @Nullable private ViewTreeObserver mViewTreeObserver;
-    @NonNull private final Supplier<Boolean> mSupplier;
+    private final @NonNull View mView;
+    private @Nullable ViewTreeObserver mViewTreeObserver;
+    private final @NonNull Supplier<Boolean> mSupplier;
     private boolean mIsAttached = false;
 
     private OneOffPreDrawListener(@NonNull View view, @NonNull Supplier<Boolean> supplier) {
@@ -53,8 +53,7 @@ class OneOffPreDrawListener implements OnPreDrawListener, OnAttachStateChangeLis
      * @param supplier The Supplier to execute in the OnPreDraw (once). This Supplier should return
      *     false if the current drawing pass that was called for needs to be cancelled.
      */
-    @NonNull
-    public static OneOffPreDrawListener add(
+    public static @NonNull OneOffPreDrawListener add(
             @NonNull View view, @NonNull Supplier<Boolean> supplier) {
         OneOffPreDrawListener listener = new OneOffPreDrawListener(view, supplier);
         // OnPreDraw listener will be added only after this View was attached.

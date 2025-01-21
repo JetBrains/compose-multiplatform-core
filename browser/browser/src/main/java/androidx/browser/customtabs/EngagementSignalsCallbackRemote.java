@@ -23,8 +23,9 @@ import android.support.customtabs.IEngagementSignalsCallback;
 import android.util.Log;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Remote class used to execute callbacks from a binder of {@link EngagementSignalsCallback}. This
@@ -44,8 +45,7 @@ import androidx.annotation.RestrictTo;
     /**
      * Creates an {@link EngagementSignalsCallback} from a binder.
      */
-    @NonNull
-    static EngagementSignalsCallbackRemote fromBinder(@NonNull IBinder binder) {
+    static @NonNull EngagementSignalsCallbackRemote fromBinder(@NonNull IBinder binder) {
         IEngagementSignalsCallback callbackBinder =
                 IEngagementSignalsCallback.Stub.asInterface(binder);
         return new EngagementSignalsCallbackRemote(callbackBinder);

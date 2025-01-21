@@ -20,9 +20,11 @@ import android.content.Context
 import android.os.Binder
 import android.os.Bundle
 import androidx.privacysandbox.sdkruntime.client.activity.LocalSdkActivityHandlerRegistry
+import androidx.privacysandbox.sdkruntime.client.controller.impl.LocalClientImportanceListenerRegistry
 import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
+import androidx.privacysandbox.sdkruntime.core.SdkSandboxClientImportanceListenerCompat
 import androidx.privacysandbox.sdkruntime.core.activity.ActivityHolder
 import androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandlerCompat
 import androidx.privacysandbox.sdkruntime.core.controller.LoadSdkCallback
@@ -30,6 +32,8 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.Executor
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -55,6 +59,12 @@ class LocalControllerTest {
                 localSdkRegistry,
                 appOwnedSdkRegistry
             )
+    }
+
+    @After
+    fun tearDown() {
+        LocalSdkActivityHandlerRegistry.unregisterAllActivityHandlersForSdk(SDK_PACKAGE_NAME)
+        LocalClientImportanceListenerRegistry.unregisterAllListenersForSdk(SDK_PACKAGE_NAME)
     }
 
     @Test
@@ -174,6 +184,41 @@ class LocalControllerTest {
     fun getClientPackageName_returnsAppPackageName() {
         val result = controller.getClientPackageName()
         assertThat(result).isEqualTo(applicationContext.getPackageName())
+    }
+
+    @Test
+    fun registerSdkSandboxClientImportanceListener_delegateToLocalClientImportanceListenerRegistry() {
+        val executor = Executor { p -> p.run() }
+        val listener =
+            object : SdkSandboxClientImportanceListenerCompat {
+                override fun onForegroundImportanceChanged(isForeground: Boolean) {
+                    // do nothing
+                }
+            }
+
+        controller.registerSdkSandboxClientImportanceListener(executor, listener)
+
+        val isRegistered =
+            LocalClientImportanceListenerRegistry.isRegistered(SDK_PACKAGE_NAME, executor, listener)
+        assertThat(isRegistered).isTrue()
+    }
+
+    @Test
+    fun unregisterSdkSandboxClientImportanceListener_delegateToLocalClientImportanceListenerRegistry() {
+        val executor = Executor { p -> p.run() }
+        val listener =
+            object : SdkSandboxClientImportanceListenerCompat {
+                override fun onForegroundImportanceChanged(isForeground: Boolean) {
+                    // do nothing
+                }
+            }
+
+        controller.registerSdkSandboxClientImportanceListener(executor, listener)
+        controller.unregisterSdkSandboxClientImportanceListener(listener)
+
+        val isRegistered =
+            LocalClientImportanceListenerRegistry.isRegistered(SDK_PACKAGE_NAME, executor, listener)
+        assertThat(isRegistered).isFalse()
     }
 
     private class StubLocalSdkRegistry : SdkRegistry {

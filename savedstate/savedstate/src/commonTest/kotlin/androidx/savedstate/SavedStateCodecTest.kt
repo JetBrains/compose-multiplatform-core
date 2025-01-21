@@ -21,6 +21,7 @@ import androidx.kruth.assertThrows
 import androidx.savedstate.SavedStateCodecTestUtils.encodeDecode
 import androidx.savedstate.serialization.decodeFromSavedState
 import androidx.savedstate.serialization.encodeToSavedState
+import androidx.savedstate.serialization.serializers.SavedStateSerializer
 import kotlin.jvm.JvmInline
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -449,6 +450,52 @@ internal class SavedStateCodecTest : RobolectricTest() {
             assertThat(getInt("i")).isEqualTo(5)
             assertThat(getString("s")).isEqualTo("foo")
         }
+    }
+
+    @Test
+    fun savedStates() {
+        @Serializable
+        data class MyClass(@Serializable(with = SavedStateSerializer::class) val s: SavedState)
+        MyClass(
+                savedState {
+                    putInt("i", 1)
+                    putString("s", "foo")
+                    putIntArray("a", intArrayOf(1, 3, 5))
+                    putSavedState("ss", savedState { putString("s", "bar") })
+                }
+            )
+            .encodeDecode {
+                assertThat(size()).isEqualTo(1)
+                getSavedState("s").read {
+                    assertThat(size()).isEqualTo(4)
+                    assertThat(getInt("i")).isEqualTo(1)
+                    assertThat(getString("s")).isEqualTo("foo")
+                    assertThat(getIntArray("a")).isEqualTo(intArrayOf(1, 3, 5))
+                    getSavedState("ss").read {
+                        assertThat(size()).isEqualTo(1)
+                        assertThat(getString("s")).isEqualTo("bar")
+                    }
+                }
+            }
+
+        val origin = savedState {
+            putInt("i", 1)
+            putString("s", "foo")
+            putIntArray("a", intArrayOf(1, 3, 5))
+        }
+        val restored =
+            decodeFromSavedState(
+                SavedStateSerializer(),
+                encodeToSavedState(SavedStateSerializer(), origin).read {
+                    assertThat(size()).isEqualTo(3)
+                    assertThat(getInt("i")).isEqualTo(1)
+                    assertThat(getString("s")).isEqualTo("foo")
+                    assertThat(getIntArray("a")).isEqualTo(intArrayOf(1, 3, 5))
+                    source
+                }
+            )
+        assertThat(restored.read { contentDeepEquals(origin) }).isTrue()
+        assertThat(restored).isNotSameInstanceAs(origin)
     }
 
     @Test

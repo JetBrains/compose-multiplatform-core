@@ -21,8 +21,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.ViewState;
 import androidx.pdf.find.FindInFileView;
@@ -31,6 +29,9 @@ import androidx.pdf.util.ObservableValue;
 import androidx.pdf.widget.ZoomView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class ZoomScrollValueObserver implements ObservableValue.ValueObserver<ZoomView.ZoomScroll> {
@@ -68,8 +69,8 @@ public class ZoomScrollValueObserver implements ObservableValue.ValueObserver<Zo
     }
 
     @Override
-    public void onChange(@Nullable ZoomView.ZoomScroll oldPosition,
-            @Nullable ZoomView.ZoomScroll position) {
+    public void onChange(ZoomView.@Nullable ZoomScroll oldPosition,
+            ZoomView.@Nullable ZoomScroll position) {
         if (mPaginatedView == null || !mPaginatedView.getModel().isInitialized()
                 || position == null || mPaginatedView.getModel().getSize() == 0) {
             return;
@@ -109,7 +110,7 @@ public class ZoomScrollValueObserver implements ObservableValue.ValueObserver<Zo
                 });
             }
         } else if (mPaginatedView.isConfigurationChanged()
-                && position.scrollY != oldPosition.scrollY) {
+                && !position.stable) {
             mPaginatedView.setConfigurationChanged(false);
         }
     }

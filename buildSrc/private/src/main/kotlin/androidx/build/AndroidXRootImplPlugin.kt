@@ -81,20 +81,21 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
             }
         }
 
-        val buildOnServerTask = tasks.create(BUILD_ON_SERVER_TASK, BuildOnServerTask::class.java)
-        buildOnServerTask.cacheEvenIfNoOutputs()
-        buildOnServerTask.distributionDirectory = getDistributionDirectory()
-        if (!buildFeatures.isIsolatedProjectsEnabled()) {
-            buildOnServerTask.dependsOn(
+        val verifyPlayground = VerifyPlaygroundGradleConfigurationTask.createIfNecessary(project)
+
+        val aggregateBuildInfo =
+            if (!buildFeatures.isIsolatedProjectsEnabled()) {
                 tasks.register(
                     CREATE_AGGREGATE_BUILD_INFO_FILES_TASK,
                     CreateAggregateLibraryBuildInfoFileTask::class.java
                 )
-            )
-        }
+            } else null
 
-        VerifyPlaygroundGradleConfigurationTask.createIfNecessary(project)?.let {
-            buildOnServerTask.dependsOn(it)
+        tasks.register(BUILD_ON_SERVER_TASK, BuildOnServerTask::class.java) { task ->
+            task.cacheEvenIfNoOutputs()
+            task.distributionDirectory = getDistributionDirectory()
+            verifyPlayground?.let { task.dependsOn(it) }
+            aggregateBuildInfo?.let { task.dependsOn(it) }
         }
 
         extra.set("projects", ConcurrentHashMap<String, String>())

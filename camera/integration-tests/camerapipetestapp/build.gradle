@@ -23,7 +23,7 @@ plugins {
 
 android {
     defaultConfig {
-        applicationId "androidx.camera.integration.camera2.pipe"
+        applicationId = "androidx.camera.integration.camera2.pipe"
     }
 
     sourceSets {
@@ -36,13 +36,13 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"),
                     "proguard-rules.pro")
         }
     }
-    namespace "androidx.camera.integration.camera2.pipe"
+    namespace = "androidx.camera.integration.camera2.pipe"
 }
 
 dependencies {

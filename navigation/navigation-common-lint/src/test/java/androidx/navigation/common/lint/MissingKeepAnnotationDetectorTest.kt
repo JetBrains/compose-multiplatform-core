@@ -16,8 +16,8 @@
 
 package androidx.navigation.common.lint
 
-import androidx.navigation.lint.common.KEEP_ANNOTATION
-import androidx.navigation.lint.common.NAVIGATION_STUBS
+import androidx.navigation.lint.test.KEEP_ANNOTATION
+import androidx.navigation.lint.test.NAVIGATION_STUBS
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue

@@ -21,12 +21,12 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 import androidx.webkit.WebMessagePortCompat.WebMessageCallbackCompat;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

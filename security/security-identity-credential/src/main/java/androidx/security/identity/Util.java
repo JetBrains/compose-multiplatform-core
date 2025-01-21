@@ -25,9 +25,6 @@ import android.icu.util.TimeZone;
 import android.security.keystore.KeyProperties;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -35,6 +32,8 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -173,7 +172,7 @@ class Util {
         return cborEncode(new CborBuilder().add(value).build().get(0));
     }
 
-    static byte[] cborEncodeBytestring(@NonNull byte[] value) {
+    static byte[] cborEncodeBytestring(byte @NonNull [] value) {
         return cborEncode(new CborBuilder().add(value).build().get(0));
     }
 
@@ -212,24 +211,24 @@ class Util {
         return dataItems.get(0);
     }
 
-    static boolean cborDecodeBoolean(@NonNull byte[] data) {
+    static boolean cborDecodeBoolean(byte @NonNull [] data) {
         SimpleValue simple = (SimpleValue) cborDecode(data);
         return simple.getSimpleValueType() == SimpleValueType.TRUE;
     }
 
-    static String cborDecodeString(@NonNull byte[] data) {
+    static String cborDecodeString(byte @NonNull [] data) {
         return ((co.nstant.in.cbor.model.UnicodeString) cborDecode(data)).getString();
     }
 
-    static long cborDecodeLong(@NonNull byte[] data) {
+    static long cborDecodeLong(byte @NonNull [] data) {
         return ((co.nstant.in.cbor.model.Number) cborDecode(data)).getValue().longValue();
     }
 
-    static byte[] cborDecodeByteString(@NonNull byte[] data) {
+    static byte[] cborDecodeByteString(byte @NonNull [] data) {
         return ((co.nstant.in.cbor.model.ByteString) cborDecode(data)).getBytes();
     }
 
-    static Calendar cborDecodeDateTime(@NonNull byte[] data) {
+    static Calendar cborDecodeDateTime(byte @NonNull [] data) {
         DataItem di = cborDecode(data);
         if (!(di instanceof co.nstant.in.cbor.model.UnicodeString)) {
             throw new IllegalArgumentException("Passed in data is not a Unicode-string");
@@ -670,7 +669,7 @@ class Util {
     }
 
     public static DataItem coseSign1Sign(Signature s,
-            @Nullable byte[] data,
+            byte @Nullable [] data,
             byte[] detachedContent,
             @Nullable Collection<X509Certificate> certificateChain)
             throws CertificateEncodingException {
@@ -724,7 +723,7 @@ class Util {
     }
 
     public static DataItem coseSign1Sign(PrivateKey key,
-            @Nullable byte[] data,
+            byte @Nullable [] data,
             byte[] additionalData,
             @Nullable Collection<X509Certificate> certificateChain)
             throws NoSuchAlgorithmException, InvalidKeyException, CertificateEncodingException {
@@ -818,7 +817,7 @@ class Util {
     }
 
     public static DataItem coseMac0(SecretKey key,
-            @Nullable byte[] data,
+            byte @Nullable [] data,
             byte[] detachedContent) {
 
         int dataLen = (data != null ? data.length : 0);
@@ -911,7 +910,7 @@ class Util {
 
     // Returns #6.24(bstr) of the given already encoded CBOR
     //
-    public static @NonNull DataItem cborBuildTaggedByteString(@NonNull byte[] encodedCbor) {
+    public static @NonNull DataItem cborBuildTaggedByteString(byte @NonNull [] encodedCbor) {
         DataItem item = new ByteString(encodedCbor);
         item.setTag(CBOR_SEMANTIC_TAG_ENCODED_CBOR);
         return item;
@@ -1493,8 +1492,8 @@ Certificate:
      *                                 type.
      * @return CBOR data conforming to the CDDL mentioned above.
      */
-    static @NonNull byte[] createItemsRequest(
-            @NonNull java.util.Map<String, Collection<String>> entriesToRequest,
+    static byte @NonNull [] createItemsRequest(
+            java.util.@NonNull Map<String, Collection<String>> entriesToRequest,
             @Nullable String docType) {
         CborBuilder builder = new CborBuilder();
         MapBuilder<CborBuilder> mapBuilder = builder.addMap();

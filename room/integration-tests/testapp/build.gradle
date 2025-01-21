@@ -63,9 +63,9 @@ android {
         // For testing Java records
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
-        coreLibraryDesugaringEnabled true
+        coreLibraryDesugaringEnabled = true
     }
-    namespace "androidx.room.integration.testapp"
+    namespace = "androidx.room.integration.testapp"
 }
 
 dependencies {

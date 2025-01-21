@@ -494,6 +494,28 @@ fun equals(
     equals(getCredentialResponse1.credential, getCredentialResponse2.credential)
 }
 
+@RequiresApi(34)
+fun assertEquals(
+    actual: android.credentials.CreateCredentialResponse,
+    expected: CreatePasswordResponse
+) {
+    assertEquals(actual.data, expected.data)
+}
+
+@RequiresApi(34)
+fun assertEquals(
+    actual: android.credentials.GetCredentialResponse,
+    expected: GetCredentialResponse
+) {
+    equals(actual.credential, expected.credential)
+}
+
+@RequiresApi(34)
+fun equals(actual: android.credentials.Credential, expected: Credential) {
+    assertThat(actual.type).isEqualTo(expected.type)
+    equals(actual.data, expected.data)
+}
+
 fun equals(credential1: Credential, credential2: Credential) {
     assertThat(credential1.type).isEqualTo(credential2.type)
     equals(credential1.data, credential2.data)

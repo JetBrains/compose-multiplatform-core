@@ -19,7 +19,7 @@ package androidx.security.identity;
 import android.annotation.SuppressLint;
 import android.icu.util.Calendar;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -63,8 +63,8 @@ public class PersonalizationData {
 
     static class NamespaceData {
 
-        @NonNull protected String mNamespace;
-        @NonNull protected LinkedHashMap<String, EntryData> mEntries = new LinkedHashMap<>();
+        protected @NonNull String mNamespace;
+        protected @NonNull LinkedHashMap<String, EntryData> mEntries = new LinkedHashMap<>();
 
         protected NamespaceData(@NonNull String namespace) {
             this.mNamespace = namespace;
@@ -137,7 +137,7 @@ public class PersonalizationData {
         @SuppressLint("BuilderSetStyle")
         public @NonNull Builder putEntry(@NonNull String namespace, @NonNull String name,
                 @NonNull Collection<AccessControlProfileId> accessControlProfileIds,
-                @NonNull byte[] value) {
+                byte @NonNull [] value) {
             NamespaceData namespaceData = mData.mNamespaces.get(namespace);
             if (namespaceData == null) {
                 namespaceData = new NamespaceData(namespace);
@@ -184,7 +184,7 @@ public class PersonalizationData {
         @SuppressLint("BuilderSetStyle")
         public @NonNull Builder putEntryBytestring(@NonNull String namespace, @NonNull String name,
                 @NonNull Collection<AccessControlProfileId> accessControlProfileIds,
-                @NonNull byte[] value) {
+                byte @NonNull [] value) {
             return putEntry(namespace, name, accessControlProfileIds,
                     Util.cborEncodeBytestring(value));
         }

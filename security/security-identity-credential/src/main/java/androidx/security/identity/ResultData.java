@@ -21,9 +21,10 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
 import android.icu.util.Calendar;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.security.PublicKey;
@@ -109,7 +110,7 @@ public abstract class ResultData {
      *
      * @return The bytes of the {@code DeviceNameSpaces} CBOR structure.
      */
-    public abstract @NonNull byte[] getAuthenticatedData();
+    public abstract byte @NonNull [] getAuthenticatedData();
 
     /**
      * Returns a message authentication code over the {@code DeviceAuthenticationBytes} CBOR
@@ -135,7 +136,7 @@ public abstract class ResultData {
      * @return A COSE_Mac0 structure with the message authentication code as described above
      *         or {@code null} if the conditions specified above are not met.
      */
-    public abstract @Nullable byte[] getMessageAuthenticationCode();
+    public abstract byte @Nullable [] getMessageAuthenticationCode();
 
     /**
      * Returns a digital signature over the {@code DeviceAuthenticationBytes} CBOR
@@ -149,7 +150,7 @@ public abstract class ResultData {
      * @return {@code null} if not implemented, otherwise a COSE_Sign1 structure with the payload
      *         set to the data returned by {@link #getAuthenticatedData()}.
      */
-    public abstract @Nullable byte[] getEcdsaSignature();
+    public abstract byte @Nullable [] getEcdsaSignature();
 
     /**
      * Returns the static authentication data associated with the dynamic authentication
@@ -158,7 +159,7 @@ public abstract class ResultData {
      * @return The static authentication data associated with dynamic authentication key used to
      * MAC the data.
      */
-    public abstract @NonNull byte[] getStaticAuthenticationData();
+    public abstract byte @NonNull [] getStaticAuthenticationData();
 
     /**
      * Gets the names of namespaces with retrieved entries.
@@ -222,7 +223,7 @@ public abstract class ResultData {
      * @param name the name of the entry to get the value for.
      * @return the raw CBOR data or {@code null} if no entry with the given name exists.
      */
-    public abstract @Nullable byte[] getEntry(@NonNull String namespaceName, @NonNull String name);
+    public abstract byte @Nullable [] getEntry(@NonNull String namespaceName, @NonNull String name);
 
     /**
      * Gets the value of an entry.
@@ -252,7 +253,7 @@ public abstract class ResultData {
      * @param name the name of the entry to get the value for.
      * @return a {@code byte[]} or {@code null} if no entry with the given name exists.
      */
-    public @Nullable byte[] getEntryBytestring(@NonNull String namespaceName,
+    public byte @Nullable [] getEntryBytestring(@NonNull String namespaceName,
             @NonNull String name) {
         byte[] value = getEntry(namespaceName, name);
         if (value == null) {
@@ -307,8 +308,7 @@ public abstract class ResultData {
      * @param name the name of the entry to get the value for.
      * @return a {@code Calendar} or {@code null} if no entry with the given name exists.
      */
-    public @Nullable
-    Calendar getEntryCalendar(@NonNull String namespaceName,
+    public     @Nullable Calendar getEntryCalendar(@NonNull String namespaceName,
             @NonNull String name) {
         byte[] value = getEntry(namespaceName, name);
         if (value == null) {

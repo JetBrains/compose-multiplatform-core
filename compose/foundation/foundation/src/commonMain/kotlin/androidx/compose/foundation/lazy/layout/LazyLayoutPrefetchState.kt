@@ -16,7 +16,7 @@
 
 package androidx.compose.foundation.lazy.layout
 
-import androidx.collection.mutableObjectLongMapOf
+import androidx.collection.mutableScatterMapOf
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.internal.checkPrecondition
 import androidx.compose.foundation.internal.requirePrecondition
@@ -31,6 +31,8 @@ import androidx.compose.ui.node.TraversableNode.Companion.TraverseDescendantsAct
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.util.trace
+import kotlin.time.TimeSource.Monotonic.ValueTimeMark
+import kotlin.time.TimeSource.Monotonic.markNow
 
 /**
  * State for lazy items prefetching, used by lazy layouts to instruct the prefetcher.
@@ -150,55 +152,58 @@ sealed interface NestedPrefetchScope {
 }
 
 /**
- * [PrefetchMetrics] tracks composition and measure timings for subcompositions so that they can be
- * used to estimate whether we can fit prefetch work into idle time without delaying the start of
- * the next frame.
+ * [PrefetchMetrics] tracks timings for subcompositions so that they can be used to estimate whether
+ * we can fit prefetch work into idle time without delaying the start of the next frame.
  */
-@ExperimentalFoundationApi
 internal class PrefetchMetrics {
 
-    val averageCompositionTimeNanosByContentType = mutableObjectLongMapOf<Any>()
-    val averageMeasureTimeNanosByContentType = mutableObjectLongMapOf<Any>()
-
-    /** The current average time composition has taken during prefetches of this LazyLayout. */
-    var averageCompositionTimeNanos: Long = 0L
-        private set
-
-    /** The current average time measure has taken during prefetches of this LazyLayout. */
-    var averageMeasureTimeNanos: Long = 0L
-        private set
-
     /**
-     * Executes the [doComposition] block and updates [averageCompositionTimeNanos] with the new
-     * average.
+     * We keep the overall average numbers and averages for each content type separately. the idea
+     * is once we encounter a new content type we don't want to start with no averages, instead we
+     * use the overall averages initially until we collected more data.
      */
-    internal inline fun recordCompositionTiming(contentType: Any?, doComposition: () -> Unit) {
-        val executionTime = measureNanoTime(doComposition)
-        contentType?.let {
-            val currentAvgCompositionTimeNanos =
-                averageCompositionTimeNanosByContentType.getOrDefault(contentType, 0L)
-            val newAvgCompositionTimeNanos =
-                calculateAverageTime(executionTime, currentAvgCompositionTimeNanos)
-            averageCompositionTimeNanosByContentType[contentType] = newAvgCompositionTimeNanos
-        }
-        averageCompositionTimeNanos =
-            calculateAverageTime(executionTime, averageCompositionTimeNanos)
+    private fun getAverage(contentType: Any?): Averages =
+        averagesByContentType.getOrPut(contentType) { overallAverage.copy() }
+
+    private val overallAverage = Averages()
+    private val averagesByContentType = mutableScatterMapOf<Any?, Averages>()
+
+    fun getCompositionTimeNanos(contentType: Any?) = getAverage(contentType).compositionTimeNanos
+
+    fun getMeasureTimeNanos(contentType: Any?) = getAverage(contentType).measureTimeNanos
+
+    fun saveCompositionTime(contentType: Any?, startMark: ValueTimeMark) {
+        val timeNanos = startMark.elapsedNow().inWholeNanoseconds
+        overallAverage.saveCompositionTimeNanos(timeNanos)
+        getAverage(contentType).saveCompositionTimeNanos(timeNanos)
     }
 
-    /**
-     * Executes the [doMeasure] block and updates [averageMeasureTimeNanos] with the new average.
-     */
-    internal inline fun recordMeasureTiming(contentType: Any?, doMeasure: () -> Unit) {
-        val executionTime = measureNanoTime(doMeasure)
-        contentType?.let {
-            val currentAvgMeasureTimeNanos =
-                averageMeasureTimeNanosByContentType.getOrDefault(contentType, 0L)
-            val newAvgMeasureTimeNanos =
-                calculateAverageTime(executionTime, currentAvgMeasureTimeNanos)
-            averageMeasureTimeNanosByContentType[contentType] = newAvgMeasureTimeNanos
-        }
-        averageMeasureTimeNanos = calculateAverageTime(executionTime, averageMeasureTimeNanos)
+    fun saveMeasureTime(contentType: Any?, startMark: ValueTimeMark) {
+        val timeNanos = startMark.elapsedNow().inWholeNanoseconds
+        overallAverage.saveMeasureTimeNanos(timeNanos)
+        getAverage(contentType).saveMeasureTimeNanos(timeNanos)
     }
+}
+
+private class Averages {
+    /** Average time the composition phase has taken. */
+    var compositionTimeNanos: Long = 0L
+    /** Average time the measure phase has taken. */
+    var measureTimeNanos: Long = 0L
+
+    fun saveCompositionTimeNanos(timeNanos: Long) {
+        compositionTimeNanos = calculateAverageTime(timeNanos, compositionTimeNanos)
+    }
+
+    fun saveMeasureTimeNanos(timeNanos: Long) {
+        measureTimeNanos = calculateAverageTime(timeNanos, measureTimeNanos)
+    }
+
+    fun copy() =
+        Averages().also {
+            it.compositionTimeNanos = compositionTimeNanos
+            it.measureTimeNanos = measureTimeNanos
+        }
 
     private fun calculateAverageTime(new: Long, current: Long): Long {
         // Calculate a weighted moving average of time taken to compose an item. We use weighted
@@ -212,8 +217,6 @@ internal class PrefetchMetrics {
         }
     }
 }
-
-internal expect inline fun measureNanoTime(doMeasure: () -> Unit): Long
 
 @ExperimentalFoundationApi
 private object DummyHandle : PrefetchHandle {
@@ -296,19 +299,10 @@ internal class PrefetchHandleProvider(
             val contentType = itemContentFactory.itemProvider().getContentType(index)
 
             if (!isComposed) {
-                val estimatedPrecomposeTime: Long =
-                    if (
-                        contentType != null &&
-                            prefetchMetrics.averageCompositionTimeNanosByContentType.contains(
-                                contentType
-                            )
-                    )
-                        prefetchMetrics.averageCompositionTimeNanosByContentType[contentType]
-                    else prefetchMetrics.averageCompositionTimeNanos
-                if (shouldExecute(estimatedPrecomposeTime)) {
-                    prefetchMetrics.recordCompositionTiming(contentType) {
-                        trace("compose:lazy:prefetch:compose") { performComposition() }
-                    }
+                if (shouldExecute(prefetchMetrics.getCompositionTimeNanos(contentType))) {
+                    val startMark = markNow()
+                    trace("compose:lazy:prefetch:compose") { performComposition() }
+                    prefetchMetrics.saveCompositionTime(contentType, startMark)
                 } else {
                     return true
                 }
@@ -343,19 +337,10 @@ internal class PrefetchHandleProvider(
             }
 
             if (!isMeasured && !constraints.isZero) {
-                val estimatedPremeasureTime: Long =
-                    if (
-                        contentType != null &&
-                            prefetchMetrics.averageMeasureTimeNanosByContentType.contains(
-                                contentType
-                            )
-                    )
-                        prefetchMetrics.averageMeasureTimeNanosByContentType[contentType]
-                    else prefetchMetrics.averageMeasureTimeNanos
-                if (shouldExecute(estimatedPremeasureTime)) {
-                    prefetchMetrics.recordMeasureTiming(contentType) {
-                        trace("compose:lazy:prefetch:measure") { performMeasure(constraints) }
-                    }
+                if (shouldExecute(prefetchMetrics.getMeasureTimeNanos(contentType))) {
+                    val startMark = markNow()
+                    trace("compose:lazy:prefetch:measure") { performMeasure(constraints) }
+                    prefetchMetrics.saveMeasureTime(contentType, startMark)
                 } else {
                     return true
                 }

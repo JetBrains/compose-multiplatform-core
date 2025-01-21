@@ -16,6 +16,7 @@
 
 package androidx.credentials.provider
 
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -27,7 +28,6 @@ import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.BiometricPrompt.CryptoObject
-import androidx.core.os.BuildCompat
 import androidx.credentials.provider.utils.CryptoObjectUtils
 
 /**
@@ -62,7 +62,6 @@ import androidx.credentials.provider.utils.CryptoObjectUtils
  *   is not set to [BIOMETRIC_STRONG]
  * @see Authenticators
  */
-@RequiresApi(35)
 class BiometricPromptData
 internal constructor(
     val cryptoObject: BiometricPrompt.CryptoObject? = null,
@@ -146,7 +145,7 @@ internal constructor(
                 if (!bundle.containsKey(BUNDLE_HINT_ALLOWED_AUTHENTICATORS)) {
                     throw IllegalArgumentException("Bundle lacks allowed authenticator key.")
                 }
-                if (BuildCompat.isAtLeastV()) {
+                if (Build.VERSION.SDK_INT >= 35) {
                     Api35Impl.fromBundle(bundle)
                 } else {
                     ApiMinImpl.fromBundle(bundle)
@@ -161,7 +160,7 @@ internal constructor(
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         fun toBundle(biometricPromptData: BiometricPromptData): Bundle {
-            return if (BuildCompat.isAtLeastV()) {
+            return if (Build.VERSION.SDK_INT >= 35) {
                 Api35Impl.toBundle(biometricPromptData)
             } else {
                 ApiMinImpl.toBundle(biometricPromptData)
@@ -281,6 +280,7 @@ internal constructor(
         }
     }
 
+    @RequiresApi(35)
     private object Api35Impl {
 
         /**

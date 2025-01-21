@@ -55,6 +55,7 @@ import androidx.wear.compose.material3.SegmentedCircularProgressIndicator
 import androidx.wear.compose.material3.Slider
 import androidx.wear.compose.material3.SliderDefaults
 import androidx.wear.compose.material3.Stepper
+import androidx.wear.compose.material3.StepperDefaults
 import androidx.wear.compose.material3.SwitchButton
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.samples.CircularProgressIndicatorContentSample
@@ -580,6 +581,8 @@ fun LinearProgressIndicatorAnimatedDemo() {
             onValueChange = { progress = it },
             valueRange = valueRange,
             steps = 3,
+            decreaseIcon = { DecreaseIcon(StepperDefaults.IconSize) },
+            increaseIcon = { IncreaseIcon(StepperDefaults.IconSize) },
         ) {
             ScalingLazyColumn(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),

@@ -123,7 +123,7 @@ internal class AndroidCameraDevice(
     private val threads: Threads
 ) : CameraDeviceWrapper {
     private val closed = atomic(false)
-    private val _lastStateCallback = atomic<OnSessionFinalized?>(null)
+    private val _lastStateCallback = atomic<SessionStateCallback?>(null)
 
     override fun createCaptureSession(
         outputs: List<Surface>,
@@ -131,6 +131,7 @@ internal class AndroidCameraDevice(
     ): Boolean {
         val (success, previousStateCallback) = checkAndSetStateCallback(stateCallback)
         if (!success) return false
+        previousStateCallback?.onSessionDisconnectedWithTrace()
         val result =
             instrumentAndCatch("createCaptureSession") {
                 // This function was deprecated in Android Q, but is required for some
@@ -172,6 +173,7 @@ internal class AndroidCameraDevice(
         }
         val (success, previousStateCallback) = checkAndSetStateCallback(stateCallback)
         if (!success) return false
+        previousStateCallback?.onSessionDisconnectedWithTrace()
         val result =
             instrumentAndCatch("createExtensionSession") {
                 val sessionConfig =
@@ -221,6 +223,7 @@ internal class AndroidCameraDevice(
     ): Boolean {
         val (success, previousStateCallback) = checkAndSetStateCallback(stateCallback)
         if (!success) return false
+        previousStateCallback?.onSessionDisconnectedWithTrace()
         val result =
             instrumentAndCatch("createReprocessableCaptureSession") {
                 // This function was deprecated in Android Q, but is required for some
@@ -259,6 +262,7 @@ internal class AndroidCameraDevice(
     ): Boolean {
         val (success, previousStateCallback) = checkAndSetStateCallback(stateCallback)
         if (!success) return false
+        previousStateCallback?.onSessionDisconnectedWithTrace()
         val result =
             instrumentAndCatch("createConstrainedHighSpeedCaptureSession") {
                 // This function was deprecated in Android Q, but is required for some
@@ -297,6 +301,7 @@ internal class AndroidCameraDevice(
     ): Boolean {
         val (success, previousStateCallback) = checkAndSetStateCallback(stateCallback)
         if (!success) return false
+        previousStateCallback?.onSessionDisconnectedWithTrace()
         val result =
             instrumentAndCatch("createCaptureSessionByOutputConfigurations") {
                 // This function was deprecated in Android Q, but is required for some
@@ -336,6 +341,7 @@ internal class AndroidCameraDevice(
     ): Boolean {
         val (success, previousStateCallback) = checkAndSetStateCallback(stateCallback)
         if (!success) return false
+        previousStateCallback?.onSessionDisconnectedWithTrace()
         val result =
             instrumentAndCatch("createReprocessableCaptureSessionByConfigurations") {
                 // This function was deprecated in Android Q, but is required for some
@@ -375,6 +381,7 @@ internal class AndroidCameraDevice(
     override fun createCaptureSession(config: SessionConfigData): Boolean {
         val (success, previousStateCallback) = checkAndSetStateCallback(config.stateCallback)
         if (!success) return false
+        previousStateCallback?.onSessionDisconnectedWithTrace()
         val result =
             instrumentAndCatch("createCaptureSession") {
                 val sessionConfig =
@@ -500,13 +507,17 @@ internal class AndroidCameraDevice(
         }
 
     private fun checkAndSetStateCallback(
-        stateCallback: OnSessionFinalized
-    ): Pair<Boolean, OnSessionFinalized?> {
+        stateCallback: SessionStateCallback
+    ): Pair<Boolean, SessionStateCallback?> {
         if (closed.value) {
             stateCallback.onSessionFinalized()
             return Pair(false, null)
         }
         return Pair(true, _lastStateCallback.getAndSet(stateCallback))
+    }
+
+    private fun SessionStateCallback.onSessionDisconnectedWithTrace() {
+        Debug.trace("${this@AndroidCameraDevice}#onSessionDisconnected") { onSessionDisconnected() }
     }
 }
 

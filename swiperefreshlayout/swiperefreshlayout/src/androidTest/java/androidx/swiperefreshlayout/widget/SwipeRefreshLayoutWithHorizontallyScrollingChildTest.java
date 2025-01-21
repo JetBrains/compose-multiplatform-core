@@ -37,13 +37,13 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import androidx.activity.ComponentActivity;
-import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.test.filters.FlakyTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.testutils.SwipeInjector;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -190,9 +190,8 @@ public class SwipeRefreshLayoutWithHorizontallyScrollingChildTest {
             return 3;
         }
 
-        @NonNull
         @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        public @NonNull ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             TextView textView = new TextView(parent.getContext());
             textView.setLayoutParams(matchParent());
             textView.setTextSize(40);

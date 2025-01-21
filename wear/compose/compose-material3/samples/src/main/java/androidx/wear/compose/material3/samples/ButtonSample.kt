@@ -17,8 +17,10 @@
 package androidx.wear.compose.material3.samples
 
 import androidx.annotation.Sampled
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.Composable
@@ -231,7 +233,7 @@ fun CompactButtonSample(modifier: Modifier = Modifier) {
             Icon(
                 painter = painterResource(R.drawable.ic_favorite_rounded),
                 contentDescription = "Favorite icon",
-                modifier = Modifier.size(ButtonDefaults.SmallIconSize)
+                modifier = Modifier.size(ButtonDefaults.ExtraSmallIconSize)
             )
         },
         modifier = modifier,
@@ -265,7 +267,7 @@ fun FilledTonalCompactButtonSample(modifier: Modifier = Modifier) {
             Icon(
                 painter = painterResource(R.drawable.ic_favorite_rounded),
                 contentDescription = "Favorite icon",
-                modifier = Modifier.size(ButtonDefaults.SmallIconSize)
+                modifier = Modifier.size(ButtonDefaults.ExtraSmallIconSize)
             )
         },
         colors = ButtonDefaults.filledTonalButtonColors(),
@@ -280,17 +282,16 @@ fun FilledTonalCompactButtonSample(modifier: Modifier = Modifier) {
 fun OutlinedCompactButtonSample(modifier: Modifier = Modifier) {
     CompactButton(
         onClick = { /* Do something */ },
-        icon = {
-            Icon(
-                Icons.Filled.ArrowDropDown,
-                contentDescription = "Expand",
-                modifier = Modifier.size(ButtonDefaults.SmallIconSize)
-            )
-        },
         colors = ButtonDefaults.outlinedButtonColors(),
         border = ButtonDefaults.outlinedButtonBorder(enabled = true),
         modifier = modifier,
     ) {
         Text("Show More", maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+        Icon(
+            Icons.Filled.ArrowDropDown,
+            contentDescription = "Expand",
+            modifier = Modifier.size(ButtonDefaults.ExtraSmallIconSize)
+        )
     }
 }

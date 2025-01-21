@@ -33,6 +33,7 @@ class MainActivity : FragmentActivity() {
 
         // Set button callbacks.
         binding.biometricPromptButton.setOnClickListener { launch<BiometricPromptTestActivity>() }
+        binding.authResultButton.setOnClickListener { launch<AuthenticationResultTestActivity>() }
     }
 
     /** Launches an instance of the given test activity [T]. */

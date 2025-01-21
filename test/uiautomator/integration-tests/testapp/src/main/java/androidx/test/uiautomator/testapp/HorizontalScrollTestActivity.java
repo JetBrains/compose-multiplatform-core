@@ -23,7 +23,7 @@ import android.view.Display;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class HorizontalScrollTestActivity extends Activity {
 

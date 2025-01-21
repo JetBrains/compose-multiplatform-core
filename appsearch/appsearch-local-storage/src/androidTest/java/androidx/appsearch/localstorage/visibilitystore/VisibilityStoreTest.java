@@ -74,7 +74,7 @@ public class VisibilityStoreTest {
                 /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
                 ALWAYS_OPTIMIZE);
-        mVisibilityStore = new VisibilityStore(mAppSearchImpl);
+        mVisibilityStore = VisibilityStore.createDocumentVisibilityStore(mAppSearchImpl);
     }
 
     @After
@@ -98,9 +98,9 @@ public class VisibilityStoreTest {
      */
     @Test
     public void testValidDatabaseName() {
-        assertThat(VisibilityStore.VISIBILITY_DATABASE_NAME)
+        assertThat(VisibilityStore.DOCUMENT_VISIBILITY_DATABASE_NAME)
                 .doesNotContain(String.valueOf(PrefixUtil.PACKAGE_DELIMITER));
-        assertThat(VisibilityStore.VISIBILITY_DATABASE_NAME)
+        assertThat(VisibilityStore.DOCUMENT_VISIBILITY_DATABASE_NAME)
                 .doesNotContain(String.valueOf(PrefixUtil.DATABASE_DELIMITER));
     }
 
@@ -108,7 +108,7 @@ public class VisibilityStoreTest {
     public void testSetVisibilitySchema() throws Exception {
         GetSchemaResponse getSchemaResponse = mAppSearchImpl.getSchema(
                 VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                VisibilityStore.VISIBILITY_DATABASE_NAME,
+                VisibilityStore.DOCUMENT_VISIBILITY_DATABASE_NAME,
                 new CallerAccess(VisibilityStore.VISIBILITY_PACKAGE_NAME));
 
         assertThat(getSchemaResponse.getSchemas()).containsExactly(
@@ -118,7 +118,7 @@ public class VisibilityStoreTest {
 
         GetSchemaResponse getAndroidVOverlaySchemaResponse = mAppSearchImpl.getSchema(
                 VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                VisibilityStore.ANDROID_V_OVERLAY_DATABASE_NAME,
+                VisibilityStore.DOCUMENT_ANDROID_V_OVERLAY_DATABASE_NAME,
                 new CallerAccess(VisibilityStore.VISIBILITY_PACKAGE_NAME));
 
         assertThat(getAndroidVOverlaySchemaResponse.getSchemas()).containsExactly(
@@ -140,7 +140,7 @@ public class VisibilityStoreTest {
         // Verify the VisibilityConfig is saved to AppSearchImpl.
         GenericDocument actualDocument = mAppSearchImpl.getDocument(
                 VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                VisibilityStore.VISIBILITY_DATABASE_NAME,
+                VisibilityStore.DOCUMENT_VISIBILITY_DATABASE_NAME,
                 VisibilityToDocumentConverter.VISIBILITY_DOCUMENT_NAMESPACE,
                 /*id=*/ prefix + "Email",
                 /*typePropertyPaths=*/ Collections.emptyMap());
@@ -167,7 +167,7 @@ public class VisibilityStoreTest {
                 VisibilityToDocumentConverter.createInternalVisibilityConfig(
                         mAppSearchImpl.getDocument(
                                 VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                                VisibilityStore.VISIBILITY_DATABASE_NAME,
+                                VisibilityStore.DOCUMENT_VISIBILITY_DATABASE_NAME,
                                 VisibilityToDocumentConverter.VISIBILITY_DOCUMENT_NAMESPACE,
                                 /*id=*/ "Email",
                                 /*typePropertyPaths=*/ Collections.emptyMap()),
@@ -180,7 +180,7 @@ public class VisibilityStoreTest {
         AppSearchException e = assertThrows(AppSearchException.class,
                 () -> mAppSearchImpl.getDocument(
                         VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                        VisibilityStore.VISIBILITY_DATABASE_NAME,
+                        VisibilityStore.DOCUMENT_VISIBILITY_DATABASE_NAME,
                         VisibilityToDocumentConverter.VISIBILITY_DOCUMENT_NAMESPACE,
                         /*id=*/ "Email",
                         /*typePropertyPaths=*/ Collections.emptyMap()));
@@ -198,7 +198,7 @@ public class VisibilityStoreTest {
         // Index a broken schema into AppSearch, use the latest version to make it broken.
         InternalSetSchemaResponse internalSetSchemaResponse = mAppSearchImpl.setSchema(
                 VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                VisibilityStore.VISIBILITY_DATABASE_NAME,
+                VisibilityStore.DOCUMENT_VISIBILITY_DATABASE_NAME,
                 Collections.singletonList(brokenSchema),
                 /*visibilityConfigs=*/ Collections.emptyList(),
                 /*forceOverride=*/ true,
@@ -206,7 +206,7 @@ public class VisibilityStoreTest {
                 /*setSchemaStatsBuilder=*/ null);
         assertThat(internalSetSchemaResponse.isSuccess()).isTrue();
         // Create VisibilityStore should recover the broken schema
-        mVisibilityStore = new VisibilityStore(mAppSearchImpl);
+        mVisibilityStore = VisibilityStore.createDocumentVisibilityStore(mAppSearchImpl);
 
         // We should be able to set and get Visibility settings.
         String prefix = PrefixUtil.createPrefix("packageName", "databaseName");
@@ -241,7 +241,7 @@ public class VisibilityStoreTest {
         // Verify the VisibilityConfig is saved to AppSearchImpl.
         GenericDocument visibleToConfigOverlay = mAppSearchImpl.getDocument(
                 VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                VisibilityStore.ANDROID_V_OVERLAY_DATABASE_NAME,
+                VisibilityStore.DOCUMENT_ANDROID_V_OVERLAY_DATABASE_NAME,
                 VisibilityToDocumentConverter.ANDROID_V_OVERLAY_NAMESPACE,
                 /*id=*/ prefix + "Email",
                 /*typePropertyPaths=*/ Collections.emptyMap());
@@ -256,7 +256,7 @@ public class VisibilityStoreTest {
         AppSearchException e = assertThrows(AppSearchException.class,
                 () -> mAppSearchImpl.getDocument(
                         VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                        VisibilityStore.ANDROID_V_OVERLAY_DATABASE_NAME,
+                        VisibilityStore.DOCUMENT_ANDROID_V_OVERLAY_DATABASE_NAME,
                         VisibilityToDocumentConverter.ANDROID_V_OVERLAY_NAMESPACE,
                         /*id=*/ prefix + "Email",
                         /*typePropertyPaths=*/ Collections.emptyMap()));
@@ -282,7 +282,7 @@ public class VisibilityStoreTest {
                         .build();
         mAppSearchImpl.putDocument(
                 VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                VisibilityStore.ANDROID_V_OVERLAY_DATABASE_NAME,
+                VisibilityStore.DOCUMENT_ANDROID_V_OVERLAY_DATABASE_NAME,
                 fakeAndroidVOverlay,
                 /*sendChangeNotifications=*/ false,
                 /*logger=*/null);
@@ -297,7 +297,7 @@ public class VisibilityStoreTest {
         // Verify we won't trigger a remove() call to AppSearchImpl by get the fakeAndroidVOverlay.
         GenericDocument actualAndroidVOverlay = mAppSearchImpl.getDocument(
                 VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                VisibilityStore.ANDROID_V_OVERLAY_DATABASE_NAME,
+                VisibilityStore.DOCUMENT_ANDROID_V_OVERLAY_DATABASE_NAME,
                 VisibilityToDocumentConverter.ANDROID_V_OVERLAY_NAMESPACE,
                 /*id=*/ "Email",
                 /*typePropertyPaths=*/ Collections.emptyMap());
@@ -321,7 +321,7 @@ public class VisibilityStoreTest {
         // verify the overlay document is created.
         mAppSearchImpl.getDocument(
                 VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                VisibilityStore.ANDROID_V_OVERLAY_DATABASE_NAME,
+                VisibilityStore.DOCUMENT_ANDROID_V_OVERLAY_DATABASE_NAME,
                 VisibilityToDocumentConverter.ANDROID_V_OVERLAY_NAMESPACE,
                 /*id=*/ "Email",
                 /*typePropertyPaths=*/ Collections.emptyMap());
@@ -336,7 +336,7 @@ public class VisibilityStoreTest {
         AppSearchException e = assertThrows(AppSearchException.class,
                 () -> mAppSearchImpl.getDocument(
                         VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                        VisibilityStore.ANDROID_V_OVERLAY_DATABASE_NAME,
+                        VisibilityStore.DOCUMENT_ANDROID_V_OVERLAY_DATABASE_NAME,
                         VisibilityToDocumentConverter.ANDROID_V_OVERLAY_NAMESPACE,
                         /*id=*/ "Email",
                         /*typePropertyPaths=*/ Collections.emptyMap()));
@@ -356,7 +356,7 @@ public class VisibilityStoreTest {
         // verify the overlay document is created.
         mAppSearchImpl.getDocument(
                 VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                VisibilityStore.ANDROID_V_OVERLAY_DATABASE_NAME,
+                VisibilityStore.DOCUMENT_ANDROID_V_OVERLAY_DATABASE_NAME,
                 VisibilityToDocumentConverter.ANDROID_V_OVERLAY_NAMESPACE,
                 /*id=*/ "Email",
                 /*typePropertyPaths=*/ Collections.emptyMap());
@@ -371,7 +371,7 @@ public class VisibilityStoreTest {
         AppSearchException e = assertThrows(AppSearchException.class,
                 () -> mAppSearchImpl.getDocument(
                         VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                        VisibilityStore.ANDROID_V_OVERLAY_DATABASE_NAME,
+                        VisibilityStore.DOCUMENT_ANDROID_V_OVERLAY_DATABASE_NAME,
                         VisibilityToDocumentConverter.ANDROID_V_OVERLAY_NAMESPACE,
                         /*id=*/ "Email",
                         /*typePropertyPaths=*/ Collections.emptyMap()));
@@ -383,7 +383,7 @@ public class VisibilityStoreTest {
         // Set deprecated public acl schema to main visibility database.
         mAppSearchImpl.setSchema(
                 VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                VisibilityStore.VISIBILITY_DATABASE_NAME,
+                VisibilityStore.DOCUMENT_VISIBILITY_DATABASE_NAME,
                 ImmutableList.of(VisibilityToDocumentConverter.VISIBILITY_DOCUMENT_SCHEMA,
                 VisibilityPermissionConfig.SCHEMA,
                 VisibilityToDocumentConverter.DEPRECATED_PUBLIC_ACL_OVERLAY_SCHEMA),
@@ -394,11 +394,11 @@ public class VisibilityStoreTest {
 
         // Create VisibilityStore with success and force remove deprecated public acl schema from
         // the main visibility database.
-        mVisibilityStore = new VisibilityStore(mAppSearchImpl);
+        mVisibilityStore = VisibilityStore.createDocumentVisibilityStore(mAppSearchImpl);
 
         GetSchemaResponse getSchemaResponse = mAppSearchImpl.getSchema(
                 VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                VisibilityStore.VISIBILITY_DATABASE_NAME,
+                VisibilityStore.DOCUMENT_VISIBILITY_DATABASE_NAME,
                 new CallerAccess(VisibilityStore.VISIBILITY_PACKAGE_NAME));
 
         assertThat(getSchemaResponse.getSchemas()).containsExactly(
@@ -454,7 +454,7 @@ public class VisibilityStoreTest {
                         .build();
         mAppSearchImpl.setSchema(
                 VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                VisibilityStore.ANDROID_V_OVERLAY_DATABASE_NAME,
+                VisibilityStore.DOCUMENT_ANDROID_V_OVERLAY_DATABASE_NAME,
                 ImmutableList.of(deprecatedOverlaySchema, deprecatedVisibleToConfigSchema,
                         VisibilityPermissionConfig.SCHEMA),
                 /*visibilityConfigs=*/ Collections.emptyList(),
@@ -464,11 +464,11 @@ public class VisibilityStoreTest {
                 /*setSchemaStatsBuilder=*/ null);
 
         // Create VisibilityStore with success and force remove override overlay schema.
-        mVisibilityStore = new VisibilityStore(mAppSearchImpl);
+        mVisibilityStore = VisibilityStore.createDocumentVisibilityStore(mAppSearchImpl);
 
         GetSchemaResponse getSchemaResponse = mAppSearchImpl.getSchema(
                 VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                VisibilityStore.ANDROID_V_OVERLAY_DATABASE_NAME,
+                VisibilityStore.DOCUMENT_ANDROID_V_OVERLAY_DATABASE_NAME,
                 new CallerAccess(VisibilityStore.VISIBILITY_PACKAGE_NAME));
 
         assertThat(getSchemaResponse.getVersion()).isEqualTo(

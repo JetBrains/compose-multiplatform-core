@@ -27,6 +27,7 @@ import android.util.SizeF
 import android.util.SparseArray
 import java.io.Serializable
 
+@Suppress("ValueClassDefinition")
 @JvmInline
 actual value class SavedStateWriter
 @PublishedApi
@@ -92,7 +93,7 @@ internal actual constructor(
      * @param key The key to associate the value with.
      * @param value The [Serializable] value to store.
      */
-    inline fun <reified T : Serializable> putSerializable(key: String, value: T) {
+    inline fun <reified T : Serializable> putJavaSerializable(key: String, value: T) {
         source.putSerializable(key, value)
     }
 

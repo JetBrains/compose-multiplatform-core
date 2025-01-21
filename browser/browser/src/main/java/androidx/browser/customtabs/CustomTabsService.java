@@ -29,10 +29,11 @@ import android.support.customtabs.ICustomTabsCallback;
 import android.support.customtabs.ICustomTabsService;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.collection.SimpleArrayMap;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -329,8 +330,7 @@ public abstract class CustomTabsService extends Service {
     };
 
     @Override
-    @NonNull
-    public IBinder onBind(@Nullable Intent intent) {
+    public @NonNull IBinder onBind(@Nullable Intent intent) {
         return mBinder;
     }
 
@@ -465,8 +465,8 @@ public abstract class CustomTabsService extends Service {
      * @param args        Arguments for the command
      * @return The result {@link Bundle}, or {@code null}.
      */
-    @Nullable
-    protected abstract Bundle extraCommand(@NonNull String commandName, @Nullable Bundle args);
+    protected abstract @Nullable Bundle extraCommand(@NonNull String commandName,
+            @Nullable Bundle args);
 
     /**
      * Updates the visuals of custom tabs for the given session. Will only succeed if the given

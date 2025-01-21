@@ -19,13 +19,13 @@ package androidx.webkit.internal;
 import android.annotation.SuppressLint;
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.webkit.WebViewRenderProcess;
 import androidx.webkit.WebViewRenderProcessClient;
 
 import org.chromium.support_lib_boundary.WebViewRendererClientBoundaryInterface;
 import org.chromium.support_lib_boundary.util.Features;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationHandler;
 import java.util.concurrent.Executor;
@@ -51,8 +51,7 @@ public class WebViewRenderProcessClientAdapter implements WebViewRendererClientB
         mWebViewRenderProcessClient = webViewRenderProcessClient;
     }
 
-    @Nullable
-    public WebViewRenderProcessClient getWebViewRenderProcessClient() {
+    public @Nullable WebViewRenderProcessClient getWebViewRenderProcessClient() {
         return mWebViewRenderProcessClient;
     }
 
@@ -61,8 +60,7 @@ public class WebViewRenderProcessClientAdapter implements WebViewRendererClientB
      * subset of the Features declared in WebViewFeature.
      */
     @Override
-    @NonNull
-    public final String[] getSupportedFeatures() {
+    public final String @NonNull [] getSupportedFeatures() {
         return sSupportedFeatures;
     }
 
@@ -72,8 +70,8 @@ public class WebViewRenderProcessClientAdapter implements WebViewRendererClientB
      */
     @Override
     public final void onRendererUnresponsive(
-            @NonNull final WebView view,
-            @NonNull /* WebViewRenderer */ final InvocationHandler renderer) {
+            final @NonNull WebView view,
+            /* WebViewRenderer */ final @NonNull InvocationHandler renderer) {
         final WebViewRenderProcess rendererObject =
                 WebViewRenderProcessImpl.forInvocationHandler(renderer);
         final WebViewRenderProcessClient client = mWebViewRenderProcessClient;
@@ -90,8 +88,8 @@ public class WebViewRenderProcessClientAdapter implements WebViewRendererClientB
      */
     @Override
     public final void onRendererResponsive(
-            @NonNull final WebView view,
-            @NonNull /* WebViewRenderer */ InvocationHandler renderer) {
+            final @NonNull WebView view,
+            /* WebViewRenderer */ @NonNull InvocationHandler renderer) {
         final WebViewRenderProcess rendererObject =
                 WebViewRenderProcessImpl.forInvocationHandler(renderer);
         final WebViewRenderProcessClient client = mWebViewRenderProcessClient;

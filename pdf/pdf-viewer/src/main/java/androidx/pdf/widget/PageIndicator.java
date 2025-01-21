@@ -22,12 +22,13 @@ import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.pdf.R;
 import androidx.pdf.data.Range;
 import androidx.pdf.util.Accessibility;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
@@ -110,8 +111,7 @@ public class PageIndicator extends ReusableToast {
         return shown;
     }
 
-    @NonNull
-    public TextView getTextView() {
+    public @NonNull TextView getTextView() {
         return mPageNumberView;
     }
 

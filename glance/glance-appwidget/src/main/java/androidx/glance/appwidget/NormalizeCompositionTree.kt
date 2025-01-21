@@ -300,6 +300,7 @@ private fun Emittable.transformBackgroundImageAndActionRipple(): Emittable {
                             provider = bgModifier.imageProvider
                             contentScale = bgModifier.contentScale
                             colorFilterParams = bgModifier.colorFilter?.colorFilterParams
+                            alpha = bgModifier.alpha
                         }
                 }
                 is BackgroundModifier.Color -> {

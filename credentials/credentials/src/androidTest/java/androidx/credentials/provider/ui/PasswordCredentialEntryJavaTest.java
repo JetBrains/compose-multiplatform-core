@@ -30,10 +30,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Icon;
+import android.os.Build;
 import android.os.Bundle;
 import android.service.credentials.CredentialEntry;
 
-import androidx.core.os.BuildCompat;
 import androidx.credentials.PasswordCredential;
 import androidx.credentials.R;
 import androidx.credentials.TestUtilsKt;
@@ -365,7 +365,7 @@ public class PasswordCredentialEntryJavaTest {
                 .setAutoSelectAllowed(IS_AUTO_SELECT_ALLOWED)
                 .setAffiliatedDomain(AFFILIATED_DOMAIN)
                 .setDefaultIconPreferredAsSingleProvider(SINGLE_PROVIDER_ICON_BIT);
-        if (BuildCompat.isAtLeastV()) {
+        if (Build.VERSION.SDK_INT >= 35) {
             BiometricPromptData biometricPromptData = null;
             if (!nullBiometricPromptData) {
                 biometricPromptData = testBiometricPromptData();
@@ -399,7 +399,7 @@ public class PasswordCredentialEntryJavaTest {
         assertThat(entry.isDefaultIconPreferredAsSingleProvider()).isEqualTo(
                 SINGLE_PROVIDER_ICON_BIT);
         assertThat(entry.getEntryGroupId()).isEqualTo(USERNAME);
-        if (BuildCompat.isAtLeastV() && entry.getBiometricPromptData() != null) {
+        if (Build.VERSION.SDK_INT >= 35 && entry.getBiometricPromptData() != null) {
             assertThat(entry.getBiometricPromptData().getAllowedAuthenticators()).isEqualTo(
                     testBiometricPromptData().getAllowedAuthenticators());
         } else {

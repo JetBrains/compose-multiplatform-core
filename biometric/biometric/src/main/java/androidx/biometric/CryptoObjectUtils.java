@@ -70,6 +70,7 @@ class CryptoObjectUtils {
      * @param cryptoObject A crypto object from {@link android.hardware.biometrics.BiometricPrompt}.
      * @return An equivalent {@link androidx.biometric.BiometricPrompt.CryptoObject} instance.
      */
+    @SuppressWarnings("deprecation")
     @RequiresApi(Build.VERSION_CODES.P)
     @Nullable
     static BiometricPrompt.CryptoObject unwrapFromBiometricPrompt(
@@ -135,6 +136,7 @@ class CryptoObjectUtils {
      */
     @RequiresApi(Build.VERSION_CODES.P)
     @Nullable
+    @SuppressWarnings("deprecation")
     static android.hardware.biometrics.BiometricPrompt.CryptoObject
             wrapForBiometricPrompt(@Nullable BiometricPrompt.CryptoObject cryptoObject) {
 
@@ -197,13 +199,11 @@ class CryptoObjectUtils {
      */
     @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     static long getOperationHandle(@Nullable BiometricPrompt.CryptoObject cryptoObject) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
             final android.hardware.biometrics.BiometricPrompt.CryptoObject wrappedCryptoObject =
                     CryptoObjectUtils.wrapForBiometricPrompt(cryptoObject);
             if (wrappedCryptoObject != null) {
                 return Api35Impl.getOperationHandle(wrappedCryptoObject);
             }
-        }
         return 0;
     }
 

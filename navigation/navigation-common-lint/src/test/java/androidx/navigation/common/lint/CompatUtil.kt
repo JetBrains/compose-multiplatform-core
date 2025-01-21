@@ -16,7 +16,7 @@
 
 package androidx.navigation.common.lint
 
-import androidx.navigation.lint.common.CompatKotlinAndBytecodeStub
+import androidx.navigation.lint.test.CompatKotlinAndBytecodeStub
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest.kotlin
 import com.android.tools.lint.checks.infrastructure.TestFile
 import com.android.tools.lint.checks.infrastructure.TestFiles
@@ -43,4 +43,4 @@ fun CompatKotlinAndBytecodeStub.toTestBytecodeStub(): TestFile =
 
 class KotlinAndBytecodeStub(val kotlin: TestFile, val bytecode: TestFile)
 
-val NAV_DEEP_LINK = androidx.navigation.lint.common.NAV_DEEP_LINK.toTestBytecodeStub()
+val NAV_DEEP_LINK = androidx.navigation.lint.test.NAV_DEEP_LINK.toTestBytecodeStub()

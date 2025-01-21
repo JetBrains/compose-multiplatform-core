@@ -15,8 +15,8 @@
  */
 package androidx.navigation
 
-import android.os.Bundle
 import androidx.annotation.RestrictTo
+import androidx.savedstate.SavedState
 
 /** A [Navigator] that only supports creating destinations. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -26,7 +26,7 @@ public class NoOpNavigator : Navigator<NavDestination>() {
 
     override fun navigate(
         destination: NavDestination,
-        args: Bundle?,
+        args: SavedState?,
         navOptions: NavOptions?,
         navigatorExtras: Extras?
     ): NavDestination = destination

@@ -34,7 +34,6 @@ import android.view.Display;
 import android.view.ViewConfiguration;
 import android.view.accessibility.AccessibilityEvent;
 
-import androidx.annotation.NonNull;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.filters.SdkSuppress;
@@ -46,6 +45,7 @@ import androidx.test.uiautomator.StaleObjectException;
 import androidx.test.uiautomator.UiObject2;
 import androidx.test.uiautomator.Until;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Assume;
 import org.junit.Test;
 
@@ -750,9 +750,8 @@ public class UiObject2Test extends BaseTest {
                         return false;
                     }
 
-                    @NonNull
                     @Override
-                    public String toString() {
+                    public @NonNull String toString() {
                         return "EventCondition[LONG_CLICK]";
                     }
                 });

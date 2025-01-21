@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.Button
 import androidx.glance.ButtonDefaults
+import androidx.glance.ColorFilter
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.Image
@@ -426,6 +427,32 @@ class GlanceAppWidgetReceiverScreenshotTest {
         mHostRule.startHost()
 
         mScreenshotRule.checkScreenshot(mHostRule.mHostView, "drawable_background")
+    }
+
+    @Test
+    fun drawableBackgroundWithColorAndAlpha() {
+        TestGlanceAppWidget.uiDefinition = {
+            Box(
+                modifier = GlanceModifier.fillMaxSize().background(Color.Green).padding(8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Some useful text",
+                    modifier =
+                        GlanceModifier.fillMaxWidth()
+                            .height(220.dp)
+                            .background(
+                                ImageProvider(R.drawable.filled_oval),
+                                colorFilter = ColorFilter.tint(GlanceTheme.colors.secondary),
+                                alpha = 0.5f
+                            )
+                )
+            }
+        }
+
+        mHostRule.startHost()
+
+        mScreenshotRule.checkScreenshot(mHostRule.mHostView, "drawable_background_color_alpha")
     }
 
     @Test

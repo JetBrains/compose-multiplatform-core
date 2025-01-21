@@ -18,19 +18,27 @@ package androidx.build.binarycompatibilityvalidator
 
 import androidx.binarycompatibilityvalidator.BinaryCompatibilityChecker
 import androidx.binarycompatibilityvalidator.KlibDumpParser
+import javax.inject.Inject
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.workers.WorkAction
+import org.gradle.workers.WorkParameters
+import org.gradle.workers.WorkerExecutor
 import org.jetbrains.kotlin.library.abi.ExperimentalLibraryAbiReader
 
-@OptIn(ExperimentalLibraryAbiReader::class)
 @CacheableTask
-abstract class IgnoreAbiChangesTask : DefaultTask() {
+abstract class IgnoreAbiChangesTask
+@Inject
+constructor(@Internal protected val workerExecutor: WorkerExecutor) : DefaultTask() {
 
     /** Text file from which API signatures will be read. */
     @get:PathSensitive(PathSensitivity.RELATIVE)
@@ -43,10 +51,33 @@ abstract class IgnoreAbiChangesTask : DefaultTask() {
 
     @get:OutputFile abstract val ignoreFile: RegularFileProperty
 
+    @get:Classpath abstract val runtimeClasspath: ConfigurableFileCollection
+
     @TaskAction
     fun execute() {
-        val previousDump = KlibDumpParser(previousApiDump.get().asFile).parse()
-        val currentDump = KlibDumpParser(currentApiDump.get().asFile).parse()
+        // Execute BCV code as a WorkAction to allow setting the classpath for the action.
+        // This is to work around the kotlin compiler needing to be a compileOnly dependency for
+        // buildSrc (https://kotl.in/gradle/internal-compiler-symbols, aosp/3368960).
+        val workQueue = workerExecutor.classLoaderIsolation { it.classpath.from(runtimeClasspath) }
+        workQueue.submit(IgnoreChangesWorker::class.java) { params ->
+            params.previousApiDump.set(previousApiDump)
+            params.currentApiDump.set(currentApiDump)
+            params.ignoreFile.set(ignoreFile)
+        }
+    }
+}
+
+private interface IgnoreChangesParameters : WorkParameters {
+    val previousApiDump: RegularFileProperty
+    val currentApiDump: RegularFileProperty
+    val ignoreFile: RegularFileProperty
+}
+
+private abstract class IgnoreChangesWorker : WorkAction<IgnoreChangesParameters> {
+    @OptIn(ExperimentalLibraryAbiReader::class)
+    override fun execute() {
+        val previousDump = KlibDumpParser(parameters.previousApiDump.get().asFile).parse()
+        val currentDump = KlibDumpParser(parameters.currentApiDump.get().asFile).parse()
         val ignoredErrors =
             BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
                     currentDump,
@@ -56,7 +87,7 @@ abstract class IgnoreAbiChangesTask : DefaultTask() {
                 )
                 .map { it.toString() }
                 .toSet()
-        ignoreFile.get().asFile.apply {
+        parameters.ignoreFile.get().asFile.apply {
             if (!exists()) {
                 createNewFile()
             }

@@ -20,8 +20,6 @@ import static java.util.stream.Collectors.toMap;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
 import androidx.collection.ArrayMap;
@@ -30,6 +28,9 @@ import androidx.wear.protolayout.expression.DynamicDataKey;
 import androidx.wear.protolayout.expression.PlatformDataKey;
 import androidx.wear.protolayout.expression.PlatformDataValues;
 import androidx.wear.protolayout.expression.proto.DynamicDataProto.DynamicDataValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.Map;
@@ -50,17 +51,14 @@ final class PlatformDataStore extends DataStore {
 
     private final Executor mUiExecutor;
 
-    @NonNull
-    private final Map<PlatformDataKey<?>, DynamicDataValue> mCurrentPlatformData =
+    private final @NonNull Map<PlatformDataKey<?>, DynamicDataValue> mCurrentPlatformData =
             new ArrayMap<>();
 
-    @NonNull
-    private final Map<DynamicDataKey<?>,
+    private final @NonNull Map<DynamicDataKey<?>,
             Set<DynamicTypeValueReceiverWithPreUpdate<DynamicDataValue>>>
             mRegisteredCallbacks = new ArrayMap<>();
 
-    @NonNull
-    private final Map<PlatformDataKey<?>, PlatformDataProvider>
+    private final @NonNull Map<PlatformDataKey<?>, PlatformDataProvider>
             mSourceKeyToDataProviders = new ArrayMap<>();
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -143,9 +141,8 @@ final class PlatformDataStore extends DataStore {
     /** Gets dynamic value with the given {@code key}. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @UiThread
-    @Nullable
     @Override
-    public DynamicDataValue getDynamicDataValuesProto(@NonNull DynamicDataKey<?> key) {
+    public @Nullable DynamicDataValue getDynamicDataValuesProto(@NonNull DynamicDataKey<?> key) {
         return mCurrentPlatformData.get(key);
     }
 

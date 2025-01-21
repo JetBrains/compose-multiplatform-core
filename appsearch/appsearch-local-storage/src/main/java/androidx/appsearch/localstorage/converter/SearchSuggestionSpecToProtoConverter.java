@@ -19,6 +19,7 @@ package androidx.appsearch.localstorage.converter;
 import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.SearchSuggestionSpec;
+import androidx.appsearch.localstorage.NamespaceCache;
 import androidx.appsearch.localstorage.SchemaCache;
 import androidx.core.util.Preconditions;
 
@@ -64,23 +65,21 @@ public final class SearchSuggestionSpecToProtoConverter {
      * @param suggestionQueryExpression The non-empty query expression used to be completed.
      * @param searchSuggestionSpec      The spec we need to convert from.
      * @param prefixes                  Set of database prefix which the caller want to access.
-     * @param namespaceMap              The cached Map of {@code <Prefix, Set<PrefixedNamespace>>}
-     *                                  stores all prefixed namespace filters which are stored in
-     *                                  AppSearch.
+     * @param namespaceCache            The NamespaceCache instance held in AppSearch.
      */
     public SearchSuggestionSpecToProtoConverter(
             @NonNull String suggestionQueryExpression,
             @NonNull SearchSuggestionSpec searchSuggestionSpec,
             @NonNull Set<String> prefixes,
-            @NonNull Map<String, Set<String>> namespaceMap,
+            @NonNull NamespaceCache namespaceCache,
             @NonNull SchemaCache schemaCache) {
         mSuggestionQueryExpression = Preconditions.checkNotNull(suggestionQueryExpression);
         mSearchSuggestionSpec = Preconditions.checkNotNull(searchSuggestionSpec);
         mPrefixes = Preconditions.checkNotNull(prefixes);
-        Preconditions.checkNotNull(namespaceMap);
+        Preconditions.checkNotNull(namespaceCache);
         mTargetPrefixedNamespaceFilters =
                 SearchSpecToProtoConverterUtil.generateTargetNamespaceFilters(
-                        prefixes, namespaceMap, searchSuggestionSpec.getFilterNamespaces());
+                        prefixes, namespaceCache, searchSuggestionSpec.getFilterNamespaces());
         mTargetPrefixedSchemaFilters =
                 SearchSpecToProtoConverterUtil.generateTargetSchemaFilters(
                         prefixes, schemaCache, searchSuggestionSpec.getFilterSchemas());

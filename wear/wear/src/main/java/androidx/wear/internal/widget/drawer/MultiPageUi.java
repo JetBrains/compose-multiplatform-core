@@ -23,8 +23,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.viewpager.widget.PagerAdapter;
@@ -33,6 +31,9 @@ import androidx.wear.R;
 import androidx.wear.widget.drawer.PageIndicatorView;
 import androidx.wear.widget.drawer.WearableNavigationDrawerView;
 import androidx.wear.widget.drawer.WearableNavigationDrawerView.WearableNavigationDrawerAdapter;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Handles view logic for the multi page style {@link WearableNavigationDrawerView}.
@@ -46,8 +47,8 @@ public class MultiPageUi implements MultiPagePresenter.Ui {
     @SuppressWarnings("WeakerAccess") /* synthetic access */
     WearableNavigationDrawerPresenter mPresenter;
 
-    @Nullable private ViewPager mNavigationPager;
-    @Nullable private PageIndicatorView mPageIndicatorView;
+    private @Nullable ViewPager mNavigationPager;
+    private @Nullable PageIndicatorView mPageIndicatorView;
 
     @Override
     public void initialize(
@@ -129,9 +130,8 @@ public class MultiPageUi implements MultiPagePresenter.Ui {
             mAdapter = adapter;
         }
 
-        @NonNull
         @Override
-        public Object instantiateItem(@NonNull ViewGroup container, int position) {
+        public @NonNull Object instantiateItem(@NonNull ViewGroup container, int position) {
             // Do not attach to root in the inflate method. The view needs to returned at the end
             // of this method. Attaching to root will cause view to point to container instead.
             final View view =

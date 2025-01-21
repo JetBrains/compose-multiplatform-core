@@ -154,25 +154,26 @@ val WearMaterial3Demos =
                     title = "Swipe to Reveal",
                     listOf(
                         ComposableDemo("Single Action with Anchoring") {
-                            Centralize { SwipeToRevealSingleButtonWithAnchoring() }
+                            SwipeToRevealSingleButtonWithAnchoring()
                         },
                         ComposableDemo("Bi-directional / Non-anchoring") {
-                            Centralize { SwipeToRevealBothDirectionsNonAnchoring() }
+                            SwipeToRevealBothDirectionsNonAnchoring()
                         },
                         ComposableDemo("Bi-directional Two Actions") {
-                            Centralize { SwipeToRevealBothDirections() }
+                            SwipeToRevealBothDirections()
                         },
-                        ComposableDemo("Two Actions") { Centralize { SwipeToRevealSample() } },
-                        ComposableDemo("Two Undo Actions") {
-                            Centralize { SwipeToRevealTwoActionsWithUndo() }
+                        ComposableDemo("Two Actions") {
+                            ScalingLazyDemo { item { SwipeToRevealSample() } }
                         },
+                        ComposableDemo("Two Undo Actions") { SwipeToRevealTwoActionsWithUndo() },
                         ComposableDemo("Single action with Card") {
-                            Centralize { SwipeToRevealSingleActionCardSample() }
+                            ScalingLazyDemo { item { SwipeToRevealSingleActionCardSample() } }
                         },
-                        ComposableDemo("In a list") { Centralize { SwipeToRevealInList() } },
+                        ComposableDemo("In a list") { SwipeToRevealInList() },
                         ComposableDemo("Non-anchoring") {
-                            Centralize { SwipeToRevealNonAnchoredSample() }
-                        }
+                            ScalingLazyDemo { item { SwipeToRevealNonAnchoredSample() } }
+                        },
+                        ComposableDemo("Long labels") { SwipeToRevealWithLongLabels() },
                     )
                 ),
                 Material3DemoCategory(
@@ -208,7 +209,7 @@ val WearMaterial3Demos =
                         },
                         ComposableDemo("TLC Buttons") { TransformingLazyColumnButtons() },
                         ComposableDemo("TLC Cards") { TransformingLazyColumnCards() },
-                        ComposableDemo("TLC add/remove") { TransformingLazyColumnScrollingSample() }
+                        ComposableDemo("Animation Demo") { TransformingLazyColumnScrollingSample() }
                     )
                 )
             )

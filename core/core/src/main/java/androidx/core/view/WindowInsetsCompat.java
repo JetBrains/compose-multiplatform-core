@@ -75,7 +75,9 @@ public class WindowInsetsCompat {
     public static final WindowInsetsCompat CONSUMED;
 
     static {
-        if (SDK_INT >= 30) {
+        if (SDK_INT >= 34) {
+            CONSUMED = Impl34.CONSUMED;
+        } else if (SDK_INT >= 30) {
             CONSUMED = Impl30.CONSUMED;
         } else {
             CONSUMED = Impl.CONSUMED;
@@ -86,7 +88,9 @@ public class WindowInsetsCompat {
 
     @RequiresApi(20)
     private WindowInsetsCompat(@NonNull WindowInsets insets) {
-        if (SDK_INT >= 30) {
+        if (SDK_INT >= 34) {
+            mImpl = new Impl34(this, insets);
+        } else if (SDK_INT >= 30) {
             mImpl = new Impl30(this, insets);
         } else if (SDK_INT >= 29) {
             mImpl = new Impl29(this, insets);
@@ -110,7 +114,9 @@ public class WindowInsetsCompat {
         if (src != null) {
             // We'll copy over from the 'src' instance's impl
             final Impl srcImpl = src.mImpl;
-            if (SDK_INT >= 30 && srcImpl instanceof Impl30) {
+            if (SDK_INT >= 34 && srcImpl instanceof Impl34) {
+                mImpl = new Impl34(this, (Impl34) srcImpl);
+            } else if (SDK_INT >= 30 && srcImpl instanceof Impl30) {
                 mImpl = new Impl30(this, (Impl30) srcImpl);
             } else if (SDK_INT >= 29 && srcImpl instanceof Impl29) {
                 mImpl = new Impl29(this, (Impl29) srcImpl);
@@ -1412,6 +1418,41 @@ public class WindowInsetsCompat {
         }
     }
 
+    @RequiresApi(34)
+    private static class Impl34 extends Impl30 {
+        @NonNull
+        static final WindowInsetsCompat CONSUMED = toWindowInsetsCompat(WindowInsets.CONSUMED);
+
+        Impl34(@NonNull WindowInsetsCompat host, @NonNull WindowInsets insets) {
+            super(host, insets);
+        }
+
+        Impl34(@NonNull WindowInsetsCompat host, @NonNull Impl34 other) {
+            super(host, other);
+        }
+
+        @NonNull
+        @Override
+        public Insets getInsets(int typeMask) {
+            return toCompatInsets(
+                    mPlatformInsets.getInsets(TypeImpl34.toPlatformType(typeMask))
+            );
+        }
+
+        @NonNull
+        @Override
+        public Insets getInsetsIgnoringVisibility(int typeMask) {
+            return toCompatInsets(
+                    mPlatformInsets.getInsetsIgnoringVisibility(TypeImpl34.toPlatformType(typeMask))
+            );
+        }
+
+        @Override
+        public boolean isVisible(int typeMask) {
+            return mPlatformInsets.isVisible(TypeImpl34.toPlatformType(typeMask));
+        }
+    }
+
     /**
      * Builder for {@link WindowInsetsCompat}.
      */
@@ -1422,7 +1463,9 @@ public class WindowInsetsCompat {
          * Creates a builder where all insets are initially consumed.
          */
         public Builder() {
-            if (SDK_INT >= 30) {
+            if (SDK_INT >= 34) {
+                mImpl = new BuilderImpl34();
+            } else if (SDK_INT >= 30) {
                 mImpl = new BuilderImpl30();
             } else if (SDK_INT >= 29) {
                 mImpl = new BuilderImpl29();
@@ -1439,7 +1482,9 @@ public class WindowInsetsCompat {
          * @param insets the instance to initialize from.
          */
         public Builder(@NonNull WindowInsetsCompat insets) {
-            if (SDK_INT >= 30) {
+            if (SDK_INT >= 34) {
+                mImpl = new BuilderImpl34(insets);
+            } else if (SDK_INT >= 30) {
                 mImpl = new BuilderImpl30(insets);
             } else if (SDK_INT >= 29) {
                 mImpl = new BuilderImpl29(insets);
@@ -1919,6 +1964,38 @@ public class WindowInsetsCompat {
         }
     }
 
+    @RequiresApi(34)
+    private static class BuilderImpl34 extends BuilderImpl30 {
+        BuilderImpl34() {
+            super();
+        }
+
+        BuilderImpl34(@NonNull WindowInsetsCompat insets) {
+            super(insets);
+        }
+
+        @Override
+        void setInsets(int typeMask, @NonNull Insets insets) {
+            mPlatBuilder.setInsets(
+                    TypeImpl34.toPlatformType(typeMask),
+                    insets.toPlatformInsets()
+            );
+        }
+
+        @Override
+        void setInsetsIgnoringVisibility(int typeMask, @NonNull Insets insets) {
+            mPlatBuilder.setInsetsIgnoringVisibility(
+                    TypeImpl34.toPlatformType(typeMask),
+                    insets.toPlatformInsets()
+            );
+        }
+
+        @Override
+        void setVisible(int typeMask, boolean visible) {
+            mPlatBuilder.setVisible(TypeImpl34.toPlatformType(typeMask), visible);
+        }
+    }
+
     /**
      * Class that defines different types of sources causing window insets.
      */
@@ -1936,9 +2013,10 @@ public class WindowInsetsCompat {
 
         static final int DISPLAY_CUTOUT = 1 << 7;
 
-        static final int LAST = 1 << 8;
-        static final int SIZE = 9;
-        static final int WINDOW_DECOR = LAST;
+        static final int WINDOW_DECOR = 1 << 8;
+        static final int SYSTEM_OVERLAYS = 1 << 9;
+        static final int LAST = SYSTEM_OVERLAYS;
+        static final int SIZE = 10;
 
         private Type() {}
 
@@ -2028,12 +2106,29 @@ public class WindowInsetsCompat {
         }
 
         /**
+         * System overlays represent the insets caused by the system visible elements. Unlike
+         * {@link #navigationBars()} or {@link #statusBars()}, system overlays might not be
+         * hidden by the client.
+         *
+         * For compatibility reasons, this type is included in {@link #systemBars()}. In this
+         * way, views which fit {@link #systemBars()} fit {@link #systemOverlays()}.
+         *
+         * Examples include climate controls, multi-tasking affordances, etc.
+         *
+         * @return An insets type representing the system overlays.
+         */
+        @InsetsType
+        public static int systemOverlays() {
+            return SYSTEM_OVERLAYS;
+        }
+
+        /**
          * @return All system bars. Includes {@link #statusBars()}, {@link #captionBar()} as well as
-         * {@link #navigationBars()}, but not {@link #ime()}.
+         * {@link #navigationBars()}, {@link #systemOverlays()} but not {@link #ime()}.
          */
         @InsetsType
         public static int systemBars() {
-            return STATUS_BARS | NAVIGATION_BARS | CAPTION_BAR;
+            return STATUS_BARS | NAVIGATION_BARS | CAPTION_BAR | SYSTEM_OVERLAYS;
         }
 
         /**
@@ -2066,6 +2161,8 @@ public class WindowInsetsCompat {
                     return 7;
                 case WINDOW_DECOR:
                     return 8;
+                case SYSTEM_OVERLAYS:
+                    return 9;
                 default:
                     throw new IllegalArgumentException("type needs to be >= FIRST and <= LAST,"
                             + " type=" + type);
@@ -2075,7 +2172,8 @@ public class WindowInsetsCompat {
         @RestrictTo(LIBRARY_GROUP)
         @Retention(RetentionPolicy.SOURCE)
         @IntDef(flag = true, value = {STATUS_BARS, NAVIGATION_BARS, CAPTION_BAR, IME, WINDOW_DECOR,
-                SYSTEM_GESTURES, MANDATORY_SYSTEM_GESTURES, TAPPABLE_ELEMENT, DISPLAY_CUTOUT})
+                SYSTEM_GESTURES, MANDATORY_SYSTEM_GESTURES, TAPPABLE_ELEMENT, DISPLAY_CUTOUT,
+                SYSTEM_OVERLAYS})
         public @interface InsetsType {
         }
     }
@@ -2117,6 +2215,54 @@ public class WindowInsetsCompat {
                             break;
                         case Type.DISPLAY_CUTOUT:
                             result |= WindowInsets.Type.displayCutout();
+                            break;
+                    }
+                }
+            }
+            return result;
+        }
+    }
+
+    @RequiresApi(34)
+    private static final class TypeImpl34 {
+        private TypeImpl34() {}
+
+        /**
+         * Maps from our internal type mask constants to the platform's. Ideally we will keep the
+         * constant values in sync, but this allows the platform to return different constants in
+         * the future without breaking the logic in this class.
+         */
+        static int toPlatformType(@InsetsType final int typeMask) {
+            int result = 0;
+            for (int i = Type.FIRST; i <= Type.LAST; i = i << 1) {
+                if ((typeMask & i) != 0) {
+                    switch (i) {
+                        case Type.STATUS_BARS:
+                            result |= WindowInsets.Type.statusBars();
+                            break;
+                        case Type.NAVIGATION_BARS:
+                            result |= WindowInsets.Type.navigationBars();
+                            break;
+                        case Type.CAPTION_BAR:
+                            result |= WindowInsets.Type.captionBar();
+                            break;
+                        case Type.IME:
+                            result |= WindowInsets.Type.ime();
+                            break;
+                        case Type.SYSTEM_GESTURES:
+                            result |= WindowInsets.Type.systemGestures();
+                            break;
+                        case Type.MANDATORY_SYSTEM_GESTURES:
+                            result |= WindowInsets.Type.mandatorySystemGestures();
+                            break;
+                        case Type.TAPPABLE_ELEMENT:
+                            result |= WindowInsets.Type.tappableElement();
+                            break;
+                        case Type.DISPLAY_CUTOUT:
+                            result |= WindowInsets.Type.displayCutout();
+                            break;
+                        case Type.SYSTEM_OVERLAYS:
+                            result |= WindowInsets.Type.systemOverlays();
                             break;
                     }
                 }

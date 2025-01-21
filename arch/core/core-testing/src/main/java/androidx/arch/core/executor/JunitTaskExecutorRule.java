@@ -16,9 +16,9 @@
 
 package androidx.arch.core.executor;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.MultipleFailureException;
@@ -56,8 +56,7 @@ public class JunitTaskExecutorRule implements TestRule {
         ArchTaskExecutor.getInstance().setDelegate(null);
     }
 
-    @NonNull
-    public TaskExecutor getTaskExecutor() {
+    public @NonNull TaskExecutor getTaskExecutor() {
         return mTaskExecutor;
     }
 
@@ -70,9 +69,9 @@ public class JunitTaskExecutorRule implements TestRule {
         mTaskExecutor.drainTasks(seconds);
     }
 
-    @NonNull
     @Override
-    public Statement apply(final @NonNull Statement base, @NonNull Description description) {
+    public @NonNull Statement apply(final @NonNull Statement base,
+            @NonNull Description description) {
         return new Statement() {
             @Override
             public void evaluate() {

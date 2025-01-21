@@ -17,11 +17,10 @@
 package androidx.navigation
 
 import androidx.annotation.IdRes
-import androidx.annotation.RestrictTo
-import androidx.core.os.bundleOf
 import androidx.navigation.serialization.generateHashCode
 import androidx.navigation.serialization.generateNavArguments
 import androidx.navigation.serialization.generateRoutePattern
+import androidx.savedstate.savedState
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlinx.serialization.InternalSerializationApi
@@ -159,7 +158,7 @@ internal constructor(
     public inline fun <reified T : Any> deepLink(
         basePath: String,
     ) {
-        deepLink(basePath, T::class) {}
+        deepLink(T::class, basePath) {}
     }
 
     /**
@@ -204,28 +203,33 @@ internal constructor(
         basePath: String,
         noinline navDeepLink: NavDeepLinkDslBuilder.() -> Unit
     ) {
-        deepLink(basePath, T::class, navDeepLink)
+        deepLink(T::class, basePath, navDeepLink)
     }
 
     /**
-     * Public delegation for the reified deepLink overloads.
+     * Add a deep link to this destination.
      *
-     * Checks for deepLink validity:
-     * 1. They used the safe args constructor since we rely on that constructor to add arguments to
-     *    the destination
-     * 2. DeepLink does not contain extra arguments not present in the destination KClass. We will
-     *    not have its NavType. Even if we do, the destination is not aware of the argument and will
-     *    just ignore it. In general we don't want safe args deeplinks to introduce new arguments.
-     * 3. DeepLink does not contain different argument type for the same arg name
+     * The arguments in [route] are expected to be identical (in name and type) to the arguments in
+     * the [NavDestinationBuilder.route] that was used to construct this [NavDestinationBuilder].
      *
-     * For the case where the deepLink is missing required arguments in the [route], existing checks
-     * will catch it.
+     * Extracts deeplink arguments from [route] and appends it to the [basePath]. See docs on the
+     * safe args version of [NavDeepLink.Builder.setUriPattern] for the final uriPattern's
+     * generation logic.
+     *
+     * In addition to a direct Uri match, [basePath]s without a scheme are assumed as http and
+     * https. For example, `www.example.com` will match `http://www.example.com` and
+     * `https://www.example.com`.
+     *
+     * @param route The deepLink KClass to extract arguments from
+     * @param basePath The base uri path to append arguments onto
+     * @param navDeepLink the NavDeepLink to be added to this destination
+     * @see NavDeepLink.Builder.setUriPattern for the final uriPattern's generation logic.
      */
     @OptIn(InternalSerializationApi::class)
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Suppress("BuilderSetStyle")
     public fun <T : Any> deepLink(
-        basePath: String,
         route: KClass<T>,
+        basePath: String,
         navDeepLink: NavDeepLinkDslBuilder.() -> Unit
     ) {
         // make sure they used the safe args constructors which automatically adds
@@ -235,6 +239,19 @@ internal constructor(
                 "constructor that takes a KClass with the same arguments."
         }
         val deepLinkArgs = route.serializer().generateNavArguments(typeMap)
+        /**
+         * Checks for deepLink validity:
+         * 1. They used the safe args constructor since we rely on that constructor to add arguments
+         *    to the destination
+         * 2. DeepLink does not contain extra arguments not present in the destination KClass. We
+         *    will not have its NavType. Even if we do, the destination is not aware of the argument
+         *    and will just ignore it. In general we don't want safe args deeplinks to introduce new
+         *    arguments.
+         * 3. DeepLink does not contain different argument type for the same arg name
+         *
+         * For the case where the deepLink is missing required arguments in the [route], existing
+         * checks will catch it.
+         */
         deepLinkArgs.forEach {
             val arg = arguments[it.name]
             // make sure deep link doesn't contain extra arguments not present in the route KClass
@@ -245,7 +262,7 @@ internal constructor(
                     "route from KClass"
             }
         }
-        deepLink(navDeepLink(basePath, route, typeMap, navDeepLink))
+        deepLink(navDeepLink(route, basePath, typeMap, navDeepLink))
     }
 
     /**
@@ -331,8 +348,7 @@ public class NavActionBuilder {
         NavAction(
             destinationId,
             navOptions,
-            if (defaultArguments.isEmpty()) null
-            else bundleOf(*defaultArguments.toList().toTypedArray())
+            if (defaultArguments.isEmpty()) null else savedState(defaultArguments)
         )
 }
 

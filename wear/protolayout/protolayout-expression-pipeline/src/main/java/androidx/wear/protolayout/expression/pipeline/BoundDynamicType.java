@@ -16,10 +16,11 @@
 
 package androidx.wear.protolayout.expression.pipeline;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -84,7 +85,6 @@ public interface BoundDynamicType extends AutoCloseable {
      *     layout. The list may be empty if there are no animations.
      *     <p>This method is intended for internal use by ui-tooling libraries
      */
-    @NonNull
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    List<DynamicTypeAnimator> getAnimations();
+    @NonNull List<DynamicTypeAnimator> getAnimations();
 }

@@ -18,8 +18,7 @@ package androidx.webkit;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.NonNull;
-
+import org.jspecify.annotations.NonNull;
 import org.junit.Assert;
 
 import java.util.concurrent.Callable;

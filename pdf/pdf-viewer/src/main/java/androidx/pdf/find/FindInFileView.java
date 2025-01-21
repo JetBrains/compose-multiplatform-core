@@ -34,8 +34,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.os.BundleCompat;
 import androidx.core.view.WindowCompat;
@@ -53,6 +51,9 @@ import androidx.pdf.viewer.SelectedMatch;
 import androidx.pdf.viewer.loader.PdfLoader;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -115,7 +116,7 @@ public class FindInFileView extends LinearLayout {
 
     private final FindInFileListener mFindInFileListenerSetter = new FindInFileListener() {
         @Override
-        public boolean onQueryTextChange(@androidx.annotation.Nullable String query) {
+        public boolean onQueryTextChange(@Nullable String query) {
             if (mSearchModel != null && mPaginatedView != null) {
                 mSearchModel.setQuery(query, getViewingPage());
                 return true;
@@ -139,9 +140,8 @@ public class FindInFileView extends LinearLayout {
             return false;
         }
 
-        @androidx.annotation.Nullable
         @Override
-        public ObservableValue<MatchCount> matchCount() {
+        public @Nullable ObservableValue<MatchCount> matchCount() {
             return mSearchModel != null ? mSearchModel.matchCount() : null;
         }
     };
@@ -270,9 +270,8 @@ public class FindInFileView extends LinearLayout {
         }
     }
 
-    @NonNull
     @Override
-    protected Parcelable onSaveInstanceState() {
+    protected @NonNull Parcelable onSaveInstanceState() {
         Bundle bundle = new Bundle();
         bundle.putParcelable(KEY_SUPER, super.onSaveInstanceState());
         // Save TextView Focus State
@@ -325,8 +324,7 @@ public class FindInFileView extends LinearLayout {
         this.mOnClosedButtonCallback = onClosedButtonCallback;
     }
 
-    @NonNull
-    public SearchModel getSearchModel() {
+    public @NonNull SearchModel getSearchModel() {
         return mSearchModel;
     }
 

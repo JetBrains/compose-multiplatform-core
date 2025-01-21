@@ -20,8 +20,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.UiThread;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -80,9 +81,8 @@ class BoundDynamicTypeImpl implements BoundDynamicType {
                         .count();
     }
 
-    @NonNull
     @Override
-    public List<DynamicTypeAnimator> getAnimations() {
+    public @NonNull List<DynamicTypeAnimator> getAnimations() {
         List<QuotaAwareAnimator> animators =
                 mNodes.stream()
                         .filter(n -> n instanceof AnimatableNode)

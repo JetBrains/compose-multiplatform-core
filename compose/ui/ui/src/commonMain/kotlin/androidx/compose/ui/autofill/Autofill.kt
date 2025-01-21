@@ -17,6 +17,7 @@
 package androidx.compose.ui.autofill
 
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.platform.makeSynchronizedObject
 import androidx.compose.ui.platform.synchronized
 
 /**
@@ -72,7 +73,9 @@ class AutofillNode(
         /*@GuardedBy("this")*/
         private var previousId = 0
 
-        private fun generateId() = synchronized(this) { ++previousId }
+        private val lock = makeSynchronizedObject(this)
+
+        private fun generateId() = synchronized(lock) { ++previousId }
     }
 
     val id: Int = generateId()

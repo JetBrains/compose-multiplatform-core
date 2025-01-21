@@ -20,11 +20,12 @@ plugins {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.appcompat.demo.receivecontent"
+    compileSdk = 35
+    namespace = "androidx.appcompat.demo.receivecontent"
 }
 
 dependencies {
+    api(libs.jspecify)
     api("androidx.annotation:annotation:1.8.1")
     implementation(project(":appcompat:appcompat"))
     implementation(libs.constraintLayout)

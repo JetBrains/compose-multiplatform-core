@@ -58,8 +58,8 @@ tasks.withType(KotlinCompile).configureEach {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.compose.foundation.benchmark"
+    compileSdk = 35
+    namespace = "androidx.compose.foundation.benchmark"
 
     // DO NOT CHECK IN! Enable experimental benchmarking with R8 - for local runs only
     // buildTypes.release.androidTest.enableMinification = true

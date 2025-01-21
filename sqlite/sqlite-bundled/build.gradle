@@ -241,7 +241,7 @@ androidXMultiplatform {
 }
 
 android {
-    namespace "androidx.sqlite.driver.bundled"
+    namespace = "androidx.sqlite.driver.bundled"
 }
 
 androidx {

@@ -20,9 +20,10 @@ import android.os.Bundle;
 import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.media.MediaBrowserServiceCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -46,9 +47,8 @@ public class StubMediaBrowserServiceCompatWithDelayedMediaSession extends
                 this, "StubMediaBrowserServiceCompatWithDelayedMediaSession");
     }
 
-    @Nullable
     @Override
-    public BrowserRoot onGetRoot(@NonNull String clientPackageName,
+    public @Nullable BrowserRoot onGetRoot(@NonNull String clientPackageName,
             int clientUid, @Nullable Bundle rootHints) {
         return new BrowserRoot("StubRootId", null);
     }

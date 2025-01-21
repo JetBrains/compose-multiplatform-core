@@ -23,9 +23,10 @@ import android.os.Build;
 import android.support.v4.media.session.MediaSessionCompat;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -156,8 +157,7 @@ public abstract class VolumeProviderCompat {
      * @return the volume control ID or {@code null} if it isn't set.
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    @Nullable
-    public final String getVolumeControlId() {
+    public final @Nullable String getVolumeControlId() {
         return mControlId;
     }
 

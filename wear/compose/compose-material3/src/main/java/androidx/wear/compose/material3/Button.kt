@@ -933,8 +933,8 @@ fun ChildButton(
  *   single line of text which is "start" aligned if there is an icon preset and "center" aligned if
  *   not.
  * @param icon A slot for providing the button's icon. The contents are expected to be a
- *   horizontally and vertically aligned icon of size [ButtonDefaults.SmallIconSize] when used with
- *   a label or [ButtonDefaults.IconSize] when used as the only content in the button.
+ *   horizontally and vertically aligned icon of size [ButtonDefaults.ExtraSmallIconSize] when used
+ *   with a label or [ButtonDefaults.SmallIconSize] when used as the only content in the button.
  * @param colors [ButtonColors] that will be used to resolve the background and content color for
  *   this button in different states. See [ButtonDefaults.buttonColors].
  * @param enabled Controls the enabled state of the button. When `false`, this button will not be
@@ -1437,8 +1437,11 @@ object ButtonDefaults {
             bottom = ButtonVerticalPadding
         )
 
-    /** The size of the icon when used inside a "[CompactButton]. */
-    val SmallIconSize: Dp = CompactButtonTokens.IconSize
+    /** The size of the icon when used with text inside a "[CompactButton]. */
+    val ExtraSmallIconSize: Dp = CompactButtonTokens.IconSize
+
+    /** The icon size for use with a CompactButton that has icon-only content. */
+    val SmallIconSize: Dp = CompactButtonTokens.IconOnlyIconSize
 
     /** The default size of the icon when used inside a [Button]. */
     val IconSize: Dp = FilledButtonTokens.IconSize
@@ -1482,6 +1485,12 @@ object ButtonDefaults {
      * tappable area meets minimum UX guidance.
      */
     val CompactButtonTapTargetPadding: PaddingValues = PaddingValues(top = 8.dp, bottom = 8.dp)
+
+    /**
+     * The default size of the spacing between an icon and a text when they are used inside a
+     * [Button].
+     */
+    val IconSpacing = 6.dp
 
     private val ColorScheme.defaultFilledTonalButtonColors: ButtonColors
         get() {
@@ -1645,12 +1654,6 @@ object ButtonDefaults {
      * you can override it by applying Modifier.width directly on [CompactButton].
      */
     internal val IconOnlyCompactButtonWidth = CompactButtonTokens.IconOnlyWidth
-
-    /**
-     * The default size of the spacing between an icon and a text when they are used inside a
-     * [Button].
-     */
-    internal val IconSpacing = 6.dp
 }
 
 /**

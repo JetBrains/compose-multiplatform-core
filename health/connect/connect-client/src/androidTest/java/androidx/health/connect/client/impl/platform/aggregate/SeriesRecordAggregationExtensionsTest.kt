@@ -585,15 +585,16 @@ class SeriesRecordAggregationExtensionsTest {
         assertThrows(IllegalStateException::class.java) {
             runBlocking {
                 healthConnectClient.aggregateSeriesRecord(
-                    recordType = StepsCadenceRecord::class,
-                    aggregateMetrics =
+                    StepsCadenceRecord::class,
+                    AggregateRequest(
                         setOf(
                             SpeedRecord.SPEED_AVG,
                             StepsCadenceRecord.RATE_MAX,
                             StepsCadenceRecord.RATE_MIN
                         ),
-                    timeRangeFilter = TimeRangeFilter.none(),
-                    dataOriginFilter = emptySet()
+                        TimeRangeFilter.none(),
+                        emptySet()
+                    )
                 ) {
                     samples.map { SampleInfo(time = it.time, value = it.rate) }
                 }
@@ -607,14 +608,15 @@ class SeriesRecordAggregationExtensionsTest {
             runBlocking {
                 healthConnectClient.aggregateSeriesRecord(
                     recordType = HeartRateRecord::class,
-                    aggregateMetrics =
+                    AggregateRequest(
                         setOf(
                             HeartRateRecord.BPM_AVG,
                             HeartRateRecord.BPM_MAX,
                             HeartRateRecord.BPM_MIN
                         ),
-                    timeRangeFilter = TimeRangeFilter.none(),
-                    dataOriginFilter = emptySet()
+                        TimeRangeFilter.none(),
+                        emptySet()
+                    )
                 ) {
                     samples.map { SampleInfo(time = it.time, value = it.beatsPerMinute.toDouble()) }
                 }

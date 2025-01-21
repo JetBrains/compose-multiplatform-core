@@ -79,8 +79,6 @@ import android.widget.LinearLayout;
 import android.widget.Space;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -129,8 +127,8 @@ import androidx.wear.protolayout.proto.ColorProto.ColorProp;
 import androidx.wear.protolayout.proto.ColorProto.ColorStop;
 import androidx.wear.protolayout.proto.ColorProto.SweepGradient;
 import androidx.wear.protolayout.proto.DimensionProto;
-import androidx.wear.protolayout.proto.DimensionProto.ArcLineLength;
 import androidx.wear.protolayout.proto.DimensionProto.AngularDimension;
+import androidx.wear.protolayout.proto.DimensionProto.ArcLineLength;
 import androidx.wear.protolayout.proto.DimensionProto.BoundingBoxRatio;
 import androidx.wear.protolayout.proto.DimensionProto.ContainerDimension;
 import androidx.wear.protolayout.proto.DimensionProto.DegreesProp;
@@ -223,6 +221,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.truth.Expect;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -2400,8 +2400,8 @@ public class ProtoLayoutInflaterTest {
         assertThat(line.getSweepAngleDegrees()).isEqualTo(60f);
     }
 
-    @NonNull
-    private static ArcLayoutElement.Builder arcLayoutElement(ArcSpacer.Builder setAngularLength) {
+    private static ArcLayoutElement.@NonNull Builder arcLayoutElement(
+            ArcSpacer.Builder setAngularLength) {
         return ArcLayoutElement.newBuilder().setSpacer(setAngularLength.setThickness(dp(20)));
     }
 
@@ -3002,8 +3002,7 @@ public class ProtoLayoutInflaterTest {
         assertThat(hasFiredList).hasSize(1);
     }
 
-    @NonNull
-    private static SpanModifiers.Builder spanClickMod() {
+    private static SpanModifiers.@NonNull Builder spanClickMod() {
         return SpanModifiers.newBuilder()
                 .setClickable(
                         Clickable.newBuilder()
@@ -3528,13 +3527,11 @@ public class ProtoLayoutInflaterTest {
         expect.that(image2.getHeight()).isEqualTo(24);
     }
 
-    @NonNull
-    private static ImageDimension.Builder linImageDim(DpProp.Builder builderForValue) {
+    private static ImageDimension.@NonNull Builder linImageDim(DpProp.Builder builderForValue) {
         return ImageDimension.newBuilder().setLinearDimension(builderForValue);
     }
 
-    @NonNull
-    private static ContainerDimension.Builder wrap() {
+    private static ContainerDimension.@NonNull Builder wrap() {
         return ContainerDimension.newBuilder()
                 .setWrappedDimension(WrappedDimensionProp.getDefaultInstance());
     }
@@ -3775,13 +3772,11 @@ public class ProtoLayoutInflaterTest {
         assertThat(line.getMaxSweepAngleDegrees()).isEqualTo(0);
     }
 
-    @NonNull
-    private static DegreesProp.Builder degreesDynamic(DynamicFloat arcLength) {
+    private static DegreesProp.@NonNull Builder degreesDynamic(DynamicFloat arcLength) {
         return DegreesProp.newBuilder().setDynamicValue(arcLength);
     }
 
-    @NonNull
-    private static DegreesProp.Builder degreesDynamic(
+    private static DegreesProp.@NonNull Builder degreesDynamic(
             DynamicFloat arcLength, float valueForLayout) {
         return DegreesProp.newBuilder()
                 .setValueForLayout(valueForLayout)
@@ -5061,15 +5056,13 @@ public class ProtoLayoutInflaterTest {
                 .build();
     }
 
-    @NonNull
-    private static Trigger onVisibleTrigger() {
+    private static @NonNull Trigger onVisibleTrigger() {
         return Trigger.newBuilder()
                 .setOnVisibleTrigger(OnVisibleTrigger.getDefaultInstance())
                 .build();
     }
 
-    @NonNull
-    private static AnimatableDynamicFloat.Builder stateDynamicFloat() {
+    private static AnimatableDynamicFloat.@NonNull Builder stateDynamicFloat() {
         return AnimatableDynamicFloat.newBuilder()
                 .setInput(
                         DynamicFloat.newBuilder()
@@ -5111,8 +5104,7 @@ public class ProtoLayoutInflaterTest {
         expect.that(linearLayoutParams.weight).isEqualTo(10.0f);
     }
 
-    @NonNull
-    private static ContainerDimension expandWeight() {
+    private static @NonNull ContainerDimension expandWeight() {
         return ContainerDimension.newBuilder()
                 .setExpandedDimension(
                         ExpandedDimensionProp.newBuilder()
@@ -6233,13 +6225,11 @@ public class ProtoLayoutInflaterTest {
                 .build();
     }
 
-    @NonNull
-    private static EnterTransition.Builder enterFadeIn(int delay) {
+    private static EnterTransition.@NonNull Builder enterFadeIn(int delay) {
         return EnterTransition.newBuilder().setFadeIn(fadeIn(delay));
     }
 
-    @NonNull
-    private static FadeInTransition.Builder fadeIn(int delay) {
+    private static FadeInTransition.@NonNull Builder fadeIn(int delay) {
         return FadeInTransition.newBuilder()
                 .setAnimationSpec(
                         AnimationSpec.newBuilder()
@@ -6330,15 +6320,15 @@ public class ProtoLayoutInflaterTest {
                 .build();
     }
 
-    @NonNull
-    private Text.Builder textAnimVisibility(AnimatedVisibility.Builder snapTo, String text) {
+    private Text.@NonNull Builder textAnimVisibility(AnimatedVisibility.Builder snapTo,
+            String text) {
         return Text.newBuilder()
                 .setModifiers(Modifiers.newBuilder().setContentUpdateAnimation(snapTo.build()))
                 .setText(string(text).build());
     }
 
-    @NonNull
-    private Text.Builder dynamicTextAnimVisibility(AnimatedVisibility.Builder snapTo, String text) {
+    private Text.@NonNull Builder dynamicTextAnimVisibility(AnimatedVisibility.Builder snapTo,
+            String text) {
         return Text.newBuilder()
                 .setModifiers(Modifiers.newBuilder().setContentUpdateAnimation(snapTo.build()))
                 .setText(
@@ -6369,66 +6359,54 @@ public class ProtoLayoutInflaterTest {
                                                 .build()));
     }
 
-    @NonNull
-    private static DpProp.Builder dp(float value) {
+    private static DpProp.@NonNull Builder dp(float value) {
         return DpProp.newBuilder().setValue(value);
     }
 
-    @NonNull
-    private static DpProp.Builder dynamicDp(DynamicFloat value, float valueForLayout) {
+    private static DpProp.@NonNull Builder dynamicDp(DynamicFloat value, float valueForLayout) {
         return DpProp.newBuilder().setDynamicValue(value).setValueForLayout(valueForLayout);
     }
 
-    @NonNull
-    private static DimensionProto.SpProp sp(float value) {
+    private static DimensionProto.@NonNull SpProp sp(float value) {
         return DimensionProto.SpProp.newBuilder().setValue(value).build();
     }
 
-    @NonNull
-    private static ContainerDimension.Builder expand() {
+    private static ContainerDimension.@NonNull Builder expand() {
         return ContainerDimension.newBuilder()
                 .setExpandedDimension(ExpandedDimensionProp.getDefaultInstance());
     }
 
-    @NonNull
-    private static StrokeCapProp.Builder strokeCapButt() {
+    private static StrokeCapProp.@NonNull Builder strokeCapButt() {
         return StrokeCapProp.newBuilder().setValue(LayoutElementProto.StrokeCap.STROKE_CAP_BUTT);
     }
 
-    @NonNull
-    private static DegreesProp.Builder degrees(int value) {
+    private static DegreesProp.@NonNull Builder degrees(int value) {
         return DegreesProp.newBuilder().setValue(value);
     }
 
-    @NonNull
-    private static ColorStop.Builder colorStop(int color, float offset) {
+    private static ColorStop.@NonNull Builder colorStop(int color, float offset) {
         return colorStop(color).setOffset(FloatProp.newBuilder().setValue(offset));
     }
 
-    @NonNull
-    private static ColorStop.Builder colorStop(int color) {
+    private static ColorStop.@NonNull Builder colorStop(int color) {
         return ColorStop.newBuilder().setColor(argb(color));
     }
 
-    @NonNull
-    private static ColorProp.Builder argb(int value) {
+    private static ColorProp.@NonNull Builder argb(int value) {
         return ColorProp.newBuilder().setArgb(value);
     }
 
-    @NonNull
-    private static ExpandedAngularDimensionProp expandAngular(float value) {
+    private static @NonNull ExpandedAngularDimensionProp expandAngular(float value) {
         return ExpandedAngularDimensionProp.newBuilder()
                 .setLayoutWeight(FloatProp.newBuilder().setValue(value).build())
                 .build();
     }
 
-    @NonNull
-    private static StringProp.Builder string(String value) {
+    private static StringProp.@NonNull Builder string(String value) {
         return StringProp.newBuilder().setValue(value);
     }
 
-    @NonNull
-    private static StringProp.Builder dynamicString(String value) {
+    private static StringProp.@NonNull Builder dynamicString(String value) {
         return StringProp.newBuilder()
                 .setValue(value)
                 .setDynamicValue(
@@ -6436,14 +6414,12 @@ public class ProtoLayoutInflaterTest {
                                 .setFixed(FixedString.newBuilder().setValue(value)));
     }
 
-    @NonNull
-    private static ImageDimension.Builder expandImage() {
+    private static ImageDimension.@NonNull Builder expandImage() {
         return ImageDimension.newBuilder()
                 .setExpandedDimension(ExpandedDimensionProp.getDefaultInstance());
     }
 
-    @NonNull
-    private static List<DimensionProto.SpProp> buildSizesList(int[] presetSizes) {
+    private static @NonNull List<DimensionProto.SpProp> buildSizesList(int[] presetSizes) {
         List<DimensionProto.SpProp> sizes = new ArrayList<>(3);
         for (int s : presetSizes) {
             sizes.add(sp(s));
@@ -6501,7 +6477,7 @@ public class ProtoLayoutInflaterTest {
 
     /** Builds a wrapper Box that contains Spacer with the given parameters. */
     private static Layout layoutBoxWithSpacer(
-            int width, int height, @Nullable Modifiers.Builder modifiers) {
+            int width, int height, Modifiers.@Nullable Builder modifiers) {
         Spacer.Builder spacer =
                 Spacer.newBuilder()
                         .setWidth(SpacerDimension.newBuilder().setLinearDimension(dp(width)))

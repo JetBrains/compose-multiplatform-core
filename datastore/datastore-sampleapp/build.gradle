@@ -54,6 +54,6 @@ dependencies {
 }
 
 android {
-    namespace "com.example.datastoresampleapp"
+    namespace = "com.example.datastoresampleapp"
 }
 

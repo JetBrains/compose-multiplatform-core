@@ -16,8 +16,6 @@
 
 package androidx.wear.tiles;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.StateBuilders.State;
@@ -25,6 +23,9 @@ import androidx.wear.protolayout.TimelineBuilders.Timeline;
 import androidx.wear.protolayout.expression.RequiresSchemaVersion;
 import androidx.wear.protolayout.expression.proto.VersionProto.VersionInfo;
 import androidx.wear.tiles.proto.TileProto;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /** Builders for the components of a tile that can be rendered by a tile renderer. */
 public final class TileBuilders {
@@ -48,8 +49,7 @@ public final class TileBuilders {
          * androidx.wear.tiles.RequestBuilders.ResourcesRequest} if the system does not have a copy
          * of the specified resource version.
          */
-        @NonNull
-        public String getResourcesVersion() {
+        public @NonNull String getResourcesVersion() {
             return mImpl.getResourcesVersion();
         }
 
@@ -57,8 +57,7 @@ public final class TileBuilders {
          * Gets the {@link androidx.wear.protolayout.TimelineBuilders.Timeline} containing the
          * layouts for the tiles to show in the carousel, along with their validity periods.
          */
-        @Nullable
-        public Timeline getTileTimeline() {
+        public @Nullable Timeline getTileTimeline() {
             if (mImpl.hasTileTimeline()) {
                 return Timeline.fromProto(mImpl.getTileTimeline());
             } else {
@@ -84,8 +83,7 @@ public final class TileBuilders {
         }
 
         /** Gets {@link androidx.wear.protolayout.StateBuilders.State} for this tile. */
-        @Nullable
-        public State getState() {
+        public @Nullable State getState() {
             if (mImpl.hasState()) {
                 return State.fromProto(mImpl.getState());
             } else {
@@ -100,9 +98,8 @@ public final class TileBuilders {
          * @deprecated Use {@link #getTileTimeline()} instead.
          */
         @Deprecated
-        @Nullable
         @SuppressWarnings("deprecation") // for backward compatibility
-        public androidx.wear.tiles.TimelineBuilders.Timeline getTimeline() {
+        public androidx.wear.tiles.TimelineBuilders.@Nullable Timeline getTimeline() {
             if (mImpl.hasTileTimeline()) {
                 return androidx.wear.tiles.TimelineBuilders.Timeline.fromProto(
                         mImpl.getTileTimeline());
@@ -113,21 +110,18 @@ public final class TileBuilders {
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static Tile fromProto(@NonNull TileProto.Tile proto) {
+        public static @NonNull Tile fromProto(TileProto.@NonNull Tile proto) {
             return new Tile(proto);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public TileProto.Tile toProto() {
+        public TileProto.@NonNull Tile toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "Tile{"
                     + "resourcesVersion="
                     + getResourcesVersion()
@@ -155,8 +149,7 @@ public final class TileBuilders {
              * copy of the specified resource version.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setResourcesVersion(@NonNull String resourcesVersion) {
+            public @NonNull Builder setResourcesVersion(@NonNull String resourcesVersion) {
                 mImpl.setResourcesVersion(resourcesVersion);
                 return this;
             }
@@ -166,8 +159,7 @@ public final class TileBuilders {
              * layouts for the tiles to show in the carousel, along with their validity periods.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setTileTimeline(@NonNull Timeline tileTimeline) {
+            public @NonNull Builder setTileTimeline(@NonNull Timeline tileTimeline) {
                 mImpl.setTileTimeline(tileTimeline.toProto());
                 return this;
             }
@@ -186,16 +178,14 @@ public final class TileBuilders {
              * due to system-level optimizations.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setFreshnessIntervalMillis(long freshnessIntervalMillis) {
+            public @NonNull Builder setFreshnessIntervalMillis(long freshnessIntervalMillis) {
                 mImpl.setFreshnessIntervalMillis(freshnessIntervalMillis);
                 return this;
             }
 
             /** Sets {@link androidx.wear.protolayout.StateBuilders.State} for this tile. */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setState(@NonNull State state) {
+            public @NonNull Builder setState(@NonNull State state) {
                 mImpl.setState(state.toProto());
                 return this;
             }
@@ -207,16 +197,14 @@ public final class TileBuilders {
              * @deprecated Use {@link #setTileTimeline(Timeline)} instead.
              */
             @Deprecated
-            @NonNull
-            public Builder setTimeline(
-                    @NonNull androidx.wear.tiles.TimelineBuilders.Timeline timeline) {
+            public @NonNull Builder setTimeline(
+                    androidx.wear.tiles.TimelineBuilders.@NonNull Timeline timeline) {
                 mImpl.setTileTimeline(timeline.toProto());
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public Tile build() {
+            public @NonNull Tile build() {
                 return Tile.fromProto(mImpl.build());
             }
         }

@@ -23,9 +23,10 @@ import android.os.Build;
 import android.os.Parcel;
 import android.os.ext.SdkExtensions;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.data.TextSelection;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,13 +77,11 @@ public class PageSelection extends TextSelection {
         return mPage;
     }
 
-    @NonNull
-    public List<Rect> getRects() {
+    public @NonNull List<Rect> getRects() {
         return mRects;
     }
 
-    @NonNull
-    public String getText() {
+    public @NonNull String getText() {
         return mText;
     }
 
@@ -99,9 +98,8 @@ public class PageSelection extends TextSelection {
      * Converts android.graphics.pdf.models.selection.PageSelection object to its
      * androidx.pdf.aidl.PageSelection representation.
      */
-    @NonNull
-    public static PageSelection convert(
-            @NonNull android.graphics.pdf.models.selection.PageSelection pageSelection) {
+    public static @NonNull PageSelection convert(
+            android.graphics.pdf.models.selection.@NonNull PageSelection pageSelection) {
         if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 13) {
             List<PdfPageTextContent> textSelections = pageSelection.getSelectedTextContents();
 

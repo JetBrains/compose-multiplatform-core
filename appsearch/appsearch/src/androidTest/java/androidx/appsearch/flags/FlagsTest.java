@@ -34,6 +34,14 @@ public class FlagsTest {
     }
 
     @Test
+    public void testFlagValue_enableListFilterMatchScoreExpressionFunction() {
+        assertThat(Flags.FLAG_ENABLE_LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION)
+                .isEqualTo(
+                        "com.android.appsearch"
+                                + ".flags.enable_list_filter_match_score_expression_function");
+    }
+
+    @Test
     public void testFlagValue_enableGroupingTypePerSchema() {
         assertThat(Flags.FLAG_ENABLE_GROUPING_TYPE_PER_SCHEMA).isEqualTo(
                 "com.android.appsearch.flags.enable_grouping_type_per_schema");
@@ -110,6 +118,12 @@ public class FlagsTest {
     }
 
     @Test
+    public void testFlagValue_enableSchemaEmbeddingQuantization() {
+        assertThat(Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_QUANTIZATION)
+                .isEqualTo("com.android.appsearch.flags.enable_schema_embedding_quantization");
+    }
+
+    @Test
     public void testFlagValue_enableSearchSpecSearchStringParameters() {
         assertThat(Flags.FLAG_ENABLE_SEARCH_SPEC_SEARCH_STRING_PARAMETERS)
                 .isEqualTo(
@@ -158,5 +172,18 @@ public class FlagsTest {
     public void testFlagValue_enableSearchSpecFilterDocumentIds() {
         assertThat(Flags.FLAG_ENABLE_SEARCH_SPEC_FILTER_DOCUMENT_IDS).isEqualTo(
                 "com.android.appsearch.flags.enable_search_spec_filter_document_ids");
+    }
+
+    @Test
+    public void testFlagValue_enableScorableSchemaProperty() {
+        assertThat(Flags.FLAG_ENABLE_SCORABLE_PROPERTY)
+                .isEqualTo("com.android.appsearch.flags.enable_scorable_property");
+    }
+
+    @Test
+    public void testFlagValue_enableSearchResultParentTypes() {
+        assertThat(Flags.FLAG_ENABLE_SEARCH_RESULT_PARENT_TYPES)
+                .isEqualTo(
+                        "com.android.appsearch.flags.enable_search_result_parent_types");
     }
 }

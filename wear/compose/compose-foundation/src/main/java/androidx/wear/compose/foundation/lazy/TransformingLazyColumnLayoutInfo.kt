@@ -63,7 +63,11 @@ internal constructor(private val packedValue: Long) {
     ) : this(packFloats(topOffsetFraction, bottomOffsetFraction))
 
     internal companion object {
-        internal val Zero = TransformingLazyColumnItemScrollProgress(0f, 0f)
+        /**
+         * Represents an unspecified [TransformingLazyColumnItemScrollProgress] value, usually a
+         * replacement for `null` when a primitive value is desired.
+         */
+        val Unspecified = TransformingLazyColumnItemScrollProgress(UnspecifiedPackedFloats)
 
         internal fun bottomItemScrollProgress(
             offset: Int,
@@ -127,4 +131,14 @@ sealed interface TransformingLazyColumnLayoutInfo {
 
     /** The size of the viewport in pixels. */
     val viewportSize: IntSize
+
+    /**
+     * The content padding in pixels applied before the first item in the direction of scrolling.
+     */
+    val beforeContentPadding: Int
+
+    /** The content padding in pixels applied after the last item in the direction of scrolling. */
+    val afterContentPadding: Int
 }
+
+internal const val UnspecifiedPackedFloats = 0x7fc00000_7fc00000L // NaN_NaN

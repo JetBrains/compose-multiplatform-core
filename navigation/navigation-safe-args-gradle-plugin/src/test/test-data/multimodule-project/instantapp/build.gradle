@@ -22,7 +22,7 @@ android {
             storeFile file("$debugKeystoreFile")
         }
     }
-    namespace "safe.gradle.test.app.instant"
+    namespace = "safe.gradle.test.app.instant"
     flavorDimensions "mode"
     productFlavors {
         foo {

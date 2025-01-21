@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
@@ -50,6 +52,7 @@ import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -398,7 +401,7 @@ object SplitButtonDefaults {
         // TODO Load the motionScheme tokens from the component tokens file
         val defaultAnimationSpec = MotionSchemeKeyTokens.DefaultEffects.value<Float>()
         val pressed by interactionSource.collectIsPressedAsState()
-
+        val layoutDirection = LocalLayoutDirection.current
         val shape = shapeByInteraction(shapes, pressed, false, defaultAnimationSpec)
 
         Surface(
@@ -423,23 +426,30 @@ object SplitButtonDefaults {
                         )
                         .then(
                             when (shape) {
-                                is ShapeWithOpticalCentering -> {
-                                    Modifier.opticalCentering(
+                                is ShapeWithHorizontalCenterOptically -> {
+                                    Modifier.horizontalCenterOptically(
                                         shape = shape,
-                                        basePadding = contentPadding
+                                        maxStartOffset =
+                                            contentPadding.calculateStartPadding(layoutDirection),
+                                        maxEndOffset =
+                                            contentPadding.calculateEndPadding(layoutDirection)
                                     )
                                 }
                                 is CornerBasedShape -> {
-                                    Modifier.opticalCentering(
+                                    Modifier.horizontalCenterOptically(
                                         shape = shape,
-                                        basePadding = contentPadding
+                                        maxStartOffset =
+                                            contentPadding.calculateStartPadding(layoutDirection),
+                                        maxEndOffset =
+                                            contentPadding.calculateEndPadding(layoutDirection)
                                     )
                                 }
                                 else -> {
-                                    Modifier.padding(contentPadding)
+                                    Modifier
                                 }
                             }
-                        ),
+                        )
+                        .padding(contentPadding),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                     content = content
@@ -458,8 +468,8 @@ object SplitButtonDefaults {
      *
      * The default text style for internal [Text] components will be set to [Typography.labelLarge].
      *
-     * @param checked indicates whether the button is toggled to a `checked` state. This will
-     *   trigger the corner morphing animation to reflect the updated state.
+     * @param checked indicates whether the button is checked. This will trigger the corner morphing
+     *   animation to reflect the updated state.
      * @param onCheckedChange called when the button is clicked
      * @param modifier the [Modifier] to be applied to this button.
      * @param enabled controls the enabled state of the split button. When `false`, this component
@@ -503,7 +513,7 @@ object SplitButtonDefaults {
         // TODO Load the motionScheme tokens from the component tokens file
         val defaultAnimationSpec = MotionSchemeKeyTokens.DefaultEffects.value<Float>()
         val pressed by interactionSource.collectIsPressedAsState()
-
+        val layoutDirection = LocalLayoutDirection.current
         val density = LocalDensity.current
         val shape = shapeByInteraction(shapes, pressed, checked, defaultAnimationSpec)
 
@@ -542,23 +552,30 @@ object SplitButtonDefaults {
                         )
                         .then(
                             when (shape) {
-                                is ShapeWithOpticalCentering -> {
-                                    Modifier.opticalCentering(
+                                is ShapeWithHorizontalCenterOptically -> {
+                                    Modifier.horizontalCenterOptically(
                                         shape = shape,
-                                        basePadding = contentPadding
+                                        maxStartOffset =
+                                            contentPadding.calculateStartPadding(layoutDirection),
+                                        maxEndOffset =
+                                            contentPadding.calculateEndPadding(layoutDirection)
                                     )
                                 }
                                 is CornerBasedShape -> {
-                                    Modifier.opticalCentering(
+                                    Modifier.horizontalCenterOptically(
                                         shape = shape,
-                                        basePadding = contentPadding
+                                        maxStartOffset =
+                                            contentPadding.calculateStartPadding(layoutDirection),
+                                        maxEndOffset =
+                                            contentPadding.calculateEndPadding(layoutDirection)
                                     )
                                 }
                                 else -> {
-                                    Modifier.padding(contentPadding)
+                                    Modifier
                                 }
                             }
-                        ),
+                        )
+                        .padding(contentPadding),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                     content = content
@@ -634,8 +651,8 @@ object SplitButtonDefaults {
      *
      * The default text style for internal [Text] components will be set to [Typography.labelLarge].
      *
-     * @param checked indicates whether the button is toggled to a `checked` state. This will
-     *   trigger the corner morphing animation to reflect the updated state.
+     * @param checked indicates whether the button is checked. This will trigger the corner morphing
+     *   animation to reflect the updated state.
      * @param onCheckedChange called when the button is clicked
      * @param modifier the [Modifier] to be applied to this button.
      * @param enabled controls the enabled state of the split button. When `false`, this component
@@ -755,8 +772,8 @@ object SplitButtonDefaults {
      *
      * The default text style for internal [Text] components will be set to [Typography.labelLarge].
      *
-     * @param checked indicates whether the button is toggled to a `checked` state. This will
-     *   trigger the corner morphing animation to reflect the updated state.
+     * @param checked indicates whether the button is checked. This will trigger the corner morphing
+     *   animation to reflect the updated state.
      * @param onCheckedChange called when the button is clicked
      * @param modifier the [Modifier] to be applied to this button.
      * @param enabled controls the enabled state of the split button. When `false`, this component
@@ -876,8 +893,8 @@ object SplitButtonDefaults {
      *
      * The default text style for internal [Text] components will be set to [Typography.labelLarge].
      *
-     * @param checked indicates whether the button is toggled to a `checked` state. This will
-     *   trigger the corner morphing animation to reflect the updated state.
+     * @param checked indicates whether the button is checked. This will trigger the corner morphing
+     *   animation to reflect the updated state.
      * @param onCheckedChange called when the button is clicked
      * @param modifier the [Modifier] to be applied to this button.
      * @param enabled controls the enabled state of the split button. When `false`, this component
@@ -931,6 +948,7 @@ object SplitButtonDefaults {
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun shapeByInteraction(
     shapes: SplitButtonShapes,
@@ -959,9 +977,34 @@ private fun shapeByInteraction(
  * @property pressedShape is the pressed shape.
  * @property checkedShape is the checked shape.
  */
-data class SplitButtonShapes(val shape: Shape, val pressedShape: Shape?, val checkedShape: Shape?)
+@ExperimentalMaterial3ExpressiveApi
+class SplitButtonShapes(val shape: Shape, val pressedShape: Shape?, val checkedShape: Shape?) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || other !is SplitButtonShapes) return false
 
-internal val SplitButtonShapes.hasRoundedCornerShapes: Boolean
+        if (shape != other.shape) return false
+        if (pressedShape != other.pressedShape) return false
+        if (checkedShape != other.checkedShape) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = shape.hashCode()
+        if (pressedShape != null) {
+            result = 31 * result + pressedShape.hashCode()
+        }
+        if (checkedShape != null) {
+            result = 31 * result + checkedShape.hashCode()
+        }
+
+        return result
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private val SplitButtonShapes.hasRoundedCornerShapes: Boolean
     get() {
         // Ignore null shapes and only check default shape for RoundedCorner
         if (pressedShape != null && pressedShape !is RoundedCornerShape) return false

@@ -27,6 +27,7 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.WideNavigationRail
 import androidx.compose.material3.WideNavigationRailItem
 import androidx.compose.material3.WideNavigationRailState
+import androidx.compose.material3.WideNavigationRailValue
 import androidx.compose.material3.rememberWideNavigationRailState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableIntState
@@ -56,10 +57,12 @@ class NavigationRailBenchmark {
 
     private val testCaseFactory = { NavigationRailTestCase() }
     private val collapsedWideRailTestCaseFactory = { NavigationRailTestCase(true) }
-    private val expandedWideRailTestCaseFactory = { NavigationRailTestCase(true, true) }
+    private val expandedWideRailTestCaseFactory = {
+        NavigationRailTestCase(true, WideNavigationRailValue.Expanded)
+    }
     private val modalWideRailTestCaseFactory = { ModalWideNavigationRailTestCase() }
     private val dismissibleModalWideRailTestCaseFactory = {
-        ModalWideNavigationRailTestCase(true, true)
+        ModalWideNavigationRailTestCase(true, WideNavigationRailValue.Expanded)
     }
 
     @Test
@@ -115,7 +118,7 @@ class NavigationRailBenchmark {
             {
                 NavigationRailTestCase(
                     isWideNavRail = true,
-                    initialStateValue = true,
+                    initialStateValue = WideNavigationRailValue.Expanded,
                     changeSelectionToggleTestCase = false
                 )
             },
@@ -153,7 +156,7 @@ class NavigationRailBenchmark {
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 internal class NavigationRailTestCase(
     private val isWideNavRail: Boolean = false,
-    private val initialStateValue: Boolean = true,
+    private val initialStateValue: WideNavigationRailValue = WideNavigationRailValue.Expanded,
     private val changeSelectionToggleTestCase: Boolean = true,
 ) : LayeredComposeTestCase(), ToggleableTestCase {
     private lateinit var selectedIndexState: MutableIntState
@@ -172,14 +175,14 @@ internal class NavigationRailTestCase(
                     selected = selectedIndexState.value == 0,
                     onClick = {},
                     icon = { Spacer(Modifier.size(24.dp)) },
-                    railExpanded = state.targetValue,
+                    railExpanded = state.targetValue == WideNavigationRailValue.Expanded,
                     label = { Spacer(Modifier.size(24.dp)) }
                 )
                 WideNavigationRailItem(
                     selected = selectedIndexState.value == 1,
                     onClick = {},
                     icon = { Spacer(Modifier.size(24.dp)) },
-                    railExpanded = state.targetValue,
+                    railExpanded = state.targetValue == WideNavigationRailValue.Expanded,
                     label = { Spacer(Modifier.size(24.dp)) }
                 )
             }
@@ -222,7 +225,7 @@ internal class NavigationRailTestCase(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 internal class ModalWideNavigationRailTestCase(
     private val isDismissible: Boolean = false,
-    private val initialStateValue: Boolean = false,
+    private val initialStateValue: WideNavigationRailValue = WideNavigationRailValue.Collapsed,
 ) : LayeredComposeTestCase(), ToggleableTestCase {
     private lateinit var state: WideNavigationRailState
     private lateinit var scope: CoroutineScope
@@ -240,14 +243,16 @@ internal class ModalWideNavigationRailTestCase(
                 selected = true,
                 onClick = {},
                 icon = { Spacer(Modifier.size(24.dp)) },
-                railExpanded = isDismissible || state.targetValue,
+                railExpanded =
+                    isDismissible || state.targetValue == WideNavigationRailValue.Expanded,
                 label = { Spacer(Modifier.size(24.dp)) }
             )
             WideNavigationRailItem(
                 selected = false,
                 onClick = {},
                 icon = { Spacer(Modifier.size(24.dp)) },
-                railExpanded = isDismissible || state.targetValue,
+                railExpanded =
+                    isDismissible || state.targetValue == WideNavigationRailValue.Expanded,
                 label = { Spacer(Modifier.size(24.dp)) }
             )
         }

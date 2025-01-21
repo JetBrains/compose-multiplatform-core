@@ -22,21 +22,17 @@ plugins {
 }
 
 android {
-    compileSdk 35
-    namespace 'androidx.compose.integration.hero.jetsnack.implementation'
+    compileSdk = 35
+    namespace = "androidx.compose.integration.hero.jetsnack.implementation"
 
     lint {
         // These projects should use the external lint checks to simulate real world development
         disable += ['PrimitiveInCollection', 'AsCollectionCall']
     }
 
-    defaultConfig {
-        minSdk 21
-    }
-
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled = false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }

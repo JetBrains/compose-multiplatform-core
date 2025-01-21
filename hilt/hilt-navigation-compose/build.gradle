@@ -35,11 +35,11 @@ plugins {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
     defaultConfig {
         testInstrumentationRunner "androidx.hilt.navigation.compose.TestRunner"
     }
-    namespace "androidx.hilt.navigation.compose"
+    namespace = "androidx.hilt.navigation.compose"
 }
 
 dependencies {

@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.fastSumBy
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineScope
 
@@ -271,3 +272,25 @@ internal val EmptyLazyStaggeredGridLayoutInfo =
         scrollBackAmount = 0f,
         coroutineScope = CoroutineScope(EmptyCoroutineContext)
     )
+
+internal fun LazyStaggeredGridLayoutInfo.visibleItemsAverageSize(): Int {
+    val visibleItems = visibleItemsInfo
+    if (visibleItems.isEmpty()) return 0
+    val itemSizeSum =
+        visibleItems.fastSumBy {
+            if (orientation == Orientation.Vertical) {
+                it.size.height
+            } else {
+                it.size.width
+            }
+        }
+    return itemSizeSum / visibleItems.size + mainAxisItemSpacing
+}
+
+internal val LazyStaggeredGridLayoutInfo.singleAxisViewportSize: Int
+    get() =
+        if (orientation == Orientation.Vertical) {
+            viewportSize.height
+        } else {
+            viewportSize.width
+        }

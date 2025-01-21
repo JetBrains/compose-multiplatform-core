@@ -21,7 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.util.fastForEachIndexed
 
 /**
  * The class that provides motion settings for three pane scaffolds like [ListDetailPaneScaffold]
@@ -102,22 +101,37 @@ internal fun ThreePaneScaffoldState.calculateThreePaneMotion(
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Suppress("PrimitiveInCollection") // No way to get underlying Long of IntSize or IntOffset
-internal class ThreePaneScaffoldMotionScopeImpl : PaneScaffoldMotionScope {
-    private lateinit var threePaneMotion: ThreePaneMotion
+internal class ThreePaneScaffoldMotionDataProvider :
+    PaneScaffoldMotionDataProvider<ThreePaneScaffoldRole> {
+    private lateinit var ltrOrder: ThreePaneScaffoldHorizontalOrder
+
+    private val primary = PaneMotionData()
+    private val secondary = PaneMotionData()
+    private val tertiary = PaneMotionData()
 
     override var scaffoldSize: IntSize = IntSize.Zero
-    override val paneMotionDataList: List<PaneMotionData> =
-        listOf(PaneMotionData(), PaneMotionData(), PaneMotionData())
 
-    internal fun updateThreePaneMotion(
+    override val count: Int = 3
+
+    override fun getRoleAt(index: Int): ThreePaneScaffoldRole = ltrOrder[index]
+
+    override fun get(role: ThreePaneScaffoldRole): PaneMotionData =
+        when (role) {
+            ThreePaneScaffoldRole.Primary -> primary
+            ThreePaneScaffoldRole.Secondary -> secondary
+            ThreePaneScaffoldRole.Tertiary -> tertiary
+        }
+
+    override fun get(index: Int): PaneMotionData = get(getRoleAt(index))
+
+    internal fun update(
         threePaneMotion: ThreePaneMotion,
         ltrOrder: ThreePaneScaffoldHorizontalOrder
     ) {
-        this.paneMotionDataList.fastForEachIndexed { index, it ->
-            val role = ltrOrder[index]
+        this.ltrOrder = ltrOrder
+        forEach { role, it ->
             it.motion = threePaneMotion[role]
             it.isOriginSizeAndPositionSet = false
         }
-        this.threePaneMotion = threePaneMotion
     }
 }

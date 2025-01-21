@@ -17,6 +17,7 @@ package androidx.mediarouter.media;
 
 import android.content.Context;
 import android.content.IntentFilter;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -32,6 +33,7 @@ import java.util.Set;
 
 /** Stub {@link MediaRouteProviderService} implementation that supports dynamic groups. */
 public final class StubDynamicMediaRouteProviderService extends MediaRouteProviderService {
+    private static final String TAG = "StubDynamicMrps";
     public static final String CATEGORY_DYNAMIC_PROVIDER_TEST =
             "androidx.mediarouter.media.CATEGORY_DYNAMIC_PROVIDER_TEST";
 
@@ -41,8 +43,7 @@ public final class StubDynamicMediaRouteProviderService extends MediaRouteProvid
     public static final String ROUTE_NAME_1 = "Sample Route 1";
     public static final String ROUTE_ID_2 = "route_id2";
     public static final String ROUTE_NAME_2 = "Sample Route 2";
-
-    private static final List<IntentFilter> CONTROL_FILTERS_TEST = new ArrayList<>();
+    public static final List<IntentFilter> CONTROL_FILTERS_TEST = new ArrayList<>();
 
     static {
         IntentFilter filter = new IntentFilter();
@@ -73,11 +74,11 @@ public final class StubDynamicMediaRouteProviderService extends MediaRouteProvid
                     new MediaRouteDescriptor.Builder(ROUTE_ID_1, ROUTE_NAME_1)
                             .addControlFilters(CONTROL_FILTERS_TEST)
                             .build();
-            mRoutes.put(route1.getId(), route1);
             MediaRouteDescriptor route2 =
                     new MediaRouteDescriptor.Builder(ROUTE_ID_2, ROUTE_NAME_2)
                             .addControlFilters(CONTROL_FILTERS_TEST)
                             .build();
+            mRoutes.put(route1.getId(), route1);
             mRoutes.put(route2.getId(), route2);
         }
 
@@ -85,6 +86,7 @@ public final class StubDynamicMediaRouteProviderService extends MediaRouteProvid
 
         @Override
         public void onDiscoveryRequestChanged(@Nullable MediaRouteDiscoveryRequest request) {
+            Log.i(TAG, "onDiscoveryRequestChanged");
             mCurrentlyScanning =
                     request != null
                             && request.isActiveScan()
@@ -95,6 +97,21 @@ public final class StubDynamicMediaRouteProviderService extends MediaRouteProvid
 
         @Override
         public RouteController onCreateRouteController(@NonNull String routeId) {
+            Log.i(TAG, "onCreateRouteController with routeId = " + routeId);
+            StubRouteController newController = new StubRouteController(routeId);
+            mControllers.put(routeId, newController);
+            return newController;
+        }
+
+        @Override
+        public RouteController onCreateRouteController(
+                @NonNull String routeId, @NonNull String routeGroupId) {
+            Log.i(
+                    TAG,
+                    "onCreateRouteController with routeId = "
+                            + routeId
+                            + ", routeGroupId = "
+                            + routeGroupId);
             StubRouteController newController = new StubRouteController(routeId);
             mControllers.put(routeId, newController);
             return newController;
@@ -105,6 +122,10 @@ public final class StubDynamicMediaRouteProviderService extends MediaRouteProvid
         public DynamicGroupRouteController onCreateDynamicGroupRouteController(
                 @NonNull String initialMemberRouteId,
                 @NonNull RouteControllerOptions routeControllerOptions) {
+            Log.i(
+                    TAG,
+                    "onCreateDynamicGroupRouteController with initialMemberRouteId = "
+                            + initialMemberRouteId);
             mGroupController = new StubDynamicRouteController();
             return mGroupController;
         }
@@ -146,6 +167,7 @@ public final class StubDynamicMediaRouteProviderService extends MediaRouteProvid
 
             @Override
             public void onSelect() {
+                Log.i(TAG, "StubRouteController.onSelect()");
                 mRoutes.put(
                         mRouteId,
                         new MediaRouteDescriptor.Builder(mRoutes.get(mRouteId))
@@ -157,6 +179,7 @@ public final class StubDynamicMediaRouteProviderService extends MediaRouteProvid
 
             @Override
             public void onUnselect(int reason) {
+                Log.i(TAG, "StubRouteController.onUnselect()");
                 mRoutes.put(
                         mRouteId,
                         new MediaRouteDescriptor.Builder(mRoutes.get(mRouteId))
@@ -171,11 +194,13 @@ public final class StubDynamicMediaRouteProviderService extends MediaRouteProvid
 
             @Override
             public void onSelect() {
+                Log.i(TAG, "StubDynamicRouteController.onSelect()");
                 publishState();
             }
 
             @Override
             public void onUpdateMemberRoutes(@Nullable List<String> routeIds) {
+                Log.i(TAG, "StubDynamicRouteController.onUpdateMemberRoutes()");
                 mCurrentSelectedRouteIds.clear();
                 mCurrentSelectedRouteIds.addAll(routeIds);
                 publishState();
@@ -183,17 +208,22 @@ public final class StubDynamicMediaRouteProviderService extends MediaRouteProvid
 
             @Override
             public void onAddMemberRoute(@NonNull String routeId) {
+                Log.i(TAG, "StubDynamicRouteController.onAddMemberRoute with routeId = " + routeId);
                 mCurrentSelectedRouteIds.add(routeId);
                 publishState();
             }
 
             @Override
             public void onRemoveMemberRoute(@NonNull String routeId) {
+                Log.i(
+                        TAG,
+                        "StubDynamicRouteController.onRemoveMemberRoute with routeId = " + routeId);
                 mCurrentSelectedRouteIds.remove(routeId);
                 publishState();
             }
 
             private void publishState() {
+                Log.i(TAG, "StubDynamicRouteController.publishState()");
                 notifyDynamicRoutesChanged(mGroupDescriptor, buildDynamicRouteDescriptors());
             }
         }

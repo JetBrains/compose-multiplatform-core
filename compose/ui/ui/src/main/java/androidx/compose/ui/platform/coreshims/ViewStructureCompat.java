@@ -21,10 +21,11 @@ import static android.os.Build.VERSION.SDK_INT;
 import android.os.Bundle;
 import android.view.ViewStructure;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing features in {@link ViewStructure}.
@@ -48,8 +49,7 @@ public class ViewStructureCompat {
      * @return wrapped class
      */
     @RequiresApi(23)
-    @NonNull
-    public static ViewStructureCompat toViewStructureCompat(
+    public static @NonNull ViewStructureCompat toViewStructureCompat(
             @NonNull ViewStructure contentCaptureSession) {
         return new ViewStructureCompat(contentCaptureSession);
     }
@@ -64,8 +64,7 @@ public class ViewStructureCompat {
      * @see ViewStructureCompat#toViewStructureCompat(ViewStructure)
      */
     @RequiresApi(23)
-    @NonNull
-    public ViewStructure toViewStructure() {
+    public @NonNull ViewStructure toViewStructure() {
         return (ViewStructure) mWrappedObj;
     }
 
@@ -200,8 +199,7 @@ public class ViewStructureCompat {
      * <li>SDK 22 and below, this method returns null.
      * </ul>
      */
-    @Nullable
-    public Bundle getExtras() {
+    public @Nullable Bundle getExtras() {
         if (SDK_INT >= 23) {
             return Api23Impl.getExtras((ViewStructure) mWrappedObj);
         }

@@ -21,11 +21,11 @@ plugins {
 }
 
 android {
-    compileSdkVersion 35
+    compileSdk = 35
     defaultConfig {
-        applicationId "androidx.core.graphics.sample"
+        applicationId = "androidx.core.graphics.sample"
     }
-    namespace "androidx.core.graphics.sample"
+    namespace = "androidx.core.graphics.sample"
 }
 
 dependencies {

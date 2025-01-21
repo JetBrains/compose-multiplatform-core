@@ -21,8 +21,8 @@ import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.OpticalCenteringCoefficient
-import androidx.compose.material3.ShapeWithOpticalCentering
+import androidx.compose.material3.CenterOpticallyCoefficient
+import androidx.compose.material3.ShapeWithHorizontalCenterOptically
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -94,7 +94,7 @@ private fun rememberAnimatedShape(
     state.density = density
 
     return remember(density, state) {
-        object : ShapeWithOpticalCentering {
+        object : ShapeWithHorizontalCenterOptically {
             var clampedRange by mutableStateOf(0f..1f)
 
             override fun offset(): Float {
@@ -104,7 +104,7 @@ private fun rememberAnimatedShape(
                 val bottomEnd = state.bottomEnd().coerceIn(clampedRange)
                 val avgStart = (topStart + bottomStart) / 2
                 val avgEnd = (topEnd + bottomEnd) / 2
-                return OpticalCenteringCoefficient * (avgStart - avgEnd)
+                return CenterOpticallyCoefficient * (avgStart - avgEnd)
             }
 
             override fun createOutline(

@@ -200,7 +200,7 @@ private object StrokeJni {
     @UsedByNative external fun allocShallowCopyOfInputs(nativeAddress: Long): Long
 
     /**
-     * Returns the address of a new `ink::ModeledShape` that is a shallow copy of the shape
+     * Returns the address of a new `ink::PartitionedMesh` that is a shallow copy of the shape
      * belonging to the `ink::Stroke` given by the [nativeAddress].
      */
     @UsedByNative external fun allocShallowCopyOfShape(nativeAddress: Long): Long

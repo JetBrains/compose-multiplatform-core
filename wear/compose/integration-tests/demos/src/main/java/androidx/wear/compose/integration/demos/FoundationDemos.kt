@@ -44,6 +44,7 @@ import androidx.wear.compose.foundation.samples.SimpleScalingLazyColumnWithSnap
 import androidx.wear.compose.foundation.samples.SimpleSwipeToDismissBox
 import androidx.wear.compose.foundation.samples.SimpleVerticalPagerSample
 import androidx.wear.compose.foundation.samples.StatefulSwipeToDismissBox
+import androidx.wear.compose.foundation.samples.TransformingLazyColumnAnimateItemSample
 import androidx.wear.compose.foundation.samples.TransformingLazyColumnLettersSample
 import androidx.wear.compose.integration.demos.common.Centralize
 import androidx.wear.compose.integration.demos.common.ComposableDemo
@@ -244,6 +245,9 @@ val WearFoundationDemos =
                 "TransformingLazyColumn",
                 listOf(
                     ComposableDemo("Letter Sample") { TransformingLazyColumnLettersSample() },
+                    ComposableDemo("Animation Sample") {
+                        TransformingLazyColumnAnimateItemSample()
+                    },
                 )
             )
         ),

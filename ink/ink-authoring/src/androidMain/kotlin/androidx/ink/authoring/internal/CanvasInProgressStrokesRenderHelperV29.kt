@@ -59,9 +59,6 @@ import kotlin.math.floor
  * @param mainView The [View] within which the front buffer should be constructed.
  * @param callback How to render the desired content within the front buffer.
  * @param renderer Draws individual stroke objects using [Canvas].
- * @param useOffScreenFrameBuffer A temporary flag to gate the offscreen frame buffer feature for
- *   reducing rendering artifacts until [CanvasInProgressStrokesRenderHelperV33] is fully rolled
- *   out.
  * @param canvasFrontBufferedRendererWrapper Override the default only for testing.
  * @param uiThreadHandler Override the default only for testing.
  */
@@ -72,7 +69,6 @@ internal class CanvasInProgressStrokesRenderHelperV29(
     private val mainView: ViewGroup,
     private val callback: InProgressStrokesRenderHelper.Callback,
     private val renderer: CanvasStrokeRenderer,
-    private val useOffScreenFrameBuffer: Boolean,
     private val canvasFrontBufferedRendererWrapper: CanvasFrontBufferedRendererWrapper =
         CanvasFrontBufferedRendererWrapperImpl(),
     frontBufferToHwuiHandoffFactory: (SurfaceView) -> FrontBufferToHwuiHandoff = { surfaceView ->
@@ -148,9 +144,7 @@ internal class CanvasInProgressStrokesRenderHelperV29(
             ) {
                 recordRenderThreadIdentity()
 
-                if (useOffScreenFrameBuffer) {
-                    ensureOffScreenFrameBuffer(bufferWidth, bufferHeight)
-                }
+                ensureOffScreenFrameBuffer(bufferWidth, bufferHeight)
 
                 // Just in case save/restores get imbalanced among callbacks
                 val originalSaveCount = canvas.saveCount
@@ -234,11 +228,9 @@ internal class CanvasInProgressStrokesRenderHelperV29(
         // Save the previous clip state. Restored in `afterDrawInModifiedRegion`.
         frontBufferCanvas.save()
 
-        if (useOffScreenFrameBuffer) {
-            val offScreenCanvas = checkNotNull(offScreenFrameBuffer).beginRecording()
-            offScreenCanvas.save()
-            onDrawState.offScreenCanvas = offScreenCanvas
-        }
+        val offScreenCanvas = checkNotNull(offScreenFrameBuffer).beginRecording()
+        offScreenCanvas.save()
+        onDrawState.offScreenCanvas = offScreenCanvas
 
         // Set the clip to only apply changes to the modified region.
         // Clip uses integers, so round floats in a way that makes sure the entire updated region
@@ -279,9 +271,7 @@ internal class CanvasInProgressStrokesRenderHelperV29(
         // RenderNode for both the front buffer and offscreen frame buffer is the strategy used by
         // the
         // v33 implementation of this class.
-        if (useOffScreenFrameBuffer) {
-            checkNotNull(offScreenFrameBuffer).setClipRect(scratchRect)
-        }
+        checkNotNull(offScreenFrameBuffer).setClipRect(scratchRect)
 
         // Clear the updated region of the offscreen frame buffer rather than the front buffer
         // because
@@ -292,13 +282,8 @@ internal class CanvasInProgressStrokesRenderHelperV29(
         // two
         // can be visible due to scanline racing, which can cause parts of the background to peek
         // through the content being rendered.
-        val canvasToClear =
-            if (useOffScreenFrameBuffer) {
-                checkNotNull(onDrawState.offScreenCanvas)
-            } else {
-                frontBufferCanvas
-            }
-        canvasToClear.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
+        checkNotNull(onDrawState.offScreenCanvas)
+            .drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
     }
 
     @WorkerThread
@@ -309,12 +294,7 @@ internal class CanvasInProgressStrokesRenderHelperV29(
         assertOnRenderThread()
         check(onDrawState.duringDraw) { "Can only render during Callback.onDraw." }
 
-        val canvas =
-            if (useOffScreenFrameBuffer) {
-                checkNotNull(onDrawState.offScreenCanvas)
-            } else {
-                checkNotNull(onDrawState.frontBufferCanvas)
-            }
+        val canvas = checkNotNull(onDrawState.offScreenCanvas)
         canvas.withMatrix(strokeToMainViewTransform) {
             renderer.draw(canvas, inProgressStroke, strokeToMainViewTransform)
         }
@@ -326,25 +306,21 @@ internal class CanvasInProgressStrokesRenderHelperV29(
         check(onDrawState.duringDraw) { "Can only finalize rendering during Callback.onDraw." }
         val frontBufferCanvas = checkNotNull(onDrawState.frontBufferCanvas)
 
-        if (useOffScreenFrameBuffer) {
-            val offScreenRenderNode = checkNotNull(offScreenFrameBuffer)
+        val offScreenRenderNode = checkNotNull(offScreenFrameBuffer)
 
-            // Previously saved in `prepareToDrawInModifiedRegion`.
-            checkNotNull(onDrawState.offScreenCanvas).restore()
+        // Previously saved in `prepareToDrawInModifiedRegion`.
+        checkNotNull(onDrawState.offScreenCanvas).restore()
 
-            offScreenRenderNode.endRecording()
-            check(offScreenRenderNode.hasDisplayList())
+        offScreenRenderNode.endRecording()
+        check(offScreenRenderNode.hasDisplayList())
 
-            // offScreenRenderNode is configured with BlendMode=SRC so that drawRenderNode replaces
-            // the
-            // contents of the front buffer with the contents of the offscreen frame buffer, within
-            // the
-            // clip bounds set in `prepareToDrawInModifiedRegion` above.
-            frontBufferCanvas.drawRenderNode(offScreenRenderNode)
+        // offScreenRenderNode is configured with BlendMode=SRC so that drawRenderNode replaces the
+        // contents of the front buffer with the contents of the offscreen frame buffer, within the
+        // clip bounds set in `prepareToDrawInModifiedRegion` above.
+        frontBufferCanvas.drawRenderNode(offScreenRenderNode)
 
-            offScreenRenderNode.setClipRect(null)
-            onDrawState.offScreenCanvas = null
-        }
+        offScreenRenderNode.setClipRect(null)
+        onDrawState.offScreenCanvas = null
 
         // Previously saved in `prepareToDrawInModifiedRegion`.
         frontBufferCanvas.restore()
@@ -377,7 +353,6 @@ internal class CanvasInProgressStrokesRenderHelperV29(
     @WorkerThread
     private fun ensureOffScreenFrameBuffer(width: Int, height: Int) {
         assertOnRenderThread()
-        check(useOffScreenFrameBuffer)
         val existingBuffer = offScreenFrameBuffer
         if (
             existingBuffer != null &&

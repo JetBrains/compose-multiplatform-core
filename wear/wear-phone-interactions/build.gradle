@@ -54,7 +54,7 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 25
+        minSdk = 25
     }
 
     // Use Robolectric 4.+
@@ -65,10 +65,10 @@ android {
     }
     buildTypes.configureEach {
         stableAidl {
-            version 1
+            version = 1
         }
     }
-    namespace "androidx.wear.phone.interactions"
+    namespace = "androidx.wear.phone.interactions"
 }
 
 androidx {

@@ -20,6 +20,9 @@ import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.Test;
 
+import java.util.List;
+import java.util.Map;
+
 public class SearchResultInternalTest {
     @Test
     public void testSearchResultBuilderCopyConstructor() {
@@ -72,6 +75,22 @@ public class SearchResultInternalTest {
         assertThat(searchResultCopy.getRankingSignal()).isEqualTo(searchResult.getRankingSignal());
         assertThat(searchResultCopy.getInformationalRankingSignals()).isEqualTo(
                 searchResult.getInformationalRankingSignals());
+    }
+
+    @Test
+    public void testSearchResultBuilderCopyConstructor_parentType() {
+        GenericDocument document =
+                new GenericDocument.Builder<>("namespace", "id", "schemaType1").build();
+        SearchResult searchResult = new SearchResult.Builder("package", "database")
+                .setGenericDocument(document)
+                .setParentTypeMap(Map.of(
+                        "schemaType1", List.of("parent1", "parent2"),
+                        "schemaType2", List.of("parent3", "parent4")
+                ))
+                .build();
+        SearchResult searchResultCopy = new SearchResult.Builder(searchResult).build();
+        assertThat(searchResultCopy.getParentTypeMap()).containsExactlyEntriesIn(
+                searchResult.getParentTypeMap());
     }
 
     @Test

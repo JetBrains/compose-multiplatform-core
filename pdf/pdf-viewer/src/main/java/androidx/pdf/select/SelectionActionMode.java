@@ -27,7 +27,6 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.R;
 import androidx.pdf.models.PageSelection;
@@ -38,6 +37,8 @@ import androidx.pdf.viewer.PageMosaicView;
 import androidx.pdf.viewer.PageViewFactory;
 import androidx.pdf.viewer.PaginatedView;
 import androidx.pdf.viewer.PdfSelectionHandles;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Objects;

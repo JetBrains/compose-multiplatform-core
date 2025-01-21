@@ -49,7 +49,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 
 @RequiresApi(34)
-@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @Suppress("ClassVerificationFailure")
 internal class CallSession(
     val coroutineContext: CoroutineContext,
@@ -379,8 +378,7 @@ internal class CallSession(
     suspend fun setActive(): CallControlResult {
         val result: CompletableDeferred<CallControlResult> = CompletableDeferred()
         mPlatformInterface?.setActive(Runnable::run, CallControlReceiver(result))
-        result.await()
-        val callControlResult = result.getCompleted()
+        val callControlResult = result.await()
         moveState(callControlResult, CallStateEvent.ACTIVE)
         return callControlResult
     }
@@ -388,8 +386,7 @@ internal class CallSession(
     suspend fun setInactive(): CallControlResult {
         val result: CompletableDeferred<CallControlResult> = CompletableDeferred()
         mPlatformInterface?.setInactive(Runnable::run, CallControlReceiver(result))
-        result.await()
-        val callControlResult = result.getCompleted()
+        val callControlResult = result.await()
         moveState(callControlResult, CallStateEvent.INACTIVE)
         return callControlResult
     }
@@ -397,8 +394,7 @@ internal class CallSession(
     suspend fun answer(videoState: Int): CallControlResult {
         val result: CompletableDeferred<CallControlResult> = CompletableDeferred()
         mPlatformInterface?.answer(videoState, Runnable::run, CallControlReceiver(result))
-        result.await()
-        val callControlResult = result.getCompleted()
+        val callControlResult = result.await()
         moveState(callControlResult, CallStateEvent.ACTIVE)
         return callControlResult
     }
@@ -432,8 +428,7 @@ internal class CallSession(
             Runnable::run,
             CallControlReceiver(job)
         )
-        job.await()
-        val platformResult = job.getCompleted()
+        val platformResult = job.await()
         if (platformResult != CallControlResult.Success()) {
             mLastClientRequestedEndpoint = null
         }
@@ -443,10 +438,9 @@ internal class CallSession(
     suspend fun disconnect(disconnectCause: DisconnectCause): CallControlResult {
         val result: CompletableDeferred<CallControlResult> = CompletableDeferred()
         mPlatformInterface?.disconnect(disconnectCause, Runnable::run, CallControlReceiver(result))
-        result.await()
-        val callControlResult = result.getCompleted()
+        val callControlResult = result.await()
         moveState(callControlResult, CallStateEvent.DISCONNECTED)
-        return result.getCompleted()
+        return callControlResult
     }
 
     /** CallControlCallback */

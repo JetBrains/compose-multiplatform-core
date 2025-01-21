@@ -32,7 +32,7 @@ plugins {
 }
 
 android {
-    namespace "androidx.compose.runtime.tracing"
+    namespace = "androidx.compose.runtime.tracing"
 }
 
 dependencies {

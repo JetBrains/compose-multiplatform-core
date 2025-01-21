@@ -46,7 +46,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.camera.viewfinder.core"
+    namespace = "androidx.camera.viewfinder.core"
 }
 
 androidx {

@@ -33,6 +33,7 @@ import androidx.wear.tiles.TileBuilders
 import androidx.wear.tiles.TileCallback
 import androidx.wear.tiles.TileData
 import androidx.wear.tiles.TileEnterEventData
+import androidx.wear.tiles.TileInteractionEventData
 import androidx.wear.tiles.TileLeaveEventData
 import androidx.wear.tiles.TileProvider
 import androidx.wear.tiles.TileRemoveEventData
@@ -371,5 +372,9 @@ public class DefaultTileClientTest {
         override fun onTileLeaveEvent(requestData: TileLeaveEventData?) {
             onTileLeaveCalled = true
         }
+
+        override fun processRecentInteractionEvents(
+            events: MutableList<TileInteractionEventData>?
+        ) {}
     }
 }

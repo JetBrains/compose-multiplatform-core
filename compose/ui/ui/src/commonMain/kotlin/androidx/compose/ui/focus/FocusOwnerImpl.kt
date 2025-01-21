@@ -322,8 +322,10 @@ internal class FocusOwnerImpl(
         event: RotaryScrollEvent,
         onFocusedItem: () -> Boolean
     ): Boolean {
-        check(!focusInvalidationManager.hasPendingInvalidation()) {
-            "Dispatching rotary event while focus system is invalidated."
+        if (focusInvalidationManager.hasPendingInvalidation()) {
+            // Ignoring this to unblock b/379289347.
+            println("$Warning: Dispatching rotary event while the focus system is invalidated.")
+            return false
         }
 
         val focusedRotaryInputNode =

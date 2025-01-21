@@ -24,9 +24,10 @@ import androidx.compose.ui.platform.InspectorInfo
 
 /**
  * Remove the root modifier nodes as they are not relevant from the perspective of the tests. There
- * are 5 nodes: FocusTargetNode, KeyInputNode, RotaryInputNode, SemanticsNode and DragAndDropNode.
+ * are 6 nodes: FocusTargetNode, KeyInputNode, RotaryInputNode, SemanticsNode, DragAndDropNode and
+ * BringIntoViewModifierNode
  */
-internal fun <T> List<T>.trimRootModifierNodes(): List<T> = dropLast(5)
+internal fun <T> List<T>.trimRootModifierNodes(): List<T> = dropLast(6)
 
 internal fun Modifier.elementOf(node: Modifier.Node): Modifier {
     return this.then(ElementOf { node })

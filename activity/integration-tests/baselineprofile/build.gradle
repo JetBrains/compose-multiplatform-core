@@ -32,7 +32,7 @@ plugins {
 
 android {
     defaultConfig {
-        minSdkVersion 23
+        minSdk = 23
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     testOptions.managedDevices.allDevices {
@@ -43,7 +43,7 @@ android {
         }
     }
     targetProjectPath = ":activity:integration-tests:testapp"
-    namespace "androidx.activity.integration.testapp.baselineprofile"
+    namespace = "androidx.activity.integration.testapp.baselineprofile"
 }
 
 dependencies {

@@ -42,6 +42,7 @@ import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.component.ComponentWithCoordinates
 import org.gradle.api.component.ComponentWithVariants
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependencyConstraint
 import org.gradle.api.internal.artifacts.ivyservice.projectmodule.ProjectComponentPublication
@@ -60,7 +61,6 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.configure
 import org.gradle.work.DisableCachingByDefault
 import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
-import org.jetbrains.kotlin.utils.mapToSetOrEmpty
 
 /**
  * This task generates a library build information file containing the artifactId, groupId, and
@@ -83,7 +83,7 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
         description = "Generates a file containing library build information serialized to json"
     }
 
-    @get:OutputFile abstract val outputFile: Property<File>
+    @get:OutputFile abstract val outputFile: RegularFileProperty
 
     @get:Input abstract val artifactId: Property<String>
 
@@ -127,7 +127,7 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
     abstract val kmpChildren: SetProperty<String>
 
     private fun writeJsonToFile(info: LibraryBuildInfoFile) {
-        val resolvedOutputFile: File = outputFile.get()
+        val resolvedOutputFile: File = outputFile.get().asFile
         val outputDir = resolvedOutputFile.parentFile
         if (!outputDir.exists()) {
             if (!outputDir.mkdirs()) {
@@ -280,7 +280,8 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
             this != null &&
                 startsWith("androidx.") &&
                 !startsWith("androidx.test") &&
-                !startsWith("androidx.databinding")
+                !startsWith("androidx.databinding") &&
+                !startsWith("androidx.media3")
     }
 }
 
@@ -321,8 +322,7 @@ fun Project.addCreateLibraryBuildInfoFileTasks(
                         shouldPublishDocs = androidXExtension.requiresDocs(),
                         isKmp = androidXKmpExtension.supportedPlatforms.isNotEmpty(),
                         buildTarget = buildTarget,
-                        kmpChildren =
-                            androidXKmpExtension.supportedPlatforms.mapToSetOrEmpty { it.id },
+                        kmpChildren = androidXKmpExtension.supportedPlatforms.map { it.id }.toSet(),
                         testModuleNames = androidXExtension.testModuleNames,
                         isolatedProjectEnabled = androidXExtension.isIsolatedProjectsEnabled(),
                     )

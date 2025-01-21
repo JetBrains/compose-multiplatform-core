@@ -406,6 +406,7 @@ fun ComposeContentTestRule.verifyRoundedButtonTapAnimationEnd(
     expectedFramesUntilTarget: Int,
     color: @Composable () -> Color,
     antiAliasingGap: Float = 2f,
+    releaseAfterTap: Boolean = true,
     content: @Composable (Modifier) -> Unit
 ) {
     val expectedAnimationEnd =
@@ -420,7 +421,9 @@ fun ComposeContentTestRule.verifyRoundedButtonTapAnimationEnd(
     mainClock.autoAdvance = false
     onNodeWithTag(TEST_TAG).performTouchInput {
         down(center)
-        up()
+        if (releaseAfterTap) {
+            up()
+        }
     }
 
     /**

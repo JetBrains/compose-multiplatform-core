@@ -26,6 +26,7 @@ import androidx.compose.ui.node.requireLayoutNode
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.ViewConfiguration
+import androidx.compose.ui.platform.makeSynchronizedObject
 import androidx.compose.ui.platform.synchronized
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
@@ -542,10 +543,12 @@ internal class SuspendingPointerInputModifierNodeImpl(
 
     /**
      * Actively registered input handlers from currently ongoing calls to [awaitPointerEventScope].
-     * Must use `synchronized(pointerHandlers)` to access.
+     * Must use `synchronized(pointerHandlersLock)` to access.
      */
     private val pointerHandlers =
         mutableVectorOf<SuspendingPointerInputModifierNodeImpl.PointerEventHandlerCoroutine<*>>()
+
+    private val pointerHandlersLock = makeSynchronizedObject(pointerHandlers)
 
     /**
      * Scratch list for dispatching to handlers for a particular phase. Used to hold a copy of the
@@ -675,7 +678,7 @@ internal class SuspendingPointerInputModifierNodeImpl(
         block: (SuspendingPointerInputModifierNodeImpl.PointerEventHandlerCoroutine<*>) -> Unit
     ) {
         // Copy handlers to avoid mutating the collection during dispatch
-        synchronized(pointerHandlers) { dispatchingPointerHandlers.addAll(pointerHandlers) }
+        synchronized(pointerHandlersLock) { dispatchingPointerHandlers.addAll(pointerHandlers) }
         try {
             when (pass) {
                 PointerEventPass.Initial,
@@ -766,7 +769,7 @@ internal class SuspendingPointerInputModifierNodeImpl(
         block: suspend AwaitPointerEventScope.() -> R
     ): R = suspendCancellableCoroutine { continuation ->
         val handlerCoroutine = PointerEventHandlerCoroutine(continuation)
-        synchronized(pointerHandlers) {
+        synchronized(pointerHandlersLock) {
             pointerHandlers += handlerCoroutine
 
             // NOTE: We resume the new continuation while holding this lock.
@@ -840,7 +843,7 @@ internal class SuspendingPointerInputModifierNodeImpl(
 
         // Implementation of Continuation; clean up and resume our wrapped continuation.
         override fun resumeWith(result: Result<R>) {
-            synchronized(pointerHandlers) { pointerHandlers -= this }
+            synchronized(pointerHandlersLock) { pointerHandlers -= this }
             completion.resumeWith(result)
         }
 

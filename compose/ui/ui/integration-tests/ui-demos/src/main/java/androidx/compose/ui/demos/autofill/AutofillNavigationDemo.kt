@@ -156,7 +156,7 @@ fun LoginScreen(navController: NavController) {
                     state = remember { TextFieldState() },
                     modifier =
                         Modifier.fillMaxWidth().border(1.dp, Color.LightGray).semantics {
-                            contentType = ContentType.Username
+                            contentType = ContentType.Password
                         }
                 )
             }

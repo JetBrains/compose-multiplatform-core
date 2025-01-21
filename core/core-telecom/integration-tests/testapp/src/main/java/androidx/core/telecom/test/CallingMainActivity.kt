@@ -49,6 +49,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
+@ExperimentalAppActions
 @RequiresApi(34)
 class CallingMainActivity : Activity() {
     // Activity

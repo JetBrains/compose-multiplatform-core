@@ -19,6 +19,7 @@ package androidx.camera.camera2.pipe.integration.impl
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CaptureRequest
 import android.os.Build
+import android.os.Looper
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.integration.adapter.FakeTestUseCase
@@ -54,6 +55,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
@@ -125,6 +127,8 @@ class SessionProcessorManagerTest {
         ) { useCaseManagerConfig ->
             assertNotNull(useCaseManagerConfig)
         }
+
+        shadowOf(Looper.getMainLooper()).idle()
 
         advanceUntilIdle()
         verify(useCaseManager).createCameraGraphConfig(any(), any(), eq(true))

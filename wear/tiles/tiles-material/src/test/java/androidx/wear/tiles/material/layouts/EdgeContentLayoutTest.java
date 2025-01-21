@@ -22,11 +22,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.annotation.internal.DoNotInstrument;
@@ -148,13 +148,11 @@ public class EdgeContentLayoutTest {
 
     private void assertLayout(
             @NonNull EdgeContentLayout actualLayout,
-            @Nullable
-                    androidx.wear.tiles.LayoutElementBuilders.LayoutElement
+                                androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement
                             expectedProgressIndicator,
-            @Nullable androidx.wear.tiles.LayoutElementBuilders.LayoutElement expectedContent,
-            @Nullable androidx.wear.tiles.LayoutElementBuilders.LayoutElement expectedPrimaryLabel,
-            @Nullable
-                    androidx.wear.tiles.LayoutElementBuilders.LayoutElement
+            androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement expectedContent,
+            androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement expectedPrimaryLabel,
+                                androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement
                             expectedSecondaryLabel) {
         assertLayoutIsEqual(
                 actualLayout,
@@ -183,13 +181,11 @@ public class EdgeContentLayoutTest {
 
     private void assertLayoutIsEqual(
             @NonNull EdgeContentLayout actualLayout,
-            @Nullable
-                    androidx.wear.tiles.LayoutElementBuilders.LayoutElement
+                                androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement
                             expectedProgressIndicator,
-            @Nullable androidx.wear.tiles.LayoutElementBuilders.LayoutElement expectedContent,
-            @Nullable androidx.wear.tiles.LayoutElementBuilders.LayoutElement expectedPrimaryLabel,
-            @Nullable
-                    androidx.wear.tiles.LayoutElementBuilders.LayoutElement
+            androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement expectedContent,
+            androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement expectedPrimaryLabel,
+                                androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement
                             expectedSecondaryLabel) {
         byte[] expectedMetadata = EdgeContentLayout.METADATA_TAG_BASE.clone();
 

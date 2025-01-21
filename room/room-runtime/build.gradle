@@ -58,12 +58,12 @@ android {
         aidl = true
     }
     buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
+        consumerProguardFiles("proguard-rules.pro")
         stableAidl {
-            version 1
+            version = 1
         }
     }
-    namespace "androidx.room"
+    namespace = "androidx.room"
     // TODO(b/345531033)
     experimentalProperties["android.lint.useK2Uast"] = false
 }

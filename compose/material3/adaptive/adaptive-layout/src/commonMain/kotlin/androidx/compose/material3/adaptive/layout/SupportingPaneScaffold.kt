@@ -22,9 +22,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 /**
- * An opinionated implementation of [ThreePaneScaffold] following Material guidelines that displays
- * the provided three panes in a canonical [supporting pane layout](
- * https://m3.material.io/foundations/layout/canonical-layouts/supporting-pane).
+ * A three pane layout that follows the Material guidelines, displaying the provided panes in a
+ * canonical
+ * [supporting pane layout](https://m3.material.io/foundations/layout/canonical-layouts/supporting-pane).
  *
  * This overload takes a [ThreePaneScaffoldValue] describing the adapted value of each pane within
  * the scaffold.
@@ -80,9 +80,9 @@ fun SupportingPaneScaffold(
 }
 
 /**
- * An opinionated implementation of [ThreePaneScaffold] following Material guidelines that displays
- * the provided three panes in a canonical [supporting pane layout](
- * https://m3.material.io/foundations/layout/canonical-layouts/supporting-pane).
+ * A three pane layout that follows the Material guidelines, displaying the provided panes in a
+ * canonical
+ * [supporting pane layout](https://m3.material.io/foundations/layout/canonical-layouts/supporting-pane).
  *
  * This overload takes a [ThreePaneScaffoldState] describing the current [ThreePaneScaffoldValue]
  * and any pane transitions or animations in progress.

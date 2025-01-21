@@ -38,7 +38,6 @@ import static java.util.Collections.singletonList;
 import android.app.Instrumentation;
 import android.content.Intent;
 import android.os.Build;
-import org.junit.Ignore;
 
 import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.testapp.CollectingLifecycleOwner;
@@ -53,14 +52,15 @@ import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.ActivityTestRule;
 
+import kotlin.Pair;
+
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.List;
-
-import kotlin.Pair;
 
 /**
  * Runs tests about the state when an activity is partially covered by another activity. Pre

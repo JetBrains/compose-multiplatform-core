@@ -68,7 +68,7 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
     buildFeatures {
         aidl = true
@@ -77,7 +77,7 @@ android {
         consumerProguardFiles "proguard-rules.pro"
     }
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.health.connect.client"
+    namespace = "androidx.health.connect.client"
     compileSdk = 35
 }
 

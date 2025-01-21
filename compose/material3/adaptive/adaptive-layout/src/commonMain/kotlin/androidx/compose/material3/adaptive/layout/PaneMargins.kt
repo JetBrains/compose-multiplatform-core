@@ -104,7 +104,7 @@ private data class PaneMarginsElement(val paneMargins: PaneMargins) :
 private class PaneMarginsNode(var paneMargins: PaneMargins) :
     ParentDataModifierNode, Modifier.Node() {
     override fun Density.modifyParentData(parentData: Any?) =
-        ((parentData as? PaneScaffoldParentData) ?: PaneScaffoldParentData()).also {
+        ((parentData as? PaneScaffoldParentDataImpl) ?: PaneScaffoldParentDataImpl()).also {
             it.paneMargins = paneMargins
         }
 }

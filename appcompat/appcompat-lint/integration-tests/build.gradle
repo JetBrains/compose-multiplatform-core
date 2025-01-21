@@ -12,20 +12,19 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation(project(":appcompat:appcompat"))
     implementation(project(":core:core"))
     api(libs.kotlinStdlib)
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
     defaultConfig {
         vectorDrawables.useSupportLibrary = true
     }
     lintOptions {
         disable "WrongThread"
-        // TODO: Enable lint after appcompat:1.1.0 release or use lint-baseline.xml instead.
-        abortOnError false
     }
-    namespace "com.example.android.appcompat"
+    namespace = "com.example.android.appcompat"
 }

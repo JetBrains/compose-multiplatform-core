@@ -20,6 +20,7 @@ package androidx.compose.ui.input.pointer
 
 import android.view.MotionEvent.ACTION_HOVER_ENTER
 import android.view.MotionEvent.ACTION_HOVER_EXIT
+import androidx.collection.IntObjectMap
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.Autofill
@@ -3357,6 +3358,9 @@ private class MockOwner(
     var layoutChangeCount = 0
 
     override val rootForTest: RootForTest
+        get() = TODO("Not yet implemented")
+
+    override val layoutNodes: IntObjectMap<LayoutNode>
         get() = TODO("Not yet implemented")
 
     override val hapticFeedBack: HapticFeedback

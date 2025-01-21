@@ -31,7 +31,6 @@ import android.view.KeyEvent;
 import android.view.View;
 
 import androidx.annotation.IdRes;
-import androidx.annotation.Nullable;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.espresso.ViewAction;
@@ -47,6 +46,7 @@ import androidx.wear.test.R;
 import androidx.wear.widget.util.FrameLocationAvoidingEdges;
 import androidx.wear.widget.util.WakeLockRule;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
@@ -254,7 +254,7 @@ public class DismissibleFrameLayoutTest {
             ActivityScenario<DismissibleFrameLayoutTestActivity> scenario,
             boolean backDismissible,
             boolean swipeable,
-            @Nullable DismissibleFrameLayout.Callback callback) {
+            DismissibleFrameLayout.@Nullable Callback callback) {
         scenario.onActivity(activity -> {
             DismissibleFrameLayout testLayout = activity.findViewById(R.id.dismissible_root);
             testLayout.setBackButtonDismissible(backDismissible);

@@ -42,14 +42,14 @@ dependencies {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
     lintOptions {
         enable 'CameraXQuirksClassDetector'
     }
 
     testOptions.unitTests.includeAndroidResources = true
 
-    namespace "androidx.camera.featurecombinationquery.playservices"
+    namespace = "androidx.camera.featurecombinationquery.playservices"
 }
 
 androidx {

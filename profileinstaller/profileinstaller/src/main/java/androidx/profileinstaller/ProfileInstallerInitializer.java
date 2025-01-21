@@ -22,9 +22,10 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.Choreographer;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.startup.Initializer;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -69,9 +70,8 @@ public class ProfileInstallerInitializer
      *
      * @return Result immediately.
      */
-    @NonNull
     @Override
-    public Result create(@NonNull Context context) {
+    public @NonNull Result create(@NonNull Context context) {
         if (Build.VERSION.SDK_INT < ProfileVersion.MIN_SUPPORTED_SDK) {
             // If we are below the supported SDK, there is nothing for us to do, so return early.
             return new Result();
@@ -111,9 +111,8 @@ public class ProfileInstallerInitializer
     /**
      * Initializer has no dependencies.
      */
-    @NonNull
     @Override
-    public List<Class<? extends Initializer<?>>> dependencies() {
+    public @NonNull List<Class<? extends Initializer<?>>> dependencies() {
         return Collections.emptyList();
     }
 

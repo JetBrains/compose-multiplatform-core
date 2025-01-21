@@ -18,7 +18,7 @@ package androidx.startup;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -36,8 +36,7 @@ public interface Initializer<T> {
      *
      * @param context The application context.
      */
-    @NonNull
-    T create(@NonNull Context context);
+    @NonNull T create(@NonNull Context context);
 
     /**
      * Gets a list of this initializer's dependencies.
@@ -48,6 +47,5 @@ public interface Initializer<T> {
      *
      * @return A list of initializer dependencies.
      */
-    @NonNull
-    List<Class<? extends Initializer<?>>> dependencies();
+    @NonNull List<Class<? extends Initializer<?>>> dependencies();
 }

@@ -64,11 +64,9 @@ constructor(
      * - Device(s): Camera devices on hardware level LEGACY
      * - API levels: 24 (N) – 28 (P)
      */
-    internal fun shouldCreateCaptureSessionBeforeClosing(cameraId: CameraId): Boolean {
-        if (Build.VERSION.SDK_INT !in (Build.VERSION_CODES.N..Build.VERSION_CODES.P)) {
-            return false
-        }
-        return metadataProvider.awaitCameraMetadata(cameraId).isHardwareLevelLegacy
+    internal fun shouldCreateEmptyCaptureSessionBeforeClosing(cameraId: CameraId): Boolean {
+        return Build.VERSION.SDK_INT in (Build.VERSION_CODES.N..Build.VERSION_CODES.P) &&
+            metadataProvider.awaitCameraMetadata(cameraId).isHardwareLevelLegacy
     }
 
     /**
@@ -82,6 +80,24 @@ constructor(
      */
     internal fun shouldWaitForCameraDeviceOnClosed(cameraId: CameraId): Boolean =
         metadataProvider.awaitCameraMetadata(cameraId).isHardwareLevelLegacy
+
+    /**
+     * A quirk that closes the camera devices before creating a new capture session. This is needed
+     * on legacy devices where creating a capture session directly may lead to deadlocks, NPEs or
+     * other undesirable behaviors. When [shouldCreateEmptyCaptureSessionBeforeClosing] is also
+     * required, a regular camera device closure would then be expanded to:
+     * 1. Close the camera device.
+     * 2. Open the camera device.
+     * 3. Create an empty capture session.
+     * 4. Close the capture session.
+     * 5. Close the camera device.
+     * - Bug(s): b/237341513, b/359062845, b/342263275, b/379347826
+     * - Device(s): Camera devices on hardware level LEGACY
+     * - API levels: 23 (M) – 31 (S_V2)
+     */
+    internal fun shouldCloseCameraBeforeCreatingCaptureSession(cameraId: CameraId): Boolean =
+        Build.VERSION.SDK_INT in (Build.VERSION_CODES.M..Build.VERSION_CODES.S_V2) &&
+            metadataProvider.awaitCameraMetadata(cameraId).isHardwareLevelLegacy
 
     companion object {
         private val SHOULD_WAIT_FOR_REPEATING_DEVICE_MAP =

@@ -42,7 +42,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.room.integration.autovaluetestapp"
+    namespace = "androidx.room.integration.autovaluetestapp"
 }
 
 // Enable parameter names to support Room incremental when its a project() dep.

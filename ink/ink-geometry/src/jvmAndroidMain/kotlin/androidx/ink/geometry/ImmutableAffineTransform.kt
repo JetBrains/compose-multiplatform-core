@@ -18,6 +18,8 @@ package androidx.ink.geometry
 
 import androidx.annotation.RestrictTo
 import androidx.annotation.Size
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * An affine transformation in the plane. The transformation can be thought of as a 3x3 matrix:
@@ -133,5 +135,25 @@ public constructor(
          */
         @JvmStatic
         public fun scaleY(scaleFactor: Float): ImmutableAffineTransform = scale(1f, scaleFactor)
+
+        /** Returns a transformation that shears in the x-direction by the given factor. */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+        @JvmStatic
+        public fun shearX(shearFactor: Float): ImmutableAffineTransform =
+            ImmutableAffineTransform(1f, shearFactor, 0f, 0f, 1f, 0f)
+
+        /** Returns a transformation that shears in the y-direction by the given factor. */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+        @JvmStatic
+        public fun shearY(shearFactor: Float): ImmutableAffineTransform =
+            ImmutableAffineTransform(1f, 0f, 0f, shearFactor, 1f, 0f)
+
+        /** Returns a transformation that rotates by the given angle, centered about the origin. */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+        public fun rotate(@AngleRadiansFloat angleOfRotation: Float): ImmutableAffineTransform {
+            val sin = sin(angleOfRotation)
+            val cos = cos(angleOfRotation)
+            return ImmutableAffineTransform(cos, -sin, 0f, sin, cos, 0f)
+        }
     }
 }

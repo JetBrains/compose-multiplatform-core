@@ -78,10 +78,10 @@ public class BrushBehavior(
     public constructor(
         source: Source,
         target: Target,
-        sourceValueRangeLowerBound: Float,
-        sourceValueRangeUpperBound: Float,
-        targetModifierRangeLowerBound: Float,
-        targetModifierRangeUpperBound: Float,
+        sourceValueRangeStart: Float,
+        sourceValueRangeEnd: Float,
+        targetModifierRangeStart: Float,
+        targetModifierRangeEnd: Float,
         sourceOutOfRangeBehavior: OutOfRange = OutOfRange.CLAMP,
         responseCurve: EasingFunction = EasingFunction.Predefined.LINEAR,
         responseTimeMillis: Long = 0L,
@@ -92,9 +92,9 @@ public class BrushBehavior(
             var node: ValueNode =
                 SourceNode(
                     source,
-                    sourceValueRangeLowerBound,
-                    sourceValueRangeUpperBound,
-                    sourceOutOfRangeBehavior,
+                    sourceValueRangeStart,
+                    sourceValueRangeEnd,
+                    sourceOutOfRangeBehavior
                 )
             if (enabledToolTypes != ALL_TOOL_TYPES) {
                 node = ToolTypeFilterNode(enabledToolTypes, node)
@@ -115,14 +115,7 @@ public class BrushBehavior(
                         node
                     )
             }
-            listOf(
-                TargetNode(
-                    target,
-                    targetModifierRangeLowerBound,
-                    targetModifierRangeUpperBound,
-                    node
-                )
-            )
+            listOf(TargetNode(target, targetModifierRangeStart, targetModifierRangeEnd, node))
         }
     )
 
@@ -136,7 +129,7 @@ public class BrushBehavior(
      *   .setSource(...)
      *   .setTarget(...)
      *   .setSourceOutOfRangeBehavior(...)
-     *   .setSourceValueRangeLowerBound(...)
+     *   .setSourceValueRangeStart(...)
      *   .build();
      * ```
      */
@@ -145,10 +138,10 @@ public class BrushBehavior(
         private var source: Source = Source.NORMALIZED_PRESSURE
         private var target: Target = Target.SIZE_MULTIPLIER
         private var sourceOutOfRangeBehavior: OutOfRange = OutOfRange.CLAMP
-        private var sourceValueRangeLowerBound: Float = 0f
-        private var sourceValueRangeUpperBound: Float = 1f
-        private var targetModifierRangeLowerBound: Float = 0f
-        private var targetModifierRangeUpperBound: Float = 1f
+        private var sourceValueRangeStart: Float = 0f
+        private var sourceValueRangeEnd: Float = 1f
+        private var targetModifierRangeStart: Float = 0f
+        private var targetModifierRangeEnd: Float = 1f
         private var responseCurve: EasingFunction = EasingFunction.Predefined.LINEAR
         private var responseTimeMillis: Long = 0L
         private var enabledToolTypes: Set<InputToolType> = ALL_TOOL_TYPES
@@ -163,25 +156,21 @@ public class BrushBehavior(
                 this.sourceOutOfRangeBehavior = sourceOutOfRangeBehavior
             }
 
-        public fun setSourceValueRangeLowerBound(sourceValueRangeLowerBound: Float): Builder =
-            apply {
-                this.sourceValueRangeLowerBound = sourceValueRangeLowerBound
-            }
+        public fun setSourceValueRangeStart(sourceValueRangeStart: Float): Builder = apply {
+            this.sourceValueRangeStart = sourceValueRangeStart
+        }
 
-        public fun setSourceValueRangeUpperBound(sourceValueRangeUpperBound: Float): Builder =
-            apply {
-                this.sourceValueRangeUpperBound = sourceValueRangeUpperBound
-            }
+        public fun setSourceValueRangeEnd(sourceValueRangeEnd: Float): Builder = apply {
+            this.sourceValueRangeEnd = sourceValueRangeEnd
+        }
 
-        public fun setTargetModifierRangeLowerBound(targetModifierRangeLowerBound: Float): Builder =
-            apply {
-                this.targetModifierRangeLowerBound = targetModifierRangeLowerBound
-            }
+        public fun setTargetModifierRangeStart(targetModifierRangeStart: Float): Builder = apply {
+            this.targetModifierRangeStart = targetModifierRangeStart
+        }
 
-        public fun setTargetModifierRangeUpperBound(targetModifierRangeUpperBound: Float): Builder =
-            apply {
-                this.targetModifierRangeUpperBound = targetModifierRangeUpperBound
-            }
+        public fun setTargetModifierRangeEnd(targetModifierRangeEnd: Float): Builder = apply {
+            this.targetModifierRangeEnd = targetModifierRangeEnd
+        }
 
         public fun setResponseCurve(responseCurve: EasingFunction): Builder = apply {
             this.responseCurve = responseCurve
@@ -203,10 +192,10 @@ public class BrushBehavior(
             BrushBehavior(
                 source,
                 target,
-                sourceValueRangeLowerBound,
-                sourceValueRangeUpperBound,
-                targetModifierRangeLowerBound,
-                targetModifierRangeUpperBound,
+                sourceValueRangeStart,
+                sourceValueRangeEnd,
+                targetModifierRangeStart,
+                targetModifierRangeEnd,
                 sourceOutOfRangeBehavior,
                 responseCurve,
                 responseTimeMillis,
@@ -732,7 +721,7 @@ public class BrushBehavior(
 
     /**
      * The desired behavior when an input value is outside the range defined by
-     * [sourceValueRangeLowerBound, sourceValueRangeUpperBound].
+     * [sourceValueRangeStart] and [sourceValueRangeEnd].
      */
     public class OutOfRange private constructor(@JvmField internal val value: Int) {
         internal fun toSimpleString(): String =
@@ -762,14 +751,12 @@ public class BrushBehavior(
             //
             // In this case, the range will be treated as a half-open interval, with a value exactly
             // at
-            // [sourceValueRangeUpperBound] being treated as though it was
-            // [sourceValueRangeLowerBound].
+            // [sourceValueRangeEnd] being treated as though it was [sourceValueRangeStart].
             @JvmField public val REPEAT: OutOfRange = OutOfRange(1)
             // Similar to [Repeat], but every other repetition of the bounds will be mirrored, as
             // though
             // the
-            // two elements [sourceValueRangeLowerBound] and [sourceValueRangeUpperBound] were
-            // swapped.
+            // two elements [sourceValueRangeStart] and [sourceValueRangeEnd] were swapped.
             // This means the range does not need to be treated as a half-open interval like in the
             // case
             // of [Repeat].
@@ -944,19 +931,19 @@ public class BrushBehavior(
     @JvmOverloads
     constructor(
         public val source: Source,
-        public val sourceValueRangeLowerBound: Float,
-        public val sourceValueRangeUpperBound: Float,
+        public val sourceValueRangeStart: Float,
+        public val sourceValueRangeEnd: Float,
         public val sourceOutOfRangeBehavior: OutOfRange = OutOfRange.CLAMP,
     ) : ValueNode(emptyList()) {
         init {
-            require(sourceValueRangeLowerBound.isFinite()) {
-                "sourceValueRangeLowerBound must be finite, was $sourceValueRangeLowerBound"
+            require(sourceValueRangeStart.isFinite()) {
+                "sourceValueRangeStart must be finite, was $sourceValueRangeStart"
             }
-            require(sourceValueRangeUpperBound.isFinite()) {
-                "sourceValueRangeUpperBound must be finite, was $sourceValueRangeUpperBound"
+            require(sourceValueRangeEnd.isFinite()) {
+                "sourceValueRangeEnd must be finite, was $sourceValueRangeEnd"
             }
-            require(sourceValueRangeLowerBound != sourceValueRangeUpperBound) {
-                "sourceValueRangeLowerBound and sourceValueRangeUpperBound must be distinct, both were $sourceValueRangeLowerBound"
+            require(sourceValueRangeStart != sourceValueRangeEnd) {
+                "sourceValueRangeStart and sourceValueRangeEnd must be distinct, both were $sourceValueRangeStart"
             }
         }
 
@@ -964,27 +951,27 @@ public class BrushBehavior(
             nativeAppendSourceNode(
                 nativeBehaviorPointer,
                 source.value,
-                sourceValueRangeLowerBound,
-                sourceValueRangeUpperBound,
+                sourceValueRangeStart,
+                sourceValueRangeEnd,
                 sourceOutOfRangeBehavior.value,
             )
         }
 
         override fun toString(): String =
-            "SourceNode(${source.toSimpleString()}, $sourceValueRangeLowerBound, $sourceValueRangeUpperBound, ${sourceOutOfRangeBehavior.toSimpleString()})"
+            "SourceNode(${source.toSimpleString()}, $sourceValueRangeStart, $sourceValueRangeEnd, ${sourceOutOfRangeBehavior.toSimpleString()})"
 
         override fun equals(other: Any?): Boolean {
             if (other == null || other !is SourceNode) return false
             return source == other.source &&
-                sourceValueRangeLowerBound == other.sourceValueRangeLowerBound &&
-                sourceValueRangeUpperBound == other.sourceValueRangeUpperBound &&
+                sourceValueRangeStart == other.sourceValueRangeStart &&
+                sourceValueRangeEnd == other.sourceValueRangeEnd &&
                 sourceOutOfRangeBehavior == other.sourceOutOfRangeBehavior
         }
 
         override fun hashCode(): Int {
             var result = source.hashCode()
-            result = 31 * result + sourceValueRangeLowerBound.hashCode()
-            result = 31 * result + sourceValueRangeUpperBound.hashCode()
+            result = 31 * result + sourceValueRangeStart.hashCode()
+            result = 31 * result + sourceValueRangeEnd.hashCode()
             result = 31 * result + sourceOutOfRangeBehavior.hashCode()
             return result
         }
@@ -994,8 +981,8 @@ public class BrushBehavior(
         private external fun nativeAppendSourceNode(
             nativeBehaviorPointer: Long,
             source: Int,
-            sourceValueRangeLowerBound: Float,
-            sourceValueRangeUpperBound: Float,
+            sourceValueRangeStart: Float,
+            sourceValueRangeEnd: Float,
             sourceOutOfRangeBehavior: Int,
         )
     }
@@ -1349,19 +1336,19 @@ public class BrushBehavior(
     public class TargetNode
     constructor(
         public val target: Target,
-        public val targetModifierRangeLowerBound: Float,
-        public val targetModifierRangeUpperBound: Float,
+        public val targetModifierRangeStart: Float,
+        public val targetModifierRangeEnd: Float,
         public val input: ValueNode,
     ) : Node(listOf(input)) {
         init {
-            require(targetModifierRangeLowerBound.isFinite()) {
-                "targetModifierRangeLowerBound must be finite, was $targetModifierRangeLowerBound"
+            require(targetModifierRangeStart.isFinite()) {
+                "targetModifierRangeStart must be finite, was $targetModifierRangeStart"
             }
-            require(targetModifierRangeUpperBound.isFinite()) {
-                "targetModifierRangeUpperBound must be finite, was $targetModifierRangeUpperBound"
+            require(targetModifierRangeEnd.isFinite()) {
+                "targetModifierRangeEnd must be finite, was $targetModifierRangeEnd"
             }
-            require(targetModifierRangeLowerBound != targetModifierRangeUpperBound) {
-                "targetModifierRangeLowerBound and targetModifierRangeUpperBound must be distinct, both were $targetModifierRangeLowerBound"
+            require(targetModifierRangeStart != targetModifierRangeEnd) {
+                "targetModifierRangeStart and targetModifierRangeEnd must be distinct, both were $targetModifierRangeStart"
             }
         }
 
@@ -1369,27 +1356,27 @@ public class BrushBehavior(
             nativeAppendTargetNode(
                 nativeBehaviorPointer,
                 target.value,
-                targetModifierRangeLowerBound,
-                targetModifierRangeUpperBound,
+                targetModifierRangeStart,
+                targetModifierRangeEnd,
             )
         }
 
         override fun toString(): String =
-            "TargetNode(${target.toSimpleString()}, $targetModifierRangeLowerBound, $targetModifierRangeUpperBound, $input)"
+            "TargetNode(${target.toSimpleString()}, $targetModifierRangeStart, $targetModifierRangeEnd, $input)"
 
         override fun equals(other: Any?): Boolean {
             if (other == null || other !is TargetNode) return false
             if (other === this) return true
             return target == other.target &&
-                targetModifierRangeLowerBound == other.targetModifierRangeLowerBound &&
-                targetModifierRangeUpperBound == other.targetModifierRangeUpperBound &&
+                targetModifierRangeStart == other.targetModifierRangeStart &&
+                targetModifierRangeEnd == other.targetModifierRangeEnd &&
                 input == other.input
         }
 
         override fun hashCode(): Int {
             var result = target.hashCode()
-            result = 31 * result + targetModifierRangeLowerBound.hashCode()
-            result = 31 * result + targetModifierRangeUpperBound.hashCode()
+            result = 31 * result + targetModifierRangeStart.hashCode()
+            result = 31 * result + targetModifierRangeEnd.hashCode()
             result = 31 * result + input.hashCode()
             return result
         }
@@ -1399,8 +1386,8 @@ public class BrushBehavior(
         private external fun nativeAppendTargetNode(
             nativeBehaviorPointer: Long,
             target: Int,
-            targetModifierRangeLowerBound: Float,
-            targetModifierRangeUpperBound: Float,
+            targetModifierRangeStart: Float,
+            targetModifierRangeEnd: Float,
         )
     }
 }

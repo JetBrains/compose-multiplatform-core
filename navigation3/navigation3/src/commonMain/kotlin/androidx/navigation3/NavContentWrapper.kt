@@ -40,5 +40,5 @@ public interface NavContentWrapper {
      * This function is called by the [NavDisplay](reference/androidx/navigation/NavDisplay) and
      * should not be called directly.
      */
-    @Composable public fun <T : Any> WrapContent(record: Record<T>)
+    @Composable public fun <T : Any> WrapContent(record: NavRecord<T>)
 }

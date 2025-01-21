@@ -18,9 +18,10 @@ package androidx.wear.widget;
 import android.content.Context;
 import android.view.View;
 
-import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * This wear-specific implementation of {@link LinearLayoutManager} provides basic
@@ -32,8 +33,7 @@ import androidx.recyclerview.widget.RecyclerView;
  */
 public class WearableLinearLayoutManager extends LinearLayoutManager {
 
-    @Nullable
-    private LayoutCallback mLayoutCallback;
+    private @Nullable LayoutCallback mLayoutCallback;
 
     /**
      * Callback for interacting with layout passes.
@@ -86,8 +86,7 @@ public class WearableLinearLayoutManager extends LinearLayoutManager {
      * @return the current {@link LayoutCallback} associated with this
      * {@link WearableLinearLayoutManager}.
      */
-    @Nullable
-    public LayoutCallback getLayoutCallback() {
+    public @Nullable LayoutCallback getLayoutCallback() {
         return mLayoutCallback;
     }
 

@@ -35,8 +35,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.util.Consumer;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.window.WindowSdkExtensions;
@@ -65,6 +63,9 @@ import androidx.window.java.embedding.ActivityEmbeddingControllerCallbackAdapter
 import androidx.window.java.embedding.SplitControllerCallbackAdapter;
 
 import kotlin.Unit;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.List;

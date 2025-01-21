@@ -45,7 +45,14 @@ enum class ClientFeature {
      * Support for retrieving client app package name:
      * [SdkSandboxControllerCompat.getClientPackageName]
      */
-    GET_CLIENT_PACKAGE_NAME;
+    GET_CLIENT_PACKAGE_NAME,
+
+    /**
+     * Support for listening of client app foreground state:
+     * [SdkSandboxControllerCompat.registerSdkSandboxClientImportanceListener]
+     * [SdkSandboxControllerCompat.unregisterSdkSandboxClientImportanceListener]
+     */
+    CLIENT_IMPORTANCE_LISTENER;
 
     val availableFrom: ClientApiVersion
         get() = ClientApiVersion.minAvailableVersionFor(this)

@@ -46,5 +46,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.palette.ktx"
+    namespace = "androidx.palette.ktx"
 }

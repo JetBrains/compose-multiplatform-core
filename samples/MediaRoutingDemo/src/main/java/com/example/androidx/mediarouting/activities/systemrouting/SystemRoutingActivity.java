@@ -26,8 +26,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -43,6 +41,9 @@ import com.example.androidx.mediarouting.activities.systemrouting.source.MediaRo
 import com.example.androidx.mediarouting.activities.systemrouting.source.MediaRouterSystemRoutesSource;
 import com.example.androidx.mediarouting.activities.systemrouting.source.SystemRoutesSource;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -55,12 +56,11 @@ public final class SystemRoutingActivity extends AppCompatActivity {
 
     private static final int REQUEST_CODE_BLUETOOTH_CONNECT = 4199;
 
-    @NonNull
-    private final SystemRoutesAdapter mSystemRoutesAdapter =
+    private final @NonNull SystemRoutesAdapter mSystemRoutesAdapter =
             new SystemRoutesAdapter(this::onRouteItemClicked);
 
-    @NonNull private final Map<String, SystemRoutesSource> mSystemRoutesSources = new HashMap<>();
-    @NonNull private SwipeRefreshLayout mSwipeRefreshLayout;
+    private final @NonNull Map<String, SystemRoutesSource> mSystemRoutesSources = new HashMap<>();
+    private @NonNull SwipeRefreshLayout mSwipeRefreshLayout;
 
     /**
      * Creates and launches an intent to start current activity.
@@ -101,8 +101,8 @@ public final class SystemRoutingActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-            @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, String @NonNull [] permissions,
+            int @NonNull [] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         if (requestCode == REQUEST_CODE_BLUETOOTH_CONNECT

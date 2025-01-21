@@ -42,7 +42,7 @@ private constructor(private val loadSdkCompatExceptionConstructor: Constructor<o
         fun createFor(classLoader: ClassLoader): LoadSdkCompatExceptionProxyFactory {
             val loadSdkCompatExceptionClass =
                 Class.forName(
-                    LoadSdkCompatException::class.java.name,
+                    "androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException",
                     /* initialize = */ false,
                     classLoader
                 )

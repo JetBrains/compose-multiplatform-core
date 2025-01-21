@@ -96,7 +96,8 @@ internal class ScrollCapture : ComposeScrollCaptureCallback.ScrollCaptureSession
                 node = candidate.node,
                 viewportBoundsInWindow = candidate.viewportBoundsInWindow,
                 coroutineScope = coroutineScope,
-                listener = this
+                listener = this,
+                view
             )
         val localVisibleRectOfCandidate = candidate.coordinates.boundsInRoot()
         val windowOffsetOfCandidate = candidate.viewportBoundsInWindow.topLeft

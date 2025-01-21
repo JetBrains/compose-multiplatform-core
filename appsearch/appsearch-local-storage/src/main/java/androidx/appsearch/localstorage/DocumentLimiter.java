@@ -100,19 +100,7 @@ public class DocumentLimiter {
             // Our management of mDocumentCountMap doesn't account for document
             // replacements, so our counter might have overcounted if the app has replaced docs.
             // Rebuild the counter from StorageInfo in case this is so.
-            try {
-                List<NamespaceStorageInfoProto> namespaceStorageInfos =
-                        namespaceStorageInfoProducer.call();
-                buildDocumentCountMap(namespaceStorageInfos);
-            } catch (AppSearchException e) {
-                throw e;
-            } catch (Exception e) {
-                // This should never happen.
-                throw new AppSearchException(
-                        AppSearchResult.RESULT_UNKNOWN_ERROR,
-                        "Encountered unexpected exception when retrieving namespace storage info.",
-                        e);
-            }
+            refreshDocumentCount(namespaceStorageInfoProducer);
             newDocumentCount = MapUtil.getOrDefault(mDocumentCountMap, packageName, 0) + 1;
         }
         if (newDocumentCount > mPerPackageDocumentCountLimit) {
@@ -131,11 +119,22 @@ public class DocumentLimiter {
      *
      * @param packageName the name of the package that owns the added document.
      */
-    public void reportDocumentAdded(@NonNull String packageName) {
+    public void reportDocumentAdded(
+            @NonNull String packageName,
+            @NonNull Callable<List<NamespaceStorageInfoProto>> namespaceStorageInfoProducer)
+            throws AppSearchException {
         Preconditions.checkNotNull(packageName);
         ++mTotalDocumentCount;
         Integer newDocumentCount = MapUtil.getOrDefault(mDocumentCountMap, packageName, 0) + 1;
         mDocumentCountMap.put(packageName, newDocumentCount);
+        if (!Flags.enableDocumentLimiterReplaceTracking()
+                && mTotalDocumentCount == mDocumentLimitStartThreshold) {
+            // We just hit the document limit start threshold. If
+            // Flags.enableDocumentLimiterReplaceTracking is false, then it's possible that we're
+            // over-counting documents. So we refresh the document count to make sure that we have
+            // the right count.
+            refreshDocumentCount(namespaceStorageInfoProducer);
+        }
     }
 
     /**
@@ -176,6 +175,24 @@ public class DocumentLimiter {
             // This should always be true: how can we remove a package without having seen that
             // package during init? This is just a safeguard.
             mTotalDocumentCount -= oldDocumentCount;
+        }
+    }
+
+    private void refreshDocumentCount(
+            @NonNull Callable<List<NamespaceStorageInfoProto>> namespaceStorageInfoProducer)
+            throws AppSearchException {
+        try {
+            List<NamespaceStorageInfoProto> namespaceStorageInfos =
+                    namespaceStorageInfoProducer.call();
+            buildDocumentCountMap(namespaceStorageInfos);
+        } catch (AppSearchException e) {
+            throw e;
+        } catch (Exception e) {
+            // This should never happen.
+            throw new AppSearchException(
+                    AppSearchResult.RESULT_UNKNOWN_ERROR,
+                    "Encountered unexpected exception when retrieving namespace storage info.",
+                    e);
         }
     }
 
