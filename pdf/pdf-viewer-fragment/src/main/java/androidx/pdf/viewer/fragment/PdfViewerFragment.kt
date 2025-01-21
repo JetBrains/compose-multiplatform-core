@@ -852,9 +852,9 @@ public open class PdfViewerFragment : Fragment() {
     private fun resetViewsAndModels(fileUri: Uri) {
         if (pdfLoader != null) {
             pdfLoaderCallbacks?.uri = fileUri
-            paginatedView?.resetModels()
             destroyContentModel()
         }
+        paginatedView?.resetModels()
         fastScrollView?.resetContents()
         findInFileView?.resetFindInFile()
     }
