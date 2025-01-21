@@ -16,9 +16,9 @@
 
 package androidx.wear.protolayout.expression;
 
-import static com.google.common.truth.Truth.assertThat;
-
 import static androidx.wear.protolayout.expression.DynamicBuilders.dynamicInstantFromProto;
+
+import static com.google.common.truth.Truth.assertThat;
 
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicInstant;
 import androidx.wear.protolayout.expression.proto.DynamicProto;

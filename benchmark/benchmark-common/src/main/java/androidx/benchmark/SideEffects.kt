@@ -31,17 +31,13 @@ class DisablePackages(private val packages: List<String> = DEFAULT_PACKAGES_TO_D
     }
 
     override fun setup() {
-        if (Build.VERSION.SDK_INT >= 21) {
-            Log.d(BenchmarkState.TAG, "Disabling packages $packages")
-            Shell.disablePackages(packages)
-        }
+        Log.d(BenchmarkState.TAG, "Disabling packages $packages")
+        Shell.disablePackages(packages)
     }
 
     override fun tearDown() {
-        if (Build.VERSION.SDK_INT >= 21) {
-            Log.d(BenchmarkState.TAG, "Re-enabling packages $packages")
-            Shell.enablePackages(packages)
-        }
+        Log.d(BenchmarkState.TAG, "Re-enabling packages $packages")
+        Shell.enablePackages(packages)
     }
 
     companion object {

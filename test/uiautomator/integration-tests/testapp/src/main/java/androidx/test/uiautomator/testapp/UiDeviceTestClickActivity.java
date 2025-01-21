@@ -20,7 +20,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.widget.Button;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * {@link Activity} for testing {@link androidx.test.uiautomator.UiDevice#click(int, int)}.

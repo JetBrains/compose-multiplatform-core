@@ -20,6 +20,7 @@ import android.content.Context
 import androidx.appsearch.annotation.Document
 import androidx.appsearch.app.AppSearchSchema
 import androidx.appsearch.app.AppSearchSession
+import androidx.appsearch.app.EmbeddingVector
 import androidx.appsearch.app.GenericDocument
 import androidx.appsearch.app.PutDocumentsRequest
 import androidx.appsearch.app.SearchSpec
@@ -168,6 +169,62 @@ public class AnnotationProcessorKtTest {
 
             return true
         }
+    }
+
+    @Document
+    internal data class NullabilityDefaults(
+        @Document.Namespace val namespace: String,
+        @Document.Id val id: String,
+        @Document.StringProperty val nonNullList: List<String>,
+        @Document.StringProperty val nullableList: List<String>?,
+        @Document.BooleanProperty val nonNullBoolean: Boolean,
+        @Document.BooleanProperty val nullableBoolean: Boolean?
+    ) {}
+
+    @Test
+    fun testAnnotationProcessor_nullabilityDefaults() {
+        // Create an empty GenericDocument
+        val genericDocument =
+            GenericDocument.Builder<GenericDocument.Builder<*>>("ns", "id", "schema").build()
+        val classDocument = genericDocument.toDocumentClass(NullabilityDefaults::class.java)
+        assertThat(classDocument.nullableBoolean).isNull()
+        assertThat(classDocument.nullableList).isNull()
+        assertThat(classDocument.nonNullBoolean).isNotNull()
+        assertThat(classDocument.nonNullList).isNotNull()
+    }
+
+    @Document
+    internal data class NullabilityLists(
+        @Document.Namespace val namespace: String,
+        @Document.Id val id: String,
+        @Document.StringProperty val nonNullStrings: List<String>,
+        @Document.StringProperty val nullableStrings: List<String>?,
+        @Document.BooleanProperty val nonNullBooleans: List<Boolean>,
+        @Document.BooleanProperty val nullableBooleans: List<Boolean>?,
+        @Document.LongProperty val nonNullLongs: List<Long>,
+        @Document.LongProperty val nullableLongs: List<Long>?,
+        @Document.DocumentProperty val nonNullCustomTypes: List<Gift>,
+        @Document.DocumentProperty val nullableCustomTypes: List<Gift>?,
+        @Document.EmbeddingProperty val nonNullEmbeddings: List<EmbeddingVector>,
+        @Document.EmbeddingProperty val nullableEmbeddings: List<EmbeddingVector>?
+    ) {}
+
+    @Test
+    fun testAnnotationProcessor_nullableListDefaults() {
+        // Create an empty GenericDocument
+        val genericDocument =
+            GenericDocument.Builder<GenericDocument.Builder<*>>("ns", "id", "schema").build()
+        val classDocument = genericDocument.toDocumentClass(NullabilityLists::class.java)
+        assertThat(classDocument.nullableBooleans).isNull()
+        assertThat(classDocument.nullableLongs).isNull()
+        assertThat(classDocument.nullableStrings).isNull()
+        assertThat(classDocument.nullableCustomTypes).isNull()
+        assertThat(classDocument.nullableEmbeddings).isNull()
+        assertThat(classDocument.nonNullBooleans).isNotNull()
+        assertThat(classDocument.nonNullLongs).isNotNull()
+        assertThat(classDocument.nonNullStrings).isNotNull()
+        assertThat(classDocument.nonNullCustomTypes).isNotNull()
+        assertThat(classDocument.nonNullEmbeddings).isNotNull()
     }
 
     @Test

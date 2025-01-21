@@ -24,7 +24,6 @@ import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.contentpager.content.ContentPager;
@@ -35,6 +34,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.snackbar.Snackbar;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Locale;
 

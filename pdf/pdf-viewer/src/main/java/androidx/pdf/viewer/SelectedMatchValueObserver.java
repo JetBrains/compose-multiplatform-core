@@ -19,12 +19,13 @@ package androidx.pdf.viewer;
 import android.content.Context;
 import android.graphics.Rect;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.util.ObservableValue;
 import androidx.pdf.util.PaginationUtils;
 import androidx.pdf.widget.ZoomView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class SelectedMatchValueObserver implements ObservableValue.ValueObserver<SelectedMatch> {

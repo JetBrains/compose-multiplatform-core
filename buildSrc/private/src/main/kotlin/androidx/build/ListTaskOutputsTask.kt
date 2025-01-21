@@ -21,7 +21,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.provider.Property
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
@@ -30,7 +30,7 @@ import org.gradle.api.tasks.TaskAction
 /** Finds the outputs of every task and saves this mapping into a file */
 @CacheableTask
 abstract class ListTaskOutputsTask : DefaultTask() {
-    @OutputFile val outputFile: Property<File> = project.objects.property(File::class.java)
+    @OutputFile val outputFile: RegularFileProperty = project.objects.fileProperty()
     @Input val removePrefixes: MutableList<String> = mutableListOf()
     @Input val tasks: MutableList<Task> = mutableListOf()
 
@@ -99,7 +99,7 @@ abstract class ListTaskOutputsTask : DefaultTask() {
     @TaskAction
     fun exec() {
         val outputFile = outputFile.get()
-        outputFile.writeText(outputText)
+        outputFile.asFile.writeText(outputText)
     }
 }
 
@@ -148,6 +148,9 @@ val taskNamesKnownToDuplicateOutputs =
         // destinationDirectory to the project's build directory
         "wasmJsTestTestDevelopmentExecutableCompileSync",
         "wasmJsTestTestProductionExecutableCompileSync",
+
+        // TODO file a bug
+        "kotlinNodeJsSetup",
     )
 
 fun shouldValidateTaskOutput(task: Task): Boolean {

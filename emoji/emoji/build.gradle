@@ -58,7 +58,7 @@ android {
             }
         }
     }
-    namespace "androidx.emoji"
+    namespace = "androidx.emoji"
 }
 
 androidx {

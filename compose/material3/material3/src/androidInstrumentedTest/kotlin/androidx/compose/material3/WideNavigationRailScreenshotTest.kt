@@ -286,9 +286,11 @@ private fun DefaultWideNavigationRail(
     withHeader: Boolean = false,
     setUnselectedItemsAsDisabled: Boolean = false,
 ) {
+    val value =
+        if (expanded) WideNavigationRailValue.Expanded else WideNavigationRailValue.Collapsed
     Box(Modifier.semantics(mergeDescendants = true) {}.testTag(Tag)) {
         WideNavigationRail(
-            state = rememberWideNavigationRailState(expanded),
+            state = rememberWideNavigationRailState(value),
             arrangement = arrangement,
             header =
                 if (withHeader) {

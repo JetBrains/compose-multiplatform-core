@@ -19,9 +19,9 @@ package androidx.compose.runtime.snapshots
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.external.kotlinx.collections.immutable.PersistentList
 import androidx.compose.runtime.external.kotlinx.collections.immutable.persistentListOf
-import androidx.compose.runtime.makeSynchronizedObject
+import androidx.compose.runtime.platform.makeSynchronizedObject
+import androidx.compose.runtime.platform.synchronized
 import androidx.compose.runtime.requirePrecondition
-import androidx.compose.runtime.synchronized
 import kotlin.jvm.JvmName
 
 /**

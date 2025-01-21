@@ -109,6 +109,7 @@ internal class CaptureSessionFactoryTest {
         val surfaceTexture = SurfaceTexture(0)
         surfaceTexture.setDefaultBufferSize(stream1Output.size.width, stream1Output.size.height)
         val surface = Surface(surfaceTexture)
+        val threads = FakeThreads.fromTestScope(this)
 
         val pendingOutputs =
             sessionFactory.create(
@@ -117,7 +118,7 @@ internal class CaptureSessionFactoryTest {
                     testCamera.cameraDevice,
                     testCamera.cameraId,
                     cameraErrorListener,
-                    threads = FakeThreads.fromTestScope(this)
+                    threads = threads,
                 ),
                 mapOf(stream1.id to surface),
                 captureSessionState =
@@ -137,6 +138,7 @@ internal class CaptureSessionFactoryTest {
                             finalizeSessionOnCloseBehavior = FinalizeSessionOnCloseBehavior.OFF,
                             closeCaptureSessionOnDisconnect = false,
                         ),
+                        threads.backgroundDispatcher,
                         this
                     )
             )

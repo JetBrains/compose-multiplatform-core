@@ -9,7 +9,6 @@ import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.graphics.Shader;
 
-import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.wear.protolayout.proto.ColorProto.ColorProp;
 import androidx.wear.protolayout.proto.ColorProto.ColorStop;
@@ -21,6 +20,7 @@ import androidx.wear.protolayout.renderer.inflater.WearCurvedLineView.SweepGradi
 
 import com.google.common.truth.Expect;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;

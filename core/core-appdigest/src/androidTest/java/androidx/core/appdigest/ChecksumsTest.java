@@ -53,7 +53,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.concurrent.futures.ResolvableFuture;
-import androidx.core.os.BuildCompat;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
@@ -258,7 +257,7 @@ public class ChecksumsTest {
     @Before
     public void onBefore() throws Exception {
         // b/331664452
-        Assume.assumeFalse(BuildCompat.isAtLeastV());
+        Assume.assumeFalse(Build.VERSION.SDK_INT >= 35);
         mContext = ApplicationProvider.getApplicationContext();
         mExecutor = Executors.newCachedThreadPool();
     }

@@ -36,5 +36,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.customview"
+    namespace = "androidx.customview"
 }

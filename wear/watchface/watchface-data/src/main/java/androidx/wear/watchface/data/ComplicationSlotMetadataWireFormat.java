@@ -24,14 +24,15 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.wearable.complications.ComplicationData;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
 import androidx.wear.watchface.complications.data.ComplicationExperimental;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -44,24 +45,20 @@ public final class ComplicationSlotMetadataWireFormat implements VersionedParcel
     int mId;
 
     @ParcelField(2)
-    @NonNull
-    int[] mComplicationBoundsType = new int[0];
+    int @NonNull [] mComplicationBoundsType = new int[0];
 
     @ParcelField(3)
-    @NonNull
-    RectF[] mComplicationBounds = new RectF[0];
+    RectF @NonNull [] mComplicationBounds = new RectF[0];
 
     @ParcelField(4)
     int mBoundsType;
 
     @ParcelField(5)
-    @NonNull
     @ComplicationData.ComplicationType
-    int[] mSupportedTypes = new int[0];
+    int @NonNull [] mSupportedTypes = new int[0];
 
     @ParcelField(6)
-    @Nullable
-    List<ComponentName> mDefaultDataSourcesToTry;
+    @Nullable List<ComponentName> mDefaultDataSourcesToTry;
 
     @ParcelField(7)
     int mFallbackSystemDataSource;
@@ -77,8 +74,7 @@ public final class ComplicationSlotMetadataWireFormat implements VersionedParcel
     boolean mFixedComplicationDataSource;
 
     @ParcelField(11)
-    @NonNull
-    Bundle mComplicationConfigExtras;
+    @NonNull Bundle mComplicationConfigExtras;
 
     // Not supported in library v1.0.
     @ParcelField(12)
@@ -92,14 +88,12 @@ public final class ComplicationSlotMetadataWireFormat implements VersionedParcel
 
     // Only valid for edge complications. Not supported in library v1.0.
     @ParcelField(14)
-    @Nullable
-    BoundingArcWireFormat mBoundingArc;
+    @Nullable BoundingArcWireFormat mBoundingArc;
 
     // This needs to be a list because VersionedParcelable appears not to be backwards compatible
     // when introducing new arrays.
     @ParcelField(value = 15, defaultValue = "null")
-    @Nullable
-    List<RectF> mComplicationMargins;
+    @Nullable List<RectF> mComplicationMargins;
 
     /** Used by VersionedParcelable. */
     ComplicationSlotMetadataWireFormat() {}
@@ -107,11 +101,11 @@ public final class ComplicationSlotMetadataWireFormat implements VersionedParcel
     @ComplicationExperimental
     public ComplicationSlotMetadataWireFormat(
             int id,
-            @NonNull int[] complicationBoundsType,
-            @NonNull RectF[] complicationBounds,
+            int @NonNull [] complicationBoundsType,
+            RectF @NonNull [] complicationBounds,
             @NonNull List<RectF> complicationMargins,
             int boundsType,
-            @NonNull @ComplicationData.ComplicationType int[] supportedTypes,
+            @ComplicationData.ComplicationType int @NonNull [] supportedTypes,
             @Nullable List<ComponentName> defaultDataSourcesToTry,
             int fallbackSystemDataSource,
             @ComplicationData.ComplicationType int defaultDataSourceType,
@@ -141,10 +135,10 @@ public final class ComplicationSlotMetadataWireFormat implements VersionedParcel
     // TODO(b/230364881): Deprecate when BoundingArc is no longer experimental.
     public ComplicationSlotMetadataWireFormat(
             int id,
-            @NonNull int[] complicationBoundsType,
-            @NonNull RectF[] complicationBounds,
+            int @NonNull [] complicationBoundsType,
+            RectF @NonNull [] complicationBounds,
             int boundsType,
-            @NonNull @ComplicationData.ComplicationType int[] supportedTypes,
+            @ComplicationData.ComplicationType int @NonNull [] supportedTypes,
             @Nullable List<ComponentName> defaultDataSourcesToTry,
             int fallbackSystemDataSource,
             @ComplicationData.ComplicationType int defaultDataSourceType,
@@ -175,10 +169,10 @@ public final class ComplicationSlotMetadataWireFormat implements VersionedParcel
     @Deprecated
     public ComplicationSlotMetadataWireFormat(
             int id,
-            @NonNull int[] complicationBoundsType,
-            @NonNull RectF[] complicationBounds,
+            int @NonNull [] complicationBoundsType,
+            RectF @NonNull [] complicationBounds,
             int boundsType,
-            @NonNull @ComplicationData.ComplicationType int[] supportedTypes,
+            @ComplicationData.ComplicationType int @NonNull [] supportedTypes,
             @Nullable List<ComponentName> defaultDataSourcesToTry,
             int fallbackSystemDataSource,
             @ComplicationData.ComplicationType int defaultDataSourceType,
@@ -202,18 +196,15 @@ public final class ComplicationSlotMetadataWireFormat implements VersionedParcel
         return mId;
     }
 
-    @NonNull
-    public int[] getComplicationBoundsType() {
+    public int @NonNull [] getComplicationBoundsType() {
         return mComplicationBoundsType;
     }
 
-    @NonNull
-    public RectF[] getComplicationBounds() {
+    public RectF @NonNull [] getComplicationBounds() {
         return mComplicationBounds;
     }
 
-    @Nullable
-    public List<RectF> getComplicationMargins() {
+    public @Nullable List<RectF> getComplicationMargins() {
         return mComplicationMargins;
     }
 
@@ -221,9 +212,8 @@ public final class ComplicationSlotMetadataWireFormat implements VersionedParcel
         return mBoundsType;
     }
 
-    @NonNull
     @ComplicationData.ComplicationType
-    public int[] getSupportedTypes() {
+    public int @NonNull [] getSupportedTypes() {
         return mSupportedTypes;
     }
 
@@ -231,8 +221,7 @@ public final class ComplicationSlotMetadataWireFormat implements VersionedParcel
      * Along with {@link #getFallbackSystemDataSource} this is the wire format for
      * DefaultComplicationDataSourcePolicy.
      */
-    @Nullable
-    public List<ComponentName> getDefaultDataSourcesToTry() {
+    public @Nullable List<ComponentName> getDefaultDataSourcesToTry() {
         return mDefaultDataSourcesToTry;
     }
 
@@ -287,14 +276,12 @@ public final class ComplicationSlotMetadataWireFormat implements VersionedParcel
         return mFixedComplicationDataSource;
     }
 
-    @NonNull
-    public Bundle getComplicationConfigExtras() {
+    public @NonNull Bundle getComplicationConfigExtras() {
         return mComplicationConfigExtras;
     }
 
-    @Nullable
     @ComplicationExperimental
-    public BoundingArcWireFormat getBoundingArc() {
+    public @Nullable BoundingArcWireFormat getBoundingArc() {
         return mBoundingArc;
     }
 

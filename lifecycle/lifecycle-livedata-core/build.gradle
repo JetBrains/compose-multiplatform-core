@@ -30,6 +30,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     api(libs.kotlinStdlib)
     implementation("androidx.arch.core:core-common:2.2.0")
     implementation("androidx.arch.core:core-runtime:2.2.0")
@@ -55,5 +56,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.lifecycle.livedata.core"
+    namespace = "androidx.lifecycle.livedata.core"
 }

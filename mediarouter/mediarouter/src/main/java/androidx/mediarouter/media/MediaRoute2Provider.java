@@ -399,9 +399,8 @@ class MediaRoute2Provider extends MediaRouteProvider {
     }
 
     abstract static class Callback {
-        public abstract void onSelectRoute(
-                @NonNull String routeDescriptorId, @MediaRouter.UnselectReason int reason);
-
+        public abstract void onSelectRoute(@NonNull String routeDescriptorId,
+                @MediaRouter.UnselectReason int reason);
         public abstract void onSelectFallbackRoute(@MediaRouter.UnselectReason int reason);
 
         public abstract void onReleaseController(@NonNull RouteController controller);

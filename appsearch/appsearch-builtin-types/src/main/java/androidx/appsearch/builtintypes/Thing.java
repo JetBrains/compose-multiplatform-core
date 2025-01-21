@@ -21,8 +21,10 @@ import android.net.Uri;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.appsearch.annotation.Document;
 import androidx.appsearch.app.AppSearchSchema.StringPropertyConfig;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.core.util.Preconditions;
 
 import java.util.ArrayList;
@@ -66,8 +68,10 @@ public class Thing {
     private final String mUrl;
 
     @Document.DocumentProperty
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     private final List<PotentialAction> mPotentialActions;
 
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     Thing(@NonNull String namespace, @NonNull String id, int documentScore,
             long creationTimestampMillis, long documentTtlMillis, @Nullable String name,
             @Nullable List<String> alternateNames, @Nullable String description,
@@ -148,6 +152,9 @@ public class Thing {
 
     /** Returns the URL for an image of this item. */
     @Nullable
+    // TODO(b/328672505): Discuss with other API reviewers or council whether this API should be
+    //  changed to return ImageObject instead for improved flexibility.
+    @ExperimentalAppSearchApi
     public String getImage() {
         return mImage;
     }
@@ -167,6 +174,7 @@ public class Thing {
 
     /** Returns the actions that can be taken on this object. */
     @NonNull
+    @ExperimentalAppSearchApi
     public List<PotentialAction> getPotentialActions() {
         return mPotentialActions;
     }
@@ -199,6 +207,7 @@ public class Thing {
         protected String mDescription;
         protected String mImage;
         protected String mUrl;
+        @OptIn(markerClass = ExperimentalAppSearchApi.class)
         protected List<PotentialAction> mPotentialActions = new ArrayList<>();
         private boolean mBuilt = false;
 
@@ -211,6 +220,7 @@ public class Thing {
             mCreationTimestampMillis = -1;
         }
 
+        @OptIn(markerClass = ExperimentalAppSearchApi.class)
         BuilderImpl(@NonNull Thing thing) {
             this(thing.getNamespace(), thing.getId());
             mDocumentScore = thing.getDocumentScore();
@@ -325,6 +335,7 @@ public class Thing {
 
         /** Sets the URL for an image of the item. */
         @NonNull
+        @ExperimentalAppSearchApi
         public T setImage(@Nullable String image) {
             resetIfBuilt();
             mImage = image;
@@ -355,6 +366,7 @@ public class Thing {
          * Add a new action to the list of potential actions for this document.
          */
         @NonNull
+        @ExperimentalAppSearchApi
         public T addPotentialAction(@NonNull PotentialAction newPotentialAction) {
             resetIfBuilt();
             Preconditions.checkNotNull(newPotentialAction);
@@ -364,6 +376,7 @@ public class Thing {
 
         /** Sets a list of potential actions for this document. */
         @NonNull
+        @ExperimentalAppSearchApi
         public T setPotentialActions(@Nullable List<PotentialAction> newPotentialActions) {
             resetIfBuilt();
             clearPotentialActions();
@@ -377,6 +390,7 @@ public class Thing {
          * Clear all the potential actions for this document.
          */
         @NonNull
+        @ExperimentalAppSearchApi
         public T clearPotentialActions() {
             resetIfBuilt();
             mPotentialActions.clear();

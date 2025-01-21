@@ -18,9 +18,10 @@ package androidx.wear.protolayout.expression.pipeline;
 
 import android.animation.TypeEvaluator;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * DynamicTypeAnimator interface defines the methods and properties of ProtoLayout animation.
@@ -44,8 +45,7 @@ public interface DynamicTypeAnimator {
      *
      * @return The type evaluator used for interpolation.
      */
-    @NonNull
-    TypeEvaluator<?> getTypeEvaluator();
+    @NonNull TypeEvaluator<?> getTypeEvaluator();
 
     /**
      * Sets the float values that this animation will animate between.
@@ -54,7 +54,7 @@ public interface DynamicTypeAnimator {
      * @throws IllegalArgumentException if this {@link DynamicTypeAnimator} is not configured with a
      *     suitable {@link TypeEvaluator} for float values (e.g., {@link FloatEvaluator}).
      */
-    void setFloatValues(@NonNull float... values);
+    void setFloatValues(float @NonNull ... values);
 
     /**
      * Sets the integer values that this animation will animate between.
@@ -64,7 +64,7 @@ public interface DynamicTypeAnimator {
      *     suitable {@link TypeEvaluator} for integer values (e.g., {@link IntEvaluator} or {@link
      *     ArgbEvaluator}).
      */
-    void setIntValues(@NonNull int... values);
+    void setIntValues(int @NonNull ... values);
 
     /**
      * Advances the animation to the specified time.
@@ -78,24 +78,21 @@ public interface DynamicTypeAnimator {
      *
      * @return The start value of the animation or null if value wasn't set.
      */
-    @Nullable
-    Object getStartValue();
+    @Nullable Object getStartValue();
 
     /**
      * Gets the end value of the animation.
      *
      * @return The end value of the animation.
      */
-    @Nullable
-    Object getEndValue();
+    @Nullable Object getEndValue();
 
     /**
      * Gets the last value of the animated property at the current time in the animation.
      *
      * @return The last calculated animated value or null if value wasn't set.
      */
-    @Nullable
-    Object getCurrentValue();
+    @Nullable Object getCurrentValue();
 
     /**
      * Gets the duration of the animation, in milliseconds.

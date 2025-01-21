@@ -54,5 +54,5 @@ android {
         consumerProguardFiles "proguard-rules.pro"
     }
 
-    namespace "androidx.sharetarget"
+    namespace = "androidx.sharetarget"
 }

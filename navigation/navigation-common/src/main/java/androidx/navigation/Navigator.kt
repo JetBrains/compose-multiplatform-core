@@ -15,9 +15,9 @@
  */
 package androidx.navigation
 
-import android.os.Bundle
 import androidx.annotation.CallSuper
 import androidx.navigation.Navigator.Name
+import androidx.savedstate.SavedState
 
 /**
  * Navigator defines a mechanism for navigating within an app.
@@ -167,7 +167,7 @@ public abstract class Navigator<D : NavDestination> {
     @Suppress("UNUSED_PARAMETER", "RedundantNullableReturnType")
     public open fun navigate(
         destination: D,
-        args: Bundle?,
+        args: SavedState?,
         navOptions: NavOptions?,
         navigatorExtras: Extras?
     ): NavDestination? = destination
@@ -215,10 +215,10 @@ public abstract class Navigator<D : NavDestination> {
     public open fun popBackStack(): Boolean = true
 
     /**
-     * Called to ask for a [Bundle] representing the Navigator's state. This will be restored in
+     * Called to ask for a [SavedState] representing the Navigator's state. This will be restored in
      * [onRestoreState].
      */
-    public open fun onSaveState(): Bundle? {
+    public open fun onSaveState(): SavedState? {
         return null
     }
 
@@ -231,7 +231,7 @@ public abstract class Navigator<D : NavDestination> {
      *
      * @param savedState The state previously saved
      */
-    public open fun onRestoreState(savedState: Bundle) {}
+    public open fun onRestoreState(savedState: SavedState) {}
 
     /**
      * Interface indicating that this class should be passed to its respective [Navigator] to enable

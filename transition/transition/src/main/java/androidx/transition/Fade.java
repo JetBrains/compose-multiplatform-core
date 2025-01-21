@@ -27,9 +27,10 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.content.res.TypedArrayUtils;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This transition tracks changes to the visibility of target views in the
@@ -145,9 +146,8 @@ public class Fade extends Visibility {
         return anim;
     }
 
-    @Nullable
     @Override
-    public Animator onAppear(@NonNull ViewGroup sceneRoot, @NonNull View view,
+    public @Nullable Animator onAppear(@NonNull ViewGroup sceneRoot, @NonNull View view,
             @Nullable TransitionValues startValues, @Nullable TransitionValues endValues) {
         if (DBG) {
             View startView = (startValues != null) ? startValues.view : null;
@@ -159,9 +159,8 @@ public class Fade extends Visibility {
         return createAnimation(view, startAlpha, 1);
     }
 
-    @Nullable
     @Override
-    public Animator onDisappear(@NonNull ViewGroup sceneRoot, @NonNull final View view,
+    public @Nullable Animator onDisappear(@NonNull ViewGroup sceneRoot, final @NonNull View view,
             @Nullable TransitionValues startValues, @Nullable TransitionValues endValues) {
         ViewUtils.saveNonTransitionAlpha(view);
         float startAlpha = getStartAlpha(startValues, 1);

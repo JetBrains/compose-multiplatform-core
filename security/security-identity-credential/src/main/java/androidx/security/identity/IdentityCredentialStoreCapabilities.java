@@ -18,7 +18,7 @@ package androidx.security.identity;
 
 import android.icu.util.Calendar;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.security.cert.X509Certificate;
 import java.util.Set;
@@ -107,8 +107,7 @@ public class IdentityCredentialStoreCapabilities {
      *
      * @return The supported document types or the empty set if any document type is supported.
      */
-    public @NonNull
-    Set<String> getSupportedDocTypes() {
+    public     @NonNull Set<String> getSupportedDocTypes() {
         throw new UnsupportedOperationException();
     }
 

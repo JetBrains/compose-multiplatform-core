@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Android Open Source Project
+ * Copyright 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 
 package androidx.compose.ui.text.platform
 
-import androidx.compose.ui.text.implementedInJetBrainsFork
+internal actual class SynchronizedObject
 
-@PublishedApi internal actual class SynchronizedObject
-
-internal actual fun createSynchronizedObject(): SynchronizedObject = implementedInJetBrainsFork()
+@Suppress("NOTHING_TO_INLINE")
+internal actual inline fun makeSynchronizedObject(ref: Any?) = SynchronizedObject()
 
 @PublishedApi
 internal actual inline fun <R> synchronized(lock: SynchronizedObject, block: () -> R): R = block()

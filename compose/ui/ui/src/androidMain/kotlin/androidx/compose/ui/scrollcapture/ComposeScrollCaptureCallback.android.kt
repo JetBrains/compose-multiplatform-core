@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.scrollcapture
 
-import android.graphics.BlendMode
 import android.graphics.Canvas as AndroidCanvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -25,11 +24,11 @@ import android.os.CancellationSignal
 import android.util.Log
 import android.view.ScrollCaptureCallback
 import android.view.ScrollCaptureSession
+import android.view.View
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.toAndroidRect
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.toComposeIntRect
@@ -64,6 +63,7 @@ internal class ComposeScrollCaptureCallback(
     private val viewportBoundsInWindow: IntRect,
     coroutineScope: CoroutineScope,
     private val listener: ScrollCaptureSessionListener,
+    private val composeView: View,
 ) : ScrollCaptureCallback {
     // Don't animate scrollByOffset calls.
     private val coroutineScope = coroutineScope + DisableAnimationMotionDurationScale
@@ -148,37 +148,31 @@ internal class ComposeScrollCaptureCallback(
             return IntRect.Zero
         }
 
-        // Draw a single frame of the content to a buffer that we can stamp out.
-        val coordinator =
-            checkNotNull(node.findCoordinatorToGetBounds()) {
-                "Could not find coordinator for semantics node."
-            }
-
-        val androidCanvas = session.surface.lockHardwareCanvas()
+        val canvas = session.surface.lockHardwareCanvas()
         try {
-            // Clear any pixels left over from a previous request.
-            androidCanvas.drawColor(Color.TRANSPARENT, BlendMode.CLEAR)
-
             if (DEBUG) {
-                androidCanvas.drawDebugBackground()
+                canvas.drawDebugBackground()
             }
-
-            val canvas = Canvas(androidCanvas)
+            canvas.save()
             canvas.translate(
-                dx = -viewportClippedRect.left.toFloat(),
-                dy = -viewportClippedRect.top.toFloat()
+                -viewportClippedRect.left.toFloat(),
+                -viewportClippedRect.top.toFloat()
             )
-            coordinator.draw(canvas, graphicsLayer = null)
+
+            // slide the viewPort over to make it window-relative
+            canvas.translate(
+                -viewportBoundsInWindow.left.toFloat(),
+                -viewportBoundsInWindow.top.toFloat()
+            )
+            // draw the content from the root view (DecorView) including the window background
+            composeView.rootView.draw(canvas)
 
             if (DEBUG) {
-                canvas.translate(
-                    dx = viewportClippedRect.left.toFloat(),
-                    dy = viewportClippedRect.top.toFloat(),
-                )
-                androidCanvas.drawDebugOverlay()
+                canvas.restore()
+                canvas.drawDebugOverlay()
             }
         } finally {
-            session.surface.unlockCanvasAndPost(androidCanvas)
+            session.surface.unlockCanvasAndPost(canvas)
         }
 
         // Translate back to "original" coordinates to report.

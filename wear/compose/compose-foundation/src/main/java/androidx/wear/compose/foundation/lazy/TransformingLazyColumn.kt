@@ -44,8 +44,10 @@ import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.IntrinsicMeasureScope
+import androidx.compose.ui.platform.LocalGraphicsContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.lazy.layout.LazyLayoutKeyIndexMap
 import androidx.wear.compose.foundation.rememberActiveFocusRequester
 import androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
@@ -89,6 +91,8 @@ fun TransformingLazyColumn(
     rotaryScrollableBehavior: RotaryScrollableBehavior? = RotaryScrollableDefaults.behavior(state),
     content: TransformingLazyColumnScope.() -> Unit
 ) {
+    val graphicsContext = LocalGraphicsContext.current
+
     TransformingLazyColumnImpl(
         modifier = modifier,
         state = state,
@@ -97,7 +101,9 @@ fun TransformingLazyColumn(
         measurementStrategyProvider = {
             TransformingLazyColumnContentPaddingMeasurementStrategy(
                 contentPadding = contentPadding,
-                intrinsicMeasureScope = this
+                intrinsicMeasureScope = this,
+                graphicsContext = graphicsContext,
+                itemAnimator = state.animator,
             )
         },
         flingBehavior = flingBehavior,
@@ -149,7 +155,7 @@ fun TransformingLazyColumn(
         flingBehavior = flingBehavior,
         userScrollEnabled = userScrollEnabled,
         rotaryScrollableBehavior = rotaryScrollableBehavior,
-        content = content,
+        content = content
     )
 }
 
@@ -222,6 +228,7 @@ internal fun TransformingLazyColumnImpl(
         itemProvider = itemProviderLambda,
         modifier =
             modifier
+                .then(state.animator.modifier)
                 .then(
                     if (rotaryScrollableBehavior != null && userScrollEnabled)
                         Modifier.rotaryScrollable(
@@ -294,7 +301,7 @@ internal class TransformingLazyColumnItemProvider(
 internal class NearestRangeKeyIndexMap(
     nearestRange: IntRange,
     intervalContent: LazyLayoutIntervalContent<*>
-) {
+) : LazyLayoutKeyIndexMap {
     private val map: ObjectIntMap<Any>
     private val keys: Array<Any?>
     private val keysStartIndex: Int
@@ -333,7 +340,7 @@ internal class NearestRangeKeyIndexMap(
         }
     }
 
-    fun getIndex(key: Any): Int = map.getOrElse(key) { -1 }
+    override fun getIndex(key: Any): Int = map.getOrElse(key) { -1 }
 
-    fun getKey(index: Int) = keys.getOrElse(index - keysStartIndex) { null }
+    override fun getKey(index: Int) = keys.getOrElse(index - keysStartIndex) { null }
 }

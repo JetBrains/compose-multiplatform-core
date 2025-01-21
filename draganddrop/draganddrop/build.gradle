@@ -43,10 +43,10 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 24
+        minSdk = 24
     }
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.draganddrop"
+    namespace = "androidx.draganddrop"
 }
 
 androidx {

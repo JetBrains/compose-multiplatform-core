@@ -21,8 +21,6 @@ import static androidx.annotation.Dimension.DP;
 import androidx.annotation.Dimension;
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
@@ -30,6 +28,9 @@ import androidx.wear.protolayout.expression.ProtoLayoutExperimental;
 import androidx.wear.protolayout.expression.RequiresSchemaVersion;
 import androidx.wear.protolayout.expression.VersionBuilders.VersionInfo;
 import androidx.wear.protolayout.proto.DeviceParametersProto;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -131,8 +132,7 @@ public final class DeviceParametersBuilders {
          * that uses features not available on schema version 1.0 , this can be used to
          * conditionally choose which feature to use.
          */
-        @NonNull
-        public VersionInfo getRendererSchemaVersion() {
+        public @NonNull VersionInfo getRendererSchemaVersion() {
             if (mImpl.hasRendererSchemaVersion()) {
                 return VersionInfo.fromProto(mImpl.getRendererSchemaVersion());
             } else {
@@ -142,8 +142,7 @@ public final class DeviceParametersBuilders {
 
         /** Gets renderer supported {@link Capabilities}. */
         @ProtoLayoutExperimental
-        @Nullable
-        public Capabilities getCapabilities() {
+        public @Nullable Capabilities getCapabilities() {
             if (mImpl.hasCapabilities()) {
                 return Capabilities.fromProto(mImpl.getCapabilities());
             } else {
@@ -153,23 +152,20 @@ public final class DeviceParametersBuilders {
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static DeviceParameters fromProto(
-                @NonNull DeviceParametersProto.DeviceParameters proto) {
+        public static @NonNull DeviceParameters fromProto(
+                DeviceParametersProto.@NonNull DeviceParameters proto) {
             return new DeviceParameters(proto);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public DeviceParametersProto.DeviceParameters toProto() {
+        public DeviceParametersProto.@NonNull DeviceParameters toProto() {
             return mImpl;
         }
 
         @Override
         @OptIn(markerClass = ProtoLayoutExperimental.class)
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "DeviceParameters{"
                     + "screenWidthDp="
                     + getScreenWidthDp()
@@ -200,16 +196,14 @@ public final class DeviceParametersBuilders {
 
             /** Sets width of the device's screen in DP. */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setScreenWidthDp(@Dimension(unit = DP) int screenWidthDp) {
+            public @NonNull Builder setScreenWidthDp(@Dimension(unit = DP) int screenWidthDp) {
                 mImpl.setScreenWidthDp(screenWidthDp);
                 return this;
             }
 
             /** Sets height of the device's screen in DP. */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setScreenHeightDp(@Dimension(unit = DP) int screenHeightDp) {
+            public @NonNull Builder setScreenHeightDp(@Dimension(unit = DP) int screenHeightDp) {
                 mImpl.setScreenHeightDp(screenHeightDp);
                 return this;
             }
@@ -219,8 +213,7 @@ public final class DeviceParametersBuilders {
              * Pixels (px = dp * density).
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setScreenDensity(
+            public @NonNull Builder setScreenDensity(
                     @FloatRange(from = 0.0, fromInclusive = false, toInclusive = false)
                             float screenDensity) {
                 mImpl.setScreenDensity(screenDensity);
@@ -232,8 +225,7 @@ public final class DeviceParametersBuilders {
              * display. This value is used to get from SP to DP (dp = sp * font_scale).
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setFontScale(
+            public @NonNull Builder setFontScale(
                     @FloatRange(from = 0.0, fromInclusive = false, toInclusive = false)
                             float fontScale) {
                 mImpl.setFontScale(fontScale);
@@ -242,8 +234,7 @@ public final class DeviceParametersBuilders {
 
             /** Sets the platform of the device. */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setDevicePlatform(@DevicePlatform int devicePlatform) {
+            public @NonNull Builder setDevicePlatform(@DevicePlatform int devicePlatform) {
                 mImpl.setDevicePlatform(
                         DeviceParametersProto.DevicePlatform.forNumber(devicePlatform));
                 return this;
@@ -251,8 +242,7 @@ public final class DeviceParametersBuilders {
 
             /** Sets the shape of the device's screen. */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setScreenShape(@ScreenShape int screenShape) {
+            public @NonNull Builder setScreenShape(@ScreenShape int screenShape) {
                 mImpl.setScreenShape(DeviceParametersProto.ScreenShape.forNumber(screenShape));
                 return this;
             }
@@ -263,8 +253,8 @@ public final class DeviceParametersBuilders {
              * conditionally choose which feature to use.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setRendererSchemaVersion(@NonNull VersionInfo rendererSchemaVersion) {
+            public @NonNull Builder setRendererSchemaVersion(
+                    @NonNull VersionInfo rendererSchemaVersion) {
                 mImpl.setRendererSchemaVersion(rendererSchemaVersion.toProto());
                 return this;
             }
@@ -272,15 +262,13 @@ public final class DeviceParametersBuilders {
             /** Sets renderer supported {@link Capabilities}. */
             @RequiresSchemaVersion(major = 1, minor = 200)
             @ProtoLayoutExperimental
-            @NonNull
-            public Builder setCapabilities(@NonNull Capabilities capabilities) {
+            public @NonNull Builder setCapabilities(@NonNull Capabilities capabilities) {
                 mImpl.setCapabilities(capabilities.toProto());
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public DeviceParameters build() {
+            public @NonNull DeviceParameters build() {
                 return DeviceParameters.fromProto(mImpl.build());
             }
         }
@@ -312,21 +300,19 @@ public final class DeviceParametersBuilders {
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static Capabilities fromProto(@NonNull DeviceParametersProto.Capabilities proto) {
+        public static @NonNull Capabilities fromProto(
+                DeviceParametersProto.@NonNull Capabilities proto) {
             return new Capabilities(proto);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public DeviceParametersProto.Capabilities toProto() {
+        public DeviceParametersProto.@NonNull Capabilities toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "Capabilities{"
                     + "minimumFreshnessLimitMillis="
                     + getMinimumFreshnessLimitMillis()
@@ -348,15 +334,14 @@ public final class DeviceParametersBuilders {
              * in unknown.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setMinimumFreshnessLimitMillis(long minimumFreshnessLimitMillis) {
+            public @NonNull Builder setMinimumFreshnessLimitMillis(
+                    long minimumFreshnessLimitMillis) {
                 mImpl.setMinimumFreshnessLimitMillis(minimumFreshnessLimitMillis);
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public Capabilities build() {
+            public @NonNull Capabilities build() {
                 return Capabilities.fromProto(mImpl.build());
             }
         }

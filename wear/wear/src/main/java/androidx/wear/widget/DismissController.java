@@ -18,11 +18,12 @@ package androidx.wear.widget;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.UiThread;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 @RestrictTo(Scope.LIBRARY)
 @UiThread
@@ -38,9 +39,9 @@ class DismissController {
         void onDismissed();
     }
 
-    @NonNull protected final Context mContext;
-    @NonNull protected final DismissibleFrameLayout mLayout;
-    @Nullable protected OnDismissListener mDismissListener;
+    protected final @NonNull Context mContext;
+    protected final @NonNull DismissibleFrameLayout mLayout;
+    protected @Nullable OnDismissListener mDismissListener;
 
     DismissController(@NonNull Context context, DismissibleFrameLayout layout) {
         mContext = context;

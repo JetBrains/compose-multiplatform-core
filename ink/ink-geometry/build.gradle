@@ -78,6 +78,7 @@ androidXMultiplatform {
         implementation(libs.espressoCore)
         implementation(libs.junit)
         implementation(libs.truth)
+	implementation("androidx.graphics:graphics-path:1.0.1")
       }
     }
   }

@@ -145,7 +145,9 @@ interface LazyListScope {
         key: Any? = null,
         contentType: Any? = null,
         content: @Composable LazyItemScope.(Int) -> Unit
-    )
+    ) {
+        item(key, contentType) { content.invoke(this, 0) }
+    }
 }
 
 /**

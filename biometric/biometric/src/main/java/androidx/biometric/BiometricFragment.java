@@ -286,8 +286,9 @@ public class BiometricFragment extends Fragment {
     @Override
     public void onStop() {
         super.onStop();
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
-                && !mViewModel.isConfirmingDeviceCredential()
+        // TODO(b/349214064): When removing BiometricFragment, leverage the client's lifecycle
+        //  observer to cancel authentication when the client enters the background.
+        if (mViewModel.isPromptShowing() && !mViewModel.isConfirmingDeviceCredential()
                 && !isChangingConfigurations()) {
             cancelAuthentication(BiometricFragment.CANCELED_FROM_INTERNAL);
         }

@@ -907,14 +907,22 @@ public abstract class MediaRouteProvider {
     /** Holds parameters for creating {@link RouteController}. */
     public static final class RouteControllerOptions {
         static final RouteControllerOptions EMPTY = new RouteControllerOptions.Builder().build();
-
+        private static final String KEY_CONTROL_HINTS = "controlHints";
+        private final Bundle mBundle;
         // The controlHints is passed by the client application for creating the route controller,
         // or {@code null} if the client has not provided control hints. The controlHints may be
         // provided by {@link android.media.MediaRouter2.OnGetControllerHintsListener}.
         private final Bundle mControlHints;
 
-        private RouteControllerOptions(Builder builder) {
-            mControlHints = (builder.mControlHints != null) ? builder.mControlHints : Bundle.EMPTY;
+        /* package */ RouteControllerOptions(Bundle bundle) {
+            mBundle = new Bundle(bundle);
+            Bundle controlHints = mBundle.getParcelable(KEY_CONTROL_HINTS);
+            mControlHints = (controlHints != null) ? controlHints : Bundle.EMPTY;
+        }
+
+        /** Returns the contents of this object represented as a bundle. */
+        /* package */ @NonNull Bundle asBundle() {
+            return mBundle;
         }
 
         @NonNull
@@ -924,19 +932,19 @@ public abstract class MediaRouteProvider {
 
         /** Builder for {@link RouteControllerOptions}. */
         public static final class Builder {
-            @Nullable private Bundle mControlHints;
+            private final Bundle mBundle = new Bundle();
 
             /** Sets controlHints passed by the client application. */
             @NonNull
             public Builder setControlHints(@Nullable Bundle controlHints) {
-                mControlHints = controlHints;
+                mBundle.putParcelable(KEY_CONTROL_HINTS, controlHints);
                 return this;
             }
 
             /** Builds the {@link RouteControllerOptions}. */
             @NonNull
-            public RouteControllerOptions build() {
-                return new RouteControllerOptions(this);
+            public  RouteControllerOptions build() {
+                return new RouteControllerOptions(mBundle);
             }
         }
     }

@@ -36,10 +36,10 @@ android {
     externalNativeBuild {
         cmake {
             path "src/androidMain/cpp/CMakeLists.txt"
-            version libs.versions.cmake.get()
+            version = libs.versions.cmake.get()
         }
     }
-    namespace "androidx.datastore.core"
+    namespace = "androidx.datastore.core"
 }
 
 androidXMultiplatform {

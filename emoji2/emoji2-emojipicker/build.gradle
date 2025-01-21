@@ -58,7 +58,7 @@ android {
         androidTest.assets.srcDirs += project.rootDir.absolutePath + "/../../golden/emoji2/emoji2-emojipicker"
     }
 
-    namespace "androidx.emoji2.emojipicker"
+    namespace = "androidx.emoji2.emojipicker"
     testOptions.unitTests.includeAndroidResources = true
 }
 

@@ -29,8 +29,8 @@ plugins {
 }
 
 android {
-    compileSdkVersion 35
-    namespace "androidx.appsearch.debugview.samples"
+    compileSdk = 35
+    namespace = "androidx.appsearch.debugview.samples"
 }
 
 dependencies {

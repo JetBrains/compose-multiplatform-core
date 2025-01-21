@@ -50,6 +50,7 @@ import androidx.glance.layout.WidthModifier
 import androidx.glance.unit.ColorProvider
 import androidx.glance.unit.Dimension
 import androidx.glance.unit.ResourceColorProvider
+import kotlin.math.round
 
 internal fun RemoteViews.translateEmittableImage(
     translationContext: TranslationContext,
@@ -65,6 +66,13 @@ internal fun RemoteViews.translateEmittableImage(
         else -> throw IllegalArgumentException("An unsupported ImageProvider type was used.")
     }
     element.colorFilterParams?.let { applyColorFilter(translationContext, this, it, viewDef) }
+
+    element.alpha?.let {
+        val alpha = it.coerceIn(0f, 1f) // sanitized
+        val convertedAlpha = round(alpha * 255).toInt().coerceIn(0, 255)
+        setImageViewImageAlpha(viewDef.mainViewId, /* alpha= */ convertedAlpha)
+    }
+
     applyModifiers(translationContext, this, element.modifier, viewDef)
 
     // If the content scale is Fit, the developer has expressed that they want the image to

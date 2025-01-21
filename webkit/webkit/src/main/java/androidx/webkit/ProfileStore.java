@@ -16,13 +16,14 @@
 
 package androidx.webkit;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.UiThread;
 import androidx.webkit.internal.ApiFeature;
 import androidx.webkit.internal.ProfileStoreImpl;
 import androidx.webkit.internal.WebViewFeatureInternal;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -49,10 +50,9 @@ public interface ProfileStore {
      *
      * @return ProfileStore instance to use for managing profiles.
      */
-    @NonNull
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    static ProfileStore getInstance() {
+    static @NonNull ProfileStore getInstance() {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.MULTI_PROFILE;
         if (feature.isSupportedByWebView()) {
             return ProfileStoreImpl.getInstance();
@@ -70,10 +70,9 @@ public interface ProfileStore {
      * @param name name of the profile to retrieve.
      * @return instance of {@link Profile} matching this name.
      */
-    @NonNull
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    Profile getOrCreateProfile(@NonNull String name);
+    @NonNull Profile getOrCreateProfile(@NonNull String name);
 
     /**
      * Returns a profile with the given name, if it exists.
@@ -84,10 +83,9 @@ public interface ProfileStore {
      * @param name the name of the profile to retrieve.
      * @return instance of {@link Profile} matching this name, null otherwise if there's no match.
      */
-    @Nullable
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    Profile getProfile(@NonNull String name);
+    @Nullable Profile getProfile(@NonNull String name);
 
     /**
      * Returns the names of all available profiles.
@@ -96,10 +94,9 @@ public interface ProfileStore {
      *
      * @return profile names as a list.
      */
-    @NonNull
     @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    List<String> getAllProfileNames();
+    @NonNull List<String> getAllProfileNames();
 
     /**
      * Deletes the profile data associated with the name.

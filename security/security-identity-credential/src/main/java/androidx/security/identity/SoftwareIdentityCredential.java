@@ -21,9 +21,10 @@ import android.icu.util.Calendar;
 import android.security.keystore.KeyProperties;
 import android.util.Pair;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.biometric.BiometricPrompt;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -118,12 +119,12 @@ class SoftwareIdentityCredential extends IdentityCredential {
     }
 
     @Override
-    public @NonNull byte[] delete(@NonNull byte[] challenge)  {
+    public byte @NonNull [] delete(byte @NonNull [] challenge)  {
         return CredentialData.delete(mContext, mCredentialName, challenge);
     }
 
     @Override
-    public @NonNull byte[] proveOwnership(@NonNull byte[] challenge)  {
+    public byte @NonNull [] proveOwnership(byte @NonNull [] challenge)  {
         return mData.proveOwnership(challenge);
     }
 
@@ -132,7 +133,7 @@ class SoftwareIdentityCredential extends IdentityCredential {
     // This only extracts the requested namespaces, not DocType or RequestInfo. We
     // can do this later if it's needed.
     private static HashMap<String, Collection<String>> parseRequestMessage(
-            @Nullable byte[] requestMessage) {
+            byte @Nullable [] requestMessage) {
         HashMap<String, Collection<String>> result = new HashMap<>();
 
         if (requestMessage == null) {
@@ -208,7 +209,7 @@ class SoftwareIdentityCredential extends IdentityCredential {
     }
 
     @Override
-    public void setSessionTranscript(@NonNull byte[] sessionTranscript) {
+    public void setSessionTranscript(byte @NonNull [] sessionTranscript) {
         if (mSessionTranscript != null) {
             throw new RuntimeException("SessionTranscript already set");
         }
@@ -253,8 +254,7 @@ class SoftwareIdentityCredential extends IdentityCredential {
     }
 
     @Override
-    public @NonNull
-    byte[] encryptMessageToReader(@NonNull byte[] messagePlaintext) {
+    public     byte @NonNull [] encryptMessageToReader(byte @NonNull [] messagePlaintext) {
         ensureSessionEncryptionKey();
         byte[] messageCiphertextAndAuthTag = null;
         try {
@@ -279,8 +279,7 @@ class SoftwareIdentityCredential extends IdentityCredential {
     }
 
     @Override
-    public @NonNull
-    byte[] decryptMessageFromReader(@NonNull byte[] messageCiphertext)
+    public     byte @NonNull [] decryptMessageFromReader(byte @NonNull [] messageCiphertext)
             throws MessageDecryptionException {
         ensureSessionEncryptionKey();
         ByteBuffer iv = ByteBuffer.allocate(12);
@@ -306,8 +305,7 @@ class SoftwareIdentityCredential extends IdentityCredential {
     }
 
     @Override
-    public @NonNull
-    Collection<X509Certificate> getCredentialKeyCertificateChain() {
+    public     @NonNull Collection<X509Certificate> getCredentialKeyCertificateChain() {
         return mData.getCredentialKeyCertificateChain();
     }
 
@@ -366,13 +364,12 @@ class SoftwareIdentityCredential extends IdentityCredential {
     }
 
     @Override
-    @Nullable
-    public BiometricPrompt.CryptoObject getCryptoObject() {
+    public BiometricPrompt.@Nullable CryptoObject getCryptoObject() {
         ensureCryptoObject();
         return mCryptoObject;
     }
 
-    private boolean hasEphemeralKeyInSessionTranscript(@NonNull byte[] sessionTranscript) {
+    private boolean hasEphemeralKeyInSessionTranscript(byte @NonNull [] sessionTranscript) {
         if (mEphemeralKeyPair == null) {
             return false;
         }
@@ -428,12 +425,11 @@ class SoftwareIdentityCredential extends IdentityCredential {
     }
 
 
-    @NonNull
     @Override
-    public ResultData getEntries(
-            @Nullable byte[] requestMessage,
-            @NonNull java.util.Map<String, Collection<String>> entriesToRequest,
-            @Nullable byte[] readerSignature)
+    public @NonNull ResultData getEntries(
+            byte @Nullable [] requestMessage,
+            java.util.@NonNull Map<String, Collection<String>> entriesToRequest,
+            byte @Nullable [] readerSignature)
             throws NoAuthenticationKeyAvailableException,
             InvalidReaderSignatureException, InvalidRequestMessageException,
             EphemeralPublicKeyNotFoundException {
@@ -694,15 +690,14 @@ class SoftwareIdentityCredential extends IdentityCredential {
     }
 
     @Override
-    public @NonNull
-    Collection<X509Certificate> getAuthKeysNeedingCertification() {
+    public     @NonNull Collection<X509Certificate> getAuthKeysNeedingCertification() {
         return mData.getAuthKeysNeedingCertification();
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public void storeStaticAuthenticationData(@NonNull X509Certificate authenticationKey,
-            @NonNull byte[] staticAuthData) throws UnknownAuthenticationKeyException {
+            byte @NonNull [] staticAuthData) throws UnknownAuthenticationKeyException {
         mData.storeStaticAuthenticationData(authenticationKey, null, staticAuthData);
     }
 
@@ -710,20 +705,19 @@ class SoftwareIdentityCredential extends IdentityCredential {
     public void storeStaticAuthenticationData(
             @NonNull X509Certificate authenticationKey,
             @NonNull Calendar expirationDate,
-            @NonNull byte[] staticAuthData)
+            byte @NonNull [] staticAuthData)
             throws UnknownAuthenticationKeyException {
         mData.storeStaticAuthenticationData(authenticationKey, expirationDate, staticAuthData);
     }
 
 
     @Override
-    public @NonNull
-    int[] getAuthenticationDataUsageCount() {
+    public     int @NonNull [] getAuthenticationDataUsageCount() {
         return mData.getAuthKeyUseCounts();
     }
 
     @Override
-    public @NonNull byte[] update(@NonNull PersonalizationData personalizationData) {
+    public byte @NonNull [] update(@NonNull PersonalizationData personalizationData) {
         try {
             String docType = mData.getDocType();
             Collection<X509Certificate> certificates = mData.getCredentialKeyCertificateChain();

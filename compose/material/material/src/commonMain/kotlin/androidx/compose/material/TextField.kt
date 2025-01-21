@@ -69,6 +69,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceAtLeast
+import androidx.compose.ui.unit.constrainHeight
+import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.util.fastFirst
@@ -897,7 +899,7 @@ private class TextFieldMeasurePolicy(
             textFieldWidth = textFieldWidth,
             labelWidth = labelWidth,
             placeholderWidth = placeholderWidth,
-            constraints = ZeroConstraints
+            constraints = Constraints()
         )
     }
 
@@ -947,7 +949,7 @@ private class TextFieldMeasurePolicy(
             leadingHeight = leadingHeight,
             trailingHeight = trailingHeight,
             placeholderHeight = placeholderHeight,
-            constraints = ZeroConstraints,
+            constraints = Constraints(),
             density = density,
             paddingValues = paddingValues
         )
@@ -971,7 +973,7 @@ private fun calculateWidth(
 ): Int {
     val middleSection = maxOf(textFieldWidth, labelWidth, placeholderWidth)
     val wrappedWidth = leadingWidth + middleSection + trailingWidth
-    return max(wrappedWidth, constraints.minWidth)
+    return constraints.constrainWidth(wrappedWidth)
 }
 
 private fun calculateHeight(
@@ -996,10 +998,8 @@ private fun calculateHeight(
         } else {
             topPaddingValue + inputFieldHeight + bottomPaddingValue
         }
-    return maxOf(
-        middleSectionHeight.roundToInt(),
-        max(leadingHeight, trailingHeight),
-        constraints.minHeight
+    return constraints.constrainHeight(
+        maxOf(middleSectionHeight.roundToInt(), leadingHeight, trailingHeight)
     )
 }
 

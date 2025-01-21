@@ -131,6 +131,7 @@ class CameraDisconnectTest(
     @Before
     fun setUp() {
         assumeTrue(CameraUtil.hasCameraWithLensFacing(lensFacing))
+        device.setOrientationNatural()
         CoreAppTestUtil.assumeCompatibleDevice()
         CoreAppTestUtil.assumeCanTestCameraDisconnect()
         ProcessCameraProvider.configureInstance(cameraConfig)

@@ -63,5 +63,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.window.java"
+    namespace = "androidx.window.java"
 }

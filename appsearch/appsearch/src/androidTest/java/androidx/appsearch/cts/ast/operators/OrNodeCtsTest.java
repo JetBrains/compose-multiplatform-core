@@ -25,13 +25,13 @@ import androidx.appsearch.ast.Node;
 import androidx.appsearch.ast.TextNode;
 import androidx.appsearch.ast.operators.AndNode;
 import androidx.appsearch.ast.operators.OrNode;
-import androidx.appsearch.flags.CheckFlagsRule;
-import androidx.appsearch.flags.DeviceFlagsValueProvider;
 import androidx.appsearch.flags.Flags;
-import androidx.appsearch.flags.RequiresFlagsEnabled;
+import androidx.appsearch.testutil.AppSearchTestUtils;
+import androidx.appsearch.testutil.flags.RequiresFlagsEnabled;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.RuleChain;
 
 import java.util.Collections;
 import java.util.List;
@@ -39,7 +39,7 @@ import java.util.List;
 @RequiresFlagsEnabled(Flags.FLAG_ENABLE_ABSTRACT_SYNTAX_TREES)
 public class OrNodeCtsTest {
     @Rule
-    public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
+    public final RuleChain mRuleChain = AppSearchTestUtils.createCommonTestRules();
 
     @Test
     public void testEquals_identical() {
@@ -179,23 +179,94 @@ public class OrNodeCtsTest {
     }
 
     @Test
+    public void testGetIndexOfChild_throwsOnNull() {
+        TextNode foo = new TextNode("foo");
+        TextNode bar = new TextNode("bar");
+        OrNode orNode = new OrNode(foo, bar);
+
+        assertThrows(NullPointerException.class, () -> orNode.getIndexOfChild(null));
+    }
+
+    @Test
+    public void testGetIndexOfChild_nodeExists_returnsIndex() {
+        TextNode foo = new TextNode("foo");
+        TextNode bar = new TextNode("bar");
+        OrNode orNode = new OrNode(foo, bar);
+
+        TextNode nodeToFind = new TextNode("bar");
+        assertThat(orNode.getIndexOfChild(nodeToFind)).isEqualTo(1);
+    }
+
+    @Test
+    public void testGetIndexOfChild_nodeDoesNotExist_returnsNegativeOne() {
+        TextNode foo = new TextNode("foo");
+        TextNode bar = new TextNode("bar");
+        OrNode orNode = new OrNode(foo, bar);
+
+        TextNode nodeToFind = new TextNode("baz");
+        assertThat(orNode.getIndexOfChild(nodeToFind)).isEqualTo(-1);
+    }
+
+    @Test
+    public void testGetIndexOfChild_multipleCopiesExist_returnsIndexOfFirst() {
+        TextNode fooOne = new TextNode("foo");
+        TextNode fooTwo = new TextNode("foo");
+        OrNode orNode = new OrNode(fooOne, fooTwo);
+
+        TextNode nodeToFind = new TextNode("foo");
+        assertThat(orNode.getIndexOfChild(nodeToFind)).isEqualTo(0);
+    }
+
+    @Test
     public void testRemoveChild_throwsIfListIsTooSmall() {
         TextNode foo = new TextNode("foo");
         TextNode bar = new TextNode("bar");
         OrNode orNode = new OrNode(foo, bar);
 
-        assertThrows(IllegalStateException.class, () -> orNode.removeChild(0));
+        assertThrows(IllegalStateException.class, () -> orNode.removeChild(new TextNode("foo")));
     }
 
     @Test
-    public void testRemoveChild_throwsIfIndexOutOfRange() {
+    public void testRemoveChild_throwsOnNull() {
         TextNode foo = new TextNode("foo");
         TextNode bar = new TextNode("bar");
         TextNode baz = new TextNode("baz");
         OrNode orNode = new OrNode(foo, bar, baz);
 
-        assertThrows(IllegalArgumentException.class, () -> orNode.removeChild(-1));
-        assertThrows(IllegalArgumentException.class, () -> orNode.removeChild(3));
+        assertThrows(NullPointerException.class, () -> orNode.removeChild(null));
+    }
+
+    @Test
+    public void testRemoveChild_nonExistentNode_listUnchanged() {
+        TextNode foo = new TextNode("foo");
+        TextNode bar = new TextNode("bar");
+        TextNode baz = new TextNode("baz");
+        OrNode orNode = new OrNode(foo, bar, baz);
+
+        assertThat(orNode.removeChild(new TextNode("bat"))).isFalse();
+        assertThat(orNode.getChildren()).containsExactly(foo, bar, baz).inOrder();
+    }
+
+    @Test
+    public void testRemoveChild_removesNode() {
+        TextNode foo = new TextNode("foo");
+        TextNode bar = new TextNode("bar");
+        TextNode baz = new TextNode("baz");
+        OrNode orNode = new OrNode(foo, bar, baz);
+
+        assertThat(orNode.removeChild(baz)).isTrue();
+        assertThat(orNode.getChildren()).containsExactly(foo, bar).inOrder();
+    }
+
+    @Test
+    public void testRemoveChild_multipleCopies_removesFirstCopy() {
+        TextNode foo = new TextNode("foo");
+        TextNode barOne = new TextNode("bar");
+        TextNode barTwo = new TextNode("bar");
+        OrNode orNode = new OrNode(barOne, foo, barTwo);
+
+        assertThat(orNode.removeChild(new TextNode("bar"))).isTrue();
+        assertThat(orNode.getChildren()).containsExactly(foo, barTwo).inOrder();
     }
 
     @Test

@@ -24,16 +24,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.ColorScheme
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.dynamicColorScheme
-import androidx.wear.compose.material3.isDynamicColorSchemeEnabled
 
 @Composable
 fun DynamicColorSchemeDemos() {
-    MaterialTheme(colorScheme = dynamicColorScheme(LocalContext.current)) {
-        val hasDynamicColors = isDynamicColorSchemeEnabled(LocalContext.current)
+    val dynamicColorScheme = dynamicColorScheme(LocalContext.current)
+    MaterialTheme(colorScheme = dynamicColorScheme ?: ColorScheme()) {
+        val hasDynamicColors = dynamicColorScheme != null
         ScalingLazyDemo {
             if (!hasDynamicColors) {
                 item { ListHeader { Text("Dynamic color is not available.") } }

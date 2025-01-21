@@ -20,28 +20,38 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material3.SplitButtonDefaults.InnerCornerSize
+import androidx.compose.material3.SplitButtonDefaults.OuterCornerSize
+import androidx.compose.material3.tokens.SplitButtonSmallTokens
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsEqualTo
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -303,4 +313,96 @@ class SplitButtonTest {
         rule.onNodeWithContentDescription("Leading Icon").assertIsDisplayed()
         rule.onNodeWithContentDescription("Trailing Icon").assertIsDisplayed()
     }
+
+    @Test
+    fun FilledSplitButton_contentPadding() {
+        lateinit var density: Density
+        var trailingButtonSize by mutableStateOf(Size(0f, 0f))
+
+        rule.setMaterialContent(lightColorScheme()) {
+            density = LocalDensity.current
+            SplitButtonLayout(
+                leadingButton = {
+                    SplitButtonDefaults.LeadingButton(
+                        onClick = { /* Do Nothing */ },
+                        modifier = Modifier.testTag("leading button"),
+                        enabled = false
+                    ) {
+                        Text(
+                            "My Button",
+                            modifier =
+                                Modifier.testTag(TextTag).semantics(mergeDescendants = true) {}
+                        )
+                    }
+                },
+                trailingButton = {
+                    SplitButtonDefaults.TrailingButton(
+                        onCheckedChange = {},
+                        checked = false,
+                        modifier =
+                            Modifier.layout { measurable, constraints ->
+                                    val placeable = measurable.measure(constraints)
+                                    val width = placeable.width
+                                    val height = placeable.height
+                                    trailingButtonSize = Size(width.toFloat(), height.toFloat())
+                                    layout(width, height) { placeable.place(0, 0) }
+                                }
+                                .testTag("trailing button"),
+                        enabled = false,
+                    ) {
+                        Icon(
+                            Icons.Outlined.KeyboardArrowDown,
+                            contentDescription = "Trailing Icon",
+                            modifier =
+                                Modifier.testTag(IconTag).semantics(mergeDescendants = true) {}
+                        )
+                    }
+                }
+            )
+        }
+
+        val trailingButtonTopStartPx = InnerCornerSize.toPx(trailingButtonSize, density)
+        val trailingButtonTopEndPx = OuterCornerSize.toPx(trailingButtonSize, density) / 2
+
+        val paddingPxCorrection =
+            CenterOpticallyCoefficient * (trailingButtonTopStartPx - trailingButtonTopEndPx)
+
+        val expectedTrailingButtonStartPadding =
+            with(density) {
+                SplitButtonSmallTokens.TrailingButtonLeadingSpace + paddingPxCorrection.toDp()
+            }
+
+        val expectedTrailingButtonEndPadding =
+            with(density) {
+                SplitButtonSmallTokens.TrailingButtonTrailingSpace - paddingPxCorrection.toDp()
+            }
+
+        val leadingButtonBounds = rule.onNodeWithTag("leading button").getUnclippedBoundsInRoot()
+
+        val textBounds = rule.onNodeWithTag(TextTag).getUnclippedBoundsInRoot()
+
+        val trailingButtonBounds = rule.onNodeWithTag("trailing button").getUnclippedBoundsInRoot()
+
+        val iconBounds = rule.onNodeWithTag(IconTag).getUnclippedBoundsInRoot()
+
+        (textBounds.left - leadingButtonBounds.left).assertIsEqualTo(
+            SplitButtonSmallTokens.LeadingButtonLeadingSpace,
+            "start padding for leading button"
+        )
+        (leadingButtonBounds.right - textBounds.right).assertIsEqualTo(
+            SplitButtonSmallTokens.LeadingButtonTrailingSpace,
+            "end padding for leading button"
+        )
+        (iconBounds.left - trailingButtonBounds.left).assertIsEqualTo(
+            expectedTrailingButtonStartPadding,
+            "start padding for trailing button"
+        )
+        (trailingButtonBounds.right - iconBounds.right).assertIsEqualTo(
+            expectedTrailingButtonEndPadding,
+            "end padding for trailing button"
+        )
+    }
 }
+
+private const val TextTag = "text tag"
+private const val IconTag = "icon tag"

@@ -21,7 +21,7 @@ import android.graphics.Point;
 import android.os.Bundle;
 import android.widget.Button;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /** {@link Activity} for testing gesture margins by tracking relative touch coordinates. */
 public class MarginTestActivity extends Activity {
@@ -39,8 +39,7 @@ public class MarginTestActivity extends Activity {
         });
     }
 
-    @Nullable
-    public Point getLastTouch() {
+    public @Nullable Point getLastTouch() {
         return mLastTouch;
     }
 }

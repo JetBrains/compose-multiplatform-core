@@ -28,8 +28,9 @@ import android.support.wearable.complications.ComplicationData;
 import android.text.Layout;
 import android.view.Gravity;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Layout helper for {@link ComplicationData#TYPE_SHORT_TEXT}.
@@ -77,9 +78,8 @@ public class ShortTextLayoutHelper extends LayoutHelper {
         }
     }
 
-    @NonNull
     @Override
-    public Layout.Alignment getShortTextAlignment() {
+    public Layout.@NonNull Alignment getShortTextAlignment() {
         getBounds(mBounds);
         if (isWideRectangle(mBounds) && hasIcon()) {
             // Wide rectangle with an icon available, align normal
@@ -120,9 +120,8 @@ public class ShortTextLayoutHelper extends LayoutHelper {
         // Text only, no-op here.
     }
 
-    @NonNull
     @Override
-    public Layout.Alignment getShortTitleAlignment() {
+    public Layout.@NonNull Alignment getShortTitleAlignment() {
         return getShortTextAlignment();
     }
 

@@ -21,10 +21,10 @@ plugins {
 }
 
 android {
-    namespace "androidx.tv.integration.macrobenchmark"
+    namespace = "androidx.tv.integration.macrobenchmark"
 
     defaultConfig {
-        minSdkVersion 24
+        minSdk = 24
     }
 
     buildTypes {

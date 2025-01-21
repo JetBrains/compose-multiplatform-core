@@ -17,6 +17,7 @@
 
 package androidx.compose.ui.node
 
+import androidx.collection.IntObjectMap
 import androidx.compose.testutils.TestViewConfiguration
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -2322,6 +2323,9 @@ internal class MockOwner(
     var layoutChangeCount = 0
 
     override val rootForTest: RootForTest
+        get() = TODO("Not yet implemented")
+
+    override val layoutNodes: IntObjectMap<LayoutNode>
         get() = TODO("Not yet implemented")
 
     override val hapticFeedBack: HapticFeedback

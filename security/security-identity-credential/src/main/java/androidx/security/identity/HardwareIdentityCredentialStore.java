@@ -20,9 +20,10 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -38,7 +39,7 @@ class HardwareIdentityCredentialStore extends IdentityCredentialStore {
     private boolean mIsDirectAccess = false;
 
     private HardwareIdentityCredentialStore(
-            @NonNull android.security.identity.IdentityCredentialStore store,
+            android.security.identity.@NonNull IdentityCredentialStore store,
             @NonNull Context context,
             boolean isDirectAccess) {
         mStore = store;
@@ -94,7 +95,7 @@ class HardwareIdentityCredentialStore extends IdentityCredentialStore {
 
     @SuppressWarnings("deprecation")
     @Override
-    public @NonNull String[] getSupportedDocTypes() {
+    public String @NonNull [] getSupportedDocTypes() {
         Set<String> docTypeSet = getCapabilities().getSupportedDocTypes();
         String[] docTypes = new String[docTypeSet.size()];
         int n = 0;
@@ -138,15 +139,14 @@ class HardwareIdentityCredentialStore extends IdentityCredentialStore {
 
     @SuppressWarnings("deprecation")
     @Override
-    public @Nullable byte[] deleteCredentialByName(@NonNull String credentialName) {
+    public byte @Nullable [] deleteCredentialByName(@NonNull String credentialName) {
         return mStore.deleteCredentialByName(credentialName);
     }
 
     SimpleIdentityCredentialStoreCapabilities mCapabilities = null;
 
     @Override
-    public @NonNull
-    IdentityCredentialStoreCapabilities getCapabilities() {
+    public     @NonNull IdentityCredentialStoreCapabilities getCapabilities() {
         LinkedHashSet<String> supportedDocTypesSet =
                 new LinkedHashSet<>(Arrays.asList(mStore.getSupportedDocTypes()));
 

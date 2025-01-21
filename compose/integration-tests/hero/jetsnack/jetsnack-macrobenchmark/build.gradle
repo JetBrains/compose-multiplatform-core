@@ -22,9 +22,9 @@ plugins {
 
 android {
     defaultConfig {
-        minSdkVersion 23
+        minSdk = 23
     }
-    namespace "androidx.compose.integration.hero.jetsnack.macrobenchmark"
+    namespace = "androidx.compose.integration.hero.jetsnack.macrobenchmark"
     targetProjectPath = ":compose:integration-tests:hero:jetsnack:jetsnack-macrobenchmark-target"
     experimentalProperties["android.experimental.self-instrumenting"] = true
 }
@@ -38,6 +38,7 @@ dependencies {
     implementation(project(":benchmark:benchmark-junit4"))
     implementation(project(":benchmark:benchmark-macro-junit4"))
     implementation(project(":internal-testutils-macrobenchmark"))
+    implementation(project(":compose:integration-tests:hero:hero-common:hero-common-macrobenchmark"))
     implementation(libs.testRules)
     implementation(libs.testExtJunit)
     implementation(libs.testCore)

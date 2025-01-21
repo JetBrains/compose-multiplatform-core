@@ -39,6 +39,6 @@ dependencies {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.compose.foundation.layout.benchmark"
+    compileSdk = 35
+    namespace = "androidx.compose.foundation.layout.benchmark"
 }

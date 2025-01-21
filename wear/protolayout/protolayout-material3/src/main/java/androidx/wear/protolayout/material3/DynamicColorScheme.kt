@@ -88,16 +88,17 @@ public fun dynamicColorScheme(
  * If enabled, and elements or [MaterialScope] are opted in to using dynamic theme, colors will
  * change whenever system theme changes.
  */
-public fun isDynamicColorSchemeEnabled(context: Context): Boolean {
-    val overlaySetting: String? =
-        Settings.Secure.getString(context.contentResolver, THEME_CUSTOMIZATION_OVERLAY_PACKAGES)
-    return (!overlaySetting.isNullOrEmpty() && overlaySetting != "{}")
-}
+public fun isDynamicColorSchemeEnabled(context: Context): Boolean =
+    // Guard this with API 35 check, as from that version, reading from the Setting is available.
+    // Before API 35, reading from the Setting will throw an exception, like in b/379652439 or
+    // b/372375270.
+    // Dynamic theming is usually available from API 36.
+    (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) &&
+        (Settings.Global.getInt(context.contentResolver, DYNAMIC_THEMING_SETTING_NAME, 0) == 1)
 
 /** This maps to `android.provider.Settings.Secure.THEME_CUSTOMIZATION_OVERLAY_PACKAGES`. */
 @VisibleForTesting
-internal const val THEME_CUSTOMIZATION_OVERLAY_PACKAGES: String =
-    "theme_customization_overlay_packages"
+internal const val DYNAMIC_THEMING_SETTING_NAME: String = "dynamic_color_theme_enabled"
 
 /** Retrieves the [ColorProp] from the dynamic system theme with the given color token name. */
 private fun getColorProp(context: Context, @ColorRes id: Int): ColorProp =

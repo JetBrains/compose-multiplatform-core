@@ -106,8 +106,8 @@ androidXMultiplatform {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.navigation3"
+    compileSdk = 35
+    namespace = "androidx.navigation3"
 }
 
 androidx {

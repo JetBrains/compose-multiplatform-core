@@ -26,7 +26,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
-import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -44,14 +43,15 @@ class SandboxedPdfLoaderTest {
             SandboxedPdfLoader(
                 context,
                 Dispatchers.Main,
-                FakePdfServiceConnection(context, isConnected = false) { isServiceConnected = true }
             )
+        loader.testingConnection =
+            FakePdfServiceConnection(context, isConnected = false) { isServiceConnected = true }
         val uri = TestUtils.openFile(context, PDF_DOCUMENT)
 
         val document = loader.openDocument(uri)
 
         val expectedPageCount = 3
-        assertTrue(isServiceConnected)
+        assertThat(isServiceConnected).isTrue()
         assertThat(document.uri == uri).isTrue()
         assertThat(document.pageCount == expectedPageCount).isTrue()
         assertThat(!document.isLinearized).isTrue()
@@ -65,8 +65,9 @@ class SandboxedPdfLoaderTest {
             SandboxedPdfLoader(
                 context,
                 Dispatchers.Main,
-                FakePdfServiceConnection(context, isConnected = true)
             )
+        loader.testingConnection = FakePdfServiceConnection(context, isConnected = true)
+
         val uri = TestUtils.openFile(context, PDF_DOCUMENT)
         runTest { loader.openDocument(uri) }
     }
@@ -78,7 +79,6 @@ class SandboxedPdfLoaderTest {
             SandboxedPdfLoader(
                 context,
                 Dispatchers.Main,
-                FakePdfServiceConnection(context, isConnected = false)
             )
 
         val uri = TestUtils.openFile(context, PASSWORD_PROTECTED_DOCUMENT)
@@ -93,12 +93,43 @@ class SandboxedPdfLoaderTest {
             SandboxedPdfLoader(
                 context,
                 Dispatchers.Main,
-                FakePdfServiceConnection(context, isConnected = false)
             )
 
         val uri = TestUtils.openFile(context, CORRUPTED_DOCUMENT)
 
         runTest { loader.openDocument(uri) }
+    }
+
+    /**
+     * Verify that 2 documents can be opened using the same loader, without corrupting the initial
+     * document's internal state. See b/380140417
+     */
+    @Test
+    fun openTwoDocuments_sharedLoader() = runTest {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val uri1 = TestUtils.openFile(context, "sample.pdf")
+        val uri2 = TestUtils.openFile(context, "alt_text.pdf")
+        val sharedLoader =
+            SandboxedPdfLoader(
+                context,
+                Dispatchers.Main,
+            )
+
+        // Grab some data from document1
+        val document1 = sharedLoader.openDocument(uri1)
+        assertThat(document1.pageCount).isEqualTo(3)
+        val doc1Page3Info = document1.getPageInfo(2)
+        val doc1Page1Text = document1.getPageContent(0)?.textContents?.get(0)?.text
+
+        // Load document2, make a basic assertion to verify it is indeed a different PDF document
+        val document2 = sharedLoader.openDocument(uri2)
+        assertThat(document2.pageCount).isEqualTo(1)
+
+        // Make sure we receive the same data from document1 as before, i.e. that loading document2
+        // did not in any way corrupt document1
+        assertThat(document1.getPageContent(0)?.textContents?.get(0)?.text).isEqualTo(doc1Page1Text)
+        assertThat(document1.getPageInfo(2).height).isEqualTo(doc1Page3Info.height)
+        assertThat(document1.getPageInfo(2).width).isEqualTo(doc1Page3Info.width)
     }
 
     companion object {

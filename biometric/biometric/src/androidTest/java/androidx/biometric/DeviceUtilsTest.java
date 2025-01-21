@@ -27,22 +27,21 @@ import android.os.Build;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
-import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class DeviceUtilsTest {
+    @Rule
+    public final MockitoRule mocks = MockitoJUnit.rule();
+
     @Mock private Context mContext;
     @Mock private Resources mResources;
-
-    @Before
-    public void setUp() {
-        MockitoAnnotations.initMocks(this);
-    }
 
     @Test
     public void testShouldUseFingerprintForCrypto() {

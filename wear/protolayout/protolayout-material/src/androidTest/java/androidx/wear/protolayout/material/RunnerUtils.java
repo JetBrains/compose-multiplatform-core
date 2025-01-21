@@ -24,13 +24,14 @@ import android.graphics.Bitmap;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.screenshot.AndroidXScreenshotTestRule;
 import androidx.test.screenshot.matchers.MSSIMMatcher;
 import androidx.wear.protolayout.LayoutElementBuilders.Layout;
 import androidx.wear.protolayout.material.test.GoldenTestActivity;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Map;

@@ -38,10 +38,10 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
 
-    namespace "androidx.wear.tiles.tooling"
+    namespace = "androidx.wear.tiles.tooling"
 }
 
 androidx {

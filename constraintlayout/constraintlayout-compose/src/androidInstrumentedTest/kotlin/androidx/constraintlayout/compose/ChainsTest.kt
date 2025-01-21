@@ -39,119 +39,136 @@ class ChainsTest {
     @get:Rule val rule = createComposeRule()
 
     @Test
-    fun testHorizontalPacked_withConstraintSet() {
-        val rootSize = 100.dp
-        val boxSizes = arrayOf(10.dp, 20.dp, 30.dp)
-        val margin = 10.dp
-        val constraintSet = ConstraintSet {
-            val box0 = createRefFor("box0")
-            val box1 = createRefFor("box1")
-            val box2 = createRefFor("box2")
-            val chain0 = createHorizontalChain(box0, box1, chainStyle = ChainStyle.Packed)
+    fun testHorizontalPacked_withConstraintSet(): Unit =
+        with(rule.density) {
+            val rootSizePx = 100f
+            val boxSizesPx = arrayOf(10, 20, 30)
+            val marginPx = 10
+            val constraintSet = ConstraintSet {
+                val box0 = createRefFor("box0")
+                val box1 = createRefFor("box1")
+                val box2 = createRefFor("box2")
+                val chain0 = createHorizontalChain(box0, box1, chainStyle = ChainStyle.Packed)
 
-            constrain(box0) {
-                width = Dimension.value(boxSizes[0])
-                height = Dimension.value(boxSizes[0])
-                centerVerticallyTo(parent)
+                constrain(box0) {
+                    width = Dimension.value(boxSizesPx[0].toDp())
+                    height = Dimension.value(boxSizesPx[0].toDp())
+                    centerVerticallyTo(parent)
+                }
+                constrain(box1) {
+                    width = Dimension.value(boxSizesPx[1].toDp())
+                    height = Dimension.value(boxSizesPx[1].toDp())
+                    centerVerticallyTo(box0)
+                }
+                constrain(box2) {
+                    width = Dimension.value(boxSizesPx[2].toDp())
+                    height = Dimension.value(boxSizesPx[2].toDp())
+                    top.linkTo(parent.top, marginPx.toDp())
+                    start.linkTo(parent.start, marginPx.toDp())
+                }
+                constrain(chain0) { start.linkTo(box2.end, marginPx.toDp()) }
             }
-            constrain(box1) {
-                width = Dimension.value(boxSizes[1])
-                height = Dimension.value(boxSizes[1])
-                centerVerticallyTo(box0)
+            rule.setContent {
+                ConstraintLayout(
+                    modifier = Modifier.size(rootSizePx.toDp()),
+                    constraintSet = constraintSet
+                ) {
+                    Box(modifier = Modifier.background(Color.Red).layoutTestId("box0"))
+                    Box(modifier = Modifier.background(Color.Blue).layoutTestId("box1"))
+                    Box(modifier = Modifier.background(Color.Green).layoutTestId("box2"))
+                }
             }
-            constrain(box2) {
-                width = Dimension.value(boxSizes[2])
-                height = Dimension.value(boxSizes[2])
-                top.linkTo(parent.top, margin)
-                start.linkTo(parent.start, margin)
-            }
-            constrain(chain0) { start.linkTo(box2.end, margin) }
+            rule.waitForIdle()
+
+            val spaceForChain = rootSizePx - boxSizesPx[2] - (marginPx * 2)
+            val spaceAroundChain = spaceForChain - boxSizesPx[0] - boxSizesPx[1]
+            val spaceAtLeftOfChain = spaceAroundChain * 0.5f
+            val offsetFromBox2 = marginPx + boxSizesPx[2] + marginPx
+
+            val box0Left = offsetFromBox2 + spaceAtLeftOfChain
+            val box0Top = (rootSizePx - boxSizesPx[0]) * 0.5f
+
+            val box1Left = box0Left + boxSizesPx[0]
+            val box1Top = box0Top - ((boxSizesPx[1] - boxSizesPx[0]) * 0.5f)
+
+            rule
+                .onNodeWithTag("box0")
+                .assertPositionInRootIsEqualTo(box0Left.toDp(), box0Top.toDp())
+            rule
+                .onNodeWithTag("box1")
+                .assertPositionInRootIsEqualTo(box1Left.toDp(), box1Top.toDp())
+            rule
+                .onNodeWithTag("box2")
+                .assertPositionInRootIsEqualTo(marginPx.toDp(), marginPx.toDp())
         }
-        rule.setContent {
-            ConstraintLayout(modifier = Modifier.size(rootSize), constraintSet = constraintSet) {
-                Box(modifier = Modifier.background(Color.Red).layoutTestId("box0"))
-                Box(modifier = Modifier.background(Color.Blue).layoutTestId("box1"))
-                Box(modifier = Modifier.background(Color.Green).layoutTestId("box2"))
-            }
-        }
-        rule.waitForIdle()
-
-        val spaceForChain = rootSize - boxSizes[2] - (margin * 2)
-        val spaceAroundChain = spaceForChain - boxSizes[0] - boxSizes[1]
-        val spaceAtLeftOfChain = spaceAroundChain * 0.5f
-        val offsetFromBox2 = margin + boxSizes[2] + margin
-
-        val box0Left = offsetFromBox2 + spaceAtLeftOfChain
-        val box0Top = (rootSize - boxSizes[0]) * 0.5f
-
-        val box1Left = box0Left + boxSizes[0] + 0.5.dp // 0.5dp, compensate for a small solver error
-        val box1Top = box0Top - ((boxSizes[1] - boxSizes[0]) * 0.5f)
-
-        rule.onNodeWithTag("box0").assertPositionInRootIsEqualTo(box0Left, box0Top)
-        rule.onNodeWithTag("box1").assertPositionInRootIsEqualTo(box1Left, box1Top)
-        rule.onNodeWithTag("box2").assertPositionInRootIsEqualTo(margin, margin)
-    }
 
     @Test
-    fun testHorizontalPacked_withModifier() {
-        val rootSize = 100.dp
-        val boxSizes = arrayOf(10.dp, 20.dp, 30.dp)
-        val margin = 10.dp
-        rule.setContent {
-            ConstraintLayout(Modifier.background(Color.LightGray).size(rootSize)) {
-                val (box0, box1, box2) = createRefs()
-                val chain0 = createHorizontalChain(box0, box1, chainStyle = ChainStyle.Packed)
-                constrain(chain0) { start.linkTo(box2.end, margin) }
-                Box(
-                    modifier =
-                        Modifier.background(Color.Red)
-                            .constrainAs(box0) {
-                                width = Dimension.value(boxSizes[0])
-                                height = Dimension.value(boxSizes[0])
-                                centerVerticallyTo(parent)
-                            }
-                            .layoutTestId("box0")
-                )
-                Box(
-                    modifier =
-                        Modifier.background(Color.Blue)
-                            .constrainAs(box1) {
-                                width = Dimension.value(boxSizes[1])
-                                height = Dimension.value(boxSizes[1])
-                                centerVerticallyTo(box0)
-                            }
-                            .layoutTestId("box1")
-                )
-                Box(
-                    modifier =
-                        Modifier.background(Color.Green)
-                            .constrainAs(box2) {
-                                width = Dimension.value(boxSizes[2])
-                                height = Dimension.value(boxSizes[2])
-                                top.linkTo(parent.top, margin)
-                                start.linkTo(parent.start, margin)
-                            }
-                            .layoutTestId("box2")
-                )
+    fun testHorizontalPacked_withModifier(): Unit =
+        with(rule.density) {
+            val rootSizePx = 100f
+            val boxSizesPx = arrayOf(10, 20, 30)
+            val marginPx = 10f
+            rule.setContent {
+                ConstraintLayout(Modifier.background(Color.LightGray).size(rootSizePx.toDp())) {
+                    val (box0, box1, box2) = createRefs()
+                    val chain0 = createHorizontalChain(box0, box1, chainStyle = ChainStyle.Packed)
+                    constrain(chain0) { start.linkTo(box2.end, marginPx.toDp()) }
+                    Box(
+                        modifier =
+                            Modifier.background(Color.Red)
+                                .constrainAs(box0) {
+                                    width = Dimension.value(boxSizesPx[0].toDp())
+                                    height = Dimension.value(boxSizesPx[0].toDp())
+                                    centerVerticallyTo(parent)
+                                }
+                                .layoutTestId("box0")
+                    )
+                    Box(
+                        modifier =
+                            Modifier.background(Color.Blue)
+                                .constrainAs(box1) {
+                                    width = Dimension.value(boxSizesPx[1].toDp())
+                                    height = Dimension.value(boxSizesPx[1].toDp())
+                                    centerVerticallyTo(box0)
+                                }
+                                .layoutTestId("box1")
+                    )
+                    Box(
+                        modifier =
+                            Modifier.background(Color.Green)
+                                .constrainAs(box2) {
+                                    width = Dimension.value(boxSizesPx[2].toDp())
+                                    height = Dimension.value(boxSizesPx[2].toDp())
+                                    top.linkTo(parent.top, marginPx.toDp())
+                                    start.linkTo(parent.start, marginPx.toDp())
+                                }
+                                .layoutTestId("box2")
+                    )
+                }
             }
+            rule.waitForIdle()
+
+            val spaceForChain = rootSizePx - boxSizesPx[2] - (marginPx * 2)
+            val spaceAroundChain = spaceForChain - boxSizesPx[0] - boxSizesPx[1]
+            val spaceAtLeftOfChain = spaceAroundChain * 0.5f
+            val offsetFromBox2 = marginPx + boxSizesPx[2] + marginPx
+
+            val box0Left = offsetFromBox2 + spaceAtLeftOfChain
+            val box0Top = (rootSizePx - boxSizesPx[0]) * 0.5f
+
+            val box1Left = box0Left + boxSizesPx[0]
+            val box1Top = box0Top - ((boxSizesPx[1] - boxSizesPx[0]) * 0.5f)
+
+            rule
+                .onNodeWithTag("box0")
+                .assertPositionInRootIsEqualTo(box0Left.toDp(), box0Top.toDp())
+            rule
+                .onNodeWithTag("box1")
+                .assertPositionInRootIsEqualTo(box1Left.toDp(), box1Top.toDp())
+            rule
+                .onNodeWithTag("box2")
+                .assertPositionInRootIsEqualTo(marginPx.toDp(), marginPx.toDp())
         }
-        rule.waitForIdle()
-
-        val spaceForChain = rootSize - boxSizes[2] - (margin * 2)
-        val spaceAroundChain = spaceForChain - boxSizes[0] - boxSizes[1]
-        val spaceAtLeftOfChain = spaceAroundChain * 0.5f
-        val offsetFromBox2 = margin + boxSizes[2] + margin
-
-        val box0Left = offsetFromBox2 + spaceAtLeftOfChain
-        val box0Top = (rootSize - boxSizes[0]) * 0.5f
-
-        val box1Left = box0Left + boxSizes[0] + 0.5.dp // 0.5dp, compensate for a small solver error
-        val box1Top = box0Top - ((boxSizes[1] - boxSizes[0]) * 0.5f)
-
-        rule.onNodeWithTag("box0").assertPositionInRootIsEqualTo(box0Left, box0Top)
-        rule.onNodeWithTag("box1").assertPositionInRootIsEqualTo(box1Left, box1Top)
-        rule.onNodeWithTag("box2").assertPositionInRootIsEqualTo(margin, margin)
-    }
 
     @Test
     fun testHorizontalPacked_withMargins() {

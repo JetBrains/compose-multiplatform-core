@@ -26,7 +26,6 @@ import static java.lang.Integer.MAX_VALUE;
 
 import android.icu.util.ULocale;
 
-import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.wear.protolayout.expression.AppDataKey;
 import androidx.wear.protolayout.expression.DynamicBuilders;
@@ -37,6 +36,7 @@ import androidx.wear.protolayout.expression.pipeline.DynamicTypeEvaluator.Evalua
 import androidx.wear.protolayout.expression.proto.DynamicProto;
 import androidx.wear.protolayout.expression.proto.FixedProto;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -153,21 +153,18 @@ public class DynamicTypeEvaluatorTest {
         }
     }
 
-    @NonNull
-    private static DynamicTypeBindingRequest createSingleNodeDynamicBoolRequest(
+    private static @NonNull DynamicTypeBindingRequest createSingleNodeDynamicBoolRequest(
             ArrayList<Boolean> results) {
         return createDynamicBoolRequest(DynamicBool.from(new AppDataKey<>("key")), results);
     }
 
-    @NonNull
-    private static DynamicTypeBindingRequest createDynamicBoolRequest(
+    private static @NonNull DynamicTypeBindingRequest createDynamicBoolRequest(
             DynamicBuilders.DynamicBool dynamicBool, ArrayList<Boolean> results) {
         return DynamicTypeBindingRequest.forDynamicBool(
                 dynamicBool, new MainThreadExecutor(), new AddToListCallback<>(results));
     }
 
-    @NonNull
-    private static DynamicTypeBindingRequest createExpressionWithUnrecognizedEnum(
+    private static @NonNull DynamicTypeBindingRequest createExpressionWithUnrecognizedEnum(
             ArrayList<Integer> results) {
         return DynamicTypeBindingRequest.forDynamicInt32Internal(
                 DynamicProto.DynamicInt32.newBuilder()
@@ -185,8 +182,8 @@ public class DynamicTypeEvaluatorTest {
                 new AddToListCallback<Integer>(results));
     }
 
-    @NonNull
-    private static DynamicTypeBindingRequest createSingleNodeDynamicStringFromTimePlatformRequest(
+    private static @NonNull DynamicTypeBindingRequest
+                createSingleNodeDynamicStringFromTimePlatformRequest(
             ArrayList<String> results) {
         return DynamicTypeBindingRequest.forDynamicString(
                 DynamicBuilders.DynamicInstant.platformTimeWithSecondsPrecision()

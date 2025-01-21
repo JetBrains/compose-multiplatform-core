@@ -20,8 +20,6 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
@@ -30,6 +28,9 @@ import androidx.versionedparcelable.VersionedParcelize;
 import androidx.wear.watchface.data.IdAndComplicationDataWireFormat;
 import androidx.wear.watchface.data.RenderParametersWireFormat;
 import androidx.wear.watchface.style.data.UserStyleWireFormat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -43,8 +44,7 @@ import java.util.List;
 public class WatchFaceRenderParams implements VersionedParcelable, Parcelable {
     /** The {@link RenderParametersWireFormat} to render with. */
     @ParcelField(1)
-    @NonNull
-    RenderParametersWireFormat mRenderParametersWireFormats;
+    @NonNull RenderParametersWireFormat mRenderParametersWireFormats;
 
     /** The UTC time in milliseconds since the epoch to render with. */
     @ParcelField(3)
@@ -55,15 +55,13 @@ public class WatchFaceRenderParams implements VersionedParcelable, Parcelable {
      * instead.
      */
     @ParcelField(5)
-    @Nullable
-    UserStyleWireFormat mUserStyle;
+    @Nullable UserStyleWireFormat mUserStyle;
 
     /**
      * The complications to render with. If null then the current complication data is used instead.
      */
     @ParcelField(100)
-    @Nullable
-    List<IdAndComplicationDataWireFormat> mIdAndComplicationDatumWireFormats;
+    @Nullable List<IdAndComplicationDataWireFormat> mIdAndComplicationDatumWireFormats;
 
     /** Used by VersionedParcelable. */
     WatchFaceRenderParams() {}
@@ -79,8 +77,7 @@ public class WatchFaceRenderParams implements VersionedParcelable, Parcelable {
         mIdAndComplicationDatumWireFormats = idAndComplicationDatumWireFormats;
     }
 
-    @NonNull
-    public RenderParametersWireFormat getRenderParametersWireFormat() {
+    public @NonNull RenderParametersWireFormat getRenderParametersWireFormat() {
         return mRenderParametersWireFormats;
     }
 
@@ -89,13 +86,11 @@ public class WatchFaceRenderParams implements VersionedParcelable, Parcelable {
         return mCalendarTimeMillis;
     }
 
-    @Nullable
-    public UserStyleWireFormat getUserStyle() {
+    public @Nullable UserStyleWireFormat getUserStyle() {
         return mUserStyle;
     }
 
-    @Nullable
-    public List<IdAndComplicationDataWireFormat> getIdAndComplicationDatumWireFormats() {
+    public @Nullable List<IdAndComplicationDataWireFormat> getIdAndComplicationDatumWireFormats() {
         return mIdAndComplicationDatumWireFormats;
     }
 

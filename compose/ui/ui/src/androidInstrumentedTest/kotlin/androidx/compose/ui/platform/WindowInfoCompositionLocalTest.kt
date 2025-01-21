@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.focus.setFocusableContent
 import androidx.compose.ui.graphics.toComposeIntRect
@@ -310,6 +311,7 @@ class WindowInfoCompositionLocalTest {
     fun windowInfo_containerSize_viewCreatedWithApplicationContext() {
         // Arrange.
         var containerSize = IntSize.Zero
+        var drawCount = 0
         var recompositions = 0
         val activity = rule.activity
 
@@ -317,7 +319,7 @@ class WindowInfoCompositionLocalTest {
             val composeView =
                 ComposeView(activity.applicationContext).apply {
                     setContent {
-                        BasicText("Main Window")
+                        BasicText("Main Window", Modifier.drawBehind { drawCount++ })
                         val windowInfo = LocalWindowInfo.current
                         containerSize = windowInfo.containerSize
                         recompositions++
@@ -329,8 +331,7 @@ class WindowInfoCompositionLocalTest {
             rule.activity.setContentView(frameLayout)
         }
 
-        // Act.
-        rule.waitForIdle()
+        rule.waitUntil { drawCount == 1 }
 
         val expectedWindowSize =
             WindowMetricsCalculator.getOrCreate()

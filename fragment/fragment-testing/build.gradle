@@ -62,5 +62,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.fragment.testing"
+    namespace = "androidx.fragment.testing"
 }

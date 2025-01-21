@@ -21,6 +21,7 @@ package androidx.compose.ui.input.pointer
 import android.view.InputDevice
 import android.view.KeyEvent as AndroidKeyEvent
 import android.view.MotionEvent
+import androidx.collection.IntObjectMap
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.Autofill
@@ -2844,6 +2845,9 @@ private class TestOwner : Owner {
     override fun requestFocus(): Boolean = false
 
     override val rootForTest: RootForTest
+        get() = TODO("Not yet implemented")
+
+    override val layoutNodes: IntObjectMap<LayoutNode>
         get() = TODO("Not yet implemented")
 
     override val hapticFeedBack: HapticFeedback

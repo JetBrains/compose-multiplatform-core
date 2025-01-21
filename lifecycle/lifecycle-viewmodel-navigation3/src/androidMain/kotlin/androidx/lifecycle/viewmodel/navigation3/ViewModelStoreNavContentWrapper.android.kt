@@ -35,10 +35,10 @@ import androidx.lifecycle.viewmodel.MutableCreationExtras
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.NavContentWrapper
-import androidx.navigation3.Record
+import androidx.navigation3.NavRecord
 
 /**
- * Provides the content of a [Record] with a [ViewModelStoreOwner] and provides that
+ * Provides the content of a [NavRecord] with a [ViewModelStoreOwner] and provides that
  * [ViewModelStoreOwner] as a [LocalViewModelStoreOwner] so that it is available within the content.
  */
 public object ViewModelStoreNavContentWrapper : NavContentWrapper {
@@ -51,7 +51,7 @@ public object ViewModelStoreNavContentWrapper : NavContentWrapper {
     }
 
     @Composable
-    override fun <T : Any> WrapContent(record: Record<T>) {
+    override fun <T : Any> WrapContent(record: NavRecord<T>) {
         val key = record.key
         val recordViewModelStoreProvider = viewModel { RecordViewModel() }
         val viewModelStore = recordViewModelStoreProvider.viewModelStoreForKey(key)

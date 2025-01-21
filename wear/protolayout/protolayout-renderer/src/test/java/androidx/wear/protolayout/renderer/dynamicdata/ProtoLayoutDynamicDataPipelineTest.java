@@ -37,8 +37,6 @@ import android.graphics.drawable.AnimatedVectorDrawable;
 import android.graphics.drawable.Drawable;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.vectordrawable.graphics.drawable.SeekableAnimatedVectorDrawable;
@@ -93,6 +91,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Range;
 import com.google.common.truth.Expect;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -1050,16 +1050,14 @@ public class ProtoLayoutDynamicDataPipelineTest {
         expect.that(quotaManager.isAllQuotaReleased()).isTrue();
     }
 
-    @NonNull
-    private static Trigger conditionTrigger(DynamicBool dynamicBool) {
+    private static @NonNull Trigger conditionTrigger(DynamicBool dynamicBool) {
         return Trigger.newBuilder()
                 .setOnConditionMetTrigger(
                         OnConditionMetTrigger.newBuilder().setCondition(dynamicBool).build())
                 .build();
     }
 
-    @NonNull
-    private static DynamicBool dynamicBool(String boolStateKey) {
+    private static @NonNull DynamicBool dynamicBool(String boolStateKey) {
         return DynamicBool.newBuilder()
                 .setStateSource(StateBoolSource.newBuilder().setSourceKey(boolStateKey).build())
                 .build();
@@ -1691,16 +1689,15 @@ public class ProtoLayoutDynamicDataPipelineTest {
         expect.that(quotaManager.isAllQuotaReleased()).isTrue();
     }
 
-    @NonNull
-    private DynamicFloat animatableFixedFloat(float from, float to) {
+    private @NonNull DynamicFloat animatableFixedFloat(float from, float to) {
         return DynamicFloat.newBuilder()
                 .setAnimatableFixed(
                         AnimatableFixedFloat.newBuilder().setFromValue(from).setToValue(to))
                 .build();
     }
 
-    @NonNull
-    private DynamicFloat animatableFixedFloat(float from, float to, int duration, int delay) {
+    private @NonNull DynamicFloat animatableFixedFloat(float from, float to, int duration,
+            int delay) {
         return DynamicFloat.newBuilder()
                 .setAnimatableFixed(
                         AnimatableFixedFloat.newBuilder()
@@ -1717,8 +1714,7 @@ public class ProtoLayoutDynamicDataPipelineTest {
                 .build();
     }
 
-    @NonNull
-    private DynamicFloat animatableFixedFloat(
+    private @NonNull DynamicFloat animatableFixedFloat(
             float from, float to, int duration, int delay, int repeatDelay, int iterations) {
         AnimationParameters alternateParameters =
                 AnimationParameters.newBuilder().setDelayMillis(repeatDelay).build();
@@ -1749,16 +1745,14 @@ public class ProtoLayoutDynamicDataPipelineTest {
                 .build();
     }
 
-    @NonNull
-    private DynamicColor animatableFixedColor(int from, int to) {
+    private @NonNull DynamicColor animatableFixedColor(int from, int to) {
         return DynamicColor.newBuilder()
                 .setAnimatableFixed(
                         AnimatableFixedColor.newBuilder().setFromArgb(from).setToArgb(to).build())
                 .build();
     }
 
-    @NonNull
-    private ProtoLayoutDynamicDataPipeline initPipelineWithAllAnimations(
+    private @NonNull ProtoLayoutDynamicDataPipeline initPipelineWithAllAnimations(
             List<DynamicFloat> dynamicFloats,
             @Nullable DynamicFloat boundProgress,
             @Nullable SeekableAnimatedVectorDrawable seekableDrawable,
@@ -1773,8 +1767,7 @@ public class ProtoLayoutDynamicDataPipelineTest {
                 /* results= */ new ArrayList<>());
     }
 
-    @NonNull
-    private ProtoLayoutDynamicDataPipeline initPipelineWithAllAnimations(
+    private @NonNull ProtoLayoutDynamicDataPipeline initPipelineWithAllAnimations(
             @NonNull List<DynamicFloat> dynamicFloats,
             @Nullable DynamicFloat boundProgress,
             @Nullable SeekableAnimatedVectorDrawable seekableDrawable,

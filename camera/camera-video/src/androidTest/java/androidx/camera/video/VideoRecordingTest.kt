@@ -89,7 +89,6 @@ import org.junit.After
 import org.junit.Assume.assumeFalse
 import org.junit.Assume.assumeTrue
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -741,7 +740,7 @@ class VideoRecordingTest(
         // Bypass stream sharing if it's enforced on the device. Like quirks in
         // androidx.camera.core.internal.compat.workaround.StreamSharingForceEnabler.
         assumeFalse(
-            "The test is temporarily ignored when stream sharing is enabled.",
+            "The test is temporarily ignored when the video capture requires transformation.",
             isStreamSharingEnabled(videoCapture)
         )
 
@@ -773,7 +772,7 @@ class VideoRecordingTest(
         // Bypass stream sharing if it's enforced on the device. Like quirks in
         // androidx.camera.core.internal.compat.workaround.StreamSharingForceEnabler.
         assumeFalse(
-            "The test is temporarily ignored when stream sharing is enabled.",
+            "The test is temporarily ignored when the video capture requires transformation.",
             isStreamSharingEnabled(videoCapture)
         )
 
@@ -787,6 +786,34 @@ class VideoRecordingTest(
         checkAndBindUseCases(preview, videoCapture)
 
         recording.resumeAndVerify().stopAndVerify()
+    }
+
+    @Test
+    fun persistentRecording_canStopAfterUnbind() {
+        assumeStopCodecAfterSurfaceRemovalCrashMediaServerQuirk()
+
+        // TODO(b/340406044): Enable the test for stream sharing use case.
+        assumeFalse(
+            "The test is temporarily ignored when stream sharing is enabled.",
+            forceEnableStreamSharing
+        )
+
+        checkAndBindUseCases(preview, videoCapture)
+
+        // TODO(b/340406044): Enable the test for stream sharing use case.
+        // Bypass stream sharing if it's enforced on the device. Like quirks in
+        // androidx.camera.core.internal.compat.workaround.StreamSharingForceEnabler.
+        assumeFalse(
+            "The test is temporarily ignored when the video capture requires transformation.",
+            isStreamSharingEnabled(videoCapture)
+        )
+
+        val recording =
+            recordingSession.createRecording(asPersistentRecording = true).startAndVerify()
+
+        instrumentation.runOnMainSync { cameraProvider.unbindAll() }
+
+        recording.stopAndVerify()
     }
 
     @Test
@@ -890,7 +917,6 @@ class VideoRecordingTest(
         )
     }
 
-    @Ignore("TODO: b/342977497 - Temporarily ignored for persistent recording.")
     @Test
     fun updateVideoUsage_whenUseCaseUnboundAndReboundForPersistentRecording(): Unit = runBlocking {
         assumeFalse(
@@ -899,7 +925,8 @@ class VideoRecordingTest(
         )
 
         checkAndBindUseCases(preview, videoCapture)
-        recordingSession.createRecording(asPersistentRecording = true).startAndVerify()
+        val recording =
+            recordingSession.createRecording(asPersistentRecording = true).startAndVerify()
 
         // Act 1 - unbind VideoCapture before recording completes, isRecording should be false.
         instrumentation.runOnMainSync { cameraProvider.unbind(videoCapture) }
@@ -916,9 +943,13 @@ class VideoRecordingTest(
             true,
             "VideoCapture re-bound but camera still not in video usage"
         )
+
+        // TODO(b/382158668): Remove the check for the status events.
+        recording.clearEvents()
+        recording.verifyStatus()
+        recording.stopAndVerify()
     }
 
-    @Ignore("TODO: b/342977497 - Temporarily ignored for persistent recording.")
     @Test
     fun updateVideoUsage_whenUseCaseBoundToNewCameraForPersistentRecording(): Unit = runBlocking {
         assumeStopCodecAfterSurfaceRemovalCrashMediaServerQuirk()
@@ -929,7 +960,8 @@ class VideoRecordingTest(
         )
 
         checkAndBindUseCases(preview, videoCapture)
-        recordingSession.createRecording(asPersistentRecording = true).startAndVerify()
+        val recording =
+            recordingSession.createRecording(asPersistentRecording = true).startAndVerify()
 
         // Act 1 - unbind before recording completes, isRecording should be false.
         instrumentation.runOnMainSync { cameraProvider.unbindAll() }
@@ -940,34 +972,17 @@ class VideoRecordingTest(
         )
 
         // Act 2 - rebind VideoCapture to opposite camera, isRecording should be true.
-        checkAndBindUseCases(useOppositeCamera = true)
+        checkAndBindUseCases(preview, videoCapture, useOppositeCamera = true)
 
         oppositeCamera.cameraControl.verifyIfInVideoUsage(
             true,
             "VideoCapture re-bound but camera still not in video usage"
         )
-    }
 
-    @Ignore("TODO: b/353113961 - Temporarily ignored for persistent recording.")
-    @Test
-    fun updateVideoUsage_whenLifecycleStoppedBeforeCompletingPersistentRecording() = runBlocking {
-        assumeStopCodecAfterSurfaceRemovalCrashMediaServerQuirk()
-
-        assumeFalse(
-            "TODO: b/340406044 - Temporarily ignored when stream sharing is enabled.",
-            forceEnableStreamSharing
-        )
-
-        checkAndBindUseCases(preview, videoCapture)
-        recordingSession.createRecording(asPersistentRecording = true).startAndVerify()
-
-        // Act.
-        instrumentation.runOnMainSync { lifecycleOwner.pauseAndStop() }
-
-        camera.cameraControl.verifyIfInVideoUsage(
-            false,
-            "Lifecycle stopped but camera still in video usage"
-        )
+        // TODO(b/382158668): Remove the check for the status events.
+        recording.clearEvents()
+        recording.verifyStatus()
+        recording.stopAndVerify()
     }
 
     // TODO: b/341691683 - Add tests for multiple VideoCapture bound and recording concurrently

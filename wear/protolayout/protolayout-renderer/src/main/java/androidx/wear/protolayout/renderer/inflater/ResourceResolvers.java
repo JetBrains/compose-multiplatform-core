@@ -19,8 +19,6 @@ package androidx.wear.protolayout.renderer.inflater;
 import android.annotation.SuppressLint;
 import android.graphics.drawable.Drawable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.wear.protolayout.expression.proto.DynamicProto.DynamicFloat;
 import androidx.wear.protolayout.proto.ResourceProto;
 import androidx.wear.protolayout.proto.ResourceProto.AndroidAnimatedImageResourceByResId;
@@ -33,39 +31,37 @@ import androidx.wear.protolayout.proto.TriggerProto.Trigger;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 /**
  * Class for resolving resources. Delegates the actual work to different types of resolver classes,
  * and allows each type of resolver to be configured individually, as well as instantiation from
  * common resolver implementations.
  */
 public class ResourceResolvers {
-    @NonNull private final ResourceProto.Resources mProtoResources;
+    private final ResourceProto.@NonNull Resources mProtoResources;
 
-    @Nullable
-    private final AndroidImageResourceByResIdResolver mAndroidImageResourceByResIdResolver;
+    private final @Nullable AndroidImageResourceByResIdResolver
+            mAndroidImageResourceByResIdResolver;
 
-    @Nullable
-    private final AndroidAnimatedImageResourceByResIdResolver
+    private final @Nullable AndroidAnimatedImageResourceByResIdResolver
             mAndroidAnimatedImageResourceByResIdResolver;
 
-    @Nullable
-    private final AndroidSeekableAnimatedImageResourceByResIdResolver
+    private final @Nullable AndroidSeekableAnimatedImageResourceByResIdResolver
             mAndroidSeekableAnimatedImageResourceByResIdResolver;
 
-    @Nullable private final InlineImageResourceResolver mInlineImageResourceResolver;
+    private final @Nullable InlineImageResourceResolver mInlineImageResourceResolver;
 
-    @Nullable
-    private final AndroidImageResourceByContentUriResolver
+    private final @Nullable AndroidImageResourceByContentUriResolver
             mAndroidImageResourceByContentUriResolver;
 
     ResourceResolvers(
-            @NonNull ResourceProto.Resources protoResources,
+            ResourceProto.@NonNull Resources protoResources,
             @Nullable AndroidImageResourceByResIdResolver androidImageResourceByResIdResolver,
-            @Nullable
-                    AndroidAnimatedImageResourceByResIdResolver
+            @Nullable AndroidAnimatedImageResourceByResIdResolver
                             androidAnimatedImageResourceByResIdResolver,
-            @Nullable
-                    AndroidSeekableAnimatedImageResourceByResIdResolver
+            @Nullable AndroidSeekableAnimatedImageResourceByResIdResolver
                             androidSeekableAnimatedImageResourceByResIdResolver,
             @Nullable InlineImageResourceResolver inlineImageResourceResolver,
             @Nullable AndroidImageResourceByContentUriResolver androidContentUriResolver) {
@@ -97,8 +93,7 @@ public class ResourceResolvers {
          *
          * @throws ResourceAccessException If the drawable cannot be found
          */
-        @NonNull
-        Drawable getDrawableOrThrow(@NonNull AndroidImageResourceByResId resource)
+        @NonNull Drawable getDrawableOrThrow(@NonNull AndroidImageResourceByResId resource)
                 throws ResourceAccessException;
     }
 
@@ -109,8 +104,7 @@ public class ResourceResolvers {
          *
          * @throws ResourceAccessException If the drawable cannot be found.
          */
-        @NonNull
-        Drawable getDrawableOrThrow(@NonNull AndroidAnimatedImageResourceByResId resource)
+        @NonNull Drawable getDrawableOrThrow(@NonNull AndroidAnimatedImageResourceByResId resource)
                 throws ResourceAccessException;
     }
 
@@ -121,8 +115,7 @@ public class ResourceResolvers {
          *
          * @throws ResourceAccessException If the drawable cannot be found.
          */
-        @NonNull
-        Drawable getDrawableOrThrow(@NonNull AndroidSeekableAnimatedImageResourceByResId resource)
+        @NonNull Drawable getDrawableOrThrow(@NonNull AndroidSeekableAnimatedImageResourceByResId resource)
                 throws ResourceAccessException;
     }
 
@@ -133,21 +126,18 @@ public class ResourceResolvers {
          *
          * @throws ResourceAccessException If the drawable cannot be found,.
          */
-        @NonNull
-        Drawable getDrawableOrThrow(@NonNull InlineImageResource resource)
+        @NonNull Drawable getDrawableOrThrow(@NonNull InlineImageResource resource)
                 throws ResourceAccessException;
     }
 
     /** Interface that can provide a Drawable for an AndroidContentUriResource. */
     public interface AndroidImageResourceByContentUriResolver {
         /** Get the drawable as specified by {@code resource}, to be loaded asynchronously. */
-        @NonNull
-        ListenableFuture<Drawable> getDrawable(@NonNull AndroidImageResourceByContentUri resource);
+        @NonNull ListenableFuture<Drawable> getDrawable(@NonNull AndroidImageResourceByContentUri resource);
     }
 
     /** Get an empty builder to build {@link ResourceResolvers} with. */
-    @NonNull
-    public static Builder builder(@NonNull ResourceProto.Resources protoResources) {
+    public static @NonNull Builder builder(ResourceProto.@NonNull Resources protoResources) {
         return new Builder(protoResources);
     }
 
@@ -168,8 +158,7 @@ public class ResourceResolvers {
      *     exist.
      * @see ResourceResolvers#hasPlaceholderDrawable(String)
      */
-    @NonNull
-    public Drawable getPlaceholderDrawableOrThrow(@NonNull String protoResourceId)
+    public @NonNull Drawable getPlaceholderDrawableOrThrow(@NonNull String protoResourceId)
             throws ResourceAccessException {
         String placeholderResourceId = getPlaceholderResourceId(protoResourceId);
 
@@ -200,8 +189,7 @@ public class ResourceResolvers {
     }
 
     /** Get the drawable corresponding to the given resource ID. */
-    @NonNull
-    public ListenableFuture<Drawable> getDrawable(@NonNull String protoResourceId) {
+    public @NonNull ListenableFuture<Drawable> getDrawable(@NonNull String protoResourceId) {
         ResourceProto.ImageResource imageResource =
                 mProtoResources.getIdToImageMap().get(protoResourceId);
 
@@ -211,8 +199,7 @@ public class ResourceResolvers {
                             "Resource " + protoResourceId + " is not defined in resources bundle"));
         }
 
-        @Nullable
-        ListenableFuture<Drawable> drawableFutureOrNull =
+                ListenableFuture<Drawable> drawableFutureOrNull =
                 getDrawableForImageResource(imageResource);
         if (drawableFutureOrNull == null) {
             return Futures.immediateFailedFuture(
@@ -227,8 +214,7 @@ public class ResourceResolvers {
      *
      * @throws IllegalArgumentException If the resource is not an animated resource.
      */
-    @Nullable
-    public Trigger getAnimationTrigger(@NonNull String protoResourceId) {
+    public @Nullable Trigger getAnimationTrigger(@NonNull String protoResourceId) {
         ResourceProto.ImageResource imageResource =
                 mProtoResources.getIdToImageMap().get(protoResourceId);
         if (imageResource != null && imageResource.hasAndroidAnimatedResourceByResId()) {
@@ -245,8 +231,7 @@ public class ResourceResolvers {
      *
      * @throws IllegalArgumentException If the resource is not a seekable animated resource.
      */
-    @Nullable
-    public DynamicFloat getBoundProgress(@NonNull String protoResourceId) {
+    public @Nullable DynamicFloat getBoundProgress(@NonNull String protoResourceId) {
         ResourceProto.ImageResource imageResource =
                 mProtoResources.getIdToImageMap().get(protoResourceId);
         if (imageResource != null && imageResource.hasAndroidSeekableAnimatedResourceByResId()) {
@@ -259,9 +244,8 @@ public class ResourceResolvers {
                         + " DynamicFloat");
     }
 
-    @Nullable
-    Drawable getDrawableForImageResourceSynchronously(
-            @NonNull ResourceProto.ImageResource imageResource) throws ResourceAccessException {
+    @Nullable Drawable getDrawableForImageResourceSynchronously(
+            ResourceProto.@NonNull ImageResource imageResource) throws ResourceAccessException {
         if (imageResource.hasAndroidAnimatedResourceByResId()
                 && mAndroidAnimatedImageResourceByResIdResolver != null) {
             AndroidAnimatedImageResourceByResIdResolver resolver =
@@ -295,9 +279,8 @@ public class ResourceResolvers {
      * Get the drawable for the known ImageResource. Can return null if there's no resolver for the
      * image resource.
      */
-    @Nullable
-    protected ListenableFuture<Drawable> getDrawableForImageResource(
-            @NonNull ResourceProto.ImageResource imageResource) {
+    protected @Nullable ListenableFuture<Drawable> getDrawableForImageResource(
+            ResourceProto.@NonNull ImageResource imageResource) {
         try {
             Drawable drawable = getDrawableForImageResourceSynchronously(imageResource);
             if (drawable != null) {
@@ -338,8 +321,7 @@ public class ResourceResolvers {
         return false;
     }
 
-    @Nullable
-    protected String getPlaceholderResourceId(@NonNull String originalResourceId) {
+    protected @Nullable String getPlaceholderResourceId(@NonNull String originalResourceId) {
         ResourceProto.ImageResource imageResource =
                 mProtoResources.getIdToImageMap().get(originalResourceId);
 
@@ -353,30 +335,27 @@ public class ResourceResolvers {
 
     /** Builder for ResourceResolvers */
     public static final class Builder {
-        @NonNull private final ResourceProto.Resources mProtoResources;
-        @Nullable private AndroidImageResourceByResIdResolver mAndroidImageResourceByResIdResolver;
+        private final ResourceProto.@NonNull Resources mProtoResources;
+        private @Nullable AndroidImageResourceByResIdResolver mAndroidImageResourceByResIdResolver;
 
-        @Nullable
-        private AndroidAnimatedImageResourceByResIdResolver
+        private @Nullable AndroidAnimatedImageResourceByResIdResolver
                 mAndroidAnimatedImageResourceByResIdResolver;
 
-        @Nullable
-        private AndroidSeekableAnimatedImageResourceByResIdResolver
+        private @Nullable AndroidSeekableAnimatedImageResourceByResIdResolver
                 mAndroidSeekableAnimatedImageResourceByResIdResolver;
 
-        @Nullable private InlineImageResourceResolver mInlineImageResourceResolver;
+        private @Nullable InlineImageResourceResolver mInlineImageResourceResolver;
 
-        @Nullable
-        private AndroidImageResourceByContentUriResolver mAndroidImageResourceByContentUriResolver;
+        private @Nullable AndroidImageResourceByContentUriResolver
+                mAndroidImageResourceByContentUriResolver;
 
-        Builder(@NonNull ResourceProto.Resources protoResources) {
+        Builder(ResourceProto.@NonNull Resources protoResources) {
             this.mProtoResources = protoResources;
         }
 
         /** Set the resource loader for {@link AndroidImageResourceByResIdResolver} resources. */
-        @NonNull
         @SuppressLint("MissingGetterMatchingBuilder")
-        public Builder setAndroidImageResourceByResIdResolver(
+        public @NonNull Builder setAndroidImageResourceByResIdResolver(
                 @NonNull AndroidImageResourceByResIdResolver resolver) {
             mAndroidImageResourceByResIdResolver = resolver;
             return this;
@@ -386,9 +365,8 @@ public class ResourceResolvers {
          * Set the resource loader for {@link AndroidAnimatedImageResourceByResIdResolver}
          * resources.
          */
-        @NonNull
         @SuppressLint("MissingGetterMatchingBuilder")
-        public Builder setAndroidAnimatedImageResourceByResIdResolver(
+        public @NonNull Builder setAndroidAnimatedImageResourceByResIdResolver(
                 @NonNull AndroidAnimatedImageResourceByResIdResolver resolver) {
             mAndroidAnimatedImageResourceByResIdResolver = resolver;
             return this;
@@ -398,34 +376,30 @@ public class ResourceResolvers {
          * Set the resource loader for {@link AndroidSeekableAnimatedImageResourceByResIdResolver}
          * resources.
          */
-        @NonNull
         @SuppressLint("MissingGetterMatchingBuilder")
-        public Builder setAndroidSeekableAnimatedImageResourceByResIdResolver(
+        public @NonNull Builder setAndroidSeekableAnimatedImageResourceByResIdResolver(
                 @NonNull AndroidSeekableAnimatedImageResourceByResIdResolver resolver) {
             mAndroidSeekableAnimatedImageResourceByResIdResolver = resolver;
             return this;
         }
 
         /** Set the resource loader for {@link InlineImageResourceResolver} resources. */
-        @NonNull
         @SuppressLint("MissingGetterMatchingBuilder")
-        public Builder setInlineImageResourceResolver(
+        public @NonNull Builder setInlineImageResourceResolver(
                 @NonNull InlineImageResourceResolver resolver) {
             mInlineImageResourceResolver = resolver;
             return this;
         }
 
-        @NonNull
         @SuppressLint("MissingGetterMatchingBuilder")
-        public Builder setAndroidImageResourceByContentUriResolver(
+        public @NonNull Builder setAndroidImageResourceByContentUriResolver(
                 @NonNull AndroidImageResourceByContentUriResolver resolver) {
             mAndroidImageResourceByContentUriResolver = resolver;
             return this;
         }
 
         /** Build a {@link ResourceResolvers} instance. */
-        @NonNull
-        public ResourceResolvers build() {
+        public @NonNull ResourceResolvers build() {
             return new ResourceResolvers(
                     mProtoResources,
                     mAndroidImageResourceByResIdResolver,

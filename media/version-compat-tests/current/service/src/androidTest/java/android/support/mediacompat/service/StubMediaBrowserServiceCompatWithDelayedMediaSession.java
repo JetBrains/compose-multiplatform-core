@@ -20,9 +20,10 @@ import android.os.Bundle;
 import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.media.MediaBrowserServiceCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 

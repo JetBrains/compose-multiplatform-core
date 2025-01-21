@@ -21,6 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+import androidx.build.KotlinTarget
 import androidx.build.LibraryType
 
 plugins {
@@ -52,4 +53,5 @@ androidx {
     type = LibraryType.OTHER_CODE_PROCESSOR
     inceptionYear = "2022"
     description = "Packages API descriptions from SDKs compiled with Privacy Sandbox annotations."
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

@@ -16,11 +16,12 @@
 
 package androidx.wear.protolayout.expression.pipeline;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.wear.protolayout.expression.DynamicBuilders;
 import androidx.wear.protolayout.expression.proto.DynamicProto;
 import androidx.wear.protolayout.expression.proto.FixedProto.FixedInstant;
+
+import org.jspecify.annotations.Nullable;
 
 import java.time.Instant;
 
@@ -62,7 +63,7 @@ class InstantNodes {
 
     /** Dynamic Instant node that gets value from the platform source. */
     static class PlatformTimeSourceNode implements DynamicDataSourceNode<Integer> {
-        @Nullable private final EpochTimePlatformDataSource mEpochTimePlatformDataSource;
+        private final @Nullable EpochTimePlatformDataSource mEpochTimePlatformDataSource;
         private final DynamicTypeValueReceiverWithPreUpdate<Instant> mDownstream;
 
         PlatformTimeSourceNode(

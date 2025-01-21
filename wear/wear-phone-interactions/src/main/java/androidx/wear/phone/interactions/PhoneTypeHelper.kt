@@ -74,10 +74,15 @@ public class PhoneTypeHelper private constructor() {
                         }
                     }
                 }
+            } else if (
+                Build.VERSION.SDK_INT == Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+                    context.applicationInfo.targetSdkVersion > Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+            ) {
+                return DEVICE_TYPE_ANDROID
             } else {
                 bluetoothMode =
                     Settings.Global.getInt(
-                        context.getContentResolver(),
+                        context.contentResolver,
                         PAIRED_DEVICE_OS_TYPE,
                         UNKNOWN_MODE
                     )

@@ -19,9 +19,10 @@ package androidx.test.uiautomator;
 import static java.util.Objects.requireNonNull;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.test.uiautomator.util.Patterns;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.LinkedList;
 import java.util.List;

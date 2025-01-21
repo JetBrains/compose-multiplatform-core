@@ -23,17 +23,17 @@ plugins {
 }
 
 android {
-    compileSdkVersion 35
+    compileSdk = 35
     defaultConfig {
         testInstrumentationRunner "androidx.hilt.integration.viewmodelapp.TestRunner"
     }
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
         }
     }
-    namespace "androidx.hilt.integration.viewmodelapp"
+    namespace = "androidx.hilt.integration.viewmodelapp"
 }
 
 dependencies {

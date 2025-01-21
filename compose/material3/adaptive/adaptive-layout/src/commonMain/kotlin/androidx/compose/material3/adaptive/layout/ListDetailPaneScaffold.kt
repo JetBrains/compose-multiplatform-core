@@ -22,9 +22,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 /**
- * An opinionated implementation of [ThreePaneScaffold] following Material guidelines that displays
- * the provided three panes in a canonical [list-detail layout](
- * https://m3.material.io/foundations/layout/canonical-layouts/list-detail).
+ * A three pane layout that follows the Material guidelines, displaying the provided panes in a
+ * canonical
+ * [list-detail layout](https://m3.material.io/foundations/layout/canonical-layouts/list-detail).
  *
  * This overload takes a [ThreePaneScaffoldValue] describing the adapted value of each pane within
  * the scaffold.
@@ -105,9 +105,9 @@ fun ListDetailPaneScaffold(
 }
 
 /**
- * An opinionated implementation of [ThreePaneScaffold] following Material guidelines that displays
- * the provided three panes in a canonical [list-detail layout](
- * https://m3.material.io/foundations/layout/canonical-layouts/list-detail).
+ * A three pane layout that follows the Material guidelines, displaying the provided panes in a
+ * canonical
+ * [list-detail layout](https://m3.material.io/foundations/layout/canonical-layouts/list-detail).
  *
  * This overload takes a [ThreePaneScaffoldState] describing the current [ThreePaneScaffoldValue]
  * and any pane transitions or animations in progress.

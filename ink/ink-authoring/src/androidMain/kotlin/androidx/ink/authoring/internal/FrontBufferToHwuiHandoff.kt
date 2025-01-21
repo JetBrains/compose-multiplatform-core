@@ -57,27 +57,12 @@ internal interface FrontBufferToHwuiHandoff {
             surfaceView: SurfaceView,
             @UiThread onCohortHandoff: (Map<InProgressStrokeId, FinishedStroke>) -> Unit,
             @UiThread onCohortHandoffComplete: () -> Unit,
-        ): FrontBufferToHwuiHandoff {
-            // TODO: b/328087803 - Samsung API 34 devices do not seem to execute the buffer release
-            //   callback that V34 relies on. So use V29 for those devices instead.
-            return if (
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
-                    Build.MANUFACTURER != "samsung"
-            ) {
-                FrontBufferToHwuiHandoffV34(
-                    mainView,
-                    surfaceView,
-                    onCohortHandoff,
-                    onCohortHandoffComplete
-                )
-            } else {
-                FrontBufferToHwuiHandoffV29(
-                    mainView,
-                    surfaceView,
-                    onCohortHandoff,
-                    onCohortHandoffComplete
-                )
-            }
-        }
+        ): FrontBufferToHwuiHandoff =
+            FrontBufferToHwuiHandoffV29(
+                mainView,
+                surfaceView,
+                onCohortHandoff,
+                onCohortHandoffComplete
+            )
     }
 }

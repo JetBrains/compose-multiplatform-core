@@ -333,6 +333,13 @@ internal constructor(
         )
     }
 
+    fun nestedClass(name: String) =
+        XClassName(
+            java = java.nestedClass(name),
+            kotlin = kotlin.nestedClass(name),
+            nullability = XNullability.NONNULL
+        )
+
     override fun copy(nullable: Boolean): XClassName {
         return XClassName(
             java = java,
@@ -348,6 +355,7 @@ internal constructor(
 
     companion object {
         // TODO(b/248633751): Handle interop types.
+        @JvmStatic
         fun get(packageName: String, vararg names: String): XClassName {
             return XClassName(
                 java = JClassName.get(packageName, names.first(), *names.drop(1).toTypedArray()),

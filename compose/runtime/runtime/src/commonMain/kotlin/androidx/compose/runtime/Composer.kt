@@ -32,6 +32,7 @@ import androidx.collection.emptyScatterMap
 import androidx.collection.mutableScatterMapOf
 import androidx.collection.mutableScatterSetOf
 import androidx.compose.runtime.Composer.Companion.equals
+import androidx.compose.runtime.ComposerImpl.CompositionContextHolder
 import androidx.compose.runtime.changelist.ChangeList
 import androidx.compose.runtime.changelist.ComposerChangeListWriter
 import androidx.compose.runtime.changelist.FixupList
@@ -48,6 +49,8 @@ import androidx.compose.runtime.snapshots.fastForEach
 import androidx.compose.runtime.snapshots.fastMap
 import androidx.compose.runtime.snapshots.fastToSet
 import androidx.compose.runtime.tooling.CompositionData
+import androidx.compose.runtime.tooling.CompositionGroup
+import androidx.compose.runtime.tooling.CompositionInstance
 import androidx.compose.runtime.tooling.LocalInspectionTables
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
@@ -1652,7 +1655,7 @@ internal class ComposerImpl(
         }
 
         parentProvider.read(LocalInspectionTables)?.let {
-            it.add(slotTable)
+            it.add(compositionData)
             parentContext.recordInspectionTable(it)
         }
         startGroup(parentContext.compoundHashKey)
@@ -2187,8 +2190,18 @@ internal class ComposerImpl(
             } else null
         }
 
+    private var _compositionData: CompositionData? = null
+
     override val compositionData: CompositionData
-        get() = slotTable
+        get() {
+            val data = _compositionData
+            if (data == null) {
+                val newData = CompositionDataImpl(composition)
+                _compositionData = newData
+                return newData
+            }
+            return data
+        }
 
     /** Schedule a side effect to run when we apply composition changes. */
     override fun recordSideEffect(effect: () -> Unit) {
@@ -3944,8 +3957,9 @@ internal class ComposerImpl(
      * A holder that will dispose of its [CompositionContext] when it leaves the composition that
      * will not have its reference made visible to user code.
      */
-    private class CompositionContextHolder(val ref: ComposerImpl.CompositionContextImpl) :
+    internal class CompositionContextHolder(val ref: ComposerImpl.CompositionContextImpl) :
         ReusableRememberObserver {
+
         override fun onRemembered() {}
 
         override fun onAbandoned() {
@@ -3958,7 +3972,7 @@ internal class ComposerImpl(
     }
 
     @OptIn(ExperimentalComposeRuntimeApi::class)
-    private inner class CompositionContextImpl(
+    internal inner class CompositionContextImpl(
         override val compoundHashKey: Int,
         override val collectingParameterInformation: Boolean,
         override val collectingSourceInformation: Boolean,
@@ -4010,7 +4024,7 @@ internal class ComposerImpl(
         @OptIn(ExperimentalComposeApi::class)
         @get:OptIn(ExperimentalComposeApi::class)
         override val recomposeCoroutineContext: CoroutineContext
-            get() = composition.recomposeCoroutineContext
+            get() = this@ComposerImpl.composition.recomposeCoroutineContext
 
         override fun composeInitial(
             composition: ControlledComposition,
@@ -4105,6 +4119,9 @@ internal class ComposerImpl(
         override fun reportRemovedComposition(composition: ControlledComposition) {
             parentContext.reportRemovedComposition(composition)
         }
+
+        override val composition: Composition
+            get() = this@ComposerImpl.composition
     }
 
     private inline fun updateCompoundKeyWhenWeEnterGroup(
@@ -4803,4 +4820,70 @@ internal fun extractMovableContentAtCurrent(
         }
     }
     return state
+}
+
+internal class CompositionDataImpl(val composition: Composition) :
+    CompositionData, CompositionInstance {
+    private val slotTable
+        get() = (composition as CompositionImpl).slotTable
+
+    override val compositionGroups: Iterable<CompositionGroup>
+        get() = slotTable.compositionGroups
+
+    override val isEmpty: Boolean
+        get() = slotTable.isEmpty
+
+    override fun find(identityToFind: Any): CompositionGroup? = slotTable.find(identityToFind)
+
+    override fun hashCode(): Int = composition.hashCode() * 31
+
+    override fun equals(other: Any?): Boolean =
+        other is CompositionDataImpl && composition == other.composition
+
+    override val parent: CompositionInstance?
+        get() = composition.parent?.let { CompositionDataImpl(it) }
+
+    override val data: CompositionData
+        get() = this
+
+    override fun findContextGroup(): CompositionGroup? {
+        val parentSlotTable = composition.parent?.slotTable ?: return null
+        val context = composition.context
+
+        parentSlotTable.read { reader ->
+            fun scanGroup(group: Int, end: Int): CompositionGroup? {
+                var current = group
+                while (current < end) {
+                    val next = current + reader.groupSize(current)
+                    if (
+                        reader.hasMark(current) &&
+                            reader.groupKey(current) == referenceKey &&
+                            reader.groupObjectKey(current) == reference
+                    ) {
+                        val contextHolder = reader.groupGet(current, 0) as? CompositionContextHolder
+                        if (contextHolder != null && contextHolder.ref == context) {
+                            return parentSlotTable.compositionGroupOf(current)
+                        }
+                    }
+                    if (reader.containsMark(current)) {
+                        scanGroup(current + 1, next)?.let {
+                            return it
+                        }
+                    }
+                    current = next
+                }
+                return null
+            }
+            return scanGroup(0, reader.size)
+        }
+    }
+
+    private val Composition.slotTable
+        get() = (this as? CompositionImpl)?.slotTable
+
+    private val Composition.context
+        get() = (this as? CompositionImpl)?.parent
+
+    private val Composition.parent
+        get() = context?.composition
 }

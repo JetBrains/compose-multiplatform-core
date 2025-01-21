@@ -18,7 +18,7 @@ package androidx.wear.tiles;
 
 import android.content.ComponentName;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Tile information containing the tile instance ID and component name for identifying a tile
@@ -34,8 +34,7 @@ public final class ActiveTileIdentifier {
     }
 
     /** Component name of the tile provider. */
-    @NonNull
-    public ComponentName getComponentName() {
+    public @NonNull ComponentName getComponentName() {
         return mComponentName;
     }
 
@@ -53,8 +52,7 @@ public final class ActiveTileIdentifier {
      *     represented as the tileId, concatenated with a ':' and then the component name flattened
      *     to string.
      */
-    @NonNull
-    String flattenToString() {
+    @NonNull String flattenToString() {
         return mInstanceId + ":" + mComponentName.flattenToString();
     }
 
@@ -67,8 +65,7 @@ public final class ActiveTileIdentifier {
      * @return Returns a new ActiveTileIdentifier containing the tile id and component name that
      *     were encoded in {@code string}.
      */
-    @NonNull
-    static ActiveTileIdentifier unflattenFromString(@NonNull String string) {
+    static @NonNull ActiveTileIdentifier unflattenFromString(@NonNull String string) {
         int delimiterIndex = string.indexOf(":");
         return new ActiveTileIdentifier(
                 ComponentName.unflattenFromString(string.substring(delimiterIndex + 1)),

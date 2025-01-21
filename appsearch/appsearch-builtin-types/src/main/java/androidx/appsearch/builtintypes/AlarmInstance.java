@@ -19,8 +19,10 @@ package androidx.appsearch.builtintypes;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.Document;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.utils.DateTimeFormatValidator;
 import androidx.core.util.Preconditions;
 
@@ -71,6 +73,7 @@ public class AlarmInstance extends Thing {
     @Document.LongProperty
     private final long mSnoozeDurationMillis;
 
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     AlarmInstance(@NonNull String namespace, @NonNull String id, int documentScore,
             long creationTimestampMillis, long documentTtlMillis, @Nullable String name,
             @Nullable List<String> alternateNames, @Nullable String description,

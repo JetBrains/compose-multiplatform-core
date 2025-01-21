@@ -16,6 +16,8 @@
 
 package androidx.compose.runtime
 
+import androidx.compose.runtime.platform.makeSynchronizedObject
+import androidx.compose.runtime.platform.synchronized
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine

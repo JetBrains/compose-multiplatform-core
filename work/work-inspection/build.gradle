@@ -57,13 +57,13 @@ androidx {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
     defaultConfig {
         // studio pipeline works only starting with Android O
-        minSdkVersion 26
+        minSdk = 26
     }
     sourceSets {
         main.resources.srcDirs += "src/main/proto"
     }
-    namespace "androidx.work.inspection"
+    namespace = "androidx.work.inspection"
 }

@@ -18,12 +18,13 @@ package androidx.pdf.viewer;
 
 import android.graphics.Rect;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.models.MatchRects;
 import androidx.pdf.util.CycleRange.Direction;
 import androidx.pdf.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a currently selected match, including the query that was matched, the page the match
@@ -64,8 +65,7 @@ public class SelectedMatch {
         return mPage;
     }
 
-    @NonNull
-    public MatchRects getPageMatches() {
+    public @NonNull MatchRects getPageMatches() {
         return mPageMatches;
     }
 
@@ -94,19 +94,16 @@ public class SelectedMatch {
         return mQuery.hashCode() + 31 * mPage + 101 * mPageMatches.hashCode() + 313 * mSelected;
     }
 
-    @Nullable
-    public Rect getFirstSelectionRect() {
+    public @Nullable Rect getFirstSelectionRect() {
         return isEmpty() ? null : mPageMatches.getFirstRect(mSelected);
     }
 
     /** Returns the page overlay for this selection. */
-    @Nullable
-    public PdfHighlightOverlay getOverlay() {
+    public @Nullable PdfHighlightOverlay getOverlay() {
         return isEmpty() ? null : new PdfHighlightOverlay(mPageMatches, mSelected);
     }
 
-    @Nullable
-    public SelectedMatch selectNextMatchOnPage(@NonNull Direction direction) {
+    public @Nullable SelectedMatch selectNextMatchOnPage(@NonNull Direction direction) {
         if (direction == Direction.BACKWARDS && mSelected > 0) {
             return withSelected(mSelected - 1);
         } else if (direction == Direction.FORWARDS && mSelected < mPageMatches.size() - 1) {
@@ -123,8 +120,8 @@ public class SelectedMatch {
      * Given a new set of matches, selects the one that is closest to the old selected match (if
      * any).
      */
-    @NonNull
-    public SelectedMatch nearestMatch(@NonNull String newQuery, @NonNull MatchRects newMatches) {
+    public @NonNull SelectedMatch nearestMatch(@NonNull String newQuery,
+            @NonNull MatchRects newMatches) {
         if (newMatches.isEmpty()) {
             return noMatches(newQuery, mPage);
         }
@@ -138,14 +135,12 @@ public class SelectedMatch {
     }
 
     /** Returns a SelectedMatch that contains no matches and so nothing is selected. */
-    @NonNull
-    public static SelectedMatch noMatches(@NonNull String query, int page) {
+    public static @NonNull SelectedMatch noMatches(@NonNull String query, int page) {
         return new SelectedMatch(query, page, MatchRects.NO_MATCHES, -1);
     }
 
     /** Selects the first match from the given matches. */
-    @NonNull
-    public static SelectedMatch firstMatch(@NonNull String query, int page,
+    public static @NonNull SelectedMatch firstMatch(@NonNull String query, int page,
             @NonNull MatchRects matches) {
         return matches.isEmpty() ? noMatches(query, page) : new SelectedMatch(query, page, matches,
                 0);

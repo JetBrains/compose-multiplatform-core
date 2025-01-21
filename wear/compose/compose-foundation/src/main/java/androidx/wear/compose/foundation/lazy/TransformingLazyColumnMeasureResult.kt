@@ -41,8 +41,8 @@ internal class TransformingLazyColumnMeasureResult(
     val itemSpacing: Int,
     /** Density of the last measure. */
     val density: Density,
-    val beforeContentPadding: Int,
-    val afterContentPadding: Int,
+    override val beforeContentPadding: Int,
+    override val afterContentPadding: Int,
     /** True if there is some space available to continue scrolling in the forward direction. */
     var canScrollForward: Boolean,
     /** True if there is some space available to continue scrolling in the backward direction. */

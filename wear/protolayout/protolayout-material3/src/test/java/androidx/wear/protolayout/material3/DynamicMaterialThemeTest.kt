@@ -31,8 +31,8 @@ import org.robolectric.annotation.internal.DoNotInstrument
 @DoNotInstrument
 class DynamicMaterialThemeTest {
     @Test
-    @Config(sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE])
-    fun test_api34() {
+    @Config(minSdk = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    fun test_api35() {
         enableDynamicTheme()
 
         val colorScheme = dynamicColorScheme(ApplicationProvider.getApplicationContext())
@@ -49,8 +49,8 @@ class DynamicMaterialThemeTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.TIRAMISU])
-    fun test_apiLessThan34() {
+    @Config(maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    fun test_apiLessThan35() {
         enableDynamicTheme()
 
         val colorScheme = dynamicColorScheme(ApplicationProvider.getApplicationContext())

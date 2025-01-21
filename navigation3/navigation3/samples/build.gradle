@@ -62,6 +62,6 @@ androidx {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.navigation3.samples"
+    compileSdk = 35
+    namespace = "androidx.navigation3.samples"
 }

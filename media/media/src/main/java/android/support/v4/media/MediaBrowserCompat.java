@@ -77,13 +77,14 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.collection.ArrayMap;
 import androidx.media.MediaBrowserCompatUtils;
 import androidx.media.MediaBrowserServiceCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -243,8 +244,7 @@ public final class MediaBrowserCompat {
     /**
      * Gets the service component that the media browser is connected to.
      */
-    @NonNull
-    public ComponentName getServiceComponent() {
+    public @NonNull ComponentName getServiceComponent() {
         return mImpl.getServiceComponent();
     }
 
@@ -257,8 +257,7 @@ public final class MediaBrowserCompat {
      *
      * @throws IllegalStateException if not connected.
      */
-    @NonNull
-    public String getRoot() {
+    public @NonNull String getRoot() {
         return mImpl.getRoot();
     }
 
@@ -268,8 +267,7 @@ public final class MediaBrowserCompat {
      * @return The extra bundle if it is connected and set, and {@code null} otherwise.
      * @throws IllegalStateException if not connected.
      */
-    @Nullable
-    public Bundle getExtras() {
+    public @Nullable Bundle getExtras() {
         return mImpl.getExtras();
     }
 
@@ -284,8 +282,7 @@ public final class MediaBrowserCompat {
      *
      * @throws IllegalStateException if not connected.
      */
-    @NonNull
-    public MediaSessionCompat.Token getSessionToken() {
+    public MediaSessionCompat.@NonNull Token getSessionToken() {
         return mImpl.getSessionToken();
     }
 
@@ -403,7 +400,7 @@ public final class MediaBrowserCompat {
      * @param mediaId The id of the item to retrieve.
      * @param cb The callback to receive the result on.
      */
-    public void getItem(@NonNull final String mediaId, @NonNull final ItemCallback cb) {
+    public void getItem(final @NonNull String mediaId, final @NonNull ItemCallback cb) {
         mImpl.getItem(mediaId, cb);
     }
 
@@ -418,7 +415,7 @@ public final class MediaBrowserCompat {
      * @param callback The callback to receive the search result. Must be non-null.
      * @throws IllegalStateException if the browser is not connected to the media browser service.
      */
-    public void search(@NonNull final String query, final Bundle extras,
+    public void search(final @NonNull String query, final Bundle extras,
             @NonNull SearchCallback callback) {
         if (TextUtils.isEmpty(query)) {
             throw new IllegalArgumentException("query cannot be empty");
@@ -457,8 +454,7 @@ public final class MediaBrowserCompat {
      *         String, Bundle)}
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX) // accessed by media2-session
-    @Nullable
-    public Bundle getNotifyChildrenChangedOptions() {
+    public @Nullable Bundle getNotifyChildrenChangedOptions() {
         return mImpl.getNotifyChildrenChangedOptions();
     }
 
@@ -570,8 +566,7 @@ public final class MediaBrowserCompat {
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             final StringBuilder sb = new StringBuilder("MediaItem{");
             sb.append("mFlags=").append(mFlags);
             sb.append(", mDescription=").append(mDescription);
@@ -619,8 +614,7 @@ public final class MediaBrowserCompat {
         /**
          * Returns the description of the media.
          */
-        @NonNull
-        public MediaDescriptionCompat getDescription() {
+        public @NonNull MediaDescriptionCompat getDescription() {
             return mDescription;
         }
 
@@ -628,8 +622,7 @@ public final class MediaBrowserCompat {
          * Returns the media id in the {@link MediaDescriptionCompat} for this item.
          * @see MediaMetadataCompat#METADATA_KEY_MEDIA_ID
          */
-        @Nullable
-        public String getMediaId() {
+        public @Nullable String getMediaId() {
             return mDescription.getMediaId();
         }
     }
@@ -988,7 +981,7 @@ public final class MediaBrowserCompat {
         ComponentName getServiceComponent();
         @NonNull String getRoot();
         @Nullable Bundle getExtras();
-        @NonNull MediaSessionCompat.Token getSessionToken();
+        MediaSessionCompat.@NonNull Token getSessionToken();
         void subscribe(@NonNull String parentId, @Nullable Bundle options,
                 @NonNull SubscriptionCallback callback);
         void unsubscribe(@NonNull String parentId, SubscriptionCallback callback);
@@ -1170,8 +1163,7 @@ public final class MediaBrowserCompat {
         }
 
         @Override
-        @NonNull
-        public ComponentName getServiceComponent() {
+        public @NonNull ComponentName getServiceComponent() {
             if (!isConnected()) {
                 throw new IllegalStateException("getServiceComponent() called while not connected" +
                         " (state=" + mState + ")");
@@ -1180,8 +1172,7 @@ public final class MediaBrowserCompat {
         }
 
         @Override
-        @NonNull
-        public String getRoot() {
+        public @NonNull String getRoot() {
             if (!isConnected()) {
                 throw new IllegalStateException("getRoot() called while not connected"
                         + "(state=" + getStateLabel(mState) + ")");
@@ -1190,8 +1181,7 @@ public final class MediaBrowserCompat {
         }
 
         @Override
-        @Nullable
-        public Bundle getExtras() {
+        public @Nullable Bundle getExtras() {
             if (!isConnected()) {
                 throw new IllegalStateException("getExtras() called while not connected (state="
                         + getStateLabel(mState) + ")");
@@ -1200,8 +1190,7 @@ public final class MediaBrowserCompat {
         }
 
         @Override
-        @NonNull
-        public MediaSessionCompat.Token getSessionToken() {
+        public MediaSessionCompat.@NonNull Token getSessionToken() {
             if (!isConnected()) {
                 throw new IllegalStateException("getSessionToken() called while not connected"
                         + "(state=" + mState + ")");
@@ -1275,7 +1264,7 @@ public final class MediaBrowserCompat {
         }
 
         @Override
-        public void getItem(@NonNull final String mediaId, @NonNull final ItemCallback cb) {
+        public void getItem(final @NonNull String mediaId, final @NonNull ItemCallback cb) {
             if (TextUtils.isEmpty(mediaId)) {
                 throw new IllegalArgumentException("mediaId is empty");
             }
@@ -1307,8 +1296,8 @@ public final class MediaBrowserCompat {
         }
 
         @Override
-        public void search(@NonNull final String query, final Bundle extras,
-                @NonNull final SearchCallback callback) {
+        public void search(final @NonNull String query, final Bundle extras,
+                final @NonNull SearchCallback callback) {
             if (!isConnected()) {
                 throw new IllegalStateException("search() called while not connected"
                         + " (state=" + getStateLabel(mState) + ")");
@@ -1329,8 +1318,8 @@ public final class MediaBrowserCompat {
         }
 
         @Override
-        public void sendCustomAction(@NonNull final String action, final Bundle extras,
-                @Nullable final CustomActionCallback callback) {
+        public void sendCustomAction(final @NonNull String action, final Bundle extras,
+                final @Nullable CustomActionCallback callback) {
             if (!isConnected()) {
                 throw new IllegalStateException("Cannot send a custom action (" + action + ") with "
                         + "extras " + extras + " because the browser is not connected to the "
@@ -1695,20 +1684,17 @@ public final class MediaBrowserCompat {
         }
 
         @Override
-        @NonNull
-        public String getRoot() {
+        public @NonNull String getRoot() {
             return mBrowserFwk.getRoot();
         }
 
         @Override
-        @Nullable
-        public Bundle getExtras() {
+        public @Nullable Bundle getExtras() {
             return mBrowserFwk.getExtras();
         }
 
         @Override
-        @NonNull
-        public MediaSessionCompat.Token getSessionToken() {
+        public MediaSessionCompat.@NonNull Token getSessionToken() {
             if (mMediaSessionToken == null) {
                 mMediaSessionToken = MediaSessionCompat.Token.fromToken(
                         mBrowserFwk.getSessionToken());
@@ -1717,8 +1703,8 @@ public final class MediaBrowserCompat {
         }
 
         @Override
-        public void subscribe(@NonNull final String parentId, final Bundle options,
-                @NonNull final SubscriptionCallback callback) {
+        public void subscribe(final @NonNull String parentId, final Bundle options,
+                final @NonNull SubscriptionCallback callback) {
             // Update or create the subscription.
             Subscription sub = mSubscriptions.get(parentId);
             if (sub == null) {
@@ -1800,7 +1786,7 @@ public final class MediaBrowserCompat {
         }
 
         @Override
-        public void getItem(@NonNull final String mediaId, @NonNull final ItemCallback cb) {
+        public void getItem(final @NonNull String mediaId, final @NonNull ItemCallback cb) {
             if (TextUtils.isEmpty(mediaId)) {
                 throw new IllegalArgumentException("mediaId is empty");
             }
@@ -1842,8 +1828,8 @@ public final class MediaBrowserCompat {
         }
 
         @Override
-        public void search(@NonNull final String query, final Bundle extras,
-                @NonNull final SearchCallback callback) {
+        public void search(final @NonNull String query, final Bundle extras,
+                final @NonNull SearchCallback callback) {
             if (!isConnected()) {
                 throw new IllegalStateException("search() called while not connected");
             }
@@ -1874,8 +1860,8 @@ public final class MediaBrowserCompat {
         }
 
         @Override
-        public void sendCustomAction(@NonNull final String action, final Bundle extras,
-                @Nullable final CustomActionCallback callback) {
+        public void sendCustomAction(final @NonNull String action, final Bundle extras,
+                final @Nullable CustomActionCallback callback) {
             if (!isConnected()) {
                 throw new IllegalStateException("Cannot send a custom action (" + action + ") with "
                         + "extras " + extras + " because the browser is not connected to the "
@@ -2023,7 +2009,7 @@ public final class MediaBrowserCompat {
         }
 
         @Override
-        public void getItem(@NonNull final String mediaId, @NonNull final ItemCallback cb) {
+        public void getItem(final @NonNull String mediaId, final @NonNull ItemCallback cb) {
             if (mServiceBinderWrapper == null) {
                 mBrowserFwk.getItem(mediaId, cb.mItemCallbackFwk);
             } else {

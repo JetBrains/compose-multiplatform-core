@@ -34,7 +34,6 @@ import android.content.Context;
 
 import androidx.annotation.Dimension;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.DimensionBuilders;
@@ -44,6 +43,8 @@ import androidx.wear.protolayout.LayoutElementBuilders.FontVariant;
 import androidx.wear.protolayout.LayoutElementBuilders.FontWeight;
 import androidx.wear.protolayout.materialcore.fontscaling.FontScaleConverter;
 import androidx.wear.protolayout.materialcore.fontscaling.FontScaleConverterFactory;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -107,8 +108,8 @@ public class Typography {
     @interface TypographyName {}
 
     /** Mapping for line height for different typography. */
-    @NonNull
-    private static final Map<Integer, Float> TYPOGRAPHY_TO_LINE_HEIGHT_SP = new HashMap<>();
+    private static final @NonNull Map<Integer, Float> TYPOGRAPHY_TO_LINE_HEIGHT_SP =
+            new HashMap<>();
 
     static {
         TYPOGRAPHY_TO_LINE_HEIGHT_SP.put(TYPOGRAPHY_DISPLAY1, 46f);
@@ -131,8 +132,7 @@ public class Typography {
      * Returns the {@link FontStyle.Builder} for the given FontStyle code with the recommended size,
      * weight and letter spacing. Font will be scalable.
      */
-    @NonNull
-    static FontStyle.Builder getFontStyleBuilder(
+    static FontStyle.@NonNull Builder getFontStyleBuilder(
             @TypographyName int fontStyleCode, @NonNull Context context) {
         return getFontStyleBuilder(fontStyleCode, context, true);
     }
@@ -141,8 +141,7 @@ public class Typography {
      * Returns the {@link FontStyle.Builder} for the given Typography code with the recommended
      * size, weight and letter spacing, with the option to make this font not scalable.
      */
-    @NonNull
-    static FontStyle.Builder getFontStyleBuilder(
+    static FontStyle.@NonNull Builder getFontStyleBuilder(
             @TypographyName int typographyCode, @NonNull Context context, boolean isScalable) {
         switch (typographyCode) {
             case TYPOGRAPHY_BODY1:
@@ -180,8 +179,7 @@ public class Typography {
      * Returns the recommended line height for the given Typography to be added to the Text
      * component.
      */
-    @NonNull
-    static SpProp getLineHeightForTypography(@TypographyName int typography) {
+    static @NonNull SpProp getLineHeightForTypography(@TypographyName int typography) {
         if (!TYPOGRAPHY_TO_LINE_HEIGHT_SP.containsKey(typography)) {
             throw new IllegalArgumentException("Typography " + typography + " doesn't exist.");
         }
@@ -232,85 +230,79 @@ public class Typography {
     }
 
     /** Font style for large display text. */
-    @NonNull
-    private static FontStyle.Builder display1(boolean isScalable, @NonNull Context context) {
+    private static FontStyle.@NonNull Builder display1(boolean isScalable,
+            @NonNull Context context) {
         return createFontStyleBuilder(
                 40, FONT_WEIGHT_MEDIUM, FONT_VARIANT_TITLE, 0.01f, isScalable, context);
     }
 
     /** Font style for medium display text. */
-    @NonNull
-    private static FontStyle.Builder display2(boolean isScalable, @NonNull Context context) {
+    private static FontStyle.@NonNull Builder display2(boolean isScalable,
+            @NonNull Context context) {
         return createFontStyleBuilder(
                 34, FONT_WEIGHT_MEDIUM, FONT_VARIANT_TITLE, 0.03f, isScalable, context);
     }
 
     /** Font style for small display text. */
-    @NonNull
-    private static FontStyle.Builder display3(boolean isScalable, @NonNull Context context) {
+    private static FontStyle.@NonNull Builder display3(boolean isScalable,
+            @NonNull Context context) {
         return createFontStyleBuilder(
                 30, FONT_WEIGHT_MEDIUM, FONT_VARIANT_TITLE, 0.03f, isScalable, context);
     }
 
     /** Font style for large title text. */
-    @NonNull
-    private static FontStyle.Builder title1(boolean isScalable, @NonNull Context context) {
+    private static FontStyle.@NonNull Builder title1(boolean isScalable, @NonNull Context context) {
         return createFontStyleBuilder(
                 24, FONT_WEIGHT_MEDIUM, FONT_VARIANT_TITLE, 0.008f, isScalable, context);
     }
 
     /** Font style for medium title text. */
-    @NonNull
-    private static FontStyle.Builder title2(boolean isScalable, @NonNull Context context) {
+    private static FontStyle.@NonNull Builder title2(boolean isScalable, @NonNull Context context) {
         return createFontStyleBuilder(
                 20, FONT_WEIGHT_MEDIUM, FONT_VARIANT_TITLE, 0.01f, isScalable, context);
     }
 
     /** Font style for small title text. */
-    @NonNull
-    private static FontStyle.Builder title3(boolean isScalable, @NonNull Context context) {
+    private static FontStyle.@NonNull Builder title3(boolean isScalable, @NonNull Context context) {
         return createFontStyleBuilder(
                 16, FONT_WEIGHT_MEDIUM, FONT_VARIANT_TITLE, 0.01f, isScalable, context);
     }
 
     /** Font style for normal body text. */
-    @NonNull
-    private static FontStyle.Builder body1(boolean isScalable, @NonNull Context context) {
+    private static FontStyle.@NonNull Builder body1(boolean isScalable, @NonNull Context context) {
         return createFontStyleBuilder(
                 16, FONT_WEIGHT_NORMAL, FONT_VARIANT_BODY, 0.01f, isScalable, context);
     }
 
     /** Font style for small body text. */
-    @NonNull
-    private static FontStyle.Builder body2(boolean isScalable, @NonNull Context context) {
+    private static FontStyle.@NonNull Builder body2(boolean isScalable, @NonNull Context context) {
         return createFontStyleBuilder(
                 14, FONT_WEIGHT_NORMAL, FONT_VARIANT_BODY, 0.014f, isScalable, context);
     }
 
     /** Font style for bold button text. */
-    @NonNull
-    private static FontStyle.Builder button(boolean isScalable, @NonNull Context context) {
+    private static FontStyle.@NonNull Builder button(boolean isScalable, @NonNull Context context) {
         return createFontStyleBuilder(
                 15, FONT_WEIGHT_BOLD, FONT_VARIANT_BODY, 0.03f, isScalable, context);
     }
 
     /** Font style for large caption text. */
-    @NonNull
-    private static FontStyle.Builder caption1(boolean isScalable, @NonNull Context context) {
+    private static FontStyle.@NonNull Builder caption1(boolean isScalable,
+            @NonNull Context context) {
         return createFontStyleBuilder(
                 14, FONT_WEIGHT_MEDIUM, FONT_VARIANT_BODY, 0.01f, isScalable, context);
     }
 
     /** Font style for medium caption text. */
-    @NonNull
-    private static FontStyle.Builder caption2(boolean isScalable, @NonNull Context context) {
+    private static FontStyle.@NonNull Builder caption2(boolean isScalable,
+            @NonNull Context context) {
         return createFontStyleBuilder(
                 12, FONT_WEIGHT_MEDIUM, FONT_VARIANT_BODY, 0.01f, isScalable, context);
     }
 
     /** Font style for small caption text. */
-    @NonNull
-    private static FontStyle.Builder caption3(boolean isScalable, @NonNull Context context) {
+    private static FontStyle.@NonNull Builder caption3(boolean isScalable,
+            @NonNull Context context) {
         return createFontStyleBuilder(
                 10, FONT_WEIGHT_MEDIUM, FONT_VARIANT_BODY, 0.01f, isScalable, context);
     }

@@ -45,7 +45,6 @@ import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.util.Consumer;
 import androidx.slice.Slice;
@@ -54,6 +53,8 @@ import androidx.slice.SliceMetadata;
 import androidx.slice.SliceViewManager;
 import androidx.slice.core.SliceQuery;
 import androidx.slice.widget.ListContent;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;

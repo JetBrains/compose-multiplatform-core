@@ -332,17 +332,24 @@ private fun CircularProgressIndicatorWithOverflowImpl(
 
     var shouldAnimateProgress by remember { mutableStateOf(false) }
     val updatedProgress by rememberUpdatedState(progress)
-    val animatedProgress = remember { Animatable(updatedProgress()) }
-    val animatedOverflowColor = remember { Animatable(if (updatedProgress() > 1f) 1f else 0f) }
+    val initialProgress = updatedProgress()
+    var lastProgress = initialProgress
+    val animatedProgress = remember { Animatable(initialProgress) }
+    val animatedOverflowColor = remember { Animatable(if (initialProgress > 1f) 1f else 0f) }
 
     LaunchedEffect(Unit) {
         snapshotFlow(updatedProgress).collectLatest {
             val newProgress = it
+
+            val actualProgressAnimationSpec =
+                if ((newProgress - lastProgress).absoluteValue <= 1f) progressAnimationSpec
+                else createOverflowProgressAnimationSpec(newProgress, lastProgress)
+
             if (!shouldAnimateProgress) {
                 shouldAnimateProgress = true
             } else if (newProgress > 1f) {
                 // Animate the progress arc.
-                animatedProgress.animateTo(newProgress, progressAnimationSpec) {
+                animatedProgress.animateTo(newProgress, actualProgressAnimationSpec) {
                     // Start overflow color transition when progress crosses 1 (full circle).
                     if (animatedProgress.value.equalsWithTolerance(1f)) {
                         launch { animatedOverflowColor.animateTo(1f, colorAnimationSpec) }
@@ -353,11 +360,15 @@ private fun CircularProgressIndicatorWithOverflowImpl(
                 // same time.
                 launch {
                     awaitAll(
-                        async { animatedProgress.animateTo(newProgress, progressAnimationSpec) },
+                        async {
+                            animatedProgress.animateTo(newProgress, actualProgressAnimationSpec)
+                        },
                         async { animatedOverflowColor.animateTo(0f, colorAnimationSpec) }
                     )
                 }
             }
+
+            lastProgress = newProgress
         }
     }
 

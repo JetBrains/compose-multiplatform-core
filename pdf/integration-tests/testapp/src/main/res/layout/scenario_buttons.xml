@@ -25,6 +25,19 @@
         app:layout_constraintTop_toBottomOf="@+id/single_pdf"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/pdfFragmentV2"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/pdfFragmentV2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/pdf_fragment_v2_string"
+        app:strokeWidth="1dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintTop_toBottomOf="@+id/tab_view"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"/>
 
 </merge>

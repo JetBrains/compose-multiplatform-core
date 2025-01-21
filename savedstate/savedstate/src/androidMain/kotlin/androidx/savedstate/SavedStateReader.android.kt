@@ -32,6 +32,7 @@ import androidx.core.os.BundleCompat.getSerializable
 import androidx.core.os.BundleCompat.getSparseParcelableArray
 import java.io.Serializable
 
+@Suppress("ValueClassDefinition")
 @JvmInline
 actual value class SavedStateReader
 @PublishedApi
@@ -173,7 +174,7 @@ internal actual constructor(
      * @return The value associated with the [key].
      * @throws IllegalStateException If the key is not found.
      */
-    inline fun <reified T : Serializable> getSerializable(key: String): T {
+    inline fun <reified T : Serializable> getJavaSerializable(key: String): T {
         if (key !in this) keyNotFoundError(key)
         return getSerializable(source, key, T::class.java) ?: valueNotFoundError(key)
     }
@@ -188,7 +189,7 @@ internal actual constructor(
      * @return The value associated with the [key], or the result of [defaultValue] if the key is
      *   not found or the associated value has the wrong type.
      */
-    inline fun <reified T : Serializable> getSerializableOrElse(
+    inline fun <reified T : Serializable> getJavaSerializableOrElse(
         key: String,
         defaultValue: () -> T
     ): T {

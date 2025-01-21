@@ -17,6 +17,14 @@ package androidx.wear.protolayout.material3 {
     method public void buttonGroupItem(kotlin.jvm.functions.Function1<? super androidx.wear.protolayout.material3.MaterialScope,? extends androidx.wear.protolayout.LayoutElementBuilders.LayoutElement> content);
   }
 
+  public final class CardDefaults {
+    field public static final androidx.wear.protolayout.material3.CardDefaults INSTANCE;
+  }
+
+  public final class CardKt {
+    method public static androidx.wear.protolayout.LayoutElementBuilders.LayoutElement card(androidx.wear.protolayout.material3.MaterialScope, androidx.wear.protolayout.ModifiersBuilders.Clickable onClick, androidx.wear.protolayout.TypeBuilders.StringProp contentDescription, optional androidx.wear.protolayout.DimensionBuilders.ContainerDimension width, optional androidx.wear.protolayout.DimensionBuilders.ContainerDimension height, optional androidx.wear.protolayout.ModifiersBuilders.Corner shape, optional androidx.wear.protolayout.ColorBuilders.ColorProp? backgroundColor, optional kotlin.jvm.functions.Function1<? super androidx.wear.protolayout.material3.MaterialScope,? extends androidx.wear.protolayout.LayoutElementBuilders.LayoutElement>? background, optional androidx.wear.protolayout.ModifiersBuilders.Padding contentPadding, kotlin.jvm.functions.Function1<? super androidx.wear.protolayout.material3.MaterialScope,? extends androidx.wear.protolayout.LayoutElementBuilders.LayoutElement> content);
+  }
+
   public final class ColorScheme {
     ctor public ColorScheme();
     ctor public ColorScheme(optional androidx.wear.protolayout.ColorBuilders.ColorProp primary, optional androidx.wear.protolayout.ColorBuilders.ColorProp primaryDim, optional androidx.wear.protolayout.ColorBuilders.ColorProp primaryContainer, optional androidx.wear.protolayout.ColorBuilders.ColorProp onPrimary, optional androidx.wear.protolayout.ColorBuilders.ColorProp onPrimaryContainer, optional androidx.wear.protolayout.ColorBuilders.ColorProp secondary, optional androidx.wear.protolayout.ColorBuilders.ColorProp secondaryDim, optional androidx.wear.protolayout.ColorBuilders.ColorProp secondaryContainer, optional androidx.wear.protolayout.ColorBuilders.ColorProp onSecondary, optional androidx.wear.protolayout.ColorBuilders.ColorProp onSecondaryContainer, optional androidx.wear.protolayout.ColorBuilders.ColorProp tertiary, optional androidx.wear.protolayout.ColorBuilders.ColorProp tertiaryDim, optional androidx.wear.protolayout.ColorBuilders.ColorProp tertiaryContainer, optional androidx.wear.protolayout.ColorBuilders.ColorProp onTertiary, optional androidx.wear.protolayout.ColorBuilders.ColorProp onTertiaryContainer, optional androidx.wear.protolayout.ColorBuilders.ColorProp surfaceContainerLow, optional androidx.wear.protolayout.ColorBuilders.ColorProp surfaceContainer, optional androidx.wear.protolayout.ColorBuilders.ColorProp surfaceContainerHigh, optional androidx.wear.protolayout.ColorBuilders.ColorProp onSurface, optional androidx.wear.protolayout.ColorBuilders.ColorProp onSurfaceVariant, optional androidx.wear.protolayout.ColorBuilders.ColorProp outline, optional androidx.wear.protolayout.ColorBuilders.ColorProp outlineVariant, optional androidx.wear.protolayout.ColorBuilders.ColorProp background, optional androidx.wear.protolayout.ColorBuilders.ColorProp onBackground, optional androidx.wear.protolayout.ColorBuilders.ColorProp error, optional androidx.wear.protolayout.ColorBuilders.ColorProp onError, optional androidx.wear.protolayout.ColorBuilders.ColorProp errorContainer, optional androidx.wear.protolayout.ColorBuilders.ColorProp onErrorContainer);
@@ -114,8 +122,16 @@ package androidx.wear.protolayout.material3 {
     property public final androidx.wear.protolayout.material3.EdgeButtonStyle TOP_ALIGN;
   }
 
+  public final class HelpersKt {
+    method public static androidx.wear.protolayout.ColorBuilders.ColorProp withOpacity(androidx.wear.protolayout.ColorBuilders.ColorProp, @FloatRange(from=0.0, to=1.0) float ratio);
+  }
+
   public final class IconKt {
     method public static androidx.wear.protolayout.LayoutElementBuilders.LayoutElement icon(androidx.wear.protolayout.material3.MaterialScope, String protoLayoutResourceId, optional androidx.wear.protolayout.DimensionBuilders.ImageDimension size, optional androidx.wear.protolayout.ColorBuilders.ColorProp tintColor);
+  }
+
+  public final class ImageKt {
+    method public static androidx.wear.protolayout.LayoutElementBuilders.LayoutElement backgroundImage(androidx.wear.protolayout.material3.MaterialScope, String protoLayoutResourceId, optional androidx.wear.protolayout.DimensionBuilders.ImageDimension width, optional androidx.wear.protolayout.DimensionBuilders.ImageDimension height, optional androidx.wear.protolayout.ColorBuilders.ColorProp overlayColor, optional androidx.wear.protolayout.DimensionBuilders.ContainerDimension overlayWidth, optional androidx.wear.protolayout.DimensionBuilders.ContainerDimension overlayHeight, optional androidx.wear.protolayout.ModifiersBuilders.Corner shape, optional int contentScaleMode);
   }
 
   @androidx.wear.protolayout.material3.MaterialScopeMarker public class MaterialScope {

@@ -48,5 +48,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.lifecycle.service"
+    namespace = "androidx.lifecycle.service"
 }

@@ -20,6 +20,7 @@ import android.graphics.Bitmap
 import android.graphics.drawable.Icon
 import android.os.Build
 import androidx.annotation.DrawableRes
+import androidx.annotation.FloatRange
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Composable
@@ -99,6 +100,7 @@ class EmittableImage : Emittable {
     override var modifier: GlanceModifier = GlanceModifier
     var provider: ImageProvider? = null
     var colorFilterParams: ColorFilterParams? = null
+    var alpha: Float? = null // null retains the source image's alpha
     var contentScale: ContentScale = ContentScale.Fit
 
     override fun copy(): Emittable =
@@ -106,6 +108,7 @@ class EmittableImage : Emittable {
             it.modifier = modifier
             it.provider = provider
             it.colorFilterParams = colorFilterParams
+            it.alpha = alpha
             it.contentScale = contentScale
         }
 
@@ -114,6 +117,7 @@ class EmittableImage : Emittable {
             "modifier=$modifier, " +
             "provider=$provider, " +
             "colorFilterParams=$colorFilterParams, " +
+            "alpha=$alpha, " +
             "contentScale=$contentScale" +
             ")"
 }
@@ -147,7 +151,42 @@ fun Image(
     contentDescription: String?,
     modifier: GlanceModifier = GlanceModifier,
     contentScale: ContentScale = ContentScale.Fit,
-    colorFilter: ColorFilter? = null
+    colorFilter: ColorFilter? = null,
+) = ImageElement(provider, contentDescription, modifier, contentScale, colorFilter, alpha = null)
+
+/**
+ * A composable which lays out and draws the image specified in [provider]. This will attempt to lay
+ * out the image using the intrinsic width and height of the provided image, but this can be
+ * overridden by using a modifier to set the width or height of this element.
+ *
+ * @param provider The image provider to use to draw the image
+ * @param contentDescription text used by accessibility services to describe what this image
+ *   represents. This should always be provided unless this image is used for decorative purposes,
+ *   and does not represent a meaningful action that a user can take. This text should be localized.
+ * @param alpha Opacity (0f to 1f) to apply to the image.
+ * @param modifier Modifier used to adjust the layout algorithm or draw decoration content.
+ * @param contentScale How to lay the image out with respect to its bounds, if the bounds are
+ *   smaller than the image.
+ * @param colorFilter The effects to use to modify the color of an image.
+ */
+@Composable
+fun Image(
+    provider: ImageProvider,
+    contentDescription: String?,
+    @FloatRange(from = 0.0, to = 1.0) alpha: Float,
+    modifier: GlanceModifier = GlanceModifier,
+    contentScale: ContentScale = ContentScale.Fit,
+    colorFilter: ColorFilter? = null,
+) = ImageElement(provider, contentDescription, modifier, contentScale, colorFilter, alpha)
+
+@Composable
+internal fun ImageElement(
+    provider: ImageProvider,
+    contentDescription: String?,
+    modifier: GlanceModifier = GlanceModifier,
+    contentScale: ContentScale = ContentScale.Fit,
+    colorFilter: ColorFilter? = null,
+    alpha: Float? = null,
 ) {
     val finalModifier =
         if (contentDescription != null) {
@@ -163,6 +202,7 @@ fun Image(
             this.set(finalModifier) { this.modifier = it }
             this.set(contentScale) { this.contentScale = it }
             this.set(colorFilter) { this.colorFilterParams = it?.colorFilterParams }
+            this.set(alpha) { this.alpha = it }
         }
     )
 }

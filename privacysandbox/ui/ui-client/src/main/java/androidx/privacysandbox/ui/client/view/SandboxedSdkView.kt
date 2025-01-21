@@ -18,84 +18,42 @@ package androidx.privacysandbox.ui.client.view
 
 import android.content.Context
 import android.content.res.Configuration
-import android.graphics.Rect
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.util.AttributeSet
-import android.view.SurfaceControl
-import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewParent
 import android.view.ViewTreeObserver
 import androidx.annotation.RequiresApi
-import androidx.annotation.VisibleForTesting
 import androidx.core.util.Consumer
 import androidx.customview.poolingcontainer.PoolingContainerListener
 import androidx.customview.poolingcontainer.addPoolingContainerListener
 import androidx.customview.poolingcontainer.isPoolingContainer
 import androidx.customview.poolingcontainer.isWithinPoolingContainer
 import androidx.customview.poolingcontainer.removePoolingContainerListener
-import androidx.privacysandbox.ui.client.view.SandboxedSdkUiSessionState.Active
-import androidx.privacysandbox.ui.client.view.SandboxedSdkUiSessionState.Idle
-import androidx.privacysandbox.ui.client.view.SandboxedSdkUiSessionState.Loading
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter.SessionClient
-import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.min
 
-/** A listener for changes to the state of the UI session associated with SandboxedSdkView. */
-fun interface SandboxedSdkUiSessionStateChangedListener {
-    /** Called when the state of the session for SandboxedSdkView is updated. */
-    fun onStateChanged(state: SandboxedSdkUiSessionState)
-}
-
-/**
- * Represents the state of a UI session.
- *
- * A UI session refers to the session opened with a [SandboxedUiAdapter] to let the host display UI
- * from the UI provider. If the host has requested to open a session with its [SandboxedUiAdapter],
- * the state will be [Loading] until the session has been opened and the content has been displayed.
- * At this point, the state will become [Active]. If there is no active session and no session is
- * being loaded, the state is [Idle].
- */
-sealed class SandboxedSdkUiSessionState private constructor() {
+/** A listener for events relating to the SandboxedSdkView UI presentation. */
+interface SandboxedSdkViewEventListener {
     /**
-     * A UI session is currently attempting to be opened.
-     *
-     * This state occurs when the UI has requested to open a session with its [SandboxedUiAdapter].
-     * No UI from the [SandboxedUiAdapter] will be shown during this state. When the session has
-     * been successfully opened and the content has been displayed, the state will transition to
-     * [Active].
+     * Called when the UI is committed to the display. The UI might still not be visible to the user
+     * at this point due to the SandboxedSdkView's properties. This is the point where the
+     * SandboxedSdkView can be made visible to the user.
      */
-    object Loading : SandboxedSdkUiSessionState()
+    fun onUiDisplayed()
 
     /**
-     * There is an open session with the supplied [SandboxedUiAdapter] and its UI is currently being
-     * displayed. This state is set after the first draw event of the [SandboxedSdkView].
+     * Called when an error occurs in the [SandboxedSdkView]'s UI session. Use [error].getMessage()
+     * to get the error message from the UI provider.
      */
-    object Active : SandboxedSdkUiSessionState()
+    fun onUiError(error: Throwable)
 
-    /**
-     * There is no currently open UI session and there is no operation in progress to open one.
-     *
-     * The UI provider may close the session at any point, which will result in the state becoming
-     * [Idle] if the session is closed without an error. If there is an error that causes the
-     * session to close, the state will be [Error].
-     *
-     * If a new [SandboxedUiAdapter] is set on a [SandboxedSdkView], the existing session will close
-     * and the state will become [Idle].
-     */
-    object Idle : SandboxedSdkUiSessionState()
-
-    /**
-     * There was an error in the UI session.
-     *
-     * @param throwable The error that caused the session to end.
-     */
-    class Error(val throwable: Throwable) : SandboxedSdkUiSessionState()
+    /** Called when the UI session of the [SandboxedSdkView] is closed. */
+    fun onUiClosed()
 }
 
 /** A type of client that may get refresh requests (to re-establish a session) */
@@ -110,23 +68,6 @@ internal interface RefreshableSessionClient : SessionClient {
 
 class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) :
     ViewGroup(context, attrs) {
-
-    // This will only be invoked when the content view has been set and the window is attached.
-    private val surfaceChangedCallback =
-        object : SurfaceHolder.Callback {
-            override fun surfaceCreated(p0: SurfaceHolder) {
-                updateAndSetClippingBounds(true)
-                viewTreeObserver.addOnGlobalLayoutListener(globalLayoutChangeListener)
-            }
-
-            override fun surfaceChanged(p0: SurfaceHolder, p1: Int, p2: Int, p3: Int) {}
-
-            override fun surfaceDestroyed(p0: SurfaceHolder) {}
-        }
-
-    // This will only be invoked when the content view has been set and the window is attached.
-    private val globalLayoutChangeListener =
-        ViewTreeObserver.OnGlobalLayoutListener { updateAndSetClippingBounds() }
 
     private val scrollChangedListener =
         ViewTreeObserver.OnScrollChangedListener { signalMeasurer?.maybeSendSignals() }
@@ -143,25 +84,21 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
     private var windowInputToken: IBinder? = null
     private var previousChildWidth = -1
     private var previousChildHeight = -1
-    private var currentClippingBounds = Rect()
-    internal val stateListenerManager: StateListenerManager = StateListenerManager()
     private var viewContainingPoolingContainerListener: View? = null
     private var poolingContainerListener = PoolingContainerListener {}
-    private val frameCommitCallback = Runnable {
-        stateListenerManager.currentUiSessionState = Active
-    }
+    private var eventListener: SandboxedSdkViewEventListener? = null
+    private val frameCommitCallback = Runnable { eventListener?.onUiDisplayed() }
     internal var signalMeasurer: SandboxedSdkViewSignalMeasurer? = null
 
-    /** Adds a state change listener to the UI session and immediately reports the current state. */
-    fun addStateChangedListener(stateChangedListener: SandboxedSdkUiSessionStateChangedListener) {
-        stateListenerManager.addStateChangedListener(stateChangedListener)
-    }
-
-    /** Removes the specified state change listener from SandboxedSdkView. */
-    fun removeStateChangedListener(
-        stateChangedListener: SandboxedSdkUiSessionStateChangedListener
-    ) {
-        stateListenerManager.removeStateChangedListener(stateChangedListener)
+    /**
+     * Sets an event listener to the [SandboxedSdkView] and starts reporting the new events. To
+     * listen to all the events during the lifecycle of the SandboxedSdkView, the listener should be
+     * set before calling [setAdapter].
+     *
+     * To remove the eventListener, set the eventListener as null.
+     */
+    fun setEventListener(eventListener: SandboxedSdkViewEventListener?) {
+        this.eventListener = eventListener
     }
 
     fun setAdapter(sandboxedUiAdapter: SandboxedUiAdapter) {
@@ -192,33 +129,6 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
         checkClientOpenSession()
     }
 
-    internal fun updateAndSetClippingBounds(forceUpdate: Boolean = false) {
-        if (maybeUpdateClippingBounds(currentClippingBounds) || forceUpdate) {
-            CompatImpl.setClippingBounds(contentView, isAttachedToWindow, currentClippingBounds)
-        }
-    }
-
-    /**
-     * Computes the window space coordinates for the bounding parent of this view, and stores the
-     * result in [rect].
-     *
-     * Returns true if the coordinates have changed, false otherwise.
-     */
-    @VisibleForTesting
-    internal fun maybeUpdateClippingBounds(rect: Rect): Boolean {
-        val prevBounds = Rect(rect)
-        var viewParent: ViewParent? = parent
-        while (viewParent != null && viewParent is View) {
-            val v = viewParent as View
-            if (v.isScrollContainer || v.id == android.R.id.content) {
-                v.getGlobalVisibleRect(rect)
-                return prevBounds != rect
-            }
-            viewParent = viewParent.getParent()
-        }
-        return false
-    }
-
     private fun checkClientOpenSession(
         isSecondary: Boolean = false,
         callback: Consumer<Boolean>? = null
@@ -232,7 +142,6 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
                 windowVisibility == View.VISIBLE
         ) {
             if (client == null && !isSecondary) {
-                stateListenerManager.currentUiSessionState = SandboxedSdkUiSessionState.Loading
                 client = Client(this)
                 adapter.openSession(
                     context,
@@ -285,12 +194,6 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
         CompatImpl.unregisterFrameCommitCallback(viewTreeObserver, frameCommitCallback)
     }
 
-    private fun removeCallbacks() {
-        // TODO(b/339377737): Handle leak of listeners when this is called.
-        (contentView as? SurfaceView)?.holder?.removeCallback(surfaceChangedCallback)
-        viewTreeObserver.removeOnGlobalLayoutListener(globalLayoutChangeListener)
-    }
-
     internal fun setContentView(contentView: View) {
         if (childCount > 0) {
             throw IllegalStateException("Number of children views must not exceed 1")
@@ -301,24 +204,17 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
 
         super.addView(contentView, 0, generateDefaultLayoutParams())
 
-        // Wait for the next frame commit before sending an ACTIVE state change to listeners.
+        // Wait for the next frame commit before sending a UiDisplayed event to listeners.
         CompatImpl.registerFrameCommitCallback(viewTreeObserver, frameCommitCallback)
-
-        if (contentView is SurfaceView) {
-            contentView.holder.addCallback(surfaceChangedCallback)
-        }
     }
 
     internal fun onClientClosedSession(error: Throwable? = null) {
         removeContentView()
         signalMeasurer?.dropPendingUpdates()
         signalMeasurer = null
-        stateListenerManager.currentUiSessionState =
-            if (error != null) {
-                SandboxedSdkUiSessionState.Error(error)
-            } else {
-                SandboxedSdkUiSessionState.Idle
-            }
+        if (error != null) {
+            eventListener?.onUiError(error)
+        }
     }
 
     private fun calculateMeasuredDimension(requestedSize: Int, measureSpec: Int): Int {
@@ -415,7 +311,6 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
         client?.close()
         client = null
         windowInputToken = null
-        removeCallbacks()
     }
 
     private fun attachPoolingContainerListener() {
@@ -536,6 +431,7 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
 
         private var pendingZOrderOnTop: Boolean? = null
         private var pendingConfiguration: Configuration? = null
+        private val eventListener = sandboxedSdkView?.eventListener
 
         fun notifyConfigurationChanged(configuration: Configuration) {
             val session = session
@@ -567,6 +463,7 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
         }
 
         fun close() {
+            eventListener?.onUiClosed()
             session?.close()
             session = null
             sandboxedSdkView?.onClientClosedSession()
@@ -575,7 +472,7 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
 
         override fun onSessionOpened(session: SandboxedUiAdapter.Session) {
             if (sandboxedSdkView == null) {
-                session.close()
+                close()
                 return
             }
             val view = checkNotNull(sandboxedSdkView) { "SandboxedSdkView should not be null" }
@@ -600,7 +497,6 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
         }
 
         override fun onSessionError(throwable: Throwable) {
-            if (sandboxedSdkView == null) return
             sandboxedSdkView?.let { view ->
                 if (this == view.clientSecondary) {
                     view.clientSecondary = null
@@ -612,7 +508,6 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
         }
 
         override fun onResizeRequested(width: Int, height: Int) {
-            if (sandboxedSdkView == null) return
             sandboxedSdkView?.requestResize(width, height)
         }
 
@@ -628,31 +523,6 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
         // close session with primary client
         this.client?.close()
         this.client = this.clientSecondary
-    }
-
-    internal class StateListenerManager {
-        internal var currentUiSessionState: SandboxedSdkUiSessionState =
-            SandboxedSdkUiSessionState.Idle
-            set(value) {
-                if (field != value) {
-                    field = value
-                    for (listener in stateChangedListeners) {
-                        listener.onStateChanged(currentUiSessionState)
-                    }
-                }
-            }
-
-        private var stateChangedListeners =
-            CopyOnWriteArrayList<SandboxedSdkUiSessionStateChangedListener>()
-
-        fun addStateChangedListener(listener: SandboxedSdkUiSessionStateChangedListener) {
-            stateChangedListeners.add(listener)
-            listener.onStateChanged(currentUiSessionState)
-        }
-
-        fun removeStateChangedListener(listener: SandboxedSdkUiSessionStateChangedListener) {
-            stateChangedListeners.remove(listener)
-        }
     }
 
     /**
@@ -675,20 +545,6 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
             }
         }
 
-        fun setClippingBounds(
-            contentView: View?,
-            isAttachedToWindow: Boolean,
-            currentClippingBounds: Rect
-        ) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                Api34PlusImpl.setClippingBounds(
-                    contentView,
-                    isAttachedToWindow,
-                    currentClippingBounds
-                )
-            }
-        }
-
         fun registerFrameCommitCallback(observer: ViewTreeObserver, callback: Runnable) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 Api29PlusImpl.registerFrameCommitCallback(observer, callback)
@@ -705,47 +561,6 @@ class SandboxedSdkView @JvmOverloads constructor(context: Context, attrs: Attrib
 
         @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
         private object Api34PlusImpl {
-
-            @JvmStatic
-            fun setClippingBounds(
-                contentView: View?,
-                isAttachedToWindow: Boolean,
-                currentClippingBounds: Rect
-            ) {
-                checkNotNull(contentView)
-                check(isAttachedToWindow)
-
-                val surfaceView: SurfaceView? = contentView as? SurfaceView
-                // TODO(b/339377737): Remove the need for this check with better listener handling.
-                if (surfaceView?.surfaceControl == null) {
-                    return
-                }
-                val attachedSurfaceControl =
-                    checkNotNull(surfaceView.rootSurfaceControl) {
-                        "attachedSurfaceControl should be non-null if the window is attached"
-                    }
-                val name = "clippingBounds-${System.currentTimeMillis()}"
-                val clippingBoundsSurfaceControl = SurfaceControl.Builder().setName(name).build()
-                val reparentSurfaceControlTransaction =
-                    SurfaceControl.Transaction()
-                        .reparent(surfaceView.surfaceControl, clippingBoundsSurfaceControl)
-
-                val reparentClippingBoundsTransaction =
-                    checkNotNull(
-                        attachedSurfaceControl.buildReparentTransaction(
-                            clippingBoundsSurfaceControl
-                        )
-                    ) {
-                        "Reparent transaction should be non-null if the window is attached"
-                    }
-                reparentClippingBoundsTransaction.setCrop(
-                    clippingBoundsSurfaceControl,
-                    currentClippingBounds
-                )
-                reparentClippingBoundsTransaction.setVisibility(clippingBoundsSurfaceControl, true)
-                reparentSurfaceControlTransaction.merge(reparentClippingBoundsTransaction)
-                attachedSurfaceControl.applyTransactionOnDraw(reparentSurfaceControlTransaction)
-            }
 
             @JvmStatic
             fun attachTemporarySurfaceViewAndOpenSession(

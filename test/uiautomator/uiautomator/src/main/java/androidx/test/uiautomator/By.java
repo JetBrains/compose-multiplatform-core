@@ -17,8 +17,9 @@
 package androidx.test.uiautomator;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.regex.Pattern;
 

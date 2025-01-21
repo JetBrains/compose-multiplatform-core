@@ -397,14 +397,36 @@ internal class InProgressStrokesManager(
      * @param brush Brush specification for the stroke being started.
      * @param startTimeMillis Start time of the stroke, used to determine the relative timing of
      *   later additions of the stroke.
+     * @param strokeToViewTransform The [AndroidMatrix] that converts stroke coordinates as provided
+     *   in [input] into the coordinate space of this view for rendering.
      * @return The Stroke ID of the stroke being built, later used to identify which stroke is being
      *   added to, finished, or canceled.
      */
     @UiThread
-    fun startStroke(input: StrokeInput, brush: Brush): InProgressStrokeId {
+    fun startStroke(
+        input: StrokeInput,
+        brush: Brush,
+        strokeToViewTransform: AndroidMatrix,
+    ): InProgressStrokeId {
         // The start time here isn't really relevant unless this override of startStroke is combined
         // with the MotionEvent override of addToStroke or finishStroke.
-        return startStrokeInternal(input, brush, getNanoTime() / 1_000_000L)
+        return startStrokeInternal(
+            input,
+            brush,
+            getNanoTime() / 1_000_000L,
+            // Although a MotionEvent isn't used to start the stroke, the inputToStrokeTransform is
+            // still needed to transform the stroke coordinates into view coordinates for rendering,
+            // as
+            // motionEventToStrokeTransform is used for all rendering.
+            inputToStrokeTransform =
+                AndroidMatrix().apply {
+                    // Compute (view -> stroke) = (stroke -> view)^-1
+                    set(strokeToViewTransform)
+                    invert(this)
+                    // Compute (MotionEvent -> stroke) = (view -> stroke) x (MotionEvent -> view)
+                    preConcat(motionEventToViewTransform)
+                },
+        )
     }
 
     @UiThread
@@ -633,6 +655,17 @@ internal class InProgressStrokesManager(
         queueInputToRenderThread(cancelAction)
     }
 
+    /** Cancel all in-progress strokes. */
+    @UiThread
+    fun cancelUnfinishedStrokes() {
+        // Defensive copy needed to avoid a ConcurrentModificationException.
+        for (strokeId in uiThreadState.startedStrokes.keys.toList()) {
+            cancelStroke(strokeId, event = null)
+        }
+    }
+
+    @UiThread fun hasUnfinishedStrokes(): Boolean = uiThreadState.startedStrokes.isNotEmpty()
+
     /**
      * Begin the process of a possible handoff. If a handoff is actually possible right now, then
      * [Finished] will be returned containing the strokes to hand off, and state will be updated to
@@ -700,18 +733,7 @@ internal class InProgressStrokesManager(
             return
         }
 
-        uiThreadState.cohortHandoffAsap = false
-        uiThreadState.lastStrokeEndUptimeMs = Long.MIN_VALUE
-
-        uiThreadState.strokesAwaitingEndOfCohort.clear()
-
-        threadSharedState.pauseInputs.set(true)
-        // Queue a clear action to take place as soon as inputs are unpaused, to be sure the clear
-        // happens before any inputs for the new cohort.
-        queueInputToRenderThread(ClearAction)
-        inProgressStrokesRenderHelper.requestStrokeCohortHandoffToHwui(
-            claimStrokesToHandOffResult.finishedStrokes
-        )
+        handOffFinishedStrokes(claimStrokesToHandOffResult.finishedStrokes)
     }
 
     @UiThread
@@ -782,7 +804,7 @@ internal class InProgressStrokesManager(
         // a short enough timeout.
         return when (val claimStrokesToHandOffResult = claimStrokesToHandOff()) {
             is Finished -> {
-                onStrokeCohortHandoffToHwui(claimStrokesToHandOffResult.finishedStrokes)
+                handOffFinishedStrokes(claimStrokesToHandOffResult.finishedStrokes)
                 true
             }
             // None left in progress, so the flush completed successfully, but nothing to hand off.
@@ -1043,7 +1065,7 @@ internal class InProgressStrokesManager(
                 renderThreadState.generatedStrokes[strokeId] =
                     FinishedStroke(
                         stroke = inProgressStroke.toImmutable(),
-                        copiedStrokeToViewTransform,
+                        copiedStrokeToViewTransform
                     )
             }
         }
@@ -1367,6 +1389,20 @@ internal class InProgressStrokesManager(
     @WorkerThread
     private fun assertOnRenderThread() {
         inProgressStrokesRenderHelper.assertOnRenderThread()
+    }
+
+    @UiThread
+    private fun handOffFinishedStrokes(finishedStrokes: Map<InProgressStrokeId, FinishedStroke>) {
+        uiThreadState.cohortHandoffAsap = false
+        uiThreadState.lastStrokeEndUptimeMs = Long.MIN_VALUE
+
+        uiThreadState.strokesAwaitingEndOfCohort.clear()
+
+        threadSharedState.pauseInputs.set(true)
+        // Queue a clear action to take place as soon as inputs are unpaused, to be sure the clear
+        // happens before any inputs for the new cohort.
+        queueInputToRenderThread(ClearAction)
+        inProgressStrokesRenderHelper.requestStrokeCohortHandoffToHwui(finishedStrokes)
     }
 
     /** An input event that can go in the (future) event queue to hand off across threads. */

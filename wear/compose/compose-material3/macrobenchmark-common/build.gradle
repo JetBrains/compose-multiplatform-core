@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace 'androidx.wear.compose.material3.macrobenchmark.common'
-    compileSdk 35
+    namespace = "androidx.wear.compose.material3.macrobenchmark.common"
+    compileSdk = 35
 
     defaultConfig {
-        minSdkVersion 25
+        minSdk = 25
     }
 
     buildTypes.configureEach {

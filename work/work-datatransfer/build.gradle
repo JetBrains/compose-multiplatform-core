@@ -30,11 +30,11 @@ plugins {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
     defaultConfig {
-        minSdkVersion 23
+        minSdk = 23
     }
-    namespace "androidx.work.datatransfer"
+    namespace = "androidx.work.datatransfer"
 }
 
 dependencies {

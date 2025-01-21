@@ -50,5 +50,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.tracing"
+    namespace = "androidx.tracing"
 }

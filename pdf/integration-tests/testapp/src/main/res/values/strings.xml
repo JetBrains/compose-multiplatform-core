@@ -3,5 +3,6 @@
     <string name="launch_string">Open Pdf</string>
     <string name="search_string">Search</string>
     <string name="tab_view_string">Tab View</string>
+    <string name="pdf_fragment_v2_string">Pdf Fragment v2</string>
     <string name="single_pdf_string">Single Pdf</string>
 </resources>

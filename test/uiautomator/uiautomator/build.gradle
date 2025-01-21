@@ -29,6 +29,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation(libs.junit)
     implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.tracing:tracing:1.1.0")
@@ -46,7 +47,7 @@ android {
     useLibrary "android.test.runner"
     useLibrary "android.test.base"
     useLibrary "android.test.mock"
-    namespace "androidx.test.uiautomator"
+    namespace = "androidx.test.uiautomator"
 }
 
 androidx {

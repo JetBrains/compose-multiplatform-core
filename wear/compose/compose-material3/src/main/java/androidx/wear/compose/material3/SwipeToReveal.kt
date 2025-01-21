@@ -37,7 +37,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -46,7 +45,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.takeOrElse
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
@@ -120,6 +118,20 @@ fun SwipeToReveal(
         "PrimaryAction should be provided in actions by calling the PrimaryAction method"
     }
 
+    val hasSecondaryAction = children.secondaryAction != null
+    val iconStartFadeInFraction =
+        if (hasSecondaryAction) {
+            DOUBLE_ICON_VISIBLE_THRESHOLD_AS_SCREEN_WIDTH_PERCENTAGE
+        } else {
+            SINGLE_ICON_VISIBLE_THRESHOLD_AS_SCREEN_WIDTH_PERCENTAGE
+        }
+    val iconEndFadeInFraction =
+        if (hasSecondaryAction) {
+            DOUBLE_ICON_FADE_IN_END_THRESHOLD_AS_SCREEN_WIDTH_PERCENTAGE
+        } else {
+            SINGLE_ICON_FADE_IN_END_THRESHOLD_AS_SCREEN_WIDTH_PERCENTAGE
+        }
+
     SwipeToReveal(
         modifier =
             modifier.fillMaxWidth().semantics {
@@ -146,6 +158,8 @@ fun SwipeToReveal(
                 primaryAction,
                 RevealActionType.PrimaryAction,
                 actionButtonHeight,
+                iconStartFadeInFraction,
+                iconEndFadeInFraction,
                 children.undoPrimaryAction != null,
             )
         },
@@ -157,6 +171,8 @@ fun SwipeToReveal(
                         it,
                         RevealActionType.SecondaryAction,
                         actionButtonHeight,
+                        iconStartFadeInFraction,
+                        iconEndFadeInFraction,
                         children.undoSecondaryAction != null,
                     )
                 }
@@ -171,6 +187,8 @@ fun SwipeToReveal(
                                 it,
                                 RevealActionType.UndoAction,
                                 actionButtonHeight,
+                                iconStartFadeInFraction,
+                                iconEndFadeInFraction,
                             )
                         }
                     }
@@ -182,6 +200,8 @@ fun SwipeToReveal(
                                 it,
                                 RevealActionType.UndoAction,
                                 actionButtonHeight,
+                                iconStartFadeInFraction,
+                                iconEndFadeInFraction,
                             )
                         }
                     }
@@ -345,15 +365,7 @@ object SwipeToRevealDefaults {
     /** Standard height for a large revealed action, such as when the swiped item is a Card. */
     val LargeActionButtonHeight = 84.dp
 
-    internal val MinimumIconSize = 20.dp
-
     internal val IconSize = 26.dp
-
-    internal val IconAndTextPadding = 6.dp
-
-    internal val ActionButtonContentPadding = 4.dp
-
-    internal val FullScreenPaddingFraction = 0.0625f
 }
 
 @Composable
@@ -362,6 +374,8 @@ internal fun ActionButton(
     action: SwipeToRevealAction,
     revealActionType: RevealActionType,
     buttonHeight: Dp,
+    iconStartFadeInFraction: Float,
+    iconEndFadeInFraction: Float,
     hasUndo: Boolean = false,
 ) {
     val containerColor =
@@ -398,7 +412,7 @@ internal fun ActionButton(
                 else -> Color.Unspecified
             }
         }
-    val fullScreenPaddingDp = (screenWidthDp() * SwipeToRevealDefaults.FullScreenPaddingFraction).dp
+    val fullScreenPaddingDp = (screenWidthDp() * FULL_SCREEN_PADDING_FRACTION).dp
     val startPadding =
         when (revealActionType) {
             RevealActionType.UndoAction -> fullScreenPaddingDp
@@ -409,12 +423,31 @@ internal fun ActionButton(
             RevealActionType.UndoAction -> fullScreenPaddingDp
             else -> 0.dp
         }
+    val screenWidthPx = with(LocalDensity.current) { screenWidthDp().dp.toPx() }
+    val fadeInStart = screenWidthPx * BUTTON_VISIBLE_THRESHOLD_AS_SCREEN_WIDTH_PERCENTAGE
+    val fadeInEnd = screenWidthPx * BUTTON_FADE_IN_END_THRESHOLD_AS_SCREEN_WIDTH_PERCENTAGE
     val coroutineScope = rememberCoroutineScope()
     Button(
         modifier =
             Modifier.height(buttonHeight)
                 .padding(startPadding, 0.dp, endPadding, 0.dp)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .graphicsLayer {
+                    val offset = abs(revealState.offset)
+                    val shouldDisplayButton =
+                        offset > screenWidthPx * BUTTON_VISIBLE_THRESHOLD_AS_SCREEN_WIDTH_PERCENTAGE
+                    alpha =
+                        if (shouldDisplayButton) {
+                            val coercedOffset =
+                                offset.coerceIn(
+                                    minimumValue = fadeInStart,
+                                    maximumValue = fadeInEnd
+                                )
+                            (coercedOffset - fadeInStart) / (fadeInEnd - fadeInStart)
+                        } else {
+                            0f
+                        }
+                },
         onClick = {
             coroutineScope.launch {
                 try {
@@ -439,7 +472,7 @@ internal fun ActionButton(
             }
         },
         colors = buttonColors(containerColor = containerColor, contentColor = contentColor),
-        contentPadding = PaddingValues(SwipeToRevealDefaults.ActionButtonContentPadding),
+        contentPadding = PaddingValues(ACTION_BUTTON_CONTENT_PADDING),
         shape = CircleShape
     ) {
         Row(
@@ -449,7 +482,9 @@ internal fun ActionButton(
         ) {
             val density = LocalDensity.current
             val primaryActionTextRevealed = remember { mutableStateOf(false) }
-            action.icon?.let { ActionIconWrapper(it) }
+            action.icon?.let {
+                ActionIconWrapper(revealState, iconStartFadeInFraction, iconEndFadeInFraction, it)
+            }
             when (revealActionType) {
                 RevealActionType.PrimaryAction ->
                     AnimatedVisibility(
@@ -480,10 +515,7 @@ internal fun ActionButton(
 @Composable
 private fun ActionText(action: SwipeToRevealAction, contentColor: Color) {
     Text(
-        modifier =
-            Modifier.padding(
-                start = action.icon?.let { SwipeToRevealDefaults.IconAndTextPadding } ?: 0.dp
-            ),
+        modifier = Modifier.padding(start = action.icon?.let { ICON_AND_TEXT_PADDING } ?: 0.dp),
         text = action.label,
         color = contentColor,
         maxLines = 1
@@ -491,20 +523,29 @@ private fun ActionText(action: SwipeToRevealAction, contentColor: Color) {
 }
 
 @Composable
-private fun ActionIconWrapper(content: @Composable () -> Unit) {
-    val iconAlpha = remember { mutableFloatStateOf(0f) }
+private fun ActionIconWrapper(
+    revealState: RevealState,
+    iconStartFadeInFraction: Float,
+    iconEndFadeInFraction: Float,
+    content: @Composable () -> Unit
+) {
+    val screenWidthPx = with(LocalDensity.current) { screenWidthDp().dp.toPx() }
+    val fadeInStart = screenWidthPx * iconStartFadeInFraction
+    val fadeInEnd = screenWidthPx * iconEndFadeInFraction
     Box(
         modifier =
-            Modifier.onGloballyPositioned { coordinates ->
-                    val currentWidthDp = coordinates.size.width.dp.value
-                    iconAlpha.floatValue =
-                        ((currentWidthDp - SwipeToRevealDefaults.MinimumIconSize.value) /
-                                (SwipeToRevealDefaults.IconSize.value -
-                                    SwipeToRevealDefaults.MinimumIconSize.value))
-                            .coerceIn(0.0f, 1.0f)
-                }
-                .size(SwipeToRevealDefaults.IconSize, Dp.Unspecified)
-                .graphicsLayer { alpha = iconAlpha.floatValue }
+            Modifier.size(SwipeToRevealDefaults.IconSize, Dp.Unspecified).graphicsLayer {
+                val offset = abs(revealState.offset)
+                val shouldDisplayIcon = offset > fadeInStart
+                alpha =
+                    if (shouldDisplayIcon) {
+                        val coercedOffset =
+                            offset.coerceIn(minimumValue = fadeInStart, maximumValue = fadeInEnd)
+                        (coercedOffset - fadeInStart) / (fadeInEnd - fadeInStart)
+                    } else {
+                        0f
+                    }
+            }
     ) {
         content()
     }
@@ -543,3 +584,27 @@ internal data class SwipeToRevealAction(
 
 /** Rapid animation length in milliseconds. */
 internal const val RAPID_ANIMATION = 200
+
+private val ICON_AND_TEXT_PADDING = 6.dp
+
+private val ACTION_BUTTON_CONTENT_PADDING = 4.dp
+
+// Swipe required to start displaying the action buttons.
+private const val BUTTON_VISIBLE_THRESHOLD_AS_SCREEN_WIDTH_PERCENTAGE = 0.06f
+
+// End threshold for the fade in progression of the action buttons.
+private const val BUTTON_FADE_IN_END_THRESHOLD_AS_SCREEN_WIDTH_PERCENTAGE = 0.12f
+
+// Swipe required to start displaying the icon for a single action button.
+private const val SINGLE_ICON_VISIBLE_THRESHOLD_AS_SCREEN_WIDTH_PERCENTAGE = 0.15f
+
+// Swipe required to start displaying the icon for two action buttons.
+private const val DOUBLE_ICON_VISIBLE_THRESHOLD_AS_SCREEN_WIDTH_PERCENTAGE = 0.30f
+
+// End threshold for the fade in progression of the icon for a single action button.
+private const val SINGLE_ICON_FADE_IN_END_THRESHOLD_AS_SCREEN_WIDTH_PERCENTAGE = 0.21f
+
+// End threshold for the fade in progression of the icon for two action buttons.
+private const val DOUBLE_ICON_FADE_IN_END_THRESHOLD_AS_SCREEN_WIDTH_PERCENTAGE = 0.36f
+
+private val FULL_SCREEN_PADDING_FRACTION = 0.0625f

@@ -24,8 +24,9 @@ import android.content.Intent;
 import android.support.wearable.complications.ComplicationData;
 import android.support.wearable.complications.ComplicationProviderInfo;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Utilities to allow watch faces to launch the complication data source chooser.
@@ -152,11 +153,10 @@ public class ComplicationDataSourceChooserIntent {
      *     chosen will be whichever was specified first.
      * @see ComplicationHelperActivity
      */
-    @NonNull
-    public static Intent createComplicationDataSourceChooserIntent(
+    public static @NonNull Intent createComplicationDataSourceChooserIntent(
             @NonNull ComponentName watchFace,
             int watchFaceComplicationId,
-            @NonNull @ComplicationData.ComplicationType int... supportedTypes) {
+            @ComplicationData.ComplicationType int @NonNull ... supportedTypes) {
         Intent intent = new Intent(ACTION_CHOOSE_DATA_SOURCE);
         intent.putExtra(EXTRA_WATCH_FACE_COMPONENT_NAME, watchFace);
         intent.putExtra(EXTRA_COMPLICATION_ID, watchFaceComplicationId);
@@ -193,7 +193,7 @@ public class ComplicationDataSourceChooserIntent {
             @NonNull Context context,
             @NonNull ComponentName watchFace,
             int watchFaceComplicationId,
-            @NonNull @ComplicationData.ComplicationType int... supportedTypes) {
+            @ComplicationData.ComplicationType int @NonNull ... supportedTypes) {
         Intent intent =
                 createComplicationDataSourceChooserIntent(
                         watchFace, watchFaceComplicationId, supportedTypes);

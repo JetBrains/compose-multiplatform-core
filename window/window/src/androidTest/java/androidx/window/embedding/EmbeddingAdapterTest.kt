@@ -335,11 +335,11 @@ class EmbeddingAdapterTest {
 
         val colorBackground = EmbeddingAnimationBackground.createColorBackground(Color.BLUE)
         val splitAttributesWithColorBackground =
-            SplitAttributes.Builder().setAnimationBackground(colorBackground).build()
-        val splitAttributesWithDefaultBackground =
             SplitAttributes.Builder()
-                .setAnimationBackground(EmbeddingAnimationBackground.DEFAULT)
+                .setAnimationParams(EmbeddingAnimationParams(colorBackground))
                 .build()
+        val splitAttributesWithDefaultBackground =
+            SplitAttributes.Builder().setAnimationParams(EmbeddingAnimationParams()).build()
 
         val extensionsColorBackground =
             OEMEmbeddingAnimationBackground.createColorBackground(Color.BLUE)
@@ -380,11 +380,11 @@ class EmbeddingAdapterTest {
 
         val colorBackground = EmbeddingAnimationBackground.createColorBackground(Color.BLUE)
         val splitAttributesWithColorBackground =
-            SplitAttributes.Builder().setAnimationBackground(colorBackground).build()
-        val splitAttributesWithDefaultBackground =
             SplitAttributes.Builder()
-                .setAnimationBackground(EmbeddingAnimationBackground.DEFAULT)
+                .setAnimationParams(EmbeddingAnimationParams(colorBackground))
                 .build()
+        val splitAttributesWithDefaultBackground =
+            SplitAttributes.Builder().setAnimationParams(EmbeddingAnimationParams()).build()
 
         // No difference after translate before API level 5
         assertEquals(

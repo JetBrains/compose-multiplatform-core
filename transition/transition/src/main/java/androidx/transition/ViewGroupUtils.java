@@ -20,8 +20,9 @@ import android.annotation.SuppressLint;
 import android.os.Build;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

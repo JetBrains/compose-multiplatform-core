@@ -33,7 +33,7 @@ android {
     buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
-    namespace "androidx.lifecycle.process"
+    namespace = "androidx.lifecycle.process"
 }
 
 dependencies {

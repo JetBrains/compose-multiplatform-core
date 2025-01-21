@@ -30,7 +30,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.emoji2.viewsintegration"
+    namespace = "androidx.emoji2.viewsintegration"
 }
 
 androidx {

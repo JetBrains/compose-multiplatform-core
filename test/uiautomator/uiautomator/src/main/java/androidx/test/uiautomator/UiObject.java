@@ -24,8 +24,8 @@ import android.util.Log;
 import android.view.MotionEvent.PointerCoords;
 import android.view.accessibility.AccessibilityNodeInfo;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A UiObject is a representation of a view. It is not in any way directly bound to a
@@ -83,8 +83,7 @@ public class UiObject {
      *
      * @return {@link UiSelector}
      */
-    @NonNull
-    public final UiSelector getSelector() {
+    public final @NonNull UiSelector getSelector() {
         if (mUiSelector == null) {
             throw new IllegalStateException("UiSelector not set");
         }
@@ -121,8 +120,8 @@ public class UiObject {
      * @param selector for child view to match
      * @return a new UiObject representing the child view
      */
-    @NonNull
-    public UiObject getChild(@NonNull UiSelector selector) throws UiObjectNotFoundException {
+    public @NonNull UiObject getChild(@NonNull UiSelector selector)
+            throws UiObjectNotFoundException {
         return new UiObject(getSelector().childSelector(selector));
     }
 
@@ -134,8 +133,8 @@ public class UiObject {
      * @return a new UiObject representing the matched view
      * @throws UiObjectNotFoundException
      */
-    @NonNull
-    public UiObject getFromParent(@NonNull UiSelector selector) throws UiObjectNotFoundException {
+    public @NonNull UiObject getFromParent(@NonNull UiSelector selector)
+            throws UiObjectNotFoundException {
         return new UiObject(getSelector().fromParent(selector));
     }
 
@@ -160,8 +159,7 @@ public class UiObject {
      * @param timeout in milliseconds
      * @return AccessibilityNodeInfo if found else null
      */
-    @Nullable
-    protected AccessibilityNodeInfo findAccessibilityNodeInfo(long timeout) {
+    protected @Nullable AccessibilityNodeInfo findAccessibilityNodeInfo(long timeout) {
         AccessibilityNodeInfo node = null;
         long startMills = SystemClock.uptimeMillis();
         long currentMills = 0;
@@ -513,8 +511,7 @@ public class UiObject {
      * @return text value of the current node represented by this UiObject
      * @throws UiObjectNotFoundException if no match could be found
      */
-    @NonNull
-    public String getText() throws UiObjectNotFoundException {
+    public @NonNull String getText() throws UiObjectNotFoundException {
         AccessibilityNodeInfo node = findAccessibilityNodeInfo(mConfig.getWaitForSelectorTimeout());
         if(node == null) {
             throw new UiObjectNotFoundException(mUiSelector.toString());
@@ -528,8 +525,7 @@ public class UiObject {
      * @return class name of the current node represented by this UiObject
      * @throws UiObjectNotFoundException if no match was found
      */
-    @NonNull
-    public String getClassName() throws UiObjectNotFoundException {
+    public @NonNull String getClassName() throws UiObjectNotFoundException {
         AccessibilityNodeInfo node = findAccessibilityNodeInfo(mConfig.getWaitForSelectorTimeout());
         if(node == null) {
             throw new UiObjectNotFoundException(mUiSelector.toString());
@@ -543,8 +539,7 @@ public class UiObject {
      * @return value of node attribute "content_desc"
      * @throws UiObjectNotFoundException
      */
-    @NonNull
-    public String getContentDescription() throws UiObjectNotFoundException {
+    public @NonNull String getContentDescription() throws UiObjectNotFoundException {
         AccessibilityNodeInfo node = findAccessibilityNodeInfo(mConfig.getWaitForSelectorTimeout());
         if(node == null) {
             throw new UiObjectNotFoundException(mUiSelector.toString());
@@ -743,8 +738,7 @@ public class UiObject {
      * @return true if it is else false
      * @throws UiObjectNotFoundException
      */
-    @NonNull
-    public String getPackageName() throws UiObjectNotFoundException {
+    public @NonNull String getPackageName() throws UiObjectNotFoundException {
         AccessibilityNodeInfo node = findAccessibilityNodeInfo(mConfig.getWaitForSelectorTimeout());
         if(node == null) {
             throw new UiObjectNotFoundException(mUiSelector.toString());
@@ -762,8 +756,7 @@ public class UiObject {
      * @throws UiObjectNotFoundException
      * @see #getBounds()
      */
-    @NonNull
-    public Rect getVisibleBounds() throws UiObjectNotFoundException {
+    public @NonNull Rect getVisibleBounds() throws UiObjectNotFoundException {
         AccessibilityNodeInfo node = findAccessibilityNodeInfo(mConfig.getWaitForSelectorTimeout());
         if(node == null) {
             throw new UiObjectNotFoundException(mUiSelector.toString());
@@ -777,8 +770,7 @@ public class UiObject {
      * @return Rect
      * @throws UiObjectNotFoundException
      */
-    @NonNull
-    public Rect getBounds() throws UiObjectNotFoundException {
+    public @NonNull Rect getBounds() throws UiObjectNotFoundException {
         AccessibilityNodeInfo node = findAccessibilityNodeInfo(mConfig.getWaitForSelectorTimeout());
         if(node == null) {
             throw new UiObjectNotFoundException(mUiSelector.toString());
@@ -1025,12 +1017,12 @@ public class UiObject {
      * @return <code>true</code> if all touch events for this gesture are injected successfully,
      *         <code>false</code> otherwise
      */
-    public boolean performMultiPointerGesture(@NonNull PointerCoords[]... touches) {
+    public boolean performMultiPointerGesture(PointerCoords @NonNull []... touches) {
         Log.d(TAG, String.format("Performing multi-point gesture %s.", touchesToString(touches)));
         return getInteractionController().performMultiPointerGesture(touches);
     }
 
-    private static String touchesToString(@NonNull PointerCoords[]... touches) {
+    private static String touchesToString(PointerCoords @NonNull []... touches) {
         StringBuilder result = new StringBuilder();
         result.append("[");
         for (int i = 0; i < touches.length; i++) {

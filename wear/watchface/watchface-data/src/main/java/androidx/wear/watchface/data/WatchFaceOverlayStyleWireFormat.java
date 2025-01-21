@@ -21,13 +21,14 @@ import android.graphics.Color;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Wire format for {@link androidx.wear.watchface.WatchFace.WatchFaceOverlayStyle}.
@@ -69,8 +70,7 @@ public class WatchFaceOverlayStyleWireFormat implements VersionedParcelable, Par
     }
 
     /** Returns the background color or `null`. */
-    @Nullable
-    public Color getBackgroundColor() {
+    public @Nullable Color getBackgroundColor() {
         if (!mHasBackgroundColor) {
             return null;
         }
@@ -78,8 +78,7 @@ public class WatchFaceOverlayStyleWireFormat implements VersionedParcelable, Par
     }
 
     /** Returns the foreground color or `null`. */
-    @Nullable
-    public Color getForegroundColor() {
+    public @Nullable Color getForegroundColor() {
         if (!mHasForegroundColor) {
             return null;
         }

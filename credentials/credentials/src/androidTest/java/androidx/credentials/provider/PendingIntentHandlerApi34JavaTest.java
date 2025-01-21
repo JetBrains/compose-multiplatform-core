@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.SigningInfo;
 import android.credentials.CredentialOption;
@@ -38,6 +39,7 @@ import androidx.credentials.exceptions.GetCredentialInterruptedException;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -68,6 +70,8 @@ public class PendingIntentHandlerApi34JavaTest {
     private static final int BIOMETRIC_AUTHENTICATOR_ERROR_CODE = 5;
 
     private static final String BIOMETRIC_AUTHENTICATOR_ERROR_MSG = "error";
+
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
 
     @Test
     public void test_retrieveProviderCreateCredReqWithSuccessBpAuthJetpack_retrieveJetpackResult() {
@@ -292,12 +296,7 @@ public class PendingIntentHandlerApi34JavaTest {
 
     @Test
     public void test_setGetCreateCredentialException() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return;
-        }
-
         Intent intent = new Intent();
-
         CreateCredentialInterruptedException initialException =
                 new CreateCredentialInterruptedException("message");
 
@@ -307,26 +306,16 @@ public class PendingIntentHandlerApi34JavaTest {
                 IntentHandlerConverters.getCreateCredentialException(intent);
         assertThat(finalException).isNotNull();
         assertThat(finalException.getMessage()).isEqualTo(initialException.getMessage());
+        assertThat(finalException.getType()).isEqualTo(initialException.getType());
     }
 
     @Test
-    public void test_setGetCreateCredentialException_throwsWhenEmptyIntent() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return;
-        }
-
-        assertThat(
-                        IntentHandlerConverters.getCreateCredentialException(
-                                BLANK_INTENT))
-                .isNull();
+    public void test_setGetCreateCredentialException_nullWhenEmptyIntent() {
+        assertThat(IntentHandlerConverters.getCreateCredentialException(BLANK_INTENT)).isNull();
     }
 
     @Test
     public void test_credentialException() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return;
-        }
-
         Intent intent = new Intent();
         GetCredentialInterruptedException initialException =
                 new GetCredentialInterruptedException("message");
@@ -336,25 +325,17 @@ public class PendingIntentHandlerApi34JavaTest {
         android.credentials.GetCredentialException finalException =
                 IntentHandlerConverters.getGetCredentialException(intent);
         assertThat(finalException).isNotNull();
-        assertThat(finalException).isEqualTo(initialException);
+        assertThat(finalException.getMessage()).isEqualTo(initialException.getMessage());
+        assertThat(finalException.getType()).isEqualTo(initialException.getType());
     }
 
     @Test
-    public void test_credentialException_throwsWhenEmptyIntent() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return;
-        }
-
-        assertThat(IntentHandlerConverters.getGetCredentialException(BLANK_INTENT))
-                .isNull();
+    public void test_credentialException_nullWhenEmptyIntent() {
+        assertThat(IntentHandlerConverters.getGetCredentialException(BLANK_INTENT)).isNull();
     }
 
     @Test
     public void test_beginGetResponse() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return;
-        }
-
         Intent intent = new Intent();
         BeginGetCredentialResponse initialResponse =
                 new BeginGetCredentialResponse.Builder().build();
@@ -364,25 +345,17 @@ public class PendingIntentHandlerApi34JavaTest {
         BeginGetCredentialResponse finalResponse =
                 IntentHandlerConverters.getBeginGetResponse(intent);
         assertThat(finalResponse).isNotNull();
-        assertThat(finalResponse).isEqualTo(initialResponse);
+        TestUtilsKt.assertEquals(mContext, finalResponse, initialResponse);
     }
 
     @Test
     public void test_beginGetResponse_throwsWhenEmptyIntent() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return;
-        }
-
         assertThat(IntentHandlerConverters.getBeginGetResponse(BLANK_INTENT))
                 .isNull();
     }
 
     @Test
     public void test_credentialResponse() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return;
-        }
-
         Intent intent = new Intent();
         PasswordCredential credential = new PasswordCredential("a", "b");
         GetCredentialResponse initialResponse = new GetCredentialResponse(credential);
@@ -392,15 +365,11 @@ public class PendingIntentHandlerApi34JavaTest {
         android.credentials.GetCredentialResponse finalResponse =
                 IntentHandlerConverters.getGetCredentialResponse(intent);
         assertThat(finalResponse).isNotNull();
-        assertThat(finalResponse).isEqualTo(initialResponse);
+        TestUtilsKt.assertEquals(finalResponse, initialResponse);
     }
 
     @Test
-    public void test_credentialResponse_throwsWhenEmptyIntent() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return;
-        }
-
+    public void test_credentialResponse_nullWhenEmptyIntent() {
         assertThat(IntentHandlerConverters.getGetCredentialResponse(BLANK_INTENT))
                 .isNull();
     }
@@ -519,10 +488,6 @@ public class PendingIntentHandlerApi34JavaTest {
 
     @Test
     public void test_createCredentialCredentialResponse() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return;
-        }
-
         Intent intent = new Intent();
         CreatePasswordResponse initialResponse = new CreatePasswordResponse();
 
@@ -532,18 +497,12 @@ public class PendingIntentHandlerApi34JavaTest {
                 IntentHandlerConverters.getCreateCredentialCredentialResponse(
                         intent);
         assertThat(finalResponse).isNotNull();
-        assertThat(finalResponse).isEqualTo(initialResponse);
+        TestUtilsKt.assertEquals(finalResponse, initialResponse);
     }
 
     @Test
-    public void test_createCredentialCredentialResponse_throwsWhenEmptyIntent() {
-        if (Build.VERSION.SDK_INT >= 34) {
-            return;
-        }
-
-        assertThat(
-                        IntentHandlerConverters
-                                .getCreateCredentialCredentialResponse(BLANK_INTENT))
+    public void test_createCredentialCredentialResponse_nullWhenEmptyIntent() {
+        assertThat(IntentHandlerConverters.getCreateCredentialCredentialResponse(BLANK_INTENT))
                 .isNull();
     }
 }

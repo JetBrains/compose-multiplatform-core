@@ -32,10 +32,11 @@ plugins {
 }
 
 android {
-    namespace "androidx.window.testing"
+    namespace = "androidx.window.testing"
 }
 
 dependencies {
+    api(libs.jspecify)
     api(libs.kotlinStdlib)
     api(project(":window:window"))
     api(libs.junit)

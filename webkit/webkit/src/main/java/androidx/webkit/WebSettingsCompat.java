@@ -20,7 +20,6 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RequiresOptIn;
 import androidx.annotation.RestrictTo;
@@ -34,6 +33,7 @@ import androidx.webkit.internal.WebViewFeatureInternal;
 import androidx.webkit.internal.WebViewGlueCommunicator;
 
 import org.chromium.support_lib_boundary.WebSettingsBoundaryInterface;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -658,8 +658,8 @@ public class WebSettingsCompat {
      */
     @RequiresFeature(name = WebViewFeature.REQUESTED_WITH_HEADER_ALLOW_LIST,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @NonNull
-    public static Set<String> getRequestedWithHeaderOriginAllowList(@NonNull WebSettings settings) {
+    public static @NonNull Set<String> getRequestedWithHeaderOriginAllowList(
+            @NonNull WebSettings settings) {
         final ApiFeature.NoFramework feature =
                 WebViewFeatureInternal.REQUESTED_WITH_HEADER_ALLOW_LIST;
         if (feature.isSupportedByWebView()) {
@@ -758,8 +758,7 @@ public class WebSettingsCompat {
      */
     @RequiresFeature(name = WebViewFeature.USER_AGENT_METADATA,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @NonNull
-    public static UserAgentMetadata getUserAgentMetadata(@NonNull WebSettings settings) {
+    public static @NonNull UserAgentMetadata getUserAgentMetadata(@NonNull WebSettings settings) {
         final ApiFeature.NoFramework feature =
                 WebViewFeatureInternal.USER_AGENT_METADATA;
         if (feature.isSupportedByWebView()) {
@@ -900,8 +899,7 @@ public class WebSettingsCompat {
      */
     @RequiresFeature(name = WebViewFeature.WEBVIEW_MEDIA_INTEGRITY_API_STATUS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    @NonNull
-    public static WebViewMediaIntegrityApiStatusConfig getWebViewMediaIntegrityApiStatus(
+    public static @NonNull WebViewMediaIntegrityApiStatusConfig getWebViewMediaIntegrityApiStatus(
             @NonNull WebSettings settings) {
         final ApiFeature.NoFramework feature =
                 WebViewFeatureInternal.WEBVIEW_MEDIA_INTEGRITY_API_STATUS;

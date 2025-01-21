@@ -18,11 +18,12 @@ package androidx.concurrent.futures;
 
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 import java.util.concurrent.CancellationException;
@@ -119,10 +120,8 @@ public abstract class AbstractResolvableFuture<V> implements ListenableFuture<V>
     private static final class Waiter {
         static final Waiter TOMBSTONE = new Waiter(false /* ignored param */);
 
-        @Nullable
-        volatile Thread thread;
-        @Nullable
-        volatile Waiter next;
+        volatile @Nullable Thread thread;
+        volatile @Nullable Waiter next;
 
         /**
          * Constructor for the TOMBSTONE, avoids use of ATOMIC_HELPER in case this class is loaded
@@ -203,8 +202,7 @@ public abstract class AbstractResolvableFuture<V> implements ListenableFuture<V>
         final Executor executor;
 
         // writes to next are made visible by subsequent CAS's on the listeners field
-        @Nullable
-        Listener next;
+        @Nullable Listener next;
 
         Listener(Runnable task, Executor executor) {
             this.task = task;
@@ -249,8 +247,7 @@ public abstract class AbstractResolvableFuture<V> implements ListenableFuture<V>
         }
 
         final boolean wasInterrupted;
-        @Nullable
-        final Throwable cause;
+        final @Nullable Throwable cause;
 
         Cancellation(boolean wasInterrupted, @Nullable Throwable cause) {
             this.wasInterrupted = wasInterrupted;
@@ -298,19 +295,16 @@ public abstract class AbstractResolvableFuture<V> implements ListenableFuture<V>
      * argument.
      * </ul>
      */
-    @Nullable
     @SuppressWarnings("WeakerAccess") // Avoiding synthetic accessor.
-    volatile Object value;
+    volatile @Nullable Object value;
 
     /** All listeners. */
-    @Nullable
     @SuppressWarnings("WeakerAccess") // Avoiding synthetic accessor.
-    volatile Listener listeners;
+    volatile @Nullable Listener listeners;
 
     /** All waiting threads. */
-    @Nullable
     @SuppressWarnings("WeakerAccess") // Avoiding synthetic accessor.
-    volatile Waiter waiters;
+    volatile @Nullable Waiter waiters;
 
     /** Constructor for use by subclasses. */
     protected AbstractResolvableFuture() {
@@ -1006,8 +1000,7 @@ public abstract class AbstractResolvableFuture<V> implements ListenableFuture<V>
      * @return null if an explanation cannot be provided because the future is done.
      * @since 23.0
      */
-    @Nullable
-    protected String pendingToString() {
+    protected @Nullable String pendingToString() {
         Object localValue = value;
         if (localValue instanceof SetFuture) {
             return "setFuture=[" + userObjectToString(((SetFuture) localValue).future) + "]";
@@ -1196,8 +1189,7 @@ public abstract class AbstractResolvableFuture<V> implements ListenableFuture<V>
     }
 
     @SuppressWarnings("WeakerAccess") // Avoiding synthetic accessor.
-    @NonNull
-    static <T> T checkNotNull(@Nullable T reference) {
+    static <T> @NonNull T checkNotNull(@Nullable T reference) {
         if (reference == null) {
             throw new NullPointerException();
         }

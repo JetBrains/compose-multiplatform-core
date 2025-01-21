@@ -162,7 +162,7 @@ abstract class StableAidlCompile : DefaultTask() {
             abstract val importFolders: ConfigurableFileCollection
             abstract val sourceOutputDir: DirectoryProperty
             abstract val packagedOutputDir: DirectoryProperty
-            abstract val dir: Property<File>
+            abstract val dir: RegularFileProperty
             abstract val extraArgs: ListProperty<String>
         }
 
@@ -179,7 +179,7 @@ abstract class StableAidlCompile : DefaultTask() {
 
             try {
                 DirectoryWalker.builder()
-                    .root(parameters.dir.get().toPath())
+                    .root(parameters.dir.get().asFile.toPath())
                     .extensions("aidl")
                     .action(collector)
                     .build()

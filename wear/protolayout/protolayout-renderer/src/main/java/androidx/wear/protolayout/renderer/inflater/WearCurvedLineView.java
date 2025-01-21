@@ -39,8 +39,6 @@ import android.util.Log;
 import android.view.View;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.wear.protolayout.proto.ColorProto;
 import androidx.wear.protolayout.proto.LayoutElementProto.ArcDirection;
@@ -49,6 +47,9 @@ import androidx.wear.protolayout.renderer.inflater.WearCurvedLineView.ArcSegment
 import androidx.wear.widget.ArcLayout;
 
 import com.google.common.primitives.Floats;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -89,13 +90,13 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
     private float mMaxSweepAngleDegrees;
     private float mLineSweepAngleDegrees;
 
-    @Nullable @VisibleForTesting SweepGradientHelper mSweepGradientHelper;
+    @VisibleForTesting @Nullable SweepGradientHelper mSweepGradientHelper;
 
-    @Nullable private ArcDrawable mArcDrawable;
-    @Nullable private StrokeCapShadow mCapShadow;
+    private @Nullable ArcDrawable mArcDrawable;
+    private @Nullable StrokeCapShadow mCapShadow;
 
     /** Base paint used for drawing. This paint doesn't include any gradient definition. */
-    @NonNull private final Paint mBasePaint;
+    private final @NonNull Paint mBasePaint;
 
     private boolean updatesEnabled = true;
 
@@ -292,7 +293,7 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
     }
 
     /** Sets a brush to be used to draw this arc. */
-    public void setBrush(@NonNull ColorProto.Brush brushProto) {
+    public void setBrush(ColorProto.@NonNull Brush brushProto) {
         if (!brushProto.hasSweepGradient()) {
             Log.e(TAG, "Only SweepGradient is currently supported in ArcLine.");
             return;
@@ -306,8 +307,7 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
     }
 
     /** Returns the strokeCap of this arc. */
-    @NonNull
-    public Cap getStrokeCap() {
+    public @NonNull Cap getStrokeCap() {
         return mBasePaint.getStrokeCap();
     }
 
@@ -390,10 +390,10 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
          */
         private static final float CAP_COLOR_SHADER_OFFSET_SIZE = 0.25f;
 
-        @NonNull private final List<AngularColorStop> colorStops;
+        private final @NonNull List<AngularColorStop> colorStops;
 
         /** Constructor. All colors will have their alpha channel set to 0xFF (opaque). */
-        SweepGradientHelper(@NonNull ColorProto.SweepGradient sweepGradProto) {
+        SweepGradientHelper(ColorProto.@NonNull SweepGradient sweepGradProto) {
             int numColors = sweepGradProto.getColorStopsCount();
             if (numColors < MIN_COLOR_STOPS || numColors > MAX_COLOR_STOPS) {
                 throw new IllegalArgumentException(
@@ -506,8 +506,7 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
          *     color
          * @param capPosition the position of the stroke cap.
          */
-        @NonNull
-        Shader getShader(
+        @NonNull Shader getShader(
                 @NonNull RectF bounds,
                 float gradStartAngle,
                 float gradEndAngle,
@@ -599,14 +598,14 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
         /** The angle span of the sector that is clipped out. */
         private static final float CLIP_OUT_PATH_SPAN_DEGREES = 90f;
 
-        @NonNull private final Paint mPaint;
-        @NonNull private final Path mPath;
+        private final @NonNull Paint mPaint;
+        private final @NonNull Path mPath;
 
         /** A region to be clipped out when drawing, in order to exclude one of the stroke caps. */
-        @Nullable private Path mExcludedCapRegion = null;
+        private @Nullable Path mExcludedCapRegion = null;
 
         /** A region to be clipped in when drawing, in order to only include this region. */
-        @Nullable private Path mMaskRegion = null;
+        private @Nullable Path mMaskRegion = null;
 
         /**
          * Creates a segment that draws perpendicular to the arc, covering a length equivalent to
@@ -759,7 +758,7 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
     static class ArcDrawableImpl implements ArcDrawable {
         // The list of segments that compose the ArcDrawable, in the order that they should be
         // drawn.
-        @NonNull private final List<ArcSegment> mSegments = new ArrayList<>();
+        private final @NonNull List<ArcSegment> mSegments = new ArrayList<>();
 
         ArcDrawableImpl(
                 @NonNull RectF bounds,
@@ -796,7 +795,7 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
 
             float segmentSweep = topLayerLength / 2f;
 
-            @Nullable Paint shadowPaint = null;
+            Paint shadowPaint = null;
             if (strokeCapShadow != null) {
                 shadowPaint = new Paint(basePaint);
                 shadowPaint.setColor(Color.TRANSPARENT);
@@ -888,8 +887,8 @@ public class WearCurvedLineView extends View implements ArcLayout.Widget {
     /** Legacy LinePath, which supports drawing the line as a single Path. */
     private static class ArcDrawableLegacy implements ArcDrawable {
 
-        @NonNull private final Paint mPaint;
-        @NonNull private final Path mPath = new Path();
+        private final @NonNull Paint mPaint;
+        private final @NonNull Path mPath = new Path();
 
         ArcDrawableLegacy(@NonNull RectF bounds, float clampedLineLength, @NonNull Paint paint) {
             this.mPaint = paint;

@@ -147,5 +147,7 @@ object CurvedTextDefaults {
      * The recommended background color to use when displaying curved text so it is visible on top
      * of other content.
      */
-    @Composable fun backgroundColor() = MaterialTheme.colorScheme.background.copy(alpha = 0.85f)
+    @Composable
+    fun backgroundColor() =
+        MaterialTheme.colorScheme.background.let { it.copy(alpha = 0.85f * it.alpha) }
 }

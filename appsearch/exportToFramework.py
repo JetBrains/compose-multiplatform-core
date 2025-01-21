@@ -193,6 +193,7 @@ class ExportToFramework:
             .replace('@exportToFramework:hide', '@hide')
             .replace('// @exportToFramework:skipFile()', '')
             .replace('@ExperimentalAppSearchApi', '')
+            .replace('@OptIn(markerClass = ExperimentalAppSearchApi.class)', '')
         )
         contents = re.sub(r'\/\/ @exportToFramework:copyToPath\([^)]+\)', '', contents)
         contents = re.sub(r'@RequiresFeature\([^)]*\)', '', contents, flags=re.DOTALL)
@@ -208,14 +209,17 @@ class ExportToFramework:
     def _TransformTestCode(self, contents):
         contents = (contents
             .replace(
-                    'androidx.appsearch.flags.CheckFlagsRule',
+                    'androidx.appsearch.testutil.flags.CheckFlagsRule',
                     'android.platform.test.flag.junit.CheckFlagsRule')
             .replace(
-                    'androidx.appsearch.flags.DeviceFlagsValueProvider',
+                    'androidx.appsearch.testutil.flags.DeviceFlagsValueProvider',
                     'android.platform.test.flag.junit.DeviceFlagsValueProvider')
             .replace(
-                    'androidx.appsearch.flags.RequiresFlagsEnabled',
+                    'androidx.appsearch.testutil.flags.RequiresFlagsEnabled',
                     'android.platform.test.annotations.RequiresFlagsEnabled')
+            .replace(
+                    'androidx.appsearch.testutil.flags.RequiresFlagsDisabled',
+                    'android.platform.test.annotations.RequiresFlagsDisabled')
             .replace('androidx.appsearch.testutil.', 'android.app.appsearch.testutil.')
             .replace(
                     'package androidx.appsearch.testutil;',

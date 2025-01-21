@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The Android Open Source Project
+ * Copyright 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package androidx.navigation
 import androidx.annotation.AnimRes
 import androidx.annotation.AnimatorRes
 import androidx.annotation.IdRes
-import androidx.annotation.RestrictTo
 import androidx.navigation.NavDestination.Companion.createRoute
+import androidx.navigation.NavOptions.Builder
 import androidx.navigation.serialization.generateHashCode
 import kotlin.reflect.KClass
 import kotlinx.serialization.InternalSerializationApi
@@ -435,15 +435,29 @@ internal constructor(
             return this
         }
 
-        // this restricted public is needed so that the public reified [popUpTo] can call
-        // private popUpToRouteClass setter
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public fun setPopUpTo(
-            klass: KClass<*>,
+        /**
+         * Pop up to a given destination before navigating. This pops all non-matching destinations
+         * from the back stack until this destination is found.
+         *
+         * @param route from the [KClass] of the destination [T] to pop up to, clearing all
+         *   intervening destinations.
+         * @param inclusive true to also pop the given destination from the back stack.
+         * @param saveState true if the back stack and the state of all destinations between the
+         *   current destination and [T] should be saved for later restoration via [setRestoreState]
+         *   or the `restoreState` attribute using the same route from [KClass] as
+         *   [popUpToRouteClass] (note: this matching route is true whether [inclusive] is true or
+         *   false).
+         * @return this Builder
+         * @see NavOptions.popUpToId
+         * @see NavOptions.isPopUpToInclusive
+         */
+        @JvmOverloads
+        public fun <T : Any> setPopUpTo(
+            route: KClass<T>,
             inclusive: Boolean,
             saveState: Boolean = false
         ): Builder {
-            popUpToRouteClass = klass
+            popUpToRouteClass = route
             popUpToId = -1
             popUpToInclusive = inclusive
             popUpToSaveState = saveState

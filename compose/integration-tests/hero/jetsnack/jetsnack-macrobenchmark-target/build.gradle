@@ -22,13 +22,13 @@ plugins {
 }
 
 android {
-    compileSdkVersion 35
-    namespace "androidx.compose.integration.hero.jetsnack.macrobenchmark.target"
+    compileSdk = 35
+    namespace = "androidx.compose.integration.hero.jetsnack.macrobenchmark.target"
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
         }
     }
@@ -39,7 +39,7 @@ dependencies {
     implementation("androidx.viewpager2:viewpager2:1.0.0")
 
     implementation(libs.kotlinStdlib)
-    implementation(project(":activity:activity-compose"))
+    implementation(libs.androidx.activity.compose)
     implementation("androidx.appcompat:appcompat:1.4.1")
     implementation("androidx.cardview:cardview:1.0.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")

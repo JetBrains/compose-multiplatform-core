@@ -22,7 +22,7 @@ plugins {
 
 android {
     defaultConfig {
-        applicationId "androidx.camera.integration.core"
+        applicationId = "androidx.camera.integration.core"
 
         externalNativeBuild {
             cmake {
@@ -34,12 +34,12 @@ android {
 
     buildTypes {
         debug {
-            pseudoLocalesEnabled true
+            pseudoLocalesEnabled = true
         }
 
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
     }
@@ -47,10 +47,10 @@ android {
     externalNativeBuild {
         cmake {
             path "src/main/cpp/CMakeLists.txt"
-            version libs.versions.cmake.get()
+            version = libs.versions.cmake.get()
         }
     }
-    namespace "androidx.camera.integration.core"
+    namespace = "androidx.camera.integration.core"
 }
 
 dependencies {

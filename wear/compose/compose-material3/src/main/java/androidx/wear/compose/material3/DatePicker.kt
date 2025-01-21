@@ -157,14 +157,33 @@ fun DatePicker(
     val monthString = getString(DatePickerMonth)
     val dayString = getString(DatePickerDay)
 
-    LaunchedEffect(datePickerState.isMinYearSelected, datePickerState.isMaxYearSelected) {
-        datePickerState.adjustMonthOption()
+    LaunchedEffect(
+        datePickerState.isMinYearSelected,
+        datePickerState.isMaxYearSelected,
+        datePickerState.yearState.isScrollInProgress,
+        datePickerState.monthState.isScrollInProgress,
+    ) {
+        if (
+            (datePickerState.isMinYearSelected || datePickerState.isMaxYearSelected) &&
+                !datePickerState.yearState.isScrollInProgress &&
+                !datePickerState.monthState.isScrollInProgress
+        ) {
+            datePickerState.adjustMonthOptionIfInvalid()
+        }
     }
     LaunchedEffect(
-        datePickerState.yearState.selectedOptionIndex,
-        datePickerState.monthState.selectedOptionIndex
+        datePickerState.yearState.isScrollInProgress,
+        datePickerState.monthState.isScrollInProgress,
+        datePickerState.dayState.isScrollInProgress,
     ) {
-        datePickerState.adjustDayOption()
+        if (
+            !datePickerState.yearState.isScrollInProgress &&
+                !datePickerState.monthState.isScrollInProgress &&
+                !datePickerState.dayState.isScrollInProgress &&
+                datePickerState.isSelectedMonthValid
+        ) {
+            datePickerState.adjustDayOptionIfInvalid()
+        }
     }
 
     val shortMonthNames = remember { getMonthNames("MMM") }
@@ -172,12 +191,12 @@ fun DatePicker(
     val yearContentDescription by
         remember(
             selectedIndex,
-            datePickerState.currentYear(),
+            datePickerState.selectedYear,
         ) {
             derivedStateOf {
                 createDescriptionDatePicker(
                     selectedIndex,
-                    datePickerState.currentYear(),
+                    datePickerState.selectedYear,
                     yearString,
                 )
             }
@@ -185,25 +204,25 @@ fun DatePicker(
     val monthContentDescription by
         remember(
             selectedIndex,
-            datePickerState.currentMonth(),
+            datePickerState.selectedMonth,
         ) {
             derivedStateOf {
                 if (selectedIndex == null) {
                     monthString
                 } else {
-                    fullMonthNames[(datePickerState.currentMonth() - 1) % 12]
+                    fullMonthNames[(datePickerState.selectedMonth - 1) % 12]
                 }
             }
         }
     val dayContentDescription by
         remember(
             selectedIndex,
-            datePickerState.currentDay(),
+            datePickerState.selectedDay,
         ) {
             derivedStateOf {
                 createDescriptionDatePicker(
                     selectedIndex,
-                    datePickerState.currentDay(),
+                    datePickerState.selectedDay,
                     dayString,
                 )
             }
@@ -321,13 +340,20 @@ fun DatePicker(
                                             pickerTextOption(
                                                 textStyle = optionTextStyle,
                                                 indexToText = {
-                                                    "%02d".format(datePickerState.currentDay(it))
+                                                    "%02d".format(datePickerState.dayValue(it))
                                                 },
                                                 optionHeight = optionHeight,
                                                 selectedContentColor =
                                                     colors.selectedPickerContentColor,
                                                 unselectedContentColor =
                                                     colors.unselectedPickerContentColor,
+                                                invalidContentColor =
+                                                    colors.invalidPickerContentColor,
+                                                isValid = {
+                                                    datePickerState.isDayValid(
+                                                        datePickerState.dayValue(it)
+                                                    )
+                                                }
                                             ),
                                         spacing = spacing,
                                     )
@@ -342,13 +368,20 @@ fun DatePicker(
                                                 textStyle = optionTextStyle,
                                                 indexToText = {
                                                     shortMonthNames[
-                                                        (datePickerState.currentMonth(it) - 1) % 12]
+                                                        (datePickerState.monthValue(it) - 1) % 12]
                                                 },
                                                 optionHeight = optionHeight,
                                                 selectedContentColor =
                                                     colors.selectedPickerContentColor,
                                                 unselectedContentColor =
                                                     colors.unselectedPickerContentColor,
+                                                invalidContentColor =
+                                                    colors.invalidPickerContentColor,
+                                                isValid = {
+                                                    datePickerState.isMonthValid(
+                                                        datePickerState.monthValue(it)
+                                                    )
+                                                }
                                             ),
                                         spacing = spacing,
                                     )
@@ -362,13 +395,20 @@ fun DatePicker(
                                             pickerTextOption(
                                                 textStyle = optionTextStyle,
                                                 indexToText = {
-                                                    "%4d".format(datePickerState.currentYear(it))
+                                                    "%4d".format(datePickerState.yearValue(it))
                                                 },
                                                 optionHeight = optionHeight,
                                                 selectedContentColor =
                                                     colors.selectedPickerContentColor,
                                                 unselectedContentColor =
                                                     colors.unselectedPickerContentColor,
+                                                invalidContentColor =
+                                                    colors.invalidPickerContentColor,
+                                                isValid = {
+                                                    datePickerState.isYearValid(
+                                                        datePickerState.yearValue(it)
+                                                    )
+                                                }
                                             ),
                                         spacing = spacing,
                                     )
@@ -382,12 +422,13 @@ fun DatePicker(
                 onClick = {
                     selectedIndex?.let { selectedIndex ->
                         if (selectedIndex >= 2) {
-                            val confirmedYear: Int = datePickerState.currentYear()
-                            val confirmedMonth: Int = datePickerState.currentMonth()
-                            val confirmedDay: Int = datePickerState.currentDay()
-                            val confirmedDate =
-                                LocalDate.of(confirmedYear, confirmedMonth, confirmedDay)
-                            onDatePicked(confirmedDate)
+                            val pickedDate =
+                                LocalDate.of(
+                                    datePickerState.selectedYear,
+                                    datePickerState.selectedMonth,
+                                    datePickerState.selectedDay,
+                                )
+                            onDatePicked(pickedDate)
                         } else {
                             onPickerSelected(selectedIndex, selectedIndex + 1)
                         }
@@ -408,7 +449,13 @@ fun DatePicker(
                             contentColor = colors.nextButtonContentColor,
                             containerColor = colors.nextButtonContainerColor,
                         )
-                    }
+                    },
+                enabled =
+                    if (selectedIndex?.let { it >= 2 } == true) {
+                        datePickerState.isSelectedDayValid
+                    } else {
+                        true
+                    },
             ) {
                 // If none is selected (selectedIndex == null) we show 'next' instead of 'confirm'.
                 val showConfirm = selectedIndex?.let { it >= 2 } == true
@@ -481,6 +528,8 @@ object DatePickerDefaults {
      *
      * @param selectedPickerContentColor The content color of selected picker.
      * @param unselectedPickerContentColor The content color of unselected picker.
+     * @param invalidPickerContentColor The content color of invalid picker options. Picker options
+     *   can be invalid when minDate or maxDate are specified for the [DatePicker].
      * @param pickerLabelColor The color of the picker label.
      * @param nextButtonContentColor The content color of the next button.
      * @param nextButtonContainerColor The container color of the next button.
@@ -491,6 +540,7 @@ object DatePickerDefaults {
     fun datePickerColors(
         selectedPickerContentColor: Color = Color.Unspecified,
         unselectedPickerContentColor: Color = Color.Unspecified,
+        invalidPickerContentColor: Color = Color.Unspecified,
         pickerLabelColor: Color = Color.Unspecified,
         nextButtonContentColor: Color = Color.Unspecified,
         nextButtonContainerColor: Color = Color.Unspecified,
@@ -500,6 +550,7 @@ object DatePickerDefaults {
         MaterialTheme.colorScheme.defaultDatePickerColors.copy(
             selectedPickerContentColor = selectedPickerContentColor,
             unselectedPickerContentColor = unselectedPickerContentColor,
+            invalidPickerContentColor = invalidPickerContentColor,
             pickerLabelColor = pickerLabelColor,
             nextButtonContentColor = nextButtonContentColor,
             nextButtonContainerColor = nextButtonContainerColor,
@@ -515,6 +566,11 @@ object DatePickerDefaults {
                             fromToken(DatePickerTokens.SelectedContentColor),
                         unselectedPickerContentColor =
                             fromToken(DatePickerTokens.UnselectedContentColor),
+                        invalidPickerContentColor =
+                            fromToken(DatePickerTokens.InvalidContentColor)
+                                .toDisabledColor(
+                                    disabledAlpha = DatePickerTokens.InvalidContentOpacity
+                                ),
                         pickerLabelColor = fromToken(DatePickerTokens.LabelColor),
                         nextButtonContentColor = fromToken(DatePickerTokens.NextButtonContentColor),
                         nextButtonContainerColor =
@@ -532,6 +588,7 @@ object DatePickerDefaults {
 class DatePickerColors(
     val selectedPickerContentColor: Color,
     val unselectedPickerContentColor: Color,
+    val invalidPickerContentColor: Color,
     val pickerLabelColor: Color,
     val nextButtonContentColor: Color,
     val nextButtonContainerColor: Color,
@@ -543,6 +600,7 @@ class DatePickerColors(
      *
      * @param selectedPickerContentColor The content color of selected picker.
      * @param unselectedPickerContentColor The content color of unselected picker.
+     * @param invalidPickerContentColor The content color of invalid picker options.
      * @param pickerLabelColor The color of the picker label.
      * @param nextButtonContentColor The content color of the next button.
      * @param nextButtonContainerColor The container color of the next button.
@@ -552,6 +610,7 @@ class DatePickerColors(
     fun copy(
         selectedPickerContentColor: Color = this.selectedPickerContentColor,
         unselectedPickerContentColor: Color = this.unselectedPickerContentColor,
+        invalidPickerContentColor: Color = this.invalidPickerContentColor,
         pickerLabelColor: Color = this.pickerLabelColor,
         nextButtonContentColor: Color = this.nextButtonContentColor,
         nextButtonContainerColor: Color = this.nextButtonContainerColor,
@@ -563,6 +622,8 @@ class DatePickerColors(
                 selectedPickerContentColor.takeOrElse { this.selectedPickerContentColor },
             unselectedPickerContentColor =
                 unselectedPickerContentColor.takeOrElse { this.unselectedPickerContentColor },
+            invalidPickerContentColor =
+                invalidPickerContentColor.takeOrElse { this.invalidPickerContentColor },
             pickerLabelColor = pickerLabelColor.takeOrElse { this.pickerLabelColor },
             nextButtonContentColor =
                 nextButtonContentColor.takeOrElse { this.nextButtonContentColor },
@@ -580,6 +641,7 @@ class DatePickerColors(
 
         if (selectedPickerContentColor != other.selectedPickerContentColor) return false
         if (unselectedPickerContentColor != other.unselectedPickerContentColor) return false
+        if (invalidPickerContentColor != other.invalidPickerContentColor) return false
         if (pickerLabelColor != other.pickerLabelColor) return false
         if (nextButtonContentColor != other.nextButtonContentColor) return false
         if (nextButtonContainerColor != other.nextButtonContainerColor) return false
@@ -592,6 +654,7 @@ class DatePickerColors(
     override fun hashCode(): Int {
         var result = selectedPickerContentColor.hashCode()
         result = 31 * result + unselectedPickerContentColor.hashCode()
+        result = 31 * result + invalidPickerContentColor.hashCode()
         result = 31 * result + pickerLabelColor.hashCode()
         result = 31 * result + nextButtonContentColor.hashCode()
         result = 31 * result + nextButtonContainerColor.hashCode()
@@ -664,350 +727,139 @@ private class DatePickerState(
     private val minDate = initialDateMinYear ?: LocalDate.of(1900, 1, 1)
     private val maxDate = initialDateMaxYear ?: LocalDate.of(2100, 12, 31)
 
-    /** The [PickerState] for the year picker. */
     val yearState =
-        (maxDate.year - minDate.year + 1).let {
-            PickerState(
-                initialNumberOfOptions = it,
-                initiallySelectedIndex = initialDate.year - minDate.year,
-                shouldRepeatOptions = it > 2,
-            )
-        }
-
-    /** The [PickerState] for the month picker. */
-    val monthState: PickerState
-        get() = dynamicMonthState.activeState
-
-    /** The [DynamicDayState] instance that manages the state of the day picker. */
-    val dayState
-        get() = dynamicDayState.activeState
-
-    /** The [DynamicMonthState] instance that manages the state of the month picker. */
-    private val dynamicMonthState =
-        DynamicMonthState(
-            date = initialDate,
-            minDate = minDate,
-            maxDate = maxDate,
-            currentYear = ::currentYear,
+        PickerState(
+            initialNumberOfOptions = (maxDate.year - minDate.year + 1),
+            initiallySelectedIndex = initialDate.year - minDate.year,
+            shouldRepeatOptions = false,
         )
 
-    /** The [DynamicDayState] instance that manages the state of the day picker. */
-    private val dynamicDayState =
-        DynamicDayState(
-            date = initialDate,
-            minDate = minDate,
-            maxDate = maxDate,
-            currentYear = ::currentYear,
-            currentMonth = ::currentMonth,
+    val monthState: PickerState =
+        PickerState(
+            initialNumberOfOptions = 12,
+            initiallySelectedIndex = initialDate.monthValue - 1,
         )
 
-    /** Adjusts the month options based on the currently selected year. */
-    suspend fun adjustMonthOption() = dynamicMonthState.adjustMonthOption()
+    val dayState =
+        PickerState(
+            initialNumberOfOptions = initialDate.lengthOfMonth(),
+            initiallySelectedIndex = initialDate.dayOfMonth - 1,
+        )
 
-    /** Adjusts the day options based on the currently selected year and month. */
-    suspend fun adjustDayOption() = dynamicDayState.adjustDayOption()
+    val selectedYear: Int
+        get() = yearValue(yearState.selectedOptionIndex)
 
-    fun currentYear(year: Int = yearState.selectedOptionIndex): Int {
-        return year + minDate.year
-    }
+    val selectedMonth: Int
+        get() = monthValue(monthState.selectedOptionIndex)
 
-    fun currentMonth(monthIndex: Int = monthState.selectedOptionIndex): Int {
-        return monthIndex + dynamicMonthState.currentMinMonthOption
-    }
+    val selectedDay: Int
+        get() = dayValue(dayState.selectedOptionIndex)
 
-    fun currentDay(day: Int = dayState.selectedOptionIndex): Int {
-        return day + dynamicDayState.currentMinDayOption
-    }
+    fun yearValue(yearOptionIndex: Int): Int = yearOptionIndex + minDate.year
+
+    fun monthValue(monthOptionIndex: Int): Int = monthOptionIndex + 1
+
+    fun dayValue(dayOptionIndex: Int): Int = dayOptionIndex + 1
 
     val isMinYearSelected: Boolean
-        get() = minDate?.year == currentYear()
+        get() = minDate.year == selectedYear
 
     val isMaxYearSelected: Boolean
-        get() = maxDate?.year == currentYear()
-}
+        get() = maxDate.year == selectedYear
 
-/**
- * Manages the state of the month picker dynamically, switching between repeating and non-repeating
- * PickerState instances based on the selected year and the provided minimum and maximum dates.
- *
- * @param date The initial date.
- * @param minDate The minimum selectable date.
- * @param maxDate The maximum selectable date.
- * @param currentYear A function that returns the currently selected year.
- */
-@RequiresApi(Build.VERSION_CODES.O)
-private class DynamicMonthState(
-    date: LocalDate,
-    private val minDate: LocalDate,
-    private val maxDate: LocalDate,
-    private val currentYear: () -> Int,
-) {
-    /** The currently active [PickerState] for the month picker. */
-    val activeState: PickerState
-        get() = getMonthState(currentYear())
+    private val isMinMonthSelected: Boolean
+        get() = isMinYearSelected && selectedMonth == minDate.monthValue
 
-    /** The minimum month option currently selectable. */
-    val currentMinMonthOption: Int
-        get() = minMonthOption(currentYear())
+    private val isMaxMonthSelected: Boolean
+        get() = isMaxYearSelected && selectedMonth == maxDate.monthValue
 
-    private fun minMonthOption(year: Int) =
-        if (year == minDate.year) {
-            minDate.monthValue
-        } else {
-            1
+    fun isYearValid(year: Int) = year >= minDate.year && year <= maxDate.year
+
+    val isSelectedMonthValid
+        get() = isMonthValid(selectedMonth)
+
+    fun isMonthValid(month: Int): Boolean =
+        when {
+            !isYearValid(selectedYear) -> false
+            isMinYearSelected && month < minDate.monthValue -> false
+            isMaxYearSelected && month > maxDate.monthValue -> false
+            else -> true
         }
 
-    private fun maxMonthOption(year: Int) =
-        if (year == maxDate.year) {
-            maxDate.monthValue
-        } else {
-            12
+    val isSelectedDayValid: Boolean
+        get() = isDayValid(selectedDay)
+
+    fun isDayValid(day: Int): Boolean =
+        when {
+            !isSelectedMonthValid -> false
+            isMinMonthSelected && day < minDate.dayOfMonth -> false
+            isMaxMonthSelected && day > maxDate.dayOfMonth -> false
+            else -> true
         }
 
-    private fun numberOfOptions(year: Int): Int = maxMonthOption(year) - minMonthOption(year) + 1
-
-    private var prevAdjustedYear: Int? = null
+    private fun lengthOfMonth(year: Int, month: Int): Int =
+        LocalDate.of(year, month, 1).lengthOfMonth()
 
     /**
      * Adjusts the month options and scrolls to the appropriate month when the selected year
      * changes.
      */
-    suspend fun adjustMonthOption() {
-        val prevYear = prevAdjustedYear
-        prevAdjustedYear = currentYear()
-        if (prevYear == null) {
-            return
-        }
-
-        val prevSelectedMonth =
-            minMonthOption(prevYear) + getMonthState(prevYear).selectedOptionIndex
-
-        val currentState = activeState
-        val currentNumberOfOptions = numberOfOptions(currentYear())
-        if (
-            currentState.shouldRepeatOptions &&
-                currentState.numberOfOptions != currentNumberOfOptions
-        ) {
-            currentState.numberOfOptions = currentNumberOfOptions
-        }
-
-        val scrollToMonthIndex =
-            (prevSelectedMonth - currentMinMonthOption).coerceIn(
-                0,
-                currentState.numberOfOptions - 1
-            )
-        if (currentState.selectedOptionIndex != scrollToMonthIndex) {
-            currentState.scrollToOption(scrollToMonthIndex)
-        }
-    }
-
-    private fun getMonthState(year: Int) =
+    suspend fun adjustMonthOptionIfInvalid() {
+        if (isSelectedMonthValid) return
         when {
-            // If minDate.year == maxDate.year and no repeat, minNoRepeatMonthState will be used.
-            year == minDate.year && minNoRepeatMonthState != null -> minNoRepeatMonthState
-            year == maxDate.year && maxNoRepeatMonthState != null -> maxNoRepeatMonthState
-            else -> repeatMonthState
-        }
-
-    /**
-     * The non-repeating [PickerState] used when the minimum date restricts the month options to
-     * less than 3.
-     */
-    private val minNoRepeatMonthState: PickerState? =
-        createNoRepeatMonthState(year = minDate.year, initialMonth = date.monthValue)
-
-    /**
-     * The non-repeating [PickerState] used when the maximum date restricts the month options to
-     * less than 3.
-     */
-    private val maxNoRepeatMonthState: PickerState? =
-        createNoRepeatMonthState(year = maxDate.year, initialMonth = date.monthValue)
-
-    private fun createNoRepeatMonthState(year: Int, initialMonth: Int): PickerState? {
-        val numberOfOptions = numberOfOptions(year)
-        return if (numberOfOptions < 3) {
-            PickerState(
-                initialNumberOfOptions = numberOfOptions,
-                initiallySelectedIndex =
-                    (initialMonth - minMonthOption(year)).coerceIn(0, numberOfOptions - 1),
-                shouldRepeatOptions = false,
-            )
-        } else {
-            null
+            isMinYearSelected -> {
+                val scrollToMonth =
+                    if (minDate.monthValue - selectedMonth <= selectedMonth) {
+                        minDate.monthValue
+                    } else {
+                        12
+                    }
+                monthState.animateScrollToOption(scrollToMonth - 1)
+            }
+            isMaxYearSelected -> {
+                val scrollToMonth =
+                    if (selectedMonth - maxDate.monthValue <= 12 - selectedMonth) {
+                        maxDate.monthValue
+                    } else {
+                        1
+                    }
+                monthState.animateScrollToOption(scrollToMonth - 1)
+            }
         }
     }
-
-    /**
-     * The repeating [PickerState] used when there are no minimum/maximum date restrictions on the
-     * month options, or when there are at least 3 month options available.
-     */
-    private val repeatMonthState =
-        PickerState(
-            initialNumberOfOptions = numberOfOptions(currentYear()),
-            initiallySelectedIndex = date.monthValue - currentMinMonthOption,
-            shouldRepeatOptions = true,
-        )
-}
-
-/**
- * Manages the state of the day picker dynamically, switching between repeating and non-repeating
- * PickerState instances based on the selected year and month, and the provided minimum and maximum
- * dates.
- *
- * @param date The initial date.
- * @param minDate The minimum selectable date, or null if there is no minimum.
- * @param maxDate The maximum selectable date, or null if there is no maximum.
- * @param currentYear A function that returns the currently selected year.
- * @param currentMonth A function that returns the currently selected month.
- */
-@RequiresApi(Build.VERSION_CODES.O)
-private class DynamicDayState(
-    date: LocalDate,
-    private val minDate: LocalDate,
-    private val maxDate: LocalDate,
-    private val currentYear: () -> Int,
-    private val currentMonth: () -> Int,
-) {
-
-    /**
-     * The currently active [PickerState] for the day picker. This is determined dynamically based
-     * on the selected year and month, and whether the minimum/maximum dates restrict the day
-     * options to less than 3.
-     */
-    val activeState
-        get() =
-            when {
-                // If minMonth == maxMonth and no repeat, minNoRepeatDayState will be used.
-                isMinMonth(currentYear(), currentMonth()) && minNoRepeatDayState != null ->
-                    minNoRepeatDayState
-                isMaxMonth(currentYear(), currentMonth()) && maxNoRepeatDayState != null ->
-                    maxNoRepeatDayState
-                else -> repeatDayState
-            }
-
-    /** The minimum day option currently selectable. */
-    val currentMinDayOption: Int
-        get() = minDayOption(currentYear(), currentMonth())
-
-    private fun minDayOption(year: Int, month: Int) =
-        if (isMinMonth(year, month)) {
-            minDate.dayOfMonth
-        } else {
-            1
-        }
-
-    private fun maxDayOption(year: Int, month: Int): Int =
-        if (isMaxMonth(year, month)) {
-            maxDate.dayOfMonth
-        } else {
-            LocalDate.of(year, month, 1).lengthOfMonth()
-        }
-
-    private fun numberOfOptions(year: Int, month: Int): Int =
-        maxDayOption(year, month) - minDayOption(year, month) + 1
-
-    private fun isMinMonth(year: Int, month: Int): Boolean =
-        year == minDate.year && month == minDate.monthValue
-
-    private fun isMaxMonth(year: Int, month: Int): Boolean =
-        year == maxDate.year && month == maxDate.monthValue
-
-    private var prevAdjustedYear: Int? = null
-    private var prevAdjustedMonth: Int? = null
 
     /**
      * Adjusts the day options and scrolls to the appropriate day when the selected year or month
      * changes.
      */
-    suspend fun adjustDayOption() {
-        val prevSelectedYear = prevAdjustedYear
-        val prevSelectedMonth = prevAdjustedMonth
-        prevAdjustedYear = currentYear()
-        prevAdjustedMonth = currentMonth()
-        if (prevSelectedYear == null || prevSelectedMonth == null) {
-            return
-        }
-
-        val prevUsedState = getDayState(prevSelectedYear, prevSelectedMonth)
-        val prevSelectedDay =
-            if (minDate.year == prevSelectedYear && minDate.monthValue == prevSelectedMonth) {
-                minDate.dayOfMonth + prevUsedState.selectedOptionIndex
-            } else {
-                prevUsedState.selectedOptionIndex + 1
+    suspend fun adjustDayOptionIfInvalid() {
+        val updatedNumberOfOptions = lengthOfMonth(selectedYear, selectedMonth)
+        val scrollToDay =
+            when {
+                !isSelectedDayValid && isMinMonthSelected -> {
+                    if (minDate.dayOfMonth - selectedDay <= selectedDay) {
+                        minDate.dayOfMonth
+                    } else {
+                        updatedNumberOfOptions
+                    }
+                }
+                !isSelectedDayValid && isMaxMonthSelected -> {
+                    if (selectedDay - maxDate.dayOfMonth <= updatedNumberOfOptions - selectedDay) {
+                        maxDate.dayOfMonth
+                    } else {
+                        1
+                    }
+                }
+                selectedDay > updatedNumberOfOptions -> {
+                    updatedNumberOfOptions
+                }
+                else -> null
             }
-
-        val currentDayState = activeState
-        val numberOfDayOptions = numberOfOptions(currentYear(), currentMonth())
-        if (
-            currentDayState.shouldRepeatOptions &&
-                currentDayState.numberOfOptions != numberOfDayOptions
-        ) {
-            currentDayState.numberOfOptions = numberOfDayOptions
-        }
-
-        val scrollToDayIndex =
-            (prevSelectedDay - currentMinDayOption).coerceIn(0, currentDayState.numberOfOptions - 1)
-        if (currentDayState.selectedOptionIndex != scrollToDayIndex) {
-            currentDayState.scrollToOption(scrollToDayIndex)
+        scrollToDay?.let { dayState.animateScrollToOption(it - 1) }
+        if (updatedNumberOfOptions != dayState.numberOfOptions) {
+            dayState.numberOfOptions = updatedNumberOfOptions
         }
     }
-
-    private fun getDayState(year: Int, month: Int) =
-        when {
-            isMinMonth(year, month) && minNoRepeatDayState != null -> minNoRepeatDayState
-            isMaxMonth(year, month) && maxNoRepeatDayState != null -> maxNoRepeatDayState
-            else -> repeatDayState
-        }
-
-    /**
-     * The non-repeating [PickerState] used when the minimum date restricts the day options to less
-     * than 3.
-     */
-    private val minNoRepeatDayState: PickerState? =
-        createNoRepeatDayState(
-            year = minDate.year,
-            month = minDate.monthValue,
-            initialDay = date.dayOfMonth
-        )
-
-    /**
-     * The non-repeating [PickerState] used when the maximum date restricts the day options to less
-     * t han 3.
-     */
-    private val maxNoRepeatDayState: PickerState? =
-        createNoRepeatDayState(
-            year = maxDate.year,
-            month = maxDate.monthValue,
-            initialDay = date.dayOfMonth
-        )
-
-    private fun createNoRepeatDayState(year: Int, month: Int, initialDay: Int): PickerState? {
-        val initialNumberOfOptions = numberOfOptions(year, month)
-        return if (initialNumberOfOptions < 3) {
-            PickerState(
-                initialNumberOfOptions = initialNumberOfOptions,
-                initiallySelectedIndex =
-                    (initialDay - minDayOption(year, month)).coerceIn(
-                        0,
-                        initialNumberOfOptions - 1
-                    ),
-                shouldRepeatOptions = false,
-            )
-        } else {
-            null
-        }
-    }
-
-    /**
-     * The repeating [PickerState] used when there are no minimum/maximum date restrictions on the
-     * day options, or when there are at least 3 day options available.
-     */
-    private val repeatDayState =
-        PickerState(
-            initialNumberOfOptions = numberOfOptions(currentYear(), currentMonth()),
-            initiallySelectedIndex = date.dayOfMonth - currentMinDayOption,
-            shouldRepeatOptions = true,
-        )
 }
 
 private fun createDescriptionDatePicker(

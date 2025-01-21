@@ -18,7 +18,6 @@ package com.example.android.support.text.emoji;
 
 import android.app.Application;
 
-
 /**
  * This application uses EmojiCompat.
  */

@@ -22,6 +22,8 @@ import android.widget.TextView
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators
 import androidx.biometric.BiometricPrompt
+import androidx.biometric.PromptContentItemBulletedText
+import androidx.biometric.PromptVerticalListContentView
 import androidx.biometric.integration.testapp.databinding.BiometricPromptTestActivityBinding
 import androidx.fragment.app.FragmentActivity
 import java.lang.ref.WeakReference
@@ -118,6 +120,20 @@ class BiometricPromptTestActivity : FragmentActivity() {
                     setNegativeButtonText(getString(R.string.biometric_prompt_negative_text))
                 }
             }
+
+        if (binding.common.plainTextContent.isChecked) {
+            infoBuilder.setDescription("Description")
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            infoBuilder.setContentView(
+                PromptVerticalListContentView.Builder()
+                    .apply {
+                        setDescription("Vertical list description")
+                        addListItem(PromptContentItemBulletedText("test item1"))
+                        addListItem(PromptContentItemBulletedText("test item2"))
+                    }
+                    .build()
+            )
+        }
 
         val info: BiometricPrompt.PromptInfo?
         try {

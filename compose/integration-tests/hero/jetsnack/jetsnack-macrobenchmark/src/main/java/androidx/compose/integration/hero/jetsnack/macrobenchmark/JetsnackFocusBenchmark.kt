@@ -25,7 +25,7 @@ import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.benchmark.macro.Metric
 import androidx.benchmark.macro.TraceSectionMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
-import androidx.compose.integration.hero.jetsnack.ITERATIONS
+import androidx.compose.integration.hero.common.macrobenchmark.HeroMacrobenchmarkDefaults
 import androidx.test.filters.LargeTest
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
@@ -88,7 +88,7 @@ class JetsnackFocusBenchmark(private val compilationMode: CompilationMode) {
                     addAll(metrics)
                 },
             compilationMode = compilationMode,
-            iterations = ITERATIONS,
+            iterations = HeroMacrobenchmarkDefaults.ITERATIONS,
             setupBlock = {
                 // Ensure item animation consistency between Views and Compose
                 device.executeShellCommand("settings put global animator_duration_scale 1.0")

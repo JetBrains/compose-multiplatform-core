@@ -89,9 +89,13 @@ internal constructor(
     }
 }
 
-/** Converts a bidirectional order to a left-to-right order. */
+/**
+ * Converts a bidirectional order to a left-to-right order.
+ *
+ * @param layoutDirection the current [LayoutDirection]
+ */
 @ExperimentalMaterial3AdaptiveApi
-internal fun ThreePaneScaffoldHorizontalOrder.toLtrOrder(
+fun ThreePaneScaffoldHorizontalOrder.toLtrOrder(
     layoutDirection: LayoutDirection
 ): ThreePaneScaffoldHorizontalOrder {
     return if (layoutDirection == LayoutDirection.Rtl) {

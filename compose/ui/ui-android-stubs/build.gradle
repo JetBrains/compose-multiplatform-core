@@ -41,5 +41,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.compose.ui.androidstubs"
+    namespace = "androidx.compose.ui.androidstubs"
 }

@@ -29,9 +29,10 @@ import android.os.Looper;
 import android.os.Message;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.util.ObjectsCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 
@@ -105,8 +106,7 @@ public class AudioFocusRequestCompat {
      *
      * @return non-null {@link AudioAttributesCompat}.
      */
-    @NonNull
-    public AudioAttributesCompat getAudioAttributesCompat() {
+    public @NonNull AudioAttributesCompat getAudioAttributesCompat() {
         return mAudioAttributesCompat;
     }
 
@@ -126,8 +126,7 @@ public class AudioFocusRequestCompat {
      *
      * @return The {@link AudioManager.OnAudioFocusChangeListener} that was set.
      */
-    @NonNull
-    public OnAudioFocusChangeListener getOnAudioFocusChangeListener() {
+    public @NonNull OnAudioFocusChangeListener getOnAudioFocusChangeListener() {
         return mOnAudioFocusChangeListener;
     }
 
@@ -137,8 +136,7 @@ public class AudioFocusRequestCompat {
      * @return the same {@code Handler} set in. {@link
      *     Builder#setOnAudioFocusChangeListener(OnAudioFocusChangeListener, Handler)}.
      */
-    @NonNull
-    public Handler getFocusChangeHandler() {
+    public @NonNull Handler getFocusChangeHandler() {
         return mFocusChangeHandler;
     }
 
@@ -256,8 +254,7 @@ public class AudioFocusRequestCompat {
          * @return this {@code Builder} instance
          * @throws IllegalArgumentException thrown when an invalid focus gain type is used
          */
-        @NonNull
-        public Builder setFocusGain(@FocusGainType int focusGain) {
+        public @NonNull Builder setFocusGain(@FocusGainType int focusGain) {
             if (!isValidFocusGain(focusGain)) {
                 throw new IllegalArgumentException("Illegal audio focus gain type " + focusGain);
             }
@@ -279,8 +276,8 @@ public class AudioFocusRequestCompat {
          * @return this {@code Builder} instance.
          * @throws NullPointerException thrown when a null focus listener is used.
          */
-        @NonNull
-        public Builder setOnAudioFocusChangeListener(@NonNull OnAudioFocusChangeListener listener) {
+        public @NonNull Builder setOnAudioFocusChangeListener(
+                @NonNull OnAudioFocusChangeListener listener) {
             return setOnAudioFocusChangeListener(listener, new Handler(Looper.getMainLooper()));
         }
 
@@ -296,8 +293,7 @@ public class AudioFocusRequestCompat {
          * @return this {@code Builder} instance.
          * @throws NullPointerException thrown when a null focus listener or handler is used.
          */
-        @NonNull
-        public Builder setOnAudioFocusChangeListener(
+        public @NonNull Builder setOnAudioFocusChangeListener(
                 @NonNull OnAudioFocusChangeListener listener, @NonNull Handler handler) {
             if (listener == null) {
                 throw new IllegalArgumentException("OnAudioFocusChangeListener must not be null");
@@ -325,8 +321,7 @@ public class AudioFocusRequestCompat {
          * @return this {@code Builder} instance.
          * @throws NullPointerException thrown when using null for the attributes.
          */
-        @NonNull
-        public Builder setAudioAttributes(@NonNull AudioAttributesCompat attributes) {
+        public @NonNull Builder setAudioAttributes(@NonNull AudioAttributesCompat attributes) {
             if (attributes == null) {
                 throw new NullPointerException("Illegal null AudioAttributes");
             }
@@ -343,8 +338,7 @@ public class AudioFocusRequestCompat {
          *     when losing focus with {@link AudioManager#AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK}.
          * @return this {@code Builder} instance.
          */
-        @NonNull
-        public Builder setWillPauseWhenDucked(boolean pauseOnDuck) {
+        public @NonNull Builder setWillPauseWhenDucked(boolean pauseOnDuck) {
             mPauseOnDuck = pauseOnDuck;
             return this;
         }

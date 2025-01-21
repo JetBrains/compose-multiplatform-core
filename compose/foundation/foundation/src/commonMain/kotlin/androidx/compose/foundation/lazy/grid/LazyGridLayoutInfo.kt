@@ -18,6 +18,7 @@ package androidx.compose.foundation.lazy.grid
 
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.ui.unit.IntSize
+import kotlin.math.max
 
 /**
  * Contains useful information about the currently displayed layout state of lazy grids like
@@ -86,4 +87,46 @@ sealed interface LazyGridLayoutInfo {
      * For example if [LazyVerticalGrid] has 3 columns this value will be 3 for each cell.
      */
     val maxSpan: Int
+}
+
+internal fun LazyGridLayoutInfo.visibleLinesAverageMainAxisSize(): Int {
+    val isVertical = orientation == Orientation.Vertical
+    val visibleItems = visibleItemsInfo
+    fun lineOf(index: Int): Int =
+        if (isVertical) visibleItemsInfo[index].row else visibleItemsInfo[index].column
+
+    var totalLinesMainAxisSize = 0
+    var linesCount = 0
+
+    var lineStartIndex = 0
+    while (lineStartIndex < visibleItems.size) {
+        val currentLine = lineOf(lineStartIndex)
+        if (currentLine == -1) {
+            // Filter out exiting items.
+            ++lineStartIndex
+            continue
+        }
+
+        var lineMainAxisSize = 0
+        var lineEndIndex = lineStartIndex
+        while (lineEndIndex < visibleItems.size && lineOf(lineEndIndex) == currentLine) {
+            lineMainAxisSize =
+                max(
+                    lineMainAxisSize,
+                    if (isVertical) {
+                        visibleItems[lineEndIndex].size.height
+                    } else {
+                        visibleItems[lineEndIndex].size.width
+                    }
+                )
+            ++lineEndIndex
+        }
+
+        totalLinesMainAxisSize += lineMainAxisSize
+        ++linesCount
+
+        lineStartIndex = lineEndIndex
+    }
+
+    return totalLinesMainAxisSize / linesCount + mainAxisItemSpacing
 }

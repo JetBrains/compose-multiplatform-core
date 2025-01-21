@@ -22,15 +22,31 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraCaptureSession
+import android.hardware.camera2.CameraCaptureSession.CaptureCallback
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraExtensionCharacteristics
 import android.hardware.camera2.CameraExtensionSession
+import android.hardware.camera2.CameraExtensionSession.ExtensionCaptureCallback
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CameraMetadata
+import android.hardware.camera2.CameraMetadata.CONTROL_AF_TRIGGER_CANCEL
+import android.hardware.camera2.CameraMetadata.CONTROL_AF_TRIGGER_IDLE
 import android.hardware.camera2.CaptureFailure
 import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.CaptureRequest.CONTROL_AE_MODE
+import android.hardware.camera2.CaptureRequest.CONTROL_AE_MODE_ON
+import android.hardware.camera2.CaptureRequest.CONTROL_AE_REGIONS
+import android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE
+import android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE_AUTO
+import android.hardware.camera2.CaptureRequest.CONTROL_AF_REGIONS
+import android.hardware.camera2.CaptureRequest.CONTROL_AF_TRIGGER
+import android.hardware.camera2.CaptureRequest.CONTROL_AF_TRIGGER_START
+import android.hardware.camera2.CaptureRequest.CONTROL_AWB_REGIONS
+import android.hardware.camera2.CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE
+import android.hardware.camera2.TotalCaptureResult
 import android.hardware.camera2.params.ExtensionSessionConfiguration
+import android.hardware.camera2.params.MeteringRectangle
 import android.hardware.camera2.params.OutputConfiguration
 import android.hardware.camera2.params.SessionConfiguration
 import android.hardware.camera2.params.SessionConfiguration.SESSION_REGULAR
@@ -68,6 +84,7 @@ import androidx.camera.integration.extensions.IntentExtraKey.INTENT_EXTRA_KEY_EX
 import androidx.camera.integration.extensions.IntentExtraKey.INTENT_EXTRA_KEY_IMAGE_ROTATION_DEGREES
 import androidx.camera.integration.extensions.IntentExtraKey.INTENT_EXTRA_KEY_IMAGE_URI
 import androidx.camera.integration.extensions.IntentExtraKey.INTENT_EXTRA_KEY_REQUEST_CODE
+import androidx.camera.integration.extensions.TapToFocusDetector.CameraInfo
 import androidx.camera.integration.extensions.TestResultType.TEST_RESULT_FAILED
 import androidx.camera.integration.extensions.TestResultType.TEST_RESULT_NOT_TESTED
 import androidx.camera.integration.extensions.TestResultType.TEST_RESULT_PASSED
@@ -152,6 +169,9 @@ class Camera2ExtensionsActivity : AppCompatActivity() {
      */
     private var cameraCaptureSession: Any? = null
 
+    private val focusMeteringControl = FocusMeteringControl(::startAfTrigger, ::cancelAfTrigger)
+    private var meteringRectangles: Array<MeteringRectangle?> = EMPTY_RECTANGLES
+
     // ===============================================================
     // Fields that will be accessed on the camera thread
     // ===============================================================
@@ -171,6 +191,8 @@ class Camera2ExtensionsActivity : AppCompatActivity() {
     private var currentExtensionIdx = 0
     private val supportedExtensionModes = mutableListOf<Int>()
     private var extensionModeEnabled = false
+
+    private lateinit var tapToFocusDetector: TapToFocusDetector
 
     // ===============================================================
     // Fields that will be accessed under synchronization protection
@@ -254,18 +276,13 @@ class Camera2ExtensionsActivity : AppCompatActivity() {
             }
         }
 
-    private val captureCallbacks =
-        object : CameraExtensionSession.ExtensionCaptureCallback() {
+    private val captureCallbackExtensionMode =
+        object : ExtensionCaptureCallback() {
             override fun onCaptureProcessStarted(
                 session: CameraExtensionSession,
                 request: CaptureRequest
             ) {
-                if (
-                    receivedCaptureProcessStartedCount.getAndIncrement() >=
-                        FRAMES_UNTIL_VIEW_IS_READY && !captureProcessStartedIdlingResource.isIdleNow
-                ) {
-                    captureProcessStartedIdlingResource.decrement()
-                }
+                handleCaptureStartedEvent()
             }
 
             override fun onCaptureFailed(session: CameraExtensionSession, request: CaptureRequest) {
@@ -273,22 +290,35 @@ class Camera2ExtensionsActivity : AppCompatActivity() {
             }
         }
 
-    private val captureCallbacksNormalMode =
-        object : CameraCaptureSession.CaptureCallback() {
+    private val captureCallbackNormalMode =
+        object : CaptureCallback() {
             override fun onCaptureStarted(
                 session: CameraCaptureSession,
                 request: CaptureRequest,
                 timestamp: Long,
                 frameNumber: Long
             ) {
-                if (
-                    receivedCaptureProcessStartedCount.getAndIncrement() >=
-                        FRAMES_UNTIL_VIEW_IS_READY && !captureProcessStartedIdlingResource.isIdleNow
-                ) {
-                    captureProcessStartedIdlingResource.decrement()
-                }
+                handleCaptureStartedEvent()
             }
         }
+
+    private fun handleCaptureStartedEvent() {
+        checkRunOnCameraThread()
+        if (
+            receivedCaptureProcessStartedCount.getAndIncrement() >= FRAMES_UNTIL_VIEW_IS_READY &&
+                !captureProcessStartedIdlingResource.isIdleNow
+        ) {
+            captureProcessStartedIdlingResource.decrement()
+        }
+    }
+
+    private val comboCaptureCallbackExtensionMode =
+        ComboCaptureCallbackExtensionMode().apply {
+            addCaptureCallback(captureCallbackExtensionMode)
+        }
+
+    private val comboCaptureCallbackNormalMode =
+        ComboCaptureCallbackNormalMode().apply { addCaptureCallback(captureCallbackNormalMode) }
 
     private val cameraTaskDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private lateinit var cameraThread: Thread
@@ -443,7 +473,7 @@ class Camera2ExtensionsActivity : AppCompatActivity() {
         enableUiControl(false)
         setupUiControl()
         setupVideoStabilizationModeView()
-        enableZoomGesture()
+        enableZoomAndTapToFocusGesture()
     }
 
     private fun setupForRequestMode() {
@@ -620,10 +650,12 @@ class Camera2ExtensionsActivity : AppCompatActivity() {
         findViewById<Button>(R.id.Picture).isEnabled = enabled
     }
 
-    private fun enableZoomGesture() {
+    private fun enableZoomAndTapToFocusGesture() {
         val scaleGestureDetector = ScaleGestureDetector(this, scaleGestureListener)
         textureView.setOnTouchListener { _, event ->
-            event != null && scaleGestureDetector.onTouchEvent(event)
+            scaleGestureDetector.onTouchEvent(event)
+            tapToFocusDetector.onTouchEvent(event)
+            true
         }
     }
 
@@ -895,6 +927,30 @@ class Camera2ExtensionsActivity : AppCompatActivity() {
             cameraSensorRotationDegrees,
             lensFacing == CameraCharacteristics.LENS_FACING_BACK
         )
+
+        tapToFocusDetector =
+            TapToFocusDetector(this, textureView, getCameraInfo(), display!!.rotation, ::tapToFocus)
+    }
+
+    private fun getCameraInfo(): CameraInfo {
+        checkRunOnMainThread()
+        val lensFacing =
+            cameraManager
+                .getCameraCharacteristics(currentCameraId)[CameraCharacteristics.LENS_FACING]
+        val sensorOrientation =
+            cameraManager
+                .getCameraCharacteristics(currentCameraId)[CameraCharacteristics.SENSOR_ORIENTATION]
+        val activeArraySize =
+            cameraManager
+                .getCameraCharacteristics(currentCameraId)[
+                    CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE]
+        return CameraInfo(lensFacing!!, sensorOrientation!!.toFloat(), activeArraySize!!)
+    }
+
+    private fun tapToFocus(meteringRectangles: Array<MeteringRectangle?>) {
+        coroutineScope.launch(cameraTaskDispatcher) {
+            focusMeteringControl.updateMeteringRectangles(meteringRectangles)
+        }
     }
 
     private fun checkRunOnMainThread() {
@@ -907,7 +963,10 @@ class Camera2ExtensionsActivity : AppCompatActivity() {
     }
 
     private fun checkRunOnCameraThread() {
-        if (Thread.currentThread() != cameraThread) {
+        if (
+            Thread.currentThread() != cameraThread &&
+                Thread.currentThread() != normalModeCaptureThread
+        ) {
             val exception = IllegalStateException("Must run on the camera thread!")
             Log.e(TAG, exception.toString())
             exception.printStackTrace()
@@ -1018,6 +1077,8 @@ class Camera2ExtensionsActivity : AppCompatActivity() {
     private fun openCaptureSession(extensionMode: Int, extensionModeEnabled: Boolean) =
         coroutineScope.async(cameraTaskDispatcher) {
             Log.d(TAG, "openCaptureSession")
+            // Resets the metering rectangles
+            meteringRectangles = EMPTY_RECTANGLES
             setCurrentState(STATE_CAPTURE_SESSION_OPENING)
 
             if (stillImageReader != null) {
@@ -1134,37 +1195,107 @@ class Camera2ExtensionsActivity : AppCompatActivity() {
         closeCamera()
     }
 
-    private fun setRepeatingRequest() {
+    private fun startAfTrigger(meteringRectangles: Array<MeteringRectangle?>) {
         coroutineScope.launch(cameraTaskDispatcher) {
-            val captureBuilder = cameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-            captureBuilder.addTarget(previewSurface!!)
-            val videoStabilizationMode =
-                if (videoStabilizationToggleView.isChecked) {
-                    CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
-                } else {
-                    CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_OFF
-                }
+            this@Camera2ExtensionsActivity.meteringRectangles = meteringRectangles
+            addFocusMeteringCaptureCallback()
 
-            captureBuilder.set(
-                CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
-                videoStabilizationMode
+            val captureBuilder = getCaptureRequestBuilder()
+
+            captureBuilder.set(CONTROL_AF_TRIGGER, CONTROL_AF_TRIGGER_START)
+
+            setRepeatingRequest(captureBuilder.build())
+        }
+    }
+
+    private fun cancelAfTrigger(afTriggerType: Int) {
+        coroutineScope.launch(cameraTaskDispatcher) {
+            if (afTriggerType == CONTROL_AF_TRIGGER_CANCEL) {
+                this@Camera2ExtensionsActivity.meteringRectangles = EMPTY_RECTANGLES
+            }
+
+            removeFocusMeteringCaptureCallback()
+
+            val captureBuilder = getCaptureRequestBuilder()
+
+            if (afTriggerType == CONTROL_AF_TRIGGER_IDLE) {
+                captureBuilder.set(CONTROL_AF_TRIGGER, CONTROL_AF_TRIGGER_IDLE)
+            } else {
+                captureBuilder.set(CONTROL_AF_TRIGGER, CONTROL_AF_TRIGGER_CANCEL)
+            }
+
+            setRepeatingRequest(captureBuilder.build())
+        }
+    }
+
+    private fun addFocusMeteringCaptureCallback() {
+        checkRunOnCameraThread()
+        val captureCallback =
+            focusMeteringControl.getCaptureCallback(cameraCaptureSession is CameraExtensionSession)
+        if (cameraCaptureSession is CameraExtensionSession) {
+            comboCaptureCallbackExtensionMode.addCaptureCallback(
+                captureCallback as ExtensionCaptureCallback
             )
+        } else {
+            comboCaptureCallbackNormalMode.addCaptureCallback(captureCallback as CaptureCallback)
+        }
+    }
 
-            captureBuilder.set(CaptureRequest.CONTROL_ZOOM_RATIO, zoomRatio)
+    private fun removeFocusMeteringCaptureCallback() {
+        checkRunOnCameraThread()
+        val captureCallback =
+            focusMeteringControl.getCaptureCallback(cameraCaptureSession is CameraExtensionSession)
+        if (cameraCaptureSession is CameraExtensionSession) {
+            comboCaptureCallbackExtensionMode.removeCaptureCallback(
+                captureCallback as ExtensionCaptureCallback
+            )
+        } else {
+            comboCaptureCallbackNormalMode.removeCaptureCallback(captureCallback as CaptureCallback)
+        }
+    }
+
+    private fun setRepeatingRequest(captureRequest: CaptureRequest? = null) {
+        coroutineScope.launch(cameraTaskDispatcher) {
             if (cameraCaptureSession is CameraCaptureSession) {
                 (cameraCaptureSession as CameraCaptureSession).setRepeatingRequest(
-                    captureBuilder.build(),
-                    captureCallbacksNormalMode,
+                    captureRequest ?: getCaptureRequestBuilder().build(),
+                    comboCaptureCallbackNormalMode,
                     normalModeCaptureHandler
                 )
             } else {
                 (cameraCaptureSession as CameraExtensionSession).setRepeatingRequest(
-                    captureBuilder.build(),
+                    captureRequest ?: getCaptureRequestBuilder().build(),
                     cameraTaskDispatcher.asExecutor(),
-                    captureCallbacks
+                    comboCaptureCallbackExtensionMode
                 )
             }
         }
+    }
+
+    private fun getCaptureRequestBuilder(): CaptureRequest.Builder {
+        checkRunOnCameraThread()
+        val captureBuilder = cameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
+        captureBuilder.addTarget(previewSurface!!)
+        val videoStabilizationMode =
+            if (videoStabilizationToggleView.isChecked) {
+                CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
+            } else {
+                CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_OFF
+            }
+
+        captureBuilder.set(CONTROL_VIDEO_STABILIZATION_MODE, videoStabilizationMode)
+
+        captureBuilder.set(CaptureRequest.CONTROL_ZOOM_RATIO, zoomRatio)
+
+        if (!meteringRectangles.contentEquals(EMPTY_RECTANGLES)) {
+            captureBuilder.set(CONTROL_AF_MODE, CONTROL_AF_MODE_AUTO)
+            captureBuilder.set(CONTROL_AF_REGIONS, meteringRectangles)
+            captureBuilder.set(CONTROL_AE_MODE, CONTROL_AE_MODE_ON)
+            captureBuilder.set(CONTROL_AE_REGIONS, meteringRectangles)
+            captureBuilder.set(CONTROL_AWB_REGIONS, meteringRectangles)
+        }
+
+        return captureBuilder
     }
 
     private fun setupImageReader(cameraId: String, extensionMode: Int): ImageReader {
@@ -1308,7 +1439,7 @@ class Camera2ExtensionsActivity : AppCompatActivity() {
             if (cameraCaptureSession is CameraCaptureSession) {
                 (cameraCaptureSession as CameraCaptureSession).capture(
                     captureBuilder.build(),
-                    object : CameraCaptureSession.CaptureCallback() {
+                    object : CaptureCallback() {
                         override fun onCaptureFailed(
                             session: CameraCaptureSession,
                             request: CaptureRequest,
@@ -1324,7 +1455,7 @@ class Camera2ExtensionsActivity : AppCompatActivity() {
                 (cameraCaptureSession as CameraExtensionSession).capture(
                     captureBuilder.build(),
                     cameraTaskDispatcher.asExecutor(),
-                    object : CameraExtensionSession.ExtensionCaptureCallback() {
+                    object : ExtensionCaptureCallback() {
                         override fun onCaptureFailed(
                             session: CameraExtensionSession,
                             request: CaptureRequest
@@ -1535,6 +1666,89 @@ class Camera2ExtensionsActivity : AppCompatActivity() {
 
         fun maxZoom(characteristics: CameraCharacteristics): Float =
             characteristics.get(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE)?.upper ?: 1.0f
+    }
+
+    /**
+     * A combo ExtensionCaptureCallback implementation to receive to pass the events to the
+     * underlying callbacks.
+     */
+    private class ComboCaptureCallbackExtensionMode : ExtensionCaptureCallback() {
+        private val captureCallbacks: MutableList<ExtensionCaptureCallback> = mutableListOf()
+
+        fun addCaptureCallback(captureCallback: ExtensionCaptureCallback) {
+            if (!captureCallbacks.contains(captureCallback)) {
+                captureCallbacks.add(captureCallback)
+            }
+        }
+
+        fun removeCaptureCallback(captureCallback: ExtensionCaptureCallback) {
+            captureCallbacks.remove(captureCallback)
+        }
+
+        override fun onCaptureStarted(
+            session: CameraExtensionSession,
+            request: CaptureRequest,
+            timestamp: Long
+        ) {
+            captureCallbacks.forEach { it.onCaptureStarted(session, request, timestamp) }
+        }
+
+        override fun onCaptureProcessStarted(
+            session: CameraExtensionSession,
+            request: CaptureRequest
+        ) {
+            captureCallbacks.forEach { it.onCaptureProcessStarted(session, request) }
+        }
+
+        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+        override fun onCaptureResultAvailable(
+            session: CameraExtensionSession,
+            request: CaptureRequest,
+            result: TotalCaptureResult
+        ) {
+            captureCallbacks.forEach { it.onCaptureResultAvailable(session, request, result) }
+        }
+
+        override fun onCaptureFailed(session: CameraExtensionSession, request: CaptureRequest) {
+            captureCallbacks.forEach { it.onCaptureFailed(session, request) }
+        }
+    }
+
+    /**
+     * A combo CaptureCallback implementation to receive to pass the events to the underlying
+     * callbacks.
+     */
+    private class ComboCaptureCallbackNormalMode : CaptureCallback() {
+        private val captureCallbacks: MutableList<CaptureCallback> = mutableListOf()
+
+        fun addCaptureCallback(captureCallback: CaptureCallback) {
+            if (!captureCallbacks.contains(captureCallback)) {
+                captureCallbacks.add(captureCallback)
+            }
+        }
+
+        fun removeCaptureCallback(captureCallback: CaptureCallback) {
+            captureCallbacks.remove(captureCallback)
+        }
+
+        override fun onCaptureStarted(
+            session: CameraCaptureSession,
+            request: CaptureRequest,
+            timestamp: Long,
+            frameNumber: Long
+        ) {
+            captureCallbacks.forEach {
+                it.onCaptureStarted(session, request, timestamp, frameNumber)
+            }
+        }
+
+        override fun onCaptureCompleted(
+            session: CameraCaptureSession,
+            request: CaptureRequest,
+            result: TotalCaptureResult
+        ) {
+            captureCallbacks.forEach { it.onCaptureCompleted(session, request, result) }
+        }
     }
 }
 

@@ -47,5 +47,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.lifecycle.livedata.core.truth"
+    namespace = "androidx.lifecycle.livedata.core.truth"
 }

@@ -30,7 +30,6 @@ import android.view.MotionEvent;
 import android.view.accessibility.AccessibilityManager;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.core.view.ViewCompat;
@@ -40,6 +39,8 @@ import androidx.wear.internal.widget.drawer.MultiPageUi;
 import androidx.wear.internal.widget.drawer.SinglePagePresenter;
 import androidx.wear.internal.widget.drawer.SinglePageUi;
 import androidx.wear.internal.widget.drawer.WearableNavigationDrawerPresenter;
+
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -108,7 +109,7 @@ public class WearableNavigationDrawerView extends WearableDrawerView {
     /**
      * Listens for single taps on the drawer.
      */
-    @Nullable private final GestureDetector mGestureDetector;
+    private final @Nullable GestureDetector mGestureDetector;
     @NavigationStyle private final int mNavigationStyle;
     final WearableNavigationDrawerPresenter mPresenter;
     private final SimpleOnGestureListener mOnGestureListener =
@@ -248,8 +249,7 @@ public class WearableNavigationDrawerView extends WearableDrawerView {
      */
     public abstract static class WearableNavigationDrawerAdapter {
 
-        @Nullable
-        private WearableNavigationDrawerPresenter mPresenter;
+        private @Nullable WearableNavigationDrawerPresenter mPresenter;
 
         /**
          * Get the text associated with the item at {@code pos}.

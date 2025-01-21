@@ -22,7 +22,6 @@ import android.widget.ListView;
 
 import com.example.android.supportv4.R;
 
-
 public class SwipeRefreshLayoutActivityList extends BaseSwipeRefreshLayoutActivity {
 
     private ListView mList;

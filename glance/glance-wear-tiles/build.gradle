@@ -72,8 +72,8 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 26
-        compileSdk 35
+        minSdk = 26
+        compileSdk = 35
     }
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
@@ -88,7 +88,7 @@ android {
     sourceSets {
         androidTest.assets.srcDirs += project.rootDir.absolutePath + "/../../golden/glance/glance-wear-tiles"
     }
-    namespace "androidx.glance.wear.tiles"
+    namespace = "androidx.glance.wear.tiles"
 
 }
 

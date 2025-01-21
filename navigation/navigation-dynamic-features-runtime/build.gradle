@@ -31,7 +31,7 @@ plugins {
 }
 
 android {
-    namespace "androidx.navigation.dynamicfeatures"
+    namespace = "androidx.navigation.dynamicfeatures"
 }
 
 dependencies {

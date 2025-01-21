@@ -53,7 +53,7 @@ dependencies {
 android {
     compileSdk = 34
     compileSdkExtension = 12
-    namespace "androidx.privacysandbox.ads.adservices"
+    namespace = "androidx.privacysandbox.ads.adservices"
 }
 
 androidx {

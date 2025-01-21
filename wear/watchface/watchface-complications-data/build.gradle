@@ -33,6 +33,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     api("androidx.annotation:annotation:1.8.1")
     api("androidx.versionedparcelable:versionedparcelable:1.1.0")
     api("androidx.wear.protolayout:protolayout-expression:1.0.0")
@@ -63,7 +64,7 @@ android {
         aidl = true
     }
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
     buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
@@ -71,7 +72,7 @@ android {
 
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.wear.watchface.complications.data"
+    namespace = "androidx.wear.watchface.complications.data"
 }
 
 androidx {

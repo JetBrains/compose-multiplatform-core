@@ -24,7 +24,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.tvprovider"
+    namespace = "androidx.tvprovider"
 }
 
 androidx {

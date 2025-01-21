@@ -16,8 +16,9 @@
 
 package androidx.wear.tiles;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Holder for Tiles' Tile class, to be parceled and transferred to Wear.
@@ -29,7 +30,7 @@ public final class TileData extends ProtoParcelable {
     public static final int VERSION_PROTOBUF = 1;
     public static final Creator<TileData> CREATOR = newCreator(TileData.class, TileData::new);
 
-    public TileData(@NonNull byte[] tile, int version) {
+    public TileData(byte @NonNull [] tile, int version) {
         super(tile, version);
     }
 }

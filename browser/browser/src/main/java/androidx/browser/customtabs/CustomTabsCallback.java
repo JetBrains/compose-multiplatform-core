@@ -23,10 +23,11 @@ import android.os.Bundle;
 
 import androidx.annotation.Dimension;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.browser.customtabs.CustomTabsService.Relation;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -123,8 +124,8 @@ public class CustomTabsCallback {
      *     }
      * </code></pre>
      */
-    @Nullable
-    public Bundle extraCallbackWithResult(@NonNull String callbackName, @Nullable Bundle args) {
+    public @Nullable Bundle extraCallbackWithResult(@NonNull String callbackName,
+            @Nullable Bundle args) {
         return null;
     }
 

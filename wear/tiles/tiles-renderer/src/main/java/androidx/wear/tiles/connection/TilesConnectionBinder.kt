@@ -173,7 +173,13 @@ internal class TilesConnectionBinder(
     }
 
     private fun disconnectFromService() {
-        connection?.let(context::unbindService)
+        try {
+            connection?.let(context::unbindService)
+        } catch (_: NullPointerException) {
+            // Depending on the test timing, this could end up running after Robolectric has cleared
+            // its RuntimeEnvironment. This isn't a proper fix, but this shouldn't happen in
+            // non-test environments.
+        }
         connection = null
         connectBinderJob = null
         tileProvider = null

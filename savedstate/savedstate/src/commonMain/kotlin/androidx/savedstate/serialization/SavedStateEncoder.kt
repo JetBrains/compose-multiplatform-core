@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalSerializationApi::class)
-
 package androidx.savedstate.serialization
 
 import androidx.savedstate.SavedState
@@ -48,12 +46,12 @@ fun <T : Any> encodeToSavedState(serializer: SerializationStrategy<T>, value: T)
  * Encode a serializable object to a [SavedState] with the default serializer.
  *
  * @sample androidx.savedstate.encodeWithExplicitSerializer
- * @param serializable The serializable object to encode.
+ * @param value The serializable object to encode.
  * @return The encoded [SavedState].
- * @throws SerializationException if [serializable] cannot be serialized.
+ * @throws SerializationException if [value] cannot be serialized.
  */
-inline fun <reified T : Any> encodeToSavedState(serializable: T): SavedState {
-    return encodeToSavedState(serializer<T>(), serializable)
+inline fun <reified T : Any> encodeToSavedState(value: T): SavedState {
+    return encodeToSavedState(serializer<T>(), value)
 }
 
 /**
@@ -62,9 +60,11 @@ inline fun <reified T : Any> encodeToSavedState(serializable: T): SavedState {
  *
  * @property savedState The [SavedState] to encode to. Has to be empty before encoding.
  */
-private class SavedStateEncoder(private val savedState: SavedState) : AbstractEncoder() {
+@OptIn(ExperimentalSerializationApi::class)
+internal class SavedStateEncoder(internal val savedState: SavedState) : AbstractEncoder() {
     override val serializersModule: SerializersModule = EmptySerializersModule()
-    private var key: String = ""
+    internal var key: String = ""
+        private set
 
     override fun shouldEncodeElementDefault(descriptor: SerialDescriptor, index: Int): Boolean =
         false
@@ -174,7 +174,7 @@ private class SavedStateEncoder(private val savedState: SavedState) : AbstractEn
 
     @Suppress("UNCHECKED_CAST")
     override fun <T> encodeSerializableValue(serializer: SerializationStrategy<T>, value: T) {
-        return when (serializer.descriptor) {
+        when (serializer.descriptor) {
             intListDescriptor -> encodeIntList(value as List<Int>)
             stringListDescriptor -> encodeStringList(value as List<String>)
             booleanArrayDescriptor -> encodeBooleanArray(value as BooleanArray)

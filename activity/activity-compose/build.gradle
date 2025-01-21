@@ -79,6 +79,6 @@ androidx {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.activity.compose"
+    compileSdk = 35
+    namespace = "androidx.activity.compose"
 }

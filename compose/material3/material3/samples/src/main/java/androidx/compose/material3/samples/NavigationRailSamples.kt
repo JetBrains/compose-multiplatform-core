@@ -45,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.WideNavigationRail
 import androidx.compose.material3.WideNavigationRailArrangement
 import androidx.compose.material3.WideNavigationRailItem
+import androidx.compose.material3.WideNavigationRailValue
 import androidx.compose.material3.rememberWideNavigationRailState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -86,15 +87,22 @@ fun WideNavigationRailResponsiveSample() {
                         Modifier.padding(start = 24.dp).semantics {
                             // The button must announce the expanded or collapsed state of the rail
                             // for accessibility.
-                            stateDescription = if (state.currentValue) "Expanded" else "Collapsed"
+                            stateDescription =
+                                if (state.currentValue == WideNavigationRailValue.Expanded) {
+                                    "Expanded"
+                                } else {
+                                    "Collapsed"
+                                }
                         },
                     onClick = {
                         scope.launch {
-                            if (state.currentValue) state.collapse() else state.expand()
+                            if (state.targetValue == WideNavigationRailValue.Expanded)
+                                state.collapse()
+                            else state.expand()
                         }
                     }
                 ) {
-                    if (state.targetValue) {
+                    if (state.targetValue == WideNavigationRailValue.Expanded) {
                         Icon(Icons.AutoMirrored.Filled.MenuOpen, "Collapse rail")
                     } else {
                         Icon(Icons.Filled.Menu, "Expand rail")
@@ -104,7 +112,7 @@ fun WideNavigationRailResponsiveSample() {
         ) {
             items.forEachIndexed { index, item ->
                 WideNavigationRailItem(
-                    railExpanded = state.currentValue,
+                    railExpanded = state.targetValue == WideNavigationRailValue.Expanded,
                     icon = {
                         val imageVector =
                             if (selectedItem == index) {
@@ -121,7 +129,12 @@ fun WideNavigationRailResponsiveSample() {
             }
         }
 
-        val textString = if (state.currentValue) "expanded" else "collapsed"
+        val textString =
+            if (state.currentValue == WideNavigationRailValue.Expanded) {
+                "Expanded"
+            } else {
+                "Collapsed"
+            }
         Column {
             Text(modifier = Modifier.padding(16.dp), text = "Is animating: " + state.isAnimating)
             Text(modifier = Modifier.padding(16.dp), text = "The rail is $textString.")
@@ -172,23 +185,32 @@ fun ModalWideNavigationRailSample() {
                         Modifier.padding(start = 24.dp).semantics {
                             // The button must announce the expanded or collapsed state of the rail
                             // for accessibility.
-                            stateDescription = if (state.currentValue) "Expanded" else "Collapsed"
+                            stateDescription =
+                                if (state.currentValue == WideNavigationRailValue.Expanded) {
+                                    "Expanded"
+                                } else {
+                                    "Collapsed"
+                                }
                         },
                     onClick = {
                         scope.launch {
-                            if (state.currentValue) state.collapse() else state.expand()
+                            if (state.targetValue == WideNavigationRailValue.Expanded)
+                                state.collapse()
+                            else state.expand()
                         }
                     }
                 ) {
-                    if (state.currentValue)
+                    if (state.targetValue == WideNavigationRailValue.Expanded) {
                         Icon(Icons.AutoMirrored.Filled.MenuOpen, "Collapse rail")
-                    else Icon(Icons.Filled.Menu, "Expand rail")
+                    } else {
+                        Icon(Icons.Filled.Menu, "Expand rail")
+                    }
                 }
             }
         ) {
             items.forEachIndexed { index, item ->
                 WideNavigationRailItem(
-                    railExpanded = state.targetValue,
+                    railExpanded = state.targetValue == WideNavigationRailValue.Expanded,
                     icon = {
                         Icon(
                             if (selectedItem == index) selectedIcons[index]
@@ -203,7 +225,12 @@ fun ModalWideNavigationRailSample() {
             }
         }
 
-        val textString = if (state.currentValue) "expanded" else "collapsed"
+        val textString =
+            if (state.currentValue == WideNavigationRailValue.Expanded) {
+                "Expanded"
+            } else {
+                "Collapsed"
+            }
         Column {
             Text(modifier = Modifier.padding(16.dp), text = "The rail is $textString.")
             Text(
@@ -309,7 +336,7 @@ fun WideNavigationRailExpandedSample() {
     val selectedIcons = listOf(Icons.Filled.Home, Icons.Filled.Favorite, Icons.Filled.Star)
     val unselectedIcons =
         listOf(Icons.Outlined.Home, Icons.Outlined.FavoriteBorder, Icons.Outlined.StarBorder)
-    WideNavigationRail(state = rememberWideNavigationRailState(true)) {
+    WideNavigationRail(state = rememberWideNavigationRailState()) {
         items.forEachIndexed { index, item ->
             WideNavigationRailItem(
                 railExpanded = true,
@@ -350,20 +377,34 @@ fun WideNavigationRailArrangementsSample() {
                         Modifier.padding(start = 24.dp).semantics {
                             // The button must announce the expanded or collapsed state of the rail
                             // for accessibility.
-                            stateDescription = if (state.currentValue) "Expanded" else "Collapsed"
+                            stateDescription =
+                                if (state.currentValue == WideNavigationRailValue.Expanded) {
+                                    "Expanded"
+                                } else {
+                                    "Collapsed"
+                                }
                         },
                     onClick = {
-                        scope.launch { if (state.targetValue) state.collapse() else state.expand() }
+                        scope.launch {
+                            if (state.targetValue == WideNavigationRailValue.Expanded) {
+                                state.collapse()
+                            } else {
+                                state.expand()
+                            }
+                        }
                     }
                 ) {
-                    if (state.targetValue) Icon(Icons.AutoMirrored.Filled.MenuOpen, "Collapse rail")
-                    else Icon(Icons.Filled.Menu, "Expand rail")
+                    if (state.targetValue == WideNavigationRailValue.Expanded) {
+                        Icon(Icons.AutoMirrored.Filled.MenuOpen, "Collapse rail")
+                    } else {
+                        Icon(Icons.Filled.Menu, "Expand rail")
+                    }
                 }
             }
         ) {
             items.forEachIndexed { index, item ->
                 WideNavigationRailItem(
-                    railExpanded = state.targetValue,
+                    railExpanded = state.targetValue == WideNavigationRailValue.Expanded,
                     icon = {
                         Icon(
                             if (selectedItem == index) selectedIcons[index]

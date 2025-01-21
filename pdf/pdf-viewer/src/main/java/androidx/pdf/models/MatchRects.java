@@ -25,10 +25,11 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.ext.SdkExtensions;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.data.ListOfList;
 import androidx.pdf.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -103,8 +104,7 @@ public class MatchRects extends ListOfList<Rect> implements Parcelable {
     }
 
     /** Returns the first rect for a given match. */
-    @NonNull
-    public Rect getFirstRect(int match) {
+    public @NonNull Rect getFirstRect(int match) {
         return mRects.get(mMatchToRect.get(match));
     }
 
@@ -112,8 +112,7 @@ public class MatchRects extends ListOfList<Rect> implements Parcelable {
      * Returns the flattened, one-dimensional list of all rectangles that surround
      * all matches <strong>except</strong> for the given match.
      */
-    @NonNull
-    public List<Rect> flattenExcludingMatch(int match) {
+    public @NonNull List<Rect> flattenExcludingMatch(int match) {
         if (match < 0 || match >= mMatchToRect.size()) {
             throw new ArrayIndexOutOfBoundsException(match);
         }
@@ -149,9 +148,8 @@ public class MatchRects extends ListOfList<Rect> implements Parcelable {
         return Math.min(size() - 1, -searchResult - 1);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return size() + " matches";
     }
 
@@ -192,8 +190,8 @@ public class MatchRects extends ListOfList<Rect> implements Parcelable {
      * )
      * </pre>
      */
-    @NonNull
-    public static MatchRects flattenList(@NonNull List<PageMatchBounds> pageMatchBoundsList) {
+    public static @NonNull MatchRects flattenList(
+            @NonNull List<PageMatchBounds> pageMatchBoundsList) {
         if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 13) {
             List<Rect> rects = new ArrayList<>();
             List<Integer> matchToRect = new ArrayList<>();
@@ -214,18 +212,15 @@ public class MatchRects extends ListOfList<Rect> implements Parcelable {
         throw new UnsupportedOperationException("Operation support above S");
     }
 
-    @NonNull
-    public List<Rect> getRects() {
+    public @NonNull List<Rect> getRects() {
         return mRects;
     }
 
-    @NonNull
-    public List<Integer> getMatchToRect() {
+    public @NonNull List<Integer> getMatchToRect() {
         return mMatchToRect;
     }
 
-    @NonNull
-    public List<Integer> getCharIndexes() {
+    public @NonNull List<Integer> getCharIndexes() {
         return mCharIndexes;
     }
 }

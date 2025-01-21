@@ -45,10 +45,11 @@ android {
             java.srcDir testUtilDir
         }
     }
-    namespace "androidx.window"
+    namespace = "androidx.window"
 }
 
 dependencies {
+    api(libs.jspecify)
     api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
     implementation("androidx.annotation:annotation:1.8.1")

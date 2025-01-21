@@ -20,13 +20,14 @@ plugins {
 }
 
 android {
-    namespace "android.support.mediacompat.service"
+    namespace = "android.support.mediacompat.service"
 }
 
 dependencies {
     androidTestImplementation("androidx.media:media:1.4.1")
     androidTestImplementation(project(":media:version-compat-tests:lib"))
 
+    androidTestImplementation(libs.jspecify)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)

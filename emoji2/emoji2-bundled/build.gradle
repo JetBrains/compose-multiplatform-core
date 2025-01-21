@@ -32,7 +32,7 @@ android {
             }
         }
     }
-    namespace "androidx.emoji2.bundled"
+    namespace = "androidx.emoji2.bundled"
 
 }
 

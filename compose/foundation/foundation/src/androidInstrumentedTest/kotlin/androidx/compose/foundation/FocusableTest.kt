@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.relocation.BringIntoViewResponder
 import androidx.compose.foundation.relocation.bringIntoViewResponder
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.CompositionLocalProvider
@@ -495,12 +494,13 @@ class FocusableTest {
         }
     }
 
+    @Suppress("DEPRECATION") // b/376080744
     @Test
     fun focusable_requestsBringIntoView_whenFocused() {
         // Arrange.
         val requestedRects = mutableListOf<Rect?>()
         val bringIntoViewResponder =
-            object : BringIntoViewResponder {
+            object : androidx.compose.foundation.relocation.BringIntoViewResponder {
                 override fun calculateRectForParent(localRect: Rect): Rect = localRect
 
                 override suspend fun bringChildIntoView(localRect: () -> Rect?) {

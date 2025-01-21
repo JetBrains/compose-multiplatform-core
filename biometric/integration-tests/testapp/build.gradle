@@ -21,22 +21,22 @@ plugins {
 }
 
 android {
-    compileSdkVersion 35
+    compileSdk = 35
     defaultConfig {
-        applicationId "androidx.biometric.integration.testapp"
+        applicationId = "androidx.biometric.integration.testapp"
     }
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
         }
     }
 
     buildFeatures {
-        viewBinding true
+        viewBinding = true
     }
-    namespace "androidx.biometric.integration.testapp"
+    namespace = "androidx.biometric.integration.testapp"
 }
 
 dependencies {

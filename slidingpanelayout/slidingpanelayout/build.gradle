@@ -38,5 +38,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.slidingpanelayout"
+    namespace = "androidx.slidingpanelayout"
 }

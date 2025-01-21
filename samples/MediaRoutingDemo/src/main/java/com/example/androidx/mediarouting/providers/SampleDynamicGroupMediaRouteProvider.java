@@ -24,8 +24,6 @@ import android.content.IntentSender;
 import android.media.MediaRouter;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.collection.ArrayMap;
 import androidx.mediarouter.media.MediaRouteDescriptor;
 import androidx.mediarouter.media.MediaRouteProvider;
@@ -37,6 +35,9 @@ import com.example.androidx.mediarouting.RoutesManager;
 import com.example.androidx.mediarouting.activities.SettingsActivity;
 import com.example.androidx.mediarouting.data.RouteItem;
 import com.example.androidx.mediarouting.services.SampleDynamicGroupMediaRouteProviderService;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -63,9 +64,8 @@ public final class SampleDynamicGroupMediaRouteProvider extends SampleMediaRoute
         super(context);
     }
 
-    @Nullable
     @Override
-    public RouteController onCreateRouteController(@NonNull String routeId) {
+    public @Nullable RouteController onCreateRouteController(@NonNull String routeId) {
         if (!checkDrawOverlay()) return null;
 
         MediaRouteDescriptor routeDescriptor = mRouteDescriptors.get(routeId);
@@ -77,9 +77,8 @@ public final class SampleDynamicGroupMediaRouteProvider extends SampleMediaRoute
         return new SampleRouteController(routeId);
     }
 
-    @Nullable
     @Override
-    public RouteController onCreateRouteController(@NonNull String routeId,
+    public @Nullable RouteController onCreateRouteController(@NonNull String routeId,
             @NonNull String groupId) {
         // Handle a static group exceptionally
         if (groupId.equals(STATIC_GROUP_ROUTE_ID)) {
@@ -100,9 +99,8 @@ public final class SampleDynamicGroupMediaRouteProvider extends SampleMediaRoute
         return controller;
     }
 
-    @Nullable
     @Override
-    public DynamicGroupRouteController onCreateDynamicGroupRouteController(
+    public @Nullable DynamicGroupRouteController onCreateDynamicGroupRouteController(
             @NonNull String initialMemberRouteId) {
         if (!checkDrawOverlay()) return null;
 

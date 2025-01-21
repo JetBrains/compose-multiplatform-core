@@ -26,13 +26,14 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.proto.LayoutElementProto.ArcDirection;
 import androidx.wear.protolayout.renderer.R;
 import androidx.wear.widget.ArcLayout;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -45,7 +46,7 @@ import java.lang.annotation.RetentionPolicy;
  */
 class SizedArcContainer extends ViewGroup implements ArcLayout.Widget {
     private static final float DEFAULT_SWEEP_ANGLE_DEGREES = 0;
-    @NonNull private ArcDirection mArcDirection = ArcDirection.ARC_DIRECTION_CLOCKWISE;
+    private @NonNull ArcDirection mArcDirection = ArcDirection.ARC_DIRECTION_CLOCKWISE;
 
     private float mSweepAngleDegrees;
 
@@ -80,7 +81,7 @@ class SizedArcContainer extends ViewGroup implements ArcLayout.Widget {
             super(width, height);
         }
 
-        LayoutParams(@NonNull ViewGroup.LayoutParams source) {
+        LayoutParams(ViewGroup.@NonNull LayoutParams source) {
             super(source);
         }
 
@@ -157,7 +158,7 @@ class SizedArcContainer extends ViewGroup implements ArcLayout.Widget {
 
     @Override
     public void addView(
-            @NonNull View child, int index, @NonNull ViewGroup.LayoutParams layoutParams) {
+            @NonNull View child, int index, ViewGroup.@NonNull LayoutParams layoutParams) {
         if (!(child instanceof ArcLayout.Widget)) {
             throw new IllegalArgumentException(
                     "SizedArcContainer can only contain instances of ArcLayout.Widget");
@@ -171,13 +172,13 @@ class SizedArcContainer extends ViewGroup implements ArcLayout.Widget {
     }
 
     @Override
-    protected boolean checkLayoutParams(@NonNull ViewGroup.LayoutParams p) {
+    protected boolean checkLayoutParams(ViewGroup.@NonNull LayoutParams p) {
         return p instanceof LayoutParams;
     }
 
     @Override
-    @NonNull
-    protected ViewGroup.LayoutParams generateLayoutParams(@NonNull ViewGroup.LayoutParams p) {
+    protected ViewGroup.@NonNull LayoutParams generateLayoutParams(
+            ViewGroup.@NonNull LayoutParams p) {
         return new LayoutParams(p);
     }
 
@@ -212,8 +213,7 @@ class SizedArcContainer extends ViewGroup implements ArcLayout.Widget {
         }
     }
 
-    @Nullable
-    private ArcLayout.Widget getChild() {
+    private ArcLayout.@Nullable Widget getChild() {
         if (getChildCount() == 0) {
             return null;
         }

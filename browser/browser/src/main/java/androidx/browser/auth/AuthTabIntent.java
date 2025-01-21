@@ -37,12 +37,13 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContract;
 import androidx.annotation.IntDef;
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.browser.customtabs.ExperimentalEphemeralBrowsing;
 import androidx.core.os.BundleCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -144,8 +145,7 @@ public class AuthTabIntent {
     public static final int RESULT_UNKNOWN_CODE = -2;
 
     /** An {@link Intent} used to start the Auth Tab Activity. */
-    @NonNull
-    public final Intent intent;
+    public final @NonNull Intent intent;
 
     /**
      * Launches an Auth Tab Activity. Must be used for flows that result in a redirect with a custom
@@ -200,8 +200,7 @@ public class AuthTabIntent {
      *                    {@link #COLOR_SCHEME_SYSTEM}.
      * @return An instance of {@link AuthTabColorSchemeParams} with retrieved params.
      */
-    @NonNull
-    public static AuthTabColorSchemeParams getColorSchemeParams(@NonNull Intent intent,
+    public static @NonNull AuthTabColorSchemeParams getColorSchemeParams(@NonNull Intent intent,
             @CustomTabsIntent.ColorScheme @IntRange(from = COLOR_SCHEME_LIGHT, to =
                     COLOR_SCHEME_DARK) int colorScheme) {
         Bundle extras = intent.getExtras();
@@ -232,10 +231,8 @@ public class AuthTabIntent {
         private final Intent mIntent = new Intent(Intent.ACTION_VIEW);
         private final AuthTabColorSchemeParams.Builder mDefaultColorSchemeBuilder =
                 new AuthTabColorSchemeParams.Builder();
-        @Nullable
-        private SparseArray<Bundle> mColorSchemeParamBundles;
-        @Nullable
-        private Bundle mDefaultColorSchemeBundle;
+        private @Nullable SparseArray<Bundle> mColorSchemeParamBundles;
+        private @Nullable Bundle mDefaultColorSchemeBundle;
 
         public Builder() {
         }
@@ -249,8 +246,7 @@ public class AuthTabIntent {
          * @see CustomTabsIntent#EXTRA_ENABLE_EPHEMERAL_BROWSING
          */
         @ExperimentalEphemeralBrowsing
-        @NonNull
-        public AuthTabIntent.Builder setEphemeralBrowsingEnabled(boolean enabled) {
+        public AuthTabIntent.@NonNull Builder setEphemeralBrowsingEnabled(boolean enabled) {
             mIntent.putExtra(EXTRA_ENABLE_EPHEMERAL_BROWSING, enabled);
             return this;
         }
@@ -264,8 +260,7 @@ public class AuthTabIntent {
          * @see CustomTabsIntent#COLOR_SCHEME_DARK
          */
         @SuppressWarnings("MissingGetterMatchingBuilder")
-        @NonNull
-        public Builder setColorScheme(
+        public @NonNull Builder setColorScheme(
                 @CustomTabsIntent.ColorScheme @IntRange(from = COLOR_SCHEME_SYSTEM, to =
                         COLOR_SCHEME_DARK) int colorScheme) {
             mIntent.putExtra(EXTRA_COLOR_SCHEME, colorScheme);
@@ -314,8 +309,7 @@ public class AuthTabIntent {
          * @param params      An instance of {@link AuthTabColorSchemeParams}.
          */
         @SuppressWarnings("MissingGetterMatchingBuilder")
-        @NonNull
-        public AuthTabIntent.Builder setColorSchemeParams(
+        public AuthTabIntent.@NonNull Builder setColorSchemeParams(
                 @CustomTabsIntent.ColorScheme @IntRange(from = COLOR_SCHEME_LIGHT, to =
                         COLOR_SCHEME_DARK) int colorScheme,
                 @NonNull AuthTabColorSchemeParams params) {
@@ -336,8 +330,7 @@ public class AuthTabIntent {
          * @param params An instance of {@link AuthTabColorSchemeParams}.
          */
         @SuppressWarnings("MissingGetterMatchingBuilder")
-        @NonNull
-        public AuthTabIntent.Builder setDefaultColorSchemeParams(
+        public AuthTabIntent.@NonNull Builder setDefaultColorSchemeParams(
                 @NonNull AuthTabColorSchemeParams params) {
             mDefaultColorSchemeBundle = params.toBundle();
             return this;
@@ -347,8 +340,7 @@ public class AuthTabIntent {
          * Combines all the options that have been set and returns a new {@link AuthTabIntent}
          * object.
          */
-        @NonNull
-        public AuthTabIntent build() {
+        public @NonNull AuthTabIntent build() {
             mIntent.putExtra(EXTRA_LAUNCH_AUTH_TAB, true);
 
             // Put a null EXTRA_SESSION as a fallback so that this is interpreted as a Custom Tab
@@ -386,8 +378,7 @@ public class AuthTabIntent {
      * @param callback An {@link ActivityResultCallback} to be called with the auth result.
      * @return An {@link ActivityResultLauncher} to be passed to {@link #launch}.
      */
-    @NonNull
-    public static ActivityResultLauncher<Intent> registerActivityResultLauncher(
+    public static @NonNull ActivityResultLauncher<Intent> registerActivityResultLauncher(
             @NonNull ActivityResultCaller caller,
             @NonNull ActivityResultCallback<AuthResult> callback) {
         return caller.registerForActivityResult(new AuthenticateUserResultContract(), callback);
@@ -411,8 +402,7 @@ public class AuthTabIntent {
          * The {@link Uri} containing the Auth Tab result data. Null if the `resultCode` isn't
          * {@link RESULT_OK}.
          */
-        @Nullable
-        public final Uri resultUri;
+        public final @Nullable Uri resultUri;
 
         AuthResult(@ResultCode int resultCode, @Nullable Uri resultUri) {
             this.resultCode = resultCode;
@@ -421,15 +411,13 @@ public class AuthTabIntent {
     }
 
     static class AuthenticateUserResultContract extends ActivityResultContract<Intent, AuthResult> {
-        @NonNull
         @Override
-        public Intent createIntent(@NonNull Context context, @NonNull Intent input) {
+        public @NonNull Intent createIntent(@NonNull Context context, @NonNull Intent input) {
             return input;
         }
 
-        @NonNull
         @Override
-        public AuthResult parseResult(int resultCode, @Nullable Intent intent) {
+        public @NonNull AuthResult parseResult(int resultCode, @Nullable Intent intent) {
             Uri resultUri = null;
             switch (resultCode) {
                 case RESULT_OK:

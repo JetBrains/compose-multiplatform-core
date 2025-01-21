@@ -19,10 +19,10 @@ package androidx.webkit.internal;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -48,8 +48,7 @@ public class WebViewFeatureInternalTest {
         }
 
         @Override
-        @NonNull
-        public String getPublicFeatureName() {
+        public @NonNull String getPublicFeatureName() {
             return mPublicFeatureValue;
         }
     }

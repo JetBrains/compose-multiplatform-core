@@ -29,5 +29,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.core.role"
+    namespace = "androidx.core.role"
 }

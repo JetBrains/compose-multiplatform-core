@@ -44,6 +44,7 @@ internal object CryptoObjectUtils {
      *   [android.hardware.biometrics.BiometricPrompt].
      */
     @RequiresApi(Build.VERSION_CODES.P)
+    @Suppress("deprecation")
     fun wrapForBiometricPrompt(
         cryptoObject: androidx.biometric.BiometricPrompt.CryptoObject?
     ): BiometricPrompt.CryptoObject? {
@@ -92,11 +93,9 @@ internal object CryptoObjectUtils {
      */
     @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     fun getOperationHandle(cryptoObject: androidx.biometric.BiometricPrompt.CryptoObject?): Long {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-            val wrappedCryptoObject = wrapForBiometricPrompt(cryptoObject)
-            if (wrappedCryptoObject != null) {
-                return Api35Impl.getOperationHandle(wrappedCryptoObject)
-            }
+        val wrappedCryptoObject = wrapForBiometricPrompt(cryptoObject)
+        if (wrappedCryptoObject != null) {
+            return Api35Impl.getOperationHandle(wrappedCryptoObject)
         }
         return 0
     }

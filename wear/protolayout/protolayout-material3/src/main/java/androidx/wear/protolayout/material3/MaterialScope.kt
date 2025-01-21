@@ -20,14 +20,20 @@ import android.content.Context
 import androidx.wear.protolayout.ColorBuilders.ColorProp
 import androidx.wear.protolayout.ColorBuilders.argb
 import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters
+import androidx.wear.protolayout.DimensionBuilders.ContainerDimension
 import androidx.wear.protolayout.DimensionBuilders.ImageDimension
+import androidx.wear.protolayout.DimensionBuilders.expand
+import androidx.wear.protolayout.LayoutElementBuilders
+import androidx.wear.protolayout.LayoutElementBuilders.ContentScaleMode
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
 import androidx.wear.protolayout.LayoutElementBuilders.TEXT_ALIGN_CENTER
 import androidx.wear.protolayout.LayoutElementBuilders.TEXT_OVERFLOW_ELLIPSIZE
 import androidx.wear.protolayout.LayoutElementBuilders.TextAlignment
 import androidx.wear.protolayout.LayoutElementBuilders.TextOverflow
+import androidx.wear.protolayout.ModifiersBuilders.Corner
 import androidx.wear.protolayout.material3.Typography.TypographyToken
 import androidx.wear.protolayout.material3.tokens.ColorTokens
+import androidx.wear.protolayout.material3.tokens.ShapeTokens
 
 /**
  * Receiver scope which is used by all ProtoLayout Material3 components and layout to support
@@ -63,7 +69,8 @@ internal constructor(
     internal val allowDynamicTheme: Boolean,
     internal val theme: MaterialTheme,
     internal val defaultTextElementStyle: TextElementStyle,
-    internal val defaultIconStyle: IconStyle
+    internal val defaultIconStyle: IconStyle,
+    internal val defaultBackgroundImageStyle: BackgroundImageStyle,
 ) {
     /** Color Scheme used within this scope and its components. */
     public val colorScheme: ColorScheme = theme.colorScheme
@@ -73,7 +80,8 @@ internal constructor(
 
     internal fun withStyle(
         defaultTextElementStyle: TextElementStyle = this.defaultTextElementStyle,
-        defaultIconStyle: IconStyle = this.defaultIconStyle
+        defaultIconStyle: IconStyle = this.defaultIconStyle,
+        defaultBackgroundImageStyle: BackgroundImageStyle = this.defaultBackgroundImageStyle
     ): MaterialScope =
         MaterialScope(
             context = context,
@@ -81,7 +89,8 @@ internal constructor(
             theme = theme,
             allowDynamicTheme = allowDynamicTheme,
             defaultTextElementStyle = defaultTextElementStyle,
-            defaultIconStyle = defaultIconStyle
+            defaultIconStyle = defaultIconStyle,
+            defaultBackgroundImageStyle = defaultBackgroundImageStyle
         )
 }
 
@@ -125,7 +134,8 @@ public fun materialScope(
                         }
                 ),
             defaultTextElementStyle = TextElementStyle(),
-            defaultIconStyle = IconStyle()
+            defaultIconStyle = IconStyle(),
+            defaultBackgroundImageStyle = BackgroundImageStyle()
         )
         .layout()
 
@@ -145,4 +155,15 @@ internal class TextElementStyle(
 internal class IconStyle(
     val size: ImageDimension = 24.toDp(),
     val tintColor: ColorProp = argb(ColorTokens.PRIMARY),
+)
+
+internal class BackgroundImageStyle(
+    val width: ImageDimension = expand(),
+    val height: ImageDimension = expand(),
+    val overlayColor: ColorProp = argb(ColorTokens.BACKGROUND).withOpacity(/* ratio= */ 0.6f),
+    val overlayWidth: ContainerDimension = expand(),
+    val overlayHeight: ContainerDimension = expand(),
+    val shape: Corner = ShapeTokens.CORNER_LARGE,
+    @ContentScaleMode
+    val contentScaleMode: Int = LayoutElementBuilders.CONTENT_SCALE_MODE_FILL_BOUNDS
 )

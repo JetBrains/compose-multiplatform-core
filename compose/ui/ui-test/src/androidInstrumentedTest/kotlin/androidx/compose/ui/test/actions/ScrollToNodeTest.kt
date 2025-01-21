@@ -116,11 +116,10 @@ class ScrollToNodeTest(private val config: TestConfig) {
                 "viewport=$viewportSize, " +
                 "targetIs=" +
                 when (targetPosition) {
-                    NotInList -> "$targetPosition"
-                    else -> "${targetPosition}Viewport "
+                    NotInList -> "$targetPosition, "
+                    else -> "${targetPosition}Viewport, "
                 } +
-                "nestedScrollConsumer=" +
-                hasNestedScrollConsumer
+                "nestedScrollConsumer=$hasNestedScrollConsumer"
     }
 
     companion object {

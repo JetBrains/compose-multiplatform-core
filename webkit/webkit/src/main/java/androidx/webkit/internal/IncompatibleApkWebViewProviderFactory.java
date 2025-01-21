@@ -18,7 +18,8 @@ package androidx.webkit.internal;
 
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
+import androidx.webkit.WebViewCompat;
+import androidx.webkit.WebViewStartUpConfig;
 
 import org.chromium.support_lib_boundary.DropDataContentProviderBoundaryInterface;
 import org.chromium.support_lib_boundary.ProfileStoreBoundaryInterface;
@@ -28,6 +29,7 @@ import org.chromium.support_lib_boundary.StaticsBoundaryInterface;
 import org.chromium.support_lib_boundary.TracingControllerBoundaryInterface;
 import org.chromium.support_lib_boundary.WebViewProviderBoundaryInterface;
 import org.chromium.support_lib_boundary.WebkitToCompatConverterBoundaryInterface;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This is a stub class used when the WebView Support Library is invoked on a device incompatible
@@ -42,56 +44,53 @@ public class IncompatibleApkWebViewProviderFactory implements WebViewProviderFac
             + "method is being called too early, or is being called on start-up rather than lazily";
 
     @Override
-    @NonNull
-    public WebViewProviderBoundaryInterface createWebView(@NonNull WebView webview) {
+    public @NonNull WebViewProviderBoundaryInterface createWebView(@NonNull WebView webview) {
         throw new UnsupportedOperationException(UNSUPPORTED_EXCEPTION_EXPLANATION);
     }
 
     @Override
-    @NonNull
-    public WebkitToCompatConverterBoundaryInterface getWebkitToCompatConverter() {
+    public @NonNull WebkitToCompatConverterBoundaryInterface getWebkitToCompatConverter() {
         throw new UnsupportedOperationException(UNSUPPORTED_EXCEPTION_EXPLANATION);
     }
 
     @Override
-    @NonNull
-    public StaticsBoundaryInterface getStatics() {
+    public @NonNull StaticsBoundaryInterface getStatics() {
         throw new UnsupportedOperationException(UNSUPPORTED_EXCEPTION_EXPLANATION);
     }
 
     @Override
-    @NonNull
-    public String[] getWebViewFeatures() {
+    public String @NonNull [] getWebViewFeatures() {
         return EMPTY_STRING_ARRAY;
     }
 
     @Override
-    @NonNull
-    public ServiceWorkerControllerBoundaryInterface getServiceWorkerController() {
+    public @NonNull ServiceWorkerControllerBoundaryInterface getServiceWorkerController() {
         throw new UnsupportedOperationException(UNSUPPORTED_EXCEPTION_EXPLANATION);
     }
 
     @Override
-    @NonNull
-    public TracingControllerBoundaryInterface getTracingController() {
+    public @NonNull TracingControllerBoundaryInterface getTracingController() {
         throw new UnsupportedOperationException(UNSUPPORTED_EXCEPTION_EXPLANATION);
     }
 
     @Override
-    @NonNull
-    public ProxyControllerBoundaryInterface getProxyController() {
+    public @NonNull ProxyControllerBoundaryInterface getProxyController() {
         throw new UnsupportedOperationException(UNSUPPORTED_EXCEPTION_EXPLANATION);
     }
 
-    @NonNull
     @Override
-    public DropDataContentProviderBoundaryInterface getDropDataProvider() {
+    public @NonNull DropDataContentProviderBoundaryInterface getDropDataProvider() {
         throw new UnsupportedOperationException(UNSUPPORTED_EXCEPTION_EXPLANATION);
     }
 
-    @NonNull
     @Override
-    public ProfileStoreBoundaryInterface getProfileStore() {
+    public @NonNull ProfileStoreBoundaryInterface getProfileStore() {
+        throw new UnsupportedOperationException(UNSUPPORTED_EXCEPTION_EXPLANATION);
+    }
+
+    @Override
+    public void startUpWebView(@NonNull WebViewStartUpConfig config,
+            WebViewCompat.@NonNull WebViewStartUpCallback callback) {
         throw new UnsupportedOperationException(UNSUPPORTED_EXCEPTION_EXPLANATION);
     }
 }

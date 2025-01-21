@@ -89,12 +89,12 @@ androidx {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
     defaultConfig {
-        minSdkVersion 23
+        minSdk = 23
     }
     sourceSets.androidTest.assets.srcDir(prepareAssetsTaskProvider.map { it.outputDir })
-    namespace "androidx.profileinstaller.integration.profileverification"
+    namespace = "androidx.profileinstaller.integration.profileverification"
 }
 
 // Define a configuration that can be resolved. This project is the consumer of test apks, i.e. it

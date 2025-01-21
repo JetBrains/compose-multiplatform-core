@@ -31,6 +31,7 @@ import androidx.annotation.AttrRes
 import androidx.annotation.RestrictTo
 import androidx.annotation.UiThread
 import androidx.annotation.VisibleForTesting
+import androidx.collection.MutableIntObjectMap
 import androidx.core.graphics.withMatrix
 import androidx.ink.authoring.internal.CanvasInProgressStrokesRenderHelperV21
 import androidx.ink.authoring.internal.CanvasInProgressStrokesRenderHelperV29
@@ -64,35 +65,15 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
 
     /**
      * Force the HWUI-based high latency implementation to be used under the hood, even if the
-     * system supports low latency inking. This takes precedence over [useNewTPlusRenderHelper]. The
-     * only reason a developer may want to do this today is if they have a hard product requirement
-     * for wet ink strokes to appear in z order between two different HWUI elements - e.g. above a
-     * canvas of content but below a floating overlay button/toolbar. This is deprecated because
-     * tools to achieve layered rendering are being developed, and soon this API to force high
-     * latency wet rendering will be removed in favor of using the best rendering strategy that the
-     * device OS level allows.
+     * system supports low latency inking.
      *
      * This must be set to its desired value before the first call to [startStroke] or [eagerInit].
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     @Deprecated("Prefer to allow the underlying implementation details to be chosen automatically.")
     public var useHighLatencyRenderHelper: Boolean = false
-
-    /**
-     * Opt into using a new implementation of the wet rendering strategy that is compatible with
-     * Android T (API 33) and above. This flag is only temporary to allow for safe, gradual rollout,
-     * and will be removed when [CanvasInProgressStrokesRenderHelperV33] is fully rolled out.
-     * [useHighLatencyRenderHelper] takes precedence over this.
-     *
-     * This must be set to its desired value before the first call to [startStroke] or [eagerInit].
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-    @Deprecated("Prefer to allow the underlying implementation details to be chosen automatically.")
-    public var useNewTPlusRenderHelper: Boolean = false
 
     /**
      * Set a minimum delay from when the user finishes a stroke until rendering is handed off to the
@@ -104,8 +85,8 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      * If handoff is ever needed as soon as safely possible, call [requestHandoff].
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     public var handoffDebounceTimeMs: Long = 0L
         @UiThread
         set(value) {
@@ -128,15 +109,16 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      * something that does load and store texture images, it must be set before the first call to
      * [startStroke] or [eagerInit].
      */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+
     // Needed on both property and on getter for AndroidX build, but the Kotlin compiler doesn't
     // like it on the getter so suppress its complaint.
     @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     @ExperimentalInkCustomBrushApi
     @get:ExperimentalInkCustomBrushApi
     @set:ExperimentalInkCustomBrushApi
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public var textureBitmapStore: TextureBitmapStore = TextureBitmapStore { null }
         set(value) {
             check(!isInitialized()) { "Cannot set textureBitmapStore after initialization." }
@@ -224,15 +206,16 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      * minimize the amount of computation in this callback, and should also avoid allocations (since
      * allocation may trigger the garbage collector).
      */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+
     // Needed on both property and on getter for AndroidX build, but the Kotlin compiler doesn't
     // like it on the getter so suppress its complaint.
     @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     @ExperimentalLatencyDataApi
     @get:ExperimentalLatencyDataApi
     @set:ExperimentalLatencyDataApi
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-    @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     public var latencyDataCallback: LatencyDataCallback? = null
 
     private val renderHelperCallback =
@@ -301,7 +284,6 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
 
                 finishedStrokes.putAll(newlyFinishedStrokes)
                 for (listener in finishedStrokesListeners) {
-
                     listener.onStrokesFinished(newlyFinishedStrokes)
                 }
             }
@@ -309,11 +291,14 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
 
     private var renderHelper: InProgressStrokesRenderHelper? = null
 
-    private val finishedStrokesView =
-        FinishedStrokesView(
-            context,
-            createRenderer = rendererFactory,
-        )
+    private val finishedStrokesView = FinishedStrokesView(context, createRenderer = rendererFactory)
+
+    // The simplified version of the API assumes that there is only one stroke in progress with a
+    // given pointer ID at a time (i.e. that each stroke in a gesture is finished or cancelled
+    // before
+    // strokes in the next gesture are started, input for strokes from different gestures are not
+    // interleaved).
+    private val pointerIdToInProgressStrokeId = MutableIntObjectMap<InProgressStrokeId>()
 
     private fun inProgressStrokesRenderHelper(): InProgressStrokesRenderHelper {
         val existingInstance = renderHelper
@@ -325,44 +310,13 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
         val result =
             @Suppress("DEPRECATION")
             if (useHighLatencyRenderHelper) {
-                CanvasInProgressStrokesRenderHelperV21(
-                    this,
-                    renderHelperCallback,
-                    renderer,
-                )
+                CanvasInProgressStrokesRenderHelperV21(this, renderHelperCallback, renderer)
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                if (useNewTPlusRenderHelper) {
-                    CanvasInProgressStrokesRenderHelperV33(
-                        this,
-                        renderHelperCallback,
-                        renderer,
-                    )
-                } else {
-                    // Newer OS versions on Lenovo P12 Pro hit an issue with the v29 implementation
-                    // of the
-                    // offscreen frame buffer. It works fine on the v33 implementation, but if the
-                    // v33 version
-                    // is not enabled, use the v29 version without the offscreen frame buffer.
-                    CanvasInProgressStrokesRenderHelperV29(
-                        this,
-                        renderHelperCallback,
-                        renderer,
-                        useOffScreenFrameBuffer = false,
-                    )
-                }
+                CanvasInProgressStrokesRenderHelperV33(this, renderHelperCallback, renderer)
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                CanvasInProgressStrokesRenderHelperV29(
-                    this,
-                    renderHelperCallback,
-                    renderer,
-                    useOffScreenFrameBuffer = true,
-                )
+                CanvasInProgressStrokesRenderHelperV29(this, renderHelperCallback, renderer)
             } else {
-                CanvasInProgressStrokesRenderHelperV21(
-                    this,
-                    renderHelperCallback,
-                    renderer,
-                )
+                CanvasInProgressStrokesRenderHelperV21(this, renderHelperCallback, renderer)
             }
 
         result.maskPath = maskPath
@@ -440,6 +394,9 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      *   This matrix must be invertible.
      * @return The [InProgressStrokeId] of the stroke being built, later used to identify which
      *   stroke is being updated with [addToStroke] or ended with [finishStroke] or [cancelStroke].
+     *   Callers that assume strokes map one-to-one with pointers in a gesture (as is typical) can
+     *   skip storing this return value and use the overrides of [addToStroke], [finishStroke], and
+     *   [cancelStroke] that just take a [MotionEvent] and a [pointerId].
      * @throws IllegalArgumentException if [motionEventToWorldTransform] or [strokeToWorldTransform]
      *   is not invertible.
      */
@@ -448,18 +405,20 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
         event: MotionEvent,
         pointerId: Int,
         brush: Brush,
-        motionEventToWorldTransform: Matrix = Matrix(),
-        strokeToWorldTransform: Matrix = Matrix(),
+        motionEventToWorldTransform: Matrix = IDENTITY_MATRIX,
+        strokeToWorldTransform: Matrix = IDENTITY_MATRIX,
     ): InProgressStrokeId =
-        inProgressStrokesManager.startStroke(
-            event,
-            pointerId,
-            motionEventToWorldTransform,
-            strokeToWorldTransform,
-            brush,
-            strokeUnitLengthCm =
-                strokeUnitLengthCm(motionEventToWorldTransform, strokeToWorldTransform),
-        )
+        inProgressStrokesManager
+            .startStroke(
+                event,
+                pointerId,
+                motionEventToWorldTransform,
+                strokeToWorldTransform,
+                brush,
+                strokeUnitLengthCm =
+                    strokeUnitLengthCm(motionEventToWorldTransform, strokeToWorldTransform),
+            )
+            .also { strokeId -> pointerIdToInProgressStrokeId.put(pointerId, strokeId) }
 
     private fun strokeUnitLengthCm(
         motionEventToWorldTransform: Matrix,
@@ -475,6 +434,7 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
                 it.preConcat(strokeToWorldTransform)
                 // Compute (stroke -> cm) = (MotionEvent -> cm) * (stroke -> MotionEvent)
                 // This assumes that MotionEvent's coordinate space is hardware pixels.
+                // TODO: b/380927473 - Take into account ancestor transforms.
                 val metrics = context.resources.displayMetrics
                 it.postScale(CM_PER_INCH / metrics.xdpi, CM_PER_INCH / metrics.ydpi)
             }
@@ -508,11 +468,18 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      *   units (the [StrokeInput.x] and [StrokeInput.y] fields of [input]) are scaled to be very
      *   different in size than screen pixels, then it is recommended to update the value of
      *   [Brush.epsilon] to reflect that.
+     * @param strokeToViewTransform The [Matrix] that converts stroke coordinates as provided in
+     *   [input] into the coordinate space of this [InProgressStrokesView] for rendering.
      * @return The [InProgressStrokeId] of the stroke being built, later used to identify which
      *   stroke is being updated with [addToStroke] or ended with [finishStroke] or [cancelStroke].
      */
-    public fun startStroke(input: StrokeInput, brush: Brush): InProgressStrokeId =
-        inProgressStrokesManager.startStroke(input, brush)
+    @JvmOverloads
+    public fun startStroke(
+        input: StrokeInput,
+        brush: Brush,
+        strokeToViewTransform: Matrix = IDENTITY_MATRIX,
+    ): InProgressStrokeId =
+        inProgressStrokesManager.startStroke(input, brush, strokeToViewTransform)
 
     /**
      * Add input data, from a particular pointer within a [MotionEvent], to an existing stroke.
@@ -541,6 +508,34 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
             strokeId,
             makeCorrectPrediction(prediction),
         )
+
+    /**
+     * Add [event] data for [pointerId] to the corresponding in-progress stroke, if present.
+     *
+     * @param event the next [MotionEvent] as part of a Stroke's input data, typically an
+     *   ACTION_MOVE.
+     * @param pointerId the index of the relevant pointer in the [event]. If [pointerId] does not
+     *   correspond to an in-progress stroke, this call is ignored.
+     * @param prediction optional predicted [MotionEvent] containing predicted inputs between event
+     *   and the time of the next frame, as generated by
+     *   [androidx.input.motionprediction.MotionEventPredictor.predict].
+     * @return Whether the pointer corresponds to an in-progress stroke.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    @JvmOverloads
+    public fun addToStroke(
+        event: MotionEvent,
+        pointerId: Int,
+        prediction: MotionEvent? = null,
+    ): Boolean {
+        addToStroke(
+            event,
+            pointerId,
+            pointerIdToInProgressStrokeId[pointerId] ?: return false,
+            prediction,
+        )
+        return true
+    }
 
     /**
      * Add input data from a [StrokeInputBatch] to an existing stroke.
@@ -603,11 +598,32 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      *   [MotionEvent.findPointerIndex]. Note that this is the ID of the pointer, not its index.
      * @param strokeId The [InProgressStrokeId] of the stroke to be finished.
      */
-    public fun finishStroke(
-        event: MotionEvent,
-        pointerId: Int,
-        strokeId: InProgressStrokeId
-    ): Unit = inProgressStrokesManager.finishStroke(event, pointerId, strokeId)
+    public fun finishStroke(event: MotionEvent, pointerId: Int, strokeId: InProgressStrokeId) {
+        // Remove the strokeId from the map. If it corresponded to this pointer ID (the usual case),
+        // we can do that in the fast way.
+        if (!pointerIdToInProgressStrokeId.remove(pointerId, strokeId)) {
+            pointerIdToInProgressStrokeId.removeIf { _, v -> v == strokeId }
+        }
+        inProgressStrokesManager.finishStroke(event, pointerId, strokeId)
+    }
+
+    /**
+     * Finish the corresponding in-progress stroke with [event] data for [pointerId], if present.
+     *
+     * @param event the last [MotionEvent] as part of a stroke, typically an ACTION_UP.
+     * @param pointerId the id of the relevant pointer in the [event]. If [pointerId] does not
+     *   correspond to an in-progress stroke, this call is ignored.
+     * @return Whether the pointer corresponded to an in-progress stroke.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun finishStroke(event: MotionEvent, pointerId: Int): Boolean {
+        inProgressStrokesManager.finishStroke(
+            event,
+            pointerId,
+            pointerIdToInProgressStrokeId.remove(pointerId) ?: return false,
+        )
+        return true
+    }
 
     /**
      * Complete the building of a stroke, with the last input data coming from a [StrokeInput].
@@ -615,8 +631,13 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      * @param input The last [StrokeInput] in the stroke.
      * @param strokeId The [InProgressStrokeId] of the stroke to be finished.
      */
-    public fun finishStroke(input: StrokeInput, strokeId: InProgressStrokeId): Unit =
+    public fun finishStroke(input: StrokeInput, strokeId: InProgressStrokeId) {
+        // In general, use of the StrokeInput[Batch] API won't be mixed with the MotionEvent API
+        // (especially the version that isn't keeping track of StrokeId explicitly), so this map
+        // will be empty. Even if not, we would expect it to be short.
+        pointerIdToInProgressStrokeId.removeIf { _, v -> v == strokeId }
         inProgressStrokesManager.finishStroke(input, strokeId)
+    }
 
     /**
      * Cancel the building of a stroke. It will no longer be visible within this
@@ -643,8 +664,35 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      * @param event The [MotionEvent] that led to this cancellation, if applicable.
      */
     @JvmOverloads
-    public fun cancelStroke(strokeId: InProgressStrokeId, event: MotionEvent? = null): Unit =
+    public fun cancelStroke(strokeId: InProgressStrokeId, event: MotionEvent? = null) {
+        // Linear scan, but we expect the number of in-progress strokes to be small.
+        pointerIdToInProgressStrokeId.removeIf { _, v -> v == strokeId }
         inProgressStrokesManager.cancelStroke(strokeId, event)
+    }
+
+    /**
+     * Cancel the corresponding in-progress stroke with [event] data for [pointerId], if present.
+     *
+     * @param event The [MotionEvent] that led to this cancellation, typically an ACTION_CANCEL.
+     * @param pointerId the id of the relevant pointer in the [event].
+     * @return Whether the pointer corresponded to an in-progress stroke.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun cancelStroke(event: MotionEvent, pointerId: Int): Boolean {
+        inProgressStrokesManager.cancelStroke(
+            pointerIdToInProgressStrokeId.remove(pointerId) ?: return false,
+            event,
+        )
+        return true
+    }
+
+    /** Cancel all in-progress strokes. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun cancelUnfinishedStrokes(): Unit = inProgressStrokesManager.cancelUnfinishedStrokes()
+
+    /** Returns true if there are any in-progress strokes. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun hasUnfinishedStrokes(): Boolean = inProgressStrokesManager.hasUnfinishedStrokes()
 
     /**
      * Request that [handoffDebounceTimeMs] be temporarily ignored to hand off rendering to the
@@ -692,6 +740,7 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
             // Nothing to flush if it's not initialized.
             return true
         }
+        pointerIdToInProgressStrokeId.clear()
         return inProgressStrokesManager.flush(timeout, timeoutUnit, cancelAllInProgress)
     }
 
@@ -741,6 +790,10 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
         super.onAttachedToWindow()
         addView(finishedStrokesView)
     }
+
+    private companion object {
+        val IDENTITY_MATRIX = Matrix()
+    }
 }
 
 /**
@@ -772,8 +825,7 @@ private class FinishedStrokesView(
     }
 
     override fun onDraw(canvas: Canvas) {
-        @Suppress("UNUSED_VARIABLE")
-        for ((strokeId, finishedStroke) in finishedStrokes) {
+        for ((_, finishedStroke) in finishedStrokes) {
             canvas.withMatrix(finishedStroke.strokeToViewTransform) {
                 renderer.draw(canvas, finishedStroke.stroke, finishedStroke.strokeToViewTransform)
             }

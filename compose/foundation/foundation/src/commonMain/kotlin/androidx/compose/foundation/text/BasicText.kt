@@ -16,8 +16,6 @@
 
 package androidx.compose.foundation.text
 
-import androidx.compose.foundation.ComposeFoundationFlags
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.text.modifiers.SelectableTextAnnotatedStringElement
 import androidx.compose.foundation.text.modifiers.SelectionController
 import androidx.compose.foundation.text.modifiers.TextAnnotatedStringElement
@@ -39,7 +37,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.ColorProducer
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasurePolicy
@@ -119,26 +116,24 @@ fun BasicText(
         }
     val finalModifier =
         if (selectionController != null || onTextLayout != null) {
-            modifier
-                .optionalGraphicsLayer()
-                .textModifier(
-                    AnnotatedString(text = text),
-                    style = style,
-                    onTextLayout = onTextLayout,
-                    overflow = overflow,
-                    softWrap = softWrap,
-                    maxLines = maxLines,
-                    minLines = minLines,
-                    fontFamilyResolver = LocalFontFamilyResolver.current,
-                    placeholders = null,
-                    onPlaceholderLayout = null,
-                    selectionController = selectionController,
-                    color = color,
-                    onShowTranslation = null,
-                    autoSize = requireAutoSizeInternalImplementationOrNull(autoSize)
-                )
+            modifier.textModifier(
+                AnnotatedString(text = text),
+                style = style,
+                onTextLayout = onTextLayout,
+                overflow = overflow,
+                softWrap = softWrap,
+                maxLines = maxLines,
+                minLines = minLines,
+                fontFamilyResolver = LocalFontFamilyResolver.current,
+                placeholders = null,
+                onPlaceholderLayout = null,
+                selectionController = selectionController,
+                color = color,
+                onShowTranslation = null,
+                autoSize = requireAutoSizeInternalImplementationOrNull(autoSize)
+            )
         } else {
-            modifier.optionalGraphicsLayer() then
+            modifier then
                 TextStringSimpleElement(
                     text = text,
                     style = style,
@@ -218,24 +213,22 @@ fun BasicText(
         // this is the same as text: String, use all the early exits
         Layout(
             modifier =
-                modifier
-                    .optionalGraphicsLayer()
-                    .textModifier(
-                        text = text,
-                        style = style,
-                        onTextLayout = onTextLayout,
-                        overflow = overflow,
-                        softWrap = softWrap,
-                        maxLines = maxLines,
-                        minLines = minLines,
-                        fontFamilyResolver = LocalFontFamilyResolver.current,
-                        placeholders = null,
-                        onPlaceholderLayout = null,
-                        selectionController = selectionController,
-                        color = color,
-                        onShowTranslation = null,
-                        autoSize = requireAutoSizeInternalImplementationOrNull(autoSize)
-                    ),
+                modifier.textModifier(
+                    text = text,
+                    style = style,
+                    onTextLayout = onTextLayout,
+                    overflow = overflow,
+                    softWrap = softWrap,
+                    maxLines = maxLines,
+                    minLines = minLines,
+                    fontFamilyResolver = LocalFontFamilyResolver.current,
+                    placeholders = null,
+                    onPlaceholderLayout = null,
+                    selectionController = selectionController,
+                    color = color,
+                    onShowTranslation = null,
+                    autoSize = requireAutoSizeInternalImplementationOrNull(autoSize)
+                ),
             EmptyMeasurePolicy
         )
     } else {
@@ -672,27 +665,25 @@ private fun LayoutWithLinksAndInlineContent(
             inlineComposables?.let { InlineChildren(text = text, inlineContents = it) }
         },
         modifier =
-            modifier
-                .optionalGraphicsLayer()
-                .textModifier(
-                    text = styledText(),
-                    style = style,
-                    onTextLayout = {
-                        textScope?.textLayoutResult = it
-                        onTextLayout?.invoke(it)
-                    },
-                    overflow = overflow,
-                    softWrap = softWrap,
-                    maxLines = maxLines,
-                    minLines = minLines,
-                    fontFamilyResolver = fontFamilyResolver,
-                    placeholders = placeholders,
-                    onPlaceholderLayout = onPlaceholderLayout,
-                    selectionController = selectionController,
-                    color = color,
-                    onShowTranslation = onShowTranslation,
-                    autoSize = autoSize
-                ),
+            modifier.textModifier(
+                text = styledText(),
+                style = style,
+                onTextLayout = {
+                    textScope?.textLayoutResult = it
+                    onTextLayout?.invoke(it)
+                },
+                overflow = overflow,
+                softWrap = softWrap,
+                maxLines = maxLines,
+                minLines = minLines,
+                fontFamilyResolver = fontFamilyResolver,
+                placeholders = placeholders,
+                onPlaceholderLayout = onPlaceholderLayout,
+                selectionController = selectionController,
+                color = color,
+                onShowTranslation = onShowTranslation,
+                autoSize = autoSize
+            ),
         measurePolicy =
             if (!hasInlineContent) {
                 LinksTextMeasurePolicy(
@@ -706,18 +697,6 @@ private fun LayoutWithLinksAndInlineContent(
             }
     )
 }
-
-/**
- * Applies a full [graphicsLayer] modifier only if the associated flag
- * [ComposeFoundationFlags.RemoveBasicTextGraphicsLayerEnabled] is disabled.
- */
-@OptIn(ExperimentalFoundationApi::class)
-private fun Modifier.optionalGraphicsLayer() =
-    if (ComposeFoundationFlags.RemoveBasicTextGraphicsLayerEnabled) {
-        this
-    } else {
-        this.graphicsLayer()
-    }
 
 /**
  * [AutoSize], our public type, is a sealed interface. Our internal representation is not sealed.

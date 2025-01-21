@@ -21,7 +21,13 @@ import static androidx.appsearch.compiler.AppSearchCompiler.RESTRICT_GENERATED_C
 
 import static com.google.testing.compile.CompilationSubject.assertThat;
 
+import androidx.room.compiler.processing.util.Source;
+import androidx.room.compiler.processing.util.compiler.TestCompilationArguments;
+import androidx.room.compiler.processing.util.compiler.TestKotlinCompilerKt;
+
 import com.google.auto.value.processor.AutoValueProcessor;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
 import com.google.common.truth.Truth;
@@ -2335,7 +2341,7 @@ public class AppSearchCompilerTest {
         checkResultContains("Thing.java",
                 "Thing document = Thing.create(getIdConv, getNamespaceConv)");
         checkResultContains("Gift.java",
-                "thingConv = thingCopy.toDocumentClass(Thing.class, documentClassMap)");
+                "thingConv = thingCopy.toDocumentClass(Thing.class, documentClassMappingContext)");
         checkEqualsGolden("Gift.java");
     }
 
@@ -3516,6 +3522,107 @@ public class AppSearchCompilerTest {
         checkResultContains("Gift.java",
                 "EmbeddingVector");
         checkEqualsGolden("Gift.java");
+    }
+
+    @Test
+    public void testKotlinNullability() throws Exception {
+        compileKotlin("""
+                @Document
+                data class KotlinGift(
+                    @Document.Namespace val namespace: String,
+                    @Document.Id val id: String,
+                    @Document.StringProperty val nonNullList: List<String>,
+                    @Document.StringProperty val nullableList: List<String>?,
+                    @Document.BooleanProperty val nonNullBoolean: Boolean,
+                    @Document.BooleanProperty val nullableBoolean: Boolean?,
+                ) {}
+                """);
+
+        checkEqualsGolden("KotlinGift.java");
+        checkResultContains("KotlinGift.java",
+                "List<String> nonNullListConv = Collections.emptyList();");
+        checkResultContains("KotlinGift.java",
+                "List<String> nullableListConv = null;");
+        checkResultContains("KotlinGift.java",
+                "boolean nonNullBooleanConv = genericDoc.getPropertyBoolean(\"nonNullBoolean\");");
+        checkResultContains("KotlinGift.java",
+                "Boolean nullableBooleanConv = null;");
+    }
+
+    @Test
+    public void testKotlinNullability_nullabilityLists() throws Exception {
+        compileKotlin("""
+                import androidx.appsearch.app.EmbeddingVector
+                @Document
+                data class Gift {
+                    @Document.Namespace String namespace
+                    @Document.Id String id
+                }
+                @Document
+                data class KotlinGift(
+                    @Document.Namespace val namespace: String,
+                    @Document.Id val id: String,
+                    @Document.StringProperty val nonNullStrings: List<String>,
+                    @Document.StringProperty val nullableStrings: List<String>?,
+                    @Document.LongProperty val nonNullLongs: List<Long>,
+                    @Document.LongProperty val nullableLongs: List<Long>?,
+                    @Document.BooleanProperty val nonNullBooleans: List<Boolean>,
+                    @Document.BooleanProperty val nullableBooleans: List<Boolean>?,
+                    @Document.DocumentProperty val nonNullCustomTypes: List<Gift>,
+                    @Document.DocumentProperty val nullableCustomTypes: List<Gift>?,
+                    @Document.EmbeddingProperty val nonNullEmbeddings: List<EmbeddingVector>,
+                    @Document.EmbeddingProperty val nullableEmbeddings: List<EmbeddingVector>?,
+                ) {}
+                """);
+
+        checkEqualsGolden("KotlinGift.java");
+
+        checkResultContains("KotlinGift.java",
+                "List<String> nonNullStringsConv = Collections.emptyList();");
+        checkResultContains("KotlinGift.java",
+                "List<String> nullableStringsConv = null;");
+        checkResultContains("KotlinGift.java",
+                "List<Long> nonNullLongsConv = Collections.emptyList();");
+        checkResultContains("KotlinGift.java",
+                "List<Long> nullableLongsConv = null;");
+        checkResultContains("KotlinGift.java",
+                "List<Boolean> nonNullBooleansConv = Collections.emptyList();");
+        checkResultContains("KotlinGift.java",
+                "List<Boolean> nullableBooleansConv = null;");
+        checkResultContains("KotlinGift.java",
+                "List<Gift> nonNullCustomTypesConv = Collections.emptyList();");
+        checkResultContains("KotlinGift.java",
+                "List<Gift> nullableCustomTypesConv = null;");
+        checkResultContains("KotlinGift.java",
+                "List<EmbeddingVector> nonNullEmbeddingsConv = Collections.emptyList();");
+        checkResultContains("KotlinGift.java",
+                "List<EmbeddingVector> nullableEmbeddingsConv = null;");
+    }
+
+    private void compileKotlin(String classBody) throws IOException {
+        String src = "package com.example.appsearch\n"
+                + "import androidx.appsearch.annotation.Document\n"
+                + "import androidx.appsearch.annotation.Document.*\n";
+
+        Source kotlinSource = Source.Companion.kotlin("KotlinGift.kt", src + classBody);
+        // We're compiling kotlin a bit differently, we need a fresh folder here
+        File kotlinCompilationDir = mTemporaryFolder.newFolder("kt");
+        TestKotlinCompilerKt.compile(
+                kotlinCompilationDir,
+                new TestCompilationArguments(
+                        ImmutableList.of(kotlinSource),
+                        /* classpath= */ ImmutableList.of(),
+                        /* inheritClasspath= */ true,
+                        /* javacArguments= */ ImmutableList.of(),
+                        /* kotlincArguments= */ ImmutableList.of("-language-version=1.9",
+                        "-api-version=1.9"),
+                        /* kaptProcessors= */ ImmutableList.of(new AppSearchCompiler()),
+                        /* symbolProcessorProviders= */ ImmutableList.of(),
+                        /* processorOptions= */
+                        ImmutableMap.of(
+                                "AppSearchCompiler.OutputDir", mGenFilesDir.getAbsolutePath(),
+                                "AppSearchCompiler.RestrictGeneratedCodeToLib", "false")
+                ));
     }
 
     private Compilation compile(String classBody) {

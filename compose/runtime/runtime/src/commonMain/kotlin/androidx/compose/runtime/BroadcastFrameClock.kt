@@ -17,6 +17,8 @@
 package androidx.compose.runtime
 
 import androidx.compose.runtime.internal.AtomicInt
+import androidx.compose.runtime.platform.makeSynchronizedObject
+import androidx.compose.runtime.platform.synchronized
 import androidx.compose.runtime.snapshots.fastForEach
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resumeWithException

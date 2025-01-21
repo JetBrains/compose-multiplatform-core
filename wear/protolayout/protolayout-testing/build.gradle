@@ -45,9 +45,9 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
-    namespace "androidx.wear.protolayout.testing"
+    namespace = "androidx.wear.protolayout.testing"
 
     kotlinOptions {
         jvmTarget = '1.8'

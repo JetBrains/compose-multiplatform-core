@@ -272,6 +272,7 @@ private fun LayoutNode.Builder.setImageNode(element: EmittableImage) {
         }
     hasImageDescription = !element.isDecorative()
     hasImageColorFilter = element.colorFilterParams != null
+    hasImageAlpha = element.alpha != null
 }
 
 private fun LayoutNode.Builder.setColumnNode(element: EmittableColumn) {

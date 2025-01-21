@@ -24,11 +24,11 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
@@ -114,9 +114,9 @@ public class ServiceWorkerClientCompatTest {
     public static class InterceptServiceWorkerClient extends ServiceWorkerClientCompat {
         private final List<WebResourceRequest> mInterceptedRequests = new ArrayList<>();
 
-        @Nullable
         @Override
-        public WebResourceResponse shouldInterceptRequest(@NonNull WebResourceRequest request) {
+        public @Nullable WebResourceResponse shouldInterceptRequest(
+                @NonNull WebResourceRequest request) {
             // Records intercepted requests and only return content for SW_URL.
             mInterceptedRequests.add(request);
             try {

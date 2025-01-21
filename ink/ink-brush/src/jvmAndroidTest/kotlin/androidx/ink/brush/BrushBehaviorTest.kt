@@ -1096,54 +1096,54 @@ class BrushBehaviorTest {
 
     @Test
     fun brushBehaviorConstructor_withInvalidArguments_throws() {
-        // sourceValueRangeLowerBound not finite
-        val sourceValueRangeLowerBoundError =
+        // sourceValueRangeStart not finite
+        val sourceValueRangeStartError =
             assertFailsWith<IllegalArgumentException> {
                 BrushBehavior(
                     source = BrushBehavior.Source.NORMALIZED_PRESSURE,
                     target = BrushBehavior.Target.WIDTH_MULTIPLIER,
-                    sourceValueRangeLowerBound = Float.NaN, // Not finite.
-                    sourceValueRangeUpperBound = 1.0f,
-                    targetModifierRangeLowerBound = 1.0f,
-                    targetModifierRangeUpperBound = 1.75f,
+                    sourceValueRangeStart = Float.NaN, // Not finite.
+                    sourceValueRangeEnd = 1.0f,
+                    targetModifierRangeStart = 1.0f,
+                    targetModifierRangeEnd = 1.75f,
                     sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.CLAMP,
                     responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
                     responseTimeMillis = 1L,
                     enabledToolTypes = setOf(InputToolType.STYLUS),
                 )
             }
-        assertThat(sourceValueRangeLowerBoundError.message).contains("source")
-        assertThat(sourceValueRangeLowerBoundError.message).contains("finite")
+        assertThat(sourceValueRangeStartError.message).contains("source")
+        assertThat(sourceValueRangeStartError.message).contains("finite")
 
-        // sourceValueRangeUpperBound not finite
-        val sourceValueRangeUpperBoundError =
+        // sourceValueRangeEnd not finite
+        val sourceValueRangeEndError =
             assertFailsWith<IllegalArgumentException> {
                 BrushBehavior(
                     source = BrushBehavior.Source.NORMALIZED_PRESSURE,
                     target = BrushBehavior.Target.WIDTH_MULTIPLIER,
-                    sourceValueRangeLowerBound = 1.0f,
-                    sourceValueRangeUpperBound = Float.NaN, // Not finite.
-                    targetModifierRangeLowerBound = 1.0f,
-                    targetModifierRangeUpperBound = 1.75f,
+                    sourceValueRangeStart = 1.0f,
+                    sourceValueRangeEnd = Float.NaN, // Not finite.
+                    targetModifierRangeStart = 1.0f,
+                    targetModifierRangeEnd = 1.75f,
                     sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.CLAMP,
                     responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
                     responseTimeMillis = 1L,
                     enabledToolTypes = setOf(InputToolType.STYLUS),
                 )
             }
-        assertThat(sourceValueRangeUpperBoundError.message).contains("source")
-        assertThat(sourceValueRangeUpperBoundError.message).contains("finite")
+        assertThat(sourceValueRangeEndError.message).contains("source")
+        assertThat(sourceValueRangeEndError.message).contains("finite")
 
-        // sourceValueRangeUpperBound == sourceValueRangeUpperBound
+        // sourceValueRangeEnd == sourceValueRangeEnd
         val sourceValueRangeError =
             assertFailsWith<IllegalArgumentException> {
                 BrushBehavior(
                     source = BrushBehavior.Source.NORMALIZED_PRESSURE,
                     target = BrushBehavior.Target.WIDTH_MULTIPLIER,
-                    sourceValueRangeLowerBound = 0.5f, // same as upper bound.
-                    sourceValueRangeUpperBound = 0.5f, // same as lower bound.
-                    targetModifierRangeLowerBound = 1.0f,
-                    targetModifierRangeUpperBound = 1.75f,
+                    sourceValueRangeStart = 0.5f, // same as upper bound.
+                    sourceValueRangeEnd = 0.5f, // same as lower bound.
+                    targetModifierRangeStart = 1.0f,
+                    targetModifierRangeEnd = 1.75f,
                     sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.CLAMP,
                     responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
                     responseTimeMillis = 1L,
@@ -1153,43 +1153,43 @@ class BrushBehaviorTest {
         assertThat(sourceValueRangeError.message).contains("source")
         assertThat(sourceValueRangeError.message).contains("distinct")
 
-        // targetModifierRangeLowerBound not finite
-        val targetModifierRangeLowerBoundError =
+        // targetModifierRangeStart not finite
+        val targetModifierRangeStartError =
             assertFailsWith<IllegalArgumentException> {
                 BrushBehavior(
                     source = BrushBehavior.Source.NORMALIZED_PRESSURE,
                     target = BrushBehavior.Target.WIDTH_MULTIPLIER,
-                    sourceValueRangeLowerBound = 0.2f,
-                    sourceValueRangeUpperBound = .8f,
-                    targetModifierRangeLowerBound = Float.NaN, // Not finite.
-                    targetModifierRangeUpperBound = 1.75f,
+                    sourceValueRangeStart = 0.2f,
+                    sourceValueRangeEnd = .8f,
+                    targetModifierRangeStart = Float.NaN, // Not finite.
+                    targetModifierRangeEnd = 1.75f,
                     sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.CLAMP,
                     responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
                     responseTimeMillis = 1L,
                     enabledToolTypes = setOf(InputToolType.STYLUS),
                 )
             }
-        assertThat(targetModifierRangeLowerBoundError.message).contains("target")
-        assertThat(targetModifierRangeLowerBoundError.message).contains("finite")
+        assertThat(targetModifierRangeStartError.message).contains("target")
+        assertThat(targetModifierRangeStartError.message).contains("finite")
 
-        // targetModifierRangeUpperBound not finite
-        val targetModifierRangeUpperBoundError =
+        // targetModifierRangeEnd not finite
+        val targetModifierRangeEndError =
             assertFailsWith<IllegalArgumentException> {
                 BrushBehavior(
                     source = BrushBehavior.Source.NORMALIZED_PRESSURE,
                     target = BrushBehavior.Target.WIDTH_MULTIPLIER,
-                    sourceValueRangeLowerBound = 0.2f,
-                    sourceValueRangeUpperBound = .8f,
-                    targetModifierRangeLowerBound = 1.0f,
-                    targetModifierRangeUpperBound = Float.NaN, // Not finite.
+                    sourceValueRangeStart = 0.2f,
+                    sourceValueRangeEnd = .8f,
+                    targetModifierRangeStart = 1.0f,
+                    targetModifierRangeEnd = Float.NaN, // Not finite.
                     sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.CLAMP,
                     responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
                     responseTimeMillis = 1L,
                     enabledToolTypes = setOf(InputToolType.STYLUS),
                 )
             }
-        assertThat(targetModifierRangeUpperBoundError.message).contains("target")
-        assertThat(targetModifierRangeUpperBoundError.message).contains("finite")
+        assertThat(targetModifierRangeEndError.message).contains("target")
+        assertThat(targetModifierRangeEndError.message).contains("finite")
 
         // responseTimeMillis less than 0L
         val responseTimeMillisError =
@@ -1197,10 +1197,10 @@ class BrushBehaviorTest {
                 BrushBehavior(
                     source = BrushBehavior.Source.NORMALIZED_PRESSURE,
                     target = BrushBehavior.Target.WIDTH_MULTIPLIER,
-                    sourceValueRangeLowerBound = 0.2f,
-                    sourceValueRangeUpperBound = .8f,
-                    targetModifierRangeLowerBound = 1.0f,
-                    targetModifierRangeUpperBound = 1.75f,
+                    sourceValueRangeStart = 0.2f,
+                    sourceValueRangeEnd = .8f,
+                    targetModifierRangeStart = 1.0f,
+                    targetModifierRangeEnd = 1.75f,
                     sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.CLAMP,
                     responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
                     responseTimeMillis = -1L, // Less than 0.
@@ -1216,10 +1216,10 @@ class BrushBehaviorTest {
                 BrushBehavior(
                     source = BrushBehavior.Source.NORMALIZED_PRESSURE,
                     target = BrushBehavior.Target.WIDTH_MULTIPLIER,
-                    sourceValueRangeLowerBound = 0.2f,
-                    sourceValueRangeUpperBound = .8f,
-                    targetModifierRangeLowerBound = 1.0f,
-                    targetModifierRangeUpperBound = 1.75f,
+                    sourceValueRangeStart = 0.2f,
+                    sourceValueRangeEnd = .8f,
+                    targetModifierRangeStart = 1.0f,
+                    targetModifierRangeEnd = 1.75f,
                     sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.CLAMP,
                     responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
                     responseTimeMillis = 1L,
@@ -1235,10 +1235,10 @@ class BrushBehaviorTest {
                 BrushBehavior(
                     source = BrushBehavior.Source.TIME_SINCE_INPUT_IN_SECONDS,
                     target = BrushBehavior.Target.WIDTH_MULTIPLIER,
-                    sourceValueRangeLowerBound = 0.2f,
-                    sourceValueRangeUpperBound = .8f,
-                    targetModifierRangeLowerBound = 1.0f,
-                    targetModifierRangeUpperBound = 1.75f,
+                    sourceValueRangeStart = 0.2f,
+                    sourceValueRangeEnd = .8f,
+                    targetModifierRangeStart = 1.0f,
+                    targetModifierRangeEnd = 1.75f,
                     sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.REPEAT,
                     responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
                     responseTimeMillis = 1L,
@@ -1256,13 +1256,13 @@ class BrushBehaviorTest {
                         listOf(
                             BrushBehavior.TargetNode(
                                 target = BrushBehavior.Target.WIDTH_MULTIPLIER,
-                                targetModifierRangeLowerBound = 1.0f,
-                                targetModifierRangeUpperBound = 1.75f,
+                                targetModifierRangeStart = 1.0f,
+                                targetModifierRangeEnd = 1.75f,
                                 input =
                                     BrushBehavior.SourceNode(
                                         source = BrushBehavior.Source.NORMALIZED_PRESSURE,
-                                        sourceValueRangeLowerBound = 0.0f,
-                                        sourceValueRangeUpperBound = 1.0f,
+                                        sourceValueRangeStart = 0.0f,
+                                        sourceValueRangeEnd = 1.0f,
                                     ),
                             )
                         )
@@ -1281,10 +1281,10 @@ class BrushBehaviorTest {
             BrushBehavior(
                 source = BrushBehavior.Source.NORMALIZED_PRESSURE,
                 target = BrushBehavior.Target.WIDTH_MULTIPLIER,
-                sourceValueRangeLowerBound = 0.0f,
-                sourceValueRangeUpperBound = 1.0f,
-                targetModifierRangeLowerBound = 1.0f,
-                targetModifierRangeUpperBound = 1.75f,
+                sourceValueRangeStart = 0.0f,
+                sourceValueRangeEnd = 1.0f,
+                targetModifierRangeStart = 1.0f,
+                targetModifierRangeEnd = 1.75f,
                 sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.CLAMP,
                 responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
                 responseTimeMillis = 1L,
@@ -1295,10 +1295,10 @@ class BrushBehaviorTest {
             BrushBehavior(
                 source = BrushBehavior.Source.NORMALIZED_PRESSURE,
                 target = BrushBehavior.Target.WIDTH_MULTIPLIER,
-                sourceValueRangeLowerBound = 0.0f,
-                sourceValueRangeUpperBound = 1.0f,
-                targetModifierRangeLowerBound = 1.0f,
-                targetModifierRangeUpperBound = 1.75f,
+                sourceValueRangeStart = 0.0f,
+                sourceValueRangeEnd = 1.0f,
+                targetModifierRangeStart = 1.0f,
+                targetModifierRangeEnd = 1.75f,
                 sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.CLAMP,
                 responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
                 responseTimeMillis = 1L,
@@ -1314,10 +1314,10 @@ class BrushBehaviorTest {
             BrushBehavior(
                 source = BrushBehavior.Source.NORMALIZED_PRESSURE,
                 target = BrushBehavior.Target.WIDTH_MULTIPLIER,
-                sourceValueRangeLowerBound = 0.0f,
-                sourceValueRangeUpperBound = 1.0f,
-                targetModifierRangeLowerBound = 1.0f,
-                targetModifierRangeUpperBound = 1.75f,
+                sourceValueRangeStart = 0.0f,
+                sourceValueRangeEnd = 1.0f,
+                targetModifierRangeStart = 1.0f,
+                targetModifierRangeEnd = 1.75f,
                 sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.CLAMP,
                 responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
                 responseTimeMillis = 1L,
@@ -1329,10 +1329,10 @@ class BrushBehaviorTest {
                     BrushBehavior(
                         source = BrushBehavior.Source.TILT_IN_RADIANS, // different
                         target = BrushBehavior.Target.WIDTH_MULTIPLIER,
-                        sourceValueRangeLowerBound = 0.0f,
-                        sourceValueRangeUpperBound = 1.0f,
-                        targetModifierRangeLowerBound = 1.0f,
-                        targetModifierRangeUpperBound = 1.75f,
+                        sourceValueRangeStart = 0.0f,
+                        sourceValueRangeEnd = 1.0f,
+                        targetModifierRangeStart = 1.0f,
+                        targetModifierRangeEnd = 1.75f,
                         sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.CLAMP,
                         responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
                         responseTimeMillis = 1L,
@@ -1346,10 +1346,10 @@ class BrushBehaviorTest {
                     BrushBehavior(
                         source = BrushBehavior.Source.NORMALIZED_PRESSURE,
                         target = BrushBehavior.Target.HEIGHT_MULTIPLIER, // different
-                        sourceValueRangeLowerBound = 0.0f,
-                        sourceValueRangeUpperBound = 1.0f,
-                        targetModifierRangeLowerBound = 1.0f,
-                        targetModifierRangeUpperBound = 1.75f,
+                        sourceValueRangeStart = 0.0f,
+                        sourceValueRangeEnd = 1.0f,
+                        targetModifierRangeStart = 1.0f,
+                        targetModifierRangeEnd = 1.75f,
                         sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.CLAMP,
                         responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
                         responseTimeMillis = 1L,
@@ -1364,10 +1364,10 @@ class BrushBehaviorTest {
                     BrushBehavior(
                         source = BrushBehavior.Source.NORMALIZED_PRESSURE,
                         target = BrushBehavior.Target.WIDTH_MULTIPLIER,
-                        sourceValueRangeLowerBound = 0.0f,
-                        sourceValueRangeUpperBound = 1.0f,
-                        targetModifierRangeLowerBound = 1.0f,
-                        targetModifierRangeUpperBound = 1.75f,
+                        sourceValueRangeStart = 0.0f,
+                        sourceValueRangeEnd = 1.0f,
+                        targetModifierRangeStart = 1.0f,
+                        targetModifierRangeEnd = 1.75f,
                         sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.REPEAT, // different
                         responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
                         responseTimeMillis = 1L,
@@ -1381,10 +1381,10 @@ class BrushBehaviorTest {
                     BrushBehavior(
                         source = BrushBehavior.Source.NORMALIZED_PRESSURE,
                         target = BrushBehavior.Target.WIDTH_MULTIPLIER,
-                        sourceValueRangeLowerBound = 0.3f, // different
-                        sourceValueRangeUpperBound = 1.0f,
-                        targetModifierRangeLowerBound = 1.0f,
-                        targetModifierRangeUpperBound = 1.75f,
+                        sourceValueRangeStart = 0.3f, // different
+                        sourceValueRangeEnd = 1.0f,
+                        targetModifierRangeStart = 1.0f,
+                        targetModifierRangeEnd = 1.75f,
                         sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.CLAMP,
                         responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
                         responseTimeMillis = 1L,
@@ -1398,10 +1398,10 @@ class BrushBehaviorTest {
                     BrushBehavior(
                         source = BrushBehavior.Source.NORMALIZED_PRESSURE,
                         target = BrushBehavior.Target.WIDTH_MULTIPLIER,
-                        sourceValueRangeLowerBound = 0.0f,
-                        sourceValueRangeUpperBound = 0.8f, // different
-                        targetModifierRangeLowerBound = 1.0f,
-                        targetModifierRangeUpperBound = 1.75f,
+                        sourceValueRangeStart = 0.0f,
+                        sourceValueRangeEnd = 0.8f, // different
+                        targetModifierRangeStart = 1.0f,
+                        targetModifierRangeEnd = 1.75f,
                         sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.CLAMP,
                         responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
                         responseTimeMillis = 1L,
@@ -1415,10 +1415,10 @@ class BrushBehaviorTest {
                     BrushBehavior(
                         source = BrushBehavior.Source.NORMALIZED_PRESSURE,
                         target = BrushBehavior.Target.WIDTH_MULTIPLIER,
-                        sourceValueRangeLowerBound = 0.0f,
-                        sourceValueRangeUpperBound = 1.0f,
-                        targetModifierRangeLowerBound = 1.56f, // different
-                        targetModifierRangeUpperBound = 1.75f,
+                        sourceValueRangeStart = 0.0f,
+                        sourceValueRangeEnd = 1.0f,
+                        targetModifierRangeStart = 1.56f, // different
+                        targetModifierRangeEnd = 1.75f,
                         sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.CLAMP,
                         responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
                         responseTimeMillis = 1L,
@@ -1432,10 +1432,10 @@ class BrushBehaviorTest {
                     BrushBehavior(
                         source = BrushBehavior.Source.NORMALIZED_PRESSURE,
                         target = BrushBehavior.Target.WIDTH_MULTIPLIER,
-                        sourceValueRangeLowerBound = 0.0f,
-                        sourceValueRangeUpperBound = 1.0f,
-                        targetModifierRangeLowerBound = 1.0f,
-                        targetModifierRangeUpperBound = 1.99f, // different
+                        sourceValueRangeStart = 0.0f,
+                        sourceValueRangeEnd = 1.0f,
+                        targetModifierRangeStart = 1.0f,
+                        targetModifierRangeEnd = 1.99f, // different
                         sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.CLAMP,
                         responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
                         responseTimeMillis = 1L,
@@ -1449,10 +1449,10 @@ class BrushBehaviorTest {
                     BrushBehavior(
                         source = BrushBehavior.Source.NORMALIZED_PRESSURE,
                         target = BrushBehavior.Target.WIDTH_MULTIPLIER,
-                        sourceValueRangeLowerBound = 0.0f,
-                        sourceValueRangeUpperBound = 1.0f,
-                        targetModifierRangeLowerBound = 1.0f,
-                        targetModifierRangeUpperBound = 1.75f,
+                        sourceValueRangeStart = 0.0f,
+                        sourceValueRangeEnd = 1.0f,
+                        targetModifierRangeStart = 1.0f,
+                        targetModifierRangeEnd = 1.75f,
                         sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.CLAMP,
                         responseCurve = EasingFunction.Predefined.LINEAR, // different
                         responseTimeMillis = 1L,
@@ -1466,10 +1466,10 @@ class BrushBehaviorTest {
                     BrushBehavior(
                         source = BrushBehavior.Source.NORMALIZED_PRESSURE,
                         target = BrushBehavior.Target.WIDTH_MULTIPLIER,
-                        sourceValueRangeLowerBound = 0.0f,
-                        sourceValueRangeUpperBound = 1.0f,
-                        targetModifierRangeLowerBound = 1.0f,
-                        targetModifierRangeUpperBound = 1.75f,
+                        sourceValueRangeStart = 0.0f,
+                        sourceValueRangeEnd = 1.0f,
+                        targetModifierRangeStart = 1.0f,
+                        targetModifierRangeEnd = 1.75f,
                         sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.CLAMP,
                         responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
                         responseTimeMillis = 35L, // different
@@ -1483,10 +1483,10 @@ class BrushBehaviorTest {
                     BrushBehavior(
                         source = BrushBehavior.Source.NORMALIZED_PRESSURE,
                         target = BrushBehavior.Target.WIDTH_MULTIPLIER,
-                        sourceValueRangeLowerBound = 0.0f,
-                        sourceValueRangeUpperBound = 1.0f,
-                        targetModifierRangeLowerBound = 1.0f,
-                        targetModifierRangeUpperBound = 1.75f,
+                        sourceValueRangeStart = 0.0f,
+                        sourceValueRangeEnd = 1.0f,
+                        targetModifierRangeStart = 1.0f,
+                        targetModifierRangeEnd = 1.75f,
                         sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.CLAMP,
                         responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
                         responseTimeMillis = 1L,

@@ -78,7 +78,13 @@ public class CallStats {
             CALL_TYPE_REGISTER_OBSERVER_CALLBACK,
             CALL_TYPE_UNREGISTER_OBSERVER_CALLBACK,
             CALL_TYPE_GLOBAL_GET_NEXT_PAGE,
-            CALL_TYPE_EXECUTE_APP_FUNCTION
+            CALL_TYPE_EXECUTE_APP_FUNCTION,
+            CALL_TYPE_OPEN_WRITE_BLOB,
+            CALL_TYPE_COMMIT_BLOB,
+            CALL_TYPE_OPEN_READ_BLOB,
+            CALL_TYPE_GLOBAL_OPEN_READ_BLOB,
+            CALL_TYPE_REMOVE_BLOB,
+            CALL_TYPE_SET_BLOB_VISIBILITY
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface CallType {
@@ -116,6 +122,12 @@ public class CallStats {
     public static final int CALL_TYPE_UNREGISTER_OBSERVER_CALLBACK = 29;
     public static final int CALL_TYPE_GLOBAL_GET_NEXT_PAGE = 30;
     public static final int CALL_TYPE_EXECUTE_APP_FUNCTION = 31;
+    public static final int CALL_TYPE_OPEN_WRITE_BLOB = 32;
+    public static final int CALL_TYPE_COMMIT_BLOB = 33;
+    public static final int CALL_TYPE_OPEN_READ_BLOB = 34;
+    public static final int CALL_TYPE_GLOBAL_OPEN_READ_BLOB = 35;
+    public static final int CALL_TYPE_REMOVE_BLOB = 36;
+    public static final int CALL_TYPE_SET_BLOB_VISIBILITY = 37;
 
     // These strings are for the subset of call types that correspond to an AppSearchManager API
     private static final String CALL_TYPE_STRING_INITIALIZE = "initialize";
@@ -148,6 +160,12 @@ public class CallStats {
             "globalUnregisterObserverCallback";
     private static final String CALL_TYPE_STRING_GLOBAL_GET_NEXT_PAGE = "globalGetNextPage";
     private static final String CALL_TYPE_STRING_EXECUTE_APP_FUNCTION = "executeAppFunction";
+    private static final String CALL_TYPE_STRING_OPEN_WRITE_BLOB = "openWriteBlob";
+    private static final String CALL_TYPE_STRING_COMMIT_BLOB = "commitBlob";
+    private static final String CALL_TYPE_STRING_OPEN_READ_BLOB = "openReadBlob";
+    private static final String CALL_TYPE_STRING_GLOBAL_OPEN_READ_BLOB = "globalOpenReadBlob";
+    private static final String CALL_TYPE_STRING_REMOVE_BLOB = "removeBlob";
+    private static final String CALL_TYPE_STRING_SET_BLOB_VISIBILITY = "setBlobVisibility";
 
     @Nullable
     private final String mPackageName;
@@ -416,6 +434,18 @@ public class CallStats {
                 return CALL_TYPE_GLOBAL_GET_NEXT_PAGE;
             case CALL_TYPE_STRING_EXECUTE_APP_FUNCTION:
                 return CALL_TYPE_EXECUTE_APP_FUNCTION;
+            case CALL_TYPE_STRING_OPEN_WRITE_BLOB:
+                return CALL_TYPE_OPEN_WRITE_BLOB;
+            case CALL_TYPE_STRING_COMMIT_BLOB:
+                return CALL_TYPE_COMMIT_BLOB;
+            case CALL_TYPE_STRING_OPEN_READ_BLOB:
+                return CALL_TYPE_OPEN_READ_BLOB;
+            case CALL_TYPE_STRING_GLOBAL_OPEN_READ_BLOB:
+                return CALL_TYPE_GLOBAL_OPEN_READ_BLOB;
+            case CALL_TYPE_STRING_REMOVE_BLOB:
+                return CALL_TYPE_REMOVE_BLOB;
+            case CALL_TYPE_STRING_SET_BLOB_VISIBILITY:
+                return CALL_TYPE_SET_BLOB_VISIBILITY;
             default:
                 return CALL_TYPE_UNKNOWN;
         }
@@ -452,6 +482,12 @@ public class CallStats {
                 CALL_TYPE_REGISTER_OBSERVER_CALLBACK,
                 CALL_TYPE_UNREGISTER_OBSERVER_CALLBACK,
                 CALL_TYPE_GLOBAL_GET_NEXT_PAGE,
-                CALL_TYPE_EXECUTE_APP_FUNCTION));
+                CALL_TYPE_EXECUTE_APP_FUNCTION,
+                CALL_TYPE_OPEN_WRITE_BLOB,
+                CALL_TYPE_COMMIT_BLOB,
+                CALL_TYPE_OPEN_READ_BLOB,
+                CALL_TYPE_GLOBAL_OPEN_READ_BLOB,
+                CALL_TYPE_REMOVE_BLOB,
+                CALL_TYPE_SET_BLOB_VISIBILITY));
     }
 }

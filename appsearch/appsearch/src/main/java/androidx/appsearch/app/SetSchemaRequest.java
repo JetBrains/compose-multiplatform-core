@@ -414,6 +414,7 @@ public final class SetSchemaRequest {
         /**
          * Creates a {@link SetSchemaRequest.Builder} from the given {@link SetSchemaRequest}.
          */
+        @ExperimentalAppSearchApi
         @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
         public Builder(@NonNull SetSchemaRequest request) {
             mSchemas.addAll(request.mSchemas);
@@ -535,6 +536,7 @@ public final class SetSchemaRequest {
         /**
          * Clears all {@link AppSearchSchema}s from the list of schemas.
          */
+        @ExperimentalAppSearchApi
         @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
         @CanIgnoreReturnValue
         @NonNull
@@ -920,6 +922,7 @@ public final class SetSchemaRequest {
         /**
          * Clears all {@link Migrator}s.
          */
+        @ExperimentalAppSearchApi
         @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
         @CanIgnoreReturnValue
         @NonNull

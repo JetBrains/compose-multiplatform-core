@@ -21,6 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+import androidx.build.KotlinTarget
 import androidx.build.LibraryType
 import androidx.build.RunApiTasks
 import androidx.build.SdkHelperKt
@@ -73,4 +74,5 @@ androidx {
     type = LibraryType.ANNOTATION_PROCESSOR_UTILS
     inceptionYear = "2022"
     description = "Core utilities for Privacy Sandbox Tools."
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
 }

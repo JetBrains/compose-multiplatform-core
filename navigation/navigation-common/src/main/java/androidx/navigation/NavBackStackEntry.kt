@@ -17,7 +17,6 @@ package androidx.navigation
 
 import android.app.Application
 import android.content.Context
-import android.os.Bundle
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.lifecycle.DEFAULT_ARGS_KEY
@@ -40,9 +39,11 @@ import androidx.lifecycle.viewmodel.MutableCreationExtras
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.serialization.decodeArguments
+import androidx.savedstate.SavedState
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
+import androidx.savedstate.savedState
 import java.util.UUID
 import kotlin.reflect.KClass
 import kotlinx.serialization.InternalSerializationApi
@@ -64,7 +65,7 @@ private constructor(
      * @return The destination that is currently visible to users
      */
     @set:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public var destination: NavDestination,
-    private val immutableArgs: Bundle? = null,
+    private val immutableArgs: SavedState? = null,
     private var hostLifecycleState: Lifecycle.State = Lifecycle.State.CREATED,
     private val viewModelStoreProvider: NavViewModelStoreProvider? = null,
     /**
@@ -73,7 +74,7 @@ private constructor(
      * @return the unique ID of this entry
      */
     public val id: String = UUID.randomUUID().toString(),
-    private val savedState: Bundle? = null
+    private val savedState: SavedState? = null
 ) :
     LifecycleOwner,
     ViewModelStoreOwner,
@@ -83,7 +84,7 @@ private constructor(
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     constructor(
         entry: NavBackStackEntry,
-        arguments: Bundle? = entry.arguments
+        arguments: SavedState? = entry.arguments
     ) : this(
         entry.context,
         entry.destination,
@@ -102,11 +103,11 @@ private constructor(
         public fun create(
             context: Context?,
             destination: NavDestination,
-            arguments: Bundle? = null,
+            arguments: SavedState? = null,
             hostLifecycleState: Lifecycle.State = Lifecycle.State.CREATED,
             viewModelStoreProvider: NavViewModelStoreProvider? = null,
             id: String = UUID.randomUUID().toString(),
-            savedState: Bundle? = null
+            savedState: SavedState? = null
         ): NavBackStackEntry =
             NavBackStackEntry(
                 context,
@@ -129,16 +130,16 @@ private constructor(
     /**
      * The arguments used for this entry. Note that the arguments of a NavBackStackEntry are
      * immutable and defined when you `navigate()` to the destination - changes you make to this
-     * Bundle will not be reflected in future calls to this property.
+     * SavedState will not be reflected in future calls to this property.
      *
      * @return The arguments used when this entry was created
      */
-    public val arguments: Bundle?
+    public val arguments: SavedState?
         get() =
             if (immutableArgs == null) {
                 null
             } else {
-                Bundle(immutableArgs)
+                savedState { putAll(immutableArgs) }
             }
 
     /** The [SavedStateHandle] for this entry. */
@@ -245,7 +246,7 @@ private constructor(
         get() = savedStateRegistryController.savedStateRegistry
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun saveState(outBundle: Bundle) {
+    public fun saveState(outBundle: SavedState) {
         savedStateRegistryController.performSave(outBundle)
     }
 
@@ -310,7 +311,7 @@ public inline fun <reified T> NavBackStackEntry.toRoute(): T = toRoute(T::class)
 @OptIn(InternalSerializationApi::class)
 @Suppress("UNCHECKED_CAST")
 public fun <T> NavBackStackEntry.toRoute(route: KClass<*>): T {
-    val bundle = arguments ?: Bundle()
+    val savedState = arguments ?: savedState()
     val typeMap = destination.arguments.mapValues { it.value.type }
-    return route.serializer().decodeArguments(bundle, typeMap) as T
+    return route.serializer().decodeArguments(savedState, typeMap) as T
 }

@@ -19,7 +19,9 @@ package androidx.navigation3
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.material3.Text
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalSavedStateRegistryOwner
@@ -45,7 +47,7 @@ class NavDisplayTest {
         composeTestRule.setContent {
             val manager = rememberNavWrapperManager(emptyList())
             NavDisplay(backstack = mutableStateListOf(first), wrapperManager = manager) {
-                Record(first) { Text(first) }
+                NavRecord(first) { Text(first) }
             }
         }
 
@@ -60,8 +62,8 @@ class NavDisplayTest {
             val manager = rememberNavWrapperManager(emptyList())
             NavDisplay(backstack = backstack, wrapperManager = manager) {
                 when (it) {
-                    first -> Record(first) { Text(first) }
-                    second -> Record(second) { Text(second) }
+                    first -> NavRecord(first) { Text(first) }
+                    second -> NavRecord(second) { Text(second) }
                     else -> error("Invalid key passed")
                 }
             }
@@ -90,8 +92,8 @@ class NavDisplayTest {
                 }
             ) {
                 when (it) {
-                    first -> Record(first) { Text(first) }
-                    second -> Record(second, NavDisplay.isDialog(true)) { Text(second) }
+                    first -> NavRecord(first) { Text(first) }
+                    second -> NavRecord(second, NavDisplay.isDialog(true)) { Text(second) }
                     else -> error("Invalid key passed")
                 }
             }
@@ -123,8 +125,8 @@ class NavDisplayTest {
                 }
             ) {
                 when (it) {
-                    first -> Record(first) { Text(first) }
-                    second -> Record(second) { Text(second) }
+                    first -> NavRecord(first) { Text(first) }
+                    second -> NavRecord(second) { Text(second) }
                     else -> error("Invalid key passed")
                 }
             }
@@ -151,8 +153,8 @@ class NavDisplayTest {
             val manager = rememberNavWrapperManager(emptyList())
             NavDisplay(backstack = backstack, wrapperManager = manager) {
                 when (it) {
-                    first -> Record(first) { numberOnScreen1 = rememberSaveable { increment++ } }
-                    second -> Record(second) {}
+                    first -> NavRecord(first) { numberOnScreen1 = rememberSaveable { increment++ } }
+                    second -> NavRecord(second) {}
                     else -> error("Invalid key passed")
                 }
             }
@@ -188,11 +190,11 @@ class NavDisplayTest {
             NavDisplay(backstack = backstack, wrapperManager = manager) {
                 when (it) {
                     first ->
-                        Record(first) {
+                        NavRecord(first) {
                             registry1 = LocalSavedStateRegistryOwner.current.savedStateRegistry
                         }
                     second ->
-                        Record(second) {
+                        NavRecord(second) {
                             registry2 = LocalSavedStateRegistryOwner.current.savedStateRegistry
                         }
                     else -> error("Invalid key passed")
@@ -211,7 +213,57 @@ class NavDisplayTest {
             assertWithMessage("Registries should be unique").that(registry2).isNotEqualTo(registry1)
         }
     }
+
+    @Test
+    fun swappingOutMultipleBackStacks() {
+        lateinit var backStack1: MutableList<String>
+        lateinit var backStack2: MutableList<String>
+        lateinit var backStack3: MutableList<String>
+        lateinit var state: MutableState<Int>
+
+        composeTestRule.setContent {
+            backStack1 = remember { mutableStateListOf(first) }
+            backStack2 = remember { mutableStateListOf(second) }
+            backStack3 = remember { mutableStateListOf(third) }
+            state = remember { mutableStateOf(1) }
+            val manager = rememberNavWrapperManager(emptyList())
+            NavDisplay(
+                backstack =
+                    when (state.value) {
+                        1 -> backStack1
+                        2 -> backStack2
+                        else -> backStack3
+                    },
+                wrapperManager = manager,
+                recordProvider =
+                    recordProvider {
+                        record(first) { Text(first) }
+                        record(second) { Text(second) }
+                        record(third) { Text(third) }
+                        record(forth) { Text(forth) }
+                    }
+            )
+        }
+
+        composeTestRule.waitForIdle()
+        assertThat(composeTestRule.onNodeWithText(first).isDisplayed()).isTrue()
+
+        composeTestRule.runOnIdle { state.value = 2 }
+        composeTestRule.waitForIdle()
+        assertThat(composeTestRule.onNodeWithText(second).isDisplayed()).isTrue()
+
+        composeTestRule.runOnIdle { state.value = 3 }
+        composeTestRule.waitForIdle()
+        assertThat(composeTestRule.onNodeWithText(third).isDisplayed()).isTrue()
+
+        composeTestRule.runOnIdle { backStack3.add(forth) }
+
+        assertThat(backStack3).containsExactly(third, forth)
+        assertThat(composeTestRule.onNodeWithText(forth).isDisplayed()).isTrue()
+    }
 }
 
 private const val first = "first"
 private const val second = "second"
+private const val third = "third"
+private const val forth = "forth"

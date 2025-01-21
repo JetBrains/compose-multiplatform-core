@@ -26,10 +26,9 @@ import android.content.ComponentName;
 import android.os.IBinder;
 import android.os.RemoteException;
 
-import androidx.annotation.NonNull;
-
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -62,9 +61,8 @@ public class ConnectionHolderTest {
             return mService;
         }
 
-        @NonNull
         @Override
-        TrustedWebActivityServiceConnection create(ComponentName name, IBinder iBinder) {
+        @NonNull TrustedWebActivityServiceConnection create(ComponentName name, IBinder iBinder) {
             return mService;
         }
     }

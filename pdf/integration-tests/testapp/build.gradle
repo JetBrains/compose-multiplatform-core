@@ -5,13 +5,13 @@ plugins {
 }
 
 android {
-    namespace 'androidx.pdf.testapp'
+    namespace = "androidx.pdf.testapp"
 
     defaultConfig {
-        applicationId "androidx.pdf.testapp"
-        minSdk 31
-        compileSdk 35
-        targetSdk 31
+        applicationId = "androidx.pdf.testapp"
+        minSdk = 31
+        compileSdk = 35
+        targetSdk = 31
     }
 
     sourceSets {

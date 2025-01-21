@@ -124,11 +124,6 @@ public class AppSearchConfigImpl implements AppSearchConfig {
     }
 
     @Override
-    public boolean getEnableBlobStore() {
-        return mIcingOptionsConfig.getEnableBlobStore();
-    }
-
-    @Override
     public int getMaxDocumentSizeBytes() {
         return mLimitConfig.getMaxDocumentSizeBytes();
     }

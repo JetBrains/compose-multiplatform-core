@@ -16,7 +16,9 @@
 
 package androidx.compose.foundation
 
+import android.graphics.Bitmap
 import android.os.Build
+import android.view.View
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollScope
@@ -54,6 +56,7 @@ import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectableValue
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
@@ -68,6 +71,7 @@ import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.test.swipeWithVelocity
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.get
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -132,6 +136,41 @@ class OverscrollTest {
         rule.setContent { Box(Modifier.overscroll(overscrollEffect)) }
 
         rule.runOnIdle { assertThat(overscrollEffect.node.node.isAttached).isTrue() }
+    }
+
+    @Test
+    fun modifierUndelegatesNodeOnDetach() {
+        val overscrollEffect = TestOverscrollEffect()
+
+        var addModifier by mutableStateOf(true)
+
+        rule.setContent {
+            Box(if (addModifier) Modifier.overscroll(overscrollEffect) else Modifier)
+        }
+
+        rule.runOnIdle {
+            // The node property points to the 'real node in the tree', so it will be different
+            // from node if it has been delegated to. I.e., assert that this node has been delegated
+            // to.
+            assertThat(overscrollEffect.node.node).isNotEqualTo(overscrollEffect.node)
+            assertThat(overscrollEffect.node.node.isAttached).isTrue()
+            // Remove the overscroll modifier
+            addModifier = false
+        }
+
+        rule.runOnIdle {
+            // Assert that this node is no longer delegated - the node property should point to
+            // itself.
+            assertThat(overscrollEffect.node.node).isEqualTo(overscrollEffect.node)
+            assertThat(overscrollEffect.node.node.isAttached).isFalse()
+            addModifier = true
+        }
+
+        rule.runOnIdle {
+            // The node should be delegated again, and attached.
+            assertThat(overscrollEffect.node.node).isNotEqualTo(overscrollEffect.node)
+            assertThat(overscrollEffect.node.node.isAttached).isTrue()
+        }
     }
 
     @Test
@@ -1512,6 +1551,80 @@ class OverscrollTest {
         rule.runOnIdle {
             assertThat(overscrollController.applyToFlingCount).isEqualTo(0)
             assertThat(overscrollController.applyToScrollCount).isEqualTo(0)
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O, maxSdkVersion = Build.VERSION_CODES.R)
+    fun glowOverscroll_softwareRendering() {
+        lateinit var overscrollEffect: AndroidEdgeEffectOverscrollEffect
+        lateinit var view: View
+        rule.setContent {
+            overscrollEffect = rememberOverscrollEffect() as AndroidEdgeEffectOverscrollEffect
+            view = LocalView.current
+            Box(Modifier.fillMaxSize().overscroll(overscrollEffect).background(Color.Red))
+        }
+
+        rule.runOnIdle {
+            val offset = Offset(x = 500f, y = 500f)
+            overscrollEffect.applyToScroll(offset, source = NestedScrollSource.UserInput) {
+                Offset.Zero
+            }
+            // we have to disable further invalidation requests as otherwise while the overscroll
+            // effect is considered active (as it is in a pulled state) this will infinitely
+            // schedule next invalidation right from the drawing. this will make our test infra
+            // to never be switched into idle state so this fill freeze instead of proceeding
+            // to the next step in the test.
+            overscrollEffect.invalidationEnabled = false
+        }
+
+        rule.runOnUiThread {
+            val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+            val softwareCanvas = android.graphics.Canvas(bitmap)
+            view.draw(softwareCanvas)
+            assertThat(Color(bitmap[view.width / 2, view.height / 2])).isEqualTo(Color.Red)
+            // Glow is supported with software rendering - it should be drawn. Assert that there is
+            // some effect drawn since OverscrollEffect#isInProgress currently always returns false
+            // for glow overscroll
+            assertThat(Color(bitmap[view.width / 2, 100])).isNotEqualTo(Color.Red)
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
+    fun stretchOverscroll_softwareRendering() {
+        lateinit var overscrollEffect: AndroidEdgeEffectOverscrollEffect
+        lateinit var view: View
+        rule.setContent {
+            overscrollEffect = rememberOverscrollEffect() as AndroidEdgeEffectOverscrollEffect
+            view = LocalView.current
+            Box(Modifier.fillMaxSize().overscroll(overscrollEffect).background(Color.Red))
+        }
+
+        rule.runOnIdle {
+            val offset = Offset(x = 500f, y = 500f)
+            overscrollEffect.applyToScroll(offset, source = NestedScrollSource.UserInput) {
+                Offset.Zero
+            }
+            // we have to disable further invalidation requests as otherwise while the overscroll
+            // effect is considered active (as it is in a pulled state) this will infinitely
+            // schedule next invalidation right from the drawing. this will make our test infra
+            // to never be switched into idle state so this fill freeze instead of proceeding
+            // to the next step in the test.
+            overscrollEffect.invalidationEnabled = false
+        }
+
+        rule.runOnUiThread {
+            val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+            val softwareCanvas = android.graphics.Canvas(bitmap)
+            view.draw(softwareCanvas)
+            assertThat(Color(bitmap[view.width / 2, view.height / 2])).isEqualTo(Color.Red)
+        }
+
+        rule.runOnIdle {
+            // Stretch overscroll is not supported when using software rendering, so the overscroll
+            // should just stop when we try to render it
+            assertThat(overscrollEffect.isInProgress).isFalse()
         }
     }
 }

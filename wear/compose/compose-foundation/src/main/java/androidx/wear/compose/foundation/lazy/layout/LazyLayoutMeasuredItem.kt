@@ -18,7 +18,6 @@ package androidx.wear.compose.foundation.lazy.layout
 
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.util.fastForEach
 
 internal interface LazyLayoutMeasuredItem {
     val index: Int
@@ -28,42 +27,21 @@ internal interface LazyLayoutMeasuredItem {
     val placeablesCount: Int
     var nonScrollableItem: Boolean
     val constraints: Constraints
-    val lane: Int
-    val span: Int
 
     fun getOffset(index: Int): IntOffset
-
-    fun position(mainAxisOffset: Int, crossAxisOffset: Int, layoutWidth: Int, layoutHeight: Int)
 
     fun getParentData(index: Int): Any?
 }
 
-internal interface LazyLayoutMeasuredItemProvider<T : LazyLayoutMeasuredItem> {
-    fun getAndMeasure(index: Int, lane: Int, span: Int, constraints: Constraints): T
-}
-
-internal fun <T : LazyLayoutMeasuredItem> updatedVisibleItems(
-    firstVisibleIndex: Int,
-    lastVisibleIndex: Int,
-    positionedItems: List<T>,
-    stickingItems: List<T>,
-): List<T> {
-    if (positionedItems.isEmpty()) return emptyList()
-
-    val finalVisibleItems = stickingItems.toMutableList()
-
-    // positioned items between firstVisibleIndex and lastVisibleIndex
-    positionedItems.fastForEach {
-        if (it.index in firstVisibleIndex..lastVisibleIndex) finalVisibleItems.add(it)
+internal fun LazyLayoutMeasuredItem.hasAnimations(): Boolean = run {
+    repeat(placeablesCount) { index ->
+        getParentData(index).specs?.let {
+            // found at least one
+            return true
+        }
     }
-
-    finalVisibleItems.sortWith(LazyLayoutMeasuredItemIndexComparator)
-
-    return finalVisibleItems
+    return false
 }
 
-private val LazyLayoutMeasuredItem.mainAxisOffset
-    get() = getOffset(0).let { if (isVertical) it.y else it.x }
-
-private val LazyLayoutMeasuredItemIndexComparator =
-    Comparator<LazyLayoutMeasuredItem> { a, b -> a.index.compareTo(b.index) }
+internal val Any?.specs
+    get() = this as? LazyLayoutAnimationSpecsNode

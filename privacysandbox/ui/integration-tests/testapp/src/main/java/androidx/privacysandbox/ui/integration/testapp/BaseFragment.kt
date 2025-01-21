@@ -20,16 +20,14 @@ import android.app.Activity
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.privacysandbox.sdkruntime.client.SdkSandboxManagerCompat
 import androidx.privacysandbox.ui.client.SandboxedUiAdapterFactory
-import androidx.privacysandbox.ui.client.view.SandboxedSdkUiSessionState
-import androidx.privacysandbox.ui.client.view.SandboxedSdkUiSessionStateChangedListener
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
+import androidx.privacysandbox.ui.client.view.SandboxedSdkViewEventListener
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdType
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.MediationOption
 import androidx.privacysandbox.ui.integration.testaidl.ISdkApi
@@ -44,6 +42,7 @@ import kotlinx.coroutines.runBlocking
  */
 abstract class BaseFragment : Fragment() {
     private lateinit var sdkApi: ISdkApi
+
     private lateinit var sdkSandboxManager: SdkSandboxManagerCompat
     private lateinit var activity: Activity
 
@@ -63,7 +62,7 @@ abstract class BaseFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        getSandboxedSdkViews().forEach { it.addStateChangedListener() }
+        getSandboxedSdkViews().forEach { it.setEventListener() }
     }
 
     /** Returns a handle to the already loaded SDK. */
@@ -71,8 +70,8 @@ abstract class BaseFragment : Fragment() {
         return sdkApi
     }
 
-    fun SandboxedSdkView.addStateChangedListener() {
-        addStateChangedListener(StateChangeListener(this))
+    fun SandboxedSdkView.setEventListener() {
+        setEventListener(TestEventListener(this))
     }
 
     /**
@@ -81,7 +80,7 @@ abstract class BaseFragment : Fragment() {
      * This will be called when the drawer is opened or closed, to automatically flip the Z-ordering
      * of any remote views.
      */
-    abstract fun getSandboxedSdkViews(): List<SandboxedSdkView>
+    open fun getSandboxedSdkViews(): List<SandboxedSdkView> = emptyList()
 
     /**
      * Called when the @AdType or @MediationOption of any [SandboxedSdkView] inside the fragment is
@@ -93,11 +92,11 @@ abstract class BaseFragment : Fragment() {
      */
     // TODO(b/343436839) : Handle this automatically
     // TODO(b/348194843): Clean up the options
-    abstract fun handleLoadAdFromDrawer(
+    open fun handleLoadAdFromDrawer(
         adType: Int,
         mediationOption: Int,
         drawViewabilityLayer: Boolean
-    )
+    ) {}
 
     fun loadBannerAd(
         @AdType adType: Int,
@@ -117,31 +116,30 @@ abstract class BaseFragment : Fragment() {
         }
     }
 
-    private inner class StateChangeListener(val view: SandboxedSdkView) :
-        SandboxedSdkUiSessionStateChangedListener {
-        override fun onStateChanged(state: SandboxedSdkUiSessionState) {
-            Log.i(TAG, "UI session state changed to: $state")
-            if (state is SandboxedSdkUiSessionState.Error) {
-                // If the session fails to open, display the error.
-                val parent = view.parent as ViewGroup
-                val index = parent.indexOfChild(view)
-                val textView = TextView(requireActivity())
-                textView.setTypeface(null, Typeface.BOLD_ITALIC)
-                textView.setTextColor(Color.RED)
-                textView.text = state.throwable.message
+    private inner class TestEventListener(val view: SandboxedSdkView) :
+        SandboxedSdkViewEventListener {
+        override fun onUiDisplayed() {}
 
-                requireActivity().runOnUiThread {
-                    parent.removeView(view)
-                    parent.addView(textView, index)
-                }
+        override fun onUiError(error: Throwable) {
+            val parent = view.parent as ViewGroup
+            val index = parent.indexOfChild(view)
+            val textView = TextView(requireActivity())
+            textView.setTypeface(null, Typeface.BOLD_ITALIC)
+            textView.setTextColor(Color.RED)
+            textView.text = error.message
+            requireActivity().runOnUiThread {
+                parent.removeView(view)
+                parent.addView(textView, index)
             }
         }
+
+        override fun onUiClosed() {}
     }
 
     companion object {
-        private const val SDK_NAME = "androidx.privacysandbox.ui.integration.testsdkprovider"
+        private const val SDK_NAME = "androidx.privacysandbox.ui.integration.testsdkproviderwrapper"
         private const val MEDIATEE_SDK_NAME =
-            "androidx.privacysandbox.ui.integration.mediateesdkprovider"
+            "androidx.privacysandbox.ui.integration.mediateesdkproviderwrapper"
         const val TAG = "TestSandboxClient"
         var isZOrderOnTop = true
         @AdType var currentAdType = AdType.BASIC_NON_WEBVIEW

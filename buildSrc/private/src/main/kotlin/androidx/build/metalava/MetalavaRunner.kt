@@ -187,11 +187,15 @@ fun getApiLintArgs(targetsJavaConsumers: Boolean): List<String> {
                 )
                 .joinToString()
         )
-    if (targetsJavaConsumers) {
-        args.addAll(listOf("--error", "MissingJvmstatic", "--error", "ArrayReturn"))
-    } else {
-        args.addAll(listOf("--hide", "MissingJvmstatic", "--hide", "ArrayReturn"))
-    }
+    val javaOnlyIssues = listOf("MissingJvmstatic", "ArrayReturn", "ValueClassDefinition")
+    val javaOnlyErrorLevel =
+        if (targetsJavaConsumers) {
+            "--error"
+        } else {
+            "--hide"
+        }
+    args.add(javaOnlyErrorLevel)
+    args.add(javaOnlyIssues.joinToString())
     return args
 }
 

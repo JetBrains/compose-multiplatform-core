@@ -21,7 +21,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Icon
 import android.os.Build
-import androidx.core.os.BuildCompat
 import androidx.credentials.provider.CreateEntry
 import androidx.credentials.provider.CreateEntry.Companion.fromCreateEntry
 import androidx.credentials.provider.CreateEntry.Companion.fromSlice
@@ -149,7 +148,7 @@ class CreateEntryTest {
     }
 
     private fun constructEntryWithAllParams(): CreateEntry {
-        if (BuildCompat.isAtLeastV()) {
+        if (Build.VERSION.SDK_INT >= 35) {
             return CreateEntry(
                 ACCOUNT_NAME,
                 mPendingIntent,
@@ -186,7 +185,7 @@ class CreateEntryTest {
         assertThat(PUBLIC_KEY_CREDENTIAL_COUNT).isEqualTo(entry.getPublicKeyCredentialCount())
         assertThat(TOTAL_COUNT).isEqualTo(entry.getTotalCredentialCount())
         assertThat(AUTO_SELECT_BIT).isTrue()
-        if (BuildCompat.isAtLeastV() && entry.biometricPromptData != null) {
+        if (Build.VERSION.SDK_INT >= 35 && entry.biometricPromptData != null) {
             assertThat(entry.biometricPromptData!!.allowedAuthenticators)
                 .isEqualTo(testBiometricPromptData().allowedAuthenticators)
         } else {

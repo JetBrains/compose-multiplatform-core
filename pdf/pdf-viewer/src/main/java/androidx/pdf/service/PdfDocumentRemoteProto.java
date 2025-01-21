@@ -16,9 +16,10 @@
 
 package androidx.pdf.service;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.models.PdfDocumentRemote;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  *
@@ -31,8 +32,7 @@ public class PdfDocumentRemoteProto {
         this.mRemote = remote;
     }
 
-    @NonNull
-    public PdfDocumentRemote getPdfDocumentRemote() {
+    public @NonNull PdfDocumentRemote getPdfDocumentRemote() {
         return mRemote;
     }
 

@@ -20,6 +20,7 @@
 package androidx.wear.protolayout.material3.tokens;
 
 import android.graphics.Color;
+
 import androidx.annotation.ColorInt;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;

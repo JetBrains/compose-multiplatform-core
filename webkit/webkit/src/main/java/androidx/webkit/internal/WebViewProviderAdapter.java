@@ -22,8 +22,6 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.webkit.Profile;
 import androidx.webkit.WebMessageCompat;
 import androidx.webkit.WebMessagePortCompat;
@@ -34,6 +32,8 @@ import androidx.webkit.WebViewRenderProcessClient;
 import org.chromium.support_lib_boundary.ProfileBoundaryInterface;
 import org.chromium.support_lib_boundary.WebViewProviderBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationHandler;
 import java.util.concurrent.Executor;
@@ -55,7 +55,7 @@ public class WebViewProviderAdapter {
      * Adapter method WebViewCompat.insertVisualStateCallback().
      */
     public void insertVisualStateCallback(
-            long requestId, @NonNull WebViewCompat.VisualStateCallback callback) {
+            long requestId, WebViewCompat.@NonNull VisualStateCallback callback) {
         mImpl.insertVisualStateCallback(requestId,
                 BoundaryInterfaceReflectionUtil.createInvocationHandlerFor(
                         new VisualStateCallbackAdapter(callback)));
@@ -64,8 +64,7 @@ public class WebViewProviderAdapter {
     /**
      * Adapter method for {@link WebViewCompat#createWebMessageChannel(WebView)}.
      */
-    @NonNull
-    public WebMessagePortCompat[] createWebMessageChannel() {
+    public WebMessagePortCompat @NonNull [] createWebMessageChannel() {
         InvocationHandler[] invocationHandlers = mImpl.createWebMessageChannel();
         WebMessagePortCompat[] messagePorts = new WebMessagePortCompat[invocationHandlers.length];
         for (int n = 0; n < invocationHandlers.length; n++) {
@@ -88,8 +87,8 @@ public class WebViewProviderAdapter {
      * String, java.util.List, androidx.webkit.WebViewCompat.WebMessageListener)}.
      */
     public void addWebMessageListener(@NonNull String jsObjectName,
-            @NonNull String[] allowedOriginRules,
-            @NonNull WebViewCompat.WebMessageListener listener) {
+            String @NonNull [] allowedOriginRules,
+            WebViewCompat.@NonNull WebMessageListener listener) {
         mImpl.addWebMessageListener(jsObjectName, allowedOriginRules,
                 BoundaryInterfaceReflectionUtil.createInvocationHandlerFor(
                         new WebMessageListenerAdapter(listener)));
@@ -100,7 +99,7 @@ public class WebViewProviderAdapter {
      * String, Set)}
      */
     public @NonNull ScriptHandlerImpl addDocumentStartJavaScript(
-            @NonNull String script, @NonNull String[] allowedOriginRules) {
+            @NonNull String script, String @NonNull [] allowedOriginRules) {
         return ScriptHandlerImpl.toScriptHandler(
                 mImpl.addDocumentStartJavaScript(script, allowedOriginRules));
     }
@@ -115,32 +114,28 @@ public class WebViewProviderAdapter {
     /**
      * Adapter method for {@link WebViewCompat#getWebViewClient()}.
      */
-    @NonNull
-    public WebViewClient getWebViewClient() {
+    public @NonNull WebViewClient getWebViewClient() {
         return mImpl.getWebViewClient();
     }
 
     /**
      * Adapter method for {@link WebViewCompat#getWebChromeClient()}.
      */
-    @Nullable
-    public WebChromeClient getWebChromeClient() {
+    public @Nullable WebChromeClient getWebChromeClient() {
         return mImpl.getWebChromeClient();
     }
 
     /**
      * Adapter method for {@link WebViewCompat#getWebViewRenderer()}.
      */
-    @Nullable
-    public WebViewRenderProcess getWebViewRenderProcess() {
+    public @Nullable WebViewRenderProcess getWebViewRenderProcess() {
         return WebViewRenderProcessImpl.forInvocationHandler(mImpl.getWebViewRenderer());
     }
 
     /**
      * Adapter method for {@link WebViewCompat#getWebViewRendererClient()}.
      */
-    @Nullable
-    public WebViewRenderProcessClient getWebViewRenderProcessClient() {
+    public @Nullable WebViewRenderProcessClient getWebViewRenderProcessClient() {
         InvocationHandler handler = mImpl.getWebViewRendererClient();
         if (handler == null) return null;
         return ((WebViewRenderProcessClientAdapter)
@@ -173,8 +168,7 @@ public class WebViewProviderAdapter {
     /**
      * Adapter method for {@link WebViewCompat#getProfile(WebView)}.
      */
-    @NonNull
-    public Profile getProfile() {
+    public @NonNull Profile getProfile() {
         ProfileBoundaryInterface profile = BoundaryInterfaceReflectionUtil.castToSuppLibClass(
                 ProfileBoundaryInterface.class, mImpl.getProfile());
 

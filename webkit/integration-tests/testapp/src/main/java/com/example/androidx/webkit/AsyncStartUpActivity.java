@@ -18,16 +18,19 @@ package com.example.androidx.webkit;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.text.method.ScrollingMovementMethod;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.webkit.BlockingStartUpLocation;
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewStartUpConfig;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executors;
 
@@ -49,7 +52,6 @@ public class AsyncStartUpActivity extends AppCompatActivity {
         setContentView(R.layout.activity_async_startup);
         setTitle(R.string.async_startup_activity_title);
         WebkitHelpers.appendWebViewVersionToTitle(this);
-
         WebViewStartUpConfig config = new WebViewStartUpConfig.Builder(
                 Executors.newSingleThreadExecutor()).build();
         WebViewCompat.WebViewStartUpCallback callback = result -> {
@@ -57,8 +59,22 @@ public class AsyncStartUpActivity extends AppCompatActivity {
                     System.currentTimeMillis()
                             - mStartCaptureTime;
             TextView tv = findViewById(R.id.async_startup_textview);
-            tv.setText("WebView Async StartUp onSuccess() called in " + duration + " ms.");
-
+            tv.setMovementMethod(new ScrollingMovementMethod());
+            tv.setText("WebView Async StartUp onSuccess() called in " + duration + " ms. \n");
+            tv.append("getTotalTimeInUiThreadMillis: "
+                    + result.getTotalTimeInUiThreadMillis() + "\n");
+            tv.append("getMaxTimePerTaskInUiThreadMillis: "
+                    + result.getMaxTimePerTaskInUiThreadMillis() + "\n");
+            tv.append("getBlockingStartUpLocations: \n");
+            if (result.getBlockingStartUpLocations() == null) {
+                tv.append("null \n");
+            } else if (result.getBlockingStartUpLocations().isEmpty()) {
+                tv.append("empty list \n");
+            } else {
+                for (BlockingStartUpLocation location : result.getBlockingStartUpLocations()) {
+                    tv.append(location.getStackInformation() + "\n");
+                }
+            }
             //  Render content in a WebView similar to real-life usage.
             WebView wv = new WebView(this);
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(

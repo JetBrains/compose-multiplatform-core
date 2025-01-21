@@ -16,8 +16,9 @@
 
 package androidx.pdf.data;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Iterator;
 
@@ -64,9 +65,8 @@ public final class Range implements Iterable<Integer> {
         return 991 * mFirst + mLast;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return String.format("Range [%d, %d]", mFirst, mLast);
     }
 
@@ -84,8 +84,7 @@ public final class Range implements Iterable<Integer> {
     /**
      *
      */
-    @NonNull
-    public Range union(int value) {
+    public @NonNull Range union(int value) {
         if (isEmpty()) {
             return new Range(value, value);
         }
@@ -101,8 +100,7 @@ public final class Range implements Iterable<Integer> {
     /**
      *
      */
-    @NonNull
-    public Range union(@NonNull Range other) {
+    public @NonNull Range union(@NonNull Range other) {
         if (contains(other)) {
             return this;
         } else if (other.contains(this)) {
@@ -115,8 +113,7 @@ public final class Range implements Iterable<Integer> {
     /**
      *
      */
-    @NonNull
-    public Range intersect(@NonNull Range other) {
+    public @NonNull Range intersect(@NonNull Range other) {
         if (contains(other)) {
             return this;
         } else if (other.contains(this)) {
@@ -129,8 +126,7 @@ public final class Range implements Iterable<Integer> {
     /**
      *
      */
-    @NonNull
-    public Range[] minus(@NonNull Range other) {
+    public Range @NonNull [] minus(@NonNull Range other) {
         if (other.contains(this)) {
             return new Range[]{};
         }
@@ -161,15 +157,13 @@ public final class Range implements Iterable<Integer> {
     }
 
     /** Create a new Range which is an expansion of this range both ways, up to the given bounds. */
-    @NonNull
-    public Range expand(int margin, @NonNull Range bounds) {
+    public @NonNull Range expand(int margin, @NonNull Range bounds) {
         return new Range(Math.max(mFirst - margin, bounds.mFirst),
                 Math.min(mLast + margin, bounds.mLast));
     }
 
-    @NonNull
     @Override
-    public Iterator<Integer> iterator() {
+    public @NonNull Iterator<Integer> iterator() {
         return new Iterator<Integer>() {
 
             private int mCurrent = mFirst;

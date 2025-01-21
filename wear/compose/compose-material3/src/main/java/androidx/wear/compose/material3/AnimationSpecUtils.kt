@@ -23,10 +23,12 @@ import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.AnimationVector2D
 import androidx.compose.animation.core.AnimationVector3D
 import androidx.compose.animation.core.AnimationVector4D
+import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.TwoWayConverter
 import androidx.compose.animation.core.VectorizedAnimationSpec
 import androidx.compose.runtime.withFrameMillis
+import kotlinx.coroutines.delay
 
 /**
  * Returns a new [AnimationSpec] that is a faster version of this one.
@@ -70,6 +72,34 @@ internal fun <T> AnimationSpec<T>.speedFactor(
         is SpringSpec -> SpringSpec(dampingRatio, stiffness * factor * factor, visibilityThreshold)
         else -> WrappedAnimationSpec(this, factor)
     }
+}
+
+/**
+ * Returns a new [FiniteAnimationSpec] that is a faster version of this one.
+ *
+ * @param speedupPct How much to speed up the animation, as a percentage of the current speed. 0f
+ *   being no change, 100f being double, speed and so on.
+ */
+internal fun <T> FiniteAnimationSpec<T>.faster(
+    @FloatRange(from = 0.0) speedupPct: Float
+): FiniteAnimationSpec<T> {
+    require(speedupPct >= 0f) { "speedupPct has to be positive. Was: $speedupPct" }
+    return speedFactor(1 + speedupPct / 100) as FiniteAnimationSpec<T>
+}
+
+/**
+ * Returns a new [FiniteAnimationSpec] that is a slower version of this one.
+ *
+ * @param slowdownPct How much to slow down the animation, as a percentage of the current speed. 0f
+ *   being no change, 50f being half the speed.
+ */
+internal fun <T> FiniteAnimationSpec<T>.slower(
+    @FloatRange(from = 0.0, to = 100.0, toInclusive = false) slowdownPct: Float
+): FiniteAnimationSpec<T> {
+    require(slowdownPct >= 0f && slowdownPct < 100f) {
+        "slowdownPct has to be between 0 and 100. Was: $slowdownPct"
+    }
+    return speedFactor(1 - slowdownPct / 100) as FiniteAnimationSpec<T>
 }
 
 private class WrappedAnimationSpec<T>(val wrapped: AnimationSpec<T>, val speedupFactor: Float) :
@@ -138,6 +168,13 @@ internal suspend fun waitUntil(condition: () -> Boolean) {
         if (timeMillis - initialTimeMillis > MAX_WAIT_TIME_MILLIS) return
     }
     return
+}
+
+/** Delay to be used for animations. Will enable delay only when ReducedMotion is disabled. */
+internal suspend fun animatedDelay(duration: Long, reduceMotionEnabled: Boolean) {
+    if (!reduceMotionEnabled) {
+        delay(duration)
+    }
 }
 
 private const val MAX_WAIT_TIME_MILLIS = 1_000L

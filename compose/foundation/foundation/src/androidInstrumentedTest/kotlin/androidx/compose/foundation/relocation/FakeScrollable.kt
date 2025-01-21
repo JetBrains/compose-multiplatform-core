@@ -28,6 +28,7 @@ import androidx.compose.ui.geometry.Rect
  * [onBringIntoView]. Note that [onBringIntoView] will not be called if [parentOffset] is zero,
  * since that means the scrollable doesn't actually need to scroll anything to satisfy the request.
  */
+@Suppress("DEPRECATION") // b/376080744
 internal fun Modifier.fakeScrollable(
     parentOffset: Offset = Offset.Zero,
     onBringIntoView: suspend (() -> Rect?) -> Unit

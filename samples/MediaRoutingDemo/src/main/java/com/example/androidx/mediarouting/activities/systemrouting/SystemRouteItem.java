@@ -18,10 +18,10 @@ package com.example.androidx.mediarouting.activities.systemrouting;
 
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import com.example.androidx.mediarouting.activities.systemrouting.source.SystemRoutesSource;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -50,24 +50,24 @@ public final class SystemRouteItem implements SystemRoutesAdapterItem {
     }
 
     /** The {@link SystemRoutesSource#getSourceId()} of the source that created this item. */
-    @NonNull public final String mSourceId;
+    public final @NonNull String mSourceId;
 
     /** An id that uniquely identifies this route item within the source. */
-    @NonNull public final String mId;
+    public final @NonNull String mId;
 
-    @NonNull public final String mName;
+    public final @NonNull String mName;
 
-    @Nullable public final String mAddress;
+    public final @Nullable String mAddress;
 
-    @Nullable public final String mDescription;
+    public final @Nullable String mDescription;
 
-    @Nullable public final String mSuitabilityStatus;
+    public final @Nullable String mSuitabilityStatus;
 
-    @Nullable public final Boolean mTransferInitiatedBySelf;
+    public final @Nullable Boolean mTransferInitiatedBySelf;
 
-    @Nullable public final String mTransferReason;
+    public final @Nullable String mTransferReason;
 
-    @NonNull public final SelectionSupportState mSelectionSupportState;
+    public final @NonNull SelectionSupportState mSelectionSupportState;
 
     private SystemRouteItem(@NonNull Builder builder) {
         mSourceId = Objects.requireNonNull(builder.mSourceId);
@@ -116,15 +116,15 @@ public final class SystemRouteItem implements SystemRoutesAdapterItem {
      */
     public static final class Builder {
 
-        @NonNull private String mSourceId;
-        @NonNull private final String mId;
-        @NonNull private String mName;
-        @Nullable private String mAddress;
-        @Nullable private String mDescription;
-        @Nullable private String mSuitabilityStatus;
-        @Nullable private Boolean mTransferInitiatedBySelf;
-        @Nullable private String mTransferReason;
-        @NonNull public SelectionSupportState mSelectionSupportState;
+        private @NonNull String mSourceId;
+        private final @NonNull String mId;
+        private @NonNull String mName;
+        private @Nullable String mAddress;
+        private @Nullable String mDescription;
+        private @Nullable String mSuitabilityStatus;
+        private @Nullable Boolean mTransferInitiatedBySelf;
+        private @Nullable String mTransferReason;
+        public @NonNull SelectionSupportState mSelectionSupportState;
 
         /**
          * Creates a builder with the mandatory properties.
@@ -141,8 +141,7 @@ public final class SystemRouteItem implements SystemRoutesAdapterItem {
         /**
          * Sets a route name.
          */
-        @NonNull
-        public Builder setName(@NonNull String name) {
+        public @NonNull Builder setName(@NonNull String name) {
             mName = name;
             return this;
         }
@@ -150,8 +149,7 @@ public final class SystemRouteItem implements SystemRoutesAdapterItem {
         /**
          * Sets an address for the route.
          */
-        @NonNull
-        public Builder setAddress(@NonNull String address) {
+        public @NonNull Builder setAddress(@NonNull String address) {
             if (!TextUtils.isEmpty(address)) {
                 mAddress = address;
             }
@@ -161,8 +159,7 @@ public final class SystemRouteItem implements SystemRoutesAdapterItem {
         /**
          * Sets a description for the route.
          */
-        @NonNull
-        public Builder setDescription(@NonNull String description) {
+        public @NonNull Builder setDescription(@NonNull String description) {
             if (!TextUtils.isEmpty(description)) {
                 mDescription = description;
             }
@@ -173,8 +170,7 @@ public final class SystemRouteItem implements SystemRoutesAdapterItem {
          * Sets a human-readable string describing the transfer suitability of the route, or null if
          * not applicable.
          */
-        @NonNull
-        public Builder setSuitabilityStatus(@Nullable String suitabilityStatus) {
+        public @NonNull Builder setSuitabilityStatus(@Nullable String suitabilityStatus) {
             mSuitabilityStatus = suitabilityStatus;
             return this;
         }
@@ -183,8 +179,8 @@ public final class SystemRouteItem implements SystemRoutesAdapterItem {
          * Sets whether the corresponding route's selection is the result of an action of this app,
          * or null if not applicable.
          */
-        @NonNull
-        public Builder setTransferInitiatedBySelf(@Nullable Boolean transferInitiatedBySelf) {
+        public @NonNull Builder setTransferInitiatedBySelf(
+                @Nullable Boolean transferInitiatedBySelf) {
             mTransferInitiatedBySelf = transferInitiatedBySelf;
             return this;
         }
@@ -192,15 +188,13 @@ public final class SystemRouteItem implements SystemRoutesAdapterItem {
         /**
          * Sets a human-readable string describing the transfer reason, or null if not applicable.
          */
-        @NonNull
-        public Builder setTransferReason(@Nullable String transferReason) {
+        public @NonNull Builder setTransferReason(@Nullable String transferReason) {
             mTransferReason = transferReason;
             return this;
         }
 
         /** Sets the {@link SelectionSupportState} for the corresponding route. */
-        @NonNull
-        public Builder setSelectionSupportState(
+        public @NonNull Builder setSelectionSupportState(
                 @NonNull SelectionSupportState selectionSupportState) {
             mSelectionSupportState = Objects.requireNonNull(selectionSupportState);
             return this;
@@ -209,8 +203,7 @@ public final class SystemRouteItem implements SystemRoutesAdapterItem {
         /**
          * Builds {@link SystemRouteItem}.
          */
-        @NonNull
-        public SystemRouteItem build() {
+        public @NonNull SystemRouteItem build() {
             return new SystemRouteItem(this);
         }
     }

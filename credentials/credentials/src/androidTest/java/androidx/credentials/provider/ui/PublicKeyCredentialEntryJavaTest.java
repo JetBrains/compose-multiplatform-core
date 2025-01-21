@@ -30,9 +30,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Icon;
+import android.os.Build;
 import android.os.Bundle;
 
-import androidx.core.os.BuildCompat;
 import androidx.credentials.PublicKeyCredential;
 import androidx.credentials.R;
 import androidx.credentials.TestUtilsKt;
@@ -245,7 +245,7 @@ public class PublicKeyCredentialEntryJavaTest {
                 mBeginOption).setAutoSelectAllowed(IS_AUTO_SELECT_ALLOWED).setDisplayName(
                 DISPLAYNAME).setLastUsedTime(Instant.ofEpochMilli(LAST_USED_TIME)).setIcon(
                 ICON).setDefaultIconPreferredAsSingleProvider(SINGLE_PROVIDER_ICON_BIT);
-        if (BuildCompat.isAtLeastV()) {
+        if (Build.VERSION.SDK_INT >= 35) {
             BiometricPromptData biometricPromptData = null;
             if (!nullBiometricPromptData) {
                 biometricPromptData = testBiometricPromptData();
@@ -275,7 +275,7 @@ public class PublicKeyCredentialEntryJavaTest {
                 SINGLE_PROVIDER_ICON_BIT);
         assertThat(entry.getAffiliatedDomain()).isNull();
         assertThat(entry.getEntryGroupId()).isEqualTo(USERNAME);
-        if (BuildCompat.isAtLeastV() && entry.getBiometricPromptData() != null) {
+        if (Build.VERSION.SDK_INT >= 35 && entry.getBiometricPromptData() != null) {
             assertThat(entry.getBiometricPromptData().getAllowedAuthenticators()).isEqualTo(
                     testBiometricPromptData().getAllowedAuthenticators());
         } else {

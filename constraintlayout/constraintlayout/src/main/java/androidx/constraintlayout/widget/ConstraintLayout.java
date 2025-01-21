@@ -464,11 +464,11 @@ import java.util.HashMap;
  * <p>In addition to the intrinsic capabilities detailed previously,
  * you can also use special helper objects
  * in {@code ConstraintLayout} to help you with your layout. Currently, the
- * {@code Guideline}{@see Guideline} object allows you to create
- * Horizontal and Vertical guidelines which are positioned relative to the
- * {@code ConstraintLayout} container. Widgets can
- * then be positioned by constraining them to such guidelines. In <b>1.1</b>,
- * {@code Barrier} and {@code Group} were added too.</p>
+ * {@link Guideline} object allows you to create Horizontal and Vertical
+ * guidelines which are positioned relative to the {@code ConstraintLayout}
+ * container. Widgets can then be positioned by constraining them to such
+ * guidelines. In <b>1.1</b>, {@link Barrier} and {@link Group} were added too.
+ * </p>
  *
  * <h3 id="Optimizer">Optimizer (<i><b>in 1.1</b></i>)</h3>
  * <p>

@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.util.fastForEach
+import kotlin.math.min
 
 internal typealias LinkRange = AnnotatedString.Range<LinkAnnotation>
 
@@ -103,18 +104,39 @@ internal class TextLinkScope(internal val initialText: AnnotatedString) {
 
     /**
      * Causes the modified element to be measured with fixed constraints equal to the bounds of the
-     * text range [[start], [end]) and placed over that range of text.
+     * text range and placed over that range of text.
      */
-    private fun Modifier.textRange(start: Int, end: Int): Modifier =
-        this.then(
+    private fun Modifier.textRange(link: LinkRange): Modifier {
+        return this.layoutResultConditionedModifier(
+            link = link,
+            textLayoutResult = textLayoutResult
+        ) { range, layoutResult ->
             TextRangeLayoutModifier {
-                val layoutResult =
-                    textLayoutResult
-                        ?: return@TextRangeLayoutModifier layout(0, 0) { IntOffset.Zero }
-                val bounds = layoutResult.getPathForRange(start, end).getBounds().roundToIntRect()
-                layout(bounds.width, bounds.height) { bounds.topLeft }
+                if (range != null && layoutResult != null) {
+                    val bounds =
+                        layoutResult
+                            .getPathForRange(range.start, range.end)
+                            .getBounds()
+                            .roundToIntRect()
+                    layout(bounds.width, bounds.height) { bounds.topLeft }
+                } else {
+                    layout(0, 0) { IntOffset.Zero }
+                }
             }
-        )
+        }
+    }
+
+    /**
+     * Clips the Box representing the link to the path of the text range corresponding to that link
+     */
+    private fun Modifier.clipLink(link: LinkRange): Modifier {
+        return this.layoutResultConditionedModifier(
+            link = link,
+            textLayoutResult = textLayoutResult
+        ) { range, _ ->
+            range?.let { shapeForRange(it)?.let { shape -> Modifier.clip(shape) } }
+        }
+    }
 
     private fun shapeForRange(range: LinkRange): Shape? =
         pathForRangeInRangeCoordinates(range)?.let {
@@ -139,7 +161,7 @@ internal class TextLinkScope(internal val initialText: AnnotatedString) {
                 val lastCharBoundingBox = it.getBoundingBox(range.end - 1)
 
                 val rangeStartLine = it.getLineForOffset(range.start)
-                val rangeEndLine = it.getLineForOffset(range.end)
+                val rangeEndLine = it.getLineForOffset(range.end - 1)
 
                 val xOffset =
                     if (rangeStartLine == rangeEndLine) {
@@ -163,6 +185,38 @@ internal class TextLinkScope(internal val initialText: AnnotatedString) {
     }
 
     /**
+     * Modifier that allows to provide another modifier conditionally based on whether a [link]
+     * annotation is within the visible [TextLayoutResult] lines
+     */
+    private fun Modifier.layoutResultConditionedModifier(
+        link: LinkRange,
+        textLayoutResult: TextLayoutResult?,
+        modifierProvider: (LinkRange?, TextLayoutResult?) -> Modifier?
+    ): Modifier {
+        // if the TextLayoutResult not available, we just ignore the clip. The Box won't be placed
+        // in that case anyway
+        val modifier =
+            if (textLayoutResult != null) {
+                // The paragraph with a link might not be added to the paragraphs list if it exceeds
+                // the maxline. The Box will be measured (0, 0) in that case anyway, so it's fine
+                // that
+                // we won't add a draw/other layout modifiers in this case.
+                val lastOffset = textLayoutResult.getLineEnd(textLayoutResult.lineCount - 1)
+                val updatedLinkRange =
+                    if (link.start < lastOffset) {
+                        // The link might be clipped if we reach the maxLines so we adjust its end
+                        // in that
+                        // case to be the last visible offset.
+                        link.copy(end = min(link.end, lastOffset))
+                    } else null
+                modifierProvider(updatedLinkRange, textLayoutResult)
+            } else {
+                modifierProvider(null, null)
+            }
+        return this.then(modifier ?: Modifier)
+    }
+
+    /**
      * This composable responsible for creating layout nodes for each link annotation. Since
      * [TextLinkScope] object created *only* when there are links present in the text, we don't need
      * to do any additional guarding inside this composable function.
@@ -174,17 +228,15 @@ internal class TextLinkScope(internal val initialText: AnnotatedString) {
         val links = text.getLinkAnnotations(0, text.length)
         links.fastForEach { range ->
             if (range.start != range.end) {
-                val shape = shapeForRange(range)
-                val clipModifier = shape?.let { Modifier.clip(it) } ?: Modifier
                 val interactionSource = remember { MutableInteractionSource() }
 
                 Box(
-                    clipModifier
+                    Modifier.clipLink(range)
                         .semantics {
                             // adding this to identify links in tests, see performFirstLinkClick
                             this[LinkTestMarker] = Unit
                         }
-                        .textRange(range.start, range.end)
+                        .textRange(range)
                         .hoverable(interactionSource)
                         .pointerHoverIcon(PointerIcon.Hand)
                         .combinedClickable(

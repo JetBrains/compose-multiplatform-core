@@ -55,14 +55,14 @@ androidx {
 android {
     defaultConfig {
         // studio pipeline works only starting with Android O
-        minSdkVersion 26
+        minSdk = 26
     }
 
     externalNativeBuild {
         cmake {
             path "src/main/native/CMakeLists.txt"
-            version "3.22.1"
+            version = libs.versions.cmake.get()
         }
     }
-    namespace "androidx.inspection"
+    namespace = "androidx.inspection"
 }

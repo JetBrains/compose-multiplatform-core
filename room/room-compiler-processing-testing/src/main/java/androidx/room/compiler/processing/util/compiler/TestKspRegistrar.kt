@@ -28,6 +28,7 @@ import org.jetbrains.kotlin.cli.jvm.config.JavaSourceRoot
 import org.jetbrains.kotlin.cli.jvm.config.JvmClasspathRoot
 import org.jetbrains.kotlin.com.intellij.core.CoreApplicationEnvironment
 import org.jetbrains.kotlin.com.intellij.mock.MockProject
+import org.jetbrains.kotlin.com.intellij.openapi.Disposable
 import org.jetbrains.kotlin.com.intellij.psi.PsiTreeChangeAdapter
 import org.jetbrains.kotlin.com.intellij.psi.PsiTreeChangeListener
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
@@ -78,6 +79,7 @@ internal class TestKspRegistrar(
                 allWarningsAsErrors = baseOptions.allWarningsAsErrors
             )
         val options = baseOptions.build()
+        @Suppress("UnstableApiUsage") // For K1.
         AnalysisHandlerExtension.registerExtension(
             project,
             TestKspExtension(
@@ -106,6 +108,7 @@ internal class TestKspRegistrar(
         ) {
         private val loadedProviders = processorProviders
 
-        override fun loadProviders() = loadedProviders
+        override fun loadProviders(rootDisposable: Disposable): List<SymbolProcessorProvider> =
+            loadedProviders
     }
 }

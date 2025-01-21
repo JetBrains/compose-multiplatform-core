@@ -35,7 +35,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.security.mls"
+    namespace = "androidx.security.mls"
 }
 
 androidx {

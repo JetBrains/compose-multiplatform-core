@@ -68,7 +68,7 @@ private constructor(
 
             val lifecycleEventEnum =
                 Class.forName(
-                    Lifecycle.Event::class.java.name,
+                    "androidx.lifecycle.Lifecycle\$Event",
                     /* initialize = */ false,
                     classLoader
                 )

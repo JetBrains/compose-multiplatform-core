@@ -28,6 +28,16 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
+        <TextView
+            android:id="@+id/title_bar"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:textSize="20sp"
+            android:gravity="center"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:background="@color/teal_700" />
+
         <Button
             android:id="@+id/toggle_drawer_button"
             android:layout_width="match_parent"

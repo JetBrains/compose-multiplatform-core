@@ -18,8 +18,8 @@ package androidx.browser.trusted;
 
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A callback class for browser to get messages from client app. The callbacks should be called via

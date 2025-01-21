@@ -17,7 +17,8 @@
 package androidx.wear.tiles.material;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents the background and content colors used in a chip Tiles component.
@@ -32,10 +33,10 @@ import androidx.annotation.NonNull;
 @Deprecated
 @SuppressWarnings("deprecation")
 public class ChipColors {
-    @NonNull private final androidx.wear.tiles.ColorBuilders.ColorProp mBackgroundColor;
-    @NonNull private final androidx.wear.tiles.ColorBuilders.ColorProp mIconColor;
-    @NonNull private final androidx.wear.tiles.ColorBuilders.ColorProp mContentColor;
-    @NonNull private final androidx.wear.tiles.ColorBuilders.ColorProp mSecondaryContentColor;
+    private final androidx.wear.tiles.ColorBuilders.@NonNull ColorProp mBackgroundColor;
+    private final androidx.wear.tiles.ColorBuilders.@NonNull ColorProp mIconColor;
+    private final androidx.wear.tiles.ColorBuilders.@NonNull ColorProp mContentColor;
+    private final androidx.wear.tiles.ColorBuilders.@NonNull ColorProp mSecondaryContentColor;
 
     /**
      * Constructor for the {@link ChipColors} object.
@@ -85,10 +86,10 @@ public class ChipColors {
      *     component.
      */
     public ChipColors(
-            @NonNull androidx.wear.tiles.ColorBuilders.ColorProp backgroundColor,
-            @NonNull androidx.wear.tiles.ColorBuilders.ColorProp iconColor,
-            @NonNull androidx.wear.tiles.ColorBuilders.ColorProp contentColor,
-            @NonNull androidx.wear.tiles.ColorBuilders.ColorProp secondaryContentColor) {
+            androidx.wear.tiles.ColorBuilders.@NonNull ColorProp backgroundColor,
+            androidx.wear.tiles.ColorBuilders.@NonNull ColorProp iconColor,
+            androidx.wear.tiles.ColorBuilders.@NonNull ColorProp contentColor,
+            androidx.wear.tiles.ColorBuilders.@NonNull ColorProp secondaryContentColor) {
         mBackgroundColor = backgroundColor;
         mIconColor = iconColor;
         mContentColor = contentColor;
@@ -102,8 +103,8 @@ public class ChipColors {
      * @param contentColor The content color to be used for all items inside a chip Tiles component.
      */
     public ChipColors(
-            @NonNull androidx.wear.tiles.ColorBuilders.ColorProp backgroundColor,
-            @NonNull androidx.wear.tiles.ColorBuilders.ColorProp contentColor) {
+            androidx.wear.tiles.ColorBuilders.@NonNull ColorProp backgroundColor,
+            androidx.wear.tiles.ColorBuilders.@NonNull ColorProp contentColor) {
         mBackgroundColor = backgroundColor;
         mIconColor = contentColor;
         mContentColor = contentColor;
@@ -114,8 +115,7 @@ public class ChipColors {
      * Returns a {@link ChipColors} object, using the current Primary colors from the given {@link
      * Colors}.
      */
-    @NonNull
-    public static ChipColors primaryChipColors(@NonNull Colors colors) {
+    public static @NonNull ChipColors primaryChipColors(@NonNull Colors colors) {
         return new ChipColors(colors.getPrimary(), colors.getOnPrimary());
     }
 
@@ -123,32 +123,27 @@ public class ChipColors {
      * Returns a {@link ChipColors} object, using the current Surface colors from the given {@link
      * Colors}.
      */
-    @NonNull
-    public static ChipColors secondaryChipColors(@NonNull Colors colors) {
+    public static @NonNull ChipColors secondaryChipColors(@NonNull Colors colors) {
         return new ChipColors(colors.getSurface(), colors.getOnSurface());
     }
 
     /** The background color to be used on a chip Tiles components. */
-    @NonNull
-    public androidx.wear.tiles.ColorBuilders.ColorProp getBackgroundColor() {
+    public androidx.wear.tiles.ColorBuilders.@NonNull ColorProp getBackgroundColor() {
         return mBackgroundColor;
     }
 
     /** The icon color to be used on a chip Tiles components. */
-    @NonNull
-    public androidx.wear.tiles.ColorBuilders.ColorProp getIconColor() {
+    public androidx.wear.tiles.ColorBuilders.@NonNull ColorProp getIconColor() {
         return mIconColor;
     }
 
     /** The main text color to be used on a chip Tiles components. */
-    @NonNull
-    public androidx.wear.tiles.ColorBuilders.ColorProp getContentColor() {
+    public androidx.wear.tiles.ColorBuilders.@NonNull ColorProp getContentColor() {
         return mContentColor;
     }
 
     /** The label text color to be used on a chip Tiles components. */
-    @NonNull
-    public androidx.wear.tiles.ColorBuilders.ColorProp getSecondaryContentColor() {
+    public androidx.wear.tiles.ColorBuilders.@NonNull ColorProp getSecondaryContentColor() {
         return mSecondaryContentColor;
     }
 }

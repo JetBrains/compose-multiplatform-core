@@ -74,6 +74,9 @@ androidComponents {
 android {
     namespace = "androidx.privacysandbox.tools.integration.testsdk"
 
+    compileSdk = 35
+    compileSdkExtension = 14
+
     defaultConfig {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 

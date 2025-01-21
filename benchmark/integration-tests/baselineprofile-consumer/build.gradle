@@ -41,8 +41,8 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
         }
         releaseLibrariesOnly {
@@ -50,7 +50,7 @@ android {
             matchingFallbacks += "release"
         }
     }
-    namespace "androidx.benchmark.integration.baselineprofile.consumer"
+    namespace = "androidx.benchmark.integration.baselineprofile.consumer"
 }
 
 dependencies {

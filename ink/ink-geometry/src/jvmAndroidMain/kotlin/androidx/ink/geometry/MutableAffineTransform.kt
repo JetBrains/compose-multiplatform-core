@@ -18,6 +18,8 @@ package androidx.ink.geometry
 
 import androidx.annotation.RestrictTo
 import androidx.annotation.Size
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * An affine transformation in the plane. The transformation can be thought of as a 3x3 matrix:
@@ -126,6 +128,161 @@ public constructor(
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun asImmutable(): ImmutableAffineTransform =
         ImmutableAffineTransform(m00, m10, m20, m01, m11, m21)
+
+    /**
+     * Fills this [MutableAffineTransform] with the same values contained in [input]. Returns
+     * [this].
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun populateFrom(input: AffineTransform): MutableAffineTransform {
+        m00 = input.m00
+        m10 = input.m10
+        m20 = input.m20
+        m01 = input.m01
+        m11 = input.m11
+        m21 = input.m21
+        return this
+    }
+
+    /**
+     * Fills this [MutableAffineTransform] with an identity transformation, which maps a point to
+     * itself, i.e. it leaves it unchanged. Returns [this].
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun populateFromIdentity(): MutableAffineTransform {
+        m00 = 1f
+        m10 = 0f
+        m20 = 0f
+        m01 = 0f
+        m11 = 1f
+        m21 = 0f
+        return this
+    }
+
+    /**
+     * Fills this [MutableAffineTransform] with a transformation that translates by the given
+     * [offset] vector. Returns [this].
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun populateFromTranslate(offset: Vec): MutableAffineTransform {
+        m00 = 1f
+        m10 = 0f
+        m20 = offset.x
+        m01 = 0f
+        m11 = 1f
+        m21 = offset.y
+        return this
+    }
+
+    /**
+     * Fills this [MutableAffineTransform] with a transformation that scales in both the x- and
+     * y-direction by the given [scaleFactor], centered about the origin. Returns [this].
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun populateFromScale(scaleFactor: Float): MutableAffineTransform {
+        m00 = scaleFactor
+        m10 = 0f
+        m20 = 0f
+        m01 = 0f
+        m11 = scaleFactor
+        m21 = 0f
+        return this
+    }
+
+    /**
+     * Fills this [MutableAffineTransform] with a transformation that scales in both the x- and
+     * y-direction by the given pair of factors; [xScaleFactor] and [yScaleFactor] respectively,
+     * centered about the origin. Returns [this].
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun populateFromScale(xScaleFactor: Float, yScaleFactor: Float): MutableAffineTransform {
+        m00 = xScaleFactor
+        m10 = 0f
+        m20 = 0f
+        m01 = 0f
+        m11 = yScaleFactor
+        m21 = 0f
+        return this
+    }
+
+    /**
+     * Fills this [MutableAffineTransform] with a transformation that scales in the x-direction by
+     * the given factor, centered about the origin. Returns [this].
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun populateFromScaleX(scaleFactor: Float): MutableAffineTransform {
+        m00 = scaleFactor
+        m10 = 0f
+        m20 = 0f
+        m01 = 0f
+        m11 = 1f
+        m21 = 0f
+        return this
+    }
+
+    /**
+     * Fills this [MutableAffineTransform] with a transformation that scales in the y-direction by
+     * the given factor, centered about the origin. Returns [this].
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun populateFromScaleY(scaleFactor: Float): MutableAffineTransform {
+        m00 = 1f
+        m10 = 0f
+        m20 = 0f
+        m01 = 0f
+        m11 = scaleFactor
+        m21 = 0f
+        return this
+    }
+
+    /**
+     * Fills this [MutableAffineTransform] with a transformation that shears in the x-direction by
+     * the given factor. Returns [this].
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun populateFromShearX(shearFactor: Float): MutableAffineTransform {
+        m00 = 1f
+        m10 = shearFactor
+        m20 = 0f
+        m01 = 0f
+        m11 = 1f
+        m21 = 0f
+        return this
+    }
+
+    /**
+     * Fills this [MutableAffineTransform] with a transformation that shears in the y-direction by
+     * the given factor. Returns [this].
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun populateFromShearY(shearFactor: Float): MutableAffineTransform {
+        m00 = 1f
+        m10 = 0f
+        m20 = 0f
+        m01 = shearFactor
+        m11 = 1f
+        m21 = 0f
+        return this
+    }
+
+    /**
+     * Fills this [MutableAffineTransform] with a transformation that rotates by the given angle,
+     * centered about the origin. Returns [this].
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun populateFromRotate(
+        @AngleRadiansFloat angleOfRotation: Float
+    ): MutableAffineTransform {
+        val sin = sin(angleOfRotation)
+        val cos = cos(angleOfRotation)
+        m00 = cos
+        m10 = -sin
+        m20 = 0f
+        m01 = sin
+        m11 = cos
+        m21 = 0f
+        return this
+    }
 
     /**
      * Component-wise equality operator for [MutableAffineTransform].

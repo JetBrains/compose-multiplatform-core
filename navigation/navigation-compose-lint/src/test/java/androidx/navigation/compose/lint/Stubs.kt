@@ -205,7 +205,7 @@ internal val NAV_HOST =
     )
 
 internal val COMPOSABLE_NAV_HOST =
-    androidx.navigation.lint.common.bytecodeStub(
+    androidx.navigation.lint.test.bytecodeStub(
         "StartDestinationLint.kt",
         "androidx/navigation",
         0xa9664947,
@@ -261,7 +261,7 @@ public fun NavHost(
     )
 
 internal val COMPOSE_NAVIGATOR_DESTINATION_BUILDER =
-    androidx.navigation.lint.common.bytecodeStub(
+    androidx.navigation.lint.test.bytecodeStub(
         "ComposeNavigatorDestinationBuilder.kt",
         "androidx/navigation/compose",
         0xcdeb9868,
@@ -371,7 +371,7 @@ public inline fun <reified T : Any> NavGraphBuilder.navigation() {}
     )
 
 internal val DIALOG_NAVIGATOR_DESTINATION_BUILDER =
-    androidx.navigation.lint.common.bytecodeStub(
+    androidx.navigation.lint.test.bytecodeStub(
         "DialogNavigatorDestinationBuilder.kt",
         "androidx/navigation/compose",
         0xe5b79ce2,

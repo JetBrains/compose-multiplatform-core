@@ -36,7 +36,7 @@ plugins {
 
 android {
     defaultConfig {
-        minSdkVersion 23
+        minSdk = 23
 
         // We don't care about perf from these correctness tests, so suppress
         // anything that may otherwise block these tests
@@ -64,10 +64,11 @@ android {
         )
     }
 
-    namespace "androidx.benchmark.macro"
+    namespace = "androidx.benchmark.macro"
 }
 
 dependencies {
+    api(libs.jspecify)
     api(project(":benchmark:benchmark-common"))
     api(libs.junit)
     api(libs.kotlinStdlib)

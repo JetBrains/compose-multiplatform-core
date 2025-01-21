@@ -19,8 +19,9 @@ package androidx.pdf.util;
 import android.content.Context;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Utils class for [PaginatedView]

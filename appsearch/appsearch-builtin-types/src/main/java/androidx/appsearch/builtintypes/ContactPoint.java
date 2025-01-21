@@ -18,8 +18,10 @@ package androidx.appsearch.builtintypes;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.appsearch.annotation.Document;
 import androidx.appsearch.app.AppSearchSchema.StringPropertyConfig;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.core.util.Preconditions;
 
 import java.util.ArrayList;
@@ -46,6 +48,7 @@ public class ContactPoint extends Thing {
             "telephone")
     private final List<String> mTelephones;
 
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     ContactPoint(
             @NonNull String namespace,
             @NonNull String id,

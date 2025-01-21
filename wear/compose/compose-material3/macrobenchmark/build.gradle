@@ -21,11 +21,11 @@ plugins {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
     defaultConfig {
-        minSdkVersion 29
+        minSdk = 29
     }
-    namespace "androidx.wear.compose.material3.macrobenchmark"
+    namespace = "androidx.wear.compose.material3.macrobenchmark"
     targetProjectPath = ":wear:compose:compose-material3-macrobenchmark-target"
     experimentalProperties["android.experimental.self-instrumenting"] = true
 }

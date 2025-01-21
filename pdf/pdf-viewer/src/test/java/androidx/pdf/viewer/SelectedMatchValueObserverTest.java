@@ -37,7 +37,6 @@ import org.robolectric.RobolectricTestRunner;
 
 import java.util.ArrayList;
 
-
 @SmallTest
 @RunWith(RobolectricTestRunner.class)
 public class SelectedMatchValueObserverTest {

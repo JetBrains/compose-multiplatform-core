@@ -84,8 +84,6 @@ import android.widget.Scroller;
 import android.widget.Space;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.content.ContextCompat;
@@ -108,8 +106,8 @@ import androidx.wear.protolayout.proto.AlignmentProto.TextAlignment;
 import androidx.wear.protolayout.proto.AlignmentProto.VerticalAlignment;
 import androidx.wear.protolayout.proto.AlignmentProto.VerticalAlignmentProp;
 import androidx.wear.protolayout.proto.ColorProto.ColorProp;
-import androidx.wear.protolayout.proto.DimensionProto.ArcLineLength;
 import androidx.wear.protolayout.proto.DimensionProto.AngularDimension;
+import androidx.wear.protolayout.proto.DimensionProto.ArcLineLength;
 import androidx.wear.protolayout.proto.DimensionProto.ContainerDimension;
 import androidx.wear.protolayout.proto.DimensionProto.ContainerDimension.InnerCase;
 import androidx.wear.protolayout.proto.DimensionProto.DegreesProp;
@@ -206,6 +204,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -275,7 +276,7 @@ public final class ProtoLayoutInflater {
     // This is pretty badly named; TruncateAt specifies where to place the ellipsis (or whether to
     // marquee). Disabling truncation with null actually disables the _ellipsis_, but text will
     // still be truncated.
-    @Nullable private static final TruncateAt TEXT_OVERFLOW_DEFAULT = null;
+    private static final @Nullable TruncateAt TEXT_OVERFLOW_DEFAULT = null;
 
     private static final int TEXT_COLOR_DEFAULT = 0xFFFFFFFF;
     private static final int TEXT_MAX_LINES_DEFAULT = 1;
@@ -307,14 +308,14 @@ public final class ProtoLayoutInflater {
 
     private final Optional<ProtoLayoutDynamicDataPipeline> mDataPipeline;
 
-    @Nullable private final ProtoLayoutExtensionViewProvider mExtensionViewProvider;
+    private final @Nullable ProtoLayoutExtensionViewProvider mExtensionViewProvider;
 
     private final boolean mAllowLayoutChangingBindsWithoutDefault;
     final String mClickableIdExtra;
 
-    @Nullable private final LoggingUtils mLoggingUtils;
-    @NonNull private final InflaterStatsLogger mInflaterStatsLogger;
-    @Nullable final Executor mLoadActionExecutor;
+    private final @Nullable LoggingUtils mLoggingUtils;
+    private final @NonNull InflaterStatsLogger mInflaterStatsLogger;
+    final @Nullable Executor mLoadActionExecutor;
     final LoadActionListener mLoadActionListener;
     final boolean mAnimationEnabled;
 
@@ -478,8 +479,7 @@ public final class ProtoLayoutInflater {
             return true;
         }
 
-        @Nullable
-        String getTag() {
+        @Nullable String getTag() {
             return (String) mView.getTag();
         }
     }
@@ -489,7 +489,7 @@ public final class ProtoLayoutInflater {
      * the renderer.
      */
     private static final class ParentViewWrapper {
-        @Nullable private final ViewGroup mParent;
+        private final @Nullable ViewGroup mParent;
         private final ViewProperties mParentProps;
 
         ParentViewWrapper(ViewGroup parent, LayoutParams parentLayoutParams) {
@@ -536,19 +536,19 @@ public final class ProtoLayoutInflater {
     public static final class Config {
         public static final String DEFAULT_CLICKABLE_ID_EXTRA =
                 "androidx.wear.protolayout.extra.CLICKABLE_ID";
-        @NonNull private final Context mUiContext;
-        @NonNull private final Layout mLayout;
-        @NonNull private final ResourceResolvers mLayoutResourceResolvers;
-        @Nullable private final Executor mLoadActionExecutor;
-        @NonNull private final LoadActionListener mLoadActionListener;
-        @NonNull private final Resources mRendererResources;
-        @NonNull private final ProtoLayoutTheme mProtoLayoutTheme;
-        @Nullable private final ProtoLayoutDynamicDataPipeline mDataPipeline;
-        @NonNull private final String mClickableIdExtra;
+        private final @NonNull Context mUiContext;
+        private final @NonNull Layout mLayout;
+        private final @NonNull ResourceResolvers mLayoutResourceResolvers;
+        private final @Nullable Executor mLoadActionExecutor;
+        private final @NonNull LoadActionListener mLoadActionListener;
+        private final @NonNull Resources mRendererResources;
+        private final @NonNull ProtoLayoutTheme mProtoLayoutTheme;
+        private final @Nullable ProtoLayoutDynamicDataPipeline mDataPipeline;
+        private final @NonNull String mClickableIdExtra;
 
-        @Nullable private final LoggingUtils mLoggingUtils;
-        @NonNull private final InflaterStatsLogger mInflaterStatsLogger;
-        @Nullable private final ProtoLayoutExtensionViewProvider mExtensionViewProvider;
+        private final @Nullable LoggingUtils mLoggingUtils;
+        private final @NonNull InflaterStatsLogger mInflaterStatsLogger;
+        private final @Nullable ProtoLayoutExtensionViewProvider mExtensionViewProvider;
         private final boolean mAnimationEnabled;
 
         private final boolean mAllowLayoutChangingBindsWithoutDefault;
@@ -589,32 +589,27 @@ public final class ProtoLayoutInflater {
         }
 
         /** A {@link Context} suitable for interacting with UI. */
-        @NonNull
-        public Context getUiContext() {
+        public @NonNull Context getUiContext() {
             return mUiContext;
         }
 
         /** The layout to be rendered. */
-        @NonNull
-        public Layout getLayout() {
+        public @NonNull Layout getLayout() {
             return mLayout;
         }
 
         /** Resolvers for the resources used for rendering this layout. */
-        @NonNull
-        public ResourceResolvers getLayoutResourceResolvers() {
+        public @NonNull ResourceResolvers getLayoutResourceResolvers() {
             return mLayoutResourceResolvers;
         }
 
         /** Executor to dispatch loadActionListener on. */
-        @Nullable
-        public Executor getLoadActionExecutor() {
+        public @Nullable Executor getLoadActionExecutor() {
             return mLoadActionExecutor;
         }
 
         /** Listener for clicks that will cause contents to be reloaded. */
-        @NonNull
-        public LoadActionListener getLoadActionListener() {
+        public @NonNull LoadActionListener getLoadActionListener() {
             return mLoadActionListener;
         }
 
@@ -622,8 +617,7 @@ public final class ProtoLayoutInflater {
          * Renderer internal resources. This Resources object can be used to resolve Renderer's
          * resources.
          */
-        @NonNull
-        public Resources getRendererResources() {
+        public @NonNull Resources getRendererResources() {
             return mRendererResources;
         }
 
@@ -631,8 +625,7 @@ public final class ProtoLayoutInflater {
          * Theme to use for this ProtoLayoutInflater instance. This can be used to customise things
          * like the default font family.
          */
-        @NonNull
-        public ProtoLayoutTheme getProtoLayoutTheme() {
+        public @NonNull ProtoLayoutTheme getProtoLayoutTheme() {
             return mProtoLayoutTheme;
         }
 
@@ -640,8 +633,7 @@ public final class ProtoLayoutInflater {
          * Pipeline for dynamic data. If null, the dynamic properties would not be registered for
          * update.
          */
-        @Nullable
-        public ProtoLayoutDynamicDataPipeline getDynamicDataPipeline() {
+        public @Nullable ProtoLayoutDynamicDataPipeline getDynamicDataPipeline() {
             return mDataPipeline;
         }
 
@@ -649,26 +641,22 @@ public final class ProtoLayoutInflater {
          * ID for the Intent extra containing the ID of a Clickable. Defaults to {@link
          * Config#DEFAULT_CLICKABLE_ID_EXTRA} if not specified.
          */
-        @NonNull
-        public String getClickableIdExtra() {
+        public @NonNull String getClickableIdExtra() {
             return mClickableIdExtra;
         }
 
         /** Debug logger used to log debug messages. */
-        @Nullable
-        public LoggingUtils getLoggingUtils() {
+        public @Nullable LoggingUtils getLoggingUtils() {
             return mLoggingUtils;
         }
 
         /** Stats logger used for telemetry. */
-        @NonNull
-        public InflaterStatsLogger getInflaterStatsLogger() {
+        public @NonNull InflaterStatsLogger getInflaterStatsLogger() {
             return mInflaterStatsLogger;
         }
 
         /** View provider for the renderer extension. */
-        @Nullable
-        public ProtoLayoutExtensionViewProvider getExtensionViewProvider() {
+        public @Nullable ProtoLayoutExtensionViewProvider getExtensionViewProvider() {
             return mExtensionViewProvider;
         }
 
@@ -693,22 +681,22 @@ public final class ProtoLayoutInflater {
 
         /** Builder for the Config class. */
         public static final class Builder {
-            @NonNull private final Context mUiContext;
-            @NonNull private final Layout mLayout;
-            @NonNull private final ResourceResolvers mLayoutResourceResolvers;
-            @Nullable private Executor mLoadActionExecutor;
-            @Nullable private LoadActionListener mLoadActionListener;
-            @NonNull private Resources mRendererResources;
-            @Nullable private ProtoLayoutTheme mProtoLayoutTheme;
-            @Nullable private ProtoLayoutDynamicDataPipeline mDataPipeline = null;
+            private final @NonNull Context mUiContext;
+            private final @NonNull Layout mLayout;
+            private final @NonNull ResourceResolvers mLayoutResourceResolvers;
+            private @Nullable Executor mLoadActionExecutor;
+            private @Nullable LoadActionListener mLoadActionListener;
+            private @NonNull Resources mRendererResources;
+            private @Nullable ProtoLayoutTheme mProtoLayoutTheme;
+            private @Nullable ProtoLayoutDynamicDataPipeline mDataPipeline = null;
             private boolean mAnimationEnabled = true;
             private boolean mAllowLayoutChangingBindsWithoutDefault = false;
-            @Nullable private String mClickableIdExtra;
+            private @Nullable String mClickableIdExtra;
 
-            @Nullable private LoggingUtils mLoggingUtils;
-            @Nullable private InflaterStatsLogger mInflaterStatsLogger;
+            private @Nullable LoggingUtils mLoggingUtils;
+            private @Nullable InflaterStatsLogger mInflaterStatsLogger;
 
-            @Nullable private ProtoLayoutExtensionViewProvider mExtensionViewProvider = null;
+            private @Nullable ProtoLayoutExtensionViewProvider mExtensionViewProvider = null;
 
             private boolean mApplyFontVariantBodyAsDefault = false;
 
@@ -732,8 +720,7 @@ public final class ProtoLayoutInflater {
              * Sets the Executor to dispatch loadActionListener on. This is required when setting
              * {@link Builder#setLoadActionListener}.
              */
-            @NonNull
-            public Builder setLoadActionExecutor(@NonNull Executor loadActionExecutor) {
+            public @NonNull Builder setLoadActionExecutor(@NonNull Executor loadActionExecutor) {
                 this.mLoadActionExecutor = loadActionExecutor;
                 return this;
             }
@@ -743,8 +730,8 @@ public final class ProtoLayoutInflater {
              * no-op. This is required if the given layout contains a load action. When this is set,
              * it's also required to set an executor with {@link Builder#setLoadActionExecutor}.
              */
-            @NonNull
-            public Builder setLoadActionListener(@NonNull LoadActionListener loadActionListener) {
+            public @NonNull Builder setLoadActionListener(
+                    @NonNull LoadActionListener loadActionListener) {
                 this.mLoadActionListener = loadActionListener;
                 return this;
             }
@@ -755,8 +742,7 @@ public final class ProtoLayoutInflater {
              * android.content.pm.PackageManager#getResourcesForApplication(String)}. If not
              * specified, this is retrieved from the Ui Context.
              */
-            @NonNull
-            public Builder setRendererResources(@NonNull Resources rendererResources) {
+            public @NonNull Builder setRendererResources(@NonNull Resources rendererResources) {
                 this.mRendererResources = rendererResources;
                 return this;
             }
@@ -765,8 +751,8 @@ public final class ProtoLayoutInflater {
              * Sets the theme to use for this ProtoLayoutInflater instance. This can be used to
              * customise things like the default font family. If not set, the default theme is used.
              */
-            @NonNull
-            public Builder setProtoLayoutTheme(@NonNull ProtoLayoutTheme protoLayoutTheme) {
+            public @NonNull Builder setProtoLayoutTheme(
+                    @NonNull ProtoLayoutTheme protoLayoutTheme) {
                 this.mProtoLayoutTheme = protoLayoutTheme;
                 return this;
             }
@@ -775,16 +761,14 @@ public final class ProtoLayoutInflater {
              * Sets the pipeline for dynamic data. If null, the dynamic properties would not be
              * registered for update.
              */
-            @NonNull
-            public Builder setDynamicDataPipeline(
+            public @NonNull Builder setDynamicDataPipeline(
                     @NonNull ProtoLayoutDynamicDataPipeline dataPipeline) {
                 this.mDataPipeline = dataPipeline;
                 return this;
             }
 
             /** Sets the view provider for the renderer extension. */
-            @NonNull
-            public Builder setExtensionViewProvider(
+            public @NonNull Builder setExtensionViewProvider(
                     @NonNull ProtoLayoutExtensionViewProvider extensionViewProvider) {
                 this.mExtensionViewProvider = extensionViewProvider;
                 return this;
@@ -794,8 +778,7 @@ public final class ProtoLayoutInflater {
              * Sets whether animation is enabled, which decides whether to load
              * contentUpdateAnimations. Defaults to true.
              */
-            @NonNull
-            public Builder setAnimationEnabled(boolean animationEnabled) {
+            public @NonNull Builder setAnimationEnabled(boolean animationEnabled) {
                 this.mAnimationEnabled = animationEnabled;
                 return this;
             }
@@ -804,22 +787,19 @@ public final class ProtoLayoutInflater {
              * Sets the ID for the Intent extra containing the ID of a Clickable. Defaults to {@link
              * Config#DEFAULT_CLICKABLE_ID_EXTRA} if not specified.
              */
-            @NonNull
-            public Builder setClickableIdExtra(@NonNull String clickableIdExtra) {
+            public @NonNull Builder setClickableIdExtra(@NonNull String clickableIdExtra) {
                 this.mClickableIdExtra = clickableIdExtra;
                 return this;
             }
 
             /** Sets the debug logger used for extensive logging. */
-            @NonNull
-            public Builder setLoggingUtils(@NonNull LoggingUtils loggingUtils) {
+            public @NonNull Builder setLoggingUtils(@NonNull LoggingUtils loggingUtils) {
                 this.mLoggingUtils = loggingUtils;
                 return this;
             }
 
             /** Sets the stats logger used for telemetry. */
-            @NonNull
-            public Builder setInflaterStatsLogger(
+            public @NonNull Builder setInflaterStatsLogger(
                     @NonNull InflaterStatsLogger inflaterStatsLogger) {
                 this.mInflaterStatsLogger = inflaterStatsLogger;
                 return this;
@@ -833,8 +813,7 @@ public final class ProtoLayoutInflater {
              * <p>This is to support legacy apps which use layout-changing data bind before the full
              * support was built.
              */
-            @NonNull
-            public Builder setAllowLayoutChangingBindsWithoutDefault(
+            public @NonNull Builder setAllowLayoutChangingBindsWithoutDefault(
                     boolean allowLayoutChangingBindsWithoutDefault) {
                 this.mAllowLayoutChangingBindsWithoutDefault =
                         allowLayoutChangingBindsWithoutDefault;
@@ -842,15 +821,14 @@ public final class ProtoLayoutInflater {
             }
 
             /** Apply FONT_VARIANT_BODY as default variant. */
-            @NonNull
-            public Builder setApplyFontVariantBodyAsDefault(boolean applyFontVariantBodyAsDefault) {
+            public @NonNull Builder setApplyFontVariantBodyAsDefault(
+                    boolean applyFontVariantBodyAsDefault) {
                 this.mApplyFontVariantBodyAsDefault = applyFontVariantBodyAsDefault;
                 return this;
             }
 
             /** Builds a Config instance. */
-            @NonNull
-            public Config build() {
+            public @NonNull Config build() {
                 if (mLoadActionListener != null && mLoadActionExecutor == null) {
                     throw new IllegalArgumentException(
                             "A loadActionExecutor should always be set if setting a"
@@ -932,8 +910,7 @@ public final class ProtoLayoutInflater {
         return safeDpToPx(dpProp.getValue());
     }
 
-    @Nullable
-    private static Float safeAspectRatioOrNull(
+    private static @Nullable Float safeAspectRatioOrNull(
             ProportionalDimensionProp proportionalDimensionProp) {
         final int dividend = proportionalDimensionProp.getAspectRatioWidth();
         final int divisor = proportionalDimensionProp.getAspectRatioHeight();
@@ -1395,8 +1372,7 @@ public final class ProtoLayoutInflater {
     }
 
     /** Given the integer representation of 4 characters ASCII code, returns the String of it. */
-    @NonNull
-    private static String toTagString(int tagCode) {
+    private static @NonNull String toTagString(int tagCode) {
         return new String(ByteBuffer.allocate(4).putInt(tagCode).array(), US_ASCII);
     }
 
@@ -2199,8 +2175,7 @@ public final class ProtoLayoutInflater {
         return TEXT_ALIGN_DEFAULT;
     }
 
-    @Nullable
-    private static TruncateAt textTruncationToEllipsize(TextOverflow overflowValue) {
+    private static @Nullable TruncateAt textTruncationToEllipsize(TextOverflow overflowValue) {
         switch (overflowValue) {
             case TEXT_OVERFLOW_TRUNCATE:
                 // A null TruncateAt disables adding an ellipsis.
@@ -2279,8 +2254,7 @@ public final class ProtoLayoutInflater {
      * Returns an Android {@link Intent} that can perform the action defined in the given layout
      * {@link LaunchAction}.
      */
-    @Nullable
-    public static Intent buildLaunchActionIntent(
+    public static @Nullable Intent buildLaunchActionIntent(
             @NonNull LaunchAction launchAction,
             @NonNull String clickableId,
             @NonNull String clickableIdExtra) {
@@ -2319,8 +2293,7 @@ public final class ProtoLayoutInflater {
         return loadAction.getRequestState().toBuilder().setLastClickableId(clickableId).build();
     }
 
-    @Nullable
-    private InflatedView inflateColumn(
+    private @Nullable InflatedView inflateColumn(
             ParentViewWrapper parentViewWrapper,
             Column column,
             String columnPosId,
@@ -2380,8 +2353,7 @@ public final class ProtoLayoutInflater {
                 numMissingChildren);
     }
 
-    @Nullable
-    private InflatedView inflateRow(
+    private @Nullable InflatedView inflateRow(
             ParentViewWrapper parentViewWrapper,
             Row row,
             String rowPosId,
@@ -2440,8 +2412,7 @@ public final class ProtoLayoutInflater {
 
     // dereference of possibly-null reference lp
     @SuppressWarnings("nullness:dereference.of.nullable")
-    @Nullable
-    private InflatedView inflateBox(
+    private @Nullable InflatedView inflateBox(
             ParentViewWrapper parentViewWrapper,
             Box box,
             String boxPosId,
@@ -2534,8 +2505,7 @@ public final class ProtoLayoutInflater {
                 numMissingChildren);
     }
 
-    @Nullable
-    private InflatedView inflateSpacer(
+    private @Nullable InflatedView inflateSpacer(
             ParentViewWrapper parentViewWrapper,
             Spacer spacer,
             String posId,
@@ -2554,8 +2524,8 @@ public final class ProtoLayoutInflater {
         // Initialize the size wrapper here, if needed. This simplifies the logic below when
         // creating the actual Spacer and adding it to its parent...
         FrameLayout sizeWrapper = null;
-        @Nullable Float widthForLayoutDp = resolveSizeForLayoutIfNeeded(spacer.getWidth());
-        @Nullable Float heightForLayoutDp = resolveSizeForLayoutIfNeeded(spacer.getHeight());
+        Float widthForLayoutDp = resolveSizeForLayoutIfNeeded(spacer.getWidth());
+        Float heightForLayoutDp = resolveSizeForLayoutIfNeeded(spacer.getHeight());
 
         // Handling dynamic width/height for the spacer.
         if (widthForLayoutDp != null || heightForLayoutDp != null) {
@@ -2743,8 +2713,7 @@ public final class ProtoLayoutInflater {
                 });
     }
 
-    @Nullable
-    private InflatedView inflateArcSpacer(
+    private @Nullable InflatedView inflateArcSpacer(
             ParentViewWrapper parentViewWrapper,
             ArcSpacer spacer,
             String posId,
@@ -2870,7 +2839,7 @@ public final class ProtoLayoutInflater {
 
         textView.setGravity(textAlignToAndroidGravity(text.getMultilineAlignment().getValue()));
 
-        @Nullable String valueForLayout = resolveValueForLayoutIfNeeded(text.getText());
+        String valueForLayout = resolveValueForLayoutIfNeeded(text.getText());
 
         // Use valueForLayout as a proxy for "has a dynamic size". If there's a dynamic binding for
         // the text element, then it can only have a single line of text.
@@ -3124,8 +3093,7 @@ public final class ProtoLayoutInflater {
     }
 
     @SuppressWarnings("ExecutorTaskName")
-    @Nullable
-    private InflatedView inflateImage(
+    private @Nullable InflatedView inflateImage(
             ParentViewWrapper parentViewWrapper,
             Image image,
             String posId,
@@ -3155,7 +3123,7 @@ public final class ProtoLayoutInflater {
         }
 
         // Pull the ratio for the RatioViewWrapper. Was either argument a proportional dimension?
-        @Nullable Float ratio = RatioViewWrapper.UNDEFINED_ASPECT_RATIO;
+        Float ratio = RatioViewWrapper.UNDEFINED_ASPECT_RATIO;
 
         if (image.getWidth().getInnerCase() == ImageDimension.InnerCase.PROPORTIONAL_DIMENSION) {
             ratio = safeAspectRatioOrNull(image.getWidth().getProportionalDimension());
@@ -3322,8 +3290,7 @@ public final class ProtoLayoutInflater {
      * @return Returns the drawable if it is successfully retrieved from the drawable future and set
      *     to the image view; otherwise returns null to indicate the failure of setting drawable.
      */
-    @Nullable
-    private Drawable setImageDrawable(
+    private @Nullable Drawable setImageDrawable(
             ImageView imageView, Future<Drawable> drawableFuture, String protoResId) {
         try {
             return setImageDrawable(imageView, drawableFuture.get(), protoResId);
@@ -3339,8 +3306,8 @@ public final class ProtoLayoutInflater {
      * @return Returns the drawable if it is successfully set to the image view; otherwise returns
      *     null to indicate the failure of setting drawable.
      */
-    @Nullable
-    private Drawable setImageDrawable(ImageView imageView, Drawable drawable, String protoResId) {
+    private @Nullable Drawable setImageDrawable(ImageView imageView, Drawable drawable,
+            String protoResId) {
         if (drawable != null) {
             mInflaterStatsLogger.logDrawableUsage(drawable);
         }
@@ -3354,8 +3321,7 @@ public final class ProtoLayoutInflater {
         return drawable;
     }
 
-    @Nullable
-    private InflatedView inflateArcLine(
+    private @Nullable InflatedView inflateArcLine(
             ParentViewWrapper parentViewWrapper,
             ArcLine line,
             String posId,
@@ -3465,7 +3431,7 @@ public final class ProtoLayoutInflater {
             SizedArcContainer.LayoutParams sizedLp =
                     new SizedArcContainer.LayoutParams(
                             LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
-            @Nullable Float sizeForLayout = resolveSizeForLayoutIfNeeded(length);
+            Float sizeForLayout = resolveSizeForLayoutIfNeeded(length);
             if (sizeForLayout != null) {
                 sizeWrapper = new SizedArcContainer(mUiContext);
                 sizeWrapper.setArcDirection(arcLineDirection);
@@ -3511,8 +3477,7 @@ public final class ProtoLayoutInflater {
 
     // dereference of possibly-null reference childLayoutParams
     @SuppressWarnings("nullness:dereference.of.nullable")
-    @Nullable
-    private InflatedView inflateArc(
+    private @Nullable InflatedView inflateArc(
             ParentViewWrapper parentViewWrapper,
             Arc arc,
             String arcPosId,
@@ -3571,8 +3536,7 @@ public final class ProtoLayoutInflater {
             int index = FIRST_CHILD_INDEX;
             for (ArcLayoutElement child : arc.getContentsList()) {
                 String childPosId = ProtoLayoutDiffer.createNodePosId(arcPosId, index++);
-                @Nullable
-                InflatedView childView =
+                                InflatedView childView =
                         inflateArcLayoutElement(
                                 new ParentViewWrapper(arcLayout, layoutParams),
                                 child,
@@ -3710,7 +3674,7 @@ public final class ProtoLayoutInflater {
             }
         } else {
             // If the future is not done, add an empty drawable to builder as a placeholder.
-            @Nullable Drawable placeholderDrawable = null;
+            Drawable placeholderDrawable = null;
 
             try {
                 if (mLayoutResourceResolvers.hasPlaceholderDrawable(protoResId)) {
@@ -3914,8 +3878,7 @@ public final class ProtoLayoutInflater {
                         .applyPendingChildLayoutParams(layoutParams));
     }
 
-    @Nullable
-    private InflatedView inflateArcLayoutElement(
+    private @Nullable InflatedView inflateArcLayoutElement(
             ParentViewWrapper parentViewWrapper,
             ArcLayoutElement element,
             String nodePosId,
@@ -4032,8 +3995,7 @@ public final class ProtoLayoutInflater {
         return false;
     }
 
-    @Nullable
-    private InflatedView inflateLayoutElement(
+    private @Nullable InflatedView inflateLayoutElement(
             ParentViewWrapper parentViewWrapper,
             LayoutElement element,
             String nodePosId,
@@ -4138,8 +4100,7 @@ public final class ProtoLayoutInflater {
         return inflatedView;
     }
 
-    @Nullable
-    private InflatedView inflateExtension(
+    private @Nullable InflatedView inflateExtension(
             ParentViewWrapper parentViewWrapper, ExtensionLayoutElement element) {
         int widthPx = safeDpToPx(element.getWidth().getLinearDimension());
         int heightPx = safeDpToPx(element.getHeight().getLinearDimension());
@@ -4338,8 +4299,7 @@ public final class ProtoLayoutInflater {
      * Resolves the value for layout to be used in a Size Wrapper for elements containing dynamic
      * values. Returns null if no size wrapper is needed.
      */
-    @Nullable
-    private String resolveValueForLayoutIfNeeded(StringProp stringProp) {
+    private @Nullable String resolveValueForLayoutIfNeeded(StringProp stringProp) {
         if (!stringProp.hasDynamicValue() || !mDataPipeline.isPresent()) {
             return null;
         }
@@ -4356,8 +4316,7 @@ public final class ProtoLayoutInflater {
      * Resolves the value for layout to be used in a Size Wrapper for elements containing dynamic
      * values. Returns null if no size wrapper is needed.
      */
-    @Nullable
-    private Float resolveSizeForLayoutIfNeeded(SpacerDimension spacerDimension) {
+    private @Nullable Float resolveSizeForLayoutIfNeeded(SpacerDimension spacerDimension) {
         DpProp dimension = spacerDimension.getLinearDimension();
         if (!dimension.hasDynamicValue() || !mDataPipeline.isPresent()) {
             return null;
@@ -4374,8 +4333,7 @@ public final class ProtoLayoutInflater {
      * Resolves the value for layout to be used in a Size Wrapper for elements containing dynamic
      * values. Returns null if no size wrapper is needed.
      */
-    @Nullable
-    private Float resolveSizeForLayoutIfNeeded(DegreesProp degreesProp) {
+    private @Nullable Float resolveSizeForLayoutIfNeeded(DegreesProp degreesProp) {
         if (!degreesProp.hasDynamicValue() || !mDataPipeline.isPresent()) {
             return null;
         }
@@ -4565,8 +4523,7 @@ public final class ProtoLayoutInflater {
      *     <p>This may be null if the proto is empty the top-level LayoutElement has no inner set,
      *     or the top-level LayoutElement contains an unsupported inner type.
      */
-    @Nullable
-    public InflateResult inflate(@NonNull ViewGroup inflateParent) {
+    public @Nullable InflateResult inflate(@NonNull ViewGroup inflateParent) {
 
         // This is a full re-inflation, so we don't need any previous rendering information.
         LayoutInfo.Builder layoutInfoBuilder =
@@ -4617,8 +4574,7 @@ public final class ProtoLayoutInflater {
      * @param targetLayout The target layout that the mutation should result in.
      * @return The mutation that will produce the target layout.
      */
-    @Nullable
-    public ViewGroupMutation computeMutation(
+    public @Nullable ViewGroupMutation computeMutation(
             @NonNull RenderedMetadata prevRenderedMetadata,
             @NonNull Layout targetLayout,
             @NonNull ViewProperties parentViewProp) {
@@ -4626,8 +4582,7 @@ public final class ProtoLayoutInflater {
             Log.w(TAG, "No previous fingerprint available.");
             return null;
         }
-        @Nullable
-        LayoutDiff diff =
+                LayoutDiff diff =
                 ProtoLayoutDiffer.getDiff(prevRenderedMetadata.getTreeFingerprint(), targetLayout);
         if (diff == null) {
             Log.w(TAG, "getDiff failed");
@@ -4665,8 +4620,7 @@ public final class ProtoLayoutInflater {
                 }
 
                 // The parent node might also have been updated.
-                @Nullable
-                ViewProperties possibleUpdatedParentInfo =
+                                ViewProperties possibleUpdatedParentInfo =
                         layoutInfoBuilder.getViewPropertiesFor(parentNodePosId);
                 parentInfo =
                         possibleUpdatedParentInfo != null
@@ -4675,8 +4629,8 @@ public final class ProtoLayoutInflater {
                                         prevLayoutInfo.getViewPropertiesFor(parentNodePosId));
             }
             InflatedView inflatedView = null;
-            @Nullable LayoutElement updatedLayoutElement = changedNode.getLayoutElement();
-            @Nullable ArcLayoutElement updatedArcLayoutElement = changedNode.getArcLayoutElement();
+            LayoutElement updatedLayoutElement = changedNode.getLayoutElement();
+            ArcLayoutElement updatedArcLayoutElement = changedNode.getArcLayoutElement();
             if (updatedLayoutElement != null) {
                 inflatedView =
                         inflateLayoutElement(
@@ -4724,8 +4678,7 @@ public final class ProtoLayoutInflater {
 
     /** Apply the mutation that was previously computed with {@link #computeMutation}. */
     @UiThread
-    @NonNull
-    public ListenableFuture<RenderingArtifact> applyMutation(
+    public @NonNull ListenableFuture<RenderingArtifact> applyMutation(
             @NonNull ViewGroup prevInflatedParent, @NonNull ViewGroupMutation groupMutation) {
         RenderedMetadata prevRenderedMetadata = getRenderedMetadata(prevInflatedParent);
         if (prevRenderedMetadata != null
@@ -4836,8 +4789,7 @@ public final class ProtoLayoutInflater {
 
     /** Returns the {@link RenderedMetadata} attached to {@code inflateParent}. */
     @UiThread
-    @Nullable
-    public static RenderedMetadata getRenderedMetadata(@NonNull ViewGroup inflateParent) {
+    public static @Nullable RenderedMetadata getRenderedMetadata(@NonNull ViewGroup inflateParent) {
         Object prevMetadataObject = inflateParent.getTag(R.id.rendered_metadata_tag);
         if (prevMetadataObject instanceof RenderedMetadata) {
             return (RenderedMetadata) prevMetadataObject;

@@ -54,7 +54,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.graphics.filters"
+    namespace = "androidx.graphics.filters"
 }
 
 androidx {

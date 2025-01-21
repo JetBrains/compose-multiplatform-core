@@ -18,10 +18,10 @@ package androidx.webkit.internal;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -58,9 +58,8 @@ public abstract class ApiFeature implements ConditionallySupportedFeature {
         sValues.add(this);
     }
 
-    @NonNull
     @Override
-    public String getPublicFeatureName() {
+    public @NonNull String getPublicFeatureName() {
         return mPublicFeatureValue;
     }
 
@@ -90,15 +89,13 @@ public abstract class ApiFeature implements ConditionallySupportedFeature {
     /**
      * Get all instantiated values of this class as if it was an enum.
      */
-    @NonNull
-    public static Set<ApiFeature> values() {
+    public static @NonNull Set<ApiFeature> values() {
         return Collections.unmodifiableSet(sValues);
     }
 
 
-    @NonNull
     @VisibleForTesting
-    public static Set<String> getWebViewApkFeaturesForTesting() {
+    public static @NonNull Set<String> getWebViewApkFeaturesForTesting() {
         return LAZY_HOLDER.WEBVIEW_APK_FEATURES;
     }
 

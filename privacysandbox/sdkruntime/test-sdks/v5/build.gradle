@@ -30,7 +30,7 @@ plugins {
 }
 
 android {
-    namespace "androidx.privacysandbox.sdkruntime.testsdk.v5"
+    namespace = "androidx.privacysandbox.sdkruntime.testsdk.v5"
 }
 
 dependencies {

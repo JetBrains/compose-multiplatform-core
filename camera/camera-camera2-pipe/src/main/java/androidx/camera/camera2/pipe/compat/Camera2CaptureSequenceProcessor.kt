@@ -37,6 +37,7 @@ import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.Log.MonitoredLogMessages.REPEATING_REQUEST_STARTED_TIMEOUT
+import androidx.camera.camera2.pipe.core.Threading
 import androidx.camera.camera2.pipe.core.Threads
 import androidx.camera.camera2.pipe.graph.StreamGraphImpl
 import androidx.camera.camera2.pipe.media.AndroidImageWriter
@@ -45,8 +46,6 @@ import androidx.camera.camera2.pipe.writeParameters
 import javax.inject.Inject
 import kotlin.reflect.KClass
 import kotlinx.atomicfu.atomic
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.withTimeout
 
 internal interface Camera2CaptureSequenceProcessorFactory {
     fun create(
@@ -102,9 +101,6 @@ internal class Camera2CaptureSequenceProcessor(
     private val debugId = captureSequenceProcessorDebugIds.incrementAndGet()
     private val lock = Any()
 
-    @GuardedBy("lock") private var closed = false
-
-    // TODO: Review if there's a better option than having a closed and disconnected state
     @GuardedBy("lock") private var disconnected = false
 
     @GuardedBy("lock")
@@ -165,10 +161,8 @@ internal class Camera2CaptureSequenceProcessor(
                 }
                 val image = request.inputRequest.image
                 synchronized(lock) {
-                    if (closed || disconnected) {
-                        Log.warn {
-                            "$this closed or disconnected. $image can't be queued to $imageWriter"
-                        }
+                    if (disconnected) {
+                        Log.warn { "$this disconnected. $image can't be queued to $imageWriter" }
                         return null
                     }
                 }
@@ -300,8 +294,8 @@ internal class Camera2CaptureSequenceProcessor(
 
     override fun submit(captureSequence: Camera2CaptureSequence): Int? =
         synchronized(lock) {
-            if (closed) {
-                Log.warn { "$this closed. $captureSequence won't be submitted" }
+            if (disconnected) {
+                Log.warn { "$this disconnected. $captureSequence won't be submitted" }
                 return null
             }
             val captureCallback = captureSequence as CameraCaptureSession.CaptureCallback
@@ -343,31 +337,26 @@ internal class Camera2CaptureSequenceProcessor(
         }
 
     override suspend fun shutdown() {
-        val captureSequence: Camera2CaptureSequence?
-        synchronized(lock) {
-            if (closed) {
-                return
-            }
-            closed = true
-            captureSequence = lastSingleRepeatingRequestSequence
-        }
-
-        if (awaitRepeatingRequestOnDisconnect && captureSequence != null) {
-            awaitRepeatingRequestStarted(captureSequence)
-        }
-
         disconnect()
     }
 
     internal fun disconnect() {
         // Shutdown is responsible for releasing resources that are no longer in use.
         Debug.trace("$this#disconnect") {
-            synchronized(lock) {
-                if (!disconnected) {
-                    disconnected = true
-                    imageWriter?.close()
-                    session.inputSurface?.release()
+            val captureSequence: Camera2CaptureSequence? =
+                synchronized(lock) {
+                    if (!disconnected) {
+                        disconnected = true
+                        imageWriter?.close()
+                        session.inputSurface?.release()
+                        lastSingleRepeatingRequestSequence
+                    } else {
+                        null
+                    }
                 }
+            // Wait for the last submitted repeating request sequence to start, if one was set.
+            if (awaitRepeatingRequestOnDisconnect && captureSequence != null) {
+                awaitRepeatingRequestStarted(captureSequence)
             }
         }
     }
@@ -376,7 +365,7 @@ internal class Camera2CaptureSequenceProcessor(
         return "Camera2CaptureSequenceProcessor-$debugId"
     }
 
-    private suspend fun awaitRepeatingRequestStarted(captureSequence: Camera2CaptureSequence) {
+    private fun awaitRepeatingRequestStarted(captureSequence: Camera2CaptureSequence) {
         Log.debug { "Waiting for the last repeating request sequence: $captureSequence" }
         // On certain devices, the submitted repeating request sequence may not give
         // us onCaptureStarted() or onCaptureSequenceAborted() [1]. Hence we wrap
@@ -384,15 +373,16 @@ internal class Camera2CaptureSequenceProcessor(
         //
         // [1] b/307588161 - [ANR] at
         // androidx.camera.camera2.pipe.compat.Camera2CaptureSequenceProcessor.close
-        try {
-            withTimeout(WAIT_FOR_REPEATING_TIMEOUT_MS) { captureSequence.awaitStarted() }
-        } catch (e: TimeoutCancellationException) {
-            Log.error {
+        Threading.runBlockingCheckedOrNull(
+            threads.backgroundDispatcher,
+            WAIT_FOR_REPEATING_TIMEOUT_MS,
+        ) {
+            captureSequence.awaitStarted()
+        }
+            ?: Log.error {
                 "$this#close: $REPEATING_REQUEST_STARTED_TIMEOUT" +
                     ", lastSingleRepeatingRequestSequence = $captureSequence"
             }
-            throw e
-        }
     }
 
     /**

@@ -21,7 +21,7 @@ import android.os.Bundle;
 import android.view.KeyEvent;
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class KeycodeTestActivity extends Activity {
 

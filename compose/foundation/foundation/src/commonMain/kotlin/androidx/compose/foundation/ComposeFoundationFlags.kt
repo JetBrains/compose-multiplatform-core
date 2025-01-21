@@ -16,8 +16,6 @@
 
 package androidx.compose.foundation
 
-import androidx.compose.foundation.text.BasicText
-import androidx.compose.ui.graphics.graphicsLayer
 import kotlin.jvm.JvmField
 
 /**
@@ -64,16 +62,6 @@ object ComposeFoundationFlags {
      * propagate the remaining velocity through onPostFling.
      */
     @Suppress("MutableBareField") @JvmField var NewNestedFlingPropagationEnabled = true
-
-    /**
-     * We have removed the implicit [graphicsLayer] from [BasicText]. This also affects the `Text`
-     * composable in material modules.
-     *
-     * This change ideally improves the initial rendering performance of [BasicText] but it may have
-     * negative effect on recomposition or redraw since [BasicText]s draw operations would not be
-     * cached in a separate layer.
-     */
-    @JvmField @Suppress("MutableBareField") var RemoveBasicTextGraphicsLayerEnabled: Boolean = true
 
     /**
      * Selecting flag to enable Drag Gesture "Pick-up" on drag gesture detectors. This also applies

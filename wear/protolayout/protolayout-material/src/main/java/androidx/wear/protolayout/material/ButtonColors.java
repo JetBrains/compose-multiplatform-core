@@ -19,8 +19,9 @@ package androidx.wear.protolayout.material;
 import static androidx.wear.protolayout.ColorBuilders.argb;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
 import androidx.wear.protolayout.ColorBuilders.ColorProp;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents the background and content colors used in {@link Button}.
@@ -30,8 +31,8 @@ import androidx.wear.protolayout.ColorBuilders.ColorProp;
  * secondary styled {@link Button}.
  */
 public class ButtonColors {
-    @NonNull private final ColorProp mBackgroundColor;
-    @NonNull private final ColorProp mContentColor;
+    private final @NonNull ColorProp mBackgroundColor;
+    private final @NonNull ColorProp mContentColor;
 
     /**
      * Constructor for {@link ButtonColors} object.
@@ -61,8 +62,7 @@ public class ButtonColors {
      * Returns a {@link ButtonColors} object, using the current Primary colors from the given {@link
      * Colors}.
      */
-    @NonNull
-    public static ButtonColors primaryButtonColors(@NonNull Colors colors) {
+    public static @NonNull ButtonColors primaryButtonColors(@NonNull Colors colors) {
         return new ButtonColors(colors.getPrimary(), colors.getOnPrimary());
     }
 
@@ -70,20 +70,17 @@ public class ButtonColors {
      * Returns a {@link ButtonColors} object, using the current Surface colors from the given {@link
      * Colors}.
      */
-    @NonNull
-    public static ButtonColors secondaryButtonColors(@NonNull Colors colors) {
+    public static @NonNull ButtonColors secondaryButtonColors(@NonNull Colors colors) {
         return new ButtonColors(colors.getSurface(), colors.getOnSurface());
     }
 
     /** The background color to be used on {@link Button}. */
-    @NonNull
-    public ColorProp getBackgroundColor() {
+    public @NonNull ColorProp getBackgroundColor() {
         return mBackgroundColor;
     }
 
     /** The content or tint color to be used on {@link Button}. */
-    @NonNull
-    public ColorProp getContentColor() {
+    public @NonNull ColorProp getContentColor() {
         return mContentColor;
     }
 }

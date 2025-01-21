@@ -26,8 +26,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.navigation3.ViewModelStoreNavContentWrapper
 import androidx.navigation3.AnimatedNavDisplay
 import androidx.navigation3.NavDisplay
-import androidx.navigation3.Record
+import androidx.navigation3.NavRecord
 import androidx.navigation3.SavedStateNavContentWrapper
+import androidx.navigation3.record
+import androidx.navigation3.recordProvider
 import androidx.navigation3.rememberNavWrapperManager
 
 @Sampled
@@ -42,33 +44,22 @@ fun BasicNav() {
         backstack = backStack,
         wrapperManager = manager,
         onBack = { backStack.removeLast() },
-    ) { key ->
-        when (key) {
-            Profile -> {
-                Record(Profile) {
+        recordProvider =
+            recordProvider({ NavRecord(Unit) { Text(text = "Invalid Key") } }) {
+                record<Profile> {
                     val viewModel = viewModel<ProfileViewModel>()
                     Profile(viewModel, { backStack.add(it) }) { backStack.removeLast() }
                 }
-            }
-            Scrollable -> {
-                Record(Scrollable) { Scrollable({ backStack.add(it) }) { backStack.removeLast() } }
-            }
-            Dialog -> {
-                Record(Dialog, featureMap = NavDisplay.isDialog(true)) { third ->
+                record<Scrollable> { Scrollable({ backStack.add(it) }) { backStack.removeLast() } }
+                record<Dialog>(featureMap = NavDisplay.isDialog(true)) {
                     DialogContent { backStack.removeLast() }
                 }
-            }
-            is Dashboard -> {
-                Record(key) { dashboardArgs ->
+                record<Dashboard> { dashboardArgs ->
                     val userId = dashboardArgs.userId
                     Dashboard(userId, onBack = { backStack.removeLast() })
                 }
             }
-            else -> {
-                Record(Unit) { Text(text = "Invalid Key") }
-            }
-        }
-    }
+    )
 }
 
 class ProfileViewModel : ViewModel() {
@@ -87,11 +78,9 @@ fun AnimatedNav() {
         backstack = backStack,
         wrapperManager = manager,
         onBack = { backStack.removeLast() },
-    ) { key ->
-        when (key) {
-            Profile -> {
-                Record(
-                    Profile,
+        recordProvider =
+            recordProvider({ NavRecord(Unit) { Text(text = "Invalid Key") } }) {
+                record<Profile>(
                     AnimatedNavDisplay.transition(
                         slideInHorizontally { it },
                         slideOutHorizontally { it }
@@ -100,10 +89,7 @@ fun AnimatedNav() {
                     val viewModel = viewModel<ProfileViewModel>()
                     Profile(viewModel, { backStack.add(it) }) { backStack.removeLast() }
                 }
-            }
-            Scrollable -> {
-                Record(
-                    Scrollable,
+                record<Scrollable>(
                     AnimatedNavDisplay.transition(
                         slideInHorizontally { it },
                         slideOutHorizontally { it }
@@ -111,15 +97,10 @@ fun AnimatedNav() {
                 ) {
                     Scrollable({ backStack.add(it) }) { backStack.removeLast() }
                 }
-            }
-            Dialog -> {
-                Record(Dialog, featureMap = NavDisplay.isDialog(true)) {
+                record<Dialog>(featureMap = NavDisplay.isDialog(true)) {
                     DialogContent { backStack.removeLast() }
                 }
-            }
-            is Dashboard -> {
-                Record(
-                    key,
+                record<Dashboard>(
                     AnimatedNavDisplay.transition(
                         slideInHorizontally { it },
                         slideOutHorizontally { it }
@@ -129,9 +110,5 @@ fun AnimatedNav() {
                     Dashboard(userId, onBack = { backStack.removeLast() })
                 }
             }
-            else -> {
-                Record(Unit) { Text(text = "Invalid Key") }
-            }
-        }
-    }
+    )
 }

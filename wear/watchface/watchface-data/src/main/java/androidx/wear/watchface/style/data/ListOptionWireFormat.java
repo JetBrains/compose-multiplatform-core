@@ -18,11 +18,12 @@ package androidx.wear.watchface.style.data;
 
 import android.graphics.drawable.Icon;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Wire format for {@link androidx.wear.watchface.style.ListUserStyleSetting.ListOption}.
@@ -33,20 +34,18 @@ import androidx.versionedparcelable.VersionedParcelize;
 public class ListOptionWireFormat extends OptionWireFormat {
     /** Localized human readable name for the setting, used in the style selection UI. */
     @ParcelField(2)
-    @NonNull
-    public CharSequence mDisplayName = "";
+    public @NonNull CharSequence mDisplayName = "";
 
     /** Icon for use in the style selection UI. */
     @ParcelField(3)
-    @Nullable
-    public Icon mIcon = null;
+    public @Nullable Icon mIcon = null;
 
     // WARNING: This class is held in a list and can't change due to flaws in VersionedParcelable.
 
     ListOptionWireFormat() {}
 
     public ListOptionWireFormat(
-            @NonNull byte[] id, @NonNull CharSequence displayName, @Nullable Icon icon) {
+            byte @NonNull [] id, @NonNull CharSequence displayName, @Nullable Icon icon) {
         super(id);
         this.mDisplayName = displayName;
         this.mIcon = icon;

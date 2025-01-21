@@ -21,6 +21,8 @@ import android.os.Looper
 import android.view.View
 import androidx.annotation.VisibleForTesting
 import androidx.compose.ui.platform.ViewRootForTest
+import androidx.compose.ui.test.platform.makeSynchronizedObject
+import androidx.compose.ui.test.platform.synchronized
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -39,7 +41,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  */
 internal class ComposeRootRegistry {
 
-    private val lock = Any()
+    private val lock = makeSynchronizedObject()
     private val allRoots = Collections.newSetFromMap(WeakHashMap<ViewRootForTest, Boolean>())
     private val resumedRoots = mutableSetOf<ViewRootForTest>()
     private val registryListeners = mutableSetOf<OnRegistrationChangedListener>()

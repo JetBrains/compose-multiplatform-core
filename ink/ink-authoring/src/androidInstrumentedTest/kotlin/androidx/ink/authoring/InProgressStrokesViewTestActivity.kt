@@ -32,9 +32,6 @@ class InProgressStrokesViewTestActivity : Activity() {
 
         inProgressStrokesView = InProgressStrokesView(this)
 
-        @Suppress("DEPRECATION")
-        inProgressStrokesView.useNewTPlusRenderHelper = true
-
         setContentView(inProgressStrokesView)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)

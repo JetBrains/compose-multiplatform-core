@@ -17,7 +17,6 @@
 package androidx.benchmark
 
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 
 /**
@@ -30,7 +29,6 @@ import androidx.annotation.RestrictTo
  * missed.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@RequiresApi(21)
 public class PropOverride(private val propName: String, private val overrideValue: String) {
     private var resetValue: String? = null
 

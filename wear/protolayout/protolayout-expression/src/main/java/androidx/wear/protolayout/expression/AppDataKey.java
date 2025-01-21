@@ -16,7 +16,7 @@
 
 package androidx.wear.protolayout.expression;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represent a {@link DynamicDataKey} that references app/tile pushed state data.
@@ -24,7 +24,7 @@ import androidx.annotation.NonNull;
  * @param <T> The data type of the dynamic values that this key is bound to.
  */
 public final class AppDataKey<T extends DynamicBuilders.DynamicType> extends DynamicDataKey<T> {
-    @NonNull private static final String DEFAULT_NAMESPACE = "";
+    private static final @NonNull String DEFAULT_NAMESPACE = "";
 
     /**
      * Create a {@link AppDataKey} with the specified key.

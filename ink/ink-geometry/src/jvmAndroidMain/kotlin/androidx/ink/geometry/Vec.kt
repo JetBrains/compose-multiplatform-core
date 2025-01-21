@@ -18,6 +18,7 @@ package androidx.ink.geometry
 
 import androidx.annotation.FloatRange
 import androidx.annotation.RestrictTo
+import androidx.ink.geometry.internal.VecNative
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.hypot
@@ -140,8 +141,7 @@ public abstract class Vec internal constructor() {
         other: Vec,
         @AngleRadiansFloat @FloatRange(from = 0.0) angleTolerance: Float,
     ): Boolean {
-        val absoluteAngle = absoluteAngleBetween(this, other)
-        return abs(absoluteAngle - (Math.PI / 2)) < angleTolerance
+        return abs(absoluteAngleBetween(this, other) - (Math.PI / 2)) < angleTolerance
     }
 
     /**

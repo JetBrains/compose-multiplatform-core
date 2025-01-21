@@ -22,11 +22,12 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.androidx.mediarouting.R;
 import com.example.androidx.mediarouting.data.RouteItem;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -42,9 +43,8 @@ public final class RoutesAdapter extends RecyclerView.Adapter<RoutesAdapter.Rout
         this.mRouteItemListener = routeItemListener;
     }
 
-    @NonNull
     @Override
-    public RouteViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public @NonNull RouteViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view =
                 LayoutInflater.from(parent.getContext())
                         .inflate(R.layout.route_item, parent, false);

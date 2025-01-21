@@ -23,7 +23,7 @@ plugins {
 }
 
 android {
-    namespace "androidx.datastore.testapp"
+    namespace = "androidx.datastore.testapp"
 }
 
 dependencies {

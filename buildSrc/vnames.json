@@ -1,27 +1,27 @@
 [
   {
-    "pattern": "out/(.*)",
+    "pattern": "^out/(.*)",
     "vname": {
       "root": "out",
       "path": "@1@"
     }
   },
   {
-    "pattern": "prebuilts/androidx/external/(.*)",
+    "pattern": "^prebuilts/androidx/external/(.*)",
     "vname": {
-      "corpus": "android.googlesource.com/platform/prebuilts/androidx/external//androidx-main",
+      "root": "out",
       "path": "@1@"
     }
   },
   {
-    "pattern": "prebuilts/androidx/internal/(.*)",
+    "pattern": "^prebuilts/androidx/internal/(.*)",
     "vname": {
-      "corpus": "android.googlesource.com/platform/prebuilts/androidx/internal//androidx-main",
+      "root": "out",
       "path": "@1@"
     }
   },
   {
-    "pattern": "frameworks/support/(.*)",
+    "pattern": "^frameworks/support/(.*)",
     "vname": {
       "path": "@1@"
     }

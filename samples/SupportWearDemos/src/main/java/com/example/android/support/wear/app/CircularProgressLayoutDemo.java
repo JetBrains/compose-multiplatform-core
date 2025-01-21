@@ -21,11 +21,12 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.wear.widget.CircularProgressLayout;
 
 import com.example.android.support.wear.R;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.TimeUnit;
 

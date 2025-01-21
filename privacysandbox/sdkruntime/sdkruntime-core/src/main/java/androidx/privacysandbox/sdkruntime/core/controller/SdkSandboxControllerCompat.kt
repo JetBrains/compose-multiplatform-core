@@ -29,6 +29,7 @@ import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkProviderCompat
+import androidx.privacysandbox.sdkruntime.core.SdkSandboxClientImportanceListenerCompat
 import androidx.privacysandbox.sdkruntime.core.Versions
 import androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandlerCompat
 import androidx.privacysandbox.sdkruntime.core.controller.impl.LocalImpl
@@ -110,6 +111,30 @@ internal constructor(private val controllerImpl: SandboxControllerImpl) {
         controllerImpl.registerSdkSandboxActivityHandler(handlerCompat)
 
     /**
+     * Registers a listener to be notified of changes in the client's
+     * [android.app.ActivityManager.RunningAppProcessInfo.importance].
+     *
+     * @param executor Executor for running listenerCompat
+     * @param listenerCompat an implementation of [SdkSandboxClientImportanceListenerCompat] to
+     *   register.
+     */
+    fun registerSdkSandboxClientImportanceListener(
+        executor: Executor,
+        listenerCompat: SdkSandboxClientImportanceListenerCompat
+    ) = controllerImpl.registerSdkSandboxClientImportanceListener(executor, listenerCompat)
+
+    /**
+     * Unregisters a listener previously registered using
+     * [registerSdkSandboxClientImportanceListener]
+     *
+     * @param listenerCompat an implementation of [SdkSandboxClientImportanceListenerCompat] to
+     *   unregister.
+     */
+    fun unregisterSdkSandboxClientImportanceListener(
+        listenerCompat: SdkSandboxClientImportanceListenerCompat
+    ) = controllerImpl.unregisterSdkSandboxClientImportanceListener(listenerCompat)
+
+    /**
      * Unregister an already registered [SdkSandboxActivityHandlerCompat].
      *
      * If the passed [SdkSandboxActivityHandlerCompat] is registered, it will be unregistered.
@@ -147,6 +172,15 @@ internal constructor(private val controllerImpl: SandboxControllerImpl) {
         fun unregisterSdkSandboxActivityHandler(handlerCompat: SdkSandboxActivityHandlerCompat)
 
         fun getClientPackageName(): String
+
+        fun registerSdkSandboxClientImportanceListener(
+            executor: Executor,
+            listenerCompat: SdkSandboxClientImportanceListenerCompat
+        )
+
+        fun unregisterSdkSandboxClientImportanceListener(
+            listenerCompat: SdkSandboxClientImportanceListenerCompat
+        )
     }
 
     companion object {

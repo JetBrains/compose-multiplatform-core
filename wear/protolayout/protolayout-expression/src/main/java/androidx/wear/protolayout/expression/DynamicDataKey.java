@@ -16,8 +16,8 @@
 
 package androidx.wear.protolayout.expression;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -28,8 +28,8 @@ import java.util.Objects;
  * @param <T> The data type of the dynamic values that this key is bound to.
  */
 public abstract class DynamicDataKey<T extends DynamicBuilders.DynamicType> {
-    @NonNull private final String mKey;
-    @NonNull private final String mNamespace;
+    private final @NonNull String mKey;
+    private final @NonNull String mNamespace;
 
     /**
      * Create a {@link DynamicDataKey} with the specified key in the given namespace.
@@ -43,14 +43,12 @@ public abstract class DynamicDataKey<T extends DynamicBuilders.DynamicType> {
     }
 
     /** Gets the key that references the dynamic data source */
-    @NonNull
-    public String getKey() {
+    public @NonNull String getKey() {
         return mKey;
     }
 
     /** Gets the namespace of the key for the dynamic data source. */
-    @NonNull
-    public String getNamespace() {
+    public @NonNull String getNamespace() {
         return mNamespace;
     }
 
@@ -74,9 +72,8 @@ public abstract class DynamicDataKey<T extends DynamicBuilders.DynamicType> {
         return Objects.hash(mKey, mNamespace);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return String.format("DynamicDataKey{namespace=%s, key=%s}", mNamespace, mKey);
     }
 }

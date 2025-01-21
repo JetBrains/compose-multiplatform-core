@@ -30,21 +30,18 @@ import androidx.health.connect.client.records.SpeedRecord
 import androidx.health.connect.client.records.StepsCadenceRecord
 import androidx.health.connect.client.request.AggregateRequest
 
-internal val AggregateRequest.platformMetrics: Set<AggregateMetric<*>>
-    get() {
-        if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >= 10) {
-            return metrics
-        }
-        return metrics.filterNot { it in AGGREGATE_METRICS_ADDED_IN_SDK_EXT_10 }.toSet()
-    }
+internal fun AggregateRequest.withFilteredMetrics(predicate: (AggregateMetric<*>) -> Boolean) =
+    AggregateRequest(metrics.filter(predicate).toSet(), timeRangeFilter, dataOriginFilter)
 
-internal val AggregateRequest.fallbackMetrics: Set<AggregateMetric<*>>
-    get() {
-        if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >= 10) {
-            return emptySet()
-        }
-        return metrics.filter { it in AGGREGATE_METRICS_ADDED_IN_SDK_EXT_10 }.toSet()
+// Only check against aggregate metrics added in sdk extension 10, to address b/326414908
+// Metrics added later on will be present dependent on feature availability
+internal fun AggregateMetric<*>.isPlatformSupportedMetric(): Boolean {
+    return if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >= 10) {
+        true
+    } else {
+        this !in AGGREGATE_METRICS_ADDED_IN_SDK_EXT_10
     }
+}
 
 internal operator fun AggregationResult.plus(other: AggregationResult): AggregationResult {
     return AggregationResult(

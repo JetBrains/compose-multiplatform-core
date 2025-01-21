@@ -26,5 +26,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.cardview"
+    namespace = "androidx.cardview"
 }

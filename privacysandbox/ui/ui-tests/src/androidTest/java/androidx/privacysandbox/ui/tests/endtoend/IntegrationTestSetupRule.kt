@@ -22,11 +22,10 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
 import androidx.privacysandbox.ui.core.BackwardCompatUtil
-import androidx.privacysandbox.ui.tests.endtoend.IntegrationTests.TestStateChangeListener
+import androidx.privacysandbox.ui.integration.testingutils.TestEventListener
 import androidx.privacysandbox.ui.tests.util.TestSessionManager
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
-import java.util.concurrent.CountDownLatch
 import org.junit.Assume.assumeTrue
 import org.junit.rules.TestRule
 import org.junit.runner.Description
@@ -43,8 +42,7 @@ class IntegrationTestSetupRule(val invokeBackwardsCompatFlow: Boolean) : TestRul
 
     lateinit var activityScenario: ActivityScenario<MainActivity>
     lateinit var view: SandboxedSdkView
-    lateinit var stateChangeListener: TestStateChangeListener
-    lateinit var errorLatch: CountDownLatch
+    lateinit var eventListener: TestEventListener
     lateinit var linearLayout: LinearLayout
     lateinit var sessionManager: TestSessionManager
 
@@ -60,9 +58,8 @@ class IntegrationTestSetupRule(val invokeBackwardsCompatFlow: Boolean) : TestRul
                 activityScenario = ActivityScenario.launch(MainActivity::class.java)
                 activityScenario.onActivity { activity ->
                     view = SandboxedSdkView(context)
-                    errorLatch = CountDownLatch(1)
-                    stateChangeListener = TestStateChangeListener(errorLatch)
-                    view.addStateChangedListener(stateChangeListener)
+                    eventListener = TestEventListener()
+                    view.setEventListener(eventListener)
 
                     linearLayout = LinearLayout(context)
                     linearLayout.layoutParams =

@@ -18,9 +18,10 @@ package androidx.window.extensions.embedding;
 
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.window.extensions.RequiresVendorApiLevel;
 import androidx.window.extensions.core.util.function.Function;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * The parameter container used in standalone {@link ActivityStack} calculator function to report
@@ -32,14 +33,11 @@ import androidx.window.extensions.core.util.function.Function;
  */
 public class ActivityStackAttributesCalculatorParams {
 
-    @NonNull
-    private final ParentContainerInfo mParentContainerInfo;
+    private final @NonNull ParentContainerInfo mParentContainerInfo;
 
-    @NonNull
-    private final String mActivityStackTag;
+    private final @NonNull String mActivityStackTag;
 
-    @NonNull
-    private final Bundle mLaunchOptions;
+    private final @NonNull Bundle mLaunchOptions;
 
     /**
      * {@code ActivityStackAttributesCalculatorParams} constructor.
@@ -62,8 +60,7 @@ public class ActivityStackAttributesCalculatorParams {
      * Returns {@link ParentContainerInfo} of the standalone {@link ActivityStack} to calculate.
      */
     @RequiresVendorApiLevel(level = 6)
-    @NonNull
-    public ParentContainerInfo getParentContainerInfo() {
+    public @NonNull ParentContainerInfo getParentContainerInfo() {
         return mParentContainerInfo;
     }
 
@@ -71,8 +68,7 @@ public class ActivityStackAttributesCalculatorParams {
      * Returns unique identifier of the standalone {@link ActivityStack} to calculate.
      */
     @RequiresVendorApiLevel(level = 6)
-    @NonNull
-    public String getActivityStackTag() {
+    public @NonNull String getActivityStackTag() {
         return mActivityStackTag;
     }
 
@@ -90,14 +86,12 @@ public class ActivityStackAttributesCalculatorParams {
      * options.
      */
     @RequiresVendorApiLevel(level = 6)
-    @NonNull
-    public Bundle getLaunchOptions() {
+    public @NonNull Bundle getLaunchOptions() {
         return mLaunchOptions;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return ActivityStackAttributesCalculatorParams.class.getSimpleName() + ":{"
                 + "parentContainerInfo=" + mParentContainerInfo
                 + "activityStackTag=" + mActivityStackTag

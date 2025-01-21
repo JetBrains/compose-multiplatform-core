@@ -42,10 +42,18 @@ import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.savedstate.SavedState
 import androidx.savedstate.serialization.decodeFromSavedState
 import androidx.savedstate.serialization.encodeToSavedState
+import kotlinx.serialization.InternalSerializationApi
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.descriptors.serialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.decodeStructure
+import kotlinx.serialization.encoding.encodeStructure
+import kotlinx.serialization.serializer
 
 @Serializable
 object Profile {
@@ -172,16 +180,18 @@ private val phrases =
     )
 
 @Composable
-fun rememberMutableStateListOf(vararg elements: Any): SnapshotStateList<Any> {
+fun <T : Any> rememberMutableStateListOf(vararg elements: T): SnapshotStateList<Any> {
     return rememberSaveable(saver = snapshotStateListSaver(serializableListSaver())) {
         elements.toList().toMutableStateList()
     }
 }
 
-inline fun <reified T : Any> serializableListSaver() =
-    listSaver<List<T>, SavedState>(
-        save = { list -> list.map { encodeToSavedState<T>(it) } },
-        restore = { list -> list.map { decodeFromSavedState(it) } }
+inline fun <reified T : Any> serializableListSaver(
+    serializer: KSerializer<T> = UnsafePolymorphicSerializer()
+) =
+    listSaver(
+        save = { list -> list.map { encodeToSavedState(serializer, it) } },
+        restore = { list -> list.map { decodeFromSavedState(serializer, it) } }
     )
 
 @Suppress("UNCHECKED_CAST")
@@ -199,3 +209,34 @@ fun <T> snapshotStateListSaver(
             restore = { state -> restore(state)?.toMutableStateList() }
         )
     }
+
+@OptIn(InternalSerializationApi::class)
+class UnsafePolymorphicSerializer<T : Any> : KSerializer<T> {
+
+    override val descriptor =
+        buildClassSerialDescriptor("PolymorphicData") {
+            element(elementName = "type", serialDescriptor<String>())
+            element(elementName = "payload", buildClassSerialDescriptor("Any"))
+        }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun deserialize(decoder: Decoder): T {
+        return decoder.decodeStructure(descriptor) {
+            val className = decodeStringElement(descriptor, decodeElementIndex(descriptor))
+            val classRef = Class.forName(className).kotlin
+            val serializer = classRef.serializer()
+
+            decodeSerializableElement(descriptor, decodeElementIndex(descriptor), serializer) as T
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun serialize(encoder: Encoder, value: T) {
+        encoder.encodeStructure(descriptor) {
+            val className = value::class.java.canonicalName!!
+            encodeStringElement(descriptor, index = 0, className)
+            val serializer = value::class.serializer() as KSerializer<T>
+            encodeSerializableElement(descriptor, index = 1, serializer, value)
+        }
+    }
+}

@@ -40,36 +40,36 @@ package androidx.health.connect.client.testing {
 
   public final class FakeHealthConnectClientOverrides {
     ctor public FakeHealthConnectClientOverrides();
-    ctor public FakeHealthConnectClientOverrides(optional androidx.health.connect.client.testing.stubs.Stub? getChanges, optional androidx.health.connect.client.testing.stubs.Stub? getChangesToken, optional androidx.health.connect.client.testing.stubs.Stub? readRecords, optional androidx.health.connect.client.testing.stubs.Stub? readRecord, optional androidx.health.connect.client.testing.stubs.Stub? insertRecords, optional androidx.health.connect.client.testing.stubs.Stub? updateRecords, optional androidx.health.connect.client.testing.stubs.Stub? deleteRecords, optional androidx.health.connect.client.testing.stubs.Stub<? super androidx.health.connect.client.request.AggregateRequest,androidx.health.connect.client.aggregate.AggregationResult>? aggregate, optional androidx.health.connect.client.testing.stubs.Stub<? super androidx.health.connect.client.request.AggregateGroupByDurationRequest,? extends java.util.List<androidx.health.connect.client.aggregate.AggregationResultGroupedByDuration>>? aggregateGroupByDuration, optional androidx.health.connect.client.testing.stubs.Stub<? super androidx.health.connect.client.request.AggregateGroupByPeriodRequest,? extends java.util.List<androidx.health.connect.client.aggregate.AggregationResultGroupedByPeriod>>? aggregateGroupByPeriod);
+    ctor public FakeHealthConnectClientOverrides(optional androidx.health.connect.client.testing.stubs.Stub<? super java.lang.String,androidx.health.connect.client.response.ChangesResponse>? getChanges, optional androidx.health.connect.client.testing.stubs.Stub<? super androidx.health.connect.client.request.ChangesTokenRequest,java.lang.String>? getChangesToken, optional androidx.health.connect.client.testing.stubs.Stub<? super androidx.health.connect.client.request.ReadRecordsRequest<? extends java.lang.Object?>,? extends androidx.health.connect.client.response.ReadRecordsResponse<? extends java.lang.Object?>>? readRecords, optional androidx.health.connect.client.testing.stubs.Stub<? super java.lang.String,? extends androidx.health.connect.client.response.ReadRecordResponse<? extends java.lang.Object?>>? readRecord, optional androidx.health.connect.client.testing.stubs.Stub<? super java.util.List<? extends java.lang.Object?>,androidx.health.connect.client.response.InsertRecordsResponse>? insertRecords, optional androidx.health.connect.client.testing.stubs.Stub? updateRecords, optional androidx.health.connect.client.testing.stubs.Stub? deleteRecords, optional androidx.health.connect.client.testing.stubs.Stub<? super androidx.health.connect.client.request.AggregateRequest,androidx.health.connect.client.aggregate.AggregationResult>? aggregate, optional androidx.health.connect.client.testing.stubs.Stub<? super androidx.health.connect.client.request.AggregateGroupByDurationRequest,? extends java.util.List<androidx.health.connect.client.aggregate.AggregationResultGroupedByDuration>>? aggregateGroupByDuration, optional androidx.health.connect.client.testing.stubs.Stub<? super androidx.health.connect.client.request.AggregateGroupByPeriodRequest,? extends java.util.List<androidx.health.connect.client.aggregate.AggregationResultGroupedByPeriod>>? aggregateGroupByPeriod);
     method public androidx.health.connect.client.testing.stubs.Stub<androidx.health.connect.client.request.AggregateRequest,androidx.health.connect.client.aggregate.AggregationResult>? getAggregate();
     method public androidx.health.connect.client.testing.stubs.Stub<androidx.health.connect.client.request.AggregateGroupByDurationRequest,java.util.List<androidx.health.connect.client.aggregate.AggregationResultGroupedByDuration>>? getAggregateGroupByDuration();
     method public androidx.health.connect.client.testing.stubs.Stub<androidx.health.connect.client.request.AggregateGroupByPeriodRequest,java.util.List<androidx.health.connect.client.aggregate.AggregationResultGroupedByPeriod>>? getAggregateGroupByPeriod();
     method public androidx.health.connect.client.testing.stubs.Stub? getDeleteRecords();
-    method public androidx.health.connect.client.testing.stubs.Stub? getGetChanges();
-    method public androidx.health.connect.client.testing.stubs.Stub? getGetChangesToken();
-    method public androidx.health.connect.client.testing.stubs.Stub? getInsertRecords();
-    method public androidx.health.connect.client.testing.stubs.Stub? getReadRecord();
-    method public androidx.health.connect.client.testing.stubs.Stub? getReadRecords();
+    method public androidx.health.connect.client.testing.stubs.Stub<java.lang.String,androidx.health.connect.client.response.ChangesResponse>? getGetChanges();
+    method public androidx.health.connect.client.testing.stubs.Stub<androidx.health.connect.client.request.ChangesTokenRequest,java.lang.String>? getGetChangesToken();
+    method public androidx.health.connect.client.testing.stubs.Stub<java.util.List<? extends java.lang.Object?>,androidx.health.connect.client.response.InsertRecordsResponse>? getInsertRecords();
+    method public androidx.health.connect.client.testing.stubs.Stub<java.lang.String,androidx.health.connect.client.response.ReadRecordResponse<? extends java.lang.Object?>>? getReadRecord();
+    method public androidx.health.connect.client.testing.stubs.Stub<androidx.health.connect.client.request.ReadRecordsRequest<? extends java.lang.Object?>,androidx.health.connect.client.response.ReadRecordsResponse<? extends java.lang.Object?>>? getReadRecords();
     method public androidx.health.connect.client.testing.stubs.Stub? getUpdateRecords();
     method public void setAggregate(androidx.health.connect.client.testing.stubs.Stub<? super androidx.health.connect.client.request.AggregateRequest,androidx.health.connect.client.aggregate.AggregationResult>?);
     method public void setAggregateGroupByDuration(androidx.health.connect.client.testing.stubs.Stub<? super androidx.health.connect.client.request.AggregateGroupByDurationRequest,? extends java.util.List<androidx.health.connect.client.aggregate.AggregationResultGroupedByDuration>>?);
     method public void setAggregateGroupByPeriod(androidx.health.connect.client.testing.stubs.Stub<? super androidx.health.connect.client.request.AggregateGroupByPeriodRequest,? extends java.util.List<androidx.health.connect.client.aggregate.AggregationResultGroupedByPeriod>>?);
     method public void setDeleteRecords(androidx.health.connect.client.testing.stubs.Stub?);
-    method public void setGetChanges(androidx.health.connect.client.testing.stubs.Stub?);
-    method public void setGetChangesToken(androidx.health.connect.client.testing.stubs.Stub?);
-    method public void setInsertRecords(androidx.health.connect.client.testing.stubs.Stub?);
-    method public void setReadRecord(androidx.health.connect.client.testing.stubs.Stub?);
-    method public void setReadRecords(androidx.health.connect.client.testing.stubs.Stub?);
+    method public void setGetChanges(androidx.health.connect.client.testing.stubs.Stub<? super java.lang.String,androidx.health.connect.client.response.ChangesResponse>?);
+    method public void setGetChangesToken(androidx.health.connect.client.testing.stubs.Stub<? super androidx.health.connect.client.request.ChangesTokenRequest,java.lang.String>?);
+    method public void setInsertRecords(androidx.health.connect.client.testing.stubs.Stub<? super java.util.List<? extends java.lang.Object?>,androidx.health.connect.client.response.InsertRecordsResponse>?);
+    method public void setReadRecord(androidx.health.connect.client.testing.stubs.Stub<? super java.lang.String,? extends androidx.health.connect.client.response.ReadRecordResponse<? extends java.lang.Object?>>?);
+    method public void setReadRecords(androidx.health.connect.client.testing.stubs.Stub<? super androidx.health.connect.client.request.ReadRecordsRequest<? extends java.lang.Object?>,? extends androidx.health.connect.client.response.ReadRecordsResponse<? extends java.lang.Object?>>?);
     method public void setUpdateRecords(androidx.health.connect.client.testing.stubs.Stub?);
     property public final androidx.health.connect.client.testing.stubs.Stub<androidx.health.connect.client.request.AggregateRequest,androidx.health.connect.client.aggregate.AggregationResult>? aggregate;
     property public final androidx.health.connect.client.testing.stubs.Stub<androidx.health.connect.client.request.AggregateGroupByDurationRequest,java.util.List<androidx.health.connect.client.aggregate.AggregationResultGroupedByDuration>>? aggregateGroupByDuration;
     property public final androidx.health.connect.client.testing.stubs.Stub<androidx.health.connect.client.request.AggregateGroupByPeriodRequest,java.util.List<androidx.health.connect.client.aggregate.AggregationResultGroupedByPeriod>>? aggregateGroupByPeriod;
     property public final androidx.health.connect.client.testing.stubs.Stub? deleteRecords;
-    property public final androidx.health.connect.client.testing.stubs.Stub? getChanges;
-    property public final androidx.health.connect.client.testing.stubs.Stub? getChangesToken;
-    property public final androidx.health.connect.client.testing.stubs.Stub? insertRecords;
-    property public final androidx.health.connect.client.testing.stubs.Stub? readRecord;
-    property public final androidx.health.connect.client.testing.stubs.Stub? readRecords;
+    property public final androidx.health.connect.client.testing.stubs.Stub<java.lang.String,androidx.health.connect.client.response.ChangesResponse>? getChanges;
+    property public final androidx.health.connect.client.testing.stubs.Stub<androidx.health.connect.client.request.ChangesTokenRequest,java.lang.String>? getChangesToken;
+    property public final androidx.health.connect.client.testing.stubs.Stub<java.util.List<? extends java.lang.Object?>,androidx.health.connect.client.response.InsertRecordsResponse>? insertRecords;
+    property public final androidx.health.connect.client.testing.stubs.Stub<java.lang.String,androidx.health.connect.client.response.ReadRecordResponse<? extends java.lang.Object?>>? readRecord;
+    property public final androidx.health.connect.client.testing.stubs.Stub<androidx.health.connect.client.request.ReadRecordsRequest<? extends java.lang.Object?>,androidx.health.connect.client.response.ReadRecordsResponse<? extends java.lang.Object?>>? readRecords;
     property public final androidx.health.connect.client.testing.stubs.Stub? updateRecords;
   }
 

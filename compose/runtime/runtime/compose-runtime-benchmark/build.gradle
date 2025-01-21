@@ -22,8 +22,8 @@ plugins {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.compose.runtime.benchmark"
+    compileSdk = 35
+    namespace = "androidx.compose.runtime.benchmark"
 }
 
 dependencies {

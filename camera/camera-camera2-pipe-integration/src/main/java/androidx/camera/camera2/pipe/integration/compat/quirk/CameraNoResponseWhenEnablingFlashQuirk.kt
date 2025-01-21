@@ -57,7 +57,8 @@ public class CameraNoResponseWhenEnablingFlashQuirk : UseTorchAsFlashQuirk {
                 "SM-N920V",
                 "SM-N920W8",
                 "SM-N920X",
-                "SM-J510FN" // Galaxy J5
+                "SM-J510FN", // Galaxy J5
+                "VIVO 1610",
             )
 
         public fun isEnabled(cameraMetadata: CameraMetadata): Boolean {

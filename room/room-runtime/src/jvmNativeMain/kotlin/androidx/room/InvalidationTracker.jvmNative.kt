@@ -43,6 +43,7 @@ actual constructor(
             shadowTablesMap = shadowTablesMap,
             viewTables = viewTables,
             tableNames = tableNames,
+            useTempTable = true,
             onInvalidatedTablesIds = {}
         )
 

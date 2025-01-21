@@ -23,7 +23,7 @@ dependencies {
 }
 android {
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.enterprise.feedback"
+    namespace = "androidx.enterprise.feedback"
 }
 
 androidx {

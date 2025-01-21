@@ -16,8 +16,8 @@
 
 package androidx.security.identity;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -51,22 +51,22 @@ class SimpleResultData extends ResultData {
     SimpleResultData() {}
 
     @Override
-    public @NonNull byte[] getAuthenticatedData() {
+    public byte @NonNull [] getAuthenticatedData() {
         return mAuthenticatedData;
     }
 
     @Override
-    public @Nullable byte[] getMessageAuthenticationCode() {
+    public byte @Nullable [] getMessageAuthenticationCode() {
         return mMessageAuthenticationCode;
     }
 
     @Override
-    public @Nullable byte[] getEcdsaSignature() {
+    public byte @Nullable [] getEcdsaSignature() {
         return mEcdsaSignature;
     }
 
     @Override
-    public @NonNull byte[] getStaticAuthenticationData() {
+    public byte @NonNull [] getStaticAuthenticationData() {
         return mStaticAuthenticationData;
     }
 
@@ -118,7 +118,7 @@ class SimpleResultData extends ResultData {
     }
 
     @Override
-    public @Nullable byte[] getEntry(@NonNull String namespaceName, @NonNull String name) {
+    public byte @Nullable [] getEntry(@NonNull String namespaceName, @NonNull String name) {
         EntryData value = getEntryData(namespaceName, name);
         if (value == null) {
             return null;

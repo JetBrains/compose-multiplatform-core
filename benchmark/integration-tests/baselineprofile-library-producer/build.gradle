@@ -32,7 +32,7 @@ plugins {
 
 android {
     defaultConfig {
-        minSdkVersion 23
+        minSdk = 23
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     testOptions.managedDevices.allDevices {
@@ -43,7 +43,7 @@ android {
         }
     }
     targetProjectPath = ":benchmark:integration-tests:baselineprofile-library-app-target"
-    namespace "androidx.benchmark.integration.baselineprofile.library.producer"
+    namespace = "androidx.benchmark.integration.baselineprofile.library.producer"
 }
 
 dependencies {

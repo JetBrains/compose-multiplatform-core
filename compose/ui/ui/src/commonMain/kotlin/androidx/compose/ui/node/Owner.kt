@@ -18,6 +18,7 @@
 package androidx.compose.ui.node
 
 import androidx.annotation.RestrictTo
+import androidx.collection.IntObjectMap
 import androidx.compose.runtime.Applier
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.autofill.Autofill
@@ -66,6 +67,9 @@ internal interface Owner : PositionCalculator {
 
     /** The root layout node in the component tree. */
     val root: LayoutNode
+
+    /** A mapping of semantic id to LayoutNode. */
+    val layoutNodes: IntObjectMap<LayoutNode>
 
     /** Draw scope reused for drawing speed up. */
     val sharedDrawScope: LayoutNodeDrawScope
@@ -263,6 +267,9 @@ internal interface Owner : PositionCalculator {
     fun onLayoutChange(layoutNode: LayoutNode)
 
     fun onLayoutNodeDeactivated(layoutNode: LayoutNode)
+
+    /** Called to do internal upkeep when a [layoutNode] is reused. */
+    fun onLayoutNodeReused(layoutNode: LayoutNode, oldSemanticsId: Int) {}
 
     /**
      * The position and/or size of an interop view (typically, an android.view.View) has changed. On

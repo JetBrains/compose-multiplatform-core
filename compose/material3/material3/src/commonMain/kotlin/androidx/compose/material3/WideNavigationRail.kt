@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -163,7 +164,7 @@ fun WideNavigationRail(
     WideNavigationRailLayout(
         modifier = modifier,
         isModal = false,
-        expanded = state.targetValue,
+        expanded = state.targetValue.isExpanded,
         colors = colors,
         shape = shape,
         header = header,
@@ -456,7 +457,7 @@ fun ModalWideNavigationRail(
         }
     val positionProgress =
         animateFloatAsState(
-            targetValue = if (!state.targetValue) 0f else 1f,
+            targetValue = if (!state.targetValue.isExpanded) 0f else 1f,
             // TODO: Load the motionScheme tokens from the component tokens file.
             animationSpec = MotionSchemeKeyTokens.DefaultEffects.value()
         )
@@ -472,7 +473,7 @@ fun ModalWideNavigationRail(
     val settleToDismiss: suspend (velocity: Float) -> Unit = {
         if (hideOnCollapse) {
             modalState.settle(it)
-            if (!modalState.targetValue) state.collapse()
+            if (!modalState.targetValue.isExpanded) state.collapse()
         }
     }
 
@@ -520,7 +521,7 @@ fun ModalWideNavigationRail(
         val predictiveBackProgress = remember { Animatable(initialValue = 0f) }
         val predictiveBackState = remember { RailPredictiveBackState() }
 
-        SideEffect { channel.trySend(state.targetValue) }
+        SideEffect { channel.trySend(state.targetValue.isExpanded) }
 
         ModalWideNavigationRailDialog(
             properties = expandedProperties,
@@ -532,7 +533,12 @@ fun ModalWideNavigationRail(
             predictiveBackState = predictiveBackState
         ) {
             Box(modifier = Modifier.fillMaxSize().imePadding()) {
-                val isScrimVisible = (hideOnCollapse && modalState.currentValue) || modalExpanded
+                val isScrimVisible =
+                    if (hideOnCollapse) {
+                        (modalState.targetValue != WideNavigationRailValue.Collapsed)
+                    } else {
+                        modalExpanded
+                    }
 
                 Scrim(
                     color = colors.modalScrimColor,
@@ -969,8 +975,8 @@ private fun ModalWideNavigationRailContent(
                         }
                     val maxValue = 0f
                     return@draggableAnchors DraggableAnchors {
-                        false at minValue
-                        true at maxValue
+                        WideNavigationRailValue.Collapsed at minValue
+                        WideNavigationRailValue.Expanded at maxValue
                     } to railState.targetValue
                 }
                 .draggable(

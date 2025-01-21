@@ -21,10 +21,11 @@ import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.models.SelectionBoundary;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
@@ -63,19 +64,16 @@ public class TextSelection implements Parcelable {
         this.mStop = stop;
     }
 
-    @NonNull
-    public SelectionBoundary getStart() {
+    public @NonNull SelectionBoundary getStart() {
         return mStart;
     }
 
-    @NonNull
-    public SelectionBoundary getStop() {
+    public @NonNull SelectionBoundary getStop() {
         return mStop;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return String.format("TextSelection(start=%s, stop=%s)", mStart, mStop);
     }
 

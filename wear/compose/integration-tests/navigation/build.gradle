@@ -22,22 +22,22 @@ plugins {
 }
 
 android {
-    compileSdkVersion 35
+    compileSdk = 35
     defaultConfig {
-        applicationId "androidx.wear.compose.integration.navigation"
-        minSdk 25
+        applicationId = "androidx.wear.compose.integration.navigation"
+        minSdk = 25
     }
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled = false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
     buildFeatures {
-        viewBinding true
+        viewBinding = true
     }
-    namespace "androidx.wear.compose.integration.navigation"
+    namespace = "androidx.wear.compose.integration.navigation"
 }
 
 dependencies {

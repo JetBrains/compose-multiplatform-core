@@ -22,18 +22,18 @@ plugins {
 
 android {
     defaultConfig {
-        applicationId "androidx.camera.integration.diagnose"
+        applicationId = "androidx.camera.integration.diagnose"
     }
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
         }
     }
 
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.camera.integration.diagnose"
+    namespace = "androidx.camera.integration.diagnose"
 }
 
 dependencies {

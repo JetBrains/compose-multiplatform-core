@@ -23,7 +23,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
@@ -34,6 +33,7 @@ import com.google.crypto.tink.integration.android.AndroidKeysetManager;
 import com.google.crypto.tink.streamingaead.AesGcmHkdfStreamingKeyManager;
 import com.google.crypto.tink.streamingaead.StreamingAeadConfig;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Assert;
 import org.junit.AssumptionViolatedException;
 import org.junit.Before;
@@ -79,9 +79,8 @@ public class EncryptedFileTest {
             mText = text;
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return mText;
         }
     }

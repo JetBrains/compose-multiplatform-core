@@ -178,26 +178,27 @@ internal fun animateButtonShape(
 internal fun animateToggleButtonShape(
     uncheckedShape: Shape,
     checkedShape: Shape?,
-    pressedShape: Shape?,
+    uncheckedPressedShape: Shape?,
+    checkedPressedShape: Shape?,
     onPressAnimationSpec: FiniteAnimationSpec<Float>,
     onReleaseAnimationSpec: FiniteAnimationSpec<Float>,
     checked: Boolean,
     interactionSource: MutableInteractionSource?
 ): Pair<Shape, MutableInteractionSource?> {
     return if (checkedShape == null) {
-        // Reuse presssed animation
-
+        // Reuse pressed animation
         return animateButtonShape(
             defaultShape = uncheckedShape,
-            pressedShape = pressedShape,
+            pressedShape = uncheckedPressedShape,
             onPressAnimationSpec = onPressAnimationSpec,
             onReleaseAnimationSpec = onReleaseAnimationSpec,
             interactionSource = interactionSource
         )
     } else if (
         uncheckedShape is RoundedCornerShape &&
-            pressedShape is RoundedCornerShape &&
-            checkedShape is RoundedCornerShape
+            checkedShape is RoundedCornerShape &&
+            uncheckedPressedShape is RoundedCornerShape &&
+            checkedPressedShape is RoundedCornerShape
     ) {
         // Animate between the corner radius
 
@@ -208,7 +209,8 @@ internal fun animateToggleButtonShape(
                 interactionSource = finalInteractionSource,
                 uncheckedCornerSize = uncheckedShape.topEnd,
                 checkedCornerSize = checkedShape.topEnd,
-                pressedCornerSize = pressedShape.topEnd,
+                uncheckedPressedCornerSize = uncheckedPressedShape.topEnd,
+                checkedPressedCornerSize = checkedPressedShape.topEnd,
                 checked = checked,
                 onPressAnimationSpec = onPressAnimationSpec,
                 onReleaseAnimationSpec = onReleaseAnimationSpec,

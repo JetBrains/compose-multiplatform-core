@@ -44,8 +44,8 @@ dependencies {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.core.testing"
+    compileSdk = 35
+    namespace = "androidx.core.testing"
 }
 
 androidx {

@@ -21,9 +21,10 @@ import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.inputmethod.InputMethodManager;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appcompat.widget.AppCompatEditText;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * EditText for search queries which shows/hides the keyboard on focus change.

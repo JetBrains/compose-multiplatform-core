@@ -24,7 +24,6 @@ import android.animation.TypeEvaluator;
 import android.graphics.Color;
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.wear.protolayout.expression.proto.AnimationParameterProto;
 import androidx.wear.protolayout.expression.proto.AnimationParameterProto.AnimationParameters;
@@ -34,6 +33,7 @@ import androidx.wear.protolayout.expression.proto.AnimationParameterProto.Repeat
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Range;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -393,8 +393,7 @@ public class AnimatableNodeTest {
         }
     }
 
-    @NonNull
-    AnimationSpec createAnimationSpec(
+    @NonNull AnimationSpec createAnimationSpec(
             int iterations,
             int forwardDuration,
             int reverseDuration,

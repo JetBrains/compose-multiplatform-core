@@ -24,6 +24,7 @@ import android.graphics.ComposeShader
 import android.graphics.Matrix
 import androidx.ink.brush.BrushPaint
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.color.Color as ComposeColor
 import androidx.ink.rendering.android.TextureBitmapStore
 import androidx.ink.strokes.StrokeInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -52,18 +53,25 @@ class BrushPaintCacheTest {
             )
         val fakeTextureUri = "ink://ink/texture:test-texture-one"
         val brushPaint =
-            BrushPaint(listOf(BrushPaint.TextureLayer(fakeTextureUri, sizeX = 30F, sizeY = 40F)))
+            BrushPaint(
+                listOf(
+                    BrushPaint.TextureLayer(
+                        fakeTextureUri,
+                        sizeX = 30F,
+                        sizeY = 40F,
+                        origin = BrushPaint.TextureOrigin.FIRST_STROKE_INPUT,
+                    )
+                )
+            )
         val brushSize = 10f
-        val internalToStrokeTransform = Matrix().apply { preTranslate(50F, 60F) }
 
         val paint =
             cache.obtain(
                 brushPaint,
-                Color.RED,
+                ComposeColor.Red,
                 brushSize,
+                StrokeInput().apply { update(x = 5f, y = 7f, elapsedTimeMillis = 0L) },
                 StrokeInput(),
-                StrokeInput(),
-                internalToStrokeTransform,
             )
 
         assertThat(uriLoaded).isEqualTo(fakeTextureUri)
@@ -71,26 +79,95 @@ class BrushPaintCacheTest {
         assertThat(paint.shader).isInstanceOf(BitmapShader::class.java)
         val expectedLocalMatrix =
             nestedArrayToMatrix(
-                arrayOf(arrayOf(3F, 0F, -50F), arrayOf(0F, 2F, -60F), arrayOf(0F, 0F, 1.0F))
+                arrayOf(arrayOf(3F, 0F, 5F), arrayOf(0F, 2F, 7F), arrayOf(0F, 0F, 1.0F))
             )
         with(Matrix()) {
             assertThat(paint.shader.getLocalMatrix(this)).isTrue()
             assertThat(this).isEqualTo(expectedLocalMatrix)
         }
 
-        val newInternalToStrokeTransform = Matrix().apply { preTranslate(-50F, -60F) }
         val expectedUpdatedMatrix =
             nestedArrayToMatrix(
-                arrayOf(arrayOf(3F, 0F, 50F), arrayOf(0F, 2F, 60F), arrayOf(0F, 0F, 1.0F))
+                arrayOf(arrayOf(3F, 0F, 0F), arrayOf(0F, 2F, 0F), arrayOf(0F, 0F, 1.0F))
+            )
+        assertThat(
+                cache.obtain(brushPaint, ComposeColor.Red, brushSize, StrokeInput(), StrokeInput())
+            )
+            .isSameInstanceAs(paint)
+        with(Matrix()) {
+            assertThat(paint.shader.getLocalMatrix(this)).isTrue()
+            assertThat(expectedUpdatedMatrix).isNotEqualTo(expectedLocalMatrix)
+            assertThat(this).isEqualTo(expectedUpdatedMatrix)
+        }
+
+        assertThat(
+                cache.obtain(brushPaint, ComposeColor.Blue, brushSize, StrokeInput(), StrokeInput())
+            )
+            .isSameInstanceAs(paint)
+        assertThat(paint.color).isEqualTo(Color.BLUE)
+    }
+
+    @Test
+    fun obtain_withStrokeToGraphicsObjectTransform_shouldHaveCorrectLocalMatrix() {
+        var uriLoaded: String? = null
+        val cache =
+            BrushPaintCache(
+                TextureBitmapStore {
+                    uriLoaded = it
+                    createBitmap(10, 20, Bitmap.Config.ARGB_8888)
+                }
+            )
+        val fakeTextureUri = "ink://ink/texture:test-texture-one"
+        val brushPaint =
+            BrushPaint(
+                listOf(
+                    BrushPaint.TextureLayer(
+                        fakeTextureUri,
+                        sizeX = 30F,
+                        sizeY = 40F,
+                        origin = BrushPaint.TextureOrigin.FIRST_STROKE_INPUT,
+                    )
+                )
+            )
+        val brushSize = 10f
+
+        val paint =
+            cache.obtain(
+                brushPaint,
+                ComposeColor.Red,
+                brushSize,
+                StrokeInput(),
+                StrokeInput(),
+                Matrix().apply { setScale(5F, 5F) },
+            )
+
+        assertThat(uriLoaded).isEqualTo(fakeTextureUri)
+        assertThat(paint.color).isEqualTo(Color.RED)
+        assertThat(paint.shader).isInstanceOf(BitmapShader::class.java)
+        val expectedLocalMatrix =
+            nestedArrayToMatrix(
+                arrayOf(arrayOf(15F, 0F, 0F), arrayOf(0F, 10F, 0F), arrayOf(0F, 0F, 1F))
+            )
+        with(Matrix()) {
+            assertThat(paint.shader.getLocalMatrix(this)).isTrue()
+            assertThat(this).isEqualTo(expectedLocalMatrix)
+        }
+
+        val expectedUpdatedMatrix =
+            nestedArrayToMatrix(
+                arrayOf(arrayOf(21F, 0F, 11F), arrayOf(0F, 14F, 13F), arrayOf(0F, 0F, 1F))
             )
         assertThat(
                 cache.obtain(
                     brushPaint,
-                    Color.RED,
+                    ComposeColor.Red,
                     brushSize,
                     StrokeInput(),
                     StrokeInput(),
-                    newInternalToStrokeTransform,
+                    Matrix().apply {
+                        postScale(7F, 7F)
+                        postTranslate(11F, 13F)
+                    },
                 )
             )
             .isSameInstanceAs(paint)
@@ -101,14 +178,7 @@ class BrushPaintCacheTest {
         }
 
         assertThat(
-                cache.obtain(
-                    brushPaint,
-                    Color.BLUE,
-                    brushSize,
-                    StrokeInput(),
-                    StrokeInput(),
-                    newInternalToStrokeTransform,
-                )
+                cache.obtain(brushPaint, ComposeColor.Blue, brushSize, StrokeInput(), StrokeInput())
             )
             .isSameInstanceAs(paint)
         assertThat(paint.color).isEqualTo(Color.BLUE)
@@ -130,21 +200,19 @@ class BrushPaintCacheTest {
                     )
                 )
             )
-        val internalToStrokeTransform = Matrix().apply { preTranslate(7f, 5f) }
 
         val paint =
             cache.obtain(
                 brushPaint,
-                Color.RED,
+                ComposeColor.Red,
                 brushSize = 10f,
                 StrokeInput(),
-                StrokeInput(),
-                internalToStrokeTransform,
+                StrokeInput()
             )
 
         val expectedLocalMatrix =
             nestedArrayToMatrix(
-                arrayOf(arrayOf(20F, 0F, -7F), arrayOf(0F, 30F, -5F), arrayOf(0F, 0F, 1F))
+                arrayOf(arrayOf(20F, 0F, 0F), arrayOf(0F, 30F, 0F), arrayOf(0F, 0F, 1F))
             )
         with(Matrix()) {
             assertThat(paint.shader.getLocalMatrix(this)).isTrue()
@@ -153,16 +221,15 @@ class BrushPaintCacheTest {
 
         val expectedUpdatedMatrix =
             nestedArrayToMatrix(
-                arrayOf(arrayOf(40F, 0F, -7F), arrayOf(0F, 60F, -5F), arrayOf(0F, 0F, 1F))
+                arrayOf(arrayOf(40F, 0F, 0F), arrayOf(0F, 60F, 0F), arrayOf(0F, 0F, 1F))
             )
         assertThat(
                 cache.obtain(
                     brushPaint,
-                    Color.RED,
+                    ComposeColor.Red,
                     brushSize = 20f,
                     StrokeInput(),
-                    StrokeInput(),
-                    internalToStrokeTransform,
+                    StrokeInput()
                 )
             )
             .isSameInstanceAs(paint)
@@ -194,14 +261,7 @@ class BrushPaintCacheTest {
             )
 
         val paint =
-            cache.obtain(
-                brushPaint,
-                Color.RED,
-                brushSize = 1f,
-                StrokeInput(),
-                StrokeInput(),
-                Matrix()
-            )
+            cache.obtain(brushPaint, ComposeColor.Red, brushSize = 1f, StrokeInput(), StrokeInput())
 
         assertThat(urisLoaded).containsExactly(fakeTextureUri1, fakeTextureUri2).inOrder()
         assertThat(paint.color).isEqualTo(Color.RED)
@@ -236,7 +296,7 @@ class BrushPaintCacheTest {
             )
 
         val paint =
-            cache.obtain(brushPaint, Color.RED, brushSize = 1f, StrokeInput(), StrokeInput())
+            cache.obtain(brushPaint, ComposeColor.Red, brushSize = 1f, StrokeInput(), StrokeInput())
 
         assertThat(urisLoaded)
             .containsExactly(fakeBrokenTextureUri1, fakeWorkingTextureUri, fakeBrokenTextureUri2)
@@ -259,31 +319,16 @@ class BrushPaintCacheTest {
         val brushPaint =
             BrushPaint(listOf(BrushPaint.TextureLayer(fakeTextureUri, sizeX = 30F, sizeY = 40F)))
         val brushSize = 5f
-        val internalToStrokeTransform = Matrix().apply { preTranslate(50F, 60F) }
 
         val paint =
-            cache.obtain(
-                brushPaint,
-                Color.RED,
-                brushSize,
-                StrokeInput(),
-                StrokeInput(),
-                internalToStrokeTransform,
-            )
+            cache.obtain(brushPaint, ComposeColor.Red, brushSize, StrokeInput(), StrokeInput())
 
         assertThat(uriLoaded).isEqualTo(fakeTextureUri)
         assertThat(paint.color).isEqualTo(Color.RED)
         assertThat(paint.shader).isNull()
 
         assertThat(
-                cache.obtain(
-                    brushPaint,
-                    Color.BLUE,
-                    brushSize,
-                    StrokeInput(),
-                    StrokeInput(),
-                    internalToStrokeTransform,
-                )
+                cache.obtain(brushPaint, ComposeColor.Blue, brushSize, StrokeInput(), StrokeInput())
             )
             .isSameInstanceAs(paint)
         assertThat(paint.color).isEqualTo(Color.BLUE)
@@ -310,18 +355,9 @@ class BrushPaintCacheTest {
                     BrushPaint.TextureLayer(fakeTextureUri2, textureLayerWidth, textureLayerHeight),
                 )
             )
-        val internalToStrokeTransform =
-            Matrix().apply { preTranslate(/* dx= */ 50F, /* dy= */ 60F) }
 
         val paint =
-            cache.obtain(
-                brushPaint,
-                Color.RED,
-                brushSize = 1f,
-                StrokeInput(),
-                StrokeInput(),
-                internalToStrokeTransform,
-            )
+            cache.obtain(brushPaint, ComposeColor.Red, brushSize = 1f, StrokeInput(), StrokeInput())
 
         assertThat(urisLoaded).containsExactly(fakeTextureUri1, fakeTextureUri2).inOrder()
         assertThat(paint.color).isEqualTo(Color.RED)
@@ -332,17 +368,9 @@ class BrushPaintCacheTest {
     fun obtain_noTexture() {
         val cache = BrushPaintCache(TextureBitmapStore { null })
         val brushSize = 15f
-        val internalToStrokeTransform = Matrix().apply { preTranslate(50F, 60F) }
 
         val paint =
-            cache.obtain(
-                BrushPaint(),
-                Color.RED,
-                brushSize,
-                StrokeInput(),
-                StrokeInput(),
-                internalToStrokeTransform,
-            )
+            cache.obtain(BrushPaint(), ComposeColor.Red, brushSize, StrokeInput(), StrokeInput())
 
         assertThat(paint.color).isEqualTo(Color.RED)
         assertThat(paint.shader).isNull()
@@ -351,11 +379,10 @@ class BrushPaintCacheTest {
         assertThat(
                 cache.obtain(
                     BrushPaint(),
-                    Color.BLUE,
+                    ComposeColor.Blue,
                     brushSize,
                     StrokeInput(),
-                    StrokeInput(),
-                    internalToStrokeTransform,
+                    StrokeInput()
                 )
             )
             .isSameInstanceAs(paint)
@@ -363,7 +390,7 @@ class BrushPaintCacheTest {
     }
 
     @Test
-    fun obtain_defaultInternalToStrokeTransform() {
+    fun obtain_identityLocalMatrix() {
         var uriLoaded: String? = null
         val cache =
             BrushPaintCache(
@@ -380,7 +407,7 @@ class BrushPaintCacheTest {
             )
 
         val paint =
-            cache.obtain(brushPaint, Color.RED, brushSize = 1f, StrokeInput(), StrokeInput())
+            cache.obtain(brushPaint, ComposeColor.Red, brushSize = 1f, StrokeInput(), StrokeInput())
 
         assertThat(uriLoaded).isEqualTo(fakeTextureUri)
         assertThat(paint.color).isEqualTo(Color.RED)

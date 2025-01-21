@@ -35,6 +35,7 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.onPreInterceptKeyBeforeSoftKeyboard
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
+import androidx.compose.ui.input.rotary.findRotaryInputDevice
 import androidx.compose.ui.input.rotary.onPreRotaryScrollEvent
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -62,7 +63,7 @@ class FocusAwareEventPropagationTest(private val nodeType: NodeType) {
         when (nodeType) {
             KeyInput,
             InterruptedSoftKeyboardInput -> KeyEvent(AndroidKeyEvent(ACTION_DOWN, KEYCODE_A))
-            RotaryInput -> RotaryScrollEvent(1f, 1f, 0L, 0)
+            RotaryInput -> RotaryScrollEvent(1f, 1f, 0L, findRotaryInputDevice())
         }
     private var receivedEvent: Any? = null
     private val initialFocus = FocusRequester()

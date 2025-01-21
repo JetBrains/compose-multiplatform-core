@@ -49,5 +49,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.lifecycle.reactivestreams.ktx"
+    namespace = "androidx.lifecycle.reactivestreams.ktx"
 }

@@ -46,7 +46,7 @@ android {
             dimension "processorConfiguration"
         }
     }
-    namespace "androidx.room.integration.kotlintestapp"
+    namespace = "androidx.room.integration.kotlintestapp"
 }
 
 dependencies {

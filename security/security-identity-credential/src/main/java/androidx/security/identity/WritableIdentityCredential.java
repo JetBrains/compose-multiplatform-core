@@ -16,8 +16,9 @@
 
 package androidx.security.identity;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.security.cert.X509Certificate;
 import java.util.Collection;
@@ -72,7 +73,7 @@ public abstract class WritableIdentityCredential {
      * @return the X.509 certificate for this credential's CredentialKey.
      */
     public abstract @NonNull Collection<X509Certificate> getCredentialKeyCertificateChain(
-            @NonNull byte[] challenge);
+            byte @NonNull [] challenge);
 
     /**
      * Stores all of the data in the credential, with the specified access control profiles.
@@ -123,6 +124,6 @@ public abstract class WritableIdentityCredential {
      *                              and data elements and their values, grouped into namespaces.
      * @return A COSE_Sign1 data structure, see above.
      */
-    public abstract @NonNull byte[] personalize(
+    public abstract byte @NonNull [] personalize(
             @NonNull PersonalizationData personalizationData);
 }

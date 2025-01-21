@@ -17,7 +17,6 @@
 package androidx.wear.protolayout.expression;
 
 import static androidx.wear.protolayout.expression.AnimationParameterBuilders.REPEAT_MODE_REVERSE;
-
 import static androidx.wear.protolayout.expression.DynamicBuilders.dynamicFloatFromProto;
 
 import static com.google.common.truth.Truth.assertThat;

@@ -25,8 +25,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -36,6 +34,9 @@ import com.example.androidx.Cheeses;
 import com.example.androidx.R;
 import com.example.androidx.widget.util.ConfigToggle;
 import com.example.androidx.widget.util.ConfigViewHolder;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -107,26 +108,26 @@ abstract public class ItemTouchHelperActivity extends Activity {
         return new ItemTouchHelper.Callback() {
             @Override
             public int getMovementFlags(@NonNull RecyclerView recyclerView,
-                    @NonNull RecyclerView.ViewHolder viewHolder) {
+                    RecyclerView.@NonNull ViewHolder viewHolder) {
                 return ItemTouchHelperActivity.this.getMovementFlags(recyclerView, viewHolder);
             }
 
             @Override
             public boolean onMove(@NonNull RecyclerView recyclerView,
-                    @NonNull RecyclerView.ViewHolder viewHolder,
-                    @NonNull RecyclerView.ViewHolder target) {
+                    RecyclerView.@NonNull ViewHolder viewHolder,
+                    RecyclerView.@NonNull ViewHolder target) {
                 mAdapter.move(viewHolder.getBindingAdapterPosition(),
                         target.getBindingAdapterPosition());
                 return true;
             }
 
             @Override
-            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+            public void onSwiped(RecyclerView.@NonNull ViewHolder viewHolder, int direction) {
                 mAdapter.delete(viewHolder.getAdapterPosition());
             }
 
             @Override
-            public void onSelectedChanged(@Nullable RecyclerView.ViewHolder viewHolder,
+            public void onSelectedChanged(RecyclerView.@Nullable ViewHolder viewHolder,
                     int actionState) {
                 super.onSelectedChanged(viewHolder, actionState);
                 ItemTouchHelperActivity.this.onSelectedChanged(viewHolder, actionState);
@@ -134,7 +135,7 @@ abstract public class ItemTouchHelperActivity extends Activity {
 
             @Override
             public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView,
-                    @NonNull RecyclerView.ViewHolder viewHolder,
+                    RecyclerView.@NonNull ViewHolder viewHolder,
                     float dX, float dY, int actionState, boolean isCurrentlyActive) {
                 if (ItemTouchHelperActivity.this.onChildDraw(c, recyclerView, viewHolder,
                         dX, dY, actionState, isCurrentlyActive)) {
@@ -168,7 +169,7 @@ abstract public class ItemTouchHelperActivity extends Activity {
 
             @Override
             public void clearView(@NonNull RecyclerView recyclerView,
-                    @NonNull RecyclerView.ViewHolder viewHolder) {
+                    RecyclerView.@NonNull ViewHolder viewHolder) {
                 super.clearView(recyclerView, viewHolder);
                 ItemTouchHelperActivity.this.clearView(viewHolder);
             }

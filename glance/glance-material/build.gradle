@@ -23,7 +23,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.glance.material"
+    namespace = "androidx.glance.material"
 }
 
 androidx {

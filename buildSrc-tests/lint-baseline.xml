@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.8.0-alpha06" type="baseline" client="gradle" dependencies="false" name="AGP (8.8.0-alpha06)" variant="all" version="8.8.0-alpha06">
+<issues format="6" by="lint 8.9.0-alpha01" type="baseline" client="gradle" dependencies="false" name="AGP (8.9.0-alpha01)" variant="all" version="8.9.0-alpha01">
 
     <issue
         id="EagerGradleConfiguration"
@@ -8,15 +8,6 @@
         errorLine2="                      ~~~~~~~~~~~~~">
         <location
             file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/docs/AndroidXDocsImplPlugin.kt"/>
-    </issue>
-
-    <issue
-        id="EagerGradleConfiguration"
-        message="Use register instead of create"
-        errorLine1="        val buildOnServerTask = tasks.create(BUILD_ON_SERVER_TASK, BuildOnServerTask::class.java)"
-        errorLine2="                                      ~~~~~~">
-        <location
-            file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/AndroidXRootImplPlugin.kt"/>
     </issue>
 
     <issue
@@ -229,7 +220,7 @@
     <issue
         id="GradleProjectIsolation"
         message="Avoid using method getRootProject"
-        errorLine1="    rootProject.extensions.findByType&lt;NodeJsRootExtension>()?.let {"
+        errorLine1="    rootProject.extensions.findByType&lt;NodeJsRootExtension>()?.let { nodeJs ->"
         errorLine2="    ~~~~~~~~~~~">
         <location
             file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/AndroidXMultiplatformExtension.kt"/>
@@ -238,7 +229,7 @@
     <issue
         id="GradleProjectIsolation"
         message="Avoid using method getRootProject"
-        errorLine1="    rootProject.extensions.findByType(YarnRootExtension::class.java)?.let {"
+        errorLine1="    rootProject.extensions.findByType(YarnRootExtension::class.java)?.let { yarn ->"
         errorLine2="    ~~~~~~~~~~~">
         <location
             file="${:buildSrc-tests*main*MAIN*sourceProvider*0*javaDir*4}/androidx/build/AndroidXMultiplatformExtension.kt"/>

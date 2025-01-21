@@ -52,5 +52,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.customview.poolingcontainer"
+    namespace = "androidx.customview.poolingcontainer"
 }

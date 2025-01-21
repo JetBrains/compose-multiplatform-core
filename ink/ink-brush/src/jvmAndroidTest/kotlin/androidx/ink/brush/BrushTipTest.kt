@@ -33,10 +33,10 @@ class BrushTipTest {
         BrushBehavior(
             source = BrushBehavior.Source.TILT_IN_RADIANS,
             target = BrushBehavior.Target.HEIGHT_MULTIPLIER,
-            sourceValueRangeLowerBound = 0.2f,
-            sourceValueRangeUpperBound = .8f,
-            targetModifierRangeLowerBound = 1.1f,
-            targetModifierRangeUpperBound = 1.7f,
+            sourceValueRangeStart = 0.2f,
+            sourceValueRangeEnd = .8f,
+            targetModifierRangeStart = 1.1f,
+            targetModifierRangeEnd = 1.7f,
             sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.MIRROR,
             responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
             responseTimeMillis = 1L,
@@ -128,12 +128,12 @@ class BrushTipTest {
         val lowError =
             assertFailsWith<IllegalArgumentException> { BrushTip(slant = -Angle.HALF_TURN_RADIANS) }
         assertThat(lowError).hasMessageThat().contains("slant")
-        assertThat(lowError).hasMessageThat().contains("interval [-pi/2, pi/2]")
+        assertThat(lowError).hasMessageThat().contains("interval [-π/2, π/2]")
 
         val highError =
             assertFailsWith<IllegalArgumentException> { BrushTip(slant = Angle.HALF_TURN_RADIANS) }
         assertThat(highError).hasMessageThat().contains("slant")
-        assertThat(highError).hasMessageThat().contains("interval [-pi/2, pi/2]")
+        assertThat(highError).hasMessageThat().contains("interval [-π/2, π/2]")
     }
 
     @Test

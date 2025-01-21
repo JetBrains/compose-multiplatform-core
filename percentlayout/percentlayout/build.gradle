@@ -13,6 +13,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     api("androidx.annotation:annotation:1.8.1")
     implementation("androidx.core:core:1.1.0")
 
@@ -27,7 +28,7 @@ android {
     sourceSets {
         main.res.srcDir "res"
     }
-    namespace "androidx.percentlayout"
+    namespace = "androidx.percentlayout"
 }
 
 androidx {

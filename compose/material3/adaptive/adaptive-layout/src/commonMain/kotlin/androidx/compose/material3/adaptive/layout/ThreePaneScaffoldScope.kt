@@ -43,12 +43,10 @@ sealed interface ThreePaneScaffoldPaneScope :
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 internal class ThreePaneScaffoldScopeImpl(
-    motionScope: PaneScaffoldMotionScope,
     transitionScope: PaneScaffoldTransitionScope<ThreePaneScaffoldRole, ThreePaneScaffoldValue>,
     lookaheadScope: LookaheadScope
 ) :
     ThreePaneScaffoldScope,
-    PaneScaffoldMotionScope by motionScope,
     PaneScaffoldTransitionScope<ThreePaneScaffoldRole, ThreePaneScaffoldValue> by transitionScope,
     LookaheadScope by lookaheadScope,
     PaneScaffoldScopeImpl() {
@@ -93,8 +91,9 @@ internal class ThreePaneScaffoldPaneScopeImpl(
 }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
-internal class ThreePaneScaffoldTransitionScopeImpl :
-    PaneScaffoldTransitionScope<ThreePaneScaffoldRole, ThreePaneScaffoldValue> {
+internal class ThreePaneScaffoldTransitionScopeImpl(
+    override val motionDataProvider: PaneScaffoldMotionDataProvider<ThreePaneScaffoldRole>
+) : PaneScaffoldTransitionScope<ThreePaneScaffoldRole, ThreePaneScaffoldValue> {
     override val motionProgress: Float
         get() =
             if (transitionState.currentState == transitionState.targetState) {

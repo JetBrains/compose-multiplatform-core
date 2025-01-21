@@ -16,8 +16,9 @@
   -->
 
 <!--
-  Please copy any lint rules added here to all other modules local lint.xml
-  files and lint_samples.xml (if applicable).
+  Project-specific lint configuration can be created with a `lint.xml` in the project directory.
+  That configuration will be applied in addition to this file. The precedence order is described in
+  https://googlesamples.github.io/android-custom-lint-rules/usage/lintxml.md.html
    -->
 <lint>
     <issue id="LintBaseline" severity="ignore">

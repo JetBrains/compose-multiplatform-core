@@ -17,8 +17,8 @@
 package androidx.navigation.compose.lint
 
 import androidx.compose.lint.test.Stubs
-import androidx.navigation.lint.common.NAVIGATION_STUBS
-import androidx.navigation.lint.common.TEST_CLASS
+import androidx.navigation.lint.test.NAVIGATION_STUBS
+import androidx.navigation.lint.test.TEST_CLASS
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
@@ -263,6 +263,6 @@ you can also pass in its KClass reference Companion::class [WrongStartDestinatio
 }
 
 private val STUBS =
-    arrayOf(TEST_CLASS, COMPOSABLE_NAV_HOST, *NAVIGATION_STUBS)
+    arrayOf(*NAVIGATION_STUBS, TEST_CLASS, COMPOSABLE_NAV_HOST)
         .map { it.toTestBytecodeStub() }
         .toTypedArray()

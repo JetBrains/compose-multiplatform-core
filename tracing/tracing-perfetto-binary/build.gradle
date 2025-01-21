@@ -74,11 +74,11 @@ android {
         externalNativeBuild {
             cmake {
                 path "src/main/cpp/CMakeLists.txt"
-                version libs.versions.cmake.get()
+                version = libs.versions.cmake.get()
             }
         }
     }
-    namespace "androidx.tracing.perfetto.binary"
+    namespace = "androidx.tracing.perfetto.binary"
 }
 
 dependencies {

@@ -45,7 +45,7 @@ internal fun SemanticsNode(layoutNode: LayoutNode, mergingEnabled: Boolean) =
         layoutNode.nodes.head(Nodes.Semantics)!!.node,
         mergingEnabled,
         layoutNode,
-        layoutNode.collapsedSemantics!!
+        layoutNode.collapsedSemantics ?: SemanticsConfiguration()
     )
 
 internal fun SemanticsNode(

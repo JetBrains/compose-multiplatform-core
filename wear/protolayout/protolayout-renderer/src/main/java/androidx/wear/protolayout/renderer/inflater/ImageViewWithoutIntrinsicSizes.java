@@ -21,8 +21,8 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.ImageView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Fixed version of ImageView which doesn't ever use the intrinsic size of its drawables.

@@ -19,6 +19,8 @@ package androidx.compose.runtime
 import androidx.collection.MutableObjectIntMap
 import androidx.collection.MutableScatterMap
 import androidx.collection.ScatterSet
+import androidx.compose.runtime.platform.makeSynchronizedObject
+import androidx.compose.runtime.platform.synchronized
 import androidx.compose.runtime.snapshots.fastAny
 import androidx.compose.runtime.snapshots.fastForEach
 import androidx.compose.runtime.tooling.CompositionObserverHandle

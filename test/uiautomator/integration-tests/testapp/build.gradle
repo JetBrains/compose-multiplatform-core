@@ -22,6 +22,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation(libs.kotlinStdlib)
     implementation(libs.androidx.annotation)
     implementation("androidx.core:core:1.6.0")
@@ -50,6 +51,6 @@ dependencies {
 }
 
 android {
-    compileSdkVersion 35
-    namespace "androidx.test.uiautomator.testapp"
+    compileSdk = 35
+    namespace = "androidx.test.uiautomator.testapp"
 }

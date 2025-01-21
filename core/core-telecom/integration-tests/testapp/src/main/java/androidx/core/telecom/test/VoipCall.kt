@@ -27,6 +27,7 @@ import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+@ExperimentalAppActions
 @RequiresApi(34)
 class VoipCall {
     private val TAG = VoipCall::class.simpleName
@@ -39,7 +40,6 @@ class VoipCall {
     var mIsMuted = false
     var mTelecomCallId: String = ""
     var mIsLocallySilence: Boolean = false
-    @OptIn(ExperimentalAppActions::class)
     var mLocalCallSilenceExtension: LocalCallSilenceExtension? = null
 
     val mOnSetActiveLambda: suspend () -> Unit = {

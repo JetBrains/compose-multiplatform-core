@@ -51,12 +51,16 @@ private constructor(
         fun createFor(classLoader: ClassLoader): SdkActivityHandlerWrapper {
             val sdkSandboxActivityHandlerCompatClass =
                 Class.forName(
-                    SdkSandboxActivityHandlerCompat::class.java.name,
+                    "androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandlerCompat",
                     /* initialize = */ false,
                     classLoader
                 )
             val activityHolderClass =
-                Class.forName(ActivityHolder::class.java.name, /* initialize= */ false, classLoader)
+                Class.forName(
+                    "androidx.privacysandbox.sdkruntime.core.activity.ActivityHolder",
+                    /* initialize = */ false,
+                    classLoader
+                )
             val handlerOnActivityCreatedMethod =
                 sdkSandboxActivityHandlerCompatClass.getMethod(
                     "onActivityCreated",

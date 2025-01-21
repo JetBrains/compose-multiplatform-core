@@ -11,6 +11,16 @@ abstract interface androidx.savedstate/SavedStateRegistryOwner : androidx.lifecy
         abstract fun <get-savedStateRegistry>(): androidx.savedstate/SavedStateRegistry // androidx.savedstate/SavedStateRegistryOwner.savedStateRegistry.<get-savedStateRegistry>|<get-savedStateRegistry>(){}[0]
 }
 
+final class androidx.savedstate.serialization.serializers/SavedStateSerializer : kotlinx.serialization/KSerializer<androidx.savedstate/SavedState> { // androidx.savedstate.serialization.serializers/SavedStateSerializer|null[0]
+    constructor <init>() // androidx.savedstate.serialization.serializers/SavedStateSerializer.<init>|<init>(){}[0]
+
+    final val descriptor // androidx.savedstate.serialization.serializers/SavedStateSerializer.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // androidx.savedstate.serialization.serializers/SavedStateSerializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final fun deserialize(kotlinx.serialization.encoding/Decoder): androidx.savedstate/SavedState // androidx.savedstate.serialization.serializers/SavedStateSerializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+    final fun serialize(kotlinx.serialization.encoding/Encoder, androidx.savedstate/SavedState) // androidx.savedstate.serialization.serializers/SavedStateSerializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;androidx.savedstate.SavedState){}[0]
+}
+
 final class androidx.savedstate/SavedState { // androidx.savedstate/SavedState|null[0]
     constructor <init>(kotlin.collections/MutableMap<kotlin/String, kotlin/Any?> = ...) // androidx.savedstate/SavedState.<init>|<init>(kotlin.collections.MutableMap<kotlin.String,kotlin.Any?>){}[0]
 

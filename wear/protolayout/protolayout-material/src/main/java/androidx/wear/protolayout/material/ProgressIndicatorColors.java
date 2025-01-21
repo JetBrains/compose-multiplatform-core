@@ -19,8 +19,9 @@ package androidx.wear.protolayout.material;
 import static androidx.wear.protolayout.ColorBuilders.argb;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
 import androidx.wear.protolayout.ColorBuilders.ColorProp;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents the indicator and track colors used in {@link CircularProgressIndicator}.
@@ -29,8 +30,8 @@ import androidx.wear.protolayout.ColorBuilders.ColorProp;
  * CircularProgressIndicator}.
  */
 public class ProgressIndicatorColors {
-    @NonNull private final ColorProp mIndicatorColor;
-    @NonNull private final ColorProp mTrackColor;
+    private final @NonNull ColorProp mIndicatorColor;
+    private final @NonNull ColorProp mTrackColor;
 
     /**
      * Constructor for {@link ProgressIndicatorColors} object.
@@ -63,20 +64,17 @@ public class ProgressIndicatorColors {
      * indicator color and the current Surface color for the track color from the given {@link
      * Colors}.
      */
-    @NonNull
-    public static ProgressIndicatorColors progressIndicatorColors(@NonNull Colors colors) {
+    public static @NonNull ProgressIndicatorColors progressIndicatorColors(@NonNull Colors colors) {
         return new ProgressIndicatorColors(colors.getPrimary(), colors.getSurface());
     }
 
     /** The indicator color to be used for {@link CircularProgressIndicator}. */
-    @NonNull
-    public ColorProp getIndicatorColor() {
+    public @NonNull ColorProp getIndicatorColor() {
         return mIndicatorColor;
     }
 
     /** The background track color to be used for {@link CircularProgressIndicator}. */
-    @NonNull
-    public ColorProp getTrackColor() {
+    public @NonNull ColorProp getTrackColor() {
         return mTrackColor;
     }
 }

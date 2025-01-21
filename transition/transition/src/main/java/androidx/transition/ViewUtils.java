@@ -22,8 +22,8 @@ import android.os.Build;
 import android.util.Property;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Compatibility utilities for platform features of {@link View}.

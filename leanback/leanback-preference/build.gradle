@@ -22,13 +22,13 @@ dependencies {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
     sourceSets {
         main.java.srcDirs += [
                 "api21"
         ]
     }
-    namespace "androidx.leanback.preference"
+    namespace = "androidx.leanback.preference"
 }
 
 androidx {

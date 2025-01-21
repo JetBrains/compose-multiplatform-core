@@ -27,9 +27,10 @@ import android.view.View;
 import android.view.View.OnTouchListener;
 import android.view.ViewConfiguration;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Feed me events, I'll tell you what gesture is happening. This class also accepts a {@link
@@ -141,8 +142,7 @@ public class GestureTracker implements OnTouchListener {
     private final GestureDetector mMoveDetector;
     private final GestureDetector mDoubleTapDetector;
 
-    @Nullable
-    private GestureHandler mDelegate;
+    private @Nullable GestureHandler mDelegate;
 
     private final StringBuilder mLog = new StringBuilder();
 
@@ -157,11 +157,9 @@ public class GestureTracker implements OnTouchListener {
 
     private final PointF mTouchDown = new PointF();
 
-    @Nullable
-    private EventId mLastEvent;
+    private @Nullable EventId mLastEvent;
 
-    @Nullable
-    private Gesture mDetectedGesture;
+    private @Nullable Gesture mDetectedGesture;
 
     private final QuickScaleBypassDecider mQuickScaleBypassDecider;
 
@@ -321,7 +319,7 @@ public class GestureTracker implements OnTouchListener {
     /**
      * Returns whether the currently detected gesture matches any of the one(s) passed as argument.
      */
-    public boolean matches(@NonNull Gesture... gestures) {
+    public boolean matches(Gesture @NonNull ... gestures) {
         for (Gesture g : gestures) {
             if (mDetectedGesture == g) {
                 return true;
@@ -339,8 +337,7 @@ public class GestureTracker implements OnTouchListener {
     }
 
     /** Get a textual representation of the gesture's stream of events so far. */
-    @NonNull
-    public String getLog() {
+    public @NonNull String getLog() {
         return mDetectedGesture == null ? mLog.toString() : String.format("%s: %s",
                 mDetectedGesture,
                 mLog);

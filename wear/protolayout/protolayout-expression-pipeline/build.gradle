@@ -29,6 +29,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     annotationProcessor(libs.nullaway)
     api("androidx.annotation:annotation:1.8.1")
 
@@ -48,10 +49,10 @@ dependencies {
 }
 
 android {
-    namespace "androidx.wear.protolayout.expression.pipeline"
+    namespace = "androidx.wear.protolayout.expression.pipeline"
 
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
 }
 

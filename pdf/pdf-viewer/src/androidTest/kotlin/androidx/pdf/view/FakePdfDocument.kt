@@ -63,12 +63,10 @@ internal open class FakePdfDocument(
     private val pages: List<Point> = listOf(),
     override val formType: Int = PDF_FORM_TYPE_NONE,
     override val isLinearized: Boolean = false,
-    private val searchResults: SparseArray<List<PageMatchBounds>> = SparseArray()
+    private val searchResults: SparseArray<List<PageMatchBounds>> = SparseArray(),
+    override val uri: Uri = Uri.parse("content://test.app/document.pdf"),
 ) : PdfDocument {
     override val pageCount: Int = pages.size
-
-    override val uri: Uri
-        get() = Uri.parse("content://test.app/document.pdf")
 
     @get:Synchronized @set:Synchronized internal var layoutReach: Int = 0
 

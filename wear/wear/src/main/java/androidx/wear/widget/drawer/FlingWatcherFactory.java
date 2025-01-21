@@ -20,11 +20,12 @@ import android.view.View;
 import android.widget.AbsListView;
 import android.widget.ScrollView;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.core.widget.NestedScrollView;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -66,8 +67,7 @@ class FlingWatcherFactory {
     /**
      * Returns a {@link FlingWatcher} for the particular type of {@link View}.
      */
-    @Nullable
-    FlingWatcher getFor(View view) {
+    @Nullable FlingWatcher getFor(View view) {
         FlingWatcher watcher = mWatchers.get(view);
         if (watcher == null) {
             watcher = createFor(view);
@@ -82,8 +82,7 @@ class FlingWatcherFactory {
     /**
      * Creates a {@link FlingWatcher} for the particular type of {@link View}.
      */
-    @Nullable
-    private FlingWatcher createFor(View view) {
+    private @Nullable FlingWatcher createFor(View view) {
         if (view == null) {
             throw new IllegalArgumentException("View was null");
         }

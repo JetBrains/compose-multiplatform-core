@@ -19,10 +19,11 @@ package androidx.wear.protolayout.materialcore.fontscaling;
 import android.content.res.Configuration;
 import android.util.SparseArray;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /** Stores lookup tables for creating {@link FontScaleConverter}s at various scales. */
 // This is copied from
@@ -103,8 +104,7 @@ public class FontScaleConverterFactory {
      * @param fontScale the scale factor, usually from {@link Configuration#fontScale}.
      * @return a converter for the given scale, or null if non-linear scaling should not be used.
      */
-    @Nullable
-    public static FontScaleConverter forScale(float fontScale) {
+    public static @Nullable FontScaleConverter forScale(float fontScale) {
         if (!isNonLinearFontScalingActive(fontScale)) {
             return null;
         }
@@ -146,8 +146,7 @@ public class FontScaleConverterFactory {
         }
     }
 
-    @NonNull
-    private static FontScaleConverter createInterpolatedTableBetween(
+    private static @NonNull FontScaleConverter createInterpolatedTableBetween(
             FontScaleConverter start, FontScaleConverter end, float interpolationPoint) {
         float[] commonSpSizes = new float[] {8f, 10f, 12f, 14f, 18f, 20f, 24f, 30f, 100f};
         float[] dpInterpolated = new float[commonSpSizes.length];
@@ -174,8 +173,7 @@ public class FontScaleConverterFactory {
         LOOKUP_TABLES.put(getKey(scaleKey), fontScaleConverter);
     }
 
-    @Nullable
-    private static FontScaleConverter get(float scaleKey) {
+    private static @Nullable FontScaleConverter get(float scaleKey) {
         return LOOKUP_TABLES.get(getKey(scaleKey));
     }
 }

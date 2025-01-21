@@ -34,11 +34,12 @@ import android.widget.Checkable;
 import android.widget.TextView;
 
 import androidx.annotation.FloatRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.test.uiautomator.util.Traces;
 import androidx.test.uiautomator.util.Traces.Section;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -105,8 +106,7 @@ public class UiObject2 implements Searchable {
         mDisplayDensity = (float) densityDpi / DisplayMetrics.DENSITY_DEFAULT;
     }
 
-    @Nullable
-    static UiObject2 create(@NonNull UiDevice device, @NonNull BySelector selector,
+    static @Nullable UiObject2 create(@NonNull UiDevice device, @NonNull BySelector selector,
             @NonNull AccessibilityNodeInfo cachedNode) {
         try {
             return new UiObject2(device, selector, cachedNode);
@@ -246,8 +246,7 @@ public class UiObject2 implements Searchable {
     }
 
     /** Returns a collection of the child elements directly under this object. */
-    @NonNull
-    public List<UiObject2> getChildren() {
+    public @NonNull List<UiObject2> getChildren() {
         return findObjects(By.depth(1));
     }
 
@@ -285,8 +284,7 @@ public class UiObject2 implements Searchable {
      * Searches all elements under this object and returns those that match the {@code selector}.
      */
     @Override
-    @NonNull
-    public List<UiObject2> findObjects(@NonNull BySelector selector) {
+    public @NonNull List<UiObject2> findObjects(@NonNull BySelector selector) {
         Log.d(TAG, String.format("Retrieving nodes with selector: %s.", selector));
         List<UiObject2> ret = new ArrayList<>();
         for (AccessibilityNodeInfo node :
@@ -307,8 +305,7 @@ public class UiObject2 implements Searchable {
     }
 
     /** Returns this object's visible bounds. */
-    @NonNull
-    public Rect getVisibleBounds() {
+    public @NonNull Rect getVisibleBounds() {
         return getVisibleBounds(getAccessibilityNodeInfo());
     }
 
@@ -325,14 +322,12 @@ public class UiObject2 implements Searchable {
     }
 
     /** Returns a point in the center of this object's visible bounds. */
-    @NonNull
-    public Point getVisibleCenter() {
+    public @NonNull Point getVisibleCenter() {
         return getVisibleCenter(getAccessibilityNodeInfo());
     }
 
     /** Returns a point in the center of the {@code node}'s visible bounds. */
-    @NonNull
-    private Point getVisibleCenter(AccessibilityNodeInfo node) {
+    private @NonNull Point getVisibleCenter(AccessibilityNodeInfo node) {
         Rect bounds = getVisibleBounds(node);
         return new Point(bounds.centerX(), bounds.centerY());
     }
@@ -411,8 +406,7 @@ public class UiObject2 implements Searchable {
      * @see TextView#getHint()
      */
     @RequiresApi(26)
-    @Nullable
-    public String getHint() {
+    public @Nullable String getHint() {
         return Api26Impl.getHintText(getAccessibilityNodeInfo());
     }
 
@@ -886,9 +880,8 @@ public class UiObject2 implements Searchable {
                     return condition.accept(event) || scrollFinished.accept(event);
                 }
 
-                @NonNull
                 @Override
-                public String toString() {
+                public @NonNull String toString() {
                     return condition + " || " + scrollFinished;
                 }
             };

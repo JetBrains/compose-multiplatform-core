@@ -26,7 +26,7 @@ import java.util.zip.Deflater
 data class TraceDeepLink(
     /** Output relative path of trace file */
     private val outputRelativePath: String,
-    private val selectionParams: SelectionParams?
+    private val selectionParams: SelectionParams?,
 ) {
     fun createMarkdownLink(label: String, linkFormat: LinkFormat) =
         when (linkFormat) {
@@ -38,7 +38,7 @@ data class TraceDeepLink(
                     label = label,
                     uri =
                         if (selectionParams != null) {
-                            "uri://$outputRelativePath?selectionParams=${selectionParams.encodeParamString()}"
+                            "uri://$outputRelativePath?enablePlugins=${selectionParams.pluginId}&selectionParams=${selectionParams.encodeParamString()}"
                         } else {
                             "uri://$outputRelativePath"
                         }
@@ -46,26 +46,15 @@ data class TraceDeepLink(
             }
         }
 
-    data class SelectionParams(
-        val pid: Long,
-        val tid: Long?,
-        val ts: Long,
-        val dur: Long,
-        val query: String?
-    ) {
-        private fun buildParamString() = buildString {
-            append("pid=${pid}")
-            if (tid != null) append("&tid=${tid}")
-            append("&ts=${ts}")
-            append("&dur=${dur}")
-            if (query != null) {
-                append("&query=")
-                append(URLEncoder.encode(query, Charsets.UTF_8.name()))
-            }
-        }
+    /**
+     * Generic representation of a set of deep link parameters, specific to a certain
+     * ui.perfetto.dev plugin
+     */
+    abstract class SelectionParams(val pluginId: String) {
+        internal abstract fun buildInnerParamString(): String
 
         internal fun encodeParamString(): String {
-            return base64Encode(deflate(buildParamString().toByteArray()))
+            return base64Encode(deflate(buildInnerParamString().toByteArray()))
         }
 
         private fun base64Encode(data: ByteArray): String =
@@ -84,6 +73,47 @@ data class TraceDeepLink(
                 outputStream.write(buffer, 0, count)
             }
             return outputStream.toByteArray()
+        }
+    }
+
+    /**
+     * Parameters for startup deep link, given a specific time range, process, thread, and reasonId
+     */
+    data class StartupSelectionParams(
+        val packageName: String,
+        val tid: Int?,
+        val selectionStart: Long?, // only needed for Studio
+        val selectionEnd: Long?, // only needed for Studio
+        val reasonId: String?
+    ) : SelectionParams("android_startup") {
+        override fun buildInnerParamString() = buildString {
+            append("packageName=$packageName")
+            if (tid != null) append("&tid=$tid")
+            if (selectionStart != null) append("&selection_start=$selectionStart")
+            if (selectionEnd != null) append("&selection_end=$selectionEnd")
+            if (reasonId != null) {
+                append("&reason_id=$reasonId")
+            }
+        }
+    }
+
+    /** General benchmark deep link, given a specific time range, process, thread, and query */
+    data class BenchmarkSelectionParams(
+        val packageName: String,
+        val tid: Int?,
+        val selectionStart: Long,
+        val selectionEnd: Long,
+        val query: String?
+    ) : SelectionParams("androidx.benchmark") {
+        override fun buildInnerParamString() = buildString {
+            append("packageName=$packageName")
+            if (tid != null) append("&tid=$tid")
+            append("&selection_start=$selectionStart")
+            append("&selection_end=$selectionEnd")
+            if (query != null) {
+                append("&query=")
+                append(URLEncoder.encode(query, Charsets.UTF_8.name()))
+            }
         }
     }
 }

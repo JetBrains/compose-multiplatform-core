@@ -26,11 +26,12 @@ import android.util.Pair;
 import android.view.WindowMetrics;
 
 import androidx.annotation.FloatRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.window.extensions.RequiresVendorApiLevel;
 import androidx.window.extensions.core.util.function.Predicate;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -38,10 +39,8 @@ import java.util.Objects;
  * Split configuration rules for activity pairs.
  */
 public class SplitPairRule extends SplitRule {
-    @NonNull
-    private final Predicate<Pair<Activity, Activity>> mActivityPairPredicate;
-    @NonNull
-    private final Predicate<Pair<Activity, Intent>> mActivityIntentPredicate;
+    private final @NonNull Predicate<Pair<Activity, Activity>> mActivityPairPredicate;
+    private final @NonNull Predicate<Pair<Activity, Intent>> mActivityIntentPredicate;
     @SplitFinishBehavior
     private final int mFinishPrimaryWithSecondary;
     @SplitFinishBehavior
@@ -115,12 +114,9 @@ public class SplitPairRule extends SplitRule {
      * Builder for {@link SplitPairRule}.
      */
     public static final class Builder {
-        @NonNull
-        private final Predicate<Pair<Activity, Activity>> mActivityPairPredicate;
-        @NonNull
-        private final Predicate<Pair<Activity, Intent>> mActivityIntentPredicate;
-        @NonNull
-        private final Predicate<WindowMetrics> mParentWindowMetricsPredicate;
+        private final @NonNull Predicate<Pair<Activity, Activity>> mActivityPairPredicate;
+        private final @NonNull Predicate<Pair<Activity, Intent>> mActivityIntentPredicate;
+        private final @NonNull Predicate<WindowMetrics> mParentWindowMetricsPredicate;
         // Keep for backward compatibility
         @FloatRange(from = 0.0, to = 1.0)
         private float mSplitRatio;
@@ -133,8 +129,7 @@ public class SplitPairRule extends SplitRule {
         private int mFinishPrimaryWithSecondary;
         @SplitFinishBehavior
         private int mFinishSecondaryWithPrimary;
-        @Nullable
-        private String mTag;
+        private @Nullable String mTag;
 
         /**
          * @deprecated Use {@link #Builder(Predicate, Predicate, Predicate)} starting with
@@ -144,11 +139,11 @@ public class SplitPairRule extends SplitRule {
         @RequiresVendorApiLevel(level = 1, deprecatedSince = 2)
         @Deprecated
         @RequiresApi(Build.VERSION_CODES.N)
-        public Builder(@NonNull java.util.function.Predicate<Pair<Activity, Activity>>
+        public Builder(java.util.function.@NonNull Predicate<Pair<Activity, Activity>>
                         activityPairPredicate,
-                @NonNull java.util.function.Predicate<Pair<Activity, Intent>>
+                java.util.function.@NonNull Predicate<Pair<Activity, Intent>>
                         activityIntentPredicate,
-                @NonNull java.util.function.Predicate<WindowMetrics>
+                java.util.function.@NonNull Predicate<WindowMetrics>
                         parentWindowMetricsPredicate) {
             mActivityPairPredicate = activityPairPredicate::test;
             mActivityIntentPredicate = activityIntentPredicate::test;
@@ -185,8 +180,7 @@ public class SplitPairRule extends SplitRule {
          */
         @RequiresVendorApiLevel(level = 1, deprecatedSince = 2)
         @Deprecated
-        @NonNull
-        public Builder setSplitRatio(@FloatRange(from = 0.0, to = 1.0) float splitRatio) {
+        public @NonNull Builder setSplitRatio(@FloatRange(from = 0.0, to = 1.0) float splitRatio) {
             mSplitRatio = splitRatio;
             return this;
         }
@@ -198,8 +192,8 @@ public class SplitPairRule extends SplitRule {
          */
         @RequiresVendorApiLevel(level = 1, deprecatedSince = 2)
         @Deprecated
-        @NonNull
-        public Builder setLayoutDirection(@SplitAttributes.ExtLayoutDirection int layoutDirection) {
+        public @NonNull Builder setLayoutDirection(
+                @SplitAttributes.ExtLayoutDirection int layoutDirection) {
             mLayoutDirection = layoutDirection;
             return this;
         }
@@ -210,44 +204,41 @@ public class SplitPairRule extends SplitRule {
          * {@link #setLayoutDirection(int)}
          */
         @RequiresVendorApiLevel(level = 2)
-        @NonNull
-        public Builder setDefaultSplitAttributes(@NonNull SplitAttributes attrs) {
+        public @NonNull Builder setDefaultSplitAttributes(@NonNull SplitAttributes attrs) {
             mDefaultSplitAttributes = attrs;
             return this;
         }
 
         /** @deprecated To be removed with next developer preview. */
         @Deprecated
-        @NonNull
-        public Builder setShouldFinishPrimaryWithSecondary(
+        public @NonNull Builder setShouldFinishPrimaryWithSecondary(
                 boolean finishPrimaryWithSecondary) {
             return this;
         }
 
         /** @deprecated To be removed with next developer preview. */
         @Deprecated
-        @NonNull
-        public Builder setShouldFinishSecondaryWithPrimary(boolean finishSecondaryWithPrimary) {
+        public @NonNull Builder setShouldFinishSecondaryWithPrimary(
+                boolean finishSecondaryWithPrimary) {
             return this;
         }
 
         /** @see SplitPairRule#getFinishPrimaryWithSecondary() */
-        @NonNull
-        public Builder setFinishPrimaryWithSecondary(@SplitFinishBehavior int finishBehavior) {
+        public @NonNull Builder setFinishPrimaryWithSecondary(
+                @SplitFinishBehavior int finishBehavior) {
             mFinishPrimaryWithSecondary = finishBehavior;
             return this;
         }
 
         /** @see SplitPairRule#getFinishSecondaryWithPrimary() */
-        @NonNull
-        public Builder setFinishSecondaryWithPrimary(@SplitFinishBehavior int finishBehavior) {
+        public @NonNull Builder setFinishSecondaryWithPrimary(
+                @SplitFinishBehavior int finishBehavior) {
             mFinishSecondaryWithPrimary = finishBehavior;
             return this;
         }
 
         /** @see SplitPairRule#shouldClearTop() */
-        @NonNull
-        public Builder setShouldClearTop(boolean shouldClearTop) {
+        public @NonNull Builder setShouldClearTop(boolean shouldClearTop) {
             mClearTop = shouldClearTop;
             return this;
         }
@@ -256,15 +247,13 @@ public class SplitPairRule extends SplitRule {
          * @see SplitPairRule#getTag()
          */
         @RequiresVendorApiLevel(level = 2)
-        @NonNull
-        public Builder setTag(@NonNull String tag) {
+        public @NonNull Builder setTag(@NonNull String tag) {
             mTag = Objects.requireNonNull(tag);
             return this;
         }
 
         /** Builds a new instance of {@link SplitPairRule}. */
-        @NonNull
-        public SplitPairRule build() {
+        public @NonNull SplitPairRule build() {
             // To provide compatibility with prior version of WM Jetpack library, where
             // #setDefaultAttributes hasn't yet been supported and thus would not be set.
             mDefaultSplitAttributes = (mDefaultSplitAttributes != null)
@@ -304,9 +293,8 @@ public class SplitPairRule extends SplitRule {
         return result;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "SplitPairRule{"
                 + "mTag=" + getTag()
                 + ", mDefaultSplitAttributes=" + getDefaultSplitAttributes()

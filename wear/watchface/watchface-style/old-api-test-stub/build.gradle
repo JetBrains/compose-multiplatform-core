@@ -47,10 +47,10 @@ androidx {
 
 android {
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
     buildFeatures {
         aidl = true
     }
-    namespace "androidx.wear.watchface.style.test.oldApiTestStub"
+    namespace = "androidx.wear.watchface.style.test.oldApiTestStub"
 }

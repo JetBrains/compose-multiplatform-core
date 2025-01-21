@@ -18,7 +18,9 @@ package androidx.appsearch.builtintypes;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.appsearch.annotation.Document;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.core.util.Preconditions;
 
 import java.util.List;
@@ -38,6 +40,7 @@ public final class WebPage extends Thing {
     @Document.DocumentProperty
     private final ImageObject mFavicon;
 
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     WebPage(@NonNull String namespace, @NonNull String id, int documentScore,
             long creationTimestampMillis, long documentTtlMillis, @Nullable String name,
             @Nullable List<String> alternateNames,

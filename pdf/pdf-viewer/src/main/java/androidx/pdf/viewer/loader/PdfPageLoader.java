@@ -21,7 +21,6 @@ import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.os.RemoteException;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.R;
 import androidx.pdf.models.Dimensions;
@@ -32,6 +31,8 @@ import androidx.pdf.models.PageSelection;
 import androidx.pdf.models.SelectionBoundary;
 import androidx.pdf.service.PdfDocumentRemoteProto;
 import androidx.pdf.util.TileBoard.TileInfo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -375,9 +376,8 @@ public class PdfPageLoader {
             callbacks.pageBroken(mPageNum);
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return String.format("RenderBitmapTask(page=%d width=%d height=%d)",
                     mPageNum, mDimensions.getWidth(), mDimensions.getHeight());
         }
@@ -410,9 +410,8 @@ public class PdfPageLoader {
             mReleasePageTask = null;
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return String.format("ReleasePageTask(page=%d)", mPageNum);
         }
     }
@@ -459,9 +458,8 @@ public class PdfPageLoader {
             mTileTasks.remove(mTileInfo.getIndex());
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return String.format("RenderTileTask(page=%d width=%d height=%d tile=%s)",
                     mPageNum, mPageSize.getWidth(), mPageSize.getHeight(), mTileInfo);
         }
@@ -520,9 +518,8 @@ public class PdfPageLoader {
             mTextTask = null;
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return String.format("GetPageTextTask(page=%d)", mPageNum);
         }
     }
@@ -557,9 +554,8 @@ public class PdfPageLoader {
             mSearchPageTextTask = null;
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return String.format("SearchPageTextTask(page=%d, query=\"%s\")", mPageNum, mQuery);
         }
     }
@@ -596,9 +592,8 @@ public class PdfPageLoader {
             mSelectionTask = null;
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return String.format("SelectionTask(page=%d, start=%s, stop=%s)", mPageNum, mStart,
                     mStop);
         }
@@ -635,9 +630,8 @@ public class PdfPageLoader {
             mLinksTask = null;
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return String.format("GetPageLinksTask(page=%d)", mPageNum);
         }
     }
@@ -674,9 +668,8 @@ public class PdfPageLoader {
             mGotoLinksTask = null;
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return String.format("GetPageGotoLinksTask(page=%d)", mPageNum);
         }
     }

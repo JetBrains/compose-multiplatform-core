@@ -16,9 +16,10 @@
 
 package androidx.pdf.util;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.widget.ZoomView.ZoomScroll;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Interface to restore scroll position.

@@ -23,8 +23,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
@@ -35,6 +33,9 @@ import androidx.wear.watchface.data.DeviceConfig;
 import androidx.wear.watchface.data.IdAndComplicationDataWireFormat;
 import androidx.wear.watchface.data.WatchUiState;
 import androidx.wear.watchface.style.data.UserStyleWireFormat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -52,38 +53,31 @@ public class WallpaperInteractiveWatchFaceInstanceParams
 
     /** The id for the new instance, must be unique. */
     @ParcelField(1)
-    @NonNull
-    String mInstanceId;
+    @NonNull String mInstanceId;
 
     /** The {@link DeviceConfig} for the host wearable. */
     @ParcelField(2)
-    @NonNull
-    DeviceConfig mDeviceConfig;
+    @NonNull DeviceConfig mDeviceConfig;
 
     /** The {@link WatchUiState} for the host wearable. */
     @ParcelField(3)
-    @NonNull
-    WatchUiState mWatchUiState;
+    @NonNull WatchUiState mWatchUiState;
 
     /** The initial {@link UserStyleWireFormat}. */
     @ParcelField(4)
-    @NonNull
-    UserStyleWireFormat mUserStyle;
+    @NonNull UserStyleWireFormat mUserStyle;
 
     /** The initial state of the complications if known, or null otherwise. */
     @ParcelField(100)
-    @Nullable
-    List<IdAndComplicationDataWireFormat> mIdAndComplicationDataWireFormats;
+    @Nullable List<IdAndComplicationDataWireFormat> mIdAndComplicationDataWireFormats;
 
     /** Reserved field */
     @ParcelField(101)
-    @Nullable
-    String mAuxiliaryComponentClassName;
+    @Nullable String mAuxiliaryComponentClassName;
 
     /** Reserved field */
     @ParcelField(102)
-    @Nullable
-    String mAuxiliaryComponentPackageName;
+    @Nullable String mAuxiliaryComponentPackageName;
 
     /** Used by VersionedParcelable. */
     WallpaperInteractiveWatchFaceInstanceParams() {}
@@ -105,23 +99,19 @@ public class WallpaperInteractiveWatchFaceInstanceParams
         mAuxiliaryComponentPackageName = auxiliaryComponentPackageName;
     }
 
-    @NonNull
-    public String getInstanceId() {
+    public @NonNull String getInstanceId() {
         return mInstanceId;
     }
 
-    @NonNull
-    public DeviceConfig getDeviceConfig() {
+    public @NonNull DeviceConfig getDeviceConfig() {
         return mDeviceConfig;
     }
 
-    @NonNull
-    public WatchUiState getWatchUiState() {
+    public @NonNull WatchUiState getWatchUiState() {
         return mWatchUiState;
     }
 
-    @NonNull
-    public UserStyleWireFormat getUserStyle() {
+    public @NonNull UserStyleWireFormat getUserStyle() {
         // TODO (b/284971375): This check really shouldn't be necessary.
         if (mUserStyle == null) {
             Log.e(TAG, "WallpaperInteractiveWatchFaceInstanceParams with null mUserStyle",
@@ -135,8 +125,7 @@ public class WallpaperInteractiveWatchFaceInstanceParams
         mUserStyle = userStyle;
     }
 
-    @Nullable
-    public List<IdAndComplicationDataWireFormat> getIdAndComplicationDataWireFormats() {
+    public @Nullable List<IdAndComplicationDataWireFormat> getIdAndComplicationDataWireFormats() {
         return mIdAndComplicationDataWireFormats;
     }
 
@@ -145,13 +134,11 @@ public class WallpaperInteractiveWatchFaceInstanceParams
         mIdAndComplicationDataWireFormats = idAndComplicationDataWireFormats;
     }
 
-    @Nullable
-    public String getAuxiliaryComponentClassName() {
+    public @Nullable String getAuxiliaryComponentClassName() {
         return mAuxiliaryComponentClassName;
     }
 
-    @Nullable
-    public String getAuxiliaryComponentPackageName() {
+    public @Nullable String getAuxiliaryComponentPackageName() {
         return mAuxiliaryComponentPackageName;
     }
 

@@ -18,11 +18,12 @@ package androidx.wear.tiles.timeline;
 
 import android.app.AlarmManager;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.wear.protolayout.LayoutElementBuilders;
 import androidx.wear.protolayout.TimelineBuilders;
 import androidx.wear.tiles.timeline.internal.TilesTimelineManagerInternal;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -61,7 +62,7 @@ public class TilesTimelineManager implements AutoCloseable {
          */
         @Deprecated
         void onLayoutUpdate(
-                int token, @NonNull androidx.wear.tiles.LayoutElementBuilders.Layout layout);
+                int token, androidx.wear.tiles.LayoutElementBuilders.@NonNull Layout layout);
     }
 
     /** Type to listen for layout updates from a given timeline. */
@@ -73,7 +74,7 @@ public class TilesTimelineManager implements AutoCloseable {
          * @param token The token originally passed to {@link TilesTimelineManager}.
          * @param layout The new layout to use.
          */
-        void onLayoutUpdate(int token, @NonNull LayoutElementBuilders.Layout layout);
+        void onLayoutUpdate(int token, LayoutElementBuilders.@NonNull Layout layout);
     }
 
     private final TilesTimelineManagerInternal mManager;
@@ -96,7 +97,7 @@ public class TilesTimelineManager implements AutoCloseable {
     public TilesTimelineManager(
             @NonNull AlarmManager alarmManager,
             @NonNull Clock clock,
-            @NonNull androidx.wear.tiles.TimelineBuilders.Timeline timeline,
+            androidx.wear.tiles.TimelineBuilders.@NonNull Timeline timeline,
             int token,
             @NonNull Executor listenerExecutor,
             @NonNull Listener listener) {
@@ -128,7 +129,7 @@ public class TilesTimelineManager implements AutoCloseable {
     public TilesTimelineManager(
             @NonNull AlarmManager alarmManager,
             @NonNull Clock clock,
-            @NonNull TimelineBuilders.Timeline timeline,
+            TimelineBuilders.@NonNull Timeline timeline,
             int token,
             @NonNull Executor listenerExecutor,
             @NonNull LayoutUpdateListener listener) {

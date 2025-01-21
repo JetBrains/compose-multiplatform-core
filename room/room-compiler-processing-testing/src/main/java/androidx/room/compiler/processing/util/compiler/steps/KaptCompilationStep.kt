@@ -38,9 +38,10 @@ internal class KaptCompilationStep(
     override val name = "kapt"
 
     init {
-        check(annotationProcessors.size <= 10) {
-            "Only 10 annotation processor can be loaded for test compilation for now, but " +
-                "requested ${annotationProcessors.size}. Tell Dany to support more!"
+        check(annotationProcessors.size <= PROCESSOR_DELEGATES_SIZE) {
+            "Only $PROCESSOR_DELEGATES_SIZE annotation processor can be loaded for test " +
+                "compilation for now, but requested ${annotationProcessors.size}. " +
+                "Tell Dany to support more!"
         }
     }
 
@@ -126,7 +127,8 @@ internal class KaptCompilationStep(
         // 'apclasspath' is not used since FQN are specified in 'processors', but if left unset
         // KAPT does not try to load processors at all.
         add(KaptCliOption.ANNOTATION_PROCESSOR_CLASSPATH_OPTION to "empty")
-        List(annotationProcessors.size) { index ->
+
+        for (index in annotationProcessors.indices) {
             add(
                 KaptCliOption.ANNOTATION_PROCESSORS_OPTION to
                     TestDelegateProcessor.KaptTestDelegateAP0::class.java.name.dropLast(1) + index
@@ -194,6 +196,9 @@ internal class KaptCompilationStep(
 /** The list of processors to delegate to during the test compilation. */
 private val delegateProcessors = ThreadLocal<List<Processor>>()
 
+/** The max amount of processors we support during test is based on the amount of delegates */
+private val PROCESSOR_DELEGATES_SIZE = TestDelegateProcessor::class.java.declaredClasses.size
+
 /**
  * These delegate classes may seem unused but will be instantiated by KAPT via reflection and
  * through their no-arg constructor, and we use them to delegate to actual processors provided for
@@ -221,4 +226,24 @@ sealed class TestDelegateProcessor(val delegate: Processor) : Processor by deleg
     class KaptTestDelegateAP8 : TestDelegateProcessor(checkNotNull(delegateProcessors.get())[8])
 
     class KaptTestDelegateAP9 : TestDelegateProcessor(checkNotNull(delegateProcessors.get())[9])
+
+    class KaptTestDelegateAP10 : TestDelegateProcessor(checkNotNull(delegateProcessors.get())[10])
+
+    class KaptTestDelegateAP11 : TestDelegateProcessor(checkNotNull(delegateProcessors.get())[11])
+
+    class KaptTestDelegateAP12 : TestDelegateProcessor(checkNotNull(delegateProcessors.get())[12])
+
+    class KaptTestDelegateAP13 : TestDelegateProcessor(checkNotNull(delegateProcessors.get())[13])
+
+    class KaptTestDelegateAP14 : TestDelegateProcessor(checkNotNull(delegateProcessors.get())[14])
+
+    class KaptTestDelegateAP15 : TestDelegateProcessor(checkNotNull(delegateProcessors.get())[15])
+
+    class KaptTestDelegateAP16 : TestDelegateProcessor(checkNotNull(delegateProcessors.get())[16])
+
+    class KaptTestDelegateAP17 : TestDelegateProcessor(checkNotNull(delegateProcessors.get())[17])
+
+    class KaptTestDelegateAP18 : TestDelegateProcessor(checkNotNull(delegateProcessors.get())[18])
+
+    class KaptTestDelegateAP19 : TestDelegateProcessor(checkNotNull(delegateProcessors.get())[19])
 }

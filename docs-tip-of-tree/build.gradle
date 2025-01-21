@@ -13,7 +13,7 @@ def docsForOptionalProject(path) {
 }
 
 android {
-    namespace "androidx.docs.tipoftree"
+    namespace = "androidx.docs.tipoftree"
 }
 
 // The dependency list should only be changed when a new project is registered or a project's source is removed. Samples should never be added.
@@ -62,11 +62,11 @@ dependencies {
     docs(project(":camera:camera-feature-combination-query"))
     docs(project(":camera:camera-feature-combination-query-play-services"))
     docs(project(":camera:camera-lifecycle"))
-    docs(project(":camera:camera-media3-effect"))
     docs(project(":camera:camera-mlkit-vision"))
     docs(project(":camera:camera-testing"))
     docs(project(":camera:camera-video"))
     docs(project(":camera:camera-view"))
+    docs(project(":camera:media3:media3-effect"))
     docs(project(":camera:viewfinder:viewfinder-compose"))
     docs(project(":camera:viewfinder:viewfinder-core"))
     docs(project(":camera:viewfinder:viewfinder-view"))
@@ -312,6 +312,7 @@ dependencies {
     kmpDocs(project(":room:room-testing"))
     docs(project(":safeparcel:safeparcel"))
     kmpDocs(project(":savedstate:savedstate"))
+    kmpDocs(project(":savedstate:savedstate-compose"))
     docs(project(":savedstate:savedstate-ktx"))
     docs(project(":security:security-app-authenticator"))
     docs(project(":security:security-app-authenticator-testing"))
@@ -321,6 +322,7 @@ dependencies {
     docs(project(":security:security-identity-credential"))
     docs(project(":security:security-mls"))
     docs(project(":security:security-state"))
+    docs(project(":security:security-state-provider"))
     docs(project(":sharetarget:sharetarget"))
     docs(project(":slice:slice-builders"))
     docs(project(":slice:slice-builders-ktx"))

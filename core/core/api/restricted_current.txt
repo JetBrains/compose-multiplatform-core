@@ -80,6 +80,7 @@ package androidx.core.app {
   public class ActivityOptionsCompat {
     ctor protected ActivityOptionsCompat();
     method public android.graphics.Rect? getLaunchBounds();
+    method public int getLaunchDisplayId();
     method public static androidx.core.app.ActivityOptionsCompat makeBasic();
     method public static androidx.core.app.ActivityOptionsCompat makeClipRevealAnimation(android.view.View, int, int, int, int);
     method public static androidx.core.app.ActivityOptionsCompat makeCustomAnimation(android.content.Context, int, int);
@@ -90,6 +91,7 @@ package androidx.core.app {
     method public static androidx.core.app.ActivityOptionsCompat makeThumbnailScaleUpAnimation(android.view.View, android.graphics.Bitmap, int, int);
     method public void requestUsageTimeReport(android.app.PendingIntent);
     method public androidx.core.app.ActivityOptionsCompat setLaunchBounds(android.graphics.Rect?);
+    method public androidx.core.app.ActivityOptionsCompat setLaunchDisplayId(int);
     method public androidx.core.app.ActivityOptionsCompat setPendingIntentBackgroundActivityStartMode(int);
     method public androidx.core.app.ActivityOptionsCompat setShareIdentityEnabled(boolean);
     method public android.os.Bundle? toBundle();
@@ -2268,7 +2270,7 @@ package androidx.core.os {
     method @Deprecated @ChecksSdkIntAtLeast(api=32, codename="Sv2") public static boolean isAtLeastSv2();
     method @Deprecated @ChecksSdkIntAtLeast(api=33, codename="Tiramisu") public static boolean isAtLeastT();
     method @Deprecated @ChecksSdkIntAtLeast(api=34, codename="UpsideDownCake") public static boolean isAtLeastU();
-    method @ChecksSdkIntAtLeast(api=35, codename="VanillaIceCream") public static boolean isAtLeastV();
+    method @Deprecated @ChecksSdkIntAtLeast(api=35, codename="VanillaIceCream") public static boolean isAtLeastV();
     property @ChecksSdkIntAtLeast(extension=android.os.ext.SdkExtensions.AD_SERVICES) public final int AD_SERVICES_EXTENSION_INT;
     property @ChecksSdkIntAtLeast(extension=android.os.Build.VERSION_CODES.R) public final int R_EXTENSION_INT;
     property @ChecksSdkIntAtLeast(extension=android.os.Build.VERSION_CODES.S) public final int S_EXTENSION_INT;
@@ -2372,6 +2374,11 @@ package androidx.core.os {
   public class OperationCanceledException extends java.lang.RuntimeException {
     ctor public OperationCanceledException();
     ctor public OperationCanceledException(String?);
+  }
+
+  public interface OutcomeReceiverCompat<R, E extends java.lang.Throwable> {
+    method public default void onError(E);
+    method public void onResult(R!);
   }
 
   public final class ParcelCompat {
@@ -3973,10 +3980,11 @@ package androidx.core.view {
     method @androidx.core.view.WindowInsetsCompat.Type.InsetsType public static int statusBars();
     method @androidx.core.view.WindowInsetsCompat.Type.InsetsType public static int systemBars();
     method @androidx.core.view.WindowInsetsCompat.Type.InsetsType public static int systemGestures();
+    method @androidx.core.view.WindowInsetsCompat.Type.InsetsType public static int systemOverlays();
     method @androidx.core.view.WindowInsetsCompat.Type.InsetsType public static int tappableElement();
   }
 
-  @IntDef(flag=true, value={0x1, 0x2, 0x4, 0x8, 0x100, 0x10, 0x20, 0x40, 0x80}) @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.SOURCE) public static @interface WindowInsetsCompat.Type.InsetsType {
+  @IntDef(flag=true, value={0x1, 0x2, 0x4, 0x8, 0x100, 0x10, 0x20, 0x40, 0x80, 0x200}) @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.SOURCE) public static @interface WindowInsetsCompat.Type.InsetsType {
   }
 
   public final class WindowInsetsControllerCompat {

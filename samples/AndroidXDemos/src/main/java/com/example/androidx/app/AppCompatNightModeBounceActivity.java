@@ -21,10 +21,11 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.androidx.R;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An Activity which has a DayNight theme, which allows us to 'bounce' to our

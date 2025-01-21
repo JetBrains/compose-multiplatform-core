@@ -52,5 +52,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.profileinstaller.benchmark"
+    namespace = "androidx.profileinstaller.benchmark"
 }

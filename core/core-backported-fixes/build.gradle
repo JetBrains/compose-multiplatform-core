@@ -35,13 +35,13 @@ dependencies {
 }
 
 android {
-    namespace "androidx.core.backported.fixes"
+    namespace = "androidx.core.backported.fixes"
 }
 
 androidx {
     name = "androidx.core:core-backported-fixes"
     type = LibraryType.PUBLISHED_LIBRARY
-    mavenVersion = LibraryVersions.CORE
+    mavenVersion = LibraryVersions.CORE_BACKPORTED_FIXES
     inceptionYear = "2024"
     description = "This library makes it easy for developers to use check if a known critical issue is fixed on a device."
 }

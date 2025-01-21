@@ -28,7 +28,12 @@ internal class VersionHandshake(
 
     @SuppressLint("BanUncheckedReflection") // calling method on Versions class
     fun perform(classLoader: ClassLoader?): Int {
-        val versionsClass = Class.forName(Versions::class.java.name, false, classLoader)
+        val versionsClass =
+            Class.forName(
+                "androidx.privacysandbox.sdkruntime.core.Versions",
+                /* initialize = */ false,
+                classLoader
+            )
         val handShakeMethod = versionsClass.getMethod("handShake", Int::class.javaPrimitiveType)
 
         val clientVersion = overrideApiVersion ?: Versions.API_VERSION

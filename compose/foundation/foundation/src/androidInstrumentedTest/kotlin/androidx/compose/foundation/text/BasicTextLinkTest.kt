@@ -77,6 +77,7 @@ import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.LinkAnnotation.Url
+import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.SpanStyle
@@ -84,6 +85,7 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.DpSize
@@ -939,6 +941,134 @@ class BasicTextLinkTest {
         }
     }
 
+    @Test
+    fun links_doesNotThrow_whenParagraphNotAdded() {
+        var layoutResult: TextLayoutResult? = null
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString {
+                    withStyle(ParagraphStyle()) { append("a\nb\nc\n") }
+                    withStyle(ParagraphStyle()) {
+                        pushLink(Url("url"))
+                        append("d")
+                        pop()
+                    }
+                },
+                onTextLayout = { layoutResult = it },
+                maxLines = 2
+            )
+        }
+
+        rule.runOnIdle {
+            assertThat(layoutResult).isNotNull()
+            assertThat(layoutResult!!.lineCount).isEqualTo(2)
+        }
+    }
+
+    @Test
+    fun links_doesNotThrow_whenParagraphNotAdded_link_fallsOnMaxLines_clipOverflow() {
+        var layoutResult: TextLayoutResult? = null
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString {
+                    withStyle(ParagraphStyle()) { append("a\nb") }
+                    withStyle(ParagraphStyle()) {
+                        pushLink(Url("url"))
+                        append("link")
+                        pop()
+                    }
+                    withStyle(ParagraphStyle()) { append("c") }
+                },
+                onTextLayout = { layoutResult = it },
+                maxLines = 3,
+                overflow = TextOverflow.Clip
+            )
+        }
+
+        rule.runOnIdle {
+            assertThat(layoutResult).isNotNull()
+            assertThat(layoutResult!!.lineCount).isEqualTo(3)
+        }
+    }
+
+    @Test
+    fun links_doesNotThrow_whenParagraphNotAdded_link_fallsOnMaxLines_ellipsisOverflow() {
+        var layoutResult: TextLayoutResult? = null
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString {
+                    withStyle(ParagraphStyle()) { append("a\nb") }
+                    withStyle(ParagraphStyle()) {
+                        pushLink(Url("url"))
+                        append("link")
+                        pop()
+                    }
+                    withStyle(ParagraphStyle()) { append("c") }
+                },
+                onTextLayout = { layoutResult = it },
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        rule.runOnIdle {
+            assertThat(layoutResult).isNotNull()
+            assertThat(layoutResult!!.lineCount).isEqualTo(3)
+        }
+    }
+
+    @Test
+    fun links_doesNotThrow_whenParagraphNotAdded_multiLineLink_fallsOnMaxLines_clipOverflow() {
+        var layoutResult: TextLayoutResult? = null
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString {
+                    withStyle(ParagraphStyle()) { append("a\nb") }
+                    withStyle(ParagraphStyle()) {
+                        pushLink(Url("url"))
+                        append("link\nlink")
+                        pop()
+                    }
+                    withStyle(ParagraphStyle()) { append("c") }
+                },
+                onTextLayout = { layoutResult = it },
+                maxLines = 3,
+                overflow = TextOverflow.Clip
+            )
+        }
+
+        rule.runOnIdle {
+            assertThat(layoutResult).isNotNull()
+            assertThat(layoutResult!!.lineCount).isEqualTo(3)
+        }
+    }
+
+    @Test
+    fun links_doesNotThrow_whenParagraphNotAdded_multiLineLink_fallsOnMaxLines_ellipsisOverflow() {
+        var layoutResult: TextLayoutResult? = null
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString {
+                    withStyle(ParagraphStyle()) { append("a\nb") }
+                    withStyle(ParagraphStyle()) {
+                        pushLink(Url("url"))
+                        append("link\nlink")
+                        pop()
+                    }
+                    withStyle(ParagraphStyle()) { append("c") }
+                },
+                onTextLayout = { layoutResult = it },
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        rule.runOnIdle {
+            assertThat(layoutResult).isNotNull()
+            assertThat(layoutResult!!.lineCount).isEqualTo(3)
+        }
+    }
+
     @Composable
     private fun TextWithLinks() =
         with(rule.density) {
@@ -951,10 +1081,10 @@ class BasicTextLinkTest {
 
                 val text = buildAnnotatedString {
                     append("text ")
-                    withLink(Url(Url1)) { append("link ") }
-                    append("text ")
-                    withLink(Url(Url2)) { append("a long link ") }
-                    append("text")
+                    withLink(Url(Url1)) { append("link") }
+                    append(" text")
+                    withLink(Url(Url2)) { append(" a long link") }
+                    append(" text")
                 }
                 val widthDp = (fontSize * 22).toDp() // to fit text in the middle of the second link
                 BasicText(

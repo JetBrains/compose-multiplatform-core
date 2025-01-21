@@ -451,7 +451,10 @@ internal constructor(
     val currentPageOffsetFraction: Float
         get() = scrollPosition.currentPageOffsetFraction
 
-    internal val prefetchState = LazyLayoutPrefetchState(prefetchScheduler)
+    internal val prefetchState =
+        LazyLayoutPrefetchState(prefetchScheduler) {
+            Snapshot.withoutReadObservation { schedulePrefetch(firstVisiblePage) }
+        }
 
     internal val beyondBoundsInfo = LazyLayoutBeyondBoundsInfo()
 

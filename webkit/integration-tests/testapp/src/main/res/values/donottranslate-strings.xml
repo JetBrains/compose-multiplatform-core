@@ -128,4 +128,7 @@
     <!-- Async StartUp Metadata -->
     <string name="async_startup_activity_title">Async StartUp</string>
 
+    <!-- TrafficStats tagging -->
+    <string name="default_trafficstats_tagging_activity">Default TrafficStats Tagging</string>
+    <string name="default_trafficstats_tagging_unsupported">Default TrafficStats tagging is not supported.</string>
 </resources>

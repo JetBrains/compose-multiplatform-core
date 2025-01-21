@@ -39,6 +39,10 @@ internal class ExtensionSessionState(private val captureSessionState: CaptureSes
         captureSessionState.onConfigured(session as CameraCaptureSessionWrapper)
     }
 
+    override fun onSessionDisconnected() {
+        captureSessionState.onSessionDisconnected()
+    }
+
     override fun onSessionFinalized() {
         captureSessionState.onSessionFinalized()
     }

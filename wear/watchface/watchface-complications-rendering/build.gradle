@@ -31,6 +31,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     api("androidx.annotation:annotation:1.8.1")
     api(project(":wear:watchface:watchface-complications-data"))
     api(project(":wear:watchface:watchface"))
@@ -56,7 +57,7 @@ android {
         aidl = true
     }
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
     lintOptions {
         disable 'NullabilityAnnotationsDetector' // False alarm on transformed files.
@@ -64,7 +65,7 @@ android {
 
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.wear.watchface.complications.rendering"
+    namespace = "androidx.wear.watchface.complications.rendering"
 }
 
 androidx {

@@ -22,7 +22,6 @@ import androidx.compose.foundation.gestures.Orientation.Horizontal
 import androidx.compose.foundation.gestures.Orientation.Vertical
 import androidx.compose.foundation.internal.checkPrecondition
 import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.BringIntoViewResponder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -62,6 +61,7 @@ private const val MinScrollThreshold = 0.5f
  * child in view when the viewport shrinks.
  */
 // TODO(b/242732126) Make this logic reusable for TV's mario scrolling implementation.
+@Suppress("DEPRECATION") // b/376080744
 @OptIn(ExperimentalFoundationApi::class)
 internal class ContentInViewNode(
     private var orientation: Orientation,
@@ -70,7 +70,7 @@ internal class ContentInViewNode(
     private var bringIntoViewSpec: BringIntoViewSpec?
 ) :
     Modifier.Node(),
-    BringIntoViewResponder,
+    androidx.compose.foundation.relocation.BringIntoViewResponder,
     LayoutAwareModifierNode,
     CompositionLocalConsumerModifierNode {
 

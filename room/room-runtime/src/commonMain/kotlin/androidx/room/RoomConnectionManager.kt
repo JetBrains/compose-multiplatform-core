@@ -216,9 +216,11 @@ abstract class BaseRoomConnectionManager {
 
     private fun dropAllTables(connection: SQLiteConnection) {
         if (configuration.allowDestructiveMigrationForAllTables) {
-            // Drops all tables (excluding special ones)
+            // Drops all tables and views (excluding special ones)
             connection
-                .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
+                .prepare(
+                    "SELECT name, type FROM sqlite_master WHERE type = 'table' OR type = 'view'"
+                )
                 .use { statement ->
                     buildList {
                         while (statement.step()) {
@@ -226,11 +228,18 @@ abstract class BaseRoomConnectionManager {
                             if (name.startsWith("sqlite_") || name == "android_metadata") {
                                 continue
                             }
-                            add(name)
+                            val isView = statement.getText(1) == "view"
+                            add(name to isView)
                         }
                     }
                 }
-                .forEach { table -> connection.execSQL("DROP TABLE IF EXISTS $table") }
+                .forEach { (name, isView) ->
+                    if (isView) {
+                        connection.execSQL("DROP VIEW IF EXISTS $name")
+                    } else {
+                        connection.execSQL("DROP TABLE IF EXISTS $name")
+                    }
+                }
         } else {
             // Drops known tables (Room entity tables)
             openDelegate.dropAllTables(connection)

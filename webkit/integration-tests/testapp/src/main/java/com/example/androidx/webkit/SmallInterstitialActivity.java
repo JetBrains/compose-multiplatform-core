@@ -20,10 +20,11 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.webkit.WebView;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewFeature;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link android.app.Activity} to demonstrate small ("Quiet") interstitials.

@@ -102,13 +102,23 @@
 
         <service
             android:name=".services.SampleDynamicGroupMediaRouteProviderService"
-            android:label="@string/sample_media_route_provider_service"
+            android:label="@string/sample_dynamic_group_mrp_service"
             android:exported="true">
 
             <intent-filter>
                 <action android:name="android.media.MediaRouteProviderService" />
                 <action android:name="android.media.MediaRoute2ProviderService" />
                 <action android:name="com.example.androidx.mediarouting.BIND_LOCAL" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".services.WrapperMediaRouteProviderService"
+            android:label="@string/wrapper_media_route_provider_service"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.media.MediaRouteProviderService" />
+                <action android:name="android.media.MediaRoute2ProviderService" />
             </intent-filter>
         </service>
 

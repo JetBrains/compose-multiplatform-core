@@ -28,9 +28,9 @@ dependencies {
 }
 
 android {
-    compileSdkVersion 35
+    compileSdk = 35
     defaultConfig {
-        applicationId "androidx.core.haptics.demos"
+        applicationId = "androidx.core.haptics.demos"
     }
-    namespace "androidx.core.haptics.demos"
+    namespace = "androidx.core.haptics.demos"
 }

@@ -25,8 +25,8 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * ChangeClipBounds captures the {@link android.view.View#getClipBounds()} before and after the
@@ -48,8 +48,7 @@ public class ChangeClipBounds extends Transition {
     static final Rect NULL_SENTINEL = new Rect();
 
     @Override
-    @NonNull
-    public String[] getTransitionProperties() {
+    public String @NonNull [] getTransitionProperties() {
         return sTransitionProperties;
     }
 
@@ -99,9 +98,8 @@ public class ChangeClipBounds extends Transition {
         captureValues(transitionValues, false);
     }
 
-    @Nullable
     @Override
-    public Animator createAnimator(@NonNull final ViewGroup sceneRoot,
+    public @Nullable Animator createAnimator(final @NonNull ViewGroup sceneRoot,
             @Nullable TransitionValues startValues,
             @Nullable TransitionValues endValues) {
         if (startValues == null || endValues == null

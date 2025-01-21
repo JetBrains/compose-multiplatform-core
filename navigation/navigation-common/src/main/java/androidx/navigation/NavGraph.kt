@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The Android Open Source Project
+ * Copyright 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import androidx.core.content.res.use
 import androidx.navigation.common.R
 import androidx.navigation.serialization.generateHashCode
 import androidx.navigation.serialization.generateRouteWithArgs
-import java.lang.StringBuilder
 import kotlin.reflect.KClass
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.InternalSerializationApi
@@ -302,8 +301,18 @@ public open class NavGraph(navGraphNavigator: Navigator<out NavGraph>) :
      * @param T Route from a [KClass] to locate
      * @return the node with route - the node must have been created with a route from [KClass]
      */
-    public inline fun <reified T> findNode(): NavDestination? =
-        findNode(serializer<T>().generateHashCode())
+    public inline fun <reified T> findNode(): NavDestination? = findNode(T::class)
+
+    /**
+     * Finds a destination in the collection by route from [KClass]. This will recursively check the
+     * [parent][parent] of this navigation graph if node is not found in this navigation graph.
+     *
+     * @param route Route from a [KClass] to locate
+     * @return the node with route - the node must have been created with a route from [KClass]
+     */
+    @OptIn(InternalSerializationApi::class)
+    public fun findNode(route: KClass<*>): NavDestination? =
+        findNode(route.serializer().generateHashCode())
 
     /**
      * Finds a destination in the collection by route from Object. This will recursively check the
@@ -463,7 +472,22 @@ public open class NavGraph(navGraphNavigator: Navigator<out NavGraph>) :
      *   NavGraph.
      */
     public inline fun <reified T : Any> setStartDestination() {
-        setStartDestination(serializer<T>()) { startDestination -> startDestination.route!! }
+        setStartDestination(T::class)
+    }
+
+    /**
+     * Sets the starting destination for this NavGraph.
+     *
+     * This will override any previously set [startDestinationId]
+     *
+     * @param startDestRoute The [KClass] of route [T] to be shown when navigating to this NavGraph.
+     */
+    @JvmSynthetic
+    @OptIn(InternalSerializationApi::class)
+    public fun <T : Any> setStartDestination(startDestRoute: KClass<T>) {
+        setStartDestination(startDestRoute.serializer()) { startDestination ->
+            startDestination.route!!
+        }
     }
 
     /**
@@ -474,6 +498,7 @@ public open class NavGraph(navGraphNavigator: Navigator<out NavGraph>) :
      * @param startDestRoute The route of the destination as an object to be shown when navigating
      *   to this NavGraph.
      */
+    @JvmSynthetic
     @OptIn(InternalSerializationApi::class)
     public fun <T : Any> setStartDestination(startDestRoute: T) {
         setStartDestination(startDestRoute::class.serializer()) { startDestination ->

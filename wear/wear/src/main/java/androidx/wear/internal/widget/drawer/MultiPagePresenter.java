@@ -16,11 +16,12 @@
 
 package androidx.wear.internal.widget.drawer;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.widget.drawer.WearableNavigationDrawerView;
 import androidx.wear.widget.drawer.WearableNavigationDrawerView.WearableNavigationDrawerAdapter;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * Provides a {@link WearableNavigationDrawerPresenter} implementation that is designed for the
@@ -33,7 +34,7 @@ public class MultiPagePresenter extends WearableNavigationDrawerPresenter {
     private final Ui mUi;
     private final WearableNavigationDrawerView mDrawer;
     private final boolean mIsAccessibilityEnabled;
-    @Nullable private WearableNavigationDrawerAdapter mAdapter;
+    private @Nullable WearableNavigationDrawerAdapter mAdapter;
 
     /**
      * Controls the user interface of a multi-page {@link WearableNavigationDrawerView}.

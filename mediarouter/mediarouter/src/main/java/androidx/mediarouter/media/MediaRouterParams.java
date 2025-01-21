@@ -140,7 +140,8 @@ public class MediaRouterParams {
         return mMediaTransferRestrictedToSelfProviders;
     }
 
-    /** */
+    /**
+     */
     @NonNull
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     public Bundle getExtras() {
@@ -158,7 +159,9 @@ public class MediaRouterParams {
         boolean mMediaTransferRestrictedToSelfProviders;
         Bundle mExtras;
 
-        /** Constructor for builder to create {@link MediaRouterParams}. */
+        /**
+         * Constructor for builder to create {@link MediaRouterParams}.
+         */
         public Builder() {}
 
         /**
@@ -296,7 +299,9 @@ public class MediaRouterParams {
             return this;
         }
 
-        /** Builds the {@link MediaRouterParams} instance. */
+        /**
+         * Builds the {@link MediaRouterParams} instance.
+         */
         @NonNull
         public MediaRouterParams build() {
             return new MediaRouterParams(this);

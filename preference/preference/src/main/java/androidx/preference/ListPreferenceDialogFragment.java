@@ -20,8 +20,8 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * @deprecated Use {@link ListPreferenceDialogFragmentCompat} instead
@@ -47,9 +47,8 @@ public class ListPreferenceDialogFragment extends PreferenceDialogFragment {
     /**
      * @deprecated Use {@link ListPreferenceDialogFragmentCompat} instead
      */
-    @NonNull
     @Deprecated
-    public static ListPreferenceDialogFragment newInstance(String key) {
+    public static @NonNull ListPreferenceDialogFragment newInstance(String key) {
         final ListPreferenceDialogFragment fragment = new ListPreferenceDialogFragment();
         final Bundle b = new Bundle(1);
         b.putString(ARG_KEY, key);
@@ -91,7 +90,7 @@ public class ListPreferenceDialogFragment extends PreferenceDialogFragment {
     }
 
     @Override
-    protected void onPrepareDialogBuilder(@NonNull AlertDialog.Builder builder) {
+    protected void onPrepareDialogBuilder(AlertDialog.@NonNull Builder builder) {
         super.onPrepareDialogBuilder(builder);
 
         builder.setSingleChoiceItems(mEntries, mClickedDialogEntryIndex,

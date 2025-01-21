@@ -42,7 +42,7 @@ import androidx.health.connect.client.impl.platform.aggregate.PRESSURE_AGGREGATI
 import androidx.health.connect.client.impl.platform.aggregate.TEMPERATURE_DELTA_METRIC_TYPE_MAP
 import androidx.health.connect.client.impl.platform.aggregate.VELOCITY_AGGREGATION_METRIC_TYPE_MAP
 import androidx.health.connect.client.impl.platform.aggregate.VOLUME_AGGREGATION_METRIC_TYPE_MAP
-import androidx.health.connect.client.impl.platform.aggregate.platformMetrics
+import androidx.health.connect.client.impl.platform.aggregate.isPlatformSupportedMetric
 import androidx.health.connect.client.impl.platform.records.toPlatformDataOrigin
 import androidx.health.connect.client.impl.platform.records.toPlatformRecordClass
 import androidx.health.connect.client.records.Record
@@ -116,7 +116,9 @@ fun AggregateRequest.toPlatformRequest(): AggregateRecordsRequest<Any> {
     return AggregateRecordsRequest.Builder<Any>(timeRangeFilter.toPlatformTimeRangeFilter())
         .apply {
             dataOriginFilter.forEach { addDataOriginsFilter(it.toPlatformDataOrigin()) }
-            platformMetrics.forEach { addAggregationType(it.toAggregationType()) }
+            metrics
+                .filter { it.isPlatformSupportedMetric() }
+                .forEach { addAggregationType(it.toAggregationType()) }
         }
         .build()
 }

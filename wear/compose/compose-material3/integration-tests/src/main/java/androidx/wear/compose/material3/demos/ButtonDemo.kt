@@ -526,27 +526,24 @@ fun CompactButtonDemo() {
             CompactButton(
                 onClick = { /* Do something */ },
                 colors = ButtonDefaults.buttonColors(),
-                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Compact Button", modifier = Modifier.fillMaxWidth())
+                Text("Compact Button")
             }
         }
         item {
             CompactButton(
                 onClick = { /* Do something */ },
                 colors = ButtonDefaults.filledVariantButtonColors(),
-                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Filled Variant", modifier = Modifier.fillMaxWidth())
+                Text("Filled Variant")
             }
         }
         item {
             CompactButton(
                 onClick = { /* Do something */ },
                 colors = ButtonDefaults.filledTonalButtonColors(),
-                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Filled Tonal", modifier = Modifier.fillMaxWidth())
+                Text("Filled Tonal")
             }
         }
         item {
@@ -554,19 +551,17 @@ fun CompactButtonDemo() {
                 onClick = { /* Do something */ },
                 colors = ButtonDefaults.outlinedButtonColors(),
                 border = ButtonDefaults.outlinedButtonBorder(enabled = true),
-                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Outlined", modifier = Modifier.fillMaxWidth())
+                Text("Outlined")
             }
         }
         item { ListHeader { Text("Icon and Label") } }
-        item { CompactButtonSample(modifier = Modifier.fillMaxWidth()) }
+        item { CompactButtonSample() }
         item {
             CompactButton(
                 onClick = { /* Do something */ },
-                icon = { FavoriteIcon(ButtonDefaults.SmallIconSize) },
+                icon = { FavoriteIcon(ButtonDefaults.ExtraSmallIconSize) },
                 colors = ButtonDefaults.filledVariantButtonColors(),
-                modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Filled Variant", maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
@@ -574,9 +569,8 @@ fun CompactButtonDemo() {
         item {
             CompactButton(
                 onClick = { /* Do something */ },
-                icon = { FavoriteIcon(ButtonDefaults.SmallIconSize) },
+                icon = { FavoriteIcon(ButtonDefaults.ExtraSmallIconSize) },
                 colors = ButtonDefaults.filledTonalButtonColors(),
-                modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Filled Tonal", maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
@@ -584,10 +578,9 @@ fun CompactButtonDemo() {
         item {
             CompactButton(
                 onClick = { /* Do something */ },
-                icon = { FavoriteIcon(ButtonDefaults.SmallIconSize) },
+                icon = { FavoriteIcon(ButtonDefaults.ExtraSmallIconSize) },
                 colors = ButtonDefaults.outlinedButtonColors(),
                 border = ButtonDefaults.outlinedButtonBorder(enabled = true),
-                modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Outlined", maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
@@ -595,9 +588,8 @@ fun CompactButtonDemo() {
         item {
             CompactButton(
                 onClick = { /* Do something */ },
-                icon = { FavoriteIcon(ButtonDefaults.SmallIconSize) },
+                icon = { FavoriteIcon(ButtonDefaults.ExtraSmallIconSize) },
                 colors = ButtonDefaults.childButtonColors(),
-                modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Child", maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
@@ -607,6 +599,13 @@ fun CompactButtonDemo() {
             CompactButton(
                 onClick = { /* Do something */ },
                 icon = { FavoriteIcon(ButtonDefaults.SmallIconSize) },
+            )
+        }
+        item {
+            CompactButton(
+                onClick = { /* Do something */ },
+                icon = { FavoriteIcon(ButtonDefaults.SmallIconSize) },
+                colors = ButtonDefaults.filledVariantButtonColors(),
             )
         }
         item {
@@ -634,13 +633,12 @@ fun CompactButtonDemo() {
         item { ListHeader { Text("Long Click") } }
         item {
             CompactButtonWithOnLongClickSample(
-                modifier = Modifier.fillMaxWidth(),
                 onClickHandler = { showOnClickToast(context) },
                 onLongClickHandler = { showOnLongClickToast(context) }
             )
         }
         item { ListHeader { Text("Expandable") } }
-        item { OutlinedCompactButtonSample(modifier = Modifier.fillMaxWidth()) }
+        item { OutlinedCompactButtonSample() }
     }
 }
 

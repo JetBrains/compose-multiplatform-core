@@ -22,7 +22,6 @@ import android.content.res.Resources;
 import android.graphics.RectF;
 import android.view.SurfaceHolder;
 
-import androidx.annotation.NonNull;
 import androidx.wear.watchface.CanvasComplicationFactory;
 import androidx.wear.watchface.ComplicationSlotInflationFactory;
 import androidx.wear.watchface.ComplicationSlotsManager;
@@ -40,6 +39,8 @@ import androidx.wear.watchface.style.CurrentUserStyleRepository;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+
 /** The service hosting the watch face. */
 public class WatchFaceService extends ListenableWatchFaceService {
     public static final RectF COMPLICATION_BOUNDS = new RectF(.3f, 0.7f, .7f, .9f);
@@ -49,9 +50,8 @@ public class WatchFaceService extends ListenableWatchFaceService {
         return resources.getInteger(R.integer.complication_slot_id);
     }
 
-    @NonNull
     @Override
-    protected ListenableFuture<WatchFace> createWatchFaceFuture(
+    protected @NonNull ListenableFuture<WatchFace> createWatchFaceFuture(
             @NonNull SurfaceHolder surfaceHolder,
             @NonNull WatchState watchState,
             @NonNull ComplicationSlotsManager complicationSlotsManager,
@@ -71,15 +71,13 @@ public class WatchFaceService extends ListenableWatchFaceService {
                                 new Intent(this, ComplicationRationalActivity.class)));
     }
 
-    @NonNull
     @Override
-    public ComplicationSlotInflationFactory getComplicationSlotInflationFactory(
+    public @NonNull ComplicationSlotInflationFactory getComplicationSlotInflationFactory(
             @NonNull CurrentUserStyleRepository currentUserStyleRepository) {
         final Context context = this;
         return new ComplicationSlotInflationFactory() {
-            @NonNull
             @Override
-            public CanvasComplicationFactory getCanvasComplicationFactory(int slotId) {
+            public @NonNull CanvasComplicationFactory getCanvasComplicationFactory(int slotId) {
                 return (watchState, invalidateCallback) ->
                         new CanvasComplicationDrawable(
                                 new ComplicationDrawable(context), watchState, invalidateCallback);

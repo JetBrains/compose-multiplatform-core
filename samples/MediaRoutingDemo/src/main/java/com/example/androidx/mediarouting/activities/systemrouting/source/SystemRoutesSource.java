@@ -16,10 +16,10 @@
 
 package com.example.androidx.mediarouting.activities.systemrouting.source;
 
-import androidx.annotation.NonNull;
-
 import com.example.androidx.mediarouting.activities.systemrouting.SystemRouteItem;
 import com.example.androidx.mediarouting.activities.systemrouting.SystemRoutesSourceItem;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -28,7 +28,7 @@ import java.util.List;
  */
 public abstract class SystemRoutesSource {
 
-    @NonNull protected Runnable mOnRoutesChangedListener = () -> {};
+    protected @NonNull Runnable mOnRoutesChangedListener = () -> {};
 
     /** Sets a {@link Runnable} to invoke whenever routes change. */
     public void setOnRoutesChangedListener(@NonNull Runnable onRoutesChangedListener) {
@@ -51,22 +51,19 @@ public abstract class SystemRoutesSource {
     }
 
     /** Returns a string that uniquely identifies this source. */
-    @NonNull
-    public final String getSourceId() {
+    public final @NonNull String getSourceId() {
         return getClass().getSimpleName();
     }
 
     /**
      * Gets a source item containing source type.
      */
-    @NonNull
-    public abstract SystemRoutesSourceItem getSourceItem();
+    public abstract @NonNull SystemRoutesSourceItem getSourceItem();
 
     /**
      * Fetches a list of {@link SystemRouteItem} discovered by this source.
      */
-    @NonNull
-    public abstract List<SystemRouteItem> fetchSourceRouteItems();
+    public abstract @NonNull List<SystemRouteItem> fetchSourceRouteItems();
 
     /**
      * Selects the route that corresponds to the given item.

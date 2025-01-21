@@ -68,11 +68,13 @@ public class PackageIdentifier {
         return mPackageIdentifierParcel;
     }
 
+    /** Returns the name for a package. */
     @NonNull
     public String getPackageName() {
         return mPackageIdentifierParcel.getPackageName();
     }
 
+    /** Returns the SHA-256 certificate for a package. */
     @NonNull
     public byte[] getSha256Certificate() {
         return mPackageIdentifierParcel.getSha256Certificate();

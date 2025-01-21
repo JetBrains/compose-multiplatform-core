@@ -21,14 +21,13 @@ plugins {
 }
 
 android {
-    namespace "androidx.privacysandbox.tools.integration.testapp"
+    namespace = "androidx.privacysandbox.tools.integration.testapp"
 
     defaultConfig {
-        applicationId "androidx.privacysandbox.tools.integration.testapp"
-        minSdk 33
-        compileSdk 35
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        applicationId = "androidx.privacysandbox.tools.integration.testapp"
+        minSdk = 33
+        compileSdk = 35
+        compileSdkExtension = 14
     }
     experimentalProperties["android.privacySandboxSdk.apiGenerator"] =
             project.dependencies.create(project(":privacysandbox:tools:tools-apigenerator"))

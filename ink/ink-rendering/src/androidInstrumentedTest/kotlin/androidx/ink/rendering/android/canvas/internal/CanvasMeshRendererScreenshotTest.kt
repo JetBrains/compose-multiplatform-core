@@ -20,13 +20,14 @@ import android.os.Build
 import androidx.ink.rendering.android.canvas.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.captureToBitmap
-import androidx.test.espresso.matcher.ViewMatchers.isRoot
+import androidx.test.espresso.matcher.ViewMatchers.withTagValue
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.assertAgainstGolden
+import org.hamcrest.Matchers
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,7 +50,7 @@ class CanvasMeshRendererScreenshotTest {
     }
 
     private fun assertScreenshot(filename: String) {
-        onView(isRoot())
+        onView(withTagValue(Matchers.equalTo(CanvasMeshRendererScreenshotTestActivity.VIEW_TAG)))
             .perform(
                 captureToBitmap() {
                     it.assertAgainstGolden(screenshotRule, "${this::class.simpleName}_$filename")

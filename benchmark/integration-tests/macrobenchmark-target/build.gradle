@@ -23,16 +23,16 @@ plugins {
 android {
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles(
                     getDefaultProguardFile("proguard-android-optimize.txt"),
                     "proguard-rules.pro"
             )
         }
     }
-    compileSdkVersion 35
-    namespace "androidx.benchmark.integration.macrobenchmark.target"
+    compileSdk = 35
+    namespace = "androidx.benchmark.integration.macrobenchmark.target"
 }
 
 dependencies {

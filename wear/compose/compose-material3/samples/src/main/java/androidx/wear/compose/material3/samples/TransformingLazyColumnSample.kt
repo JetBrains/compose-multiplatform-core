@@ -17,12 +17,14 @@
 package androidx.wear.compose.material3.samples
 
 import androidx.annotation.Sampled
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement.spacedBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -58,20 +60,12 @@ import androidx.wear.compose.material3.lazy.targetMorphingHeight
 import kotlin.random.Random
 import kotlinx.coroutines.launch
 
-fun rainbowColor(progress: Float): Color {
-    val hue = progress * 360f
-    val saturation = 1f
-    val value = 1f
-
-    return Color(android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, value)))
-}
-
 @Preview
 @Composable
 fun TransformingLazyColumnScrollingSample() {
     val state = rememberTransformingLazyColumnState()
     val coroutineScope = rememberCoroutineScope()
-    var expandedItem by remember { mutableStateOf(-1) }
+    var expandedItemKey by remember { mutableStateOf(-1) }
     var elements by remember { mutableStateOf(listOf(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)) }
 
     var nextElement = 10
@@ -110,6 +104,7 @@ fun TransformingLazyColumnScrollingSample() {
                 modifier = Modifier.background(MaterialTheme.colorScheme.background)
             ) {
                 items(elements, key = { it }) {
+                    val index = elements.indexOf(it)
                     Column(
                         modifier =
                             Modifier.fillMaxWidth()
@@ -118,9 +113,9 @@ fun TransformingLazyColumnScrollingSample() {
                                     backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                                     shape = MaterialTheme.shapes.medium
                                 )
+                                .animateItem()
                                 .padding(5.dp)
                                 .clickable {
-                                    val index = elements.indexOf(it)
                                     elements =
                                         elements.subList(0, index) +
                                             elements.subList(index + 1, elements.count())
@@ -134,15 +129,9 @@ fun TransformingLazyColumnScrollingSample() {
                                 "Item $it",
                                 color = MaterialTheme.colorScheme.onSurface,
                                 style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f).fillMaxHeight()
                             )
-                            Text(
-                                "^",
-                                Modifier.clickable {
-                                    val index = elements.indexOf(it)
-                                    addElement(index)
-                                }
-                            )
+                            Text("^", Modifier.clickable { addElement(index) })
                             Box(
                                 Modifier.size(25.dp)
                                     .drawWithContent {
@@ -165,10 +154,18 @@ fun TransformingLazyColumnScrollingSample() {
                                             center = Offset(size.width - r, r)
                                         )
                                     }
-                                    .clickable { expandedItem = if (expandedItem == it) -1 else it }
+                                    .clickable {
+                                        expandedItemKey =
+                                            if (expandedItemKey == it) -1
+                                            else {
+                                                coroutineScope.launch { state.scrollToItem(index) }
+                                                it
+                                            }
+                                    }
                             )
                         }
-                        if (expandedItem == it) {
+                        AnimatedVisibility(expandedItemKey == it) {
+                            // Expanded content goes here.
                             Box(modifier = Modifier.fillMaxWidth().height(100.dp))
                         }
                     }
@@ -305,4 +302,12 @@ fun TransformingLazyColumnTargetMorphingHeightSample() {
             }
         }
     }
+}
+
+private fun rainbowColor(progress: Float): Color {
+    val hue = progress * 360f
+    val saturation = 1f
+    val value = 1f
+
+    return Color(android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, value)))
 }

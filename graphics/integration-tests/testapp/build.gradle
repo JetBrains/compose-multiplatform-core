@@ -36,5 +36,5 @@ dependencies {
 }
 
 android {
-    namespace "androidx.graphics.shapes.test"
+    namespace = "androidx.graphics.shapes.test"
 }

@@ -50,19 +50,19 @@ androidx {
 
 android {
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile('proguard-android.txt')
         }
     }
     buildFeatures {
         aidl = true
     }
-    namespace "androidx.wear.watchface.style.test.oldApiTestService"
+    namespace = "androidx.wear.watchface.style.test.oldApiTestService"
 }
 
 /*

@@ -33,6 +33,6 @@ dependencies {
 }
 
 android {
-    compileSdkVersion 35
-    namespace "androidx.compose.ui.test.manifest.integration.testapp"
+    compileSdk = 35
+    namespace = "androidx.compose.ui.test.manifest.integration.testapp"
 }

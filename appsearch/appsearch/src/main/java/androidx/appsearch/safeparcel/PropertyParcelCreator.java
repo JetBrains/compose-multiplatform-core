@@ -21,8 +21,10 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.EmbeddingVector;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,6 +60,7 @@ public class PropertyParcelCreator implements Parcelable.Creator<PropertyParcel>
     /** Creates a {@link PropertyParcel} from a {@link Bundle}. */
     @SuppressWarnings({"unchecked"})
     @NonNull
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     private static PropertyParcel createPropertyParcelFromBundle(
             @NonNull Bundle propertyParcelBundle) {
         Objects.requireNonNull(propertyParcelBundle);

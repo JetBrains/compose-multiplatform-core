@@ -151,7 +151,7 @@ public class VisibilityStoreMigrationHelperFromV0 {
                     // Note: We use the other clients' prefixed names as ids
                     deprecatedDocuments.add(appSearchImpl.getDocument(
                             VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                            VisibilityStore.VISIBILITY_DATABASE_NAME,
+                            VisibilityStore.DOCUMENT_VISIBILITY_DATABASE_NAME,
                             VisibilityToDocumentConverter.VISIBILITY_DOCUMENT_NAMESPACE,
                             getDeprecatedVisibilityDocumentId(packageName, databaseName),
                             /*typePropertyPaths=*/ Collections.emptyMap()));

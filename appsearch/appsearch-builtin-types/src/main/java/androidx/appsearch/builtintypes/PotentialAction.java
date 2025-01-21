@@ -19,6 +19,7 @@ package androidx.appsearch.builtintypes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appsearch.annotation.Document;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.core.util.Preconditions;
 
 /**
@@ -43,6 +44,10 @@ import androidx.core.util.Preconditions;
  * </ul>
  */
 // TODO(b/274671459): Add additional information, if needed, to dispatch actions.
+// TODO(b/328672505): Discuss with other API reviewers or council whether this API should be
+//  stabilized, or whether the App Functions project replaces this effort entirely so this class
+//  should be removed.
+@ExperimentalAppSearchApi
 @Document(name = "builtin:PotentialAction")
 public class PotentialAction {
     @Document.Namespace

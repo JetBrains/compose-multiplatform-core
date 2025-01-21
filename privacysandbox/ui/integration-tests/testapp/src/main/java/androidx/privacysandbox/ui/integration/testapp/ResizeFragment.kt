@@ -24,6 +24,7 @@ import android.widget.Button
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdType
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.MediationOption
+import kotlin.math.max
 
 class ResizeFragment : BaseFragment() {
 
@@ -95,8 +96,10 @@ class ResizeFragment : BaseFragment() {
         }
 
         setPaddingButton.setOnClickListener {
-            val halfWidth = (resizableBannerView.width / 2) - 10
-            val halfHeight = (resizableBannerView.height / 2) - 10
+            // Set halfWidth and halfHeight to minimum 10 to avoid crashes when the width and height
+            // are very small
+            val halfWidth = max(10, (resizableBannerView.width / 2) - 10)
+            val halfHeight = max(10, resizableBannerView.height / 2) - 10
             resizableBannerView.setPadding(
                 (10..halfWidth).random(),
                 (10..halfHeight).random(),

@@ -26,14 +26,16 @@ import com.google.common.truth.Truth.assertThat
  * Performs a [ViewAssertion] that checks [firstVisiblePage] and [visiblePages] match the
  * corresponding properties of a [PdfView]
  */
-internal fun ViewInteraction.checkPagesAreVisible(firstVisiblePage: Int, visiblePages: Int) =
-    this.check(PdfViewPagesAreVisible(firstVisiblePage, visiblePages))
+internal fun ViewInteraction.checkPagesAreVisible(
+    firstVisiblePage: Int,
+    visiblePages: Int? = null
+) = this.check(PdfViewPagesAreVisible(firstVisiblePage, visiblePages))
 
 /**
  * [ViewAssertion] which checks that [PdfView] has the expected [PdfView.firstVisiblePage] and
  * [PdfView.visiblePagesCount] values
  */
-private class PdfViewPagesAreVisible(val firstVisiblePage: Int, val visiblePages: Int) :
+private class PdfViewPagesAreVisible(val firstVisiblePage: Int, val visiblePages: Int? = null) :
     ViewAssertion {
     override fun check(view: View?, noViewFoundException: NoMatchingViewException?) {
         // ViewAssertion contract requires either view or noViewFoundException to be non-null
@@ -42,6 +44,8 @@ private class PdfViewPagesAreVisible(val firstVisiblePage: Int, val visiblePages
         // We just checked for this, but this makes smartcasts work nicely
         require(view is PdfView)
         assertThat(view.firstVisiblePage).isEqualTo(firstVisiblePage)
-        assertThat(view.visiblePagesCount).isEqualTo(visiblePages)
+        if (visiblePages != null) {
+            assertThat(view.visiblePagesCount).isEqualTo(visiblePages)
+        }
     }
 }

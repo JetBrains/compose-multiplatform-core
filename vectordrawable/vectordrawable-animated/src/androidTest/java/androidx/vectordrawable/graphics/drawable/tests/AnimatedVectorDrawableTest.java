@@ -39,7 +39,6 @@ import android.view.View;
 import android.widget.ImageButton;
 
 import androidx.annotation.DrawableRes;
-import androidx.annotation.NonNull;
 import androidx.test.annotation.UiThreadTest;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.FlakyTest;
@@ -50,6 +49,7 @@ import androidx.vectordrawable.animated.test.R;
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat.AnimationCallback;
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

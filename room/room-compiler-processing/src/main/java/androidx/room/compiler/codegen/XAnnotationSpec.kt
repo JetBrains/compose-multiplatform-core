@@ -54,6 +54,8 @@ interface XAnnotationSpec {
     }
 
     companion object {
+        @JvmStatic fun of(className: XClassName) = builder(className).build()
+
         @JvmStatic
         fun builder(className: XClassName): Builder =
             XAnnotationSpecImpl.Builder(

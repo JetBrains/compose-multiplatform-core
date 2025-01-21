@@ -795,6 +795,7 @@ class BringIntoViewScrollableInteractionTest(private val orientation: Orientatio
         assertChildMaxInView()
     }
 
+    @Suppress("DEPRECATION") // b/376080744
     /** See b/241591211. */
     @Test
     fun doesNotCrashWhenCoordinatesDetachedDuringOperation() {

@@ -20,9 +20,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
@@ -48,8 +49,7 @@ public class AnnotationUtils {
     }
 
     /** Returns an instance of intent from the annotation action for a given uri. */
-    @NonNull
-    public static Intent getAnnotationIntent(@NonNull Uri uri) {
+    public static @NonNull Intent getAnnotationIntent(@NonNull Uri uri) {
         Objects.requireNonNull(uri);
 
         Intent intent = new Intent(ACTION_ANNOTATE_PDF);

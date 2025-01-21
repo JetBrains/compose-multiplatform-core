@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
+import kotlin.math.absoluteValue
 import kotlin.math.asin
 import kotlin.math.floor
 import kotlin.math.min
@@ -97,22 +98,25 @@ fun SegmentedCircularProgressIndicator(
 
     var shouldAnimateProgress by remember { mutableStateOf(false) }
     val updatedProgress by rememberUpdatedState(progress)
+    val initialProgress = updatedProgress()
+    var lastProgress = initialProgress
     val animatedProgress = remember {
-        Animatable(
-            if (allowProgressOverflow) updatedProgress() else updatedProgress().coerceIn(0f, 1f)
-        )
+        Animatable(if (allowProgressOverflow) initialProgress else initialProgress.coerceIn(0f, 1f))
     }
-    val animatedOverflowColor = remember { Animatable(if (updatedProgress() > 1f) 1f else 0f) }
+    val animatedOverflowColor = remember { Animatable(if (initialProgress > 1f) 1f else 0f) }
 
     LaunchedEffect(Unit) {
         snapshotFlow(updatedProgress).collectLatest {
             val newProgress = if (allowProgressOverflow) it else it.coerceIn(0f, 1f)
+            val actualOverflowProgressAnimationSpec =
+                if ((newProgress - lastProgress).absoluteValue <= 1f) progressAnimationSpec
+                else createOverflowProgressAnimationSpec(newProgress, lastProgress)
 
             if (!shouldAnimateProgress) {
                 shouldAnimateProgress = true
             } else if (allowProgressOverflow && newProgress > 1f) {
                 // Animate the progress arc.
-                animatedProgress.animateTo(newProgress, progressAnimationSpec) {
+                animatedProgress.animateTo(newProgress, actualOverflowProgressAnimationSpec) {
                     // Start overflow color transition when progress crosses 1 (full circle).
                     if (animatedProgress.value.equalsWithTolerance(1f)) {
                         launch { animatedOverflowColor.animateTo(1f, colorAnimationSpec) }
@@ -123,13 +127,20 @@ fun SegmentedCircularProgressIndicator(
                 // same time.
                 launch {
                     awaitAll(
-                        async { animatedProgress.animateTo(newProgress, progressAnimationSpec) },
+                        async {
+                            animatedProgress.animateTo(
+                                newProgress,
+                                actualOverflowProgressAnimationSpec
+                            )
+                        },
                         async { animatedOverflowColor.animateTo(0f, colorAnimationSpec) }
                     )
                 }
             } else {
                 animatedProgress.animateTo(newProgress, progressAnimationSpec)
             }
+
+            lastProgress = newProgress
         }
     }
 

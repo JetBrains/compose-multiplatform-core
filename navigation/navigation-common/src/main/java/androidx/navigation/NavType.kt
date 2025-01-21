@@ -16,10 +16,12 @@
 package androidx.navigation
 
 import android.net.Uri
-import android.os.Bundle
 import android.os.Parcelable
 import androidx.annotation.AnyRes
 import androidx.annotation.RestrictTo
+import androidx.savedstate.SavedState
+import androidx.savedstate.read
+import androidx.savedstate.write
 import java.io.Serializable
 
 /**
@@ -45,20 +47,20 @@ public abstract class NavType<T>(
     /**
      * Put a value of this type in the `bundle`
      *
-     * @param bundle bundle to put value in
-     * @param key bundle key
+     * @param bundle SavedState to put value in
+     * @param key SavedState key
      * @param value value of this type
      */
-    public abstract fun put(bundle: Bundle, key: String, value: T)
+    public abstract fun put(bundle: SavedState, key: String, value: T)
 
     /**
      * Get a value of this type from the `bundle`
      *
-     * @param bundle bundle to get value from
-     * @param key bundle key
+     * @param bundle SavedState to get value from
+     * @param key SavedState key
      * @return value of this type
      */
-    public abstract operator fun get(bundle: Bundle, key: String): T?
+    public abstract operator fun get(bundle: SavedState, key: String): T?
 
     /**
      * Parse a value of this type from a String.
@@ -86,13 +88,13 @@ public abstract class NavType<T>(
     /**
      * Parse a value of this type from a String and put it in a `bundle`
      *
-     * @param bundle bundle to put value in
-     * @param key bundle key under which to put the value
+     * @param bundle SavedState to put value in
+     * @param key SavedState key under which to put the value
      * @param value string representation of a value of this type
      * @return parsed value of the type represented by this NavType
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun parseAndPut(bundle: Bundle, key: String, value: String): T {
+    public fun parseAndPut(bundle: SavedState, key: String, value: String): T {
         val parsedValue = parseValue(value)
         put(bundle, key, parsedValue)
         return parsedValue
@@ -102,15 +104,15 @@ public abstract class NavType<T>(
      * Parse a value of this type from a String, combine that parsed value with the given
      * previousValue, and then put that combined parsed value in a `bundle`.
      *
-     * @param bundle bundle to put value in
-     * @param key bundle key under which to put the value
+     * @param bundle SavedState to put value in
+     * @param key SavedState key under which to put the value
      * @param value string representation of a value of this type
      * @param previousValue previously parsed value of this type
      * @return combined parsed value of the type represented by this NavType
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun parseAndPut(bundle: Bundle, key: String, value: String?, previousValue: T): T {
-        if (!bundle.containsKey(key)) {
+    public fun parseAndPut(bundle: SavedState, key: String, value: String?, previousValue: T): T {
+        if (!bundle.read { contains(key) }) {
             throw IllegalArgumentException("There is no previous value in this bundle.")
         }
         if (value != null) {
@@ -326,14 +328,11 @@ public abstract class NavType<T>(
                 override val name: String
                     get() = "integer"
 
-                override fun put(bundle: Bundle, key: String, value: Int) {
-                    bundle.putInt(key, value)
+                override fun put(bundle: SavedState, key: String, value: Int) {
+                    bundle.write { putInt(key, value) }
                 }
 
-                @Suppress("DEPRECATION")
-                override fun get(bundle: Bundle, key: String): Int {
-                    return bundle[key] as Int
-                }
+                override fun get(bundle: SavedState, key: String): Int = bundle.read { getInt(key) }
 
                 override fun parseValue(value: String): Int {
                     return if (value.startsWith("0x")) {
@@ -356,15 +355,12 @@ public abstract class NavType<T>(
                 override val name: String
                     get() = "reference"
 
-                override fun put(bundle: Bundle, key: String, @AnyRes value: Int) {
-                    bundle.putInt(key, value)
+                override fun put(bundle: SavedState, key: String, @AnyRes value: Int) {
+                    bundle.write { putInt(key, value) }
                 }
 
                 @AnyRes
-                @Suppress("DEPRECATION")
-                override fun get(bundle: Bundle, key: String): Int {
-                    return bundle[key] as Int
-                }
+                override fun get(bundle: SavedState, key: String): Int = bundle.read { getInt(key) }
 
                 override fun parseValue(value: String): Int {
                     return if (value.startsWith("0x")) {
@@ -387,14 +383,12 @@ public abstract class NavType<T>(
                 override val name: String
                     get() = "integer[]"
 
-                override fun put(bundle: Bundle, key: String, value: IntArray?) {
-                    bundle.putIntArray(key, value)
+                override fun put(bundle: SavedState, key: String, value: IntArray?) {
+                    bundle.write { if (value == null) putNull(key) else putIntArray(key, value) }
                 }
 
-                @Suppress("DEPRECATION")
-                override fun get(bundle: Bundle, key: String): IntArray? {
-                    return bundle[key] as IntArray?
-                }
+                override fun get(bundle: SavedState, key: String): IntArray? =
+                    bundle.read { if (contains(key) && !isNull(key)) getIntArray(key) else null }
 
                 override fun parseValue(value: String): IntArray {
                     return intArrayOf(IntType.parseValue(value))
@@ -427,14 +421,16 @@ public abstract class NavType<T>(
                 override val name: String
                     get() = "List<Int>"
 
-                override fun put(bundle: Bundle, key: String, value: List<Int>?) {
-                    bundle.putIntArray(key, value?.toIntArray())
+                override fun put(bundle: SavedState, key: String, value: List<Int>?) {
+                    bundle.write {
+                        if (value == null) putNull(key) else putIntArray(key, value.toIntArray())
+                    }
                 }
 
-                @Suppress("DEPRECATION")
-                override fun get(bundle: Bundle, key: String): List<Int>? {
-                    return (bundle[key] as IntArray?)?.toList()
-                }
+                override fun get(bundle: SavedState, key: String): List<Int>? =
+                    bundle.read {
+                        if (contains(key) && !isNull(key)) getIntArray(key).toList() else null
+                    }
 
                 override fun parseValue(value: String): List<Int> {
                     return listOf(IntType.parseValue(value))
@@ -469,14 +465,12 @@ public abstract class NavType<T>(
                 override val name: String
                     get() = "long"
 
-                override fun put(bundle: Bundle, key: String, value: Long) {
-                    bundle.putLong(key, value)
+                override fun put(bundle: SavedState, key: String, value: Long) {
+                    bundle.write { putLong(key, value) }
                 }
 
-                @Suppress("DEPRECATION")
-                override fun get(bundle: Bundle, key: String): Long {
-                    return bundle[key] as Long
-                }
+                override fun get(bundle: SavedState, key: String): Long =
+                    bundle.read { getLong(key) }
 
                 override fun parseValue(value: String): Long {
                     // At runtime the L suffix is optional, contrary to the Safe Args plugin.
@@ -506,14 +500,12 @@ public abstract class NavType<T>(
                 override val name: String
                     get() = "long[]"
 
-                override fun put(bundle: Bundle, key: String, value: LongArray?) {
-                    bundle.putLongArray(key, value)
+                override fun put(bundle: SavedState, key: String, value: LongArray?) {
+                    bundle.write { if (value == null) putNull(key) else putLongArray(key, value) }
                 }
 
-                @Suppress("DEPRECATION")
-                override fun get(bundle: Bundle, key: String): LongArray? {
-                    return bundle[key] as LongArray?
-                }
+                override fun get(bundle: SavedState, key: String): LongArray? =
+                    bundle.read { if (contains(key) && !isNull(key)) getLongArray(key) else null }
 
                 override fun parseValue(value: String): LongArray {
                     return longArrayOf(LongType.parseValue(value))
@@ -546,14 +538,16 @@ public abstract class NavType<T>(
                 override val name: String
                     get() = "List<Long>"
 
-                override fun put(bundle: Bundle, key: String, value: List<Long>?) {
-                    bundle.putLongArray(key, value?.toLongArray())
+                override fun put(bundle: SavedState, key: String, value: List<Long>?) {
+                    bundle.write {
+                        if (value == null) putNull(key) else putLongArray(key, value.toLongArray())
+                    }
                 }
 
-                @Suppress("DEPRECATION")
-                override fun get(bundle: Bundle, key: String): List<Long>? {
-                    return (bundle[key] as LongArray?)?.toList()
-                }
+                override fun get(bundle: SavedState, key: String): List<Long>? =
+                    bundle.read {
+                        if (contains(key) && !isNull(key)) getLongArray(key).toList() else null
+                    }
 
                 override fun parseValue(value: String): List<Long> {
                     return listOf(LongType.parseValue(value))
@@ -587,14 +581,12 @@ public abstract class NavType<T>(
                 override val name: String
                     get() = "float"
 
-                override fun put(bundle: Bundle, key: String, value: Float) {
-                    bundle.putFloat(key, value)
+                override fun put(bundle: SavedState, key: String, value: Float) {
+                    bundle.write { putFloat(key, value) }
                 }
 
-                @Suppress("DEPRECATION")
-                override fun get(bundle: Bundle, key: String): Float {
-                    return bundle[key] as Float
-                }
+                override fun get(bundle: SavedState, key: String): Float =
+                    bundle.read { getFloat(key) }
 
                 override fun parseValue(value: String): Float {
                     return value.toFloat()
@@ -613,14 +605,12 @@ public abstract class NavType<T>(
                 override val name: String
                     get() = "float[]"
 
-                override fun put(bundle: Bundle, key: String, value: FloatArray?) {
-                    bundle.putFloatArray(key, value)
+                override fun put(bundle: SavedState, key: String, value: FloatArray?) {
+                    bundle.write { if (value == null) putNull(key) else putFloatArray(key, value) }
                 }
 
-                @Suppress("DEPRECATION")
-                override fun get(bundle: Bundle, key: String): FloatArray? {
-                    return bundle[key] as FloatArray?
-                }
+                override fun get(bundle: SavedState, key: String): FloatArray? =
+                    bundle.read { if (contains(key) && !isNull(key)) getFloatArray(key) else null }
 
                 override fun parseValue(value: String): FloatArray {
                     return floatArrayOf(FloatType.parseValue(value))
@@ -653,14 +643,17 @@ public abstract class NavType<T>(
                 override val name: String
                     get() = "List<Float>"
 
-                override fun put(bundle: Bundle, key: String, value: List<Float>?) {
-                    bundle.putFloatArray(key, value?.toFloatArray())
+                override fun put(bundle: SavedState, key: String, value: List<Float>?) {
+                    bundle.write {
+                        if (value == null) putNull(key)
+                        else putFloatArray(key, value.toFloatArray())
+                    }
                 }
 
-                @Suppress("DEPRECATION")
-                override fun get(bundle: Bundle, key: String): List<Float>? {
-                    return (bundle[key] as FloatArray?)?.toList()
-                }
+                override fun get(bundle: SavedState, key: String): List<Float>? =
+                    bundle.read {
+                        if (contains(key) && !isNull(key)) getFloatArray(key).toList() else null
+                    }
 
                 override fun parseValue(value: String): List<Float> {
                     return listOf(FloatType.parseValue(value))
@@ -694,14 +687,12 @@ public abstract class NavType<T>(
                 override val name: String
                     get() = "boolean"
 
-                override fun put(bundle: Bundle, key: String, value: Boolean) {
-                    bundle.putBoolean(key, value)
+                override fun put(bundle: SavedState, key: String, value: Boolean) {
+                    bundle.write { putBoolean(key, value) }
                 }
 
-                @Suppress("DEPRECATION")
-                override fun get(bundle: Bundle, key: String): Boolean? {
-                    return bundle[key] as Boolean?
-                }
+                override fun get(bundle: SavedState, key: String): Boolean? =
+                    bundle.read { if (contains(key) && !isNull(key)) getBoolean(key) else null }
 
                 override fun parseValue(value: String): Boolean {
                     return when (value) {
@@ -728,14 +719,16 @@ public abstract class NavType<T>(
                 override val name: String
                     get() = "boolean[]"
 
-                override fun put(bundle: Bundle, key: String, value: BooleanArray?) {
-                    bundle.putBooleanArray(key, value)
+                override fun put(bundle: SavedState, key: String, value: BooleanArray?) {
+                    bundle.write {
+                        if (value == null) putNull(key) else putBooleanArray(key, value)
+                    }
                 }
 
-                @Suppress("DEPRECATION")
-                override fun get(bundle: Bundle, key: String): BooleanArray? {
-                    return bundle[key] as BooleanArray?
-                }
+                override fun get(bundle: SavedState, key: String): BooleanArray? =
+                    bundle.read {
+                        if (contains(key) && !isNull(key)) getBooleanArray(key) else null
+                    }
 
                 override fun parseValue(value: String): BooleanArray {
                     return booleanArrayOf(BoolType.parseValue(value))
@@ -771,14 +764,17 @@ public abstract class NavType<T>(
                 override val name: String
                     get() = "List<Boolean>"
 
-                override fun put(bundle: Bundle, key: String, value: List<Boolean>?) {
-                    bundle.putBooleanArray(key, value?.toBooleanArray())
+                override fun put(bundle: SavedState, key: String, value: List<Boolean>?) {
+                    bundle.write {
+                        if (value == null) putNull(key)
+                        else putBooleanArray(key, value.toBooleanArray())
+                    }
                 }
 
-                @Suppress("DEPRECATION")
-                override fun get(bundle: Bundle, key: String): List<Boolean>? {
-                    return (bundle[key] as BooleanArray?)?.toList()
-                }
+                override fun get(bundle: SavedState, key: String): List<Boolean>? =
+                    bundle.read {
+                        if (contains(key) && !isNull(key)) getBooleanArray(key).toList() else null
+                    }
 
                 override fun parseValue(value: String): List<Boolean> {
                     return listOf(BoolType.parseValue(value))
@@ -815,14 +811,12 @@ public abstract class NavType<T>(
                 override val name: String
                     get() = "string"
 
-                override fun put(bundle: Bundle, key: String, value: String?) {
-                    bundle.putString(key, value)
+                override fun put(bundle: SavedState, key: String, value: String?) {
+                    bundle.write { if (value == null) putNull(key) else putString(key, value) }
                 }
 
-                @Suppress("DEPRECATION")
-                override fun get(bundle: Bundle, key: String): String? {
-                    return bundle[key] as String?
-                }
+                override fun get(bundle: SavedState, key: String): String? =
+                    bundle.read { if (contains(key) && !isNull(key)) getString(key) else null }
 
                 /**
                  * Returns input value by default.
@@ -857,14 +851,12 @@ public abstract class NavType<T>(
                 override val name: String
                     get() = "string[]"
 
-                override fun put(bundle: Bundle, key: String, value: Array<String>?) {
-                    bundle.putStringArray(key, value)
+                override fun put(bundle: SavedState, key: String, value: Array<String>?) {
+                    bundle.write { if (value == null) putNull(key) else putStringArray(key, value) }
                 }
 
-                @Suppress("UNCHECKED_CAST", "DEPRECATION")
-                override fun get(bundle: Bundle, key: String): Array<String>? {
-                    return bundle[key] as Array<String>?
-                }
+                override fun get(bundle: SavedState, key: String): Array<String>? =
+                    bundle.read { if (contains(key) && !isNull(key)) getStringArray(key) else null }
 
                 override fun parseValue(value: String): Array<String> {
                     return arrayOf(value)
@@ -898,14 +890,17 @@ public abstract class NavType<T>(
                 override val name: String
                     get() = "List<String>"
 
-                override fun put(bundle: Bundle, key: String, value: List<String>?) {
-                    bundle.putStringArray(key, value?.toTypedArray())
+                override fun put(bundle: SavedState, key: String, value: List<String>?) {
+                    bundle.write {
+                        if (value == null) putNull(key)
+                        else putStringArray(key, value.toTypedArray())
+                    }
                 }
 
-                @Suppress("UNCHECKED_CAST", "DEPRECATION")
-                override fun get(bundle: Bundle, key: String): List<String>? {
-                    return (bundle[key] as Array<String>?)?.toList()
-                }
+                override fun get(bundle: SavedState, key: String): List<String>? =
+                    bundle.read {
+                        if (contains(key) && !isNull(key)) getStringArray(key).toList() else null
+                    }
 
                 override fun parseValue(value: String): List<String> {
                     return listOf(value)
@@ -944,7 +939,7 @@ public abstract class NavType<T>(
         public override val name: String
             get() = type.name
 
-        public override fun put(bundle: Bundle, key: String, value: D) {
+        public override fun put(bundle: SavedState, key: String, value: D) {
             type.cast(value)
             if (value == null || value is Parcelable) {
                 bundle.putParcelable(key, value as Parcelable?)
@@ -954,7 +949,7 @@ public abstract class NavType<T>(
         }
 
         @Suppress("UNCHECKED_CAST", "DEPRECATION")
-        public override fun get(bundle: Bundle, key: String): D? {
+        public override fun get(bundle: SavedState, key: String): D? {
             return bundle[key] as D?
         }
 
@@ -999,13 +994,13 @@ public abstract class NavType<T>(
         public override val name: String
             get() = arrayType.name
 
-        public override fun put(bundle: Bundle, key: String, value: Array<D>?) {
+        public override fun put(bundle: SavedState, key: String, value: Array<D>?) {
             arrayType.cast(value)
             bundle.putParcelableArray(key, value)
         }
 
         @Suppress("UNCHECKED_CAST", "DEPRECATION")
-        public override fun get(bundle: Bundle, key: String): Array<D>? {
+        public override fun get(bundle: SavedState, key: String): Array<D>? {
             return bundle[key] as Array<D>?
         }
 
@@ -1081,13 +1076,13 @@ public abstract class NavType<T>(
             this.type = type
         }
 
-        public override fun put(bundle: Bundle, key: String, value: D) {
+        public override fun put(bundle: SavedState, key: String, value: D) {
             type.cast(value)
             bundle.putSerializable(key, value)
         }
 
         @Suppress("UNCHECKED_CAST", "DEPRECATION")
-        public override fun get(bundle: Bundle, key: String): D? {
+        public override fun get(bundle: SavedState, key: String): D? {
             return bundle[key] as D?
         }
 
@@ -1162,13 +1157,13 @@ public abstract class NavType<T>(
         public override val name: String
             get() = arrayType.name
 
-        public override fun put(bundle: Bundle, key: String, value: Array<D>?) {
+        public override fun put(bundle: SavedState, key: String, value: Array<D>?) {
             arrayType.cast(value)
             bundle.putSerializable(key, value)
         }
 
         @Suppress("UNCHECKED_CAST", "DEPRECATION")
-        public override fun get(bundle: Bundle, key: String): Array<D>? {
+        public override fun get(bundle: SavedState, key: String): Array<D>? {
             return bundle[key] as Array<D>?
         }
 

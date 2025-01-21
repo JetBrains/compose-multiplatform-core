@@ -54,5 +54,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.core.performance"
+    namespace = "androidx.core.performance"
 }

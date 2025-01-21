@@ -16,7 +16,7 @@
 
 package androidx.webkit.internal;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * An interface to represent a feature which may or may not be supported. This should generally be
@@ -26,8 +26,7 @@ public interface ConditionallySupportedFeature {
     /**
      * Get the name of the public feature this matches.
      */
-    @NonNull
-    String getPublicFeatureName();
+    @NonNull String getPublicFeatureName();
 
     /**
      * Return whether this feature is supported.

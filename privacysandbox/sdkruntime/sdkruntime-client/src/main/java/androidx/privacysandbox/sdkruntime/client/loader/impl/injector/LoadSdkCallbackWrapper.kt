@@ -68,19 +68,19 @@ private constructor(
         fun createFor(classLoader: ClassLoader): LoadSdkCallbackWrapper {
             val loadSdkCallbackClass =
                 Class.forName(
-                    LoadSdkCallback::class.java.name,
+                    "androidx.privacysandbox.sdkruntime.core.controller.LoadSdkCallback",
                     /* initialize = */ false,
                     classLoader
                 )
             val sandboxedSdkCompatClass =
                 Class.forName(
-                    SandboxedSdkCompat::class.java.name,
+                    "androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat",
                     /* initialize = */ false,
                     classLoader
                 )
             val loadSdkCompatExceptionClass =
                 Class.forName(
-                    LoadSdkCompatException::class.java.name,
+                    "androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException",
                     /* initialize = */ false,
                     classLoader
                 )

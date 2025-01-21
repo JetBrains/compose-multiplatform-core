@@ -34,10 +34,26 @@ import java.util.Arrays;
 import java.util.Objects;
 
 /**
- * An identifier to represent a Blob in AppSearch.
+ * An identifier to represent a blob in AppSearch.
+ *
+ * <p>A "blob" is a large binary object. It is used to store a significant amount of data that is
+ * not searchable, such as images, videos, audio files, or other binary data. Unlike other fields in
+ * AppSearch, blobs are stored as blob files on disk rather than in memory, and use
+ * {@link android.os.ParcelFileDescriptor} to read and write. This allows for efficient handling of
+ * large, non-searchable content.
+ *
+ * <p> {@link AppSearchBlobHandle} is a light-weight {@code Property} of {@link GenericDocument},
+ * which is a pointer to the heavy-weight blob data.
+ *
+ * <p> The blob data could be written via {@link AppSearchSession#openBlobForWriteAsync} and read
+ * via {@link AppSearchSession#openBlobForReadAsync}.
+ *
+ * <p> A {@link GenericDocument} with {@link AppSearchBlobHandle} {@code Property} could be put and
+ * read without the large blob data. This offers lazy retrieval to blob data when searching
+ * {@link GenericDocument} in AppSearch.
+ *
+ * @see GenericDocument.Builder#setPropertyBlobHandle
  */
-// TODO(b/273591938) improve the java doc about how AppSearchBlobHandle will be used together with
-//  GenericDocument as a property when we support set blob property in GenericDocument
 @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
 @SuppressWarnings("HiddenSuperclass")
 @SafeParcelable.Class(creator = "AppSearchBlobHandleCreator")

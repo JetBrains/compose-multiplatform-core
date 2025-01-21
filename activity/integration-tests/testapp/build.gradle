@@ -22,11 +22,11 @@ plugins {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
     defaultConfig {
-        applicationId "androidx.activity.integration.testapp"
+        applicationId = "androidx.activity.integration.testapp"
     }
-    namespace "androidx.activity.integration.testapp"
+    namespace = "androidx.activity.integration.testapp"
 }
 
 dependencies {

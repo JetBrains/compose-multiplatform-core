@@ -44,7 +44,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.benchmark.benchmark"
+    namespace = "androidx.benchmark.benchmark"
     buildTypes.release {
         androidTest {
             enableMinification = false

@@ -20,11 +20,12 @@ import android.content.Context;
 import android.view.View;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.models.GotoLink;
 import androidx.pdf.models.LinkRects;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -67,9 +68,8 @@ public class AccessibilityPageWrapper extends FrameLayout implements PageViewFac
         mPageLinksView.clearAll();
     }
 
-    @NonNull
     @Override
-    public PageMosaicView getPageView() {
+    public @NonNull PageMosaicView getPageView() {
         return mPageView;
     }
 
@@ -90,9 +90,8 @@ public class AccessibilityPageWrapper extends FrameLayout implements PageViewFac
         mPageLinksView.setPageGotoLinks(links);
     }
 
-    @NonNull
     @Override
-    public View asView() {
+    public @NonNull View asView() {
         return this;
     }
 }

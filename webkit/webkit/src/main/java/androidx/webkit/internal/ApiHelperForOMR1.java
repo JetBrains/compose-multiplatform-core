@@ -23,9 +23,10 @@ import android.webkit.SafeBrowsingResponse;
 import android.webkit.ValueCallback;
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -82,8 +83,7 @@ public class ApiHelperForOMR1 {
     /**
      * @see WebView#getSafeBrowsingPrivacyPolicyUrl()
      */
-    @NonNull
-    public static Uri getSafeBrowsingPrivacyPolicyUrl() {
+    public static @NonNull Uri getSafeBrowsingPrivacyPolicyUrl() {
         return WebView.getSafeBrowsingPrivacyPolicyUrl();
     }
 }

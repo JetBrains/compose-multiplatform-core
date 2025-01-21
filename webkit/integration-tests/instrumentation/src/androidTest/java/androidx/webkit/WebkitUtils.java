@@ -19,11 +19,11 @@ package androidx.webkit;
 import android.os.Handler;
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
 import androidx.concurrent.futures.ResolvableFuture;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Assume;
 
 import java.io.File;
@@ -65,8 +65,8 @@ public final class WebkitUtils {
      * @param callable the {@link Callable} to execute.
      * @return a {@link ListenableFuture} representing the result of {@code callable}.
      */
-    @NonNull
-    public static <T> ListenableFuture<T> onMainThread(final @NonNull Callable<T> callable)  {
+    public static <T> @NonNull ListenableFuture<T> onMainThread(
+            final @NonNull Callable<T> callable)  {
         return onMainThreadDelayed(0, callable);
     }
 
@@ -86,8 +86,7 @@ public final class WebkitUtils {
      * @param callable the {@link Callable} to execute.
      * @return a {@link ListenableFuture} representing the result of {@code callable}.
      */
-    @NonNull
-    public static <T> ListenableFuture<T> onMainThreadDelayed(
+    public static <T> @NonNull ListenableFuture<T> onMainThreadDelayed(
             long delayMs, final @NonNull Callable<T> callable)  {
         final ResolvableFuture<T> future = ResolvableFuture.create();
         sMainHandler.postDelayed(() -> {

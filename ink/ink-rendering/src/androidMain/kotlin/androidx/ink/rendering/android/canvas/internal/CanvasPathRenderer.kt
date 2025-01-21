@@ -20,14 +20,18 @@ import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
+import android.os.Build
 import androidx.annotation.FloatRange
+import androidx.core.graphics.withMatrix
 import androidx.ink.brush.BrushPaint
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.color.Color as ComposeColor
-import androidx.ink.brush.color.toArgb
 import androidx.ink.geometry.AffineTransform
 import androidx.ink.geometry.MutableVec
 import androidx.ink.geometry.PartitionedMesh
+import androidx.ink.geometry.outlinesToPath
+import androidx.ink.geometry.populateMatrix
+import androidx.ink.geometry.populatePathFromOutlines
 import androidx.ink.rendering.android.TextureBitmapStore
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
 import androidx.ink.strokes.InProgressStroke
@@ -48,17 +52,27 @@ import java.util.WeakHashMap
  * different instances of this object.
  */
 @OptIn(ExperimentalInkCustomBrushApi::class)
-internal class CanvasPathRenderer(
-    private val textureStore: TextureBitmapStore = TextureBitmapStore { null }
-) : CanvasStrokeRenderer {
+internal class CanvasPathRenderer(textureStore: TextureBitmapStore = TextureBitmapStore { null }) :
+    CanvasStrokeRenderer {
 
     /**
      * Holds onto rendering data for each [PartitionedMesh] (the shape of a [Stroke]) so the data
      * can be created once and then reused on each call to [draw]. The [WeakHashMap] ensures that
      * this renderer does not hold onto [PartitionedMesh] instances that would otherwise be garbage
      * collected.
+     *
+     * Before API 28, drawing a [Path] with a transform on the [Canvas] often leads to blurry
+     * results, because the [Canvas] transform was not taken into account when rasterizing the
+     * [Path]. Due to that issue, the [Path] constructed from the [PartitionedMesh] is transformed
+     * out of the default stroke coordinates to be in screen coordinates. The transform used to do
+     * this is kept as part of the cache data, so if the transform is updated (e.g. during
+     * panning/zooming/rotating), then the [Path] data must be regenerated.
+     *
+     * Starting with API 28, [Path] rendering takes the [Canvas] transform into account properly, so
+     * this workaround isn't necessary, and the [Path] data is kept in stroke coordinates and does
+     * not need to be regenerated based on the transform.
      */
-    private val strokePathCache = WeakHashMap<PartitionedMesh, List<Path>>()
+    private val strokePathCache = WeakHashMap<PartitionedMesh, PartitionedMeshPathData>()
 
     /**
      * Holds onto rendering data for each [InProgressStroke], so the data can be created once and
@@ -79,7 +93,10 @@ internal class CanvasPathRenderer(
     private val scratchPoint = MutableVec()
 
     /** Scratch [Matrix] used for draw calls taking an [AffineTransform]. */
-    private val scratchMatrix = Matrix()
+    private val scratchAffineTransformMatrix = Matrix()
+
+    /** Scratch [Matrix] used to invert the `strokeToScreenTransform` input value to [draw]. */
+    private val scratchScreenToStrokeTransform = Matrix()
 
     // First and last inputs for the stroke being rendered, reused so that we don't need to allocate
     // new ones for every stroke.
@@ -89,28 +106,53 @@ internal class CanvasPathRenderer(
     private fun draw(
         canvas: Canvas,
         path: Path,
+        strokeToScreenTransform: Matrix,
         brushPaint: BrushPaint,
         color: ComposeColor,
         @FloatRange(from = 0.0) brushSize: Float,
         firstInput: StrokeInput,
         lastInput: StrokeInput,
     ) {
-        val paint = paintCache.obtain(brushPaint, color.toArgb(), brushSize, firstInput, lastInput)
-        canvas.drawPath(path, paint)
+        // TODO: b/373649230 - Use [animationProgress] in renderer.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val paint = paintCache.obtain(brushPaint, color, brushSize, firstInput, lastInput)
+            // On API 28 and above, both the Path and the Canvas are in stroke coordinate space.
+            canvas.drawPath(path, paint)
+        } else {
+            // Below API 28, the Path is in screen coordinates to avoid rendering issues. Make sure
+            // that
+            // the Paint and the Canvas both take this into account, as by default they expect the
+            // Path
+            // to be in stroke coordinates.
+            val paint =
+                paintCache.obtain(
+                    brushPaint,
+                    color,
+                    brushSize,
+                    firstInput,
+                    lastInput,
+                    strokeToScreenTransform,
+                )
+            strokeToScreenTransform.invert(scratchScreenToStrokeTransform)
+            canvas.withMatrix(scratchScreenToStrokeTransform) { canvas.drawPath(path, paint) }
+        }
     }
 
     override fun draw(
         canvas: Canvas,
         stroke: Stroke,
-        @Suppress("UNUSED_PARAMETER") strokeToScreenTransform: AffineTransform,
+        strokeToScreenTransform: AffineTransform,
+        animationProgress: Float,
     ) {
-        draw(canvas, stroke, scratchMatrix)
+        strokeToScreenTransform.populateMatrix(scratchAffineTransformMatrix)
+        draw(canvas, stroke, scratchAffineTransformMatrix, animationProgress)
     }
 
     override fun draw(
         canvas: Canvas,
         stroke: Stroke,
-        @Suppress("UNUSED_PARAMETER") strokeToScreenTransform: Matrix,
+        strokeToScreenTransform: Matrix,
+        animationProgress: Float,
     ) {
         if (stroke.inputs.isEmpty()) return // nothing to draw
         stroke.inputs.populate(0, scratchFirstInput)
@@ -118,7 +160,8 @@ internal class CanvasPathRenderer(
         for (groupIndex in 0 until stroke.shape.getRenderGroupCount()) {
             draw(
                 canvas,
-                obtainPath(stroke.shape, groupIndex),
+                obtainPath(stroke.shape, groupIndex, strokeToScreenTransform),
+                strokeToScreenTransform,
                 stroke.brush.family.coats[groupIndex].paint,
                 stroke.brush.composeColor,
                 stroke.brush.size,
@@ -131,15 +174,18 @@ internal class CanvasPathRenderer(
     override fun draw(
         canvas: Canvas,
         inProgressStroke: InProgressStroke,
-        @Suppress("UNUSED_PARAMETER") strokeToScreenTransform: AffineTransform,
+        strokeToScreenTransform: AffineTransform,
+        animationProgress: Float,
     ) {
-        draw(canvas, inProgressStroke, scratchMatrix)
+        strokeToScreenTransform.populateMatrix(scratchAffineTransformMatrix)
+        draw(canvas, inProgressStroke, scratchAffineTransformMatrix, animationProgress)
     }
 
     override fun draw(
         canvas: Canvas,
         inProgressStroke: InProgressStroke,
-        @Suppress("UNUSED_PARAMETER") strokeToScreenTransform: Matrix,
+        strokeToScreenTransform: Matrix,
+        animationProgress: Float,
     ) {
         val brush =
             checkNotNull(inProgressStroke.brush) {
@@ -152,7 +198,8 @@ internal class CanvasPathRenderer(
         for (coatIndex in 0 until inProgressStroke.getBrushCoatCount()) {
             draw(
                 canvas,
-                obtainPath(inProgressStroke, coatIndex),
+                obtainPath(inProgressStroke, coatIndex, strokeToScreenTransform),
+                strokeToScreenTransform,
                 brush.family.coats[coatIndex].paint,
                 brush.composeColor,
                 brush.size,
@@ -166,65 +213,65 @@ internal class CanvasPathRenderer(
      * Obtain a [Path] for the specified render group of the given [PartitionedMesh], which may be
      * cached or new.
      */
-    private fun obtainPath(shape: PartitionedMesh, groupIndex: Int): Path {
-        val paths =
-            strokePathCache[shape] ?: createPaths(shape).also { strokePathCache[shape] = it }
-        return paths[groupIndex]
-    }
-
-    /** Create new [Path]s for the given [PartitionedMesh], one for each render group. */
-    private fun createPaths(shape: PartitionedMesh): List<Path> =
-        buildList() {
-            val point = MutableVec()
-            for (groupIndex in 0 until shape.getRenderGroupCount()) {
-                val path = Path()
-                for (outlineIndex in 0 until shape.getOutlineCount(groupIndex)) {
-                    val outlineVertexCount = shape.getOutlineVertexCount(groupIndex, outlineIndex)
-                    if (outlineVertexCount == 0) continue
-
-                    shape.populateOutlinePosition(groupIndex, outlineIndex, 0, point)
-                    path.moveTo(point.x, point.y)
-
-                    for (outlineVertexIndex in 1 until outlineVertexCount) {
-                        shape.populateOutlinePosition(
-                            groupIndex,
-                            outlineIndex,
-                            outlineVertexIndex,
-                            point
-                        )
-                        path.lineTo(point.x, point.y)
-                    }
-
-                    path.close()
+    private fun obtainPath(
+        shape: PartitionedMesh,
+        groupIndex: Int,
+        strokeToScreenTransform: Matrix,
+    ): Path {
+        val cachedPathData = strokePathCache[shape]
+        val pathData =
+            if (cachedPathData == null) {
+                PartitionedMeshPathData.create(shape, strokeToScreenTransform).also {
+                    strokePathCache[shape] = it
                 }
-                add(path)
+            } else {
+                cachedPathData.maybeUpdate(shape, strokeToScreenTransform)
+                cachedPathData
             }
-        }
+        return pathData.paths[groupIndex]
+    }
 
     /**
      * Obtain a [Path] for brush coat [coatIndex] of the given [InProgressStroke], which may be
      * cached or new.
+     *
+     * The resulting [Path] will be in screen coordinates.
      */
-    private fun obtainPath(inProgressStroke: InProgressStroke, coatIndex: Int): Path {
+    private fun obtainPath(
+        inProgressStroke: InProgressStroke,
+        coatIndex: Int,
+        strokeToScreenTransform: Matrix,
+    ): Path {
         val cachedPathData = inProgressStrokePathCache[inProgressStroke]
-        if (cachedPathData != null && cachedPathData.version == inProgressStroke.version) {
+        if (
+            cachedPathData != null &&
+                cachedPathData.version == inProgressStroke.version &&
+                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P ||
+                    cachedPathData.strokeToScreenTransform == strokeToScreenTransform)
+        ) {
             return cachedPathData.paths[coatIndex]
         }
-        val inProgressPathData = computeInProgressPathData(inProgressStroke)
+        val inProgressPathData =
+            computeInProgressPathData(inProgressStroke, strokeToScreenTransform)
         inProgressStrokePathCache[inProgressStroke] = inProgressPathData
         return inProgressPathData.paths[coatIndex]
     }
 
-    private fun computeInProgressPathData(inProgressStroke: InProgressStroke): InProgressPathData {
-        val paths =
-            buildList() {
-                for (coatIndex in 0 until inProgressStroke.getBrushCoatCount()) {
-                    val path = Path()
-                    path.fillFrom(inProgressStroke, coatIndex)
-                    add(path)
+    private fun computeInProgressPathData(
+        inProgressStroke: InProgressStroke,
+        strokeToScreenTransform: Matrix,
+    ): InProgressPathData {
+        val paths = buildList {
+            for (coatIndex in 0 until inProgressStroke.getBrushCoatCount()) {
+                val path = Path()
+                path.fillFrom(inProgressStroke, coatIndex)
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+                    path.transform(strokeToScreenTransform)
                 }
+                add(path)
             }
-        return InProgressPathData(inProgressStroke.version, paths)
+        }
+        return InProgressPathData(inProgressStroke.version, strokeToScreenTransform, paths)
     }
 
     /** Create a new [Path] for the given [InProgressStroke]. */
@@ -260,5 +307,73 @@ internal class CanvasPathRenderer(
      * A snapshot of the outline(s) of [InProgressStroke] at a particular
      * [InProgressStroke.version], with one [Path] object for each brush coat.
      */
-    private class InProgressPathData(val version: Long, val paths: List<Path>)
+    private class InProgressPathData(
+        val version: Long,
+        val strokeToScreenTransform: Matrix,
+        val paths: List<Path>,
+    )
+
+    /**
+     * On Android API<28, [paths] has been transformed into screen coordinates by
+     * [strokeToScreenTransform], and must be repopulated and retransformed if this transform
+     * changes.
+     *
+     * On Android API 28+, [paths] are all in stroke coordinates, and [strokeToScreenTransform] is
+     * not used for cache invalidation.
+     */
+    private class PartitionedMeshPathData
+    private constructor(
+        /** Do not modify directly! */
+        val strokeToScreenTransform: Matrix,
+        /** Do not modify directly! */
+        val paths: List<Path>,
+        /**
+         * For defensive coding - make sure updates are from the same shape, without holding a
+         * reference to the shape itself. Not used for any real functionality.
+         */
+        private val shapeNativeAddress: Long,
+    ) {
+        companion object {
+            fun create(
+                shape: PartitionedMesh,
+                strokeToScreenTransform: Matrix
+            ): PartitionedMeshPathData {
+                val paths = buildList {
+                    for (groupIndex in 0 until shape.getRenderGroupCount()) {
+                        val path = shape.outlinesToPath(groupIndex) // stroke coordinates
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+                            path.transform(strokeToScreenTransform)
+                        }
+                        add(path)
+                    }
+                }
+                return PartitionedMeshPathData(
+                    Matrix(strokeToScreenTransform),
+                    paths,
+                    shape.getNativeAddress(),
+                )
+            }
+        }
+
+        /** Update [paths] only if API < 28 and transforms are different. */
+        fun maybeUpdate(shape: PartitionedMesh, strokeToScreenTransform: Matrix) {
+            check(shape.getNativeAddress() == shapeNativeAddress) {
+                "Must update PartitionedMeshData using the same PartitionedMesh used to create it."
+            }
+            if (
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.P ||
+                    strokeToScreenTransform == this.strokeToScreenTransform
+            ) {
+                return
+            }
+            for (groupIndex in 0 until shape.getRenderGroupCount()) {
+                val path = paths[groupIndex]
+                shape.populatePathFromOutlines(groupIndex, path)
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+                    path.transform(strokeToScreenTransform)
+                }
+            }
+            this.strokeToScreenTransform.set(strokeToScreenTransform)
+        }
+    }
 }

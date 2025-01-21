@@ -53,5 +53,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.bluetooth"
+    namespace = "androidx.bluetooth"
 }

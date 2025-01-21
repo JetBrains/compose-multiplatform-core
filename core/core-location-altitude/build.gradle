@@ -32,7 +32,7 @@ plugins {
 }
 
 android {
-    namespace "androidx.core.location.altitude"
+    namespace = "androidx.core.location.altitude"
 
     buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"

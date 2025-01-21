@@ -21,12 +21,13 @@ import static androidx.annotation.Dimension.DP;
 import android.annotation.SuppressLint;
 
 import androidx.annotation.Dimension;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.proto.LayoutElementProto;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,9 +74,9 @@ public class MultiSlotLayout implements androidx.wear.tiles.LayoutElementBuilder
      */
     static final String METADATA_TAG = "MSL";
 
-    @NonNull private final androidx.wear.tiles.LayoutElementBuilders.Row mElement;
+    private final androidx.wear.tiles.LayoutElementBuilders.@NonNull Row mElement;
 
-    MultiSlotLayout(@NonNull androidx.wear.tiles.LayoutElementBuilders.Row mElement) {
+    MultiSlotLayout(androidx.wear.tiles.LayoutElementBuilders.@NonNull Row mElement) {
         this.mElement = mElement;
     }
 
@@ -83,12 +84,10 @@ public class MultiSlotLayout implements androidx.wear.tiles.LayoutElementBuilder
     public static final class Builder
             implements androidx.wear.tiles.LayoutElementBuilders.LayoutElement.Builder {
 
-        @NonNull
-        private final List<androidx.wear.tiles.LayoutElementBuilders.LayoutElement> mSlotsContent =
-                new ArrayList<>();
+        private final @NonNull List<androidx.wear.tiles.LayoutElementBuilders.LayoutElement>
+                mSlotsContent = new ArrayList<>();
 
-        @NonNull
-        private androidx.wear.tiles.DimensionBuilders.DpProp mHorizontalSpacerWidth =
+        private androidx.wear.tiles.DimensionBuilders.@NonNull DpProp mHorizontalSpacerWidth =
                 LayoutDefaults.MULTI_SLOT_LAYOUT_HORIZONTAL_SPACER_WIDTH;
 
         /**
@@ -98,12 +97,11 @@ public class MultiSlotLayout implements androidx.wear.tiles.LayoutElementBuilder
         public Builder() {}
 
         /** Add one new slot to the layout with the given content inside. */
-        @NonNull
         @SuppressWarnings("MissingGetterMatchingBuilder")
         // There is no direct matching getter for this setter, but there is a getter that gets all
         // added slots.
-        public Builder addSlotContent(
-                @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement slotContent) {
+        public @NonNull Builder addSlotContent(
+                androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement slotContent) {
             mSlotsContent.add(slotContent);
             return this;
         }
@@ -113,20 +111,18 @@ public class MultiSlotLayout implements androidx.wear.tiles.LayoutElementBuilder
          * than one slot. If not set, {@link
          * LayoutDefaults#MULTI_SLOT_LAYOUT_HORIZONTAL_SPACER_WIDTH} will be used.
          */
-        @NonNull
-        public Builder setHorizontalSpacerWidth(@Dimension(unit = DP) float width) {
+        public @NonNull Builder setHorizontalSpacerWidth(@Dimension(unit = DP) float width) {
             this.mHorizontalSpacerWidth = androidx.wear.tiles.DimensionBuilders.dp(width);
             return this;
         }
 
         /** Constructs and returns {@link MultiSlotLayout} with the provided content and look. */
-        @NonNull
         @Override
         // The @Dimension(unit = DP) on mVerticalSpacerHeight.getValue() is seemingly being ignored,
         // so lint complains that we're passing PX to something expecting DP. Just suppress the
         // warning for now.
         @SuppressLint("ResourceType")
-        public MultiSlotLayout build() {
+        public @NonNull MultiSlotLayout build() {
             androidx.wear.tiles.LayoutElementBuilders.Row.Builder rowBuilder =
                     new androidx.wear.tiles.LayoutElementBuilders.Row.Builder()
                             .setHeight(androidx.wear.tiles.DimensionBuilders.wrap())
@@ -170,8 +166,8 @@ public class MultiSlotLayout implements androidx.wear.tiles.LayoutElementBuilder
     }
 
     /** Gets the content from this layout, containing all slots that were added. */
-    @NonNull
-    public List<androidx.wear.tiles.LayoutElementBuilders.LayoutElement> getSlotContents() {
+    public @NonNull List<androidx.wear.tiles.LayoutElementBuilders.LayoutElement>
+            getSlotContents() {
         List<androidx.wear.tiles.LayoutElementBuilders.LayoutElement> slots = new ArrayList<>();
         for (androidx.wear.tiles.LayoutElementBuilders.LayoutElement slot :
                 mElement.getContents()) {
@@ -206,8 +202,7 @@ public class MultiSlotLayout implements androidx.wear.tiles.LayoutElementBuilder
     }
 
     /** Returns metadata tag set to this MultiSlotLayout. */
-    @NonNull
-    String getMetadataTag() {
+    @NonNull String getMetadataTag() {
         return androidx.wear.tiles.material.Helper.getMetadataTagName(
                 androidx.wear.tiles.material.Helper.checkNotNull(
                         androidx.wear.tiles.material.Helper.checkNotNull(mElement.getModifiers())
@@ -220,9 +215,8 @@ public class MultiSlotLayout implements androidx.wear.tiles.LayoutElementBuilder
      * container's content with {@code container.getContents().get(index)}) if that element can be
      * converted to MultiSlotLayout. Otherwise, it will return null.
      */
-    @Nullable
-    public static MultiSlotLayout fromLayoutElement(
-            @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement element) {
+    public static @Nullable MultiSlotLayout fromLayoutElement(
+            androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement element) {
         if (element instanceof MultiSlotLayout) {
             return (MultiSlotLayout) element;
         }
@@ -239,17 +233,15 @@ public class MultiSlotLayout implements androidx.wear.tiles.LayoutElementBuilder
         return new MultiSlotLayout(rowElement);
     }
 
-    @NonNull
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public LayoutElementProto.LayoutElement toLayoutElementProto() {
+    public LayoutElementProto.@NonNull LayoutElement toLayoutElementProto() {
         return mElement.toLayoutElementProto();
     }
 
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @Nullable
     @Override
-    public Fingerprint getFingerprint() {
+    public @Nullable Fingerprint getFingerprint() {
         return mElement.getFingerprint();
     }
 }

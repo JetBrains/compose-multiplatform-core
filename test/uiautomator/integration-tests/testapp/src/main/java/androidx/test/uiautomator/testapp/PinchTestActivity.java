@@ -23,7 +23,7 @@ import android.view.ScaleGestureDetector;
 import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener;
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class PinchTestActivity extends Activity {
 

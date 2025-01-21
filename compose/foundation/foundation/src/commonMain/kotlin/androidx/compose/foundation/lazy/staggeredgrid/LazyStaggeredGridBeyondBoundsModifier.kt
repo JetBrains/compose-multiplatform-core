@@ -42,4 +42,11 @@ internal class LazyStaggeredGridBeyondBoundsState(
 
     override val lastPlacedIndex: Int
         get() = state.layoutInfo.visibleItemsInfo.last().index
+
+    override fun itemsPerViewport(): Int {
+        if (state.layoutInfo.visibleItemsInfo.isEmpty()) return 0
+        val viewportSize = state.layoutInfo.singleAxisViewportSize
+        val lineAverageSize = state.layoutInfo.visibleItemsAverageSize()
+        return (viewportSize / lineAverageSize).coerceAtLeast(1)
+    }
 }

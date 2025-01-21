@@ -45,13 +45,13 @@ androidx {
 
 android {
     defaultConfig {
-        minSdkVersion 25
+        minSdk = 25
     }
 
     buildTypes {
 	release {
-	    minifyEnabled true
-	    shrinkResources true
+	    minifyEnabled = true
+	    shrinkResources = true
 	    proguardFiles getDefaultProguardFile('proguard-android.txt')
 	}
     }
@@ -60,5 +60,5 @@ android {
         sourceCompatibility 1.8
         targetCompatibility 1.8
     }
-    namespace "androidx.wear.samples.ambient"
+    namespace = "androidx.wear.samples.ambient"
 }

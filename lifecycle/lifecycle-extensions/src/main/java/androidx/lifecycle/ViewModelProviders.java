@@ -19,10 +19,11 @@ package androidx.lifecycle;
 import android.app.Application;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Utilities methods for {@link ViewModelStore} class.
@@ -53,9 +54,8 @@ public class ViewModelProviders {
      * passing in the fragment.
      */
     @Deprecated
-    @NonNull
     @MainThread
-    public static ViewModelProvider of(@NonNull Fragment fragment) {
+    public static @NonNull ViewModelProvider of(@NonNull Fragment fragment) {
         return new ViewModelProvider(fragment);
     }
 
@@ -73,9 +73,8 @@ public class ViewModelProviders {
      * passing in the activity.
      */
     @Deprecated
-    @NonNull
     @MainThread
-    public static ViewModelProvider of(@NonNull FragmentActivity activity) {
+    public static @NonNull ViewModelProvider of(@NonNull FragmentActivity activity) {
         return new ViewModelProvider(activity);
     }
 
@@ -93,10 +92,9 @@ public class ViewModelProviders {
      * passing in the fragment and factory.
      */
     @Deprecated
-    @NonNull
     @MainThread
-    public static ViewModelProvider of(@NonNull Fragment fragment,
-            @Nullable ViewModelProvider.Factory factory) {
+    public static @NonNull ViewModelProvider of(@NonNull Fragment fragment,
+            ViewModelProvider.@Nullable Factory factory) {
         if (factory == null) {
             factory = fragment.getDefaultViewModelProviderFactory();
         }
@@ -117,10 +115,9 @@ public class ViewModelProviders {
      * passing in the activity and factory.
      */
     @Deprecated
-    @NonNull
     @MainThread
-    public static ViewModelProvider of(@NonNull FragmentActivity activity,
-            @Nullable ViewModelProvider.Factory factory) {
+    public static @NonNull ViewModelProvider of(@NonNull FragmentActivity activity,
+            ViewModelProvider.@Nullable Factory factory) {
         if (factory == null) {
             factory = activity.getDefaultViewModelProviderFactory();
         }

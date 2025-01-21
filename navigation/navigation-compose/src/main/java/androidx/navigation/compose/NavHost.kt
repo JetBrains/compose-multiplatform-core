@@ -512,20 +512,29 @@ public fun NavHost(
     var progress by remember { mutableFloatStateOf(0f) }
     var inPredictiveBack by remember { mutableStateOf(false) }
     PredictiveBackHandler(currentBackStack.size > 1) { backEvent ->
-        progress = 0f
-        val currentBackStackEntry = currentBackStack.lastOrNull()
-        composeNavigator.prepareForTransition(currentBackStackEntry!!)
-        val previousEntry = currentBackStack[currentBackStack.size - 2]
-        composeNavigator.prepareForTransition(previousEntry)
+        var currentBackStackEntry: NavBackStackEntry? = null
+        if (currentBackStack.size > 1) {
+            progress = 0f
+            currentBackStackEntry = currentBackStack.lastOrNull()
+            composeNavigator.prepareForTransition(currentBackStackEntry!!)
+            val previousEntry = currentBackStack[currentBackStack.size - 2]
+            composeNavigator.prepareForTransition(previousEntry)
+        }
         try {
             backEvent.collect {
-                inPredictiveBack = true
-                progress = it.progress
+                if (currentBackStack.size > 1) {
+                    inPredictiveBack = true
+                    progress = it.progress
+                }
             }
-            inPredictiveBack = false
-            composeNavigator.popBackStack(currentBackStackEntry, false)
+            if (currentBackStack.size > 1) {
+                inPredictiveBack = false
+                composeNavigator.popBackStack(currentBackStackEntry!!, false)
+            }
         } catch (e: CancellationException) {
-            inPredictiveBack = false
+            if (currentBackStack.size > 1) {
+                inPredictiveBack = false
+            }
         }
     }
 

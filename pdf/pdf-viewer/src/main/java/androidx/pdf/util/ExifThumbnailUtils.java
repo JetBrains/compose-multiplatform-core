@@ -19,9 +19,10 @@ package androidx.pdf.util;
 import android.content.ContentResolver;
 import android.net.Uri;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.exifinterface.media.ExifInterface;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Handles extracting Exif data for content Uri thumbnails, which don't have exif data embedded.

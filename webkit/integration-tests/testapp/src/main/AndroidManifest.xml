@@ -165,6 +165,9 @@
         <activity
             android:name=".AsyncStartUpActivity"
             android:exported="true" />
+        <activity
+            android:name=".DefaultTrafficStatsTaggingActivity"
+            android:exported="true" />
         <provider
             android:authorities="com.example.androidx.webkit.DropDataProvider"
             android:name="androidx.webkit.DropDataContentProvider"

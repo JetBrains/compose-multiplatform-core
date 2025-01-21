@@ -121,12 +121,7 @@ private fun configureComposeCompilerPlugin(project: Project, extension: AndroidX
         // Add Compose compiler plugin to kotlinPlugin configuration, making sure it works
         // for Playground builds as well
         val isPlayground = ProjectLayoutType.isPlayground(project)
-        val compilerPluginVersion =
-            if (!isPlayground) {
-                project.getVersionByName("composeCompilerPlugin")
-            } else {
-                project.getVersionByName("kotlin")
-            }
+        val compilerPluginVersion = project.getVersionByName("kotlin")
         project.dependencies.add(
             COMPILER_PLUGIN_CONFIGURATION,
             "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:$compilerPluginVersion"
@@ -186,15 +181,8 @@ private fun configureComposeCompilerPlugin(project: Project, extension: AndroidX
 
             compile.pluginClasspath.from(kotlinPluginProvider.get())
 
-            // Playground is using Compose compiler 2.0.10, which does not support feature flags.
-            if (isPlayground) {
-                compile.addPluginOption(ComposeCompileOptions.StrongSkipping, "true")
-                compile.addPluginOption(ComposeCompileOptions.NonSkippingGroupOptimization, "true")
-            } else {
-                compile.enableFeatureFlag(ComposeFeatureFlag.StrongSkipping)
-                compile.enableFeatureFlag(ComposeFeatureFlag.OptimizeNonSkippingGroups)
-                compile.enableFeatureFlag(ComposeFeatureFlag.PausableComposition)
-            }
+            compile.enableFeatureFlag(ComposeFeatureFlag.OptimizeNonSkippingGroups)
+            compile.enableFeatureFlag(ComposeFeatureFlag.PausableComposition)
 
             compile.addPluginOption(ComposeCompileOptions.SourceOption, "true")
         }

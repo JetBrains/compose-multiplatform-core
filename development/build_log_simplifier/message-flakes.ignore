@@ -160,5 +160,8 @@ Generating lint files for.*
 # When we change gradle.properties, we can get this error in incremental builds:
 Calculating task graph as configuration cache cannot be reused because the set of Gradle properties has changed\.
 Calculating task graph as configuration cache cannot be reused because properties file .*local\.properties has changed\.
-# b/347233852
-e: java.rmi.NoSuchObjectException: no such object in table
+# https://youtrack.jetbrains.com/issue/KT-73311
+Unable to release compile session, maybe daemon is already down.*
+java\.net\.ConnectException: Connection refused
+java\.net\.SocketException: Connection reset
+java\.io\.EOFException

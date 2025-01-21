@@ -28,6 +28,10 @@ plugins {
     id('java-library')
 }
 
+ext {
+    kotlin = "2.0.21"
+}
+
 androidx.configureAarAsJarForConfiguration("testImplementation")
 
 dependencies {
@@ -40,12 +44,16 @@ dependencies {
     implementation(libs.autoValueAnnotations)
     implementation(libs.guava)
     implementation(libs.javapoet)
+    implementation(libs.kotlinMetadataJvm)
 
     annotationProcessor(libs.autoValue)
 
     // For testing, add in the compiled classes from appsearch to get access to annotations.
     testImplementationAarAsJar(project(":appsearch:appsearch"))
     testImplementation(libs.googleCompileTesting)
+    testImplementation project(':room:room-compiler-processing-testing')
+    testImplementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:$kotlin")
+    testImplementation(libs.kotlinCompileTestingKsp)
 }
 
 androidx {

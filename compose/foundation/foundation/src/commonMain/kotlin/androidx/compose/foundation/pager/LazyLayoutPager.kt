@@ -323,13 +323,20 @@ private class PagerBringIntoViewSpec(
         val proposedOffsetMove =
             defaultBringIntoViewSpec.calculateScrollDistance(offset, size, containerSize)
 
+        val isItemOutView =
+            if (offset > 0) {
+                offset + size > containerSize
+            } else {
+                offset + size <= 0
+            }
+
         val finalOffset =
-            if (proposedOffsetMove != 0.0f) {
+            if (proposedOffsetMove.absoluteValue != 0.0f && isItemOutView) {
                 overrideProposedOffsetMove(proposedOffsetMove)
             } else {
                 // if there's no info from the default behavior, or if we already satisfied their
                 // request.
-                if (pagerState.firstVisiblePageOffset == 0) {
+                if (pagerState.firstVisiblePageOffset.absoluteValue < 1e-6) {
                     // do nothing, we're settled
                     0f
                 } else {
@@ -348,7 +355,6 @@ private class PagerBringIntoViewSpec(
                     // much.
                 }
             }
-
         return finalOffset
     }
 

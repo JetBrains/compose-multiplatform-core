@@ -16,8 +16,8 @@
 
 package androidx.preference;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Set;
 
@@ -130,8 +130,7 @@ public abstract class PreferenceDataStore {
      * @return The value from the data store or the default return value
      * @see #putString(String, String)
      */
-    @Nullable
-    public String getString(@NonNull String key, @Nullable String defValue) {
+    public @Nullable String getString(@NonNull String key, @Nullable String defValue) {
         return defValue;
     }
 
@@ -143,8 +142,8 @@ public abstract class PreferenceDataStore {
      * @return The values from the data store or the default return values
      * @see #putStringSet(String, Set)
      */
-    @Nullable
-    public Set<String> getStringSet(@NonNull String key, @Nullable Set<String> defValues) {
+    public @Nullable Set<String> getStringSet(@NonNull String key,
+            @Nullable Set<String> defValues) {
         return defValues;
     }
 

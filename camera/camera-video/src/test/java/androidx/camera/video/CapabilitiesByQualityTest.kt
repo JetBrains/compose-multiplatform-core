@@ -21,6 +21,7 @@ import android.media.CamcorderProfile.QUALITY_720P
 import android.media.CamcorderProfile.QUALITY_HIGH
 import android.media.CamcorderProfile.QUALITY_LOW
 import android.os.Build
+import androidx.camera.core.impl.EncoderProfilesProvider
 import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_2160P
 import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_720P
 import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_1080P
@@ -129,5 +130,19 @@ class CapabilitiesByQualityTest {
             .isEqualTo(HD)
         assertThat(capabilitiesByQuality.findNearestHigherSupportedQualityFor(RESOLUTION_QVGA))
             .isEqualTo(HD)
+    }
+
+    @Test
+    fun containsSupportedQuality() {
+        val provider =
+            FakeEncoderProfilesProvider.Builder()
+                .add(QUALITY_HIGH, PROFILES_720P)
+                .add(QUALITY_720P, PROFILES_720P)
+                .add(QUALITY_LOW, PROFILES_720P)
+                .build()
+        val emptyProvider = EncoderProfilesProvider.EMPTY
+
+        assertThat(CapabilitiesByQuality.containsSupportedQuality(provider)).isTrue()
+        assertThat(CapabilitiesByQuality.containsSupportedQuality(emptyProvider)).isFalse()
     }
 }

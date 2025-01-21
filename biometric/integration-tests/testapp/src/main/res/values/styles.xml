@@ -16,6 +16,12 @@
   -->
 
 <resources>
+    <style name="GroupLabelText">
+        <item name="android:textColor">?android:textColorPrimary</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
     <style name="LabelText">
         <item name="android:textColor">?android:textColorPrimary</item>
         <item name="android:textSize">15sp</item>

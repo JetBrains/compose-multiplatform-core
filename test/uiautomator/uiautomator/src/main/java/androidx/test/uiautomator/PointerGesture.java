@@ -18,7 +18,7 @@ package androidx.test.uiautomator;
 
 import android.graphics.Point;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -110,9 +110,8 @@ class PointerGesture {
         return mActions.peekLast().end;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return mActions.toString();
     }
 
@@ -143,9 +142,8 @@ class PointerGesture {
             return new Point(start);
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return String.format("Pause(point=%s, duration=%dms)", start, duration);
         }
     }
@@ -164,9 +162,8 @@ class PointerGesture {
             return ret;
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return String.format("Move(start=%s, end=%s, duration=%dms)", start, end, duration);
         }
 

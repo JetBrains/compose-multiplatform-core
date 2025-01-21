@@ -29,14 +29,14 @@ plugins {
     id("kotlin-android")
 }
 android {
-    compileSdk 35
+    compileSdk = 35
 
     buildTypes {
         release {
             // Minification and shrinking are disabled to avoid r8 removing unused methods and
             // speed up build process.
-            minifyEnabled false
-            shrinkResources false
+            minifyEnabled = false
+            shrinkResources = false
         }
     }
 
@@ -56,7 +56,7 @@ android {
         }
     }
 
-    namespace "androidx.profileinstaller.integration.profileverification.target"
+    namespace = "androidx.profileinstaller.integration.profileverification.target"
 }
 
 dependencies {

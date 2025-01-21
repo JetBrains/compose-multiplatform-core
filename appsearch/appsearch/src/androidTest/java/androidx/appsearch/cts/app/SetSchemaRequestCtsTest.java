@@ -33,17 +33,17 @@ import androidx.appsearch.app.PackageIdentifier;
 import androidx.appsearch.app.SchemaVisibilityConfig;
 import androidx.appsearch.app.SetSchemaRequest;
 import androidx.appsearch.exceptions.AppSearchException;
-import androidx.appsearch.flags.CheckFlagsRule;
-import androidx.appsearch.flags.DeviceFlagsValueProvider;
 import androidx.appsearch.flags.Flags;
-import androidx.appsearch.flags.RequiresFlagsEnabled;
 import androidx.appsearch.testutil.AppSearchEmail;
+import androidx.appsearch.testutil.AppSearchTestUtils;
+import androidx.appsearch.testutil.flags.RequiresFlagsEnabled;
 import androidx.collection.ArrayMap;
 
 import com.google.common.collect.ImmutableSet;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.RuleChain;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -55,7 +55,7 @@ import java.util.Set;
 
 public class SetSchemaRequestCtsTest {
     @Rule
-    public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
+    public final RuleChain mRuleChain = AppSearchTestUtils.createCommonTestRules();
 
     @Test
     public void testBuildSetSchemaRequest() {

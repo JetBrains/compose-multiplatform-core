@@ -30,11 +30,11 @@ import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.content.res.TypedArrayUtils;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 
 import java.lang.annotation.Retention;
@@ -245,9 +245,8 @@ public class Slide extends Visibility {
         return mSlideEdge;
     }
 
-    @Nullable
     @Override
-    public Animator onAppear(@NonNull ViewGroup sceneRoot, @NonNull View view,
+    public @Nullable Animator onAppear(@NonNull ViewGroup sceneRoot, @NonNull View view,
             @Nullable TransitionValues startValues, @Nullable TransitionValues endValues) {
         if (endValues == null) {
             return null;
@@ -262,9 +261,8 @@ public class Slide extends Visibility {
                         startX, startY, endX, endY, sDecelerate, this);
     }
 
-    @Nullable
     @Override
-    public Animator onDisappear(@NonNull ViewGroup sceneRoot, @NonNull View view,
+    public @Nullable Animator onDisappear(@NonNull ViewGroup sceneRoot, @NonNull View view,
             @Nullable TransitionValues startValues, @Nullable TransitionValues endValues) {
         if (startValues == null) {
             return null;

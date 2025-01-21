@@ -6,13 +6,10 @@ lmohanan@google.com
 adigupt@google.com # FLEDGE Primary PoC
 tudorcretu@google.com
 # adservices.topics
-akshaymiterani@google.com # Primary PoC for Topics
-saadsheikh@google.com
+saadsheikh@google.com # Primary PoC for Topics
 # adservices.signals
-calebclark@google.com # Primary PoC for Signals
-ktjen@google.com
+ktjen@google.com # Primary PoC for Signals
 # adservices.adid, .appsetid, .common OWNERS
-ramarcus@google.com # # Primary PoC for Common
-haoliuu@google.com
+haoliuu@google.com # # Primary PoC for Common
 jmarkoff@google.com # DevRel Jetpack Lead
 carolinewang@google.com # DevRel TPM Lead

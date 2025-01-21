@@ -19,8 +19,9 @@ package androidx.pdf.util;
 import android.content.Context;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Pops a toast. Avoids using static Toast.makeText which is harder to test.
@@ -42,7 +43,7 @@ public class Toaster {
     /**
      *
      */
-    public void popToast(@NonNull Context context, int resId, @NonNull Object... args) {
+    public void popToast(@NonNull Context context, int resId, Object @NonNull ... args) {
         popToast(context, context.getString(resId, args));
     }
 

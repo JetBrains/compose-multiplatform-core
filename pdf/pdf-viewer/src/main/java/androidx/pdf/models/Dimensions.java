@@ -21,8 +21,9 @@ import android.graphics.Rect;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Dimensions of a rectangular area: width and height.
@@ -78,9 +79,8 @@ public class Dimensions implements Parcelable {
         return 31 * mWidth + mHeight;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return String.format("Dimensions (w:%d, h:%d)", mWidth, mHeight);
     }
 

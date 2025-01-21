@@ -43,38 +43,39 @@ import kotlinx.coroutines.withContext
  *
  * @param context The [Context] required for accessing system services.
  * @param dispatcher The [CoroutineDispatcher] used for asynchronous operations.
- * @param connection The [PdfServiceConnection] used to interact with the service.
  * @constructor Creates a new [SandboxedPdfLoader] instance.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class SandboxedPdfLoader(
     context: Context,
     private val dispatcher: CoroutineDispatcher,
-    private val connection: PdfServiceConnection = PdfServiceConnectionImpl(context)
 ) : PdfLoader {
     private val context = context.applicationContext
 
+    internal var testingConnection: PdfServiceConnection? = null
+
     override suspend fun openDocument(uri: Uri, password: String?): PdfDocument {
+        val connection: PdfServiceConnection =
+            testingConnection ?: PdfServiceConnectionImpl(context)
         if (!connection.isConnected) {
-            connection.bindAndConnect()
+            connection.bindAndConnect(uri)
         }
 
-        val binder =
-            connection.documentBinder
-                ?: throw IllegalStateException(
-                    "Binder interface not available for loading the document!"
-                )
-
-        return withContext(dispatcher) { openDocumentUri(uri, password, binder) }
+        return withContext(dispatcher) { openDocumentUri(uri, password, connection) }
     }
 
     private fun openDocumentUri(
         uri: Uri,
         password: String?,
-        document: PdfDocumentRemote,
+        connection: PdfServiceConnection,
     ): PdfDocument {
+        val binder =
+            connection.documentBinder
+                ?: throw IllegalStateException(
+                    "Binder interface not available for loading the document!"
+                )
         val pfd = openFileDescriptor(uri)
-        val status = PdfLoadingStatus.values()[document.openPdfDocument(pfd, password)]
+        val status = PdfLoadingStatus.values()[binder.openPdfDocument(pfd, password)]
         when (status) {
             PdfLoadingStatus.SUCCESS -> {
                 return SandboxedPdfDocument(
@@ -82,9 +83,9 @@ public class SandboxedPdfLoader(
                     pfd,
                     connection,
                     dispatcher,
-                    document.numPages(),
-                    document.isPdfLinearized(),
-                    document.getFormType()
+                    binder.numPages(),
+                    binder.isPdfLinearized(),
+                    binder.getFormType()
                 )
             }
             PdfLoadingStatus.WRONG_PASSWORD -> throw PdfPasswordException("Incorrect password")

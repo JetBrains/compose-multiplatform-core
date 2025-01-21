@@ -70,6 +70,7 @@ public class GenericDocumentInternalTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testRecreateFromParcelWithParentTypes() {
         GenericDocument inDoc = new GenericDocument.Builder<>("namespace", "id1", "schema1")
                 .setParentTypes(new ArrayList<>(Arrays.asList("Class1", "Class2")))
@@ -112,6 +113,7 @@ public class GenericDocumentInternalTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testGenericDocumentBuilderDoesNotMutateOriginal() {
         GenericDocument oldDoc = new GenericDocument.Builder<>("namespace", "id1", "schema1")
                 .setParentTypes(new ArrayList<>(Arrays.asList("Class1", "Class2")))

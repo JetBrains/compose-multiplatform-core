@@ -57,8 +57,7 @@ internal class KspEnumEntry(
             return KspEnumEntry(
                 env,
                 declaration,
-                KspTypeElement.create(
-                    env,
+                env.wrapClassDeclaration(
                     declaration.requireEnclosingMemberContainer(env).declaration
                         as KSClassDeclaration
                 ) as XEnumTypeElement

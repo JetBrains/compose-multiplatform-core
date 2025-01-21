@@ -41,25 +41,24 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
-    // Add dependencies here
 }
 
 android {
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
     buildFeatures {
         aidl = true
     }
     buildTypes.configureEach {
         stableAidl {
-            version 1
+            version = 1
         }
     }
     aaptOptions {
-        noCompress 'js'
+        noCompress = "js"
     }
-    namespace "androidx.javascriptengine"
+    namespace = "androidx.javascriptengine"
 }
 
 androidx {

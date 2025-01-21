@@ -268,6 +268,7 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
      *   with the range [start, end) will be returned. When [start] is bigger than [end], an empty
      *   list will be returned.
      */
+    @ExperimentalTextApi
     @Suppress("UNCHECKED_CAST", "Deprecation")
     @Deprecated("Use LinkAnnotation API instead", ReplaceWith("getLinkAnnotations(start, end)"))
     fun getUrlAnnotations(start: Int, end: Int): List<Range<UrlAnnotation>> =
@@ -662,6 +663,7 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
          * @sample androidx.compose.ui.text.samples.AnnotatedStringAddStringAnnotationSample
          * @see getStringAnnotations
          */
+        @ExperimentalTextApi
         @Suppress("SetterReturnsThis", "Deprecation")
         @Deprecated(
             "Use LinkAnnotation API for links instead",
@@ -782,6 +784,7 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
          * @see getStringAnnotations
          * @see Range
          */
+        @ExperimentalTextApi
         @Suppress("BuilderSetStyle", "Deprecation")
         @Deprecated(
             "Use LinkAnnotation API for links instead",
@@ -1331,6 +1334,7 @@ inline fun <R : Any> Builder.withAnnotation(
  * @see AnnotatedString.Builder.pushStringAnnotation
  * @see AnnotatedString.Builder.pop
  */
+@ExperimentalTextApi
 @Deprecated("Use LinkAnnotation API for links instead", ReplaceWith("withLink(, block)"))
 @Suppress("Deprecation")
 inline fun <R : Any> Builder.withAnnotation(

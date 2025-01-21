@@ -19,7 +19,7 @@ package androidx.credentials.provider
 import android.content.Context
 import android.content.pm.PackageManager
 import android.content.pm.SigningInfo
-import androidx.core.os.BuildCompat
+import android.os.Build
 import androidx.credentials.provider.SigningInfoCompat.Companion.fromSigningInfo
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -60,7 +60,7 @@ class SigningInfoCompatApi28Test {
         assertThat(signingInfoCompat.apkContentsSigners)
             .containsExactlyElementsIn(signingInfo!!.apkContentsSigners)
             .inOrder()
-        if (BuildCompat.isAtLeastV()) {
+        if (Build.VERSION.SDK_INT >= 35) {
             if (signingInfoCompat.publicKeys.isNotEmpty()) {
                 assertThat(signingInfoCompat.publicKeys)
                     .containsExactlyElementsIn(signingInfo!!.publicKeys)

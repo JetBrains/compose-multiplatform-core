@@ -31,9 +31,9 @@ plugins {
 
 android {
     defaultConfig {
-        minSdkVersion 23
+        minSdk = 23
     }
-    namespace "androidx.car.app.sample.showcase.common"
+    namespace = "androidx.car.app.sample.showcase.common"
 }
 
 dependencies {

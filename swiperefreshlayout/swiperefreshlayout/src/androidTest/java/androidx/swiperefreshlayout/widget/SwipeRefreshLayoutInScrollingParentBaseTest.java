@@ -27,13 +27,13 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import android.view.View;
 import android.view.ViewConfiguration;
 
-import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.testutils.PollingCheck;
 import androidx.testutils.SwipeInjector;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -59,8 +59,7 @@ public abstract class SwipeRefreshLayoutInScrollingParentBaseTest {
     protected abstract
             Class<? extends SwipeRefreshLayoutInRecyclerViewBaseActivity> getActivityClass();
 
-    @Nullable
-    private SwipeRefreshLayout getSwipeRefreshLayout() {
+    private @Nullable SwipeRefreshLayout getSwipeRefreshLayout() {
         return mActivityTestRule.getActivity().mSwipeRefreshLayout;
     }
 

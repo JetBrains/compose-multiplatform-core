@@ -16,8 +16,9 @@
 
 package androidx.pdf.exceptions;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * An exception used to report that a specific fetch task was cancelled, for whatever

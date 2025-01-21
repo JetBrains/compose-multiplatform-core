@@ -52,5 +52,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.room.guava"
+    namespace = "androidx.room.guava"
 }

@@ -42,7 +42,7 @@ android {
             }
         }
     }
-    namespace "androidx.emoji2.benchmark"
+    namespace = "androidx.emoji2.benchmark"
 
 }
 

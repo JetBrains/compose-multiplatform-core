@@ -23,6 +23,7 @@ import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException.Companion.LOAD_SDK_NOT_FOUND
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
+import androidx.privacysandbox.sdkruntime.core.SdkSandboxClientImportanceListenerCompat
 import androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandlerCompat
 import androidx.privacysandbox.sdkruntime.core.controller.LoadSdkCallback
 import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat
@@ -108,6 +109,23 @@ internal class LocalImpl(
              * wrapper.
              */
             return sdkContext.getPackageName()
+        }
+    }
+
+    override fun registerSdkSandboxClientImportanceListener(
+        executor: Executor,
+        listenerCompat: SdkSandboxClientImportanceListenerCompat
+    ) {
+        if (ClientFeature.CLIENT_IMPORTANCE_LISTENER.isAvailable(clientVersion)) {
+            implFromClient.registerSdkSandboxClientImportanceListener(executor, listenerCompat)
+        }
+    }
+
+    override fun unregisterSdkSandboxClientImportanceListener(
+        listenerCompat: SdkSandboxClientImportanceListenerCompat
+    ) {
+        if (ClientFeature.CLIENT_IMPORTANCE_LISTENER.isAvailable(clientVersion)) {
+            implFromClient.unregisterSdkSandboxClientImportanceListener(listenerCompat)
         }
     }
 }

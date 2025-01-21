@@ -30,6 +30,7 @@ internal actual fun BasicTooltipBox(
     tooltip: @Composable () -> Unit,
     state: TooltipState,
     modifier: Modifier,
+    onDismissRequest: (() -> Unit)?,
     focusable: Boolean,
     enableUserInput: Boolean,
     content: @Composable () -> Unit

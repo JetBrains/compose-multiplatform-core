@@ -36,17 +36,14 @@ dependencies {
 }
 
 android {
-    namespace "androidx.privacysandbox.activity.core"
+    namespace = "androidx.privacysandbox.activity.core"
     buildFeatures {
         aidl = true
     }
     buildTypes.configureEach {
         stableAidl {
-            version 1
+            version = 1
         }
-    }
-    defaultConfig {
-        minSdk 21
     }
 }
 

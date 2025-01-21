@@ -176,7 +176,7 @@ class ImmutableBoxTest {
     }
 
     @Test
-    fun populateCenter_modifiesMutablePoint() {
+    fun computeCenter_modifiesMutablePoint() {
         val immutableBox = ImmutableBox.fromTwoPoints(ImmutableVec(1F, 20F), ImmutableVec(3F, 40F))
         val outCenter = MutableVec()
         immutableBox.computeCenter(outCenter)
@@ -185,7 +185,15 @@ class ImmutableBoxTest {
     }
 
     @Test
-    fun corners_modifiesMutableVecs() {
+    fun computeCenter_returnsCorrectValue() {
+        val immutableBox = ImmutableBox.fromTwoPoints(ImmutableVec(1F, 20F), ImmutableVec(3F, 40F))
+        val centerVec = immutableBox.computeCenter()
+
+        assertThat(centerVec).isEqualTo(MutableVec(2F, 30F))
+    }
+
+    @Test
+    fun computeCorners_modifiesMutableVecs() {
         val rect = ImmutableBox.fromTwoPoints(ImmutableVec(1F, 20F), ImmutableVec(3F, 40F))
         val p0 = MutableVec()
         val p1 = MutableVec()
@@ -197,6 +205,18 @@ class ImmutableBoxTest {
         assertThat(p1).isEqualTo(MutableVec(3F, 20F))
         assertThat(p2).isEqualTo(MutableVec(3F, 40F))
         assertThat(p3).isEqualTo(MutableVec(1F, 40F))
+    }
+
+    @Test
+    fun computeCorners_returnsCorrectValues() {
+        val rect = ImmutableBox.fromTwoPoints(ImmutableVec(1F, 20F), ImmutableVec(3F, 40F))
+        val cornersList = rect.computeCorners()
+
+        assertThat(cornersList).hasSize(4)
+        assertThat(cornersList.get(0)).isEqualTo(MutableVec(1F, 20F))
+        assertThat(cornersList.get(1)).isEqualTo(MutableVec(3F, 20F))
+        assertThat(cornersList.get(2)).isEqualTo(MutableVec(3F, 40F))
+        assertThat(cornersList.get(3)).isEqualTo(MutableVec(1F, 40F))
     }
 
     @Test

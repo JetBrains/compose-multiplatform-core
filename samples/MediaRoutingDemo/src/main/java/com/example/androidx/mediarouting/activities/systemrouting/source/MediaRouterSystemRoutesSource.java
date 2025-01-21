@@ -20,10 +20,10 @@ import android.content.Context;
 import android.media.MediaRouter;
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
-
 import com.example.androidx.mediarouting.activities.systemrouting.SystemRouteItem;
 import com.example.androidx.mediarouting.activities.systemrouting.SystemRoutesSourceItem;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,11 +31,9 @@ import java.util.List;
 /** Implements {@link SystemRoutesSource} using {@link MediaRouter}. */
 public final class MediaRouterSystemRoutesSource extends SystemRoutesSource {
 
-    @NonNull
-    private final MediaRouter mMediaRouter;
+    private final @NonNull MediaRouter mMediaRouter;
 
-    @NonNull
-    private final MediaRouter.Callback mCallback =
+    private final MediaRouter.@NonNull Callback mCallback =
             new MediaRouter.SimpleCallback() {
                 @Override
                 public void onRouteAdded(MediaRouter router, MediaRouter.RouteInfo info) {
@@ -66,8 +64,7 @@ public final class MediaRouterSystemRoutesSource extends SystemRoutesSource {
             };
 
     /** Returns a new instance. */
-    @NonNull
-    public static MediaRouterSystemRoutesSource create(@NonNull Context context) {
+    public static @NonNull MediaRouterSystemRoutesSource create(@NonNull Context context) {
         MediaRouter mediaRouter =
                 (MediaRouter) context.getSystemService(Context.MEDIA_ROUTER_SERVICE);
         return new MediaRouterSystemRoutesSource(mediaRouter);
@@ -87,15 +84,13 @@ public final class MediaRouterSystemRoutesSource extends SystemRoutesSource {
         mMediaRouter.removeCallback(mCallback);
     }
 
-    @NonNull
     @Override
-    public SystemRoutesSourceItem getSourceItem() {
+    public @NonNull SystemRoutesSourceItem getSourceItem() {
         return new SystemRoutesSourceItem(/* name= */ "Legacy MediaRouter");
     }
 
-    @NonNull
     @Override
-    public List<SystemRouteItem> fetchSourceRouteItems() {
+    public @NonNull List<SystemRouteItem> fetchSourceRouteItems() {
         int count = mMediaRouter.getRouteCount();
 
         List<SystemRouteItem> out = new ArrayList<>();
@@ -126,9 +121,8 @@ public final class MediaRouterSystemRoutesSource extends SystemRoutesSource {
         return false;
     }
 
-    @NonNull
-    private SystemRouteItem createRouteItemFor(
-            @NonNull MediaRouter.RouteInfo routeInfo, boolean isSelected) {
+    private @NonNull SystemRouteItem createRouteItemFor(
+            MediaRouter.@NonNull RouteInfo routeInfo, boolean isSelected) {
         SystemRouteItem.Builder builder =
                 new SystemRouteItem.Builder(getSourceId(), /* id= */ routeInfo.getName().toString())
                         .setName(routeInfo.getName().toString());

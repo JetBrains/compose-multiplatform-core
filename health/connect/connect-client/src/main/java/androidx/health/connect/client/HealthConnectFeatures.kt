@@ -84,7 +84,10 @@ interface HealthConnectFeatures {
         internal val FEATURE_TO_VERSION_INFO_MAP: Map<Int, HealthConnectVersionInfo> =
             mapOf(
                 FEATURE_READ_HEALTH_DATA_IN_BACKGROUND to
-                    HealthConnectVersionInfo(platformVersion = SDK_EXT_13_PLATFORM_VERSION),
+                    HealthConnectVersionInfo(
+                        apkVersionCode = 165072,
+                        platformVersion = SDK_EXT_13_PLATFORM_VERSION
+                    ),
                 FEATURE_SKIN_TEMPERATURE to
                     HealthConnectVersionInfo(platformVersion = SDK_EXT_13_PLATFORM_VERSION),
                 FEATURE_READ_HEALTH_DATA_HISTORY to

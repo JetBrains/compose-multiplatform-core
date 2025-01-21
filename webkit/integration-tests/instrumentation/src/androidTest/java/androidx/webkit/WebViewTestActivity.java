@@ -21,14 +21,13 @@ import android.os.Bundle;
 import android.view.ViewGroup;
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public class WebViewTestActivity extends Activity {
     private WebView mWebView;
 
-    @NonNull
-    public WebView getWebView() {
+    public @NonNull WebView getWebView() {
         return mWebView;
     }
 

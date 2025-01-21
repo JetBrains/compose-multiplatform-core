@@ -20,6 +20,11 @@
 
 package androidx.wear.compose.foundation.rotary
 
+import android.content.Context
+import android.hardware.input.InputManager
+import android.view.InputDevice.SOURCE_ROTARY_ENCODER
+import android.view.MotionEvent
+import android.view.ViewConfiguration
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.layout.height
@@ -40,7 +45,10 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performRotaryScrollInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.view.ViewConfigurationCompat
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -168,6 +176,7 @@ class RotaryScrollTest {
     fun fast_scroll_with_fling() {
         var itemIndex = 0
 
+        Assume.assumeTrue(hasRotaryInputDevice())
         testScroll(
             beforeScroll = { itemIndex = state.firstVisibleItemIndex },
             rotaryAction = {
@@ -285,6 +294,32 @@ class RotaryScrollTest {
         ) {
             items(300) { BasicText(modifier = Modifier.height(itemSize), text = "Item #$it") }
         }
+    }
+
+    private fun hasRotaryInputDevice(): Boolean {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val viewConfiguration = ViewConfiguration.get(context)
+        with(context.getSystemService(Context.INPUT_SERVICE) as InputManager) {
+            inputDeviceIds.forEach { deviceId ->
+                // To validate that we have a valid rotary device we need to:
+                // 1) check that we have a rotary device.
+                // 2) check that getScaledMaximumFlingVelocity method returns us a valid fling speed
+                if (
+                    getInputDevice(deviceId)?.motionRanges?.find {
+                        it.source == SOURCE_ROTARY_ENCODER
+                    } != null &&
+                        ViewConfigurationCompat.getScaledMaximumFlingVelocity(
+                            context,
+                            viewConfiguration,
+                            deviceId,
+                            MotionEvent.AXIS_SCROLL,
+                            SOURCE_ROTARY_ENCODER
+                        ) != Integer.MIN_VALUE
+                )
+                    return true
+            }
+        }
+        return false
     }
 
     companion object {

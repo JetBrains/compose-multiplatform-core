@@ -16,6 +16,7 @@
 
 package androidx.core.text.method;
 
+import android.os.Build;
 import android.text.Layout;
 import android.text.Selection;
 import android.text.Spannable;
@@ -26,8 +27,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.OptIn;
-import androidx.core.os.BuildCompat;
 
 /**
  * Backwards compatible version of {@link LinkMovementMethod} which fixes the issue that links can
@@ -38,11 +37,10 @@ public class LinkMovementMethodCompat extends LinkMovementMethod {
 
     private LinkMovementMethodCompat() {}
 
-    @OptIn(markerClass = BuildCompat.PrereleaseSdkCheck.class)
     @Override
     public boolean onTouchEvent(@Nullable TextView widget, @Nullable Spannable buffer,
             @Nullable MotionEvent event) {
-        if (!BuildCompat.isAtLeastV()) {
+        if (Build.VERSION.SDK_INT < 35) {
             int action = event.getAction();
 
             if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_DOWN) {

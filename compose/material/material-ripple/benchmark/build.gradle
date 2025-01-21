@@ -46,9 +46,9 @@ dependencies {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
 
-    namespace "androidx.compose.material.ripple.benchmark"
+    namespace = "androidx.compose.material.ripple.benchmark"
 }
 
 androidx {

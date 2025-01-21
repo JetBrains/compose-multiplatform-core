@@ -26,12 +26,14 @@ import static org.mockito.Mockito.when;
 import android.os.Build;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
@@ -41,6 +43,9 @@ import javax.crypto.Cipher;
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
 public class AuthenticationCallbackProviderTest {
+    @Rule
+    public final MockitoRule mocks = MockitoJUnit.rule();
+
     @Mock private AuthenticationCallbackProvider.Listener mListener;
     @Mock private Cipher mCipher;
 
@@ -48,10 +53,8 @@ public class AuthenticationCallbackProviderTest {
 
     private AuthenticationCallbackProvider mAuthenticationCallbackProvider;
 
-    @SuppressWarnings("deprecation") // b/251211046
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
         mAuthenticationCallbackProvider = new AuthenticationCallbackProvider(mListener);
     }
 

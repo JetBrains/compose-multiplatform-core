@@ -42,7 +42,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.wear.core"
+    namespace = "androidx.wear.core"
 }
 
 androidx {

@@ -94,16 +94,16 @@ android {
     }
     defaultConfig {
         resValue "string", "car_app_library_version", androidx.LibraryVersions.CAR_APP.toString()
-        consumerProguardFiles "proguard-rules.pro"
+        consumerProguardFiles("proguard-rules.pro")
     }
     buildTypes.configureEach {
         stableAidl {
-            version 1
+            version = 1
         }
     }
 
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.car.app"
+    namespace = "androidx.car.app"
 }
 
 androidx {

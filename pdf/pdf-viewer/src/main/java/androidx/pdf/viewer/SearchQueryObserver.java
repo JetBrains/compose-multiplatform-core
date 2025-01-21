@@ -16,10 +16,11 @@
 
 package androidx.pdf.viewer;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.util.ObservableValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class SearchQueryObserver implements ObservableValue.ValueObserver<String> {

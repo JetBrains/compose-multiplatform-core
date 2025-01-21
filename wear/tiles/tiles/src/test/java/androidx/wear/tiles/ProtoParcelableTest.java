@@ -27,7 +27,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
-
 @RunWith(AndroidJUnit4.class)
 @DoNotInstrument // See http://g/robolectric-users/fTi2FRXgyGA/m/PkB0wYuwBgAJ
 public final class ProtoParcelableTest {

@@ -60,6 +60,7 @@ actual constructor(
             shadowTablesMap = shadowTablesMap,
             viewTables = viewTables,
             tableNames = tableNames,
+            useTempTable = database.useTempTrackingTable,
             onInvalidatedTablesIds = ::notifyInvalidatedObservers
         )
 

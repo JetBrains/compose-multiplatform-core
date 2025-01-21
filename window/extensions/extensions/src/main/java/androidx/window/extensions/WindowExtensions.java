@@ -16,10 +16,11 @@
 
 package androidx.window.extensions;
 
-import androidx.annotation.Nullable;
 import androidx.window.extensions.area.WindowAreaComponent;
 import androidx.window.extensions.embedding.ActivityEmbeddingComponent;
 import androidx.window.extensions.layout.WindowLayoutComponent;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * A class to provide instances of different WindowManager Jetpack extension components. An OEM must
@@ -50,8 +51,7 @@ public interface WindowExtensions {
      * {@link WindowExtensions}.
      * @return the OEM implementation of {@link WindowLayoutComponent}
      */
-    @Nullable
-    WindowLayoutComponent getWindowLayoutComponent();
+    @Nullable WindowLayoutComponent getWindowLayoutComponent();
 
     /**
      * Returns the OEM implementation of {@link ActivityEmbeddingComponent} if it is supported on
@@ -59,8 +59,7 @@ public interface WindowExtensions {
      * {@link WindowExtensions}.
      * @return the OEM implementation of {@link ActivityEmbeddingComponent}
      */
-    @Nullable
-    default ActivityEmbeddingComponent getActivityEmbeddingComponent() {
+    default @Nullable ActivityEmbeddingComponent getActivityEmbeddingComponent() {
         return null;
     }
 
@@ -70,8 +69,7 @@ public interface WindowExtensions {
      * {@link WindowExtensions}.
      * @return the OEM implementation of {@link WindowAreaComponent}
      */
-    @Nullable
-    default WindowAreaComponent getWindowAreaComponent() {
+    default @Nullable WindowAreaComponent getWindowAreaComponent() {
         return null;
     }
 }

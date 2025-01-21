@@ -16,7 +16,7 @@
 
 package androidx.security.identity;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Base class for all Identity Credential exceptions.

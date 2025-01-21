@@ -99,12 +99,13 @@ configurations {
 dependencies {
     api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesCore)
-    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.core:core-ktx:1.15.0")
 
     api project(path: ':privacysandbox:sdkruntime:sdkruntime-core')
 
-    implementation("androidx.core:core:1.12.0")
-    implementation("androidx.activity:activity:1.8.0")
+    implementation("androidx.core:core:1.15.0")
+    implementation("androidx.activity:activity:1.9.3")
+    implementation("androidx.lifecycle:lifecycle-process:2.8.7")
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)
@@ -127,6 +128,7 @@ dependencies {
     androidTestBundleDex(project(":privacysandbox:sdkruntime:test-sdks:v4"))
     androidTestBundleDex(project(":privacysandbox:sdkruntime:test-sdks:v5"))
     androidTestBundleDex(project(":privacysandbox:sdkruntime:test-sdks:v6"))
+    androidTestBundleDex(project(":privacysandbox:sdkruntime:test-sdks:v7"))
 }
 
 android {
@@ -138,9 +140,9 @@ android {
         }
     }
 
-    namespace "androidx.privacysandbox.sdkruntime.client"
-    compileSdk = 34
-    compileSdkExtension = 10
+    namespace = "androidx.privacysandbox.sdkruntime.client"
+    compileSdk = 35
+    compileSdkExtension = 14
 }
 
 androidx {

@@ -16,9 +16,9 @@
 
 package androidx.navigation.common.lint
 
-import androidx.navigation.lint.common.BaseTypeSafeDestinationMissingAnnotationDetector
-import androidx.navigation.lint.common.createMissingKeepAnnotationIssue
-import androidx.navigation.lint.common.createMissingSerializableAnnotationIssue
+import androidx.navigation.lint.BaseTypeSafeDestinationMissingAnnotationDetector
+import androidx.navigation.lint.createMissingKeepAnnotationIssue
+import androidx.navigation.lint.createMissingSerializableAnnotationIssue
 import com.android.tools.lint.detector.api.Issue
 
 /**

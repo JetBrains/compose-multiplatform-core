@@ -37,15 +37,22 @@ dependencies {
 
     implementation("androidx.fragment:fragment-ktx:1.8.1")
     implementation("com.google.android.material:material:1.11.0")
+
+    androidTestImplementation(libs.testCore)
+    androidTestImplementation(libs.testRules)
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.testExtJunit)
+    androidTestImplementation(libs.kotlinCoroutinesTest)
 }
 
 android {
-    namespace "androidx.pdf.viewer.fragment"
+    namespace = "androidx.pdf.viewer.fragment"
 
     defaultConfig {
-        minSdk 31
-        compileSdk 35
-        targetSdk 31
+        minSdk = 31
+        compileSdk = 35
+        targetSdk = 31
     }
 }
 

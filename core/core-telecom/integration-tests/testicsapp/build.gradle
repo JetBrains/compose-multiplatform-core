@@ -22,22 +22,22 @@ plugins {
 }
 
 android {
-    namespace 'androidx.core.telecom.test'
+    namespace = "androidx.core.telecom.test"
 
     defaultConfig {
-        applicationId "androidx.core.telecom.icstest"
-        minSdk 29 // Move down to 23 if we support CallingApp:checkDialerRole for < Q
+        applicationId = "androidx.core.telecom.icstest"
+        minSdk = 29 // Move down to 23 if we support CallingApp:checkDialerRole for < Q
     }
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
         }
     }
     buildFeatures {
-        viewBinding true
+        viewBinding = true
     }
 }
 

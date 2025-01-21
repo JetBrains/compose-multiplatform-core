@@ -25,7 +25,6 @@ import static org.junit.Assert.assertTrue;
 import android.content.res.Configuration;
 import android.graphics.Rect;
 
-import androidx.annotation.NonNull;
 import androidx.window.core.ExperimentalWindowApi;
 import androidx.window.embedding.SplitAttributes;
 import androidx.window.embedding.SplitAttributesCalculatorParams;
@@ -38,6 +37,7 @@ import androidx.window.testing.layout.WindowLayoutInfoTesting;
 
 import kotlin.OptIn;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;

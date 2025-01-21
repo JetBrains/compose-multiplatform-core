@@ -30,6 +30,17 @@ import androidx.camera.camera2.pipe.core.Log
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @JvmInline
 public value class CameraError private constructor(public val value: Int) {
+
+    /**
+     * Whether the [CameraError] indicates that the camera has been disconnected. Used in places
+     * where we need to determine whether the camera has been taken.
+     */
+    public fun isDisconnected(): Boolean {
+        return this == ERROR_CAMERA_DISCONNECTED ||
+            this == ERROR_CAMERA_IN_USE ||
+            this == ERROR_CAMERA_LIMIT_EXCEEDED
+    }
+
     public companion object {
         /**
          * Convenient placeholder for errors like CameraAccessException.CAMERA_ERROR where the cause

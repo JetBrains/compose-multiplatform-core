@@ -63,8 +63,8 @@ dependencies {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.navigation.fragment.compose"
+    compileSdk = 35
+    namespace = "androidx.navigation.fragment.compose"
 }
 
 androidx {

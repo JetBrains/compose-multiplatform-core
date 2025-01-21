@@ -20,8 +20,10 @@ import androidx.annotation.IntDef;
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.Document;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.utils.DateTimeFormatValidator;
 import androidx.core.util.Preconditions;
 
@@ -88,6 +90,7 @@ public class Alarm extends Thing {
     @Document.LongProperty(name = "computingDevice")
     private final int mOriginatingDevice;
 
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     Alarm(@NonNull String namespace, @NonNull String id, int documentScore,
             long creationTimestampMillis, long documentTtlMillis, @Nullable String name,
             @Nullable List<String> alternateNames, @Nullable String description,

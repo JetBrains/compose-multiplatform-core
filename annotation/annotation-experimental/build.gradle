@@ -39,7 +39,6 @@ androidx {
     name = "Experimental annotation"
     type = LibraryType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.ANNOTATION_EXPERIMENTAL
-    kotlinTarget = KotlinTarget.KOTLIN_1_7
     inceptionYear = "2019"
     description = "Java annotation for use on unstable Android API surfaces. When used in " +
             "conjunction with the Experimental annotation lint checks, this annotation provides " +
@@ -47,5 +46,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.annotation.experimental"
+    namespace = "androidx.annotation.experimental"
 }

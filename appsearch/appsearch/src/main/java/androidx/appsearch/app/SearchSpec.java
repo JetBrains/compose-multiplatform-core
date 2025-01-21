@@ -391,8 +391,7 @@ public final class SearchSpec extends AbstractSafeParcelable {
             @Param(id = 21) int defaultEmbeddingSearchMetricType,
             @Param(id = 22) @Nullable List<String> informationalRankingExpressions,
             @Param(id = 23) @Nullable List<String> searchStringParameters,
-            @Param(id = 24) @Nullable List<String> filterDocumentIds
-    ) {
+            @Param(id = 24) @Nullable List<String> filterDocumentIds) {
         mTermMatchType = termMatchType;
         mSchemas = Collections.unmodifiableList(Preconditions.checkNotNull(schemas));
         mNamespaces = Collections.unmodifiableList(Preconditions.checkNotNull(namespaces));
@@ -785,11 +784,30 @@ public final class SearchSpec extends AbstractSafeParcelable {
     }
 
     /**
+     * Returns whether the ScorablePropertyRanking feature is enabled.
+     */
+    @ExperimentalAppSearchApi
+    @FlaggedApi(Flags.FLAG_ENABLE_SCORABLE_PROPERTY)
+    public boolean isScorablePropertyRankingEnabled() {
+        return mEnabledFeatures.contains(FeatureConstants.SCHEMA_SCORABLE_PROPERTY_CONFIG);
+    }
+
+    /**
      * Returns whether the LIST_FILTER_HAS_PROPERTY_FUNCTION feature is enabled.
      */
     @FlaggedApi(Flags.FLAG_ENABLE_LIST_FILTER_HAS_PROPERTY_FUNCTION)
     public boolean isListFilterHasPropertyFunctionEnabled() {
         return mEnabledFeatures.contains(FeatureConstants.LIST_FILTER_HAS_PROPERTY_FUNCTION);
+    }
+
+    /**
+     * Returns whether the LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION feature is enabled.
+     */
+    @ExperimentalAppSearchApi
+    @FlaggedApi(Flags.FLAG_ENABLE_LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION)
+    public boolean isListFilterMatchScoreExpressionFunctionEnabled() {
+        return mEnabledFeatures.contains(
+                FeatureConstants.LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION);
     }
 
     /**
@@ -846,6 +864,7 @@ public final class SearchSpec extends AbstractSafeParcelable {
         }
 
         /** Constructs a new {@link Builder} from the given {@link SearchSpec}. */
+        @ExperimentalAppSearchApi
         @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
         @OptIn(markerClass = ExperimentalAppSearchApi.class)
         public Builder(@NonNull SearchSpec searchSpec) {
@@ -985,6 +1004,7 @@ public final class SearchSpec extends AbstractSafeParcelable {
 // @exportToFramework:endStrip()
 
         /** Clears all schema type filters. */
+        @ExperimentalAppSearchApi
         @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
         @CanIgnoreReturnValue
         @NonNull
@@ -1128,6 +1148,7 @@ public final class SearchSpec extends AbstractSafeParcelable {
 // @exportToFramework:endStrip()
 
         /** Clears the property filters for all schema types. */
+        @ExperimentalAppSearchApi
         @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
         @CanIgnoreReturnValue
         @NonNull
@@ -1165,6 +1186,7 @@ public final class SearchSpec extends AbstractSafeParcelable {
         }
 
         /** Clears all namespace filters. */
+        @ExperimentalAppSearchApi
         @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
         @CanIgnoreReturnValue
         @NonNull
@@ -1208,6 +1230,7 @@ public final class SearchSpec extends AbstractSafeParcelable {
         }
 
         /** Clears all package name filters. */
+        @ExperimentalAppSearchApi
         @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
         @CanIgnoreReturnValue
         @NonNull
@@ -1304,8 +1327,8 @@ public final class SearchSpec extends AbstractSafeParcelable {
          * <p>The ranking expression is a mathematical expression that will be evaluated to a
          * floating-point number of double type representing the score of each document.
          *
-         * <p>Numeric literals, arithmetic operators, mathematical functions, and document-based
-         * functions are supported to build expressions.
+         * <p>Numeric literals, arithmetic operators, mathematical functions, document-based, and
+         * property-value-based functions are supported to build expressions.
          *
          * <p>The following are supported arithmetic operators:
          * <ul>
@@ -1384,6 +1407,41 @@ public final class SearchSpec extends AbstractSafeParcelable {
          *     return a list of matched scores within the range of [0.5, 1], if
          *     `semanticSearch(getEmbeddingParameter(0), 0.5, 1, "COSINE")` is called in the
          *     query expression.
+         * </ul>
+         *
+         * <p>Property-value-based functions can be called via the function of
+         * getScorableProperty(schemaType, propertyPath)
+         *
+         * <ul>
+         *     <li>In order to use this function, ScorablePropertyRanking feature must be enabled
+         *     via {@link SearchSpec.Builder#setScorablePropertyRankingEnabled(boolean)}.
+         *     <li>Param 'schemaType' must be a valid AppSearch SchemaType otherwise an error is
+         *     returned.
+         *     <li>Param 'propertyPath' must be valid and scorable otherwise an error is returned.
+         *     It is considered scorable when:
+         *     <ul>
+         *         <li>It is to a property that is set to be enabled for scoring, or that
+         *         </li>
+         *         <li>
+         *             It points to a scorable property of nested schema types.
+         *         </li>
+         *     </ul>
+         *     <li>This function returns a list double values for the matched documents.
+         *     <ul>
+         *         <li>If the matched document's schema is different from 'schemaType', or the
+         *         property under the 'propertyPath' holds no element, an empty list is returned.
+         *         </li>
+         *     </ul>
+         *     <li>Some examples below:
+         *     <p>Suppose that there are two schemas: 'Gmail' and 'Person'. 'Gmail' schema has a
+         *     property 'recipient' with schema type 'Person'.
+         *     In the advanced ranking expression, you can have:
+         *     <ul>
+         *         <li> "sum(getScorableProperty('Gmail', 'viewTimes'))"
+         *         <li> "maxOrDefault(getScorableProperty('Person', 'income'), 0)"
+         *         <li> "sum(getScorableProperty('Gmail', 'recipient.income'))"
+         *         <li> "this.documentScore() + sum(getScorableProperty('Gmail', 'viewTimes'))"
+         *     </ul>
          * </ul>
          *
          * <p>Some errors may occur when using advanced ranking.
@@ -1489,6 +1547,7 @@ public final class SearchSpec extends AbstractSafeParcelable {
         }
 
         /** Clears all informational ranking expressions. */
+        @ExperimentalAppSearchApi
         @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
         @CanIgnoreReturnValue
         @NonNull
@@ -1533,6 +1592,7 @@ public final class SearchSpec extends AbstractSafeParcelable {
         }
 
         /** Clears the log tag that indicates the source of this search. */
+        @ExperimentalAppSearchApi
         @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
         @CanIgnoreReturnValue
         @NonNull
@@ -1779,6 +1839,7 @@ public final class SearchSpec extends AbstractSafeParcelable {
 // @exportToFramework:endStrip()
 
         /** Clears the projections for all schema types. */
+        @ExperimentalAppSearchApi
         @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
         @CanIgnoreReturnValue
         @NonNull
@@ -1819,6 +1880,7 @@ public final class SearchSpec extends AbstractSafeParcelable {
         }
 
         /** Clears the result grouping and limit. */
+        @ExperimentalAppSearchApi
         @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
         @CanIgnoreReturnValue
         @NonNull
@@ -1885,6 +1947,7 @@ public final class SearchSpec extends AbstractSafeParcelable {
         }
 
         /** Clears the property weights for all schema types. */
+        @ExperimentalAppSearchApi
         @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
         @CanIgnoreReturnValue
         @NonNull
@@ -1914,6 +1977,7 @@ public final class SearchSpec extends AbstractSafeParcelable {
         }
 
         /** Clears the {@link JoinSpec}. */
+        @ExperimentalAppSearchApi
         @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
         @CanIgnoreReturnValue
         @NonNull
@@ -2111,6 +2175,7 @@ public final class SearchSpec extends AbstractSafeParcelable {
         }
 
         /** Clears the embedding parameters. */
+        @ExperimentalAppSearchApi
         @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
         @CanIgnoreReturnValue
         @NonNull
@@ -2187,6 +2252,7 @@ public final class SearchSpec extends AbstractSafeParcelable {
          * Clears the list of String parameters that can be referenced in the query through the
          * "getSearchStringParameter({index})" function.
          */
+        @ExperimentalAppSearchApi
         @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
         @CanIgnoreReturnValue
         @NonNull
@@ -2294,6 +2360,48 @@ public final class SearchSpec extends AbstractSafeParcelable {
         @FlaggedApi(Flags.FLAG_ENABLE_LIST_FILTER_HAS_PROPERTY_FUNCTION)
         public Builder setListFilterHasPropertyFunctionEnabled(boolean enabled) {
             modifyEnabledFeature(FeatureConstants.LIST_FILTER_HAS_PROPERTY_FUNCTION, enabled);
+            return this;
+        }
+
+        /**
+         * Sets the LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION feature as enabled/disabled
+         * according to the enabled parameter.
+         *
+         * <p>If not enabled, the use of the "matchScoreExpression" function is disallowed. See
+         * {@link AppSearchSession#search} for more details about the function.
+         *
+         * @param enabled Enables the feature if true, otherwise disables it
+         */
+        @CanIgnoreReturnValue
+        @RequiresFeature(
+                enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
+                name = Features.LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION)
+        @NonNull
+        @ExperimentalAppSearchApi
+        @FlaggedApi(Flags.FLAG_ENABLE_LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION)
+        public Builder setListFilterMatchScoreExpressionFunctionEnabled(boolean enabled) {
+            modifyEnabledFeature(
+                    FeatureConstants.LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION, enabled);
+            return this;
+        }
+
+        /**
+         * Sets the ScorablePropertyRanking feature as enabled or disabled.
+         *
+         * <p>If enabled, 'getScorableProperty' function can be used in the advanced ranking
+         * expression. For details, see {@link SearchSpec.Builder#setRankingStrategy(String)}.
+         *
+         * @param enabled Enables the feature if true, otherwise disables it.
+         */
+        @CanIgnoreReturnValue
+        @RequiresFeature(
+                enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
+                name = Features.SCHEMA_SCORABLE_PROPERTY_CONFIG)
+        @ExperimentalAppSearchApi
+        @FlaggedApi(Flags.FLAG_ENABLE_SCORABLE_PROPERTY)
+        @NonNull
+        public Builder setScorablePropertyRankingEnabled(boolean enabled) {
+            modifyEnabledFeature(FeatureConstants.SCHEMA_SCORABLE_PROPERTY_CONFIG, enabled);
             return this;
         }
 

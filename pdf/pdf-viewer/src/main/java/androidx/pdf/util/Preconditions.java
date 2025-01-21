@@ -18,11 +18,12 @@ package androidx.pdf.util;
 
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Simple parameter checking.

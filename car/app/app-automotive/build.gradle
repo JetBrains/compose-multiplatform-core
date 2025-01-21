@@ -58,21 +58,21 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 29
+        minSdk = 29
     }
     buildFeatures {
         aidl = true
     }
     buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
+        consumerProguardFiles("proguard-rules.pro")
 
         stableAidl {
-            version 1
+            version = 1
         }
     }
     useLibrary 'android.car'
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.car.app.automotive"
+    namespace = "androidx.car.app.automotive"
 }
 
 androidx {

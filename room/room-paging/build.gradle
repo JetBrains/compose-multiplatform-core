@@ -90,7 +90,7 @@ androidXMultiplatform {
 }
 
 android {
-    namespace "androidx.room.paging"
+    namespace = "androidx.room.paging"
 }
 
 dependencies {

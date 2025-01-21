@@ -51,15 +51,15 @@ android {
         aidl = true
     }
     buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
+        consumerProguardFiles("proguard-rules.pro")
 
         stableAidl {
-            version 1
+            version = 1
         }
     }
 
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.car.app.projected"
+    namespace = "androidx.car.app.projected"
 }
 
 androidx {

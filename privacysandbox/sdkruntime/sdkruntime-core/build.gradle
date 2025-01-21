@@ -31,11 +31,11 @@ plugins {
 
 dependencies {
     api(libs.kotlinStdlib)
-    api("androidx.annotation:annotation:1.8.1")
+    api("androidx.annotation:annotation:1.8.2")
 
-    implementation("androidx.core:core:1.12.0")
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.activity:activity:1.8.0")
+    implementation("androidx.core:core:1.15.0")
+    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.activity:activity:1.9.3")
 
     // TODO(b/249982004): cleanup dependencies
     androidTestImplementation(libs.testCore)
@@ -55,9 +55,9 @@ android {
         disable("BanKeepAnnotation")
     }
 
-    namespace "androidx.privacysandbox.sdkruntime.core"
-    compileSdk = 34
-    compileSdkExtension = 10
+    namespace = "androidx.privacysandbox.sdkruntime.core"
+    compileSdk = 35
+    compileSdkExtension = 14
 }
 
 androidx {

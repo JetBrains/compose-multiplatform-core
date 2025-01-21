@@ -66,7 +66,7 @@ public class VisibilityStoreMigrationHelperFromV1 {
                 // Note: We use the prefixed schema type as ids
                 visibilityDocumentV1s.add(new VisibilityDocumentV1(appSearchImpl.getDocument(
                         VisibilityStore.VISIBILITY_PACKAGE_NAME,
-                        VisibilityStore.VISIBILITY_DATABASE_NAME,
+                        VisibilityStore.DOCUMENT_VISIBILITY_DATABASE_NAME,
                         VisibilityToDocumentConverter.VISIBILITY_DOCUMENT_NAMESPACE,
                         allPrefixedSchemaTypes.get(i),
                         /*typePropertyPaths=*/ Collections.emptyMap())));

@@ -32,7 +32,7 @@ android {
     buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
-    namespace "androidx.hilt.work"
+    namespace = "androidx.hilt.work"
 }
 
 dependencies {

@@ -54,11 +54,12 @@ dependencies {
     androidTestImplementation(libs.testUiautomator)
     androidTestImplementation project(path: ':appcompat:appcompat')
     androidTestImplementation project(":privacysandbox:ui:ui-provider")
+    androidTestImplementation project(':privacysandbox:ui:integration-tests:testingutils')
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.privacysandbox.ui.client"
+    compileSdk = 35
+    namespace = "androidx.privacysandbox.ui.client"
 }
 
 androidx {

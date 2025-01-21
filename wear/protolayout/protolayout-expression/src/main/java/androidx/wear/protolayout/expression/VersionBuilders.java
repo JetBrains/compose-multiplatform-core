@@ -16,11 +16,12 @@
 
 package androidx.wear.protolayout.expression;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.expression.proto.VersionProto;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -35,7 +36,7 @@ public final class VersionBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class VersionInfo implements Comparable<VersionInfo> {
         private final VersionProto.VersionInfo mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         VersionInfo(VersionProto.VersionInfo impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -60,16 +61,14 @@ public final class VersionBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static VersionInfo fromProto(
-                @NonNull VersionProto.VersionInfo proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull VersionInfo fromProto(
+                VersionProto.@NonNull VersionInfo proto, @Nullable Fingerprint fingerprint) {
             return new VersionInfo(proto, fingerprint);
         }
 
@@ -78,21 +77,18 @@ public final class VersionBuilders {
          * object created using this method can't be added to any other wrapper.
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static VersionInfo fromProto(@NonNull VersionProto.VersionInfo proto) {
+        public static @NonNull VersionInfo fromProto(VersionProto.@NonNull VersionInfo proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public VersionProto.VersionInfo toProto() {
+        public VersionProto.@NonNull VersionInfo toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "VersionInfo{" + "major=" + getMajor() + ", minor=" + getMinor() + "}";
         }
 
@@ -131,8 +127,7 @@ public final class VersionBuilders {
              * guaranteed across major versions).
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setMajor(int major) {
+            public @NonNull Builder setMajor(int major) {
                 mImpl.setMajor(major);
                 mFingerprint.recordPropertyUpdate(1, major);
                 return this;
@@ -143,16 +138,14 @@ public final class VersionBuilders {
              * Anything consuming a payload can safely consume anything with a lower minor version.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setMinor(int minor) {
+            public @NonNull Builder setMinor(int minor) {
                 mImpl.setMinor(minor);
                 mFingerprint.recordPropertyUpdate(2, minor);
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public VersionInfo build() {
+            public @NonNull VersionInfo build() {
                 return new VersionInfo(mImpl.build(), mFingerprint);
             }
         }

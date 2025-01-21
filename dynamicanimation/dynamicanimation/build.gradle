@@ -35,5 +35,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.dynamicanimation"
+    namespace = "androidx.dynamicanimation"
 }

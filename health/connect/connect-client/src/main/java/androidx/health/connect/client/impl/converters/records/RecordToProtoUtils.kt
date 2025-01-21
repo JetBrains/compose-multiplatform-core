@@ -97,7 +97,7 @@ internal fun SkinTemperatureRecord.Delta.toProto(): DataProto.SubTypeDataValue {
     return DataProto.SubTypeDataValue.newBuilder()
         .setStartTimeMillis(time.toEpochMilli())
         .setEndTimeMillis(time.toEpochMilli())
-        .putValues("delta", doubleVal(delta.inCelsius))
+        .putValues("temperatureDelta", doubleVal(delta.inCelsius))
         .build()
 }
 

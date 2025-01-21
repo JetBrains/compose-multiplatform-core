@@ -22,8 +22,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ListView;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link Activity} for exercising various WebView functionality. This Activity is a {@link
@@ -102,6 +103,9 @@ public class MainActivity extends AppCompatActivity {
                 new MenuListView.MenuItem(
                         getResources().getString(R.string.async_startup_activity_title),
                         new Intent(activityContext, AsyncStartUpActivity.class)),
+                new MenuListView.MenuItem(
+                        getResources().getString(R.string.default_trafficstats_tagging_activity),
+                        new Intent(activityContext, DefaultTrafficStatsTaggingActivity.class)),
         };
         listView.setItems(menuItems);
     }

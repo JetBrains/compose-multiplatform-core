@@ -39,7 +39,7 @@ dependencies {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
     sourceSets {
         main.java.srcDirs += [
                 "common",
@@ -47,7 +47,7 @@ android {
                 "api21",
         ]
     }
-    namespace "androidx.leanback"
+    namespace = "androidx.leanback"
 }
 
 androidx {

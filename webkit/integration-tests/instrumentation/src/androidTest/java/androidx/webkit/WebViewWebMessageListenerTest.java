@@ -19,10 +19,10 @@ package androidx.webkit;
 import android.net.Uri;
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

@@ -48,7 +48,7 @@ dependencies {
     // we ignore its transitive dependencies, because ui-inspection should
     // depend on them as "compile-only" deps.
     implementation(project(":compose:ui:ui-tooling-data"), {
-        transitive(false)
+        transitive = false
     })
     implementation(libs.kotlinReflect, {
         exclude group: "org.jetbrains.kotlin", module: "kotlin-stdlib"
@@ -82,10 +82,10 @@ androidx {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
     defaultConfig {
         // layout inspection supported starting on Android Q
-        minSdkVersion 29
+        minSdk = 29
     }
 
     sourceSets {
@@ -95,10 +95,10 @@ android {
     externalNativeBuild {
         cmake {
             path "src/main/cpp/CMakeLists.txt"
-            version libs.versions.cmake.get()
+            version = libs.versions.cmake.get()
         }
     }
-    namespace "androidx.compose.ui.inspection"
+    namespace = "androidx.compose.ui.inspection"
 }
 
 inspection {

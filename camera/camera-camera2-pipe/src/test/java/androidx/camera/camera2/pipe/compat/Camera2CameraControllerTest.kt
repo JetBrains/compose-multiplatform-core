@@ -35,6 +35,8 @@ import androidx.camera.camera2.pipe.core.TimestampNs
 import androidx.camera.camera2.pipe.graph.GraphListener
 import androidx.camera.camera2.pipe.internal.CameraStatusMonitor
 import androidx.camera.camera2.pipe.testing.FakeCamera2DeviceManager
+import androidx.camera.camera2.pipe.testing.FakeCamera2MetadataProvider
+import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.FakeCameraStatusMonitor
 import androidx.camera.camera2.pipe.testing.FakeThreads
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
@@ -76,6 +78,9 @@ class Camera2CameraControllerTest {
     private val fakeCaptureSequenceProcessorFactory: Camera2CaptureSequenceProcessorFactory = mock()
     private val fakeCamera2DeviceManager = FakeCamera2DeviceManager()
     private val fakeCameraSurfaceManager = CameraSurfaceManager()
+    private val fakeCameraMetadata = FakeCameraMetadata(cameraId = cameraId)
+    private val fakeCamera2Quirks =
+        Camera2Quirks(FakeCamera2MetadataProvider(mapOf(cameraId to fakeCameraMetadata)))
     private val fakeTimeSource: TimeSource = mock()
     private val fakeGraphId = CameraGraphId.nextId()
 
@@ -94,6 +99,7 @@ class Camera2CameraControllerTest {
             fakeCaptureSequenceProcessorFactory,
             fakeCamera2DeviceManager,
             fakeCameraSurfaceManager,
+            fakeCamera2Quirks,
             fakeTimeSource,
             fakeGraphId,
         )
@@ -311,6 +317,27 @@ class Camera2CameraControllerTest {
             testScope.advanceUntilIdle()
             verify(fakeCaptureSessionFactory, times(1)).create(any(), any(), any())
             cameraController.close()
+        }
+
+    @Test
+    fun testControllerStateDoesNotChangeAfterClosed() =
+        testScope.runTest {
+            val cameraController = createCamera2CameraController()
+            cameraController.updateSurfaceMap(mapOf(streamId1 to fakeSurface))
+            cameraController.start()
+            testScope.advanceUntilIdle()
+
+            cameraController.close()
+            testScope.advanceUntilIdle()
+            assertEquals(cameraController.controllerState, ControllerState.CLOSED)
+
+            fakeCamera2DeviceManager.simulateCameraError(cameraId, CameraError.ERROR_CAMERA_DEVICE)
+            testScope.advanceUntilIdle()
+            assertEquals(cameraController.controllerState, ControllerState.CLOSED)
+
+            fakeCamera2DeviceManager.simulateCameraError(cameraId, CameraError.ERROR_CAMERA_IN_USE)
+            testScope.advanceUntilIdle()
+            assertEquals(cameraController.controllerState, ControllerState.CLOSED)
         }
 
     @Test

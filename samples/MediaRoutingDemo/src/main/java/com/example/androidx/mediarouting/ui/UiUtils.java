@@ -21,8 +21,9 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 
-import androidx.annotation.NonNull;
 import androidx.core.util.Consumer;
+
+import org.jspecify.annotations.NonNull;
 
 /** Contains utility methods related to UI management. */
 public final class UiUtils {

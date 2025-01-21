@@ -28,6 +28,7 @@ class GradleIssueRegistry : IssueRegistry() {
         listOf(
             DiscouragedGradleMethodDetector.EAGER_CONFIGURATION_ISSUE,
             DiscouragedGradleMethodDetector.PROJECT_ISOLATION_ISSUE,
+            FilePropertyDetector.FILE_PROPERTY_ISSUE,
             InternalApiUsageDetector.INTERNAL_GRADLE_ISSUE,
             InternalApiUsageDetector.INTERNAL_AGP_ISSUE,
             WithPluginClasspathUsageDetector.ISSUE,

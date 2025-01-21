@@ -79,13 +79,13 @@ android {
     }
     testOptions.unitTests.includeAndroidResources = true
     aaptOptions {
-        noCompress "ttf"
+        noCompress = "ttf"
     }
     buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
+        consumerProguardFiles("proguard-rules.pro")
 
         stableAidl {
-            version 1
+            version = 1
         }
     }
 
@@ -96,7 +96,7 @@ android {
                 "mockito-extensions/org.mockito.plugins.StackTraceCleanerProvider"
         ]
     }
-    namespace "androidx.core"
+    namespace = "androidx.core"
 }
 
 androidx {

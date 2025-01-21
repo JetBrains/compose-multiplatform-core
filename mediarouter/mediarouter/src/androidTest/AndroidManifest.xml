@@ -36,6 +36,14 @@
             </intent-filter>
         </service>
         <service
+            android:name="androidx.mediarouter.media.StubMediaRoute2ProviderService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.media.MediaRouteProviderService"/>
+                <action android:name="android.media.MediaRoute2ProviderService"/>
+            </intent-filter>
+        </service>
+        <service
             android:name="androidx.mediarouter.media.StubDynamicMediaRouteProviderService"
             android:exported="true">
             <intent-filter>
@@ -55,7 +63,6 @@
             android:enabled="true">
             <intent-filter>
                 <action android:name="android.media.MediaRouteProviderService"/>
-                <action android:name="android.media.MediaRoute2ProviderService"/>
             </intent-filter>
         </service>
     </application>

@@ -16,11 +16,11 @@
 
 package androidx.webkit.internal;
 
-import androidx.annotation.NonNull;
 import androidx.webkit.ScriptHandler;
 
 import org.chromium.support_lib_boundary.ScriptHandlerBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.InvocationHandler;
 
@@ -48,7 +48,7 @@ public class ScriptHandlerImpl implements ScriptHandler {
      * Create an AndroidX ScriptHandler from the given InvocationHandler.
      */
     public static @NonNull ScriptHandlerImpl toScriptHandler(
-            @NonNull /* ScriptHandler */ InvocationHandler invocationHandler) {
+            /* ScriptHandler */ @NonNull InvocationHandler invocationHandler) {
         final ScriptHandlerBoundaryInterface boundaryInterface =
                 BoundaryInterfaceReflectionUtil.castToSuppLibClass(
                         ScriptHandlerBoundaryInterface.class, invocationHandler);

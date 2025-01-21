@@ -41,7 +41,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
-import androidx.core.os.BuildCompat;
 import androidx.core.util.Preconditions;
 
 import java.lang.annotation.Retention;
@@ -211,7 +210,7 @@ public final class EditorInfoCompat {
      */
     public static void setStylusHandwritingEnabled(@NonNull EditorInfo editorInfo,
             boolean enabled) {
-        if (BuildCompat.isAtLeastV()) {
+        if (Build.VERSION.SDK_INT >= 35) {
             Api35Impl.setStylusHandwritingEnabled(editorInfo, enabled);
         }
         if (editorInfo.extras == null) {
@@ -231,7 +230,7 @@ public final class EditorInfoCompat {
                 && editorInfo.extras.containsKey(STYLUS_HANDWRITING_ENABLED_KEY)) {
             return editorInfo.extras.getBoolean(STYLUS_HANDWRITING_ENABLED_KEY);
         }
-        if (BuildCompat.isAtLeastV()) {
+        if (Build.VERSION.SDK_INT >= 35) {
             return Api35Impl.isStylusHandwritingEnabled(editorInfo);
         }
         return false;

@@ -96,11 +96,15 @@ internal class ThreadConfigModule(private val threadConfig: CameraPipe.ThreadCon
         val lightweightDispatcher = lightweightExecutor.asCoroutineDispatcher()
 
         val cameraHandlerFn = {
-            val handlerThread =
+            if (threadConfig.defaultCameraHandler == null) {
+                val handlerThread =
+                    HandlerThread("CXCP-Camera-H", cameraThreadPriority).also { it.start() }
+                Handler(handlerThread.looper)
+            } else {
                 threadConfig.defaultCameraHandler
-                    ?: HandlerThread("CXCP-Camera-H", cameraThreadPriority).also { it.start() }
-            Handler(handlerThread.looper)
+            }
         }
+
         val cameraExecutorFn = {
             threadConfig.defaultCameraExecutor
                 ?: AndroidThreads.factory

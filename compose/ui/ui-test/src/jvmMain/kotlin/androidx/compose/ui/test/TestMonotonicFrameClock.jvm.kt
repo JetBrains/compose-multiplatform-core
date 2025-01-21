@@ -17,6 +17,8 @@
 package androidx.compose.ui.test
 
 import androidx.compose.runtime.MonotonicFrameClock
+import androidx.compose.ui.test.platform.makeSynchronizedObject
+import androidx.compose.ui.test.platform.synchronized
 import kotlin.coroutines.ContinuationInterceptor
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -67,7 +69,7 @@ class TestMonotonicFrameClock(
         requireNotNull(coroutineScope.coroutineContext[ContinuationInterceptor]) {
             "TestMonotonicFrameClock's coroutineScope must have a ContinuationInterceptor"
         }
-    private val lock = Any()
+    private val lock = makeSynchronizedObject()
     private var awaiters = mutableListOf<(Long) -> Unit>()
     private var spareAwaiters = mutableListOf<(Long) -> Unit>()
     private var scheduledFrameDispatch = false

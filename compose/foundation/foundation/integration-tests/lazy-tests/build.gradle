@@ -30,8 +30,8 @@ plugins {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.compose.foundation.lazytests"
+    compileSdk = 35
+    namespace = "androidx.compose.foundation.lazytests"
 }
 
 dependencies {

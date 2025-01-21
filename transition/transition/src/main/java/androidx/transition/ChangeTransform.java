@@ -31,11 +31,11 @@ import android.util.Property;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.content.res.TypedArrayUtils;
 import androidx.core.view.ViewCompat;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 
 /**
@@ -187,8 +187,7 @@ public class ChangeTransform extends Transition {
     }
 
     @Override
-    @NonNull
-    public String[] getTransitionProperties() {
+    public String @NonNull [] getTransitionProperties() {
         return sTransitionProperties;
     }
 
@@ -237,9 +236,8 @@ public class ChangeTransform extends Transition {
         captureValues(transitionValues);
     }
 
-    @Nullable
     @Override
-    public Animator createAnimator(@NonNull ViewGroup sceneRoot,
+    public @Nullable Animator createAnimator(@NonNull ViewGroup sceneRoot,
             @Nullable TransitionValues startValues,
             @Nullable TransitionValues endValues) {
         if (startValues == null || endValues == null

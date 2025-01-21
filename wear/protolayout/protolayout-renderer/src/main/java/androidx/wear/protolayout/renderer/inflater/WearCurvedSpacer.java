@@ -21,10 +21,11 @@ import android.content.res.TypedArray;
 import android.util.AttributeSet;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.wear.protolayout.renderer.R;
 import androidx.wear.widget.ArcLayout;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A lightweight curved widget that represents space between elements inside an Arc. This does no

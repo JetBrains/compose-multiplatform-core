@@ -38,9 +38,9 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 23
+        minSdk = 23
     }
-    namespace "androidx.testutils.macrobenchmark"
+    namespace = "androidx.testutils.macrobenchmark"
 }
 
 androidx {

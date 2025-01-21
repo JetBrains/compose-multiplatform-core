@@ -110,6 +110,27 @@ class NavDeepLinkBuilderTest {
     }
 
     @Test
+    fun buildDeepLinkAllSetKClassNonReified() {
+        val expectedUri = "example.com"
+        val expectedAction = "test.action"
+        val expectedMimeType = "test/type"
+        val navDeepLink =
+            navDeepLink(TestClass::class, expectedUri) {
+                action = expectedAction
+                mimeType = expectedMimeType
+            }
+        assertWithMessage("NavDeepLink should have uri pattern set")
+            .that(navDeepLink.uriPattern)
+            .isEqualTo(expectedUri)
+        assertWithMessage("NavDeepLink should have action set")
+            .that(navDeepLink.action)
+            .isEqualTo(expectedAction)
+        assertWithMessage("NavDeepLink should have mimeType set")
+            .that(navDeepLink.mimeType)
+            .isEqualTo(expectedMimeType)
+    }
+
+    @Test
     fun buildDeepLinkAllSetKClassWithPathArgs() {
         @Serializable class TestClass(val arg: Int, val arg2: String)
 

@@ -54,5 +54,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.navigation.truth"
+    namespace = "androidx.navigation.truth"
 }

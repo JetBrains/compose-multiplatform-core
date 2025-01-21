@@ -17,6 +17,7 @@
 package androidx.pdf.testapp
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.FrameLayout
@@ -39,8 +40,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var singlePdfButton: MaterialButton
     private lateinit var tabsViewButton: MaterialButton
+    private lateinit var pdfFragmentv2Button: MaterialButton
     private lateinit var fragmentContainer: FrameLayout
-    private var pdfViewerFragment: Fragment? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,10 +53,14 @@ class MainActivity : AppCompatActivity() {
 
         singlePdfButton = scenarioButtons.singlePdf
         tabsViewButton = scenarioButtons.tabView
+        pdfFragmentv2Button = scenarioButtons.pdfFragmentV2
         fragmentContainer = mainActivity.pdfInteractionFragmentContainerView
 
         singlePdfButton.setOnClickListener { loadFragment(SinglePdfFragment()) }
         tabsViewButton.setOnClickListener { loadFragment(TabsViewPdfFragment()) }
+        pdfFragmentv2Button.setOnClickListener {
+            startActivity(Intent(this@MainActivity, MainActivityV2::class.java))
+        }
 
         handleWindowInsets()
         handleBackPress()
@@ -120,11 +125,13 @@ class MainActivity : AppCompatActivity() {
     private fun showButtons() {
         singlePdfButton.visibility = View.VISIBLE
         tabsViewButton.visibility = View.VISIBLE
+        pdfFragmentv2Button.visibility = View.VISIBLE
     }
 
     private fun hideButtons() {
         singlePdfButton.visibility = View.GONE
         tabsViewButton.visibility = View.GONE
+        pdfFragmentv2Button.visibility = View.GONE
     }
 
     private fun handleWindowInsets() {

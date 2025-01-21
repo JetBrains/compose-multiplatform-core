@@ -119,8 +119,10 @@ package androidx.wear.compose.material3 {
     method public float getCompactButtonVerticalPadding();
     method public androidx.compose.foundation.layout.PaddingValues getContentPadding();
     method public float getExtraLargeIconSize();
+    method public float getExtraSmallIconSize();
     method public float getHeight();
     method public float getIconSize();
+    method public float getIconSpacing();
     method public float getLargeIconSize();
     method @androidx.compose.runtime.Composable public androidx.compose.foundation.shape.RoundedCornerShape getShape();
     method public float getSmallIconSize();
@@ -141,8 +143,10 @@ package androidx.wear.compose.material3 {
     property public final float CompactButtonVerticalPadding;
     property public final androidx.compose.foundation.layout.PaddingValues ContentPadding;
     property public final float ExtraLargeIconSize;
+    property public final float ExtraSmallIconSize;
     property public final float Height;
     property public final float IconSize;
+    property public final float IconSpacing;
     property public final float LargeIconSize;
     property public final float SmallIconSize;
     property @androidx.compose.runtime.Composable public final androidx.compose.foundation.shape.RoundedCornerShape compactButtonShape;
@@ -443,10 +447,11 @@ package androidx.wear.compose.material3 {
   }
 
   @androidx.compose.runtime.Immutable public final class DatePickerColors {
-    ctor public DatePickerColors(long selectedPickerContentColor, long unselectedPickerContentColor, long pickerLabelColor, long nextButtonContentColor, long nextButtonContainerColor, long confirmButtonContentColor, long confirmButtonContainerColor);
-    method public androidx.wear.compose.material3.DatePickerColors copy(optional long selectedPickerContentColor, optional long unselectedPickerContentColor, optional long pickerLabelColor, optional long nextButtonContentColor, optional long nextButtonContainerColor, optional long confirmButtonContentColor, optional long confirmButtonContainerColor);
+    ctor public DatePickerColors(long selectedPickerContentColor, long unselectedPickerContentColor, long invalidPickerContentColor, long pickerLabelColor, long nextButtonContentColor, long nextButtonContainerColor, long confirmButtonContentColor, long confirmButtonContainerColor);
+    method public androidx.wear.compose.material3.DatePickerColors copy(optional long selectedPickerContentColor, optional long unselectedPickerContentColor, optional long invalidPickerContentColor, optional long pickerLabelColor, optional long nextButtonContentColor, optional long nextButtonContainerColor, optional long confirmButtonContentColor, optional long confirmButtonContainerColor);
     method public long getConfirmButtonContainerColor();
     method public long getConfirmButtonContentColor();
+    method public long getInvalidPickerContentColor();
     method public long getNextButtonContainerColor();
     method public long getNextButtonContentColor();
     method public long getPickerLabelColor();
@@ -454,6 +459,7 @@ package androidx.wear.compose.material3 {
     method public long getUnselectedPickerContentColor();
     property public final long confirmButtonContainerColor;
     property public final long confirmButtonContentColor;
+    property public final long invalidPickerContentColor;
     property public final long nextButtonContainerColor;
     property public final long nextButtonContentColor;
     property public final long pickerLabelColor;
@@ -463,7 +469,7 @@ package androidx.wear.compose.material3 {
 
   public final class DatePickerDefaults {
     method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.DatePickerColors datePickerColors();
-    method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.DatePickerColors datePickerColors(optional long selectedPickerContentColor, optional long unselectedPickerContentColor, optional long pickerLabelColor, optional long nextButtonContentColor, optional long nextButtonContainerColor, optional long confirmButtonContentColor, optional long confirmButtonContainerColor);
+    method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.DatePickerColors datePickerColors(optional long selectedPickerContentColor, optional long unselectedPickerContentColor, optional long invalidPickerContentColor, optional long pickerLabelColor, optional long nextButtonContentColor, optional long nextButtonContainerColor, optional long confirmButtonContentColor, optional long confirmButtonContainerColor);
     method @androidx.compose.runtime.Composable public int getDatePickerType();
     property @androidx.compose.runtime.Composable public final int datePickerType;
     field public static final androidx.wear.compose.material3.DatePickerDefaults INSTANCE;
@@ -491,8 +497,7 @@ package androidx.wear.compose.material3 {
   }
 
   public final class DynamicColorSchemeKt {
-    method public static androidx.wear.compose.material3.ColorScheme dynamicColorScheme(android.content.Context context, optional androidx.wear.compose.material3.ColorScheme defaultColorScheme);
-    method public static boolean isDynamicColorSchemeEnabled(android.content.Context context);
+    method public static androidx.wear.compose.material3.ColorScheme? dynamicColorScheme(android.content.Context context);
   }
 
   public final class EdgeButtonDefaults {
@@ -633,6 +638,7 @@ package androidx.wear.compose.material3 {
     method public float getLargeButtonSize();
     method public float getLargeIconSize();
     method @androidx.compose.runtime.Composable public androidx.compose.foundation.shape.CornerBasedShape getPressedShape();
+    method public float getPressedShapeCornerSizeFraction();
     method @androidx.compose.runtime.Composable public androidx.compose.foundation.shape.RoundedCornerShape getShape();
     method public float getSmallButtonSize();
     method public float getSmallIconSize();
@@ -640,13 +646,14 @@ package androidx.wear.compose.material3 {
     method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.IconToggleButtonColors iconToggleButtonColors();
     method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.IconToggleButtonColors iconToggleButtonColors(optional long checkedContainerColor, optional long checkedContentColor, optional long uncheckedContainerColor, optional long uncheckedContentColor, optional long disabledCheckedContainerColor, optional long disabledCheckedContentColor, optional long disabledUncheckedContainerColor, optional long disabledUncheckedContentColor);
     method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.IconToggleButtonShapes shapes(optional androidx.compose.ui.graphics.Shape shape);
-    method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.IconToggleButtonShapes variantAnimatedShapes(optional androidx.compose.foundation.shape.CornerBasedShape uncheckedCornerSize, optional androidx.compose.foundation.shape.CornerBasedShape checkedCornerSize, optional androidx.compose.foundation.shape.CornerBasedShape pressedCornerSize);
+    method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.IconToggleButtonShapes variantAnimatedShapes(optional androidx.compose.foundation.shape.CornerBasedShape uncheckedShape, optional androidx.compose.foundation.shape.CornerBasedShape checkedShape, optional float pressedShapeCornerSizeFraction);
     property public final float DefaultButtonSize;
     property public final float DefaultIconSize;
     property public final float ExtraLargeButtonSize;
     property public final float ExtraLargeIconSize;
     property public final float LargeButtonSize;
     property public final float LargeIconSize;
+    property public final float PressedShapeCornerSizeFraction;
     property public final float SmallButtonSize;
     property public final float SmallIconSize;
     property @androidx.compose.runtime.Composable public final androidx.compose.foundation.shape.CornerBasedShape checkedShape;
@@ -660,14 +667,16 @@ package androidx.wear.compose.material3 {
   }
 
   public final class IconToggleButtonShapes {
-    ctor public IconToggleButtonShapes(androidx.compose.ui.graphics.Shape unchecked, optional androidx.compose.ui.graphics.Shape? checked, optional androidx.compose.ui.graphics.Shape? pressed);
-    method public androidx.wear.compose.material3.IconToggleButtonShapes copy(optional androidx.compose.ui.graphics.Shape unchecked, optional androidx.compose.ui.graphics.Shape? checked, optional androidx.compose.ui.graphics.Shape? pressed);
+    ctor public IconToggleButtonShapes(androidx.compose.ui.graphics.Shape unchecked, optional androidx.compose.ui.graphics.Shape? checked, optional androidx.compose.ui.graphics.Shape? uncheckedPressed, optional androidx.compose.ui.graphics.Shape? checkedPressed);
+    method public androidx.wear.compose.material3.IconToggleButtonShapes copy(optional androidx.compose.ui.graphics.Shape unchecked, optional androidx.compose.ui.graphics.Shape? checked, optional androidx.compose.ui.graphics.Shape? uncheckedPressed, optional androidx.compose.ui.graphics.Shape? checkedPressed);
     method public androidx.compose.ui.graphics.Shape? getChecked();
-    method public androidx.compose.ui.graphics.Shape? getPressed();
+    method public androidx.compose.ui.graphics.Shape? getCheckedPressed();
     method public androidx.compose.ui.graphics.Shape getUnchecked();
+    method public androidx.compose.ui.graphics.Shape? getUncheckedPressed();
     property public final androidx.compose.ui.graphics.Shape? checked;
-    property public final androidx.compose.ui.graphics.Shape? pressed;
+    property public final androidx.compose.ui.graphics.Shape? checkedPressed;
     property public final androidx.compose.ui.graphics.Shape unchecked;
+    property public final androidx.compose.ui.graphics.Shape? uncheckedPressed;
   }
 
   public final class InteractiveComponentSizeKt {
@@ -1300,18 +1309,14 @@ package androidx.wear.compose.material3 {
   public final class StepperDefaults {
     method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.StepperColors colors();
     method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.StepperColors colors(optional long contentColor, optional long buttonContainerColor, optional long buttonIconColor, optional long disabledContentColor, optional long disabledButtonContainerColor, optional long disabledButtonIconColor);
-    method public kotlin.jvm.functions.Function0<kotlin.Unit> getDecreaseIcon();
     method public float getIconSize();
-    method public kotlin.jvm.functions.Function0<kotlin.Unit> getIncreaseIcon();
-    property public final kotlin.jvm.functions.Function0<kotlin.Unit> DecreaseIcon;
     property public final float IconSize;
-    property public final kotlin.jvm.functions.Function0<kotlin.Unit> IncreaseIcon;
     field public static final androidx.wear.compose.material3.StepperDefaults INSTANCE;
   }
 
   public final class StepperKt {
-    method @androidx.compose.runtime.Composable public static void Stepper(float value, kotlin.jvm.functions.Function1<? super java.lang.Float,kotlin.Unit> onValueChange, int steps, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit> decreaseIcon, optional kotlin.jvm.functions.Function0<kotlin.Unit> increaseIcon, optional boolean enabled, optional kotlin.ranges.ClosedFloatingPointRange<java.lang.Float> valueRange, optional androidx.wear.compose.material3.StepperColors colors, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.BoxScope,kotlin.Unit> content);
-    method @androidx.compose.runtime.Composable public static void Stepper(int value, kotlin.jvm.functions.Function1<? super java.lang.Integer,kotlin.Unit> onValueChange, kotlin.ranges.IntProgression valueProgression, optional androidx.compose.ui.Modifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit> decreaseIcon, optional kotlin.jvm.functions.Function0<kotlin.Unit> increaseIcon, optional boolean enabled, optional androidx.wear.compose.material3.StepperColors colors, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.BoxScope,kotlin.Unit> content);
+    method @androidx.compose.runtime.Composable public static void Stepper(float value, kotlin.jvm.functions.Function1<? super java.lang.Float,kotlin.Unit> onValueChange, int steps, kotlin.jvm.functions.Function0<kotlin.Unit> decreaseIcon, kotlin.jvm.functions.Function0<kotlin.Unit> increaseIcon, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional kotlin.ranges.ClosedFloatingPointRange<java.lang.Float> valueRange, optional androidx.wear.compose.material3.StepperColors colors, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.BoxScope,kotlin.Unit> content);
+    method @androidx.compose.runtime.Composable public static void Stepper(int value, kotlin.jvm.functions.Function1<? super java.lang.Integer,kotlin.Unit> onValueChange, kotlin.ranges.IntProgression valueProgression, kotlin.jvm.functions.Function0<kotlin.Unit> decreaseIcon, kotlin.jvm.functions.Function0<kotlin.Unit> increaseIcon, optional androidx.compose.ui.Modifier modifier, optional boolean enabled, optional androidx.wear.compose.material3.StepperColors colors, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.layout.BoxScope,kotlin.Unit> content);
   }
 
   public final class SwipeToDismissBoxKt {
@@ -1545,14 +1550,16 @@ package androidx.wear.compose.material3 {
     method public float getLargeButtonSize();
     method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.compose.ui.text.TextStyle getLargeButtonTextStyle();
     method @androidx.compose.runtime.Composable public androidx.compose.foundation.shape.CornerBasedShape getPressedShape();
+    method public float getPressedShapeCornerSizeFraction();
     method @androidx.compose.runtime.Composable public androidx.compose.foundation.shape.RoundedCornerShape getShape();
     method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.TextToggleButtonShapes shapes(optional androidx.compose.ui.graphics.Shape shape);
     method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.TextToggleButtonColors textToggleButtonColors();
     method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.TextToggleButtonColors textToggleButtonColors(optional long checkedContainerColor, optional long checkedContentColor, optional long uncheckedContainerColor, optional long uncheckedContentColor, optional long disabledCheckedContainerColor, optional long disabledCheckedContentColor, optional long disabledUncheckedContainerColor, optional long disabledUncheckedContentColor);
-    method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.TextToggleButtonShapes variantAnimatedShapes(optional androidx.compose.foundation.shape.CornerBasedShape unchecked, optional androidx.compose.foundation.shape.CornerBasedShape checked, optional androidx.compose.foundation.shape.CornerBasedShape pressed);
+    method @androidx.compose.runtime.Composable public androidx.wear.compose.material3.TextToggleButtonShapes variantAnimatedShapes(optional androidx.compose.foundation.shape.CornerBasedShape uncheckedShape, optional androidx.compose.foundation.shape.CornerBasedShape checkedShape, optional float pressedShapeCornerSizeFraction);
     property public final float DefaultButtonSize;
     property public final float ExtraLargeButtonSize;
     property public final float LargeButtonSize;
+    property public final float PressedShapeCornerSizeFraction;
     property @androidx.compose.runtime.Composable public final androidx.compose.foundation.shape.CornerBasedShape checkedShape;
     property @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public final androidx.compose.ui.text.TextStyle defaultButtonTextStyle;
     property @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public final androidx.compose.ui.text.TextStyle extraLargeButtonTextStyle;
@@ -1567,14 +1574,16 @@ package androidx.wear.compose.material3 {
   }
 
   public final class TextToggleButtonShapes {
-    ctor public TextToggleButtonShapes(androidx.compose.ui.graphics.Shape unchecked, optional androidx.compose.ui.graphics.Shape? checked, optional androidx.compose.ui.graphics.Shape? pressed);
-    method public androidx.wear.compose.material3.TextToggleButtonShapes copy(optional androidx.compose.ui.graphics.Shape unchecked, optional androidx.compose.ui.graphics.Shape? checked, optional androidx.compose.ui.graphics.Shape? pressed);
+    ctor public TextToggleButtonShapes(androidx.compose.ui.graphics.Shape unchecked, optional androidx.compose.ui.graphics.Shape? checked, optional androidx.compose.ui.graphics.Shape? uncheckedPressed, optional androidx.compose.ui.graphics.Shape? checkedPressed);
+    method public androidx.wear.compose.material3.TextToggleButtonShapes copy(optional androidx.compose.ui.graphics.Shape unchecked, optional androidx.compose.ui.graphics.Shape? checked, optional androidx.compose.ui.graphics.Shape? uncheckedPressed, optional androidx.compose.ui.graphics.Shape? checkedPressed);
     method public androidx.compose.ui.graphics.Shape? getChecked();
-    method public androidx.compose.ui.graphics.Shape? getPressed();
+    method public androidx.compose.ui.graphics.Shape? getCheckedPressed();
     method public androidx.compose.ui.graphics.Shape getUnchecked();
+    method public androidx.compose.ui.graphics.Shape? getUncheckedPressed();
     property public final androidx.compose.ui.graphics.Shape? checked;
-    property public final androidx.compose.ui.graphics.Shape? pressed;
+    property public final androidx.compose.ui.graphics.Shape? checkedPressed;
     property public final androidx.compose.ui.graphics.Shape unchecked;
+    property public final androidx.compose.ui.graphics.Shape? uncheckedPressed;
   }
 
   @androidx.compose.runtime.Immutable public final class TimePickerColors {
@@ -1706,10 +1715,13 @@ package androidx.wear.compose.material3 {
 
 package androidx.wear.compose.material3.lazy {
 
-  public final class TransformingLazyColumnScrollTransformModifiersKt {
+  public final class ScrollTransformKt {
     method @androidx.compose.runtime.Composable public static androidx.compose.ui.Modifier scrollTransform(androidx.compose.ui.Modifier, androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope scope);
     method @androidx.compose.runtime.Composable public static androidx.compose.ui.Modifier scrollTransform(androidx.compose.ui.Modifier, androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope scope, androidx.compose.ui.graphics.Shape shape, androidx.compose.ui.graphics.painter.Painter painter, optional androidx.compose.foundation.BorderStroke? border);
     method @androidx.compose.runtime.Composable public static androidx.compose.ui.Modifier scrollTransform(androidx.compose.ui.Modifier, androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope scope, long backgroundColor, optional androidx.compose.ui.graphics.Shape shape);
+  }
+
+  public final class TargetMorphingHeightKt {
     method public static androidx.compose.ui.Modifier targetMorphingHeight(androidx.compose.ui.Modifier, androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScope scope);
   }
 

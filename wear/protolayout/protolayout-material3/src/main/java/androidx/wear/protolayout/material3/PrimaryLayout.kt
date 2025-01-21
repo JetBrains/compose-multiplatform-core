@@ -18,6 +18,7 @@ package androidx.wear.protolayout.material3
 
 import androidx.annotation.Dimension
 import androidx.annotation.Dimension.Companion.DP
+import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.wear.protolayout.DimensionBuilders
 import androidx.wear.protolayout.DimensionBuilders.DpProp
@@ -126,7 +127,8 @@ public fun MaterialScope.primaryLayout(
  * only be used for testing or building internal samples to validate the UI.
  */
 // TODO: b/353247528 - Set as @VisibleForTesting only.
-internal fun MaterialScope.primaryLayoutWithOverrideIcon(
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun MaterialScope.primaryLayoutWithOverrideIcon(
     overrideIcon: Boolean,
     titleSlot: (MaterialScope.() -> LayoutElement)? = null,
     mainSlot: (MaterialScope.() -> LayoutElement)? = null,
@@ -188,15 +190,13 @@ internal fun MaterialScope.primaryLayoutWithOverrideIcon(
                     overrideIcon
                 )
             )
+
     // Contains main content. This Box is needed to set to expand, even if empty so it
     // fills the empty space until bottom content.
-
     mainSlot?.let { mainLayout.addContent(mainSlot().getMainContentBox(mainSlotSideMargin)) }
 
-    bottomSlot?.let {
-        // Contains bottom slot, optional label or needed padding if empty.
-        mainLayout.addContent(getFooterContent(bottomSlot(), labelSlot))
-    }
+    // Contains bottom slot, optional label or needed padding if empty.
+    mainLayout.addContent(getFooterContent(bottomSlot?.let { bottomSlot() }, labelSlot))
 
     return mainLayout.build()
 }
@@ -375,7 +375,7 @@ private fun MaterialScope.getMarginForHeader(): Padding {
 /** Contains the default values used by Material layout. */
 internal object PrimaryLayoutDefaults {
     /** Tool tag for Metadata in Modifiers, so we know that Row is actually a PrimaryLayout. */
-    @VisibleForTesting const val METADATA_TAG: String = "PL"
+    @VisibleForTesting const val METADATA_TAG: String = "M3_PL"
 
     @Dimension(unit = DP) const val HEADER_MARGIN_TOP_DP: Int = 3
 

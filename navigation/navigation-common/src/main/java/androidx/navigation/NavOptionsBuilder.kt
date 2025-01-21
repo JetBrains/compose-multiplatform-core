@@ -19,7 +19,6 @@ package androidx.navigation
 import androidx.annotation.AnimRes
 import androidx.annotation.AnimatorRes
 import androidx.annotation.IdRes
-import androidx.annotation.RestrictTo
 import kotlin.reflect.KClass
 
 @DslMarker public annotation class NavOptionsDsl
@@ -155,11 +154,16 @@ public class NavOptionsBuilder {
         popUpTo(T::class, popUpToBuilder)
     }
 
-    // this restricted public is needed so that the public reified [popUpTo] can call
-    // private popUpToRouteClass setter
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun <T : Any> popUpTo(klass: KClass<T>, popUpToBuilder: PopUpToBuilder.() -> Unit) {
-        popUpToRouteClass = klass
+    /**
+     * Pop up to a given destination before navigating. This pops all non-matching destination
+     * routes from the back stack until the destination with a matching route is found.
+     *
+     * @param route the [KClass] of the destination [T]
+     * @param popUpToBuilder builder used to construct a popUpTo operation
+     */
+    @Suppress("BuilderSetStyle")
+    public fun <T : Any> popUpTo(route: KClass<T>, popUpToBuilder: PopUpToBuilder.() -> Unit) {
+        popUpToRouteClass = route
         popUpToId = -1
         popUpToRoute = null
         val builder = PopUpToBuilder().apply(popUpToBuilder)

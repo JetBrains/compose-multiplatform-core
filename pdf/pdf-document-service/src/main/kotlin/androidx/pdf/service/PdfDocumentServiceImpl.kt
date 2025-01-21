@@ -34,7 +34,5 @@ import androidx.pdf.PdfDocumentRemote
  * and accessing document metadata.
  */
 public class PdfDocumentServiceImpl : Service() {
-    private val documentRemote: PdfDocumentRemote.Stub = PdfDocumentRemoteImpl()
-
-    override fun onBind(intent: Intent?): IBinder = documentRemote
+    override fun onBind(intent: Intent?): IBinder = PdfDocumentRemoteImpl()
 }

@@ -32,7 +32,7 @@ plugins {
 }
 
 android {
-    namespace "androidx.window.rxjava2"
+    namespace = "androidx.window.rxjava2"
 }
 
 dependencies {

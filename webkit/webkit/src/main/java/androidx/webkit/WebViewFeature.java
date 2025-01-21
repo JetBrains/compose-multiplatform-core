@@ -27,10 +27,12 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StringDef;
+import androidx.core.os.CancellationSignal;
 import androidx.webkit.internal.WebViewFeatureInternal;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 import java.io.OutputStream;
@@ -111,6 +113,7 @@ public class WebViewFeature {
             WEB_AUTHENTICATION,
             SPECULATIVE_LOADING,
             BACK_FORWARD_CACHE,
+            DEFAULT_TRAFFICSTATS_TAGGING,
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -122,6 +125,7 @@ public class WebViewFeature {
     @StringDef(value = {
             STARTUP_FEATURE_SET_DATA_DIRECTORY_SUFFIX,
             STARTUP_FEATURE_SET_DIRECTORY_BASE_PATHS,
+            STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES,
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -531,6 +535,15 @@ public class WebViewFeature {
             "STARTUP_FEATURE_SET_DIRECTORY_BASE_PATHS";
 
     /**
+     * Feature for {@link #isStartupFeatureSupported(Context, String)}.
+     * This feature covers
+     * {@link androidx.webkit.ProcessGlobalConfig#setDirectoryBasePaths(Context, File, File)}
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final String STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES =
+            "STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES";
+
+    /**
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
      * {@link androidx.webkit.WebSettingsCompat#getRequestedWithHeaderOriginAllowList(WebSettings)],
@@ -620,11 +633,19 @@ public class WebViewFeature {
     /**
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
-     * {@link androidx.webkit.Profile#prefetchUrlAsync(String, PrefetchParameters)}
-     * {@link androidx.webkit.Profile#clearPrefetchAsync(String)}
+     * {@link androidx.webkit.Profile#prefetchUrlAsync(String, CancellationSignal, SpeculativeLoadingParameters, OutcomeReceiverCompat)}
+     * {@link androidx.webkit.Profile#prefetchUrlAsync(String, CancellationSignal, OutcomeReceiverCompat)}
+     * {@link androidx.webkit.Profile#clearPrefetchAsync(String, OutcomeReceiverCompat)}
      */
     @Profile.ExperimentalUrlPrefetch
-    public static final String PROFILE_URL_PREFETCH = "PROFILE_URL_PREFETCH";
+    public static final String PROFILE_URL_PREFETCH = "PREFETCH_URL_V2";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers
+     * {@link androidx.webkit.WebViewCompat#setDefaultTrafficStatsTag(int)}}
+     */
+    public static final String DEFAULT_TRAFFICSTATS_TAGGING = "DEFAULT_TRAFFICSTATS_TAGGING";
 
     /**
      * Return whether a feature is supported at run-time. This will check whether a feature is
@@ -643,7 +664,7 @@ public class WebViewFeature {
      * @param feature the feature to be checked
      * @return whether the feature is supported given the current platform SDK and WebView version
      */
-    public static boolean isFeatureSupported(@NonNull @WebViewSupportFeature String feature) {
+    public static boolean isFeatureSupported(@WebViewSupportFeature @NonNull String feature) {
         return WebViewFeatureInternal.isSupported(feature);
     }
 
@@ -666,7 +687,7 @@ public class WebViewFeature {
      * @return whether the feature is supported given the current platform SDK and WebView version
      */
     public static boolean isStartupFeatureSupported(@NonNull Context context,
-            @NonNull @WebViewStartupFeature String startupFeature) {
+            @WebViewStartupFeature @NonNull String startupFeature) {
         return WebViewFeatureInternal.isStartupFeatureSupported(startupFeature, context);
     }
 }

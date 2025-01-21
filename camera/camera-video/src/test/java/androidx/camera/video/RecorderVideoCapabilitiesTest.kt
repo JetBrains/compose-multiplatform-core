@@ -31,6 +31,7 @@ import androidx.camera.core.DynamicRange.HDR_UNSPECIFIED_10_BIT
 import androidx.camera.core.DynamicRange.HLG_10_BIT
 import androidx.camera.core.DynamicRange.SDR
 import androidx.camera.core.DynamicRange.UNSPECIFIED
+import androidx.camera.core.impl.EncoderProfilesProvider
 import androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
 import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_2160P
@@ -315,6 +316,23 @@ class RecorderVideoCapabilitiesTest {
         assertThat(videoCapabilities.isQualitySupported(FHD, SDR)).isFalse()
         assertThat(videoCapabilities.isQualitySupported(SD, SDR)).isFalse()
         assertThat(codecVideoCapabilities.isQualitySupported(FHD, SDR)).isTrue()
+        assertThat(codecVideoCapabilities.isQualitySupported(SD, SDR)).isTrue()
+    }
+
+    @Test
+    fun noSupportedQuality_shouldCreateDefaultEncoderProfilesProvider() {
+        cameraInfo.encoderProfilesProvider = EncoderProfilesProvider.EMPTY
+        val codecVideoCapabilities =
+            RecorderVideoCapabilities(VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE, cameraInfo) {
+                FakeVideoEncoderInfo()
+            }
+
+        assertThat(codecVideoCapabilities.isQualitySupported(HIGHEST, SDR)).isTrue()
+        assertThat(codecVideoCapabilities.isQualitySupported(LOWEST, SDR)).isTrue()
+        // The target quality is [FHD, HD, SD]
+        assertThat(codecVideoCapabilities.isQualitySupported(UHD, SDR)).isFalse()
+        assertThat(codecVideoCapabilities.isQualitySupported(FHD, SDR)).isTrue()
+        assertThat(codecVideoCapabilities.isQualitySupported(HD, SDR)).isTrue()
         assertThat(codecVideoCapabilities.isQualitySupported(SD, SDR)).isTrue()
     }
 }

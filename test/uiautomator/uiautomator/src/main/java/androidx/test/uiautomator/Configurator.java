@@ -18,7 +18,7 @@ package androidx.test.uiautomator;
 
 import android.view.MotionEvent;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Allows you to set key parameters for running UiAutomator tests. The new settings take effect

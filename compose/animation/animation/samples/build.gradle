@@ -54,6 +54,6 @@ androidx {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.compose.animation.samples"
+    compileSdk = 35
+    namespace = "androidx.compose.animation.samples"
 }

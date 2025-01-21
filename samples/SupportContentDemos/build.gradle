@@ -20,6 +20,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation(libs.material)
     implementation(project(":transition:transition"))
     implementation(project(":recyclerview:recyclerview"))
@@ -31,6 +32,6 @@ dependencies {
 }
 
 android {
-    compileSdk 35
-    namespace "com.example.android.support.content.demos"
+    compileSdk = 35
+    namespace = "com.example.android.support.content.demos"
 }

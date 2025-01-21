@@ -19,7 +19,8 @@ package androidx.webkit.internal;
 import android.webkit.TracingController;
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
+import androidx.webkit.WebViewCompat;
+import androidx.webkit.WebViewStartUpConfig;
 
 import org.chromium.support_lib_boundary.DropDataContentProviderBoundaryInterface;
 import org.chromium.support_lib_boundary.ProfileStoreBoundaryInterface;
@@ -29,6 +30,7 @@ import org.chromium.support_lib_boundary.StaticsBoundaryInterface;
 import org.chromium.support_lib_boundary.TracingControllerBoundaryInterface;
 import org.chromium.support_lib_boundary.WebViewProviderBoundaryInterface;
 import org.chromium.support_lib_boundary.WebkitToCompatConverterBoundaryInterface;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Interface representing {@link android.webkit.WebViewFactoryProvider}.
@@ -42,58 +44,54 @@ public interface WebViewProviderFactory {
     /**
      * Create a support library version of {@link android.webkit.WebViewProvider}.
      */
-    @NonNull
-    WebViewProviderBoundaryInterface createWebView(@NonNull WebView webview);
+    @NonNull WebViewProviderBoundaryInterface createWebView(@NonNull WebView webview);
 
     /**
      * Create the boundary interface for {@link WebkitToCompatConverter}
      * which converts android.webkit classes into their corresponding support library classes.
      */
-    @NonNull
-    WebkitToCompatConverterBoundaryInterface getWebkitToCompatConverter();
+    @NonNull WebkitToCompatConverterBoundaryInterface getWebkitToCompatConverter();
 
     /**
      * Fetch the boundary interface representing
      * {@link android.webkit.WebViewFactoryProvider#Statics}.
      */
-    @NonNull
-    StaticsBoundaryInterface getStatics();
+    @NonNull StaticsBoundaryInterface getStatics();
 
     /**
      * Fetch the features supported by the current WebView APK.
      */
-    @NonNull
-    String[] getWebViewFeatures();
+    String @NonNull [] getWebViewFeatures();
 
     /**
      * Fetch the boundary interface representing {@link android.webkit.ServiceWorkerController}.
      */
-    @NonNull
-    ServiceWorkerControllerBoundaryInterface getServiceWorkerController();
+    @NonNull ServiceWorkerControllerBoundaryInterface getServiceWorkerController();
 
     /**
      * Fetch the boundary interface representing {@link TracingController}.
      */
-    @NonNull
-    TracingControllerBoundaryInterface getTracingController();
+    @NonNull TracingControllerBoundaryInterface getTracingController();
 
     /**
      * Fetch the boundary interface representing {@link android.webkit.ProxyController}.
      */
-    @NonNull
-    ProxyControllerBoundaryInterface getProxyController();
+    @NonNull ProxyControllerBoundaryInterface getProxyController();
 
     /**
      * Fetch the boundary interface representing image drag drop implementation.
      */
-    @NonNull
-    DropDataContentProviderBoundaryInterface getDropDataProvider();
+    @NonNull DropDataContentProviderBoundaryInterface getDropDataProvider();
 
     /**
      * Fetch the boundary interface representing profile store for Multi-Profile.
      */
-    @NonNull
-    ProfileStoreBoundaryInterface getProfileStore();
+    @NonNull ProfileStoreBoundaryInterface getProfileStore();
 
-
+    /**
+     * Fetch the boundary interface representing
+     * {@link WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}.
+     */
+    void startUpWebView(@NonNull WebViewStartUpConfig config,
+            WebViewCompat.@NonNull WebViewStartUpCallback callback);
 }

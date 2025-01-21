@@ -25,6 +25,7 @@ import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkProviderCompat
+import androidx.privacysandbox.sdkruntime.core.SdkSandboxClientImportanceListenerCompat
 import androidx.privacysandbox.sdkruntime.core.Versions
 import androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandlerCompat
 import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat
@@ -32,6 +33,7 @@ import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Proxy
 import java.lang.reflect.UndeclaredThrowableException
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executor
 
 /** Extract value of [Versions.API_VERSION] from loaded SDK. */
 internal fun LocalSdkProvider.extractApiVersion(): Int = extractVersionValue("API_VERSION")
@@ -112,6 +114,31 @@ internal class SdkControllerWrapper(private val controller: Any) {
     }
 
     fun getClientPackageName(): String = controller.callMethod("getClientPackageName") as String
+
+    fun registerSdkSandboxClientImportanceListener(listener: CatchingClientImportanceListener) {
+        val classLoader = controller.javaClass.classLoader!!
+
+        val proxy =
+            classLoader.createProxyFor(
+                SdkSandboxClientImportanceListenerCompat::class.java.name,
+                "onForegroundImportanceChanged"
+            ) {
+                listener.addStateChangeEvent(it!![0]!! as Boolean)
+            }
+
+        controller.callMethod(
+            "registerSdkSandboxClientImportanceListener",
+            Executor { p -> p.run() },
+            proxy
+        )
+
+        listener.proxy = proxy
+    }
+
+    fun unregisterSdkSandboxClientImportanceListener(listener: CatchingClientImportanceListener) {
+        controller.callMethod("unregisterSdkSandboxClientImportanceListener", listener.proxy)
+        listener.proxy = null
+    }
 }
 
 /** Reflection wrapper for [SandboxedSdkCompat] */
@@ -188,6 +215,26 @@ internal class ActivityHolderWrapper(private val activityHolder: Any) {
         val currentStateString = currentState!!.callMethod(methodName = "name") as String
         return Lifecycle.State.valueOf(currentStateString)
     }
+}
+
+/**
+ * ClientImportanceListener to use with
+ * [SdkControllerWrapper.registerSdkSandboxClientImportanceListener]. Store received events.
+ */
+internal class CatchingClientImportanceListener {
+    var proxy: Any? = null
+    var events: MutableList<Boolean> = mutableListOf()
+    val async = CountDownLatch(1)
+
+    fun waitForEvents(): List<Boolean> {
+        async.await()
+        return events
+    }
+}
+
+private fun CatchingClientImportanceListener.addStateChangeEvent(isForeground: Boolean) {
+    events.add(isForeground)
+    async.countDown()
 }
 
 /** Create [SandboxedSdkWrapper] using SDK context from [SandboxedSdkProviderCompat.context]. */

@@ -25,12 +25,13 @@ import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.ImageView;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.R;
 import androidx.pdf.util.ObservableValue;
 import androidx.pdf.util.ObservableValue.ValueObserver;
 import androidx.pdf.widget.ZoomView.ZoomScroll;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Base class for selection handles on content inside a ZoomView.
@@ -77,8 +78,7 @@ public abstract class ZoomableSelectionHandles<S> {
         mZoomViewObserverKey = createZoomViewObserver();
     }
 
-    @NonNull
-    protected Object createSelectionObserver() {
+    protected @NonNull Object createSelectionObserver() {
         return mSelectionObservable.addObserver(new ValueObserver<S>() {
             @Override
             public void onChange(S oldSelection, S newSelection) {
@@ -86,16 +86,14 @@ public abstract class ZoomableSelectionHandles<S> {
                 updateHandles();
             }
 
-            @NonNull
             @Override
-            public String toString() {
+            public @NonNull String toString() {
                 return "ZoomableSelectionHandles#selectionObserver";
             }
         });
     }
 
-    @NonNull
-    protected Object createZoomViewObserver() {
+    protected @NonNull Object createZoomViewObserver() {
         return mZoomView.zoomScroll().addObserver(new ValueObserver<ZoomScroll>() {
             @Override
             public void onChange(ZoomScroll oldValue, ZoomScroll newValue) {
@@ -104,9 +102,8 @@ public abstract class ZoomableSelectionHandles<S> {
                 }
             }
 
-            @NonNull
             @Override
-            public String toString() {
+            public @NonNull String toString() {
                 return "ZoomableSelectionHandles#zoomViewObserver";
             }
         });
@@ -167,8 +164,7 @@ public abstract class ZoomableSelectionHandles<S> {
     /**
      * Creates a new text selection handle ImageView and adds it to the parent. Returns the handle.
      */
-    @NonNull
-    protected ImageView createHandle(@NonNull ViewGroup parent, boolean isStop, int id) {
+    protected @NonNull ImageView createHandle(@NonNull ViewGroup parent, boolean isStop, int id) {
         Context context = parent.getContext();
         ImageView handle = new ImageView(context);
         handle.setId(id);

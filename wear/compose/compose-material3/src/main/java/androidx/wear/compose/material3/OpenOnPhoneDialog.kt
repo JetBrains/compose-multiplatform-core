@@ -57,6 +57,7 @@ import androidx.wear.compose.foundation.CurvedLayout
 import androidx.wear.compose.foundation.CurvedModifier
 import androidx.wear.compose.foundation.CurvedScope
 import androidx.wear.compose.foundation.CurvedTextStyle
+import androidx.wear.compose.foundation.LocalReduceMotion
 import androidx.wear.compose.foundation.padding
 import androidx.wear.compose.material3.tokens.ColorSchemeKeyTokens
 import androidx.wear.compose.material3.tokens.MotionTokens.DurationLong2
@@ -135,22 +136,24 @@ fun OpenOnPhoneDialog(
         val progressDuration = a11yFullDurationMillis - finalAnimationDuration
 
         val alphaAnimationSpec = MaterialTheme.motionScheme.fastEffectsSpec<Float>()
+        val reduceMotionEnabled = LocalReduceMotion.current.enabled()
 
         LaunchedEffect(a11yFullDurationMillis) {
             launch {
-                delay(DurationShort3.toLong())
+                animatedDelay(DurationShort3.toLong(), reduceMotionEnabled)
                 alphaAnimatable.animateTo(1f, alphaAnimationSpec)
             }
             launch {
-                progressAnimatable.snapTo(0f)
-                progressAnimatable.animateTo(
-                    targetValue = 1f,
-                    animationSpec =
-                        tween(durationMillis = progressDuration.toInt(), easing = LinearEasing),
-                ) {
-                    progress = value
+                if (!reduceMotionEnabled) {
+                    progressAnimatable.animateTo(
+                        targetValue = 1f,
+                        animationSpec =
+                            tween(durationMillis = progressDuration.toInt(), easing = LinearEasing),
+                    ) {
+                        progress = value
+                    }
+                    finalAnimation = true
                 }
-                finalAnimation = true
             }
         }
 
@@ -217,8 +220,10 @@ object OpenOnPhoneDialogDefaults {
         val animation =
             AnimatedImageVector.animatedVectorResource(R.drawable.wear_m3c_open_on_phone_animation)
         var atEnd by remember { mutableStateOf(false) }
+        val reduceMotionEnabled = LocalReduceMotion.current.enabled()
+
         LaunchedEffect(Unit) {
-            delay(IconDelay)
+            animatedDelay(IconDelay, reduceMotionEnabled)
             atEnd = true
         }
         Icon(
@@ -287,7 +292,7 @@ object OpenOnPhoneDialogDefaults {
         get() {
             return mDefaultOpenOnPhoneDialogColorsCached
                 ?: OpenOnPhoneDialogColors(
-                        iconColor = fromToken(ColorSchemeKeyTokens.Primary),
+                        iconColor = fromToken(ColorSchemeKeyTokens.OnPrimaryContainer),
                         iconContainerColor = fromToken(ColorSchemeKeyTokens.PrimaryContainer),
                         progressIndicatorColor = fromToken(ColorSchemeKeyTokens.Primary),
                         progressTrackColor = fromToken(ColorSchemeKeyTokens.OnPrimary),

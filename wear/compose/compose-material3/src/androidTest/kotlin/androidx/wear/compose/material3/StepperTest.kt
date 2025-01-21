@@ -387,6 +387,8 @@ class StepperTest {
                 value = 0f,
                 steps = 5,
                 onValueChange = {},
+                decreaseIcon = {},
+                increaseIcon = {},
             ) {
                 Text("Testing", modifier = Modifier.testTag(contentTag).fillMaxHeight())
             }
@@ -467,6 +469,8 @@ class StepperTest {
                 steps = steps,
                 valueRange = valueRange,
                 onValueChange = {},
+                decreaseIcon = {},
+                increaseIcon = {},
             ) {}
         }
         rule.waitForIdle()
@@ -489,8 +493,10 @@ class StepperTest {
                 steps = steps,
                 valueRange = valueRange,
                 onValueChange = {},
+                decreaseIcon = {},
+                increaseIcon = {},
                 modifier =
-                    Modifier.testTag(TEST_TAG).rangeSemantics(value, true, {}, valueRange, steps)
+                    Modifier.testTag(TEST_TAG).rangeSemantics(value, true, {}, valueRange, steps),
             ) {}
         }
         rule.waitForIdle()
@@ -547,6 +553,8 @@ class IntegerStepperTest {
                 value = 1,
                 onValueChange = {},
                 valueProgression = 0..5,
+                decreaseIcon = {},
+                increaseIcon = {},
                 modifier = Modifier.testTag(TEST_TAG)
             ) {}
         }
@@ -609,6 +617,8 @@ class IntegerStepperTest {
                 value = value,
                 onValueChange = {},
                 valueProgression = valueProgression,
+                decreaseIcon = {},
+                increaseIcon = {},
                 modifier = Modifier.testTag(TEST_TAG)
             ) {}
         }
@@ -636,6 +646,8 @@ class IntegerStepperTest {
                 value = value,
                 onValueChange = {},
                 valueProgression = valueProgression,
+                decreaseIcon = {},
+                increaseIcon = {},
                 modifier =
                     Modifier.testTag(TEST_TAG)
                         .rangeSemantics(

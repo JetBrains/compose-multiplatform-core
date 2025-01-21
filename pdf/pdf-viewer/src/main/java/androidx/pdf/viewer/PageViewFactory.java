@@ -20,8 +20,6 @@ import android.content.Context;
 import android.graphics.Color;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.pdf.find.FindInFileView;
@@ -35,6 +33,9 @@ import androidx.pdf.util.TileBoard;
 import androidx.pdf.viewer.loader.PdfLoader;
 import androidx.pdf.widget.MosaicView;
 import androidx.pdf.widget.ZoomView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -83,8 +84,7 @@ public class PageViewFactory {
     public interface PageView {
 
         /** Returns the {@link PageMosaicView} associated with this PageView. */
-        @NonNull
-        PageMosaicView getPageView();
+        @NonNull PageMosaicView getPageView();
 
         /** Return page number. */
         int getPageNum();
@@ -101,8 +101,7 @@ public class PageViewFactory {
          * <p>NOTE: This is the view that should be added to the view hierarchy. May return the same
          * object as {@link #getPageView()}, e.g. for the {@link PageMosaicView} implementation.
          */
-        @NonNull
-        View asView();
+        @NonNull View asView();
 
         /** Clear all bitmaps and reset the view overlay. */
         void clearAll();
@@ -113,8 +112,7 @@ public class PageViewFactory {
      * {@link PaginatedView} then it will be returned from that list else a new instance will be
      * created.
      */
-    @NonNull
-    public PageMosaicView getOrCreatePageView(int pageNum,
+    public @NonNull PageMosaicView getOrCreatePageView(int pageNum,
             int pageElevationInPixels,
             @NonNull Dimensions pageDimensions) {
         PageView pageView = mPaginatedView.getViewAt(pageNum);
@@ -130,8 +128,7 @@ public class PageViewFactory {
      * optionally a {@link AccessibilityPageWrapper} if TalkBack is on, otherwise returns
      * a {@link PageMosaicView}.
      */
-    @NonNull
-    protected PageView createPageView(
+    protected @NonNull PageView createPageView(
             int pageNum,
             @NonNull Dimensions pageSize) {
         final MosaicView.BitmapSource bitmapSource = createBitmapSource(pageNum);
@@ -154,8 +151,7 @@ public class PageViewFactory {
         return Accessibility.get().isTouchExplorationEnabled(context);
     }
 
-    @NonNull
-    protected MosaicView.BitmapSource createBitmapSource(int pageNum) {
+    protected MosaicView.@NonNull BitmapSource createBitmapSource(int pageNum) {
         return new MosaicView.BitmapSource() {
 
             @Override
@@ -188,8 +184,7 @@ public class PageViewFactory {
         };
     }
 
-    @NonNull
-    protected PageView createAndSetupPageView(int pageNum,
+    protected @NonNull PageView createAndSetupPageView(int pageNum,
             int pageElevationInPixels,
             @NonNull Dimensions pageDimensions) {
         PageView pageView =

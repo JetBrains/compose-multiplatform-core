@@ -30,7 +30,6 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.ListView;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cursoradapter.widget.ResourceCursorAdapter;
 import androidx.fragment.app.ListFragment;
@@ -40,6 +39,8 @@ import androidx.loader.content.Loader;
 import androidx.palette.graphics.Palette;
 
 import com.example.androidx.R;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Activity which displays the images from the device's {@link MediaStore}, alongside the generated
@@ -147,9 +148,8 @@ public class PaletteActivity extends AppCompatActivity {
             startActivity(intent);
         }
 
-        @NonNull
         @Override
-        public Loader<Cursor> onCreateLoader(int id, Bundle bundle) {
+        public @NonNull Loader<Cursor> onCreateLoader(int id, Bundle bundle) {
             return new CursorLoader(
                     getActivity(),
                     MediaStore.Images.Media.EXTERNAL_CONTENT_URI,

@@ -363,6 +363,9 @@ abstract class AndroidXExtension(
     /** Whether Metalava should use K2 Kotlin front-end for source analysis */
     var metalavaK2UastEnabled = true
 
+    /** Whether the project has not yet been migrated to use JSpecify annotations. */
+    var optOutJSpecify = true
+
     val additionalDeviceTestApkKeys = mutableListOf<String>()
 
     val additionalDeviceTestTags: MutableList<String> by lazy {

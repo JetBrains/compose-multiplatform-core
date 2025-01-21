@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.relocation.BringIntoViewResponder
 import androidx.compose.foundation.relocation.bringIntoViewResponder
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -52,6 +51,7 @@ fun BringIntoViewResponderDemo() {
                 "(Since focusables send a bring into view request whenever they are focused.)"
         )
         var offset: IntOffset by remember { mutableStateOf(IntOffset.Zero) }
+        @Suppress("DEPRECATION") // b/376080744
         Box(
             modifier =
                 Modifier.size(100.dp)
@@ -72,7 +72,7 @@ fun BringIntoViewResponderDemo() {
                     }
                     .bringIntoViewResponder(
                         remember {
-                            object : BringIntoViewResponder {
+                            object : androidx.compose.foundation.relocation.BringIntoViewResponder {
                                 override fun calculateRectForParent(localRect: Rect): Rect {
                                     // Ask our parent to bring our top-left corner into view, since
                                     // that's

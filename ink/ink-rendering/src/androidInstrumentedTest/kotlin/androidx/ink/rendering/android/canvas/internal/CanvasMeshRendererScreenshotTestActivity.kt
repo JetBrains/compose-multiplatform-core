@@ -43,18 +43,17 @@ class CanvasMeshRendererScreenshotTestActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(StrokeView(this))
+        setContentView(StrokeView(this).apply { tag = VIEW_TAG })
     }
 
     private inner class StrokeView(context: Context) : View(context) {
 
-        // TODO: b/369408056 - Change back to twist-style input points
         private val inputs =
             MutableStrokeInputBatch()
                 .addOrThrow(InputToolType.UNKNOWN, x = 0F, y = 0F, elapsedTimeMillis = 100)
-                .addOrThrow(InputToolType.UNKNOWN, x = 40F, y = 40F, elapsedTimeMillis = 150)
-                .addOrThrow(InputToolType.UNKNOWN, x = 0F, y = 70F, elapsedTimeMillis = 200)
-                .addOrThrow(InputToolType.UNKNOWN, x = 30F, y = 100F, elapsedTimeMillis = 250)
+                .addOrThrow(InputToolType.UNKNOWN, x = 80F, y = 100F, elapsedTimeMillis = 150)
+                .addOrThrow(InputToolType.UNKNOWN, x = 0F, y = 100F, elapsedTimeMillis = 200)
+                .addOrThrow(InputToolType.UNKNOWN, x = 80F, y = 0F, elapsedTimeMillis = 250)
                 .asImmutable()
 
         // Pink twist stroke.
@@ -77,7 +76,7 @@ class CanvasMeshRendererScreenshotTestActivity : Activity() {
                 postScale(7F, 7F)
             }
 
-        // Stroke with no inputs, and therefore an empty [ModeledShape].
+        // Stroke with no inputs, and therefore an empty [PartitionedMesh].
         private val emptyStroke = Stroke(brush, ImmutableStrokeInputBatch.EMPTY)
 
         private val renderer = @OptIn(ExperimentalInkCustomBrushApi::class) CanvasMeshRenderer()
@@ -98,5 +97,9 @@ class CanvasMeshRendererScreenshotTestActivity : Activity() {
             canvas.translate(xBetweenStrokes, 0F)
             canvas.withMatrix(transform2) { renderer.draw(canvas, stroke2, transform2) }
         }
+    }
+
+    companion object {
+        const val VIEW_TAG = "stroke_view"
     }
 }

@@ -57,5 +57,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.navigation.benchmark"
+    namespace = "androidx.navigation.benchmark"
 }

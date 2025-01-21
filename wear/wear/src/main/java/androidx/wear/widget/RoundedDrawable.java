@@ -32,11 +32,11 @@ import android.util.AttributeSet;
 import android.util.Xml;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.wear.R;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -81,8 +81,7 @@ public class RoundedDrawable extends Drawable {
     final Paint mPaint;
     final Paint mBackgroundPaint;
 
-    @Nullable
-    private Drawable mDrawable;
+    private @Nullable Drawable mDrawable;
     private int mRadius; // Radius applied to corners in pixels
     private boolean mIsClipEnabled;
 
@@ -100,7 +99,7 @@ public class RoundedDrawable extends Drawable {
 
     @Override
     public void inflate(@NonNull Resources r, @NonNull XmlPullParser parser,
-            @NonNull AttributeSet attrs, @Nullable Resources.Theme theme)
+            @NonNull AttributeSet attrs, Resources.@Nullable Theme theme)
             throws XmlPullParserException, IOException {
         super.inflate(r, parser, attrs, theme);
         TypedArray a = r.obtainAttributes(Xml.asAttributeSet(parser), R.styleable.RoundedDrawable);
@@ -134,8 +133,7 @@ public class RoundedDrawable extends Drawable {
      *
      * @return {@link Drawable} that will be rendered.
      */
-    @Nullable
-    public Drawable getDrawable() {
+    public @Nullable Drawable getDrawable() {
         return mDrawable;
     }
 

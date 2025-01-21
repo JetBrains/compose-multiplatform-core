@@ -21,8 +21,6 @@ import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.collection.SparseArrayCompat;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.MutableLiveData;
@@ -31,6 +29,9 @@ import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelStore;
 import androidx.loader.content.Loader;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -69,8 +70,7 @@ class LoaderManagerImpl extends LoaderManager {
             mLoader.registerListener(id, this);
         }
 
-        @NonNull
-        Loader<D> getLoader() {
+        @NonNull Loader<D> getLoader() {
             return mLoader;
         }
 
@@ -95,8 +95,7 @@ class LoaderManagerImpl extends LoaderManager {
          * @return The {@link Loader} associated with this LoaderInfo
          */
         @MainThread
-        @NonNull
-        Loader<D> setCallback(@NonNull LifecycleOwner owner,
+        @NonNull Loader<D> setCallback(@NonNull LifecycleOwner owner,
                 @NonNull LoaderCallbacks<D> callback) {
             LoaderObserver<D> observer = new LoaderObserver<>(mLoader, callback);
             // Add the new observer
@@ -197,9 +196,8 @@ class LoaderManagerImpl extends LoaderManager {
             }
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             StringBuilder sb = new StringBuilder(64);
             sb.append("LoaderInfo{");
             sb.append(Integer.toHexString(System.identityHashCode(this)));
@@ -216,7 +214,7 @@ class LoaderManagerImpl extends LoaderManager {
 
         @SuppressWarnings("deprecation")
         public void dump(@NonNull String prefix, @Nullable FileDescriptor fd,
-                @NonNull PrintWriter writer, @Nullable String[] args) {
+                @NonNull PrintWriter writer, String @Nullable [] args) {
             writer.print(prefix); writer.print("mId="); writer.print(mId);
             writer.print(" mArgs="); writer.println(mArgs);
             writer.print(prefix); writer.print("mLoader="); writer.println(mLoader);
@@ -271,9 +269,8 @@ class LoaderManagerImpl extends LoaderManager {
             }
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return mCallback.toString();
         }
 
@@ -288,16 +285,14 @@ class LoaderManagerImpl extends LoaderManager {
      */
     static class LoaderViewModel extends ViewModel {
         private static final ViewModelProvider.Factory FACTORY = new ViewModelProvider.Factory() {
-            @NonNull
             @Override
             @SuppressWarnings("unchecked")
-            public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
+            public <T extends ViewModel> @NonNull T create(@NonNull Class<T> modelClass) {
                 return (T) new LoaderViewModel();
             }
         };
 
-        @NonNull
-        static LoaderViewModel getInstance(ViewModelStore viewModelStore) {
+        static @NonNull LoaderViewModel getInstance(ViewModelStore viewModelStore) {
             return new ViewModelProvider(viewModelStore, FACTORY).get(LoaderViewModel.class);
         }
 
@@ -360,7 +355,7 @@ class LoaderManagerImpl extends LoaderManager {
         }
 
         public void dump(@NonNull String prefix, @Nullable FileDescriptor fd,
-                @NonNull PrintWriter writer, @Nullable String[] args) {
+                @NonNull PrintWriter writer, String @Nullable [] args) {
             if (mLoaders.size() > 0) {
                 writer.print(prefix); writer.println("Loaders:");
                 String innerPrefix = prefix + "    ";
@@ -384,8 +379,7 @@ class LoaderManagerImpl extends LoaderManager {
     }
 
     @MainThread
-    @NonNull
-    private <D> Loader<D> createAndInstallLoader(int id, @Nullable Bundle args,
+    private <D> @NonNull Loader<D> createAndInstallLoader(int id, @Nullable Bundle args,
             @NonNull LoaderCallbacks<D> callback, @Nullable Loader<D> priorLoader) {
         LoaderInfo<D> info;
         try {
@@ -412,9 +406,8 @@ class LoaderManagerImpl extends LoaderManager {
     }
 
     @MainThread
-    @NonNull
     @Override
-    public <D> Loader<D> initLoader(int id, @Nullable Bundle args,
+    public <D> @NonNull Loader<D> initLoader(int id, @Nullable Bundle args,
             @NonNull LoaderCallbacks<D> callback) {
         if (mLoaderViewModel.isCreatingLoader()) {
             throw new IllegalStateException("Called while creating a loader");
@@ -437,9 +430,8 @@ class LoaderManagerImpl extends LoaderManager {
     }
 
     @MainThread
-    @NonNull
     @Override
-    public <D> Loader<D> restartLoader(int id, @Nullable Bundle args,
+    public <D> @NonNull Loader<D> restartLoader(int id, @Nullable Bundle args,
             @NonNull LoaderCallbacks<D> callback) {
         if (mLoaderViewModel.isCreatingLoader()) {
             throw new IllegalStateException("Called while creating a loader");
@@ -480,9 +472,8 @@ class LoaderManagerImpl extends LoaderManager {
         }
     }
 
-    @Nullable
     @Override
-    public <D> Loader<D> getLoader(int id) {
+    public <D> @Nullable Loader<D> getLoader(int id) {
         if (mLoaderViewModel.isCreatingLoader()) {
             throw new IllegalStateException("Called while creating a loader");
         }
@@ -496,9 +487,8 @@ class LoaderManagerImpl extends LoaderManager {
         mLoaderViewModel.markForRedelivery();
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         StringBuilder sb = new StringBuilder(128);
         sb.append("LoaderManager{");
         sb.append(Integer.toHexString(System.identityHashCode(this)));
@@ -514,7 +504,7 @@ class LoaderManagerImpl extends LoaderManager {
     @Deprecated
     @Override
     public void dump(@NonNull String prefix, @Nullable FileDescriptor fd,
-            @NonNull PrintWriter writer, @Nullable String[] args) {
+            @NonNull PrintWriter writer, String @Nullable [] args) {
         mLoaderViewModel.dump(prefix, fd, writer, args);
     }
 

@@ -20,8 +20,9 @@ import android.content.Context;
 import android.support.wearable.complications.ComplicationText;
 import android.text.format.DateFormat;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /** Utilities for making watch faces and complications accessible. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -33,8 +34,7 @@ public class AccessibilityUtils {
      * Returns a new {@link ComplicationText} that displays the current time in the default
      * timezone.
      */
-    @NonNull
-    public static ComplicationText makeTimeAsComplicationText(@NonNull Context context) {
+    public static @NonNull ComplicationText makeTimeAsComplicationText(@NonNull Context context) {
         final String format;
         if (DateFormat.is24HourFormat(context)) {
             format = "HH:mm";

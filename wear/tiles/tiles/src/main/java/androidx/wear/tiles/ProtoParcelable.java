@@ -20,8 +20,9 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -57,14 +58,13 @@ public abstract class ProtoParcelable implements Parcelable {
         };
     }
 
-    protected ProtoParcelable(@NonNull byte[] contents, int version) {
+    protected ProtoParcelable(byte @NonNull [] contents, int version) {
         this.mContents = contents;
         this.mVersion = version;
     }
 
     /** Get the payload contained within this ProtoParcelable. */
-    @NonNull
-    public byte[] getContents() {
+    public byte @NonNull [] getContents() {
         return mContents;
     }
 

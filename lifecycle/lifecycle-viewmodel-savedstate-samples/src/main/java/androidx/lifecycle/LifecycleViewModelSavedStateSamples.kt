@@ -17,6 +17,7 @@
 package androidx.lifecycle
 
 import androidx.annotation.Sampled
+import androidx.lifecycle.serialization.saved
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer

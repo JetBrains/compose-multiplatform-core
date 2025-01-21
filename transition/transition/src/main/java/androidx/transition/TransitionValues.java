@@ -19,7 +19,7 @@ package androidx.transition;
 import android.annotation.SuppressLint;
 import android.view.View;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -88,9 +88,8 @@ public class TransitionValues {
         return 31 * view.hashCode() + values.hashCode();
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         String returnValue = "TransitionValues@" + Integer.toHexString(hashCode()) + ":\n";
         returnValue += "    view = " + view + "\n";
         returnValue += "    values:";

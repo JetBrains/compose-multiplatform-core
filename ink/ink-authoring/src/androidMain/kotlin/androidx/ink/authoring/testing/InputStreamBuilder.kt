@@ -38,7 +38,7 @@ import androidx.annotation.VisibleForTesting
  * dispatched on an Android View.
  *
  * If deterministic line rendering is needed for a test, best is to dispatch input with fixed
- * timestamps directly to the LegacyStrokeBuilder using its own input format.
+ * timestamps directly to the InProgressStroke using its own input format.
  *
  * Consider if you can use [MultiTouchInputBuilder] instead with pointerCount=1, since as we
  * continue to generalize that utility there may not be much need to maintain this separately.
@@ -202,10 +202,11 @@ public class InputStreamBuilder(
             endX: Float,
             endY: Float,
             endWithCancel: Boolean = false,
+            pointerId: Int = 1,
         ): InputStreamBuilder =
             InputStreamBuilder(
                 streamToolType = MotionEvent.TOOL_TYPE_STYLUS,
-                pointerId = 1,
+                pointerId = pointerId,
                 startX = startX,
                 startY = startY,
                 xIncrement = (endX - startX) / 2,

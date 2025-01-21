@@ -19,6 +19,7 @@ package androidx.pdf.service.connect
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.IBinder
 import androidx.annotation.RestrictTo
 import androidx.pdf.PdfDocumentRemote
@@ -46,8 +47,14 @@ internal class PdfServiceConnectionImpl(override val context: Context) : PdfServ
         _eventStateFlow.update { Disconnected }
     }
 
-    override suspend fun bindAndConnect() {
-        val intent = Intent(context, PdfDocumentServiceImpl::class.java)
+    override suspend fun bindAndConnect(uri: Uri) {
+        val intent =
+            Intent(context, PdfDocumentServiceImpl::class.java).apply {
+                // Providing a different Intent to the Service per document is required to obtain a
+                // different IBinder channel per document. The data here serves no other purpose.
+                // See b/380140417
+                data = uri
+            }
         context.bindService(intent, /* conn= */ this, /* flags= */ Context.BIND_AUTO_CREATE)
         _eventStateFlow.first { it is Connected }
     }

@@ -20,9 +20,9 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Icon
+import android.os.Build
 import android.os.Bundle
 import android.service.credentials.CredentialEntry
-import androidx.core.os.BuildCompat
 import androidx.credentials.CredentialOption
 import androidx.credentials.PublicKeyCredential
 import androidx.credentials.R
@@ -250,7 +250,7 @@ class PublicKeyCredentialEntryTest {
     }
 
     private fun constructWithAllParams(): PublicKeyCredentialEntry {
-        return if (BuildCompat.isAtLeastV()) {
+        return if (Build.VERSION.SDK_INT >= 35) {
             PublicKeyCredentialEntry(
                 mContext,
                 USERNAME,
@@ -299,7 +299,7 @@ class PublicKeyCredentialEntryTest {
         assertThat(entry.isDefaultIconPreferredAsSingleProvider).isEqualTo(SINGLE_PROVIDER_ICON_BIT)
         assertThat(entry.affiliatedDomain).isNull()
         assertThat(entry.entryGroupId).isEqualTo(USERNAME)
-        if (BuildCompat.isAtLeastV() && entry.biometricPromptData != null) {
+        if (Build.VERSION.SDK_INT >= 35 && entry.biometricPromptData != null) {
             assertThat(entry.biometricPromptData!!.allowedAuthenticators)
                 .isEqualTo(testBiometricPromptData().allowedAuthenticators)
         } else {

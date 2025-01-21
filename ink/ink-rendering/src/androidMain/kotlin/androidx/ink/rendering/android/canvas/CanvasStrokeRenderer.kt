@@ -85,7 +85,8 @@ import androidx.ink.strokes.Stroke
 public interface CanvasStrokeRenderer {
 
     /**
-     * Render a single [stroke] on the provided [canvas].
+     * Render a single [stroke] on the provided [canvas]. If [stroke] has animated textures, then
+     * this will use a default animation progress value of zero.
      *
      * To avoid needing to calculate and maintain [strokeToScreenTransform], consider using
      * [androidx.ink.rendering.android.view.ViewStrokeRenderer] instead.
@@ -97,10 +98,37 @@ public interface CanvasStrokeRenderer {
      * blurry or aliased.
      */
     // TODO: b/353561141 - Reference ComposeStrokeRenderer above once implemented.
-    public fun draw(canvas: Canvas, stroke: Stroke, strokeToScreenTransform: AffineTransform)
+    public fun draw(
+        canvas: Canvas,
+        stroke: Stroke,
+        strokeToScreenTransform: AffineTransform
+    ): Unit = draw(canvas, stroke, strokeToScreenTransform, 0f)
 
     /**
-     * Render a single [stroke] on the provided [canvas].
+     * Render a single [stroke] on the provided [canvas], using the specified [animationProgress]
+     * value (typically 0 to 1) for the stroke's animated textures, if any. Renderer implementations
+     * that don't support animated textures may ignore the [animationProgress] argument.
+     *
+     * To avoid needing to calculate and maintain [strokeToScreenTransform], consider using
+     * [androidx.ink.rendering.android.view.ViewStrokeRenderer] instead.
+     *
+     * The [strokeToScreenTransform] should represent the complete transformation from stroke
+     * coordinates to the screen, modulo translation. This transform will not be applied to the
+     * [canvas] in any way, as it may be made up of several individual transforms applied to the
+     * [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may appear
+     * blurry or aliased.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun draw(
+        canvas: Canvas,
+        stroke: Stroke,
+        strokeToScreenTransform: AffineTransform,
+        animationProgress: Float,
+    )
+
+    /**
+     * Render a single [stroke] on the provided [canvas]. If [stroke] has animated textures, then
+     * this will use a default animation progress value of zero.
      *
      * To avoid needing to calculate and maintain [strokeToScreenTransform], consider using
      * [androidx.ink.rendering.android.view.ViewStrokeRenderer] instead.
@@ -112,10 +140,34 @@ public interface CanvasStrokeRenderer {
      * appear blurry or aliased.
      */
     // TODO: b/353561141 - Reference ComposeStrokeRenderer above once implemented.
-    public fun draw(canvas: Canvas, stroke: Stroke, strokeToScreenTransform: Matrix)
+    public fun draw(canvas: Canvas, stroke: Stroke, strokeToScreenTransform: Matrix): Unit =
+        draw(canvas, stroke, strokeToScreenTransform, 0f)
 
     /**
-     * Render a single [inProgressStroke] on the provided [canvas].
+     * Render a single [stroke] on the provided [canvas], using the specified [animationProgress]
+     * value (typically 0 to 1) for the stroke's animated textures, if any. Renderer implementations
+     * that don't support animated textures may ignore the [animationProgress] argument.
+     *
+     * To avoid needing to calculate and maintain [strokeToScreenTransform], consider using
+     * [androidx.ink.rendering.android.view.ViewStrokeRenderer] instead.
+     *
+     * The [strokeToScreenTransform] must be affine. It should represent the complete transformation
+     * from stroke coordinates to the canvas, modulo translation. This transform will not be applied
+     * to the [canvas] in any way, as it may be made up of several individual transforms applied to
+     * the [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may
+     * appear blurry or aliased.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun draw(
+        canvas: Canvas,
+        stroke: Stroke,
+        strokeToScreenTransform: Matrix,
+        animationProgress: Float,
+    )
+
+    /**
+     * Render a single [inProgressStroke] on the provided [canvas]. If [inProgressStroke] has
+     * animated textures, then this will use a default animation progress value of zero.
      *
      * The [strokeToScreenTransform] should represent the complete transformation from stroke
      * coordinates to the canvas, modulo translation. This transform will not be applied to the
@@ -127,10 +179,31 @@ public interface CanvasStrokeRenderer {
         canvas: Canvas,
         inProgressStroke: InProgressStroke,
         strokeToScreenTransform: AffineTransform,
+    ): Unit = draw(canvas, inProgressStroke, strokeToScreenTransform, 0f)
+
+    /**
+     * Render a single [inProgressStroke] on the provided [canvas], using the specified
+     * [animationProgress] value (typically 0 to 1) for the stroke's animated textures, if any.
+     * Renderer implementations that don't support animated textures may ignore the
+     * [animationProgress] argument.
+     *
+     * The [strokeToScreenTransform] should represent the complete transformation from stroke
+     * coordinates to the canvas, modulo translation. This transform will not be applied to the
+     * [canvas] in any way, as it may be made up of several individual transforms applied to the
+     * [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may appear
+     * blurry or aliased.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun draw(
+        canvas: Canvas,
+        inProgressStroke: InProgressStroke,
+        strokeToScreenTransform: AffineTransform,
+        animationProgress: Float,
     )
 
     /**
-     * Render a single [inProgressStroke] on the provided [canvas].
+     * Render a single [inProgressStroke] on the provided [canvas]. If [inProgressStroke] has
+     * animated textures, then this will use a default animation progress value of zero.
      *
      * The [strokeToScreenTransform] must be affine. It should represent the complete transformation
      * from stroke coordinates to the canvas, modulo translation. This transform will not be applied
@@ -142,6 +215,26 @@ public interface CanvasStrokeRenderer {
         canvas: Canvas,
         inProgressStroke: InProgressStroke,
         strokeToScreenTransform: Matrix,
+    ): Unit = draw(canvas, inProgressStroke, strokeToScreenTransform, 0f)
+
+    /**
+     * Render a single [inProgressStroke] on the provided [canvas], using the specified
+     * [animationProgress] value (typically 0 to 1) for the stroke's animated textures, if any.
+     * Renderer implementations that don't support animated textures may ignore the
+     * [animationProgress] argument.
+     *
+     * The [strokeToScreenTransform] must be affine. It should represent the complete transformation
+     * from stroke coordinates to the canvas, modulo translation. This transform will not be applied
+     * to the [canvas] in any way, as it may be made up of several individual transforms applied to
+     * the [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may
+     * appear blurry or aliased.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun draw(
+        canvas: Canvas,
+        inProgressStroke: InProgressStroke,
+        strokeToScreenTransform: Matrix,
+        animationProgress: Float,
     )
 
     /**

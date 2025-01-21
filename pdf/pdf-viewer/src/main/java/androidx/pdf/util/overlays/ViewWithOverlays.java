@@ -18,8 +18,9 @@ package androidx.pdf.util.overlays;
 
 import android.graphics.drawable.Drawable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Interface to define views which support overlays for comments.

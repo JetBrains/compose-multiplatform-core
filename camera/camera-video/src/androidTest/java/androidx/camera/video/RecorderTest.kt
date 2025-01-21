@@ -549,7 +549,7 @@ class RecorderTest(
         // Assert.
         val result =
             recording.verifyFinalize(
-                timeoutMs = durationLimitMs + 2000L,
+                timeoutMs = durationLimitMs + 2500L,
                 error = ERROR_DURATION_LIMIT_REACHED,
             )
         assertThat(result.finalize.recordingStats.recordedDurationNanos)

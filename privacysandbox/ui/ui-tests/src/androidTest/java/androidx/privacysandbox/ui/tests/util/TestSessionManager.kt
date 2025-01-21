@@ -28,7 +28,6 @@ import android.view.Display
 import android.view.View
 import android.widget.FrameLayout
 import androidx.privacysandbox.ui.client.SandboxedUiAdapterFactory
-import androidx.privacysandbox.ui.client.view.SandboxedSdkUiSessionState
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
 import androidx.privacysandbox.ui.core.DelegatingSandboxedUiAdapter
 import androidx.privacysandbox.ui.core.ExperimentalFeatures
@@ -36,6 +35,7 @@ import androidx.privacysandbox.ui.core.SandboxedUiAdapter
 import androidx.privacysandbox.ui.core.SessionObserver
 import androidx.privacysandbox.ui.core.SessionObserverContext
 import androidx.privacysandbox.ui.core.SessionObserverFactory
+import androidx.privacysandbox.ui.integration.testingutils.TestEventListener
 import androidx.privacysandbox.ui.provider.AbstractSandboxedUiAdapter
 import androidx.privacysandbox.ui.provider.toCoreLibInfo
 import androidx.privacysandbox.ui.tests.endtoend.IntegrationTestSetupRule.Companion.INITIAL_HEIGHT
@@ -124,11 +124,17 @@ class TestSessionManager(
         sessionObserverFactories?.forEach { delegate.addObserverFactory(it) }
         val delegatingAdapterProvider =
             DelegatingSandboxedUiAdapter(getCoreLibInfoFromAdapter(delegate))
+        val testEventListener = TestEventListener()
+        viewForSession.setEventListener(testEventListener)
         val delegatingAdapterClient =
             SandboxedUiAdapterFactory.createFromCoreLibInfo(
                 getCoreLibInfoFromAdapter(delegatingAdapterProvider)
             )
+
         viewForSession.setAdapter(delegatingAdapterClient)
+
+        assertThat(testEventListener.uiDisplayedLatch.await(TIMEOUT, TimeUnit.MILLISECONDS))
+            .isTrue()
         assertWithMessage("openSession is called on adapter")
             .that(delegate.isOpenSessionCalled)
             .isTrue()
@@ -143,6 +149,8 @@ class TestSessionManager(
         sessionObserverFactories: List<SessionObserverFactory>? = null,
     ): TestSandboxedUiAdapter {
         viewForSession.orderProviderUiAboveClientUi(initialZOrder)
+        val testEventListener = TestEventListener()
+        viewForSession.setEventListener(testEventListener)
 
         val adapter =
             createAdapterAndEstablishSession(
@@ -151,13 +159,8 @@ class TestSessionManager(
                 sessionObserverFactories = sessionObserverFactories
             )
 
-        val activeLatch = CountDownLatch(1)
-        viewForSession.addStateChangedListener { state ->
-            if (state is SandboxedSdkUiSessionState.Active) {
-                activeLatch.countDown()
-            }
-        }
-        assertThat(activeLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
+        assertThat(testEventListener.uiDisplayedLatch.await(TIMEOUT, TimeUnit.MILLISECONDS))
+            .isTrue()
         return adapter
     }
 

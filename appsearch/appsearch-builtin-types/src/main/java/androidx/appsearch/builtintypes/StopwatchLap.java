@@ -18,7 +18,9 @@ package androidx.appsearch.builtintypes;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.appsearch.annotation.Document;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.core.util.Preconditions;
 
 import java.util.List;
@@ -42,6 +44,7 @@ public class StopwatchLap extends Thing {
     @Document.LongProperty
     private final long mAccumulatedLapDurationMillis;
 
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     StopwatchLap(@NonNull String namespace, @NonNull String id, int documentScore,
             long creationTimestampMillis, long documentTtlMillis, @Nullable String name,
             @Nullable List<String> alternateNames, @Nullable String description,

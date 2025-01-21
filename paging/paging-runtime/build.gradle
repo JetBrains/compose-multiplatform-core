@@ -32,7 +32,7 @@ plugins {
 }
 
 android {
-    namespace "androidx.paging.runtime"
+    namespace = "androidx.paging.runtime"
 }
 
 dependencies {

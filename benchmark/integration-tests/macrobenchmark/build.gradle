@@ -32,7 +32,7 @@ plugins {
 
 android {
     defaultConfig {
-        minSdkVersion 23
+        minSdk = 23
         testInstrumentationRunnerArguments["androidx.benchmark.suppressErrors"] = "EMULATOR"
 
     }
@@ -42,7 +42,7 @@ android {
                 "androidx/traceprocessor/testdata"
         )
     }
-    namespace "androidx.benchmark.integration.macrobenchmark"
+    namespace = "androidx.benchmark.integration.macrobenchmark"
     targetProjectPath = ":benchmark:integration-tests:macrobenchmark-target"
     experimentalProperties["android.experimental.self-instrumenting"] = true
 }

@@ -25,5 +25,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.cursoradapter"
+    namespace = "androidx.cursoradapter"
 }

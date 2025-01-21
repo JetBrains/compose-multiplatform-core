@@ -44,5 +44,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.core.animation.testing"
+    namespace = "androidx.core.animation.testing"
 }

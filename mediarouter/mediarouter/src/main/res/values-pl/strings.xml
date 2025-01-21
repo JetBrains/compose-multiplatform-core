@@ -43,7 +43,7 @@
     <string name="mr_dialog_transferable_header" msgid="6068257520605505468">"Odtwórz w grupie"</string>
     <string name="mr_cast_dialog_title_view_placeholder" msgid="2175930138959078155">"Brak informacji"</string>
     <string name="mr_chooser_zero_routes_found_title" msgid="5213435473397442608">"Brak dostępnych urządzeń"</string>
-    <string name="mr_chooser_wifi_warning_description_phone" msgid="2555886884770958244">"Sprawdź, czy drugie urządzenie jest połączone z tą samą siecią Wi-Fi co telefon"</string>
+    <string name="mr_chooser_wifi_warning_description_phone" msgid="2555886884770958244">"Upewnij się, że drugie urządzenie jest połączone z tą samą siecią Wi-Fi co ten telefon"</string>
     <string name="mr_chooser_wifi_warning_description_tablet" msgid="6038748488793588164">"Sprawdź, czy drugie urządzenie jest połączone z tą samą siecią Wi-Fi co tablet"</string>
     <string name="mr_chooser_wifi_warning_description_tv" msgid="5845921667085074878">"Sprawdź, czy drugie urządzenie jest połączone z tą samą siecią Wi-Fi co telewizor"</string>
     <string name="mr_chooser_wifi_warning_description_watch" msgid="5255021372884233706">"Sprawdź, czy drugie urządzenie jest połączone z tą samą siecią Wi-Fi co zegarek"</string>

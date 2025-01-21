@@ -21,7 +21,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.glance.preview"
+    namespace = "androidx.glance.preview"
 }
 
 androidx {

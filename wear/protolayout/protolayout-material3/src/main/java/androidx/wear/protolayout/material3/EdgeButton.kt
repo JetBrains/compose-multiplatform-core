@@ -32,7 +32,8 @@ import androidx.wear.protolayout.ModifiersBuilders.Padding
 import androidx.wear.protolayout.TypeBuilders.StringProp
 import androidx.wear.protolayout.material3.EdgeButtonDefaults.BOTTOM_MARGIN_DP
 import androidx.wear.protolayout.material3.EdgeButtonDefaults.EDGE_BUTTON_HEIGHT_DP
-import androidx.wear.protolayout.material3.EdgeButtonDefaults.HORIZONTAL_MARGIN_PERCENT
+import androidx.wear.protolayout.material3.EdgeButtonDefaults.HORIZONTAL_MARGIN_PERCENT_LARGE
+import androidx.wear.protolayout.material3.EdgeButtonDefaults.HORIZONTAL_MARGIN_PERCENT_SMALL
 import androidx.wear.protolayout.material3.EdgeButtonDefaults.ICON_SIZE_DP
 import androidx.wear.protolayout.material3.EdgeButtonDefaults.METADATA_TAG
 import androidx.wear.protolayout.material3.EdgeButtonDefaults.TEXT_SIDE_PADDING_DP
@@ -156,7 +157,7 @@ public fun MaterialScope.textEdgeButton(
  * @sample androidx.wear.protolayout.material3.samples.edgeButtonSampleIcon
  */
 // TODO(b/346958146): link EdgeButton visuals in DAC
-internal fun MaterialScope.edgeButton(
+private fun MaterialScope.edgeButton(
     onClick: Clickable,
     contentDescription: StringProp,
     colors: EdgeButtonColors,
@@ -164,8 +165,12 @@ internal fun MaterialScope.edgeButton(
     content: MaterialScope.() -> LayoutElement
 ): LayoutElement {
     val containerWidth = deviceConfiguration.screenWidthDp.toDp()
+    val horizontalMarginPercent: Float =
+        if (deviceConfiguration.screenWidthDp < SCREEN_WIDTH_BREAKPOINT_DP)
+            HORIZONTAL_MARGIN_PERCENT_SMALL
+        else HORIZONTAL_MARGIN_PERCENT_LARGE
     val edgeButtonWidth: Float =
-        (100f - 2f * HORIZONTAL_MARGIN_PERCENT) * deviceConfiguration.screenWidthDp / 100f
+        (100f - 2f * horizontalMarginPercent) * deviceConfiguration.screenWidthDp / 100f
     val bottomCornerRadiusX = dp(edgeButtonWidth / 2f)
     val bottomCornerRadiusY = dp(EDGE_BUTTON_HEIGHT_DP - TOP_CORNER_RADIUS.value)
 
@@ -269,7 +274,10 @@ public object EdgeButtonDefaults {
         EdgeButtonColors(theme.colorScheme.primaryContainer, theme.colorScheme.onPrimaryContainer)
 
     @JvmField internal val TOP_CORNER_RADIUS: DpProp = dp(17f)
-    internal const val HORIZONTAL_MARGIN_PERCENT: Float = 24f
+    /** The horizontal margin used for width of the EdgeButton, below the 225dp breakpoint. */
+    internal const val HORIZONTAL_MARGIN_PERCENT_SMALL: Float = 24f
+    /** The horizontal margin used for width of the EdgeButton, above the 225dp breakpoint. */
+    internal const val HORIZONTAL_MARGIN_PERCENT_LARGE: Float = 26f
     internal const val BOTTOM_MARGIN_DP: Int = 3
     internal const val EDGE_BUTTON_HEIGHT_DP: Int = 46
     internal const val METADATA_TAG: String = "EB"

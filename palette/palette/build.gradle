@@ -31,5 +31,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.palette"
+    namespace = "androidx.palette"
 }

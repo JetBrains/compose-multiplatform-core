@@ -16,9 +16,8 @@
 
 package androidx.webkit.internal;
 
-import androidx.annotation.NonNull;
-
 import org.chromium.support_lib_boundary.WebViewCookieManagerBoundaryInterface;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 

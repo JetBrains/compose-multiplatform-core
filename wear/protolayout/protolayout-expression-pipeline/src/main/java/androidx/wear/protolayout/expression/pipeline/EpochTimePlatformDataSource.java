@@ -16,10 +16,11 @@
 
 package androidx.wear.protolayout.expression.pipeline;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -28,12 +29,12 @@ import java.util.function.Supplier;
 
 /** Utility for time data source. */
 class EpochTimePlatformDataSource {
-    @NonNull private final MainThreadExecutor mExecutor = new MainThreadExecutor();
+    private final @NonNull MainThreadExecutor mExecutor = new MainThreadExecutor();
 
-    @NonNull final List<DynamicTypeValueReceiverWithPreUpdate<Instant>> mConsumerToTimeCallback =
+    final @NonNull List<DynamicTypeValueReceiverWithPreUpdate<Instant>> mConsumerToTimeCallback =
             new ArrayList<>();
-    @NonNull private final Supplier<Instant> mClock;
-    @Nullable private final PlatformTimeUpdateNotifier mUpdateNotifier;
+    private final @NonNull Supplier<Instant> mClock;
+    private final @Nullable PlatformTimeUpdateNotifier mUpdateNotifier;
     private int mPendingConsumers = 0;
 
     EpochTimePlatformDataSource(

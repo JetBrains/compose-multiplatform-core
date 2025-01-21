@@ -22,4 +22,5 @@ interface ISdkApi {
    Bundle loadBannerAd(int adType, int sdkType, boolean withSlowDraw, boolean drawViewability);
    void requestResize(int width, int height);
    oneway void triggerProcessDeath();
+   oneway void launchFullscreenAd(in Bundle launcherInfo, int screenOrientation, int backButtonNavigation);
 }

@@ -16,7 +16,6 @@
 
 package androidx.navigation.compose
 
-import androidx.annotation.RestrictTo
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
@@ -207,10 +206,63 @@ public inline fun <reified T : Any> NavGraphBuilder.composable(
         null,
     noinline content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit
 ) {
+    composable(
+        T::class,
+        typeMap,
+        deepLinks,
+        enterTransition,
+        exitTransition,
+        popEnterTransition,
+        popExitTransition,
+        sizeTransform,
+        content
+    )
+}
+
+/**
+ * Add the [Composable] to the [NavGraphBuilder]
+ *
+ * @param route route from a [KClass] for the destination
+ * @param typeMap map of destination arguments' kotlin type [KType] to its respective custom
+ *   [NavType]. May be empty if [route] does not use custom NavTypes.
+ * @param deepLinks list of deep links to associate with the destinations
+ * @param enterTransition callback to determine the destination's enter transition
+ * @param exitTransition callback to determine the destination's exit transition
+ * @param popEnterTransition callback to determine the destination's popEnter transition
+ * @param popExitTransition callback to determine the destination's popExit transition
+ * @param sizeTransform callback to determine the destination's sizeTransform.
+ * @param content composable for the destination
+ */
+public fun <T : Any> NavGraphBuilder.composable(
+    route: KClass<T>,
+    typeMap: Map<KType, @JvmSuppressWildcards NavType<*>> = emptyMap(),
+    deepLinks: List<NavDeepLink> = emptyList(),
+    enterTransition:
+        (AnimatedContentTransitionScope<NavBackStackEntry>.() -> @JvmSuppressWildcards
+            EnterTransition?)? =
+        null,
+    exitTransition:
+        (AnimatedContentTransitionScope<NavBackStackEntry>.() -> @JvmSuppressWildcards
+            ExitTransition?)? =
+        null,
+    popEnterTransition:
+        (AnimatedContentTransitionScope<NavBackStackEntry>.() -> @JvmSuppressWildcards
+            EnterTransition?)? =
+        enterTransition,
+    popExitTransition:
+        (AnimatedContentTransitionScope<NavBackStackEntry>.() -> @JvmSuppressWildcards
+            ExitTransition?)? =
+        exitTransition,
+    sizeTransform:
+        (AnimatedContentTransitionScope<NavBackStackEntry>.() -> @JvmSuppressWildcards
+            SizeTransform?)? =
+        null,
+    content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit
+) {
     destination(
         ComposeNavigatorDestinationBuilder(
                 provider[ComposeNavigator::class],
-                T::class,
+                route,
                 typeMap,
                 content
             )
@@ -415,11 +467,27 @@ public inline fun <reified T : Any> NavGraphBuilder.navigation(
     )
 }
 
-// need to be public for reified navigation
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun NavGraphBuilder.navigation(
+/**
+ * Construct a nested [NavGraph]
+ *
+ * @sample androidx.navigation.compose.samples.SizeTransformNav
+ * @param route the destination's unique route from a KClass
+ * @param startDestination the starting destination's route from [KClass] for this NavGraph
+ * @param typeMap map of destination arguments' kotlin type [KType] to its respective custom
+ *   [NavType]. May be empty if [route] does not use custom NavTypes.
+ * @param deepLinks list of deep links to associate with the destinations
+ * @param enterTransition callback to define enter transitions for destination in this NavGraph
+ * @param exitTransition callback to define exit transitions for destination in this NavGraph
+ * @param popEnterTransition callback to define pop enter transitions for destination in this
+ *   NavGraph
+ * @param popExitTransition callback to define pop exit transitions for destination in this NavGraph
+ * @param sizeTransform callback to define the size transform for destinations in this NavGraph
+ * @param builder the builder used to construct the graph
+ * @return the newly constructed nested NavGraph
+ */
+public fun <T : Any> NavGraphBuilder.navigation(
     startDestination: KClass<*>,
-    route: KClass<*>,
+    route: KClass<T>,
     typeMap: Map<KType, @JvmSuppressWildcards NavType<*>> = emptyMap(),
     deepLinks: List<NavDeepLink> = emptyList(),
     enterTransition:
@@ -516,11 +584,27 @@ public inline fun <reified T : Any> NavGraphBuilder.navigation(
     )
 }
 
-// need to be public for reified navigation
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun NavGraphBuilder.navigation(
+/**
+ * Construct a nested [NavGraph]
+ *
+ * @sample androidx.navigation.compose.samples.SizeTransformNav
+ * @param route the destination's unique route from a KClass
+ * @param startDestination the starting destination's route from an Object for this NavGraph
+ * @param typeMap map of destination arguments' kotlin type [KType] to its respective custom
+ *   [NavType]. May be empty if [route] does not use custom NavTypes.
+ * @param deepLinks list of deep links to associate with the destinations
+ * @param enterTransition callback to define enter transitions for destination in this NavGraph
+ * @param exitTransition callback to define exit transitions for destination in this NavGraph
+ * @param popEnterTransition callback to define pop enter transitions for destination in this
+ *   NavGraph
+ * @param popExitTransition callback to define pop exit transitions for destination in this NavGraph
+ * @param sizeTransform callback to define the size transform for destinations in this NavGraph
+ * @param builder the builder used to construct the graph
+ * @return the newly constructed nested NavGraph
+ */
+public fun <T : Any> NavGraphBuilder.navigation(
     startDestination: Any,
-    route: KClass<*>,
+    route: KClass<T>,
     typeMap: Map<KType, @JvmSuppressWildcards NavType<*>> = emptyMap(),
     deepLinks: List<NavDeepLink> = emptyList(),
     enterTransition:
@@ -613,10 +697,34 @@ public inline fun <reified T : Any> NavGraphBuilder.dialog(
     dialogProperties: DialogProperties = DialogProperties(),
     noinline content: @Composable (NavBackStackEntry) -> Unit
 ) {
+    dialog(T::class, typeMap, deepLinks, dialogProperties, content)
+}
+
+/**
+ * Add the [Composable] to the [NavGraphBuilder] that will be hosted within a
+ * [androidx.compose.ui.window.Dialog]. This is suitable only when this dialog represents a separate
+ * screen in your app that needs its own lifecycle and saved state, independent of any other
+ * destination in your navigation graph. For use cases such as `AlertDialog`, you should use those
+ * APIs directly in the [composable] destination that wants to show that dialog.
+ *
+ * @param route route from [KClass] of [T] for the destination
+ * @param typeMap map of destination arguments' kotlin type [KType] to its respective custom
+ *   [NavType]. May be empty if [route] does not use custom NavTypes.
+ * @param deepLinks list of deep links to associate with the destinations
+ * @param dialogProperties properties that should be passed to [androidx.compose.ui.window.Dialog].
+ * @param content composable content for the destination that will be hosted within the Dialog
+ */
+public fun <T : Any> NavGraphBuilder.dialog(
+    route: KClass<T>,
+    typeMap: Map<KType, @JvmSuppressWildcards NavType<*>> = emptyMap(),
+    deepLinks: List<NavDeepLink> = emptyList(),
+    dialogProperties: DialogProperties = DialogProperties(),
+    content: @Composable (NavBackStackEntry) -> Unit
+) {
     destination(
         DialogNavigatorDestinationBuilder(
                 provider[DialogNavigator::class],
-                T::class,
+                route,
                 typeMap,
                 dialogProperties,
                 content

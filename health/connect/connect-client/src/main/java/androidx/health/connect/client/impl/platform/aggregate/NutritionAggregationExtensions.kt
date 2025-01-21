@@ -29,23 +29,28 @@ import androidx.health.connect.client.impl.platform.useLocalTime
 import androidx.health.connect.client.records.IntervalRecord
 import androidx.health.connect.client.records.NutritionRecord
 import androidx.health.connect.client.records.metadata.DataOrigin
+import androidx.health.connect.client.request.AggregateRequest
+import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import java.time.Instant
 import kotlin.math.max
 
 internal suspend fun HealthConnectClient.aggregateNutritionTransFatTotal(
-    timeRangeFilter: TimeRangeFilter,
-    dataOriginFilter: Set<DataOrigin>
-) = aggregateNutrition(timeRangeFilter, dataOriginFilter, TransFatTotalAggregator(timeRangeFilter))
-
-private suspend fun HealthConnectClient.aggregateNutrition(
-    timeRangeFilter: TimeRangeFilter,
-    dataOriginFilter: Set<DataOrigin>,
-    aggregator: Aggregator<NutritionRecord>
+    aggregateRequest: AggregateRequest
 ): AggregationResult {
-    readRecordsFlow(NutritionRecord::class, timeRangeFilter.withBufferedStart(), dataOriginFilter)
+    val aggregator = TransFatTotalAggregator(aggregateRequest.timeRangeFilter)
+
+    readRecordsFlow(
+            ReadRecordsRequest(
+                NutritionRecord::class,
+                aggregateRequest.timeRangeFilter.withBufferedStart(),
+                aggregateRequest.dataOriginFilter
+            )
+        )
         .collect { records ->
-            records.filter { it.overlaps(timeRangeFilter) }.forEach { aggregator += it }
+            records
+                .filter { it.overlaps(aggregateRequest.timeRangeFilter) }
+                .forEach { aggregator += it }
         }
 
     return aggregator.getResult()

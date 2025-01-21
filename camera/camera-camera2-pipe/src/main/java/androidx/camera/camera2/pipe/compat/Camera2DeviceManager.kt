@@ -157,6 +157,7 @@ internal class Camera2DeviceManagerImpl
 constructor(
     private val permissions: Permissions,
     private val retryingCameraStateOpener: RetryingCameraStateOpener,
+    private val camera2DeviceCloser: Camera2DeviceCloser,
     private val camera2ErrorProcessor: Camera2ErrorProcessor,
     private val threads: Threads
 ) : Camera2DeviceManager {
@@ -399,7 +400,12 @@ constructor(
         check(permissions.hasCameraPermission) { "Missing camera permissions!" }
 
         Log.debug { "Opening $cameraId with retries..." }
-        val result = retryingCameraStateOpener.openCameraWithRetry(cameraId, isForegroundObserver)
+        val result =
+            retryingCameraStateOpener.openCameraWithRetry(
+                cameraId,
+                camera2DeviceCloser,
+                isForegroundObserver
+            )
         if (result.cameraState == null) {
             return OpenVirtualCameraResult(lastCameraError = result.errorCode)
         }

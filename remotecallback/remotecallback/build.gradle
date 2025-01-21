@@ -41,7 +41,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.remotecallback"
+    namespace = "androidx.remotecallback"
 }
 
 androidx {

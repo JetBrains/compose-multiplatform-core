@@ -277,11 +277,62 @@ internal fun BoxScope.ModalBottomSheetContent(
 
     Surface(
         modifier =
-            Modifier.bottomSheetNestedScroll(sheetGesturesEnabled, sheetState, settleToDismiss)
-                .bottomSheetDraggableAnchors(sheetGesturesEnabled, sheetState, settleToDismiss)
+            modifier
                 .align(Alignment.TopCenter)
                 .widthIn(max = sheetMaxWidth)
                 .fillMaxWidth()
+                .then(
+                    if (sheetGesturesEnabled)
+                        Modifier.nestedScroll(
+                            remember(sheetState) {
+                                ConsumeSwipeWithinBottomSheetBoundsNestedScrollConnection(
+                                    sheetState = sheetState,
+                                    orientation = Orientation.Vertical,
+                                    onFling = settleToDismiss
+                                )
+                            }
+                        )
+                    else Modifier
+                )
+                .draggableAnchors(sheetState.anchoredDraggableState, Orientation.Vertical) {
+                    sheetSize,
+                    constraints ->
+                    val fullHeight = constraints.maxHeight.toFloat()
+                    val newAnchors = DraggableAnchors {
+                        Hidden at fullHeight
+                        if (
+                            sheetSize.height > (fullHeight / 2) && !sheetState.skipPartiallyExpanded
+                        ) {
+                            PartiallyExpanded at fullHeight / 2f
+                        }
+                        if (sheetSize.height != 0) {
+                            Expanded at max(0f, fullHeight - sheetSize.height)
+                        }
+                    }
+                    val newTarget =
+                        when (sheetState.anchoredDraggableState.targetValue) {
+                            Hidden -> Hidden
+                            PartiallyExpanded -> {
+                                val hasPartiallyExpandedState =
+                                    newAnchors.hasAnchorFor(PartiallyExpanded)
+                                val newTarget =
+                                    if (hasPartiallyExpandedState) PartiallyExpanded
+                                    else if (newAnchors.hasAnchorFor(Expanded)) Expanded else Hidden
+                                newTarget
+                            }
+                            Expanded -> {
+                                if (newAnchors.hasAnchorFor(Expanded)) Expanded else Hidden
+                            }
+                        }
+                    return@draggableAnchors newAnchors to newTarget
+                }
+                .draggable(
+                    state = sheetState.anchoredDraggableState.draggableState,
+                    orientation = Orientation.Vertical,
+                    enabled = sheetGesturesEnabled && sheetState.isVisible,
+                    startDragImmediately = sheetState.anchoredDraggableState.isAnimationRunning,
+                    onDragStopped = { settleToDismiss(it) }
+                )
                 .semantics {
                     paneTitle = bottomSheetPaneTitle
                     traversalIndex = 0f
@@ -301,8 +352,7 @@ internal fun BoxScope.ModalBottomSheetContent(
                 // min anchor. This is done to avoid showing a gap when the sheet opens and bounces
                 // when it's applied with a bouncy motion. Note that the content inside the Surface
                 // is scaled back down to maintain its aspect ratio (see below).
-                .verticalScaleUp(sheetState)
-                .then(modifier),
+                .verticalScaleUp(sheetState),
         shape = shape,
         color = containerColor,
         contentColor = contentColor,
@@ -484,80 +534,6 @@ private fun Scrim(color: Color, onDismissRequest: () -> Unit, visible: Boolean) 
             drawRect(color = color, alpha = alpha.coerceIn(0f, 1f))
         }
     }
-}
-
-/**
- * Provides custom bottom sheet [nestedScroll] behavior between the sheet's [draggable] modifier and
- * the sheets scrollable content.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun Modifier.bottomSheetNestedScroll(
-    sheetGesturesEnabled: Boolean,
-    sheetState: SheetState,
-    settleToDismiss: (velocity: Float) -> Unit,
-): Modifier {
-    return if (!sheetGesturesEnabled) {
-        this
-    } else {
-        this.nestedScroll(
-            remember(sheetState) {
-                ConsumeSwipeWithinBottomSheetBoundsNestedScrollConnection(
-                    sheetState = sheetState,
-                    orientation = Orientation.Vertical,
-                    onFling = settleToDismiss
-                )
-            }
-        )
-    }
-}
-
-/**
- * Provides the bottom sheet's anchor points on the screen and [draggable] behavior between them.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun Modifier.bottomSheetDraggableAnchors(
-    sheetGesturesEnabled: Boolean,
-    sheetState: SheetState,
-    settleToDismiss: (velocity: Float) -> Unit
-): Modifier {
-    return this.draggableAnchors(sheetState.anchoredDraggableState, Orientation.Vertical) {
-            sheetSize,
-            constraints ->
-            val fullHeight = constraints.maxHeight.toFloat()
-            val newAnchors = DraggableAnchors {
-                Hidden at fullHeight
-                if (sheetSize.height > (fullHeight / 2) && !sheetState.skipPartiallyExpanded) {
-                    PartiallyExpanded at fullHeight / 2f
-                }
-                if (sheetSize.height != 0) {
-                    Expanded at max(0f, fullHeight - sheetSize.height)
-                }
-            }
-            val newTarget =
-                when (sheetState.anchoredDraggableState.targetValue) {
-                    Hidden -> Hidden
-                    PartiallyExpanded -> {
-                        val hasPartiallyExpandedState = newAnchors.hasAnchorFor(PartiallyExpanded)
-                        val newTarget =
-                            if (hasPartiallyExpandedState) PartiallyExpanded
-                            else if (newAnchors.hasAnchorFor(Expanded)) Expanded else Hidden
-                        newTarget
-                    }
-                    Expanded -> {
-                        if (newAnchors.hasAnchorFor(Expanded)) Expanded else Hidden
-                    }
-                }
-            return@draggableAnchors newAnchors to newTarget
-        }
-        .draggable(
-            state = sheetState.anchoredDraggableState.draggableState,
-            orientation = Orientation.Vertical,
-            enabled = sheetGesturesEnabled && sheetState.isVisible,
-            startDragImmediately = sheetState.anchoredDraggableState.isAnimationRunning,
-            onDragStopped = { settleToDismiss(it) }
-        )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

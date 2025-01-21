@@ -26,5 +26,6 @@ internal object CompactButtonTokens {
     val ContainerShape = ShapeKeyTokens.CornerMedium
     val IconOnlyWidth = 52.0.dp
     val IconSize = 20.0.dp
+    val IconOnlyIconSize = 24.dp
     val LabelFont = TypographyKeyTokens.LabelSmall
 }

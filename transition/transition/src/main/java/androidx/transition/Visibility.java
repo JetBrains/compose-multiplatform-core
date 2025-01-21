@@ -29,11 +29,12 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.content.res.TypedArrayUtils;
 import androidx.core.view.ViewCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -138,9 +139,8 @@ public abstract class Visibility extends Transition {
         return mMode;
     }
 
-    @Nullable
     @Override
-    public String[] getTransitionProperties() {
+    public String @Nullable [] getTransitionProperties() {
         return sTransitionProperties;
     }
 
@@ -241,9 +241,8 @@ public abstract class Visibility extends Transition {
         return visInfo;
     }
 
-    @Nullable
     @Override
-    public Animator createAnimator(@NonNull ViewGroup sceneRoot,
+    public @Nullable Animator createAnimator(@NonNull ViewGroup sceneRoot,
             @Nullable TransitionValues startValues, @Nullable TransitionValues endValues) {
         VisibilityInfo visInfo = getVisibilityChangeInfo(startValues, endValues);
         if (visInfo.mVisibilityChange
@@ -275,10 +274,10 @@ public abstract class Visibility extends Transition {
      * overall transition for this scene change. A null value means no animation
      * should be run.
      */
-    @Nullable
     @SuppressWarnings("UnusedParameters")
-    public Animator onAppear(@NonNull ViewGroup sceneRoot, @Nullable TransitionValues startValues,
-            int startVisibility, @Nullable TransitionValues endValues, int endVisibility) {
+    public @Nullable Animator onAppear(@NonNull ViewGroup sceneRoot,
+            @Nullable TransitionValues startValues, int startVisibility,
+            @Nullable TransitionValues endValues, int endVisibility) {
         if ((mMode & MODE_IN) != MODE_IN || endValues == null) {
             return null;
         }
@@ -313,8 +312,7 @@ public abstract class Visibility extends Transition {
      * overall transition for this scene change. A null value means no animation
      * should be run.
      */
-    @Nullable
-    public Animator onAppear(@NonNull ViewGroup sceneRoot, @NonNull View view,
+    public @Nullable Animator onAppear(@NonNull ViewGroup sceneRoot, @NonNull View view,
             @Nullable TransitionValues startValues, @Nullable TransitionValues endValues) {
         return null;
     }
@@ -334,9 +332,8 @@ public abstract class Visibility extends Transition {
      * overall transition for this scene change. A null value means no animation
      * should be run.
      */
-    @Nullable
     @SuppressWarnings("UnusedParameters")
-    public Animator onDisappear(@NonNull ViewGroup sceneRoot,
+    public @Nullable Animator onDisappear(@NonNull ViewGroup sceneRoot,
             @Nullable TransitionValues startValues, int startVisibility,
             @Nullable TransitionValues endValues, int endVisibility) {
         if ((mMode & MODE_OUT) != MODE_OUT) {
@@ -480,8 +477,7 @@ public abstract class Visibility extends Transition {
      * overall transition for this scene change. A null value means no animation
      * should be run.
      */
-    @Nullable
-    public Animator onDisappear(@NonNull ViewGroup sceneRoot, @NonNull View view,
+    public @Nullable Animator onDisappear(@NonNull ViewGroup sceneRoot, @NonNull View view,
             @Nullable TransitionValues startValues, @Nullable TransitionValues endValues) {
         return null;
     }

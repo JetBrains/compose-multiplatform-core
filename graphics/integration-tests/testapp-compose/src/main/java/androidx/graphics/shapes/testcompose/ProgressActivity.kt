@@ -47,7 +47,6 @@ import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.pillStar
 import androidx.graphics.shapes.toPath
-import kotlin.math.min
 import kotlinx.coroutines.launch
 
 /**
@@ -87,7 +86,7 @@ fun ProgressHolder() {
                 .fillMaxSize()
                 .drawWithContent {
                     drawContent()
-                    val scale = min(size.width, size.height) / 2
+                    val scale = size.minDimension / 2
                     val m = Matrix()
                     m.translate(size.width / 2, size.height / 2, 0f)
                     m.scale(scale, scale)

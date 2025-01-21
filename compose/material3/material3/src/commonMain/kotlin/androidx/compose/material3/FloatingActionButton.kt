@@ -1201,7 +1201,7 @@ internal class FabVisibleNode(
     private val scaleAnimatable = Animatable(if (visible) 1f else 0f)
     private val alphaAnimatable = Animatable(if (visible) 1f else 0f)
 
-    val delegate =
+    init {
         delegate(
             CacheDrawModifierNode {
                 val layer = obtainGraphicsLayer()
@@ -1233,6 +1233,7 @@ internal class FabVisibleNode(
                 onDrawWithContent { drawLayer(layer) }
             }
         )
+    }
 
     @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     fun updateNode(

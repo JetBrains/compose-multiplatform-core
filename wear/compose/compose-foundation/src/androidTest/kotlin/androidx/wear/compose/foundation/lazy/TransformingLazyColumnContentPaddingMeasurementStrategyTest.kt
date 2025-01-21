@@ -18,7 +18,9 @@ package androidx.wear.compose.foundation.lazy
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.GraphicsContext
 import androidx.compose.ui.graphics.GraphicsLayerScope
+import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.IntrinsicMeasureScope
 import androidx.compose.ui.layout.MeasureResult
@@ -31,6 +33,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
+import androidx.wear.compose.foundation.lazy.layout.LazyLayoutItemAnimator
+import androidx.wear.compose.foundation.lazy.layout.LazyLayoutKeyIndexMap
 import com.google.common.truth.Truth.assertThat
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.Test
@@ -54,12 +58,6 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
 
     @Test
     fun emptyList_emptyResult() {
-        val strategy =
-            TransformingLazyColumnContentPaddingMeasurementStrategy(
-                PaddingValues(0.dp),
-                measureScope
-            )
-
         val result = strategy.measure(listOf())
 
         assertThat(result.visibleItems).isEmpty()
@@ -67,12 +65,6 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
 
     @Test
     fun fullScreenItem_takesFullHeight() {
-        val strategy =
-            TransformingLazyColumnContentPaddingMeasurementStrategy(
-                PaddingValues(0.dp),
-                measureScope
-            )
-
         val result = strategy.measure(listOf(screenHeight))
 
         assertThat(result.visibleItems.size).isEqualTo(1)
@@ -85,12 +77,6 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
 
     @Test
     fun fullScreenItem_scrollsBackToCenter() {
-        val strategy =
-            TransformingLazyColumnContentPaddingMeasurementStrategy(
-                PaddingValues(0.dp),
-                measureScope
-            )
-
         val result =
             strategy.measure(
                 listOf(screenHeight),
@@ -108,12 +94,6 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
 
     @Test
     fun halfScreenItem_takesHalfHeightAndTopAligned() {
-        val strategy =
-            TransformingLazyColumnContentPaddingMeasurementStrategy(
-                PaddingValues(0.dp),
-                measureScope
-            )
-
         val result = strategy.measure(listOf(screenHeight / 2))
 
         assertThat(result.visibleItems.size).isEqualTo(1)
@@ -126,12 +106,6 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
 
     @Test
     fun twoItemsWithFirstTopAligned_measuredWithCorrectOffsets() {
-        val strategy =
-            TransformingLazyColumnContentPaddingMeasurementStrategy(
-                PaddingValues(0.dp),
-                measureScope
-            )
-
         val result = strategy.measure(listOf(screenHeight / 2, screenHeight / 2))
 
         assertThat(result.visibleItems.size).isEqualTo(2)
@@ -143,28 +117,45 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
     fun twoItemsWithFirstTopAlignedWithPadding_measuredWithCorrectOffsets() {
         val topPadding = 5.dp
         val topPaddingPx = with(measureScope) { topPadding.roundToPx() }
-        val strategy =
+        val strategyWithTopPadding =
             TransformingLazyColumnContentPaddingMeasurementStrategy(
                 PaddingValues(top = topPadding),
-                measureScope
+                measureScope,
+                mockGraphicContext,
+                mockItemAnimator
             )
 
-        val result = strategy.measure(listOf(screenHeight / 2, screenHeight / 2))
+        val result = strategyWithTopPadding.measure(listOf(screenHeight / 2, screenHeight / 2))
 
         assertThat(result.visibleItems.size).isEqualTo(2)
 
         assertThat(result.visibleItems.map { it.offset })
             .isEqualTo(listOf(0 + topPaddingPx, screenHeight / 2 + topPaddingPx))
+        assertThat(result.beforeContentPadding).isEqualTo(topPaddingPx)
+    }
+
+    @Test
+    fun twoItemsWithLastOneAlignedWithPadding_measuredWithCorrectOffsets() {
+        val bottomPadding = 5.dp
+        val bottomPaddingPx = with(measureScope) { bottomPadding.roundToPx() }
+        val strategyWithBottomPadding =
+            TransformingLazyColumnContentPaddingMeasurementStrategy(
+                PaddingValues(bottom = bottomPadding),
+                measureScope,
+                mockGraphicContext,
+                mockItemAnimator
+            )
+
+        val result = strategyWithBottomPadding.measure(listOf(screenHeight / 2, screenHeight / 2))
+
+        assertThat(result.visibleItems.size).isEqualTo(2)
+
+        assertThat(result.visibleItems.map { it.offset }).isEqualTo(listOf(0, screenHeight / 2))
+        assertThat(result.afterContentPadding).isEqualTo(bottomPaddingPx)
     }
 
     @Test
     fun threeHalfScreenItemsWithFirstOneTopAligned_pushesLastItemOffscreen() {
-        val strategy =
-            TransformingLazyColumnContentPaddingMeasurementStrategy(
-                PaddingValues(0.dp),
-                measureScope
-            )
-
         val result =
             strategy.measure(
                 listOf(
@@ -181,12 +172,6 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
 
     @Test
     fun threeItemsWithSecondOneCentered_measuredWithCorrectOffsets() {
-        val strategy =
-            TransformingLazyColumnContentPaddingMeasurementStrategy(
-                PaddingValues(0.dp),
-                measureScope
-            )
-
         val result =
             strategy.measure(
                 listOf(
@@ -206,11 +191,6 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
 
     @Test
     fun threeItemsWithSecondOneCenteredAndOffset_measuredWithCorrectOffsets() {
-        val strategy =
-            TransformingLazyColumnContentPaddingMeasurementStrategy(
-                PaddingValues(0.dp),
-                measureScope
-            )
         val tinyOffset = 5
         val result =
             strategy.measure(
@@ -237,11 +217,6 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
 
     @Test
     fun threeItemsWithSecondOneCenteredAndScrolled_measuredWithCorrectOffsets() {
-        val strategy =
-            TransformingLazyColumnContentPaddingMeasurementStrategy(
-                PaddingValues(0.dp),
-                measureScope
-            )
         val scrollAmount = 5
         val result =
             strategy.measure(
@@ -269,11 +244,6 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
 
     @Test
     fun fullScreenItemWithTransformedHeight_takesHalfOfHeight() {
-        val strategy =
-            TransformingLazyColumnContentPaddingMeasurementStrategy(
-                PaddingValues(0.dp),
-                measureScope
-            )
         val result =
             strategy.measure(
                 listOf(
@@ -293,11 +263,6 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
 
     @Test
     fun renderContentSmallerThanTheScreen_hasNoScrolling() {
-        val strategy =
-            TransformingLazyColumnContentPaddingMeasurementStrategy(
-                PaddingValues(0.dp),
-                measureScope
-            )
         val result =
             strategy.measure(
                 listOf(
@@ -315,11 +280,6 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
 
     @Test
     fun renderContentOnTopOfList_hasNoBackwardScrolling() {
-        val strategy =
-            TransformingLazyColumnContentPaddingMeasurementStrategy(
-                PaddingValues(0.dp),
-                measureScope
-            )
         val result =
             strategy.measure(
                 listOf(
@@ -337,11 +297,6 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
 
     @Test
     fun renderContentOnBottomOfList_hasNoForwardScrolling() {
-        val strategy =
-            TransformingLazyColumnContentPaddingMeasurementStrategy(
-                PaddingValues(0.dp),
-                measureScope
-            )
         val result =
             strategy.measure(
                 listOf(
@@ -360,11 +315,6 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
 
     @Test
     fun dynamicHeightItems_measuredWithCorrectOffsets() {
-        val strategy =
-            TransformingLazyColumnContentPaddingMeasurementStrategy(
-                PaddingValues(0.dp),
-                measureScope
-            )
         val result =
             strategy.measure(
                 listOf(
@@ -387,12 +337,6 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
 
     @Test
     fun flingBackwards_restoresLayoutCorrectly() {
-        val strategy =
-            TransformingLazyColumnContentPaddingMeasurementStrategy(
-                PaddingValues(0.dp),
-                measureScope
-            )
-
         val itemSize = screenHeight / 4
 
         val result =
@@ -418,12 +362,6 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
 
     @Test
     fun flingForward_restoresLayoutCorrectly() {
-        val strategy =
-            TransformingLazyColumnContentPaddingMeasurementStrategy(
-                PaddingValues(0.dp),
-                measureScope
-            )
-
         val itemSize = screenHeight / 4
 
         val result =
@@ -448,6 +386,49 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
             .isEqualTo(listOf(0, screenHeight / 4, screenHeight / 2, screenHeight * 3 / 4))
     }
 
+    @Test
+    fun fullSizeBottomContentPadding_doesNotCrash() {
+        val strategy =
+            TransformingLazyColumnContentPaddingMeasurementStrategy(
+                // Padding takes the full size.
+                PaddingValues(bottom = with(Density(density)) { screenHeight.toDp() }),
+                measureScope,
+                mockGraphicContext,
+                mockItemAnimator
+            )
+
+        val itemSize = screenHeight / 4
+
+        val result =
+            strategy.measure(
+                listOf(itemSize, itemSize),
+            )
+        assertThat(result.visibleItems.size).isEqualTo(2)
+    }
+
+    @Test
+    fun fullSizeTopContentPadding_doesNotCrash() {
+        val strategy =
+            TransformingLazyColumnContentPaddingMeasurementStrategy(
+                // Padding takes the full size.
+                PaddingValues(top = with(Density(density)) { screenHeight.toDp() }),
+                measureScope,
+                mockGraphicContext,
+                mockItemAnimator
+            )
+
+        val itemSize = screenHeight / 4
+
+        val result =
+            strategy.measure(
+                listOf(
+                    itemSize,
+                    itemSize,
+                ),
+            )
+        assertThat(result.visibleItems.size).isEqualTo(2)
+    }
+
     private val measureScope: IntrinsicMeasureScope =
         object : IntrinsicMeasureScope {
             override val fontScale: Float
@@ -457,6 +438,27 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
             override val density: Float
                 get() = this@TransformingLazyColumnContentPaddingMeasurementStrategyTest.density
         }
+
+    private val mockGraphicContext =
+        object : GraphicsContext {
+            override fun createGraphicsLayer(): GraphicsLayer {
+                TODO("Not yet implemented")
+            }
+
+            override fun releaseGraphicsLayer(layer: GraphicsLayer) {
+                TODO("Not yet implemented")
+            }
+        }
+
+    private val mockItemAnimator = LazyLayoutItemAnimator<TransformingLazyColumnMeasuredItem>()
+
+    private val strategy =
+        TransformingLazyColumnContentPaddingMeasurementStrategy(
+            PaddingValues(0.dp),
+            measureScope,
+            mockGraphicContext,
+            mockItemAnimator
+        )
 
     private fun TransformingLazyColumnMeasurementStrategy.measure(
         itemHeights: List<Int>,
@@ -470,6 +472,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
         measure(
             itemsCount = itemHeights.size,
             measuredItemProvider = makeMeasuredItemProvider(itemHeights, transformedHeight),
+            keyIndexMap = LazyLayoutKeyIndexMap.Empty,
             itemSpacing = itemSpacing,
             containerConstraints = containerConstraints,
             anchorItemIndex = anchorItemIndex,
@@ -508,7 +511,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
         ) {}
 
         override val parentData: Any?
-            get() = transformedHeight?.let { HeightProviderParentData(it) }
+            get() = transformedHeight?.let { TransformingLazyColumnParentData(it) }
     }
 
     private fun makeMeasuredItemProvider(
@@ -527,7 +530,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
             containerConstraints = containerConstraints,
             leftPadding = 0,
             rightPadding = 0,
-            scrollProgress = progressProvider(itemHeights[index]),
+            measureScrollProgress = progressProvider(itemHeights[index]),
             horizontalAlignment = Alignment.CenterHorizontally,
             layoutDirection = LayoutDirection.Ltr,
             key = index,

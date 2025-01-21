@@ -48,31 +48,6 @@ class ShellTest {
         }
     }
 
-    @Test
-    fun optionalCommand_ls() {
-        // command isn't important, it's just something that's not `echo`, and guaranteed to print
-        val output = Shell.optionalCommand("ls /sys/devices/system/cpu")
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            assertNotNull(output)
-        } else {
-            assertNull(output)
-        }
-    }
-
-    @Test
-    fun optionalCommand_echo() {
-        val output = Shell.optionalCommand("echo foo")
-
-        val expected =
-            when {
-                Build.VERSION.SDK_INT >= 21 -> "foo\n"
-                else -> null
-            }
-
-        assertEquals(expected, output)
-    }
-
     private fun CpuInfo.CoreDir.scalingMinFreqPath() = "$path/cpufreq/scaling_min_freq"
 
     @Test
@@ -92,11 +67,7 @@ class ShellTest {
             val output = Shell.catProcFileLong(it.scalingMinFreqPath())
 
             // if the path exists, it should be readable by shell for every online core
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                assertNotNull(output)
-            } else {
-                assertNull(output)
-            }
+            assertNotNull(output)
         }
     }
 
@@ -502,7 +473,6 @@ class ShellTest {
         )
     }
 
-    @RequiresApi(21)
     private fun pidof(packageName: String): Int? {
         return Shell.getPidsForProcess(packageName).firstOrNull()
     }

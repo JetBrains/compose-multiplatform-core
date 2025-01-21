@@ -156,7 +156,7 @@ internal class KspProcessingEnv(
             .getDeclarationsFromPackage(packageName)
             .filterIsInstance<KSClassDeclaration>()
             .filterNot { it.classKind == ClassKind.ENUM_ENTRY }
-            .map { KspTypeElement.create(this, it) }
+            .map { this.wrapClassDeclaration(it) }
             .toList()
     }
 

@@ -17,8 +17,11 @@
 package androidx.appsearch.playservicesstorage.converter;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.app.AppSearchBlobHandle;
 import androidx.appsearch.app.EmbeddingVector;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.Features;
 import androidx.appsearch.app.GenericDocument;
 import androidx.core.util.Preconditions;
@@ -37,6 +40,7 @@ public final class GenericDocumentToGmsConverter {
      * {@link com.google.android.gms.appsearch.GenericDocument}.
      */
     @NonNull
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public static com.google.android.gms.appsearch.GenericDocument toGmsGenericDocument(
             @NonNull GenericDocument jetpackDocument) {
         Preconditions.checkNotNull(jetpackDocument);
@@ -76,6 +80,10 @@ public final class GenericDocumentToGmsConverter {
             } else if (property instanceof EmbeddingVector[]) {
                 // TODO(b/326656531): Remove this once embedding search APIs are available.
                 throw new UnsupportedOperationException(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG
+                        + " is not available on this AppSearch implementation.");
+            } else if (property instanceof AppSearchBlobHandle[]) {
+                // TODO(b/273591938): Remove this once blob APIs are available.
+                throw new UnsupportedOperationException(Features.BLOB_STORAGE
                         + " is not available on this AppSearch implementation.");
             } else {
                 throw new IllegalStateException(

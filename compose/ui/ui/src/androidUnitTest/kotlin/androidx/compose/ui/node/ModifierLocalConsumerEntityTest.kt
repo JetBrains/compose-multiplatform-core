@@ -18,6 +18,7 @@
 
 package androidx.compose.ui.node
 
+import androidx.collection.IntObjectMap
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -333,6 +334,9 @@ class ModifierLocalConsumerEntityTest {
         override fun onDetach(node: LayoutNode) {}
 
         override val root: LayoutNode
+            get() = TODO("Not yet implemented")
+
+        override val layoutNodes: IntObjectMap<LayoutNode>
             get() = TODO("Not yet implemented")
 
         override val sharedDrawScope: LayoutNodeDrawScope

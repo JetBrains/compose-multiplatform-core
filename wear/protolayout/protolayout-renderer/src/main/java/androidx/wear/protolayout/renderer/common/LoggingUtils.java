@@ -1,11 +1,12 @@
 package androidx.wear.protolayout.renderer.common;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 
 import com.google.errorprone.annotations.FormatMethod;
 import com.google.errorprone.annotations.FormatString;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Logger used for extensive logging. Note that all logs will contain the component name. To enable
@@ -19,11 +20,11 @@ import com.google.errorprone.annotations.FormatString;
 public interface LoggingUtils {
 
     /** LogD a formatted message. */
-    void logD(@NonNull String tag,@NonNull  String message);
+    void logD(@NonNull String tag, @NonNull String message);
 
     /** LogD a formatted message. */
     @FormatMethod
-    void logD(@NonNull String tag, @NonNull @FormatString String format, @NonNull Object... args);
+    void logD(@NonNull String tag, @FormatString @NonNull String format, Object @NonNull ... args);
 
     /**
      * Check whether debug logging is allowed or not for the given {@code tag}. This will allow

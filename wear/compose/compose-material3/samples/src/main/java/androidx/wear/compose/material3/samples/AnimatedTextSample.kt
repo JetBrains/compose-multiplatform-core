@@ -18,6 +18,7 @@ package androidx.wear.compose.material3.samples
 
 import androidx.annotation.Sampled
 import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -40,7 +41,15 @@ import kotlinx.coroutines.launch
 @Sampled
 @Composable
 fun AnimatedTextSample() {
+    val scope = rememberCoroutineScope()
     val animatable = remember { Animatable(0f) }
+    val animate = {
+        scope.launch {
+            // Animate from 0 to 1 and then back to 0.
+            animatable.animateTo(1f)
+            animatable.animateTo(0f)
+        }
+    }
     val animatedTextFontRegistry =
         rememberAnimatedTextFontRegistry(
             // Variation axes at the start of the animation, width 10, weight 200
@@ -64,12 +73,9 @@ fun AnimatedTextSample() {
         // Content alignment anchors the animation at the vertical center, expanding horizontally
         contentAlignment = Alignment.CenterStart,
         progressFraction = { animatable.value },
+        modifier = Modifier.clickable(onClick = { animate() })
     )
-    LaunchedEffect(Unit) {
-        // Animate from 0 to 1 and then back to 0.
-        animatable.animateTo(1f)
-        animatable.animateTo(0f)
-    }
+    LaunchedEffect(Unit) { animate() }
 }
 
 @Sampled

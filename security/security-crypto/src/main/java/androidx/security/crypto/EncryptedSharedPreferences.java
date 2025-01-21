@@ -22,8 +22,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Pair;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.collection.ArraySet;
 
 import com.google.crypto.tink.Aead;
@@ -35,6 +33,9 @@ import com.google.crypto.tink.aead.AeadConfig;
 import com.google.crypto.tink.daead.DeterministicAeadConfig;
 import com.google.crypto.tink.integration.android.AndroidKeysetManager;
 import com.google.crypto.tink.subtle.Base64;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -121,8 +122,7 @@ public final class EncryptedSharedPreferences implements SharedPreferences {
      * @throws GeneralSecurityException when a bad master key or keyset has been attempted
      * @throws IOException              when fileName can not be used
      */
-    @NonNull
-    public static SharedPreferences create(@NonNull Context context,
+    public static @NonNull SharedPreferences create(@NonNull Context context,
             @NonNull String fileName,
             @NonNull MasterKey masterKey,
             @NonNull PrefKeyEncryptionScheme prefKeyEncryptionScheme,
@@ -152,8 +152,7 @@ public final class EncryptedSharedPreferences implements SharedPreferences {
      * @throws IOException              when fileName can not be used
      */
     @Deprecated
-    @NonNull
-    public static SharedPreferences create(@NonNull String fileName,
+    public static @NonNull SharedPreferences create(@NonNull String fileName,
             @NonNull String masterKeyAlias,
             @NonNull Context context,
             @NonNull PrefKeyEncryptionScheme prefKeyEncryptionScheme,
@@ -248,8 +247,8 @@ public final class EncryptedSharedPreferences implements SharedPreferences {
         }
 
         @Override
-        @NonNull
-        public SharedPreferences.Editor putString(@Nullable String key, @Nullable String value) {
+        public SharedPreferences.@NonNull Editor putString(@Nullable String key,
+                @Nullable String value) {
             if (value == null) {
                 value = NULL_VALUE;
             }
@@ -265,8 +264,7 @@ public final class EncryptedSharedPreferences implements SharedPreferences {
         }
 
         @Override
-        @NonNull
-        public SharedPreferences.Editor putStringSet(@Nullable String key,
+        public SharedPreferences.@NonNull Editor putStringSet(@Nullable String key,
                 @Nullable Set<String> values) {
             if (values == null) {
                 values = new ArraySet<>();
@@ -291,8 +289,7 @@ public final class EncryptedSharedPreferences implements SharedPreferences {
         }
 
         @Override
-        @NonNull
-        public SharedPreferences.Editor putInt(@Nullable String key, int value) {
+        public SharedPreferences.@NonNull Editor putInt(@Nullable String key, int value) {
             ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES + Integer.BYTES);
             buffer.putInt(EncryptedType.INT.getId());
             buffer.putInt(value);
@@ -301,8 +298,7 @@ public final class EncryptedSharedPreferences implements SharedPreferences {
         }
 
         @Override
-        @NonNull
-        public SharedPreferences.Editor putLong(@Nullable String key, long value) {
+        public SharedPreferences.@NonNull Editor putLong(@Nullable String key, long value) {
             ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES + Long.BYTES);
             buffer.putInt(EncryptedType.LONG.getId());
             buffer.putLong(value);
@@ -311,8 +307,7 @@ public final class EncryptedSharedPreferences implements SharedPreferences {
         }
 
         @Override
-        @NonNull
-        public SharedPreferences.Editor putFloat(@Nullable String key, float value) {
+        public SharedPreferences.@NonNull Editor putFloat(@Nullable String key, float value) {
             ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES + Float.BYTES);
             buffer.putInt(EncryptedType.FLOAT.getId());
             buffer.putFloat(value);
@@ -321,8 +316,7 @@ public final class EncryptedSharedPreferences implements SharedPreferences {
         }
 
         @Override
-        @NonNull
-        public SharedPreferences.Editor putBoolean(@Nullable String key, boolean value) {
+        public SharedPreferences.@NonNull Editor putBoolean(@Nullable String key, boolean value) {
             ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES + Byte.BYTES);
             buffer.putInt(EncryptedType.BOOLEAN.getId());
             buffer.put(value ? (byte) 1 : (byte) 0);
@@ -331,8 +325,7 @@ public final class EncryptedSharedPreferences implements SharedPreferences {
         }
 
         @Override
-        @NonNull
-        public SharedPreferences.Editor remove(@Nullable String key) {
+        public SharedPreferences.@NonNull Editor remove(@Nullable String key) {
             if (mEncryptedSharedPreferences.isReservedKey(key)) {
                 throw new SecurityException(key + " is a reserved key for the encryption keyset.");
             }
@@ -342,8 +335,7 @@ public final class EncryptedSharedPreferences implements SharedPreferences {
         }
 
         @Override
-        @NonNull
-        public SharedPreferences.Editor clear() {
+        public SharedPreferences.@NonNull Editor clear() {
             // Set the flag to clear on commit, this operation happens first on commit.
             // Cannot use underlying clear operation, it will remove the keysets and
             // break the editor.
@@ -413,8 +405,7 @@ public final class EncryptedSharedPreferences implements SharedPreferences {
     // SharedPreferences methods
 
     @Override
-    @NonNull
-    public Map<String, ?> getAll() {
+    public @NonNull Map<String, ?> getAll() {
         Map<String, ? super Object> allEntries = new HashMap<>();
         for (Map.Entry<String, ?> entry : mSharedPreferences.getAll().entrySet()) {
             if (!isReservedKey(entry.getKey())) {
@@ -426,17 +417,16 @@ public final class EncryptedSharedPreferences implements SharedPreferences {
         return allEntries;
     }
 
-    @Nullable
     @Override
-    public String getString(@Nullable String key, @Nullable String defValue) {
+    public @Nullable String getString(@Nullable String key, @Nullable String defValue) {
         Object value = getDecryptedObject(key);
         return (value instanceof String ? (String) value : defValue);
     }
 
     @SuppressWarnings("unchecked")
-    @Nullable
     @Override
-    public Set<String> getStringSet(@Nullable String key, @Nullable Set<String> defValues) {
+    public @Nullable Set<String> getStringSet(@Nullable String key,
+            @Nullable Set<String> defValues) {
         Set<String> returnValues;
         Object value = getDecryptedObject(key);
         if (value instanceof Set) {
@@ -481,8 +471,7 @@ public final class EncryptedSharedPreferences implements SharedPreferences {
     }
 
     @Override
-    @NonNull
-    public SharedPreferences.Editor edit() {
+    public SharedPreferences.@NonNull Editor edit() {
         return new Editor(this, mSharedPreferences.edit());
     }
 
@@ -519,8 +508,7 @@ public final class EncryptedSharedPreferences implements SharedPreferences {
             return mId;
         }
 
-        @Nullable
-        public static EncryptedType fromId(int id) {
+        public static @Nullable EncryptedType fromId(int id) {
             switch (id) {
                 case 0:
                     return STRING;

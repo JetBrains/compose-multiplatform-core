@@ -52,5 +52,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.recyclerview.selection"
+    namespace = "androidx.recyclerview.selection"
 }

@@ -20,8 +20,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Composes optional parameters used in {@link CustomTabsSession#prefetch(Uri,
@@ -37,7 +37,7 @@ public final class PrefetchOptions {
     /**
      * The origin that prefetch is requested from.
      */
-    @Nullable public final Uri sourceOrigin;
+    public final @Nullable Uri sourceOrigin;
 
     @SuppressWarnings("WeakerAccess") /* synthetic access */
     PrefetchOptions(
@@ -59,8 +59,7 @@ public final class PrefetchOptions {
     private static final String KEY_SOURCE_ORIGIN =
             "androidx.browser.customtabs.PrefetchOptions.KEY_SOURCE_ORIGIN";
 
-    @NonNull
-    Bundle toBundle() {
+    @NonNull Bundle toBundle() {
         Bundle bundle = new Bundle();
         bundle.putBoolean(
                 KEY_REQUIRES_ANONYMOUS_IP_WHEN_CROSS_ORIGIN, requiresAnonymousIpWhenCrossOrigin);
@@ -71,8 +70,7 @@ public final class PrefetchOptions {
     }
 
     @SuppressWarnings({"WeakerAccess", "deprecation"}) /* synthetic access */
-    @NonNull
-    static PrefetchOptions fromBundle(@NonNull Bundle bundle) {
+    static @NonNull PrefetchOptions fromBundle(@NonNull Bundle bundle) {
         Uri uri;
         if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             uri = Api33Impl.getParcelable(bundle, KEY_SOURCE_ORIGIN,
@@ -92,7 +90,7 @@ public final class PrefetchOptions {
     @ExperimentalPrefetch
     public static final class Builder {
         private boolean mRequiresAnonymousIpWhenCrossOrigin;
-        @Nullable private Uri mSourceOrigin;
+        private @Nullable Uri mSourceOrigin;
 
         /**
          * Creates an empty {@link PrefetchOptions.Builder} object.
@@ -103,8 +101,7 @@ public final class PrefetchOptions {
          * Set true to anonymize IP address of the prefetch request when it is cross-origin.
          */
         @SuppressWarnings("MissingGetterMatchingBuilder")
-        @NonNull
-        public Builder setRequiresAnonymousIpWhenCrossOrigin(
+        public @NonNull Builder setRequiresAnonymousIpWhenCrossOrigin(
                 boolean requiresAnonymousIpWhenCrossOrigin) {
             mRequiresAnonymousIpWhenCrossOrigin = requiresAnonymousIpWhenCrossOrigin;
             return this;
@@ -114,8 +111,7 @@ public final class PrefetchOptions {
          * The origin that prefetch is requested from.
          */
         @SuppressWarnings("MissingGetterMatchingBuilder")
-        @NonNull
-        public Builder setSourceOrigin(@NonNull Uri sourceOrigin) {
+        public @NonNull Builder setSourceOrigin(@NonNull Uri sourceOrigin) {
             mSourceOrigin = sourceOrigin;
             return this;
         }
@@ -123,8 +119,7 @@ public final class PrefetchOptions {
         /**
          * Combines all the options that have been into a {@link PrefetchOptions} object.
          */
-        @NonNull
-        public PrefetchOptions build() {
+        public @NonNull PrefetchOptions build() {
             return new PrefetchOptions(
                     mRequiresAnonymousIpWhenCrossOrigin, mSourceOrigin);
         }

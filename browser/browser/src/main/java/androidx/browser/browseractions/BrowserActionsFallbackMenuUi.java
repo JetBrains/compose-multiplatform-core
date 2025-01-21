@@ -35,12 +35,13 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.browser.R;
 import androidx.core.widget.TextViewCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,11 +69,9 @@ class BrowserActionsFallbackMenuUi implements AdapterView.OnItemClickListener {
     private final List<BrowserActionItem> mMenuItems;
 
     @SuppressWarnings("WeakerAccess") /* synthetic access */
-    @Nullable
-    BrowserActionsFallMenuUiListener mMenuUiListener;
+    @Nullable BrowserActionsFallMenuUiListener mMenuUiListener;
 
-    @Nullable
-    private BrowserActionsFallbackMenuDialog mBrowserActionsDialog;
+    private @Nullable BrowserActionsFallbackMenuDialog mBrowserActionsDialog;
 
     /**
      * @param context The {@link Context} used to show the fallback menu.
@@ -92,8 +91,8 @@ class BrowserActionsFallbackMenuUi implements AdapterView.OnItemClickListener {
         mMenuUiListener = menuUiListener;
     }
 
-    @NonNull
-    private List<BrowserActionItem> buildFallbackMenuItemList(List<BrowserActionItem> customItems) {
+    private @NonNull List<BrowserActionItem> buildFallbackMenuItemList(
+            List<BrowserActionItem> customItems) {
         List<BrowserActionItem> fallbackMenuItems = new ArrayList<>();
         fallbackMenuItems.add(new BrowserActionItem(
                 mContext.getString(R.string.fallback_menu_item_open_in_browser),

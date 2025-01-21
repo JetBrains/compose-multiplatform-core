@@ -29,7 +29,11 @@ public sealed interface AuthenticationResult {
     public class Success(
         public val crypto: BiometricPrompt.CryptoObject?,
         @BiometricPrompt.AuthenticationResultType public val authType: Int
-    ) : AuthenticationResult
+    ) : AuthenticationResult {
+        override fun success(): Success {
+            return this
+        }
+    }
 
     /**
      * A result when an error has been encountered and authentication has stopped.
@@ -41,5 +45,29 @@ public sealed interface AuthenticationResult {
     public class Error(
         @BiometricPrompt.AuthenticationError public val errorCode: Int,
         public val errString: CharSequence
-    ) : AuthenticationResult
+    ) : AuthenticationResult {
+        override fun error(): Error {
+            return this
+        }
+    }
+
+    /** Whether this [AuthenticationResult] is a [Success]. */
+    public fun isSuccess(): Boolean {
+        return this is Success
+    }
+
+    /** Returns a [Success] only if it's a [Success], throws otherwise. */
+    public fun success(): Success? {
+        throw IllegalArgumentException("This is not a Success result.")
+    }
+
+    /** Whether this [AuthenticationResult] is an [Error]. */
+    public fun isError(): Boolean {
+        return this is Error
+    }
+
+    /** Returns a [Error] only if it's a [Error], throws otherwise. */
+    public fun error(): Error? {
+        throw IllegalArgumentException("This is not a Error result.")
+    }
 }

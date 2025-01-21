@@ -18,8 +18,8 @@ package androidx.webkit;
 
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Used to receive callbacks on {@link WebView} renderer events.

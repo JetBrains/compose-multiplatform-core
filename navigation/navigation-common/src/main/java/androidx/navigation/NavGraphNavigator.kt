@@ -15,7 +15,8 @@
  */
 package androidx.navigation
 
-import android.os.Bundle
+import androidx.savedstate.read
+import androidx.savedstate.savedState
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -89,12 +90,13 @@ public open class NavGraphNavigator(private val navigatorProvider: NavigatorProv
             // while also adding support for args declared in startRoute.
             if (startRoute != startDestination.route) {
                 val matchingArgs = startDestination.matchRoute(startRoute)?.matchingArgs
-                if (matchingArgs != null && !matchingArgs.isEmpty) {
-                    val bundle = Bundle()
-                    // we need to add args from startRoute, but it should not override existing args
-                    bundle.putAll(matchingArgs)
-                    args?.let { bundle.putAll(args) }
-                    args = bundle
+                if (matchingArgs != null && !matchingArgs.read { isEmpty() }) {
+                    args = savedState {
+                        // we need to add args from startRoute, but it should not override existing
+                        // args
+                        putAll(matchingArgs)
+                        args?.let { putAll(it) }
+                    }
                 }
             }
             // by this point, the bundle should contain all arguments that don't have
@@ -102,7 +104,7 @@ public open class NavGraphNavigator(private val navigatorProvider: NavigatorProv
             if (startDestination.arguments.isNotEmpty()) {
                 val missingRequiredArgs =
                     startDestination.arguments.missingRequiredArguments { key ->
-                        if (args == null) true else !args.containsKey(key)
+                        if (args == null) true else !args.read { contains(key) }
                     }
                 require(missingRequiredArgs.isEmpty()) {
                     "Cannot navigate to startDestination $startDestination. " +

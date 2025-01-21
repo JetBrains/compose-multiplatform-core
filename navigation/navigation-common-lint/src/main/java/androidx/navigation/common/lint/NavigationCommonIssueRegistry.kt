@@ -18,6 +18,7 @@
 
 package androidx.navigation.common.lint
 
+import androidx.navigation.lint.MIN_ANALYSIS_API
 import com.android.tools.lint.client.api.IssueRegistry
 import com.android.tools.lint.client.api.Vendor
 import com.android.tools.lint.detector.api.CURRENT_API
@@ -25,8 +26,10 @@ import com.android.tools.lint.detector.api.CURRENT_API
 /** [IssueRegistry] containing common specific lint issues. */
 class NavigationCommonIssueRegistry : IssueRegistry() {
     // Tests are run with this version. We ensure that with ApiLintVersionsTest
-    override val api = 14
-    override val minApi = CURRENT_API
+    override val api = CURRENT_API
+    // hardcode minApi to 14 because lint dep version 31.8 has CURRENT_API as 16, but
+    // analysis API requires minApi 14
+    override val minApi = MIN_ANALYSIS_API
 
     override val issues
         get() =

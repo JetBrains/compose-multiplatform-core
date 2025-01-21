@@ -23,7 +23,6 @@ import androidx.collection.IntObjectMap
 import androidx.collection.MutableIntObjectMap
 import androidx.collection.MutableIntSet
 import androidx.collection.emptyIntObjectMap
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.node.OwnerScope
 import androidx.compose.ui.semantics.Role
@@ -134,7 +133,6 @@ internal fun SemanticsNode.isImportantForAccessibility() =
         (unmergedConfig.isMergingSemanticsOfDescendants ||
             unmergedConfig.containsImportantForAccessibility())
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Suppress("DEPRECATION")
 internal val SemanticsNode.isHidden: Boolean
     // A node is considered hidden if it is transparent, or explicitly is hidden from accessibility.

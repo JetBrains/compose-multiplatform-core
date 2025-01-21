@@ -23,7 +23,6 @@ import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CornerBasedShape
@@ -1000,16 +999,18 @@ private fun SurfaceIconToggleButton(
                     )
                     .then(
                         when (shape) {
-                            is ShapeWithOpticalCentering -> {
-                                Modifier.opticalCentering(
+                            is ShapeWithHorizontalCenterOptically -> {
+                                Modifier.horizontalCenterOptically(
                                     shape = shape,
-                                    basePadding = PaddingValues()
+                                    maxStartOffset = Int.MAX_VALUE.dp,
+                                    maxEndOffset = Int.MAX_VALUE.dp
                                 )
                             }
                             is CornerBasedShape -> {
-                                Modifier.opticalCentering(
+                                Modifier.horizontalCenterOptically(
                                     shape = shape,
-                                    basePadding = PaddingValues()
+                                    maxStartOffset = Int.MAX_VALUE.dp,
+                                    maxEndOffset = Int.MAX_VALUE.dp
                                 )
                             }
                             else -> {

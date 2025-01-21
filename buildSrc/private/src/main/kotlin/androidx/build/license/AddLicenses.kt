@@ -23,11 +23,8 @@ import androidx.build.getSupportRootFolder
 import androidx.build.multiplatformExtension
 import com.android.build.gradle.tasks.BundleAar
 import java.io.File
-import java.net.URI
-import java.nio.file.FileSystem
-import java.nio.file.FileSystemNotFoundException
-import java.nio.file.FileSystems
 import java.nio.file.Files
+import kotlin.io.path.readBytes
 import org.gradle.api.Project
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.withType
@@ -60,16 +57,14 @@ internal fun Project.addLicensesToPublishedArtifacts(license: License) {
         task.from(licenseFile) { it.into("META-INF/$projectSubdir") }
     }
 
+    val kmpSubdir = "/default/licenses/$projectSubdir"
     // Remove when KMP creates API for adding license file and setting its location:
     // https://youtrack.jetbrains.com/issue/KT-69084
     tasks.withType<CInteropProcess>().configureEach { task ->
         task.doLast {
-            val outputFile = task.outputFileProvider.get()
-            outputFile.writeToZip { fileSystem ->
-                val licenseDir = fileSystem.getPath("/default/licenses/$projectSubdir")
-                Files.createDirectories(licenseDir)
-                Files.writeString(licenseDir.resolve("LICENSE.txt"), licenseFile.readText())
-            }
+            val licenseDir = File(task.outputFileProvider.get(), kmpSubdir).toPath()
+            Files.createDirectories(licenseDir)
+            Files.write(licenseDir.resolve("LICENSE.txt"), licenseFile.readBytes())
         }
     }
 
@@ -80,39 +75,15 @@ internal fun Project.addLicensesToPublishedArtifacts(license: License) {
             val compileTaskOutputFileProvider =
                 compilation.compileTaskProvider.flatMap { it.outputFile }
 
-            compilation.compileTaskProvider.configure {
-                it.doLast {
-                    compileTaskOutputFileProvider.get().writeToZip { fileSystem ->
-                        val licenseDir = fileSystem.getPath("/default/licenses/$projectSubdir")
-                        Files.createDirectories(licenseDir)
-                        Files.writeString(licenseDir.resolve("LICENSE.txt"), licenseFile.readText())
-                    }
+            compilation.compileTaskProvider.configure { task ->
+                task.doLast {
+                    val licenseDir = File(compileTaskOutputFileProvider.get(), kmpSubdir).toPath()
+                    Files.createDirectories(licenseDir)
+                    Files.write(licenseDir.resolve("LICENSE.txt"), licenseFile.readBytes())
                 }
             }
         }
     }
-}
-
-private fun File.writeToZip(write: (FileSystem) -> Unit) {
-    val fileUri = toURI()
-    val uri =
-        URI(
-            "jar:file",
-            fileUri.userInfo,
-            fileUri.host,
-            fileUri.port,
-            fileUri.path,
-            fileUri.query,
-            fileUri.fragment
-        )
-
-    val fileSystem =
-        try {
-            FileSystems.getFileSystem(uri)
-        } catch (e: FileSystemNotFoundException) {
-            FileSystems.newFileSystem(uri, mapOf("create" to "true"))
-        }
-    fileSystem.use(write)
 }
 
 private val Project.licenseUrlToLicenseFile: Map<String, File>

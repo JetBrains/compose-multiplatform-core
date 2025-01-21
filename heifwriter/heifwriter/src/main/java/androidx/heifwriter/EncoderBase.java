@@ -26,7 +26,6 @@ import android.media.MediaCodec.BufferInfo;
 import android.media.MediaCodec.CodecException;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
-import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.opengl.GLES20;
 import android.os.Handler;
@@ -38,9 +37,10 @@ import android.util.Range;
 import android.view.Surface;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.lang.annotation.Retention;
@@ -523,7 +523,7 @@ public class EncoderBase implements AutoCloseable,
      * @param data byte array containing the YUV data. If the format has more than one planes,
      *             they must be concatenated.
      */
-    public void addYuvBuffer(int format, @NonNull byte[] data) {
+    public void addYuvBuffer(int format, byte @NonNull [] data) {
         if (mInputMode != INPUT_MODE_BUFFER) {
             throw new IllegalStateException(
                 "addYuvBuffer is only allowed in buffer input mode");
@@ -629,7 +629,7 @@ public class EncoderBase implements AutoCloseable,
      * EOS is sent, this would block until the data is copied. After input EOS
      * is sent, this would return immediately.
      */
-    private void addYuvBufferInternal(@Nullable byte[] data) {
+    private void addYuvBufferInternal(byte @Nullable [] data) {
         ByteBuffer buffer = acquireEmptyBuffer();
         if (buffer == null) {
             return;

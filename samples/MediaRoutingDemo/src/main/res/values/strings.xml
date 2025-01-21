@@ -41,6 +41,8 @@
     <string name="mixed_volume_route_group_name">Mixed Volume Route Group</string>
     <string name="sample_route_description">Sample route from AndroidXDemos</string>
 
+    <string name="wrapper_media_route_provider_service">Media Route Provider Service provides wrapper routes</string>
+
     <string name="sample_dynamic_group_mrp_service">Media Route Provider Service Support Library Sample (supporting dynamic group)</string>
     <string name="dg_tv_route_name1">Dynamic Route 1 - TV</string>
     <string name="dg_tv_route_name2">Dynamic Route 2 - TV</string>
@@ -48,6 +50,11 @@
     <string name="dg_speaker_route_name4">Dynamic Route 4 - Speaker</string>
     <string name="dg_not_unselectable_route_name5"> Dynamic Route 5 - Not unselectable</string>
     <string name="dg_static_group_route_name6"> Dynamic Route 6 - Static Group</string>
+
+    <!-- Preference settings -->
+    <string name="prefs_header_media_route_provider_configuration">Media Route Provider Configurations</string>
+    <string name="prefs_enable_simple_route_provider_title">Enable simple route provider</string>
+    <string name="prefs_enable_wrapper_route_provider_title">Enable wrapper route provider</string>
 
     <string name="sender_driven_route_name1">Sender Driven TV 1</string>
     <string name="sender_driven_route_name2">Sender Driven TV 2</string>

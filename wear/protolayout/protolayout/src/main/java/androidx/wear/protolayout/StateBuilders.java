@@ -20,8 +20,6 @@ import static androidx.wear.protolayout.expression.Preconditions.checkNotNull;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.expression.AppDataKey;
@@ -32,6 +30,9 @@ import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.expression.RequiresSchemaVersion;
 import androidx.wear.protolayout.expression.proto.DynamicDataProto;
 import androidx.wear.protolayout.proto.StateProto;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,7 +47,7 @@ public final class StateBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class State {
         private final StateProto.State mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         private static final int MAX_STATE_ENTRY_COUNT = 30;
 
@@ -68,14 +69,12 @@ public final class StateBuilders {
         }
 
         /** Gets the ID of the clickable that was last clicked. */
-        @NonNull
-        public String getLastClickableId() {
+        public @NonNull String getLastClickableId() {
             return mImpl.getLastClickableId();
         }
 
         /** Gets any shared state between the provider and renderer. */
-        @NonNull
-        public Map<AppDataKey<?>, DynamicDataValue<?>> getKeyToValueMapping() {
+        public @NonNull Map<AppDataKey<?>, DynamicDataValue<?>> getKeyToValueMapping() {
             Map<AppDataKey<?>, DynamicDataValue<?>> map = new HashMap<>();
             for (Entry<String, DynamicDataProto.DynamicDataValue> entry :
                     mImpl.getIdToValueMap().entrySet()) {
@@ -88,16 +87,14 @@ public final class StateBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static State fromProto(
-                @NonNull StateProto.State proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull State fromProto(
+                StateProto.@NonNull State proto, @Nullable Fingerprint fingerprint) {
             return new State(proto, fingerprint);
         }
 
@@ -106,21 +103,18 @@ public final class StateBuilders {
          * object created using this method can't be added to any other wrapper.
          */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static State fromProto(@NonNull StateProto.State proto) {
+        public static @NonNull State fromProto(StateProto.@NonNull State proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public StateProto.State toProto() {
+        public StateProto.@NonNull State toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "State{"
                     + "lastClickableId="
                     + getLastClickableId()
@@ -145,8 +139,7 @@ public final class StateBuilders {
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
             @SuppressLint("MissingGetterMatchingBuilder")
-            @NonNull
-            public <T extends DynamicType> Builder addKeyToValueMapping(
+            public <T extends DynamicType> @NonNull Builder addKeyToValueMapping(
                     @NonNull AppDataKey<T> sourceKey, @NonNull DynamicDataValue<T> value) {
                 if (mImpl.getIdToValueMap().size() >= getMaxStateEntryCount()) {
                     throw new IllegalStateException(
@@ -168,8 +161,7 @@ public final class StateBuilders {
              * @throws IllegalStateException if number of key/value pairs are greater than {@link
              *     #getMaxStateEntryCount()}.
              */
-            @NonNull
-            public State build() {
+            public @NonNull State build() {
                 if (mImpl.getIdToValueMap().size() > getMaxStateEntryCount()) {
                     throw new IllegalStateException(
                             String.format(

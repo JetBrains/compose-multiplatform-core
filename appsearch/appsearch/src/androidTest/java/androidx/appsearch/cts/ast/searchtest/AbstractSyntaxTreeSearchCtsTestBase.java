@@ -48,11 +48,10 @@ import androidx.appsearch.ast.query.HasPropertyNode;
 import androidx.appsearch.ast.query.PropertyDefinedNode;
 import androidx.appsearch.ast.query.SearchNode;
 import androidx.appsearch.ast.query.SemanticSearchNode;
-import androidx.appsearch.flags.CheckFlagsRule;
-import androidx.appsearch.flags.DeviceFlagsValueProvider;
 import androidx.appsearch.flags.Flags;
-import androidx.appsearch.flags.RequiresFlagsEnabled;
 import androidx.appsearch.testutil.AppSearchEmail;
+import androidx.appsearch.testutil.AppSearchTestUtils;
+import androidx.appsearch.testutil.flags.RequiresFlagsEnabled;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -60,6 +59,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.RuleChain;
 
 import java.util.List;
 
@@ -76,7 +76,7 @@ public abstract class AbstractSyntaxTreeSearchCtsTestBase {
             new EmbeddingVector(new float[]{1, 1, 1, 1, -2}, "model_v1");
 
     @Rule
-    public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
+    public final RuleChain mRuleChain = AppSearchTestUtils.createCommonTestRules();
 
     protected abstract ListenableFuture<AppSearchSession> createSearchSessionAsync(
             @NonNull String dbName) throws Exception;

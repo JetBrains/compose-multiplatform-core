@@ -22,6 +22,7 @@ package androidx.wear.protolayout.material3.tokens;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.LayoutElementBuilders.FontSetting;
+
 import java.util.List;
 
 /** A list of text style values in Material3 for supporting product needs. */

@@ -176,7 +176,7 @@ internal interface InProgressStrokesRenderHelper {
     /**
      * Called by [InProgressStrokesManager] when no new content is expected and the current
      * in-progress content should be handed off to be rendered by HWUI. HWUI rendering of finished
-     * strokes is not handled by this class - this will lead to
+     * strokes is not handled by this class - this must synchronously call
      * [Callback.onStrokeCohortHandoffToHwui], which is responsible for initiating HWUI rendering.
      * Between this and [Callback.onStrokeCohortHandoffToHwuiComplete], any calls to [requestDraw]
      * may not (and may never become) visible.

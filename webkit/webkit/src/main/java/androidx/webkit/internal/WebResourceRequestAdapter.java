@@ -18,9 +18,8 @@ package androidx.webkit.internal;
 
 import android.webkit.WebResourceRequest;
 
-import androidx.annotation.NonNull;
-
 import org.chromium.support_lib_boundary.WebResourceRequestBoundaryInterface;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Adapter between {@link androidx.webkit.WebResourceRequestCompat} and

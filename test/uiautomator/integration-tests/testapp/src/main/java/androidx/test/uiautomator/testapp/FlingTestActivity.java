@@ -22,7 +22,7 @@ import android.view.MotionEvent;
 import android.view.ViewConfiguration;
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class FlingTestActivity extends Activity {
 

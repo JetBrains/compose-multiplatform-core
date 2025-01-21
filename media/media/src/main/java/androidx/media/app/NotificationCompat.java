@@ -34,13 +34,14 @@ import android.view.View;
 import android.widget.RemoteViews;
 
 import androidx.annotation.DrawableRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
 import androidx.annotation.RestrictTo;
 import androidx.core.app.NotificationBuilderWithBuilderAccessor;
 import androidx.media.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Class containing media specfic {@link androidx.core.app.NotificationCompat.Style styles}
@@ -190,8 +191,7 @@ public class NotificationCompat {
          * @return MediaStyle
          */
         @RequiresPermission(MEDIA_CONTENT_CONTROL)
-        @NonNull
-        public MediaStyle setRemotePlaybackInfo(@NonNull CharSequence deviceName,
+        public @NonNull MediaStyle setRemotePlaybackInfo(@NonNull CharSequence deviceName,
                 @DrawableRes int iconResource, @Nullable PendingIntent chipIntent) {
             mDeviceName = deviceName;
             mDeviceIcon = iconResource;

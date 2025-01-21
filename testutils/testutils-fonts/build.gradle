@@ -53,5 +53,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.testutils.fonts"
+    namespace = "androidx.testutils.fonts"
 }

@@ -95,12 +95,13 @@ public final class MediaRouter {
     @interface UnselectReason {}
 
     /**
-     * Passed to {@link MediaRouteProvider.RouteController#onUnselect(int)},
-     * {@link Callback#onRouteUnselected(MediaRouter, RouteInfo, int)} and
-     * {@link Callback#onRouteSelected(MediaRouter, RouteInfo, int)} when the reason the route
-     * was unselected is unknown.
+     * Passed to {@link MediaRouteProvider.RouteController#onUnselect(int)}, {@link
+     * Callback#onRouteUnselected(MediaRouter, RouteInfo, int)} and {@link
+     * Callback#onRouteSelected(MediaRouter, RouteInfo, int)} when the reason the route was
+     * unselected is unknown.
      */
     public static final int UNSELECT_REASON_UNKNOWN = 0;
+
     /**
      * Passed to {@link MediaRouteProvider.RouteController#onUnselect(int)},
      * {@link Callback#onRouteUnselected(MediaRouter, RouteInfo, int)} and
@@ -127,6 +128,69 @@ public final class MediaRouter {
      * a different route.
      */
     public static final int UNSELECT_REASON_ROUTE_CHANGED = 3;
+
+    @IntDef({
+        REASON_DISCONNECTED,
+        REASON_ROUTE_NOT_AVAILABLE,
+        REASON_ROUTE_NOT_ENABLED,
+        REASON_REJECTED_FOR_SELECTED_ROUTE,
+        REASON_UNSUPPORTED_FOR_NON_DYNAMIC_CONTROLLER,
+        REASON_FAILED_TO_CREATE_DYNAMIC_GROUP_ROUTE_CONTROLLER,
+        REASON_ROUTE_CONNECTION_TIMEOUT
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    @interface DisconnectReason {}
+
+    /**
+     * The route connection is disconnected by {@link RouteInfo#disconnect()}.
+     *
+     * @see Callback#onRouteDisconnected(MediaRouter, RouteInfo, int)
+     */
+    public static final int REASON_DISCONNECTED = 1;
+
+    /**
+     * The route connection has failed because the requested route is no longer available.
+     *
+     * @see Callback#onRouteDisconnected(MediaRouter, RouteInfo, int)
+     */
+    public static final int REASON_ROUTE_NOT_AVAILABLE = 2;
+
+    /**
+     * The route connection has failed because the requested route is not enabled.
+     *
+     * @see Callback#onRouteDisconnected(MediaRouter, RouteInfo, int)
+     */
+    public static final int REASON_ROUTE_NOT_ENABLED = 3;
+
+    /**
+     * The route connection has failed because the requested route is a selected route.
+     *
+     * @see Callback#onRouteDisconnected(MediaRouter, RouteInfo, int)
+     */
+    public static final int REASON_REJECTED_FOR_SELECTED_ROUTE = 4;
+
+    /**
+     * The route connection has failed because the provider for the requested route doesn't support
+     * dynamic groups.
+     *
+     * @see Callback#onRouteDisconnected(MediaRouter, RouteInfo, int)
+     */
+    public static final int REASON_UNSUPPORTED_FOR_NON_DYNAMIC_CONTROLLER = 5;
+
+    /**
+     * The route connection has failed because the provider for the requested route failed to create
+     * a dynamic group route controller.
+     *
+     * @see Callback#onRouteDisconnected(MediaRouter, RouteInfo, int)
+     */
+    public static final int REASON_FAILED_TO_CREATE_DYNAMIC_GROUP_ROUTE_CONTROLLER = 6;
+
+    /**
+     * The route connection has failed due to a timeout.
+     *
+     * @see Callback#onRouteDisconnected(MediaRouter, RouteInfo, int)
+     */
+    public static final int REASON_ROUTE_CONNECTION_TIMEOUT = 7;
 
     /** Maintains global media router state for the process. */
     static GlobalMediaRouter sGlobal;
@@ -379,13 +443,12 @@ public final class MediaRouter {
 
     /**
      * Gets the currently selected route.
-     * <p>
-     * The application should examine the route's
-     * {@link RouteInfo#getControlFilters media control intent filters} to assess the
-     * capabilities of the route before attempting to use it.
-     * </p>
+     *
+     * <p>The application should examine the route's {@link RouteInfo#getControlFilters media
+     * control intent filters} to assess the capabilities of the route before attempting to use it.
      *
      * <h3>Example</h3>
+     *
      * <pre>
      * public boolean playMovie() {
      *     MediaRouter mediaRouter = MediaRouter.getInstance(context);
@@ -428,6 +491,19 @@ public final class MediaRouter {
     public RouteInfo getSelectedRoute() {
         checkCallingThread();
         return getGlobalRouter().getSelectedRoute();
+    }
+
+    /**
+     * Returns the currently connected dynamic group routes.
+     *
+     * <p>If there is a selected route, the list of connected routes doesn't include it. The route
+     * connection doesn't affect the route selection. Apps can use {@link RouteInfo#connect()} to
+     * create dynamic group route connections.
+     */
+    @MainThread
+    public @NonNull List<RouteInfo> getConnectedRoutes() {
+        checkCallingThread();
+        return getGlobalRouter().getConnectedRoutes();
     }
 
     /**
@@ -480,13 +556,14 @@ public final class MediaRouter {
 
     /**
      * Unselects the current route and selects the default route instead.
-     * <p>
-     * The reason given must be one of:
+     *
+     * <p>The reason given must be one of:
+     *
      * <ul>
-     * <li>{@link MediaRouter#UNSELECT_REASON_UNKNOWN}</li>
-     * <li>{@link MediaRouter#UNSELECT_REASON_DISCONNECTED}</li>
-     * <li>{@link MediaRouter#UNSELECT_REASON_STOPPED}</li>
-     * <li>{@link MediaRouter#UNSELECT_REASON_ROUTE_CHANGED}</li>
+     *   <li>{@link MediaRouter#UNSELECT_REASON_UNKNOWN}
+     *   <li>{@link MediaRouter#UNSELECT_REASON_DISCONNECTED}
+     *   <li>{@link MediaRouter#UNSELECT_REASON_STOPPED}
+     *   <li>{@link MediaRouter#UNSELECT_REASON_ROUTE_CHANGED}
      * </ul>
      *
      * <p>Must be called on the main thread.
@@ -1050,21 +1127,21 @@ public final class MediaRouter {
         return getGlobalRouter().getCallbackCount();
     }
 
-    /**
-     * Returns whether transferring media from remote to local is enabled.
-     */
+    /** Returns whether transferring media from remote to local is enabled. */
     static boolean isTransferToLocalEnabled() {
         return getGlobalRouter().isTransferToLocalEnabled();
     }
 
     /**
      * Provides information about a media route.
-     * <p>
-     * Each media route has a list of {@link MediaControlIntent media control}
-     * {@link #getControlFilters intent filters} that describe the capabilities of the
-     * route and the manner in which it is used and controlled.
-     * </p>
+     *
+     * <p>Each media route has a list of {@link MediaControlIntent media control} {@link
+     * #getControlFilters intent filters} that describe the capabilities of the route and the manner
+     * in which it is used and controlled.
      */
+    // ExecutorRegistration lint suppressed since this class is used by apps. It is not required to
+    // implement AutoCloseable and CloseGuard classes.
+    @SuppressWarnings("NotCloseable")
     public static class RouteInfo {
         private final ProviderInfo mProvider;
         final String mDescriptorId;
@@ -1089,7 +1166,7 @@ public final class MediaRouter {
         private IntentSender mSettingsIntent;
         MediaRouteDescriptor mDescriptor;
 
-        private List<RouteInfo> mMemberRoutes = new ArrayList<>();
+        private List<RouteInfo> mRoutesInGroup = new ArrayList<>();
         private Map<String, DynamicRouteDescriptor> mDynamicGroupDescriptors;
 
         @IntDef({
@@ -1540,7 +1617,6 @@ public final class MediaRouter {
             return mConnectionState;
         }
 
-
         /**
          * Returns true if this route is currently selected.
          *
@@ -1557,6 +1633,20 @@ public final class MediaRouter {
         public boolean isSelected() {
             checkCallingThread();
             return getGlobalRouter().getSelectedRoute() == this;
+        }
+
+        /**
+         * Returns {@code true} if this route is currently connected.
+         *
+         * <p>Must be called on the main thread.
+         *
+         * @return True if this route is currently connected
+         * @see MediaRouter#getConnectedRoutes()
+         */
+        @MainThread
+        public boolean isConnected() {
+            checkCallingThread();
+            return getGlobalRouter().getConnectedRoutes().contains(this);
         }
 
         /**
@@ -1949,8 +2039,8 @@ public final class MediaRouter {
         }
 
         /**
-         * Gets a collection of extra properties about this route that were supplied
-         * by its media route provider, or null if none.
+         * Gets a collection of extra properties about this route that were supplied by its media
+         * route provider, or null if none.
          */
         @Nullable
         public Bundle getExtras() {
@@ -1988,13 +2078,42 @@ public final class MediaRouter {
                             syncMediaRoute1Provider);
         }
 
+        /**
+         * Connects this route without selecting it.
+         *
+         * <p>If the route is already selected, connecting this route will do nothing.
+         *
+         * <p>Must be called on the main thread.
+         */
+        // ExecutorRegistration lint suppressed since this method is called by app on the main
+        // thread. It doesn't require apps to provide an executor.
+        @SuppressWarnings("ExecutorRegistration")
+        @MainThread
+        public void connect() {
+            checkCallingThread();
+            getGlobalRouter().connectRoute(this);
+        }
+
+        /**
+         * Disconnects this route.
+         *
+         * <p>If it is a connected route, then it will disconnect this route. If it is a selected
+         * route, disconnecting this route will do nothing.
+         *
+         * <p>Must be called on the main thread.
+         */
+        @MainThread
+        public void disconnect() {
+            checkCallingThread();
+            getGlobalRouter().disconnectRoute(this);
+        }
 
         /**
          * Returns true if the route has one or more members
          */
         @RestrictTo(LIBRARY)
         public boolean isGroup() {
-            return !mMemberRoutes.isEmpty();
+            return !mRoutesInGroup.isEmpty();
         }
 
         /**
@@ -2018,10 +2137,18 @@ public final class MediaRouter {
          *
          * @return The list of the routes in this group
          */
-        @RestrictTo(LIBRARY)
         @NonNull
-        public List<RouteInfo> getMemberRoutes() {
-            return Collections.unmodifiableList(mMemberRoutes);
+        public List<RouteInfo> getRoutesInGroup() {
+            return Collections.unmodifiableList(mRoutesInGroup);
+        }
+
+        /**
+         * Returns the {@link MediaRouteDescriptor} of this media route info or {@code null} if it
+         * is not updated by its provider yet.
+         */
+        @Nullable
+        public MediaRouteDescriptor getMediaRouteDescriptor() {
+            return mDescriptor;
         }
 
         /**
@@ -2065,11 +2192,11 @@ public final class MediaRouter {
                     .append(", providerPackageName=").append(mProvider.getPackageName());
             if (isGroup()) {
                 sb.append(", members=[");
-                final int count = mMemberRoutes.size();
+                final int count = mRoutesInGroup.size();
                 for (int i = 0; i < count; i++) {
                     if (i > 0) sb.append(", ");
-                    if (mMemberRoutes.get(i) != this) {
-                        sb.append(mMemberRoutes.get(i).getId());
+                    if (mRoutesInGroup.get(i) != this) {
+                        sb.append(mRoutesInGroup.get(i).getId());
                     }
                 }
                 sb.append(']');
@@ -2211,7 +2338,7 @@ public final class MediaRouter {
 
                 List<String> groupMemberIds = descriptor.getGroupMemberIds();
                 List<RouteInfo> routes = new ArrayList<>();
-                if (groupMemberIds.size() != mMemberRoutes.size()) {
+                if (groupMemberIds.size() != mRoutesInGroup.size()) {
                     memberChanged = true;
                 }
                 //TODO: Clean this up not to reference the global router
@@ -2222,14 +2349,14 @@ public final class MediaRouter {
                         RouteInfo groupMember = globalRouter.getRoute(uniqueId);
                         if (groupMember != null) {
                             routes.add(groupMember);
-                            if (!memberChanged && !mMemberRoutes.contains(groupMember)) {
+                            if (!memberChanged && !mRoutesInGroup.contains(groupMember)) {
                                 memberChanged = true;
                             }
                         }
                     }
                 }
                 if (memberChanged) {
-                    mMemberRoutes = routes;
+                    mRoutesInGroup = routes;
                     changes |= CHANGE_GENERAL;
                 }
             }
@@ -2247,7 +2374,7 @@ public final class MediaRouter {
         }
 
         void updateDynamicDescriptors(Collection<DynamicRouteDescriptor> dynamicDescriptors) {
-            mMemberRoutes.clear();
+            mRoutesInGroup.clear();
             if (mDynamicGroupDescriptors == null) {
                 mDynamicGroupDescriptors = new ArrayMap<>();
             }
@@ -2262,12 +2389,13 @@ public final class MediaRouter {
 
                 if ((dynamicDescriptor.getSelectionState() == DynamicRouteDescriptor.SELECTING)
                         || (dynamicDescriptor.getSelectionState()
-                        == DynamicRouteDescriptor.SELECTED)) {
-                    mMemberRoutes.add(route);
+                                == DynamicRouteDescriptor.SELECTED)) {
+                    mRoutesInGroup.add(route);
                 }
             }
-            getGlobalRouter().mCallbackHandler.post(
-                    GlobalMediaRouter.CallbackHandler.MSG_ROUTE_CHANGED, this);
+            getGlobalRouter()
+                    .mCallbackHandler
+                    .post(GlobalMediaRouter.CallbackHandler.MSG_ROUTE_CHANGED, this);
         }
 
         RouteInfo findRouteByDynamicRouteDescriptor(DynamicRouteDescriptor dynamicDescriptor) {
@@ -2275,9 +2403,7 @@ public final class MediaRouter {
             return getProvider().findRouteByDescriptorId(descriptorId);
         }
 
-        /**
-         * Represents the dynamic group state of the {@link RouteInfo}.
-         */
+        /** Represents the dynamic group state of the {@link RouteInfo}. */
         @RestrictTo(LIBRARY)
         public static final class DynamicGroupState {
             final DynamicRouteDescriptor mDynamicDescriptor;
@@ -2288,15 +2414,17 @@ public final class MediaRouter {
 
             /**
              * Gets the selection state of the route when the {@link MediaRouteProvider} of the
-             * route supports
-             * {@link MediaRouteProviderDescriptor#supportsDynamicGroupRoute() dynamic group}.
+             * route supports {@link MediaRouteProviderDescriptor#supportsDynamicGroupRoute()
+             * dynamic group}.
              *
              * @return The selection state of the route: {@link DynamicRouteDescriptor#UNSELECTED},
-             * {@link DynamicRouteDescriptor#SELECTING}, or {@link DynamicRouteDescriptor#SELECTED}.
+             *     {@link DynamicRouteDescriptor#SELECTING}, or {@link
+             *     DynamicRouteDescriptor#SELECTED}.
              */
             @RestrictTo(LIBRARY)
             public int getSelectionState() {
-                return (mDynamicDescriptor != null) ? mDynamicDescriptor.getSelectionState()
+                return (mDynamicDescriptor != null)
+                        ? mDynamicDescriptor.getSelectionState()
                         : DynamicRouteDescriptor.UNSELECTED;
             }
 
@@ -2518,6 +2646,36 @@ public final class MediaRouter {
         }
 
         /**
+         * Called when the supplied media route becomes connected.
+         *
+         * <p>Route connection doesn't affect the selected route. Apps can keep their selected
+         * routes while connecting to other routes.
+         *
+         * @param router the media router reporting the event.
+         * @param connectedRoute the route that has been connected.
+         * @param requestedRoute the route that was requested to be connected.
+         */
+        public void onRouteConnected(
+                @NonNull MediaRouter router,
+                @NonNull RouteInfo connectedRoute,
+                @NonNull RouteInfo requestedRoute) {}
+
+        /**
+         * Called when the supplied media route becomes disconnected.
+         *
+         * <p>Route disconnection doesn't affect the selected route. Apps can keep their selected
+         * route while disconnecting other connected routes.
+         *
+         * @param router the media router reporting the event.
+         * @param route the route that has been disconnected.
+         * @param reason the reason for disconnecting the route.
+         */
+        public void onRouteDisconnected(
+                @NonNull MediaRouter router,
+                @NonNull RouteInfo route,
+                @DisconnectReason int reason) {}
+
+        /**
          * Called when a media route has been added.
          *
          * @param router The media router reporting the event.
@@ -2685,9 +2843,7 @@ public final class MediaRouter {
         }
     }
 
-    /**
-     * Class to notify events about transfer.
-     */
+    /** Class to notify events about transfer. */
     static final class PrepareTransferNotifier {
         private static final long TRANSFER_TIMEOUT_MS = 15_000;
 
@@ -2724,8 +2880,7 @@ public final class MediaRouter {
             mMemberRoutes = (memberRoutes == null) ? null : new ArrayList<>(memberRoutes);
 
             // For the case it's not handled properly
-            router.mCallbackHandler.postDelayed(this::finishTransfer,
-                    TRANSFER_TIMEOUT_MS);
+            router.mCallbackHandler.postDelayed(this::finishTransfer, TRANSFER_TIMEOUT_MS);
         }
 
         void setFuture(ListenableFuture<Void> future) {

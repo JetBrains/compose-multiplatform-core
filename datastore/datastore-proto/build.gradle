@@ -41,5 +41,5 @@ dependencies {
     testImplementation(libs.kotlinCoroutinesTest)
 }
 android {
-    namespace "androidx.datastore.protodatastore"
+    namespace = "androidx.datastore.protodatastore"
 }

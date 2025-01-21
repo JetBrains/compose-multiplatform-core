@@ -36,5 +36,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.viewpager"
+    namespace = "androidx.viewpager"
 }

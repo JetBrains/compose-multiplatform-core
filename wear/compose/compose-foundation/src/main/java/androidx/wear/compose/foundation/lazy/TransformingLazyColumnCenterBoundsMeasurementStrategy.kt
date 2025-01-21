@@ -21,6 +21,7 @@ import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.util.fastForEach
+import androidx.wear.compose.foundation.lazy.layout.LazyLayoutKeyIndexMap
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
@@ -49,6 +50,7 @@ internal class TransformingLazyColumnCenterBoundsMeasurementStrategy :
     override fun measure(
         itemsCount: Int,
         measuredItemProvider: MeasuredItemProvider,
+        keyIndexMap: LazyLayoutKeyIndexMap,
         itemSpacing: Int,
         containerConstraints: Constraints,
         anchorItemIndex: Int,
@@ -60,7 +62,13 @@ internal class TransformingLazyColumnCenterBoundsMeasurementStrategy :
         layout: (Int, Int, Placeable.PlacementScope.() -> Unit) -> MeasureResult
     ): TransformingLazyColumnMeasureResult {
         if (itemsCount == 0) {
-            return emptyMeasureResult(containerConstraints, layout)
+            return emptyMeasureResult(
+                containerConstraints = containerConstraints,
+                // We don't report content padding correctly with center bounds strategy.
+                beforeContentPadding = 0,
+                afterContentPadding = 0,
+                layout = layout
+            )
         }
         val visibleItems = ArrayDeque<TransformingLazyColumnMeasuredItem>()
         var canScrollForward = true
@@ -136,13 +144,21 @@ internal class TransformingLazyColumnCenterBoundsMeasurementStrategy :
         }
 
         if (visibleItems.isEmpty()) {
-            return emptyMeasureResult(containerConstraints, layout)
+            return emptyMeasureResult(
+                containerConstraints = containerConstraints,
+                // We don't report content padding correctly with center bounds strategy.
+                beforeContentPadding = 0,
+                afterContentPadding = 0,
+                layout = layout
+            )
         }
 
         val anchorItem =
             visibleItems.minBy {
                 abs(it.offset + it.transformedHeight / 2 - containerConstraints.maxHeight / 2)
             }
+
+        visibleItems.fastForEach { it.isInMeasure = false }
 
         return TransformingLazyColumnMeasureResult(
             anchorItemIndex = anchorItem.index,
@@ -158,6 +174,7 @@ internal class TransformingLazyColumnCenterBoundsMeasurementStrategy :
             coroutineScope = coroutineScope,
             density = density,
             itemSpacing = itemSpacing,
+            // We don't report content padding correctly with center bounds strategy.
             beforeContentPadding = 0,
             afterContentPadding = 0,
             measureResult =

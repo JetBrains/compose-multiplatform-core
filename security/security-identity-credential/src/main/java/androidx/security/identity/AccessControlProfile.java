@@ -16,8 +16,8 @@
 
 package androidx.security.identity;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.security.cert.X509Certificate;
 
@@ -33,8 +33,7 @@ public class AccessControlProfile {
     AccessControlProfile() {
     }
 
-    @NonNull
-    AccessControlProfileId getAccessControlProfileId() {
+    @NonNull AccessControlProfileId getAccessControlProfileId() {
         return mAccessControlProfileId;
     }
 
@@ -46,8 +45,7 @@ public class AccessControlProfile {
         return mUserAuthenticationRequired;
     }
 
-    @Nullable
-    X509Certificate getReaderCertificate() {
+    @Nullable X509Certificate getReaderCertificate() {
         return mReaderCertificate;
     }
 

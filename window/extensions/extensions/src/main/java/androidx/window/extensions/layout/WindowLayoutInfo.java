@@ -16,8 +16,8 @@
 
 package androidx.window.extensions.layout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -32,8 +32,7 @@ public class WindowLayoutInfo {
      * <p>NOTE: All display features returned with this container must be cropped to the application
      * window and reported within the coordinate space of the window that was provided by the app.
      */
-    @NonNull
-    private List<DisplayFeature> mDisplayFeatures;
+    private @NonNull List<DisplayFeature> mDisplayFeatures;
 
     public WindowLayoutInfo(@NonNull List<DisplayFeature> displayFeatures) {
         mDisplayFeatures = Collections.unmodifiableList(displayFeatures);
@@ -42,14 +41,12 @@ public class WindowLayoutInfo {
     /**
      * Gets the list of display features present within the window.
      */
-    @NonNull
-    public List<DisplayFeature> getDisplayFeatures() {
+    public @NonNull List<DisplayFeature> getDisplayFeatures() {
         return mDisplayFeatures;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("ExtensionWindowLayoutInfo { ExtensionDisplayFeatures[ ");
         for (int i = 0; i < mDisplayFeatures.size(); i = i + 1) {

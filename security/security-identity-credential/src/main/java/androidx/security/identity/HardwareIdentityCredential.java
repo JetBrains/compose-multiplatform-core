@@ -19,10 +19,11 @@ package androidx.security.identity;
 import android.icu.util.Calendar;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.biometric.BiometricPrompt;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 import java.security.InvalidAlgorithmParameterException;
@@ -83,7 +84,7 @@ class HardwareIdentityCredential extends IdentityCredential {
     }
 
     @Override
-    public void setSessionTranscript(@NonNull byte[] sessionTranscript) {
+    public void setSessionTranscript(byte @NonNull [] sessionTranscript) {
         if (mSessionTranscript != null) {
             throw new RuntimeException("SessionTranscript already set");
         }
@@ -128,8 +129,7 @@ class HardwareIdentityCredential extends IdentityCredential {
     }
 
     @Override
-    public @NonNull
-    byte[] encryptMessageToReader(@NonNull byte[] messagePlaintext) {
+    public     byte @NonNull [] encryptMessageToReader(byte @NonNull [] messagePlaintext) {
         ensureSessionEncryptionKey();
         byte[] messageCiphertextAndAuthTag = null;
         try {
@@ -154,8 +154,7 @@ class HardwareIdentityCredential extends IdentityCredential {
     }
 
     @Override
-    public @NonNull
-    byte[] decryptMessageFromReader(@NonNull byte[] messageCiphertext)
+    public     byte @NonNull [] decryptMessageFromReader(byte @NonNull [] messageCiphertext)
             throws MessageDecryptionException {
         ensureSessionEncryptionKey();
         ByteBuffer iv = ByteBuffer.allocate(12);
@@ -181,8 +180,7 @@ class HardwareIdentityCredential extends IdentityCredential {
     }
 
     @Override
-    public @NonNull
-    Collection<X509Certificate> getCredentialKeyCertificateChain() {
+    public     @NonNull Collection<X509Certificate> getCredentialKeyCertificateChain() {
         return mCredential.getCredentialKeyCertificateChain();
     }
 
@@ -193,19 +191,17 @@ class HardwareIdentityCredential extends IdentityCredential {
     }
 
     @Override
-    @Nullable
-    public BiometricPrompt.CryptoObject getCryptoObject() {
+    public BiometricPrompt.@Nullable CryptoObject getCryptoObject() {
         BiometricPrompt.CryptoObject cryptoObject = new BiometricPrompt.CryptoObject(mCredential);
         return cryptoObject;
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    @NonNull
-    public ResultData getEntries(
-            @Nullable byte[] requestMessage,
-            @NonNull java.util.Map<String, Collection<String>> entriesToRequest,
-            @Nullable byte[] readerSignature)
+    public @NonNull ResultData getEntries(
+            byte @Nullable [] requestMessage,
+            java.util.@NonNull Map<String, Collection<String>> entriesToRequest,
+            byte @Nullable [] readerSignature)
             throws NoAuthenticationKeyAvailableException,
             InvalidReaderSignatureException, InvalidRequestMessageException,
             EphemeralPublicKeyNotFoundException {
@@ -255,15 +251,14 @@ class HardwareIdentityCredential extends IdentityCredential {
     }
 
     @Override
-    public @NonNull
-    Collection<X509Certificate> getAuthKeysNeedingCertification() {
+    public     @NonNull Collection<X509Certificate> getAuthKeysNeedingCertification() {
         return mCredential.getAuthKeysNeedingCertification();
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public void storeStaticAuthenticationData(@NonNull X509Certificate authenticationKey,
-            @NonNull byte[] staticAuthData) throws UnknownAuthenticationKeyException {
+            byte @NonNull [] staticAuthData) throws UnknownAuthenticationKeyException {
         try {
             mCredential.storeStaticAuthenticationData(authenticationKey, staticAuthData);
         } catch (android.security.identity.UnknownAuthenticationKeyException e) {
@@ -273,8 +268,7 @@ class HardwareIdentityCredential extends IdentityCredential {
 
     @SuppressWarnings("deprecation")
     @Override
-    public @NonNull
-    int[] getAuthenticationDataUsageCount() {
+    public     int @NonNull [] getAuthenticationDataUsageCount() {
         return mCredential.getAuthenticationDataUsageCount();
     }
 
@@ -282,37 +276,37 @@ class HardwareIdentityCredential extends IdentityCredential {
     private static class ApiImplS {
         @SuppressWarnings("deprecation")
         static void callSetAllowUsingExpiredKeys(
-                @NonNull android.security.identity.IdentityCredential credential,
+                android.security.identity.@NonNull IdentityCredential credential,
                 boolean allowUsingExpiredKeys) {
             credential.setAllowUsingExpiredKeys(allowUsingExpiredKeys);
         }
 
         static void callStoreStaticAuthenticationData(
-                @NonNull android.security.identity.IdentityCredential credential,
+                android.security.identity.@NonNull IdentityCredential credential,
                 @NonNull X509Certificate authenticationKey,
                 @NonNull Instant expirationDate,
-                @NonNull byte[] staticAuthData)
+                byte @NonNull [] staticAuthData)
                 throws android.security.identity.UnknownAuthenticationKeyException {
             credential.storeStaticAuthenticationData(authenticationKey,
                     expirationDate,
                     staticAuthData);
         }
 
-        static @NonNull byte[] callProveOwnership(
-                @NonNull android.security.identity.IdentityCredential credential,
-                @NonNull byte[] challenge) {
+        static byte @NonNull [] callProveOwnership(
+                android.security.identity.@NonNull IdentityCredential credential,
+                byte @NonNull [] challenge) {
             return credential.proveOwnership(challenge);
         }
 
-        static @NonNull byte[] callDelete(
-                @NonNull android.security.identity.IdentityCredential credential,
-                @NonNull byte[] challenge) {
+        static byte @NonNull [] callDelete(
+                android.security.identity.@NonNull IdentityCredential credential,
+                byte @NonNull [] challenge) {
             return credential.delete(challenge);
         }
 
-        static @NonNull byte[] callUpdate(
-                @NonNull android.security.identity.IdentityCredential credential,
-                @NonNull android.security.identity.PersonalizationData personalizationData) {
+        static byte @NonNull [] callUpdate(
+                android.security.identity.@NonNull IdentityCredential credential,
+                android.security.identity.@NonNull PersonalizationData personalizationData) {
             return credential.update(personalizationData);
         }
     }
@@ -330,7 +324,7 @@ class HardwareIdentityCredential extends IdentityCredential {
     public void storeStaticAuthenticationData(
             @NonNull X509Certificate authenticationKey,
             @NonNull Calendar expirationDate,
-            @NonNull byte[] staticAuthData)
+            byte @NonNull [] staticAuthData)
             throws UnknownAuthenticationKeyException {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             try {
@@ -349,7 +343,7 @@ class HardwareIdentityCredential extends IdentityCredential {
     }
 
     @Override
-    public @NonNull byte[] proveOwnership(@NonNull byte[] challenge)  {
+    public byte @NonNull [] proveOwnership(byte @NonNull [] challenge)  {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             return ApiImplS.callProveOwnership(mCredential, challenge);
         } else {
@@ -358,7 +352,7 @@ class HardwareIdentityCredential extends IdentityCredential {
     }
 
     @Override
-    public @NonNull byte[] delete(@NonNull byte[] challenge)  {
+    public byte @NonNull [] delete(byte @NonNull [] challenge)  {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             return ApiImplS.callDelete(mCredential, challenge);
         } else {
@@ -367,7 +361,7 @@ class HardwareIdentityCredential extends IdentityCredential {
     }
 
     @Override
-    public @NonNull byte[] update(@NonNull PersonalizationData personalizationData) {
+    public byte @NonNull [] update(@NonNull PersonalizationData personalizationData) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             return ApiImplS.callUpdate(mCredential,
                     HardwareWritableIdentityCredential.convertPDFromJetpack(personalizationData));

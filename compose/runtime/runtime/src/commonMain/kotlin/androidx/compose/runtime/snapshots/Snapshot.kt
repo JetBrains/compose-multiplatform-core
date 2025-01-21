@@ -29,14 +29,14 @@ import androidx.compose.runtime.internal.AtomicReference
 import androidx.compose.runtime.internal.JvmDefaultWithCompatibility
 import androidx.compose.runtime.internal.SnapshotThreadLocal
 import androidx.compose.runtime.internal.currentThreadId
-import androidx.compose.runtime.makeSynchronizedObject
+import androidx.compose.runtime.platform.makeSynchronizedObject
+import androidx.compose.runtime.platform.synchronized
 import androidx.compose.runtime.requirePrecondition
 import androidx.compose.runtime.snapshots.Snapshot.Companion.takeMutableSnapshot
 import androidx.compose.runtime.snapshots.Snapshot.Companion.takeSnapshot
 import androidx.compose.runtime.snapshots.tooling.creatingSnapshot
 import androidx.compose.runtime.snapshots.tooling.dispatchObserverOnApplied
 import androidx.compose.runtime.snapshots.tooling.dispatchObserverOnDispose
-import androidx.compose.runtime.synchronized
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract

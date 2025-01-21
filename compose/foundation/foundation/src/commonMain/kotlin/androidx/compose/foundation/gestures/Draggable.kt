@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.Velocity
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
@@ -304,12 +305,14 @@ internal class DraggableNode(
 
     override fun onDragStarted(startedPosition: Offset) {
         if (!isAttached || onDragStarted == NoOpOnDragStarted) return
-        coroutineScope.launch { this@DraggableNode.onDragStarted(this, startedPosition) }
+        coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            this@DraggableNode.onDragStarted(this, startedPosition)
+        }
     }
 
     override fun onDragStopped(velocity: Velocity) {
         if (!isAttached || onDragStopped == NoOpOnDragStopped) return
-        coroutineScope.launch {
+        coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
             this@DraggableNode.onDragStopped(this, velocity.reverseIfNeeded().toFloat(orientation))
         }
     }

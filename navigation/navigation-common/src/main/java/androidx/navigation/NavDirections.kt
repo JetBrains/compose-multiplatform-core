@@ -15,8 +15,8 @@
  */
 package androidx.navigation
 
-import android.os.Bundle
 import androidx.annotation.IdRes
+import androidx.savedstate.SavedState
 
 /** An interface that describes a navigation operation: action's id and arguments */
 public interface NavDirections {
@@ -24,5 +24,5 @@ public interface NavDirections {
     @get:IdRes public val actionId: Int
 
     /** Arguments to pass to the destination */
-    public val arguments: Bundle
+    public val arguments: SavedState
 }

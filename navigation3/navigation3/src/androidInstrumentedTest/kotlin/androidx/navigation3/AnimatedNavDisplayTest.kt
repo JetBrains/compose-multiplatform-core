@@ -46,8 +46,8 @@ class AnimatedNavDisplayTest {
             val manager = rememberNavWrapperManager(emptyList())
             AnimatedNavDisplay(backstack, wrapperManager = manager) {
                 when (it) {
-                    first -> Record(first) { Text(first) }
-                    second -> Record(second) { Text(second) }
+                    first -> NavRecord(first) { Text(first) }
+                    second -> NavRecord(second) { Text(second) }
                     else -> error("Invalid key passed")
                 }
             }

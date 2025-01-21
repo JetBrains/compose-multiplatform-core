@@ -1138,6 +1138,10 @@ package androidx.compose.runtime.tooling {
     property public abstract boolean isEmpty;
   }
 
+  public final class CompositionDataKt {
+    method public static androidx.compose.runtime.tooling.CompositionInstance? findCompositionInstance(androidx.compose.runtime.tooling.CompositionData);
+  }
+
   @kotlin.jvm.JvmDefaultWithCompatibility public interface CompositionGroup extends androidx.compose.runtime.tooling.CompositionData {
     method public Iterable<java.lang.Object?> getData();
     method public default int getGroupSize();
@@ -1153,6 +1157,14 @@ package androidx.compose.runtime.tooling {
     property public abstract Object? node;
     property public default int slotsSize;
     property public abstract String? sourceInfo;
+  }
+
+  public interface CompositionInstance {
+    method public androidx.compose.runtime.tooling.CompositionGroup? findContextGroup();
+    method public androidx.compose.runtime.tooling.CompositionData getData();
+    method public androidx.compose.runtime.tooling.CompositionInstance? getParent();
+    property public abstract androidx.compose.runtime.tooling.CompositionData data;
+    property public abstract androidx.compose.runtime.tooling.CompositionInstance? parent;
   }
 
   @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeRuntimeApi public interface CompositionObserver {

@@ -22,7 +22,7 @@ package androidx.compose.runtime {
   }
 
   public final class ActualJvm_jvmKt {
-    method @kotlin.PublishedApi internal static inline <R> R synchronized(Object lock, kotlin.jvm.functions.Function0<? extends R> block);
+    method @Deprecated @kotlin.PublishedApi internal static inline <R> R synchronized(Object lock, kotlin.jvm.functions.Function0<? extends R> block);
   }
 
   @kotlin.jvm.JvmDefaultWithCompatibility public interface Applier<N> {
@@ -902,6 +902,14 @@ package androidx.compose.runtime.internal {
 
 }
 
+package androidx.compose.runtime.platform {
+
+  public final class Synchronization_androidKt {
+    method @kotlin.PublishedApi internal static inline <R> R synchronized(Object lock, kotlin.jvm.functions.Function0<? extends R> block);
+  }
+
+}
+
 package androidx.compose.runtime.reflect {
 
   public final class ComposableMethod {
@@ -1210,6 +1218,10 @@ package androidx.compose.runtime.tooling {
     property public abstract boolean isEmpty;
   }
 
+  public final class CompositionDataKt {
+    method public static androidx.compose.runtime.tooling.CompositionInstance? findCompositionInstance(androidx.compose.runtime.tooling.CompositionData);
+  }
+
   @kotlin.jvm.JvmDefaultWithCompatibility public interface CompositionGroup extends androidx.compose.runtime.tooling.CompositionData {
     method public Iterable<java.lang.Object?> getData();
     method public default int getGroupSize();
@@ -1225,6 +1237,14 @@ package androidx.compose.runtime.tooling {
     property public abstract Object? node;
     property public default int slotsSize;
     property public abstract String? sourceInfo;
+  }
+
+  public interface CompositionInstance {
+    method public androidx.compose.runtime.tooling.CompositionGroup? findContextGroup();
+    method public androidx.compose.runtime.tooling.CompositionData getData();
+    method public androidx.compose.runtime.tooling.CompositionInstance? getParent();
+    property public abstract androidx.compose.runtime.tooling.CompositionData data;
+    property public abstract androidx.compose.runtime.tooling.CompositionInstance? parent;
   }
 
   @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeRuntimeApi public interface CompositionObserver {

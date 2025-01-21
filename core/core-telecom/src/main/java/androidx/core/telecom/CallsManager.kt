@@ -57,11 +57,9 @@ import androidx.core.telecom.internal.utils.Utils
 import androidx.core.telecom.internal.utils.Utils.Companion.remapJetpackCapsToPlatformCaps
 import androidx.core.telecom.util.ExperimentalAppActions
 import java.util.UUID
-import java.util.concurrent.CancellationException
 import java.util.concurrent.Executor
 import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.awaitClose
@@ -170,7 +168,6 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
         internal const val PLACEHOLDER_VALUE_ACCOUNT_BUNDLE = "isCoreTelecomAccount"
 
         // fail messages specific to addCall
-        internal const val CALL_CREATION_FAILURE_MSG = "The call failed to be added."
         internal const val ADD_CALL_TIMEOUT = 5000L
         internal const val SWITCH_TO_SPEAKER_TIMEOUT = 1000L
         private val TAG: String = CallsManager::class.java.simpleName.toString()
@@ -265,7 +262,8 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
      * @throws UnsupportedOperationException if the device is on an invalid build
      * @throws CallException if the platform cannot add the call (e.g. reached max # of calls) or
      *   failed with an exception (e.g. call was already removed)
-     * @throws CancellationException if the call failed to be added within 5000 milliseconds
+     * @throws androidx.core.telecom.CallException.ERROR_OPERATION_TIMED_OUT if the call failed to
+     *   be added within 5000 milliseconds
      */
     @RequiresPermission(value = "android.permission.MANAGE_OWN_CALLS")
     public suspend fun addCall(
@@ -421,7 +419,6 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
      * @see addCall For more documentation on the operations/parameters of this class
      */
     @Suppress("ClassVerificationFailure")
-    @OptIn(ExperimentalCoroutinesApi::class)
     @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)
     internal suspend fun addCall(
         callAttributes: CallAttributesCompat,
@@ -535,9 +532,14 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
 
             mConnectionService.createConnectionRequest(mTelecomManager, request)
 
-            pauseExecutionUntilCallIsReadyOrTimeout(openResult, blockingSessionExecution, request)
+            val result =
+                pauseExecutionUntilCallIsReadyOrTimeout(
+                    openResult,
+                    blockingSessionExecution,
+                    request
+                )
+                    as AddCallResult.SuccessCallSessionLegacy
 
-            val result = openResult.getCompleted() as AddCallResult.SuccessCallSessionLegacy
             closableCallSession = result.callSessionLegacy
             val scope =
                 CallSessionLegacy.CallControlScopeImpl(
@@ -555,13 +557,13 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
         closableCallSession.close()
     }
 
-    @ExperimentalCoroutinesApi
     @VisibleForTesting
     internal suspend fun pauseExecutionUntilCallIsReadyOrTimeout(
         openResult: CompletableDeferred<AddCallResult>,
         blockingSessionExecution: CompletableDeferred<Unit>? = null,
         request: JetpackConnectionService.PendingConnectionRequest? = null,
-    ) {
+    ): AddCallResult {
+        var result: AddCallResult
         try {
             withTimeout(ADD_CALL_TIMEOUT) {
                 // This log will print once a request is sent to the platform to add a new call.
@@ -572,7 +574,16 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
                     "addCall: pausing [$coroutineContext] execution" +
                         " until the CallControl or Connection is ready"
                 )
-                openResult.await()
+                result = openResult.await()
+                // In the event the platform encountered an exception while adding the call request,
+                // re-throw the call exception out to the client
+                if (result is AddCallResult.Error) {
+                    blockingSessionExecution?.complete(Unit)
+                    val error = result as AddCallResult.Error
+                    throw CallException(
+                        androidx.core.telecom.CallException.fromTelecomCode(error.errorCode)
+                    )
+                }
             }
         } catch (timeout: TimeoutCancellationException) {
             // If this block is entered, the platform failed to create the call in time and hung.
@@ -581,21 +592,13 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
                 JetpackConnectionService.mPendingConnectionRequests.remove(request)
             }
             blockingSessionExecution?.complete(Unit)
-            openResult.cancel(CancellationException(CALL_CREATION_FAILURE_MSG))
-        }
-        // In the event the platform encountered an exception while adding the call request,
-        // re-throw the call exception out to the client
-        val result = openResult.getCompleted()
-        if (result is AddCallResult.Error) {
-            blockingSessionExecution?.complete(Unit)
-            throw CallException(
-                androidx.core.telecom.CallException.fromTelecomCode(result.errorCode)
-            )
+            throw CallException(androidx.core.telecom.CallException.ERROR_OPERATION_TIMED_OUT)
         }
         // This log will print once the CallControl object or Connection is returned from the
         // the platform. This means the call was added successfully and Core-Telecom is ready to
         // run the clients CallControlScope block.
         Log.i(TAG, "addCall: creating call session and running the clients scope")
+        return result
     }
 
     internal fun getPhoneAccountHandleForPackage(): PhoneAccountHandle {

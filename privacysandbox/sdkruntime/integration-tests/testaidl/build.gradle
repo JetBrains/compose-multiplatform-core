@@ -21,7 +21,7 @@ plugins {
 }
 
 android {
-    namespace 'androidx.privacysandbox.sdkruntime.integration.testaidl'
+    namespace = "androidx.privacysandbox.sdkruntime.integration.testaidl"
 
     buildFeatures {
         aidl = true

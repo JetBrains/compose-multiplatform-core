@@ -137,7 +137,7 @@ constructor(private val threads: Threads, private val graphConfig: CameraGraph.C
                     "Failed to create reprocessable captures session from $cameraDevice for" +
                         " $captureSessionState!"
                 }
-                captureSessionState.disconnect()
+                captureSessionState.shutdown()
             }
         } else {
             if (
@@ -171,7 +171,7 @@ internal class AndroidMHighSpeedSessionFactory @Inject constructor(private val t
                 "Failed to create ConstrainedHighSpeedCaptureSession " +
                     "from $cameraDevice for $captureSessionState!"
             }
-            captureSessionState.disconnect()
+            captureSessionState.shutdown()
         }
         return emptyMap()
     }
@@ -513,7 +513,7 @@ constructor(
                 "Failed to create ExtensionCaptureSession from $cameraDevice " +
                     "for $captureSessionState!"
             }
-            captureSessionState.disconnect()
+            captureSessionState.shutdown()
         }
 
         return emptyMap()

@@ -20,7 +20,7 @@ android {
     sourceSets {
         main.assets.srcDirs new File(fontDir, "font").getAbsolutePath()
     }
-    namespace "androidx.emoji.bundled"
+    namespace = "androidx.emoji.bundled"
 }
 
 dependencies {

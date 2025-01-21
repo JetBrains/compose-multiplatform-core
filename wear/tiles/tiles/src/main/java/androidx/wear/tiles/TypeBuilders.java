@@ -18,12 +18,13 @@ package androidx.wear.tiles;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.proto.TypesProto;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Builders for extensible primitive types used by layout elements.
@@ -37,7 +38,7 @@ public final class TypeBuilders {
     /** An int32 type. */
     public static final class Int32Prop {
         private final TypesProto.Int32Prop mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         Int32Prop(TypesProto.Int32Prop impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -51,18 +52,15 @@ public final class TypeBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
-        @NonNull
-        static Int32Prop fromProto(@NonNull TypesProto.Int32Prop proto) {
+        static @NonNull Int32Prop fromProto(TypesProto.@NonNull Int32Prop proto) {
             return new Int32Prop(proto, null);
         }
 
-        @NonNull
-        TypesProto.Int32Prop toProto() {
+        TypesProto.@NonNull Int32Prop toProto() {
             return mImpl;
         }
 
@@ -74,16 +72,14 @@ public final class TypeBuilders {
             public Builder() {}
 
             /** Sets the value. */
-            @NonNull
-            public Builder setValue(int value) {
+            public @NonNull Builder setValue(int value) {
                 mImpl.setValue(value);
                 mFingerprint.recordPropertyUpdate(1, value);
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public Int32Prop build() {
+            public @NonNull Int32Prop build() {
                 return new Int32Prop(mImpl.build(), mFingerprint);
             }
         }
@@ -92,7 +88,7 @@ public final class TypeBuilders {
     /** A string type. */
     public static final class StringProp {
         private final TypesProto.StringProp mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         StringProp(TypesProto.StringProp impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -100,25 +96,21 @@ public final class TypeBuilders {
         }
 
         /** Gets the value. Intended for testing purposes only. */
-        @NonNull
-        public String getValue() {
+        public @NonNull String getValue() {
             return mImpl.getValue();
         }
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
-        @NonNull
-        static StringProp fromProto(@NonNull TypesProto.StringProp proto) {
+        static @NonNull StringProp fromProto(TypesProto.@NonNull StringProp proto) {
             return new StringProp(proto, null);
         }
 
-        @NonNull
-        TypesProto.StringProp toProto() {
+        TypesProto.@NonNull StringProp toProto() {
             return mImpl;
         }
 
@@ -130,16 +122,14 @@ public final class TypeBuilders {
             public Builder() {}
 
             /** Sets the value. */
-            @NonNull
-            public Builder setValue(@NonNull String value) {
+            public @NonNull Builder setValue(@NonNull String value) {
                 mImpl.setValue(value);
                 mFingerprint.recordPropertyUpdate(1, value.hashCode());
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public StringProp build() {
+            public @NonNull StringProp build() {
                 return new StringProp(mImpl.build(), mFingerprint);
             }
         }
@@ -148,7 +138,7 @@ public final class TypeBuilders {
     /** A float type. */
     public static final class FloatProp {
         private final TypesProto.FloatProp mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         FloatProp(TypesProto.FloatProp impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -162,18 +152,15 @@ public final class TypeBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
-        @NonNull
-        static FloatProp fromProto(@NonNull TypesProto.FloatProp proto) {
+        static @NonNull FloatProp fromProto(TypesProto.@NonNull FloatProp proto) {
             return new FloatProp(proto, null);
         }
 
-        @NonNull
-        TypesProto.FloatProp toProto() {
+        TypesProto.@NonNull FloatProp toProto() {
             return mImpl;
         }
 
@@ -185,16 +172,14 @@ public final class TypeBuilders {
             public Builder() {}
 
             /** Sets the value. */
-            @NonNull
-            public Builder setValue(float value) {
+            public @NonNull Builder setValue(float value) {
                 mImpl.setValue(value);
                 mFingerprint.recordPropertyUpdate(1, Float.floatToIntBits(value));
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public FloatProp build() {
+            public @NonNull FloatProp build() {
                 return new FloatProp(mImpl.build(), mFingerprint);
             }
         }
@@ -203,7 +188,7 @@ public final class TypeBuilders {
     /** A boolean type. */
     public static final class BoolProp {
         private final TypesProto.BoolProp mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         BoolProp(TypesProto.BoolProp impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -217,18 +202,15 @@ public final class TypeBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
-        @NonNull
-        static BoolProp fromProto(@NonNull TypesProto.BoolProp proto) {
+        static @NonNull BoolProp fromProto(TypesProto.@NonNull BoolProp proto) {
             return new BoolProp(proto, null);
         }
 
-        @NonNull
-        TypesProto.BoolProp toProto() {
+        TypesProto.@NonNull BoolProp toProto() {
             return mImpl;
         }
 
@@ -241,16 +223,14 @@ public final class TypeBuilders {
 
             /** Sets the value. */
             @SuppressLint("MissingGetterMatchingBuilder")
-            @NonNull
-            public Builder setValue(boolean value) {
+            public @NonNull Builder setValue(boolean value) {
                 mImpl.setValue(value);
                 mFingerprint.recordPropertyUpdate(1, Boolean.hashCode(value));
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public BoolProp build() {
+            public @NonNull BoolProp build() {
                 return new BoolProp(mImpl.build(), mFingerprint);
             }
         }

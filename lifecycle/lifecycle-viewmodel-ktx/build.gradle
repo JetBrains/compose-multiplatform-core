@@ -43,5 +43,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.lifecycle.viewmodel.ktx"
+    namespace = "androidx.lifecycle.viewmodel.ktx"
 }

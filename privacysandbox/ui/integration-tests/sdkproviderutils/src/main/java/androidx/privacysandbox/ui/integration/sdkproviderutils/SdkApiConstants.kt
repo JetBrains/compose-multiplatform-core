@@ -38,5 +38,20 @@ class SdkApiConstants {
                 const val REFRESHABLE_MEDIATION = 4
             }
         }
+
+        annotation class ScreenOrientation {
+            companion object {
+                const val PORTRAIT = 0
+                const val LANDSCAPE = 1
+                const val USER = 2
+            }
+        }
+
+        annotation class BackNavigation {
+            companion object {
+                const val ENABLED = 0
+                const val ENABLED_AFTER_5_SECONDS = 1
+            }
+        }
     }
 }

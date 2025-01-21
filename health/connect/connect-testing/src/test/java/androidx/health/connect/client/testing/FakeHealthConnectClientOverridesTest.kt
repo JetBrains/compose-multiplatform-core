@@ -18,9 +18,16 @@ package androidx.health.connect.client.testing
 
 import androidx.health.connect.client.aggregate.AggregationResultGroupedByDuration
 import androidx.health.connect.client.aggregate.AggregationResultGroupedByPeriod
+import androidx.health.connect.client.changes.UpsertionChange
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.StepsCadenceRecord
+import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.request.ChangesTokenRequest
+import androidx.health.connect.client.response.ChangesResponse
+import androidx.health.connect.client.response.InsertRecordsResponse
+import androidx.health.connect.client.response.ReadRecordResponse
+import androidx.health.connect.client.response.ReadRecordsResponse
+import androidx.health.connect.client.testing.stubs.Stub
 import androidx.health.connect.client.testing.stubs.stub
 import androidx.health.connect.client.testing.testdata.dummyAggregateGbdRequest
 import androidx.health.connect.client.testing.testdata.dummyAggregateGbpRequest
@@ -58,6 +65,32 @@ class FakeHealthConnectClientOverridesTest {
         assertThrows(IllegalStateException::class.java) {
             runBlocking { fake.aggregateGroupByDuration(dummyAggregateGbdRequest) }
         }
+    }
+
+    /* Records stubbed elements */
+
+    @Test
+    fun readRecord_stubbedElement() = runTest {
+        fake.overrides.readRecord = stub(ReadRecordResponse(runRecord1))
+        val response =
+            fake.readRecord(recordType = runRecord1::class, recordId = runRecord1.metadata.id)
+        assertThat(response.record).isEqualTo(runRecord1)
+    }
+
+    @Test
+    fun readRecords_stubbedElement() = runTest {
+        fake.overrides.readRecords =
+            stub(ReadRecordsResponse(records = listOf(runRecord1), pageToken = "test"))
+        val response = fake.readRecords(dummyReadRecordsRequest)
+        assertThat(response.records).hasSize(1)
+        assertThat(response.records.first().title).isEqualTo(runRecord1.title)
+    }
+
+    @Test
+    fun insertRecords_stubbedElement() = runTest {
+        fake.overrides.insertRecords = stub(InsertRecordsResponse(listOf("test")))
+        val response = fake.insertRecords(emptyList())
+        assertThat(response.recordIdsList.first()).isEqualTo("test")
     }
 
     /* Record exceptions */
@@ -113,6 +146,22 @@ class FakeHealthConnectClientOverridesTest {
                     recordType = runRecord1::class,
                     timeRangeFilter =
                         TimeRangeFilter(runRecord1.startTime.minusMillis(1), runRecord1.endTime)
+                )
+            }
+        }
+    }
+
+    @Test
+    fun deleteRecordsIds_stubbedException_throws() = runTest {
+        val expectedException = Exception()
+        fake.overrides.deleteRecords = stub { throw expectedException }
+
+        assertThrows(expectedException::class.java) {
+            runBlocking {
+                fake.deleteRecords(
+                    recordType = runRecord1::class,
+                    recordIdsList = emptyList(),
+                    clientRecordIdsList = emptyList()
                 )
             }
         }
@@ -240,5 +289,35 @@ class FakeHealthConnectClientOverridesTest {
         assertThrows(expectedException::class.java) {
             runBlocking { fake.getChangesToken(ChangesTokenRequest(recordTypes = emptySet())) }
         }
+    }
+
+    @Test
+    fun getChangesToken_stubbedElement() = runTest {
+        val changesToken = "test_token"
+        fake.overrides.getChangesToken = stub(changesToken)
+        val response = fake.getChangesToken(ChangesTokenRequest(setOf(StepsRecord::class)))
+
+        assertThat(response).isEqualTo(changesToken)
+    }
+
+    @Test
+    fun getChanges_stubbedElement() = runTest {
+        val changesToken = "test_token"
+        fake.overrides.getChanges = Stub { token ->
+            if (token == changesToken) {
+                ChangesResponse(
+                    changes = listOf(UpsertionChange(runRecord1)),
+                    hasMore = true,
+                    changesTokenExpired = false,
+                    nextChangesToken = "next"
+                )
+            } else {
+                throw IllegalStateException()
+            }
+        }
+        val response = fake.getChanges(changesToken)
+
+        assertThat(response.changes).hasSize(1)
+        assertThat(response.nextChangesToken).isEqualTo("next")
     }
 }

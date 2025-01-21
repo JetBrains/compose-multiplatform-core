@@ -22,10 +22,10 @@ plugins {
 
 android {
     buildFeatures {
-        viewBinding true
+        viewBinding = true
     }
-    compileSdk 35
-    namespace "androidx.metrics.performance.janktest"
+    compileSdk = 35
+    namespace = "androidx.metrics.performance.janktest"
 }
 
 dependencies {

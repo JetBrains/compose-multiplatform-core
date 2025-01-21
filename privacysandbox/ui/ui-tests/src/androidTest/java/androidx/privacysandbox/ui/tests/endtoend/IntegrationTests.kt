@@ -25,11 +25,10 @@ import android.view.View
 import android.view.View.OnLayoutChangeListener
 import android.view.ViewGroup
 import android.widget.LinearLayout
-import androidx.privacysandbox.ui.client.view.SandboxedSdkUiSessionState
-import androidx.privacysandbox.ui.client.view.SandboxedSdkUiSessionStateChangedListener
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
 import androidx.privacysandbox.ui.core.SandboxedSdkViewUiInfo
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
+import androidx.privacysandbox.ui.integration.testingutils.TestEventListener
 import androidx.privacysandbox.ui.tests.endtoend.IntegrationTestSetupRule.Companion.INITIAL_HEIGHT
 import androidx.privacysandbox.ui.tests.endtoend.IntegrationTestSetupRule.Companion.INITIAL_WIDTH
 import androidx.privacysandbox.ui.tests.util.TestSessionManager
@@ -71,8 +70,7 @@ class IntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
 
     private lateinit var context: Context
     private lateinit var view: SandboxedSdkView
-    private lateinit var stateChangeListener: TestStateChangeListener
-    private lateinit var errorLatch: CountDownLatch
+    private lateinit var eventListener: TestEventListener
     private lateinit var linearLayout: LinearLayout
     private lateinit var sessionManager: TestSessionManager
     private lateinit var activityScenario: ActivityScenario<MainActivity>
@@ -81,8 +79,7 @@ class IntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
     fun setup() {
         context = rule.context
         view = rule.view
-        stateChangeListener = rule.stateChangeListener
-        errorLatch = rule.errorLatch
+        eventListener = rule.eventListener
         linearLayout = rule.linearLayout
         sessionManager = rule.sessionManager
         activityScenario = rule.activityScenario
@@ -130,7 +127,7 @@ class IntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
         view.layout(10, 10, 10, 10)
         layoutChangeLatch.await(2000, TimeUnit.MILLISECONDS)
         assertTrue(layoutChangeLatch.count == 0.toLong())
-        assertTrue(stateChangeListener.currentState == SandboxedSdkUiSessionState.Active)
+        assertThat(eventListener.uiDisplayedLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
     }
 
     @Test
@@ -218,8 +215,8 @@ class IntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
             failToProvideUi = true
         )
 
-        assertThat(errorLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
-        assertThat(stateChangeListener.error?.message).isEqualTo("Test Session Exception")
+        assertThat(eventListener.errorLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
+        assertThat(eventListener.error?.message).isEqualTo("Test Session Exception")
     }
 
     /**
@@ -486,16 +483,11 @@ class IntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
         adapter.removeObserverFactory(factory)
         val sandboxedSdkView2 = SandboxedSdkView(context)
         activityScenario.onActivity { linearLayout.addView(sandboxedSdkView2) }
+        val eventListener2 = TestEventListener()
+        sandboxedSdkView2.setEventListener(eventListener2)
         // create a new session and wait to be active
         sandboxedSdkView2.setAdapter(adapter)
-
-        val activeLatch = CountDownLatch(1)
-        sandboxedSdkView2.addStateChangedListener { state ->
-            if (state is SandboxedSdkUiSessionState.Active) {
-                activeLatch.countDown()
-            }
-        }
-        assertThat(activeLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
+        assertThat(eventListener2.uiDisplayedLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
         // The session observers size should remain 1, showing that no new observers have been
         // created for the new session.
         assertThat(factory.sessionObservers.size).isEqualTo(1)
@@ -532,20 +524,6 @@ class IntegrationTests(private val invokeBackwardsCompatFlow: Boolean) {
                     ),
                     false
                 )
-        }
-    }
-
-    class TestStateChangeListener(private val errorLatch: CountDownLatch) :
-        SandboxedSdkUiSessionStateChangedListener {
-        var currentState: SandboxedSdkUiSessionState? = null
-        var error: Throwable? = null
-
-        override fun onStateChanged(state: SandboxedSdkUiSessionState) {
-            currentState = state
-            if (state is SandboxedSdkUiSessionState.Error) {
-                error = state.throwable
-                errorLatch.countDown()
-            }
         }
     }
 }

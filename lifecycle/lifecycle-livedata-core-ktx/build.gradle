@@ -43,5 +43,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.lifecycle.livedata.core.ktx"
+    namespace = "androidx.lifecycle.livedata.core.ktx"
 }

@@ -17,12 +17,13 @@
 package androidx.wear.tiles.material.layouts;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.proto.LayoutElementProto;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -123,16 +124,16 @@ public class EdgeContentLayout implements androidx.wear.tiles.LayoutElementBuild
             })
     @interface ContentBits {}
 
-    @NonNull private final androidx.wear.tiles.LayoutElementBuilders.Box mImpl;
+    private final androidx.wear.tiles.LayoutElementBuilders.@NonNull Box mImpl;
 
     // This contains inner columns and edge content.
-    @NonNull private final List<androidx.wear.tiles.LayoutElementBuilders.LayoutElement> mContents;
+    private final @NonNull List<androidx.wear.tiles.LayoutElementBuilders.LayoutElement> mContents;
 
     // This contains optional labels, spacers and main content.
-    @NonNull
-    private final List<androidx.wear.tiles.LayoutElementBuilders.LayoutElement> mInnerColumn;
+    private final @NonNull List<androidx.wear.tiles.LayoutElementBuilders.LayoutElement>
+            mInnerColumn;
 
-    EdgeContentLayout(@NonNull androidx.wear.tiles.LayoutElementBuilders.Box layoutElement) {
+    EdgeContentLayout(androidx.wear.tiles.LayoutElementBuilders.@NonNull Box layoutElement) {
         this.mImpl = layoutElement;
         this.mContents = mImpl.getContents();
         this.mInnerColumn =
@@ -146,20 +147,19 @@ public class EdgeContentLayout implements androidx.wear.tiles.LayoutElementBuild
     /** Builder class for {@link EdgeContentLayout}. */
     public static final class Builder
             implements androidx.wear.tiles.LayoutElementBuilders.LayoutElement.Builder {
-        @NonNull
-        private final androidx.wear.tiles.DeviceParametersBuilders.DeviceParameters
+        private final androidx.wear.tiles.DeviceParametersBuilders.@NonNull DeviceParameters
                 mDeviceParameters;
 
-        @Nullable
-        private androidx.wear.tiles.LayoutElementBuilders.LayoutElement mEdgeContent = null;
+        private androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement mEdgeContent =
+                null;
 
-        @Nullable
-        private androidx.wear.tiles.LayoutElementBuilders.LayoutElement mPrimaryLabelText = null;
+        private androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement
+                mPrimaryLabelText = null;
 
-        @Nullable
-        private androidx.wear.tiles.LayoutElementBuilders.LayoutElement mSecondaryLabelText = null;
+        private androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement
+                mSecondaryLabelText = null;
 
-        @Nullable private androidx.wear.tiles.LayoutElementBuilders.LayoutElement mContent = null;
+        private androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement mContent = null;
         private byte mMetadataContentByte = 0;
 
         /**
@@ -167,8 +167,7 @@ public class EdgeContentLayout implements androidx.wear.tiles.LayoutElementBuild
          * later be set with ({@link #setContent}.
          */
         public Builder(
-                @NonNull
-                        androidx.wear.tiles.DeviceParametersBuilders.DeviceParameters
+                androidx.wear.tiles.DeviceParametersBuilders.@NonNull DeviceParameters
                                 deviceParameters) {
             this.mDeviceParameters = deviceParameters;
         }
@@ -176,18 +175,16 @@ public class EdgeContentLayout implements androidx.wear.tiles.LayoutElementBuild
         /**
          * Sets the content to be around the edges. This can be {@link CircularProgressIndicator}.
          */
-        @NonNull
-        public Builder setEdgeContent(
-                @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement edgeContent) {
+        public @NonNull Builder setEdgeContent(
+                androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement edgeContent) {
             this.mEdgeContent = edgeContent;
             mMetadataContentByte = (byte) (mMetadataContentByte | EDGE_CONTENT_PRESENT);
             return this;
         }
 
         /** Sets the content in the primary label slot which will be above the main content. */
-        @NonNull
-        public Builder setPrimaryLabelTextContent(
-                @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement primaryLabelText) {
+        public @NonNull Builder setPrimaryLabelTextContent(
+                androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement primaryLabelText) {
             this.mPrimaryLabelText = primaryLabelText;
             mMetadataContentByte = (byte) (mMetadataContentByte | PRIMARY_LABEL_PRESENT);
             return this;
@@ -197,10 +194,8 @@ public class EdgeContentLayout implements androidx.wear.tiles.LayoutElementBuild
          * Sets the content in the secondary label slot which will be below the main content. It is
          * highly recommended to have primary label set when having secondary label.
          */
-        @NonNull
-        public Builder setSecondaryLabelTextContent(
-                @NonNull
-                        androidx.wear.tiles.LayoutElementBuilders.LayoutElement
+        public @NonNull Builder setSecondaryLabelTextContent(
+                androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement
                                 secondaryLabelText) {
             this.mSecondaryLabelText = secondaryLabelText;
             mMetadataContentByte = (byte) (mMetadataContentByte | SECONDARY_LABEL_PRESENT);
@@ -208,18 +203,16 @@ public class EdgeContentLayout implements androidx.wear.tiles.LayoutElementBuild
         }
 
         /** Sets the additional content to this layout, inside of the screen. */
-        @NonNull
-        public Builder setContent(
-                @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement content) {
+        public @NonNull Builder setContent(
+                androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement content) {
             this.mContent = content;
             mMetadataContentByte = (byte) (mMetadataContentByte | CONTENT_PRESENT);
             return this;
         }
 
         /** Constructs and returns {@link EdgeContentLayout} with the provided content and look. */
-        @NonNull
         @Override
-        public EdgeContentLayout build() {
+        public @NonNull EdgeContentLayout build() {
             float thicknessDp =
                     mEdgeContent instanceof androidx.wear.tiles.material.CircularProgressIndicator
                             ? ((androidx.wear.tiles.material.CircularProgressIndicator)
@@ -345,8 +338,7 @@ public class EdgeContentLayout implements androidx.wear.tiles.LayoutElementBuild
     }
 
     /** Returns metadata tag set to this EdgeContentLayout. */
-    @NonNull
-    byte[] getMetadataTag() {
+    byte @NonNull [] getMetadataTag() {
         return androidx.wear.tiles.material.Helper.getMetadataTagBytes(
                 androidx.wear.tiles.material.Helper.checkNotNull(
                         androidx.wear.tiles.material.Helper.checkNotNull(mImpl.getModifiers())
@@ -354,8 +346,7 @@ public class EdgeContentLayout implements androidx.wear.tiles.LayoutElementBuild
     }
 
     /** Returns the inner content from this layout. */
-    @Nullable
-    public androidx.wear.tiles.LayoutElementBuilders.LayoutElement getContent() {
+    public androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement getContent() {
         if (!areElementsPresent(CONTENT_PRESENT)) {
             return null;
         }
@@ -368,8 +359,8 @@ public class EdgeContentLayout implements androidx.wear.tiles.LayoutElementBuild
     }
 
     /** Get the primary label content from this layout. */
-    @Nullable
-    public androidx.wear.tiles.LayoutElementBuilders.LayoutElement getPrimaryLabelTextContent() {
+    public androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement
+            getPrimaryLabelTextContent() {
         if (!areElementsPresent(PRIMARY_LABEL_PRESENT)) {
             return null;
         }
@@ -378,8 +369,8 @@ public class EdgeContentLayout implements androidx.wear.tiles.LayoutElementBuild
     }
 
     /** Get the secondary label content from this layout. */
-    @Nullable
-    public androidx.wear.tiles.LayoutElementBuilders.LayoutElement getSecondaryLabelTextContent() {
+    public androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement
+            getSecondaryLabelTextContent() {
         if (!areElementsPresent(SECONDARY_LABEL_PRESENT)) {
             return null;
         }
@@ -388,8 +379,7 @@ public class EdgeContentLayout implements androidx.wear.tiles.LayoutElementBuild
     }
 
     /** Returns the edge content from this layout. */
-    @Nullable
-    public androidx.wear.tiles.LayoutElementBuilders.LayoutElement getEdgeContent() {
+    public androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement getEdgeContent() {
         if (areElementsPresent(EDGE_CONTENT_PRESENT)) {
             return mContents.get(1);
         }
@@ -402,9 +392,8 @@ public class EdgeContentLayout implements androidx.wear.tiles.LayoutElementBuild
      * container's content with {@code container.getContents().get(index)}) if that element can be
      * converted to EdgeContentLayout. Otherwise, it will return null.
      */
-    @Nullable
-    public static EdgeContentLayout fromLayoutElement(
-            @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement element) {
+    public static @Nullable EdgeContentLayout fromLayoutElement(
+            androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement element) {
         if (element instanceof EdgeContentLayout) {
             return (EdgeContentLayout) element;
         }
@@ -421,17 +410,15 @@ public class EdgeContentLayout implements androidx.wear.tiles.LayoutElementBuild
         return new EdgeContentLayout(boxElement);
     }
 
-    @NonNull
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public LayoutElementProto.LayoutElement toLayoutElementProto() {
+    public LayoutElementProto.@NonNull LayoutElement toLayoutElementProto() {
         return mImpl.toLayoutElementProto();
     }
 
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @Nullable
     @Override
-    public Fingerprint getFingerprint() {
+    public @Nullable Fingerprint getFingerprint() {
         return mImpl.getFingerprint();
     }
 }

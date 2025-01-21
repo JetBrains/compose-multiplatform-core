@@ -54,6 +54,10 @@ public final class Flags {
     public static final String FLAG_ENABLE_LIST_FILTER_HAS_PROPERTY_FUNCTION =
             FLAG_PREFIX + "enable_list_filter_has_property_function";
 
+    /** Enable the "matchScoreExpression" function in list filter query expressions. */
+    public static final String FLAG_ENABLE_LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION =
+            FLAG_PREFIX + "enable_list_filter_match_score_expression_function";
+
     /** Enable Schema Type Grouping related features. */
     public static final String FLAG_ENABLE_GROUPING_TYPE_PER_SCHEMA =
             FLAG_PREFIX + "enable_grouping_type_per_schema";
@@ -130,6 +134,10 @@ public final class Flags {
     public static final String FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG =
             FLAG_PREFIX + "enable_schema_embedding_property_config";
 
+    /** Enables embedding quantization. */
+    public static final String FLAG_ENABLE_SCHEMA_EMBEDDING_QUANTIZATION =
+            FLAG_PREFIX + "enable_schema_embedding_quantization";
+
     /** Enables informational ranking expressions. */
     public static final String FLAG_ENABLE_INFORMATIONAL_RANKING_EXPRESSIONS =
             FLAG_PREFIX + "enable_informational_ranking_expressions";
@@ -154,6 +162,10 @@ public final class Flags {
     public static final String FLAG_ENABLE_ABSTRACT_SYNTAX_TREES =
             FLAG_PREFIX + "enable_abstract_syntax_trees";
 
+    /** Enables the feature of scorable property. */
+    public static final String FLAG_ENABLE_SCORABLE_PROPERTY =
+            FLAG_PREFIX + "enable_scorable_property";
+
     /**
      * Enable the {@link androidx.appsearch.app.SearchSpec.Builder#addFilterDocumentIds}.
      */
@@ -170,6 +182,18 @@ public final class Flags {
     public static final String FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS =
             FLAG_PREFIX + "enable_additional_builder_copy_constructors";
 
+    /**
+     * Enables wrapping the parent types of a document in the corresponding
+     * {@link androidx.appsearch.app.SearchResult}, instead of in
+     * {@link androidx.appsearch.app.GenericDocument}.
+     */
+    public static final String FLAG_ENABLE_SEARCH_RESULT_PARENT_TYPES =
+            FLAG_PREFIX + "enable_search_result_parent_types";
+
+    /** Enables delete propagation type related APIs. */
+    public static final String FLAG_ENABLE_DELETE_PROPAGATION_TYPE =
+            FLAG_PREFIX + "enable_delete_propagation_type";
+
     // Whether the features should be enabled.
     //
     // In Jetpack, those should always return true.
@@ -181,6 +205,14 @@ public final class Flags {
 
     /** Whether the "hasProperty" function in list filter query expressions should be enabled. */
     public static boolean enableListFilterHasPropertyFunction() {
+        return true;
+    }
+
+    /**
+     * Whether the "matchScoreExpression" function in list filter query expressions should be
+     * enabled.
+     */
+    public static boolean enableListFilterMatchScoreExpressionFunction() {
         return true;
     }
 
@@ -269,6 +301,11 @@ public final class Flags {
         return true;
     }
 
+    /** Whether embedding quantization is enabled. */
+    public static boolean enableSchemaEmbeddingQuantization() {
+        return true;
+    }
+
     /** Whether the search parameter APIs should be enabled. */
     public static boolean enableSearchSpecSearchStringParameters() {
         return true;
@@ -325,6 +362,25 @@ public final class Flags {
      * enabled.
      */
     public static boolean enableSearchSpecFilterDocumentIds() {
+        return true;
+    }
+
+    /** Whether the feature of the scorable property should be enabled. */
+    public static boolean enableScorableProperty() {
+        return true;
+    }
+
+    /**
+     * Whether to wrap the parent types of a document in the corresponding
+     * {@link androidx.appsearch.app.SearchResult}, instead of in
+     * {@link androidx.appsearch.app.GenericDocument}.
+     */
+    public static boolean enableSearchResultParentTypes() {
+        return true;
+    }
+
+    /** Whether delete propagation related APIs should be enabled. */
+    public static boolean enableDeletePropagationType() {
         return true;
     }
 }

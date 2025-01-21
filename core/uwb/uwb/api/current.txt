@@ -143,6 +143,19 @@ package androidx.core.uwb {
 
   public interface UwbAvailabilityCallback {
     method public void onUwbStateChanged(boolean isAvailable, int reason);
+    field public static final androidx.core.uwb.UwbAvailabilityCallback.Companion Companion;
+    field public static final int STATE_CHANGE_REASON_COUNTRY_CODE_ERROR = 2; // 0x2
+    field public static final int STATE_CHANGE_REASON_SYSTEM_POLICY = 1; // 0x1
+    field public static final int STATE_CHANGE_REASON_UNKNOWN = 0; // 0x0
+  }
+
+  public static final class UwbAvailabilityCallback.Companion {
+    property public static final int STATE_CHANGE_REASON_COUNTRY_CODE_ERROR;
+    property public static final int STATE_CHANGE_REASON_SYSTEM_POLICY;
+    property public static final int STATE_CHANGE_REASON_UNKNOWN;
+    field public static final int STATE_CHANGE_REASON_COUNTRY_CODE_ERROR = 2; // 0x2
+    field public static final int STATE_CHANGE_REASON_SYSTEM_POLICY = 1; // 0x1
+    field public static final int STATE_CHANGE_REASON_UNKNOWN = 0; // 0x0
   }
 
   public interface UwbClientSessionScope {

@@ -14,7 +14,7 @@ dependencies {
 
     // Plugins we use and configure
     api(libs.kotlinGradlePlugin)
-    api(libs.kotlinCompilerEmbeddable) // for clang compiler
+    compileOnly(libs.kotlinCompiler) // for binaryCompatibilityValidator
     implementation(libs.androidGradlePlugin)
     implementation(libs.androidToolsCommon) // for com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION
     implementation(libs.androidToolsRepository) // com.android.repository for Stable AIDL plugin

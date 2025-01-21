@@ -18,8 +18,9 @@ package androidx.wear.watchface.complications.rendering.utils;
 
 import android.graphics.Rect;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Utilities for calculations related to bounds.

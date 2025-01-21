@@ -65,7 +65,7 @@ class StrokeTest {
 
     @Test
     fun constructor_withMismatchedBrushAndShape_throwsException() {
-        // Create a [ModeledShape] with render group.
+        // Create a [PartitionedMesh] with render group.
         val inputs = makeTestInputs()
         val shape = Stroke(buildTestBrush(), inputs).shape
         assertThat(shape.getRenderGroupCount()).isEqualTo(1)

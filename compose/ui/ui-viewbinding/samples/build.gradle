@@ -61,9 +61,9 @@ androidx {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
     buildFeatures {
-        viewBinding true
+        viewBinding = true
     }
-    namespace "androidx.compose.ui.viewbinding.samples"
+    namespace = "androidx.compose.ui.viewbinding.samples"
 }

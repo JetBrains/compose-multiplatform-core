@@ -72,5 +72,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.navigation.testing"
+    namespace = "androidx.navigation.testing"
 }

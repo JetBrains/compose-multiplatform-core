@@ -29,7 +29,9 @@ import androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollPro
  * @property morphingMinHeight The minimum height each element morphs to before the whole element
  *   scales down. Providing null value means no morphing effect will be applied.
  */
-internal class LazyColumnScrollTransformBehavior(private val morphingMinHeight: () -> Float?) {
+internal class TransformingLazyColumnScrollTransformBehavior(
+    private val morphingMinHeight: () -> Float?
+) {
     // Scaling
 
     /** Scale factor applied to the item at the top edge of the LazyColumn. */

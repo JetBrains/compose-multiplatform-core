@@ -24,7 +24,6 @@ import android.graphics.Rect;
 import android.view.MotionEvent;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.find.FindInFileView;
 import androidx.pdf.models.GotoLinkDestination;
@@ -33,6 +32,8 @@ import androidx.pdf.util.ZoomUtils;
 import androidx.pdf.widget.ZoomView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+import org.jspecify.annotations.NonNull;
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class SingleTapHandler {

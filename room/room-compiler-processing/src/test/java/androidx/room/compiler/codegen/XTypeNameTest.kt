@@ -24,9 +24,14 @@ import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.getField
 import androidx.room.compiler.processing.util.getMethodByJvmName
 import androidx.room.compiler.processing.util.runProcessorTest
+import com.squareup.kotlinpoet.ARRAY
 import com.squareup.kotlinpoet.INT
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.SHORT
 import com.squareup.kotlinpoet.javapoet.JClassName
+import com.squareup.kotlinpoet.javapoet.JParameterizedTypeName
+import com.squareup.kotlinpoet.javapoet.KClassName
+import com.squareup.kotlinpoet.javapoet.KWildcardTypeName
 import org.junit.Test
 
 class XTypeNameTest {
@@ -291,6 +296,58 @@ class XTypeNameTest {
                 assertThat(cls.getMethodByJvmName("f").returnType.asTypeName())
                     .isEqualTo(unit.copy(nullable = true))
                 assertThat(cls.getMethodByJvmName("g").returnType.asTypeName()).isEqualTo(voidUnit)
+            }
+        }
+    }
+
+    @Test
+    fun testArrayTypeArgs() {
+        val javaSrc =
+            Source.java(
+                "Foo",
+                """
+                import java.util.List;
+                class MyType {}
+                class MyGenericType<T> {}
+                class Test {
+                    MyType[] myTypeArray;
+                    MyGenericType<MyType[]> myGenericType;
+                }
+                """
+                    .trimIndent()
+            )
+        runProcessorTest(listOf(javaSrc)) { invocation ->
+            invocation.processingEnv.requireTypeElement("Test").let { cls ->
+                XTypeName.getArrayName(XTypeName.ANY_OBJECT)
+                JClassName.get("java.util", "List")
+                assertThat(cls.getField("myTypeArray").type.asTypeName())
+                    .isEqualTo(
+                        XTypeName.getArrayName(
+                                XTypeName.getProducerExtendsName(
+                                    XClassName.get("", "MyType").copy(nullable = true)
+                                )
+                            )
+                            .copy(nullable = true)
+                    )
+                assertThat(cls.getField("myGenericType").type.asTypeName())
+                    .isEqualTo(
+                        XTypeName(
+                            JParameterizedTypeName.get(
+                                JClassName.get("", "MyGenericType"),
+                                JArrayTypeName.of(JClassName.get("", "MyType"))
+                            ),
+                            KClassName("", "MyGenericType")
+                                .parameterizedBy(
+                                    ARRAY.parameterizedBy(
+                                            KWildcardTypeName.producerOf(
+                                                KClassName("", "MyType").copy(nullable = true)
+                                            )
+                                        )
+                                        .copy(nullable = true)
+                                )
+                                .copy(nullable = true)
+                        )
+                    )
             }
         }
     }

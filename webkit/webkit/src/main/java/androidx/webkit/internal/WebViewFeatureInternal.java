@@ -27,16 +27,17 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
-import androidx.webkit.PrefetchParameters;
+import androidx.core.os.CancellationSignal;
+import androidx.webkit.OutcomeReceiverCompat;
 import androidx.webkit.Profile;
 import androidx.webkit.ProfileStore;
 import androidx.webkit.ProxyConfig;
 import androidx.webkit.ProxyController;
 import androidx.webkit.SafeBrowsingResponseCompat;
 import androidx.webkit.ServiceWorkerClientCompat;
+import androidx.webkit.SpeculativeLoadingParameters;
 import androidx.webkit.TracingConfig;
 import androidx.webkit.TracingController;
 import androidx.webkit.WebMessageCompat;
@@ -46,8 +47,10 @@ import androidx.webkit.WebResourceRequestCompat;
 import androidx.webkit.WebViewClientCompat;
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
+import androidx.webkit.WebViewStartUpConfig;
 
 import org.chromium.support_lib_boundary.util.Features;
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 import java.io.OutputStream;
@@ -402,6 +405,16 @@ public class WebViewFeatureInternal {
 
     /**
      * This feature covers
+     * {@link androidx.webkit.ProcessGlobalConfig#setPartitionedCookiesEnabled(Context, boolean)}.
+     */
+    public static final StartupApiFeature.NoFramework
+            STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES =
+            new StartupApiFeature.NoFramework(
+                    WebViewFeature.STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES,
+                    StartupFeatures.STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES);
+
+    /**
+     * This feature covers
      * {@link WebViewCompat#getWebViewRenderProcessClient(android.webkit.WebView)},
      * {@link WebViewCompat#setWebViewRenderProcessClient(WebView, androidx.webkit.WebViewRenderProcessClient)},
      * {@link android.webkit.WebViewRenderProcessClient#onRenderProcessUnresponsive(WebView, android.webkit.WebViewRenderProcess)},
@@ -432,7 +445,7 @@ public class WebViewFeatureInternal {
                     if (info == null) return false;
                     Matcher m = mVersionPattern.matcher(info.versionName);
                     return m.find() && Integer.parseInt(info.versionName.substring(m.start(),
-                                m.end())) >= 105;
+                            m.end())) >= 105;
                 }
             };
 
@@ -632,8 +645,8 @@ public class WebViewFeatureInternal {
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
      * This feature covers
-     * {@link androidx.webkit.Profile#prefetchUrlAsync(String, PrefetchParameters)}
-     * {@link androidx.webkit.Profile#clearPrefetchAsync(String)}
+     * {@link androidx.webkit.Profile#prefetchUrlAsync(String, CancellationSignal, SpeculativeLoadingParameters, OutcomeReceiverCompat)}
+     * {@link androidx.webkit.Profile#clearPrefetchAsync(String, OutcomeReceiverCompat)}
      */
     public static final ApiFeature.NoFramework PROFILE_URL_PREFETCH =
             new ApiFeature.NoFramework(WebViewFeature.PROFILE_URL_PREFETCH,
@@ -648,6 +661,25 @@ public class WebViewFeatureInternal {
                 }
             };
 
+    /**
+     * Feature that is relevant for the implementation of
+     * {@link androidx.webkit.WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
+     *
+     * This feature is not referred to by the app and is only used by the library to choose
+     * different code paths based on underlying support from WebView.
+     */
+    public static final ApiFeature.NoFramework ASYNC_WEBVIEW_STARTUP =
+            new ApiFeature.NoFramework("IMPLEMENTATION_ONLY_FEATURE",
+                    Features.ASYNC_WEBVIEW_STARTUP);
+
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers {@link androidx.webkit.WebViewCompat#setDefaultTrafficStatsTag(int)}}
+     */
+    public static final ApiFeature.NoFramework DEFAULT_TRAFFICSTATS_TAGGING =
+            new ApiFeature.NoFramework(WebViewFeature.DEFAULT_TRAFFICSTATS_TAGGING,
+                    Features.DEFAULT_TRAFFICSTATS_TAGGING);
+
     // --- Add new feature constants above this line ---
 
     private WebViewFeatureInternal() {
@@ -658,7 +690,7 @@ public class WebViewFeatureInternal {
      * Return whether a public feature is supported by any internal features defined in this class.
      */
     public static boolean isSupported(
-            @NonNull @WebViewFeature.WebViewSupportFeature String publicFeatureValue) {
+            @WebViewFeature.WebViewSupportFeature @NonNull String publicFeatureValue) {
         return isSupported(publicFeatureValue, ApiFeature.values());
     }
 
@@ -667,7 +699,7 @@ public class WebViewFeatureInternal {
      * this class.
      */
     public static boolean isStartupFeatureSupported(
-            @NonNull @WebViewFeature.WebViewStartupFeature String publicFeatureValue,
+            @WebViewFeature.WebViewStartupFeature @NonNull String publicFeatureValue,
             @NonNull Context context) {
         return isStartupFeatureSupported(publicFeatureValue, StartupApiFeature.values(), context);
     }
@@ -681,7 +713,7 @@ public class WebViewFeatureInternal {
      */
     @VisibleForTesting
     public static <T extends ConditionallySupportedFeature> boolean isSupported(
-            @NonNull @WebViewFeature.WebViewSupportFeature String publicFeatureValue,
+            @WebViewFeature.WebViewSupportFeature @NonNull String publicFeatureValue,
             @NonNull Collection<T> internalFeatures) {
         Set<ConditionallySupportedFeature> matchingFeatures = new HashSet<>();
         for (ConditionallySupportedFeature feature : internalFeatures) {
@@ -707,7 +739,7 @@ public class WebViewFeatureInternal {
      */
     @VisibleForTesting
     public static boolean isStartupFeatureSupported(
-            @NonNull @WebViewFeature.WebViewStartupFeature String publicFeatureValue,
+            @WebViewFeature.WebViewStartupFeature @NonNull String publicFeatureValue,
             @NonNull Collection<StartupApiFeature> internalFeatures, @NonNull Context context) {
         Set<StartupApiFeature> matchingFeatures = new HashSet<>();
         for (StartupApiFeature feature : internalFeatures) {
@@ -728,8 +760,7 @@ public class WebViewFeatureInternal {
      * Utility method for throwing an exception explaining that the feature the app trying to use
      * isn't supported.
      */
-    @NonNull
-    public static UnsupportedOperationException getUnsupportedOperationException() {
+    public static @NonNull UnsupportedOperationException getUnsupportedOperationException() {
         return new UnsupportedOperationException("This method is not supported by the current "
                 + "version of the framework and the current WebView APK");
     }

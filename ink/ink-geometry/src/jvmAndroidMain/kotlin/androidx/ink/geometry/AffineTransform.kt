@@ -16,9 +16,12 @@
 
 package androidx.ink.geometry
 
+import androidx.annotation.FloatRange
 import androidx.annotation.RestrictTo
 import androidx.annotation.Size
+import androidx.ink.geometry.internal.AffineTransformNative
 import kotlin.jvm.JvmField
+import kotlin.math.abs
 
 /**
  * An affine transformation in the plane. The transformation can be thought of as a 3x3 matrix:
@@ -72,9 +75,35 @@ public abstract class AffineTransform internal constructor() {
     public abstract fun asImmutable(): ImmutableAffineTransform
 
     /**
+     * Returns the inverse of the [AffineTransform].
+     *
+     * Performance-sensitive code should use the [computeInverse] overload that takes a
+     * pre-allocated [MutableAffineTransform], so that instance can be reused across multiple calls.
+     *
+     * @throws IllegalArgumentException if the [AffineTransform] cannot be inverted.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun computeInverse(): ImmutableAffineTransform {
+        val determinant = m00 * m11 - m10 * m01
+        require(determinant != 0F) {
+            "The inverse of the AffineTransform cannot be found because the determinant is 0."
+        }
+        return ImmutableAffineTransform(
+            m00 = m11 / determinant,
+            m10 = -m10 / determinant,
+            m20 = (m10 * m21 - m20 * m11) / determinant,
+            m01 = -m01 / determinant,
+            m11 = m00 / determinant,
+            m21 = (m20 * m01 - m00 * m21) / determinant,
+        )
+    }
+
+    /**
      * Populates [outAffineTransform] with the inverse of this [AffineTransform]. The same
      * [MutableAffineTransform] instance can be used as the output to avoid additional allocations.
      * Returns [outAffineTransform].
+     *
+     * @throws IllegalArgumentException if the [AffineTransform] cannot be inverted. .
      */
     public fun computeInverse(outAffineTransform: MutableAffineTransform): MutableAffineTransform {
         val determinant = m00 * m11 - m10 * m01
@@ -96,15 +125,59 @@ public abstract class AffineTransform internal constructor() {
     private fun applyTransformY(x: Float, y: Float): Float = m01 * x + m11 * y + m21
 
     /**
+     * Returns an [ImmutableVec] containing the result of applying the [AffineTransform] to [point].
+     *
+     * Note that this treats [point] as a location, not an offset. If you want to transform an
+     * offset, you must also transform the origin and subtract that from the result, e.g.:
+     * ```
+     * val result = MutableVec()
+     * Vec.subtract(
+     *   transform.applyTransform(vec),
+     *   transform.applyTransform(Vec.ORIGIN),
+     *   result
+     * )
+     * ```
+     *
+     * Performance-sensitive code should use the [applyTransform] overload that takes a
+     * pre-allocated [MutableVec], so that instance can be reused across multiple calls.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun applyTransform(point: Vec): ImmutableVec {
+        return ImmutableVec(applyTransformX(point.x, point.y), applyTransformY(point.x, point.y))
+    }
+
+    /**
      * Apply the [AffineTransform] to the [Vec] and store the result in the [MutableVec]. The same
      * [MutableVec] can be used as both the input and output to avoid additional allocations.
      * Returns [outVec].
+     *
+     * Note that this treats [point] as a location, not an offset. If you want to transform an
+     * offset, you must also transform the origin and subtract that from the result, e.g.:
+     * ```
+     * Vec.subtract(
+     *   transform.applyTransform(vec, scratchPoint1),
+     *   transform.applyTransform(Vec.ORIGIN, scratchPoint2),
+     *   result
+     * )
+     * ```
      */
-    public fun applyTransform(vec: Vec, outVec: MutableVec): MutableVec {
-        val newX = applyTransformX(vec.x, vec.y)
-        outVec.y = applyTransformY(vec.x, vec.y)
+    public fun applyTransform(point: Vec, outVec: MutableVec): MutableVec {
+        val newX = applyTransformX(point.x, point.y)
+        outVec.y = applyTransformY(point.x, point.y)
         outVec.x = newX
         return outVec
+    }
+
+    /**
+     * Returns an [ImmutableSegment] containing the result of applying the [AffineTransform] to
+     * [segment].
+     *
+     * Performance-sensitive code should use the [applyTransform] overload that takes a
+     * pre-allocated [MutableSegment], so that instance can be reused across multiple calls.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun applyTransform(segment: Segment): ImmutableSegment {
+        return ImmutableSegment(applyTransform(segment.start), applyTransform(segment.end))
     }
 
     /**
@@ -116,6 +189,22 @@ public abstract class AffineTransform internal constructor() {
         applyTransform(segment.start, outSegment.start)
         applyTransform(segment.end, outSegment.end)
         return outSegment
+    }
+
+    /**
+     * Returns an [ImmutableTriangle] containing the result of applying the [AffineTransform] to
+     * [triangle].
+     *
+     * Performance-sensitive code should use the [applyTransform] overload that takes a
+     * pre-allocated [MutableTriangle], so that instance can be reused across multiple calls.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun applyTransform(triangle: Triangle): ImmutableTriangle {
+        return ImmutableTriangle(
+            applyTransform(triangle.p0),
+            applyTransform(triangle.p1),
+            applyTransform(triangle.p2),
+        )
     }
 
     /**
@@ -131,6 +220,37 @@ public abstract class AffineTransform internal constructor() {
     }
 
     /**
+     * Returns an [ImmutableParallelogram] containing the result of applying the [AffineTransform]
+     * to [box].
+     *
+     * Note that applying an [AffineTransform] to a [Box] results in a [Parallelogram]. If you need
+     * a [Box], use [Parallelogram.computeBoundingBox] to get the minimum bounding box of the
+     * result.
+     *
+     * Performance-sensitive code should use the [applyTransform] overload that takes a
+     * pre-allocated [MutableParallelogram], so that instance can be reused across multiple calls.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun applyTransform(box: Box): ImmutableParallelogram {
+        return AffineTransformNative.createFromApplyParallelogram(
+            affineTransformA = m00,
+            affineTransformB = m10,
+            affineTransformC = m20,
+            affineTransformD = m01,
+            affineTransformE = m11,
+            affineTransformF = m21,
+            parallelogramCenterX = box.xMin / 2 + box.xMax / 2,
+            parallelogramCenterY = box.yMin / 2 + box.yMax / 2,
+            parallelogramWidth = box.width,
+            parallelogramHeight = box.height,
+            parallelogramRotation = 0f,
+            parallelogramShearFactor = 0f,
+            ImmutableParallelogram::class.java,
+            ImmutableVec::class.java,
+        )
+    }
+
+    /**
      * Apply the [AffineTransform] to the [Box] and store the result in the [MutableParallelogram].
      * This is the only Apply function where the input cannot also be the output, as applying an
      * Affine Transform to a Box makes a Parallelogram.
@@ -139,15 +259,15 @@ public abstract class AffineTransform internal constructor() {
         box: Box,
         outParallelogram: MutableParallelogram,
     ): MutableParallelogram {
-        AffineTransformHelper.nativeApplyParallelogram(
+        AffineTransformNative.populateFromApplyParallelogram(
             affineTransformA = m00,
             affineTransformB = m10,
             affineTransformC = m20,
             affineTransformD = m01,
             affineTransformE = m11,
             affineTransformF = m21,
-            parallelogramCenterX = (box.xMin + box.xMax) / 2,
-            parallelogramCenterY = (box.yMin + box.yMax) / 2,
+            parallelogramCenterX = box.xMin / 2 + box.xMax / 2,
+            parallelogramCenterY = box.yMin / 2 + box.yMax / 2,
             parallelogramWidth = box.width,
             parallelogramHeight = box.height,
             parallelogramRotation = 0f,
@@ -155,6 +275,33 @@ public abstract class AffineTransform internal constructor() {
             out = outParallelogram,
         )
         return outParallelogram
+    }
+
+    /**
+     * Returns an [ImmutableParallelogram] containing the result of applying the [AffineTransform]
+     * to [parallelogram].
+     *
+     * Performance-sensitive code should use the [applyTransform] overload that takes a
+     * pre-allocated [MutableParallelogram], so that instance can be reused across multiple calls.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun applyTransform(parallelogram: Parallelogram): ImmutableParallelogram {
+        return AffineTransformNative.createFromApplyParallelogram(
+            affineTransformA = m00,
+            affineTransformB = m10,
+            affineTransformC = m20,
+            affineTransformD = m01,
+            affineTransformE = m11,
+            affineTransformF = m21,
+            parallelogramCenterX = parallelogram.center.x,
+            parallelogramCenterY = parallelogram.center.y,
+            parallelogramWidth = parallelogram.width,
+            parallelogramHeight = parallelogram.height,
+            parallelogramRotation = parallelogram.rotation,
+            parallelogramShearFactor = parallelogram.shearFactor,
+            ImmutableParallelogram::class.java,
+            ImmutableVec::class.java,
+        )
     }
 
     /**
@@ -166,7 +313,7 @@ public abstract class AffineTransform internal constructor() {
         parallelogram: Parallelogram,
         outParallelogram: MutableParallelogram,
     ): MutableParallelogram {
-        AffineTransformHelper.nativeApplyParallelogram(
+        AffineTransformNative.populateFromApplyParallelogram(
             affineTransformA = m00,
             affineTransformB = m10,
             affineTransformC = m20,
@@ -212,6 +359,22 @@ public abstract class AffineTransform internal constructor() {
         return outArray
     }
 
+    /**
+     * Compares this [AffineTransform] with [other], and returns true if each component of the
+     * transform matrix is within [tolerance] of the corresponding component of [other].
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun isAlmostEqual(
+        other: AffineTransform,
+        @FloatRange(from = 0.0) tolerance: Float,
+    ): Boolean =
+        abs(m00 - other.m00) < tolerance &&
+            abs(m10 - other.m10) < tolerance &&
+            abs(m20 - other.m20) < tolerance &&
+            abs(m01 - other.m01) < tolerance &&
+            abs(m11 - other.m11) < tolerance &&
+            abs(m21 - other.m21) < tolerance
+
     public companion object {
         /**
          * Constant representing an identity transformation, which maps a point to itself, i.e. it
@@ -253,5 +416,25 @@ public abstract class AffineTransform internal constructor() {
             affineTransform.run {
                 "AffineTransform(m00=$m00, m10=$m10, m20=$m20, m01=$m01, m11=$m11, m21=$m21)"
             }
+
+        /**
+         * Multiplies the [lhs] transform by the [rhs] transform as matrices, and stores the result
+         * in [output]. Note that, when performing matrix multiplication, the [lhs] transform is
+         * applied after the [rhs] transform; i.e., after calling this method, [output] contains a
+         * transform equivalent to applying [rhs], then [lhs].
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+        public fun multiply(
+            lhs: AffineTransform,
+            rhs: AffineTransform,
+            output: MutableAffineTransform,
+        ) {
+            output.m00 = lhs.m00 * rhs.m00 + lhs.m10 * rhs.m01
+            output.m10 = lhs.m00 * rhs.m10 + lhs.m10 * rhs.m11
+            output.m20 = lhs.m00 * rhs.m20 + lhs.m10 * rhs.m21 + lhs.m20
+            output.m01 = lhs.m01 * rhs.m00 + lhs.m11 * rhs.m01
+            output.m11 = lhs.m01 * rhs.m10 + lhs.m11 * rhs.m11
+            output.m21 = lhs.m01 * rhs.m20 + lhs.m11 * rhs.m21 + lhs.m21
+        }
     }
 }

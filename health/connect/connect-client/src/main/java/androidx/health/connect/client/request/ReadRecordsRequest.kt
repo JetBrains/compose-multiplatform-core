@@ -104,6 +104,19 @@ constructor(
         require(pageSize > 0) { "pageSize must be positive." }
     }
 
+    @OptIn(ExperimentalDeduplicationApi::class)
+    internal fun withPageToken(newPageToken: String?): ReadRecordsRequest<T> {
+        return ReadRecordsRequest(
+            recordType = recordType,
+            timeRangeFilter = timeRangeFilter,
+            dataOriginFilter = dataOriginFilter,
+            ascendingOrder = ascendingOrder,
+            pageSize = pageSize,
+            pageToken = newPageToken,
+            deduplicateStrategy = deduplicateStrategy
+        )
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

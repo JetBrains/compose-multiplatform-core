@@ -22,9 +22,10 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Build;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  *
@@ -42,7 +43,7 @@ class NotificationApiHelperForO {
         return channel == null || channel.getImportance() != NotificationManager.IMPORTANCE_NONE;
     }
 
-    @Nullable static Notification copyNotificationOntoChannel(Context context,
+    static @Nullable Notification copyNotificationOntoChannel(Context context,
             NotificationManager manager, Notification notification, String channelId,
             String channelName) {
         // Create the notification channel, (no-op if already created).

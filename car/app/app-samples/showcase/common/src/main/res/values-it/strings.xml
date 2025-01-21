@@ -38,7 +38,7 @@
     <string name="settings_action_title" msgid="8616900063253887861">"Impostazioni"</string>
     <string name="accept_action_title" msgid="4899660585470647578">"Accetta"</string>
     <string name="reject_action_title" msgid="6730366705938402668">"Rifiuta"</string>
-    <string name="ok_action_title" msgid="7128494973966098611">"OK"</string>
+    <string name="ok_action_title" msgid="7128494973966098611">"Ok"</string>
     <string name="throw_action_title" msgid="7163710562670220163">"Genera"</string>
     <string name="commute_action_title" msgid="2585755255290185096">"Tragitto giornaliero"</string>
     <string name="sign_out_action_title" msgid="1653943000866713010">"Esci"</string>
@@ -321,8 +321,7 @@
     <string name="secondary_actions_test_subtitle" msgid="6985282813402073703">"Solo l\'azione secondaria può essere selezionata"</string>
     <string name="decoration_test_title" msgid="8450127046762442244">"Test decorazione"</string>
     <string name="secondary_actions_decoration_test_title" msgid="6282873404859209490">"Azioni secondarie e decorazione"</string>
-    <!-- no translation found for secondary_actions_decoration_test_title_long (3700606949229899169) -->
-    <skip />
+    <string name="secondary_actions_decoration_test_title_long" msgid="3700606949229899169">"Riga con Azioni secondarie e decorazione con un titolo molto lungo"</string>
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"Anche la riga può essere selezionata"</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"È stata selezionata l\'azione secondaria"</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"È stata selezionata l\'azione principale della riga"</string>

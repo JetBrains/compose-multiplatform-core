@@ -18,10 +18,11 @@ package androidx.pdf.viewer;
 
 import android.widget.EditText;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.viewer.password.PasswordDialog;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This instance requires a {@link #getTargetFragment} to be set to give back the typed password.
@@ -31,8 +32,7 @@ import androidx.pdf.viewer.password.PasswordDialog;
 @SuppressWarnings("deprecation")
 public class PdfPasswordDialog extends PasswordDialog {
 
-    @Nullable
-    public PasswordDialogEventsListener mListener;
+    public @Nullable PasswordDialogEventsListener mListener;
 
     public void setListener(@NonNull PasswordDialogEventsListener listener) {
         mListener = listener;

@@ -78,5 +78,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.navigation.fragment"
+    namespace = "androidx.navigation.fragment"
 }

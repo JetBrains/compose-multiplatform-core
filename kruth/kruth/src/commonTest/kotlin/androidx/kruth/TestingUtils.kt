@@ -46,3 +46,11 @@ internal inline fun <reified E : Throwable> assertFailsWith(
         }
     }
 }
+
+/**
+ * Runs the given block only if we are not on JS. This is used to skip certain test blocks on JS
+ * when they cannot be supported.
+ *
+ * @see https://youtrack.jetbrains.com/issue/KT-73309/number-types-in-kotlin-js
+ */
+internal expect inline fun assumeNotJs(block: () -> Unit)

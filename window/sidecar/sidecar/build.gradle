@@ -30,6 +30,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation("androidx.annotation:annotation:1.8.1")
 }
 
@@ -44,5 +45,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.window.sidecar"
+    namespace = "androidx.window.sidecar"
 }

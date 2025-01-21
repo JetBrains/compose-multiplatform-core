@@ -14,7 +14,7 @@ plugins {
 }
 
 android {
-    namespace "androidx.buildSrc.tests.lib"
+    namespace = "androidx.buildSrc.tests.lib"
 }
 
 androidx {

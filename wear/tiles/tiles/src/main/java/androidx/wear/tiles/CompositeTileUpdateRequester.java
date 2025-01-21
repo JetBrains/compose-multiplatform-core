@@ -16,7 +16,7 @@
 
 package androidx.wear.tiles;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 

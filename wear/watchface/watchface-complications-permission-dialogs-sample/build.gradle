@@ -36,9 +36,9 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
-    namespace "androidx.wear.watchface.complications.permission.dialogs.sample"
+    namespace = "androidx.wear.watchface.complications.permission.dialogs.sample"
 }
 
 androidx {

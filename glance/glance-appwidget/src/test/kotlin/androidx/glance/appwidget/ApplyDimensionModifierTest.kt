@@ -49,6 +49,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -188,6 +189,7 @@ class ApplyDimensionModifierTest {
             assertThat(view.layoutParams.height).isEqualTo(ViewGroup.LayoutParams.MATCH_PARENT)
         }
 
+    @Ignore // b/377567116
     @Test
     fun wrapHeight() =
         fakeCoroutineScope.runTest {

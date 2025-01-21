@@ -223,6 +223,10 @@ private class ScrollingContainerNode(
         }
     }
 
+    override fun onDetach() {
+        overscrollNode?.let { undelegate(it) }
+    }
+
     override fun MeasureScope.measure(
         measurable: Measurable,
         constraints: Constraints
@@ -336,6 +340,14 @@ private class ScrollingContainerNode(
                 val node = effect.node
                 if (!node.node.isAttached) {
                     overscrollNode = delegate(node)
+                }
+            }
+        } else {
+            // If we already have a node, re-delegate to it if needed. This will no-op if we are
+            // already delegating to it.
+            overscrollNode?.let {
+                if (!it.node.isAttached) {
+                    delegate(it)
                 }
             }
         }

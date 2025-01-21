@@ -16,8 +16,9 @@
 
 package androidx.wear.tiles;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Holder for parameters, used when a Tile update request is triggered. This is currently a
@@ -30,7 +31,7 @@ public final class TileUpdateRequestData extends ProtoParcelable {
     public static final Creator<TileUpdateRequestData> CREATOR =
             newCreator(TileUpdateRequestData.class, TileUpdateRequestData::new);
 
-    private TileUpdateRequestData(@NonNull byte[] params, int version) {
+    private TileUpdateRequestData(byte @NonNull [] params, int version) {
         super(params, version);
     }
 

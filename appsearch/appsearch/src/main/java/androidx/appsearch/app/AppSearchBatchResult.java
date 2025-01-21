@@ -138,6 +138,7 @@ public final class AppSearchBatchResult<KeyType, ValueType> {
         }
 
         /** Creates a new {@link Builder} from the given {@link AppSearchBatchResult}. */
+        @ExperimentalAppSearchApi
         @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
         public Builder(@NonNull AppSearchBatchResult<KeyType, ValueType> appSearchBatchResult) {
             mSuccesses.putAll(appSearchBatchResult.mSuccesses);

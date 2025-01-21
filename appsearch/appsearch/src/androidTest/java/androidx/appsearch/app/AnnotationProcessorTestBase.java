@@ -43,6 +43,8 @@ import androidx.appsearch.util.DocumentIdUtil;
 import androidx.test.core.app.ApplicationProvider;
 
 import com.google.auto.value.AutoValue;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import org.junit.After;
@@ -1703,6 +1705,7 @@ public abstract class AnnotationProcessorTestBase {
     @Test
     public void testPolymorphismForInterface() throws Exception {
         assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SCHEMA_ADD_PARENT_TYPE));
+        assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SEARCH_RESULT_PARENT_TYPES));
 
         mSession.setSchemaAsync(new SetSchemaRequest.Builder()
                 // Adding BusinessImpl should be enough to add all the dependency classes.
@@ -1720,9 +1723,7 @@ public abstract class AnnotationProcessorTestBase {
         assertThat(rootGeneric.getSchemaType()).isEqualTo("InterfaceRoot");
 
         Place place = Place.createPlace("id1", "namespace", 2000, "place_loc");
-        GenericDocument placeGeneric =
-                new GenericDocument.Builder<>(GenericDocument.fromDocumentClass(place))
-                        .setParentTypes(Collections.singletonList("InterfaceRoot")).build();
+        GenericDocument placeGeneric = GenericDocument.fromDocumentClass(place);
         assertThat(placeGeneric.getId()).isEqualTo("id1");
         assertThat(placeGeneric.getNamespace()).isEqualTo("namespace");
         assertThat(placeGeneric.getCreationTimestampMillis()).isEqualTo(2000);
@@ -1735,9 +1736,7 @@ public abstract class AnnotationProcessorTestBase {
                 .setCreationTimestamp(3000)
                 .setOrganizationDescription("organization_dec")
                 .build();
-        GenericDocument organizationGeneric =
-                new GenericDocument.Builder<>(GenericDocument.fromDocumentClass(organization))
-                        .setParentTypes(Collections.singletonList("InterfaceRoot")).build();
+        GenericDocument organizationGeneric = GenericDocument.fromDocumentClass(organization);
         assertThat(organizationGeneric.getId()).isEqualTo("id2");
         assertThat(organizationGeneric.getNamespace()).isEqualTo("namespace");
         assertThat(organizationGeneric.getCreationTimestampMillis()).isEqualTo(3000);
@@ -1749,9 +1748,7 @@ public abstract class AnnotationProcessorTestBase {
                 "business_dec", "business_name");
         // At runtime, business is type of BusinessImpl. As a result, the list of parent types
         // for it should contain Business.
-        GenericDocument businessGeneric = new GenericDocument.Builder<>(
-                GenericDocument.fromDocumentClass(business)).setParentTypes(new ArrayList<>(
-                Arrays.asList("Business", "Place", "Organization", "InterfaceRoot"))).build();
+        GenericDocument businessGeneric = GenericDocument.fromDocumentClass(business);
         assertThat(businessGeneric.getId()).isEqualTo("id3");
         assertThat(businessGeneric.getNamespace()).isEqualTo("namespace");
         assertThat(businessGeneric.getCreationTimestampMillis()).isEqualTo(4000);
@@ -2400,7 +2397,8 @@ public abstract class AnnotationProcessorTestBase {
         // Test that even when deserializing genericDocument to InterfaceRoot, we will get a
         // Person instance, instead of just an InterfaceRoot.
         InterfaceRoot interfaceRoot = genericDocument.toDocumentClass(InterfaceRoot.class,
-                AppSearchDocumentClassMap.getGlobalMap());
+                new DocumentClassMappingContext(
+                        AppSearchDocumentClassMap.getGlobalMap(), /* parentTypeMap= */null));
         assertThat(interfaceRoot).isInstanceOf(Person.class);
         Person newPerson = (Person) interfaceRoot;
         assertThat(newPerson.getId()).isEqualTo("id");
@@ -2432,7 +2430,8 @@ public abstract class AnnotationProcessorTestBase {
         // Without parent information, toDocumentClass() will try to deserialize unknown type to
         // the type that is specified in the parameter.
         InterfaceRoot interfaceRoot = genericDocument.toDocumentClass(InterfaceRoot.class,
-                AppSearchDocumentClassMap.getGlobalMap());
+                new DocumentClassMappingContext(
+                        AppSearchDocumentClassMap.getGlobalMap(), /* parentTypeMap= */null));
         assertThat(interfaceRoot).isNotInstanceOf(Person.class);
         assertThat(interfaceRoot).isInstanceOf(InterfaceRoot.class);
         assertThat(interfaceRoot.getId()).isEqualTo("id");
@@ -2441,11 +2440,10 @@ public abstract class AnnotationProcessorTestBase {
 
         // With parent information, toDocumentClass() will try to deserialize unknown type to the
         // nearest known parent type.
-        genericDocument = new GenericDocument.Builder<>(genericDocument)
-                .setParentTypes(new ArrayList<>(Arrays.asList("Person", "InterfaceRoot")))
-                .build();
         interfaceRoot = genericDocument.toDocumentClass(InterfaceRoot.class,
-                AppSearchDocumentClassMap.getGlobalMap());
+                new DocumentClassMappingContext(AppSearchDocumentClassMap.getGlobalMap(),
+                        ImmutableMap.of("UnknownType",
+                                ImmutableList.of("Person", "InterfaceRoot"))));
         assertThat(interfaceRoot).isInstanceOf(Person.class);
         Person newPerson = (Person) interfaceRoot;
         assertThat(newPerson.getId()).isEqualTo("id");
@@ -2456,7 +2454,7 @@ public abstract class AnnotationProcessorTestBase {
     }
 
     @Test
-    public void testPolymorphicDeserialization_nestedType() throws Exception {
+    public void testPolymorphicDeserialization_NestedType() throws Exception {
         // Create a Person document
         Person.Builder personBuilder = new Person.Builder("id_person", "namespace")
                 .setCreationTimestamp(3000)
@@ -2478,7 +2476,9 @@ public abstract class AnnotationProcessorTestBase {
         // Test that when deserializing genericDocument, we will get nested Person and Place
         // instances, instead of just nested InterfaceRoot instances.
         DocumentCollection newDocumentCollection = genericDocument.toDocumentClass(
-                DocumentCollection.class, AppSearchDocumentClassMap.getGlobalMap());
+                DocumentCollection.class,
+                new DocumentClassMappingContext(
+                        AppSearchDocumentClassMap.getGlobalMap(), /* parentTypeMap= */null));
         assertThat(newDocumentCollection.mId).isEqualTo("id_collection");
         assertThat(newDocumentCollection.mNamespace).isEqualTo("namespace");
         assertThat(newDocumentCollection.mCollection).hasLength(2);
@@ -2519,10 +2519,12 @@ public abstract class AnnotationProcessorTestBase {
     }
 
     @Test
-    public void testPolymorphicDeserialization_Integration() throws Exception {
+    @SuppressWarnings("deprecation")
+    public void testPolymorphicDeserialization_Integration()
+            throws Exception {
         assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SCHEMA_ADD_PARENT_TYPE));
 
-        // Add an unknown business type this is a subtype of Business.
+        // Add an unknown business type that is a subtype of Business.
         mSession.setSchemaAsync(new SetSchemaRequest.Builder()
                 .addDocumentClasses(Business.class)
                 .addSchemas(new AppSearchSchema.Builder("UnknownBusiness")
@@ -2556,20 +2558,29 @@ public abstract class AnnotationProcessorTestBase {
                         .build();
         checkIsBatchResultSuccess(mSession.putAsync(
                 new PutDocumentsRequest.Builder().addGenericDocuments(genericDoc).build()));
+        GenericDocument expectedGenericDoc;
+        if (mSession.getFeatures().isFeatureSupported(Features.SEARCH_RESULT_PARENT_TYPES)) {
+            // When SearchResult wraps parent information, GenericDocument should not do.
+            expectedGenericDoc = genericDoc;
+        } else {
+            // When SearchResult does not wrap parent information, GenericDocument should do.
+            expectedGenericDoc = new GenericDocument.Builder<>(genericDoc)
+                    .setParentTypes(
+                            new ArrayList<>(Arrays.asList("Business", "Place", "Organization",
+                                    "InterfaceRoot")))
+                    .build();
+        }
 
         // Query to get the document back, with parent information added.
-        SearchResults searchResults = mSession.search("", new SearchSpec.Builder().build());
-        List<GenericDocument> documents = convertSearchResultsToDocuments(searchResults);
-        assertThat(documents).hasSize(1);
-        GenericDocument actualGenericDoc = documents.get(0);
-        GenericDocument expectedGenericDoc = new GenericDocument.Builder<>(genericDoc)
-                .setParentTypes(new ArrayList<>(Arrays.asList("Business", "Place", "Organization",
-                        "InterfaceRoot")))
-                .build();
-        assertThat(actualGenericDoc).isEqualTo(expectedGenericDoc);
+        List<SearchResult> searchResults = retrieveAllSearchResults(
+                mSession.search("", new SearchSpec.Builder().build())
+        );
+        assertThat(searchResults).hasSize(1);
+        SearchResult result = searchResults.get(0);
+        assertThat(result.getGenericDocument()).isEqualTo(expectedGenericDoc);
 
         // Deserializing it to InterfaceRoot will get a Business instance back.
-        InterfaceRoot interfaceRoot = actualGenericDoc.toDocumentClass(InterfaceRoot.class,
+        InterfaceRoot interfaceRoot = result.getDocument(InterfaceRoot.class,
                 AppSearchDocumentClassMap.getGlobalMap());
         assertThat(interfaceRoot).isInstanceOf(Business.class);
         Business business = (Business) interfaceRoot;
@@ -2581,6 +2592,95 @@ public abstract class AnnotationProcessorTestBase {
         assertThat(business.getBusinessName()).isEqualTo("business_name");
     }
 
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testPolymorphicDeserialization_NestedType_Integration() throws Exception {
+        assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SCHEMA_ADD_PARENT_TYPE));
+
+        // Add an unknown business type that is a subtype of Business, and a DocumentCollection
+        // type that can hold any nested InterfaceRoot document.
+        mSession.setSchemaAsync(new SetSchemaRequest.Builder()
+                .addDocumentClasses(Business.class)
+                .addSchemas(new AppSearchSchema.Builder("UnknownBusiness")
+                        .addParentType("Business")
+                        .addProperty(new AppSearchSchema.StringPropertyConfig.Builder(
+                                "organizationDescription")
+                                .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                                .build())
+                        .addProperty(new AppSearchSchema.StringPropertyConfig.Builder("location")
+                                .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                                .build())
+                        .addProperty(new AppSearchSchema.StringPropertyConfig.Builder(
+                                "businessName")
+                                .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                                .build())
+                        .addProperty(new AppSearchSchema.StringPropertyConfig.Builder(
+                                "unknownProperty")
+                                .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                                .build())
+                        .build())
+                .addDocumentClasses(DocumentCollection.class)
+                .build()).get();
+        // Create and put a DocumentCollection that includes an UnknownBusiness document.
+        GenericDocument unknownBusinessGenericDoc =
+                new GenericDocument.Builder<>("namespace", "id1", "UnknownBusiness")
+                        .setCreationTimestampMillis(3000)
+                        .setPropertyString("location", "business_loc")
+                        .setPropertyString("organizationDescription", "business_dec")
+                        .setPropertyString("businessName", "business_name")
+                        .setPropertyString("unknownProperty", "foo")
+                        .build();
+        GenericDocument documentCollectionGenericDoc = new GenericDocument.Builder<>(
+                "namespace", "id2", "DocumentCollection")
+                .setCreationTimestampMillis(3000)
+                .setPropertyDocument("collection", unknownBusinessGenericDoc)
+                .build();
+        checkIsBatchResultSuccess(mSession.putAsync(
+                new PutDocumentsRequest.Builder().addGenericDocuments(
+                        documentCollectionGenericDoc).build()));
+        GenericDocument expectedDocumentCollectionGenericDoc;
+        if (mSession.getFeatures().isFeatureSupported(Features.SEARCH_RESULT_PARENT_TYPES)) {
+            // When SearchResult wraps parent information, GenericDocument should not do.
+            expectedDocumentCollectionGenericDoc = documentCollectionGenericDoc;
+        } else {
+            // When SearchResult does not wrap parent information, GenericDocument should do.
+            GenericDocument expectedUnknownBusinessGenericDoc = new GenericDocument.Builder<>(
+                    unknownBusinessGenericDoc)
+                    .setParentTypes(
+                            new ArrayList<>(Arrays.asList("Business", "Place", "Organization",
+                                    "InterfaceRoot")))
+                    .build();
+            expectedDocumentCollectionGenericDoc = new GenericDocument.Builder<>(
+                    "namespace", "id2", "DocumentCollection")
+                    .setCreationTimestampMillis(3000)
+                    .setPropertyDocument("collection", expectedUnknownBusinessGenericDoc)
+                    .build();
+        }
+
+        // Query to get the document back, with parent information added.
+        List<SearchResult> searchResults = retrieveAllSearchResults(
+                mSession.search("", new SearchSpec.Builder().build())
+        );
+        assertThat(searchResults).hasSize(1);
+        SearchResult result = searchResults.get(0);
+        assertThat(result.getGenericDocument()).isEqualTo(expectedDocumentCollectionGenericDoc);
+
+        // Deserialize documentCollectionGenericDoc and check that it includes a Business
+        // instance, instead of an InterfaceRoot instance.
+        DocumentCollection documentCollection = result.getDocument(DocumentCollection.class,
+                AppSearchDocumentClassMap.getGlobalMap());
+        assertThat(documentCollection.mCollection).asList().hasSize(1);
+        assertThat(documentCollection.mCollection[0]).isInstanceOf(Business.class);
+        Business business = (Business) documentCollection.mCollection[0];
+        assertThat(business.getId()).isEqualTo("id1");
+        assertThat(business.getNamespace()).isEqualTo("namespace");
+        assertThat(business.getCreationTimestamp()).isEqualTo(3000);
+        assertThat(business.getLocation()).isEqualTo("business_loc");
+        assertThat(business.getOrganizationDescription()).isEqualTo("business_dec");
+        assertThat(business.getBusinessName()).isEqualTo("business_name");
+    }
+
+
     // InterfaceRoot
     //   |    \
     //   |    Person
@@ -2589,6 +2689,7 @@ public abstract class AnnotationProcessorTestBase {
     @Test
     public void testPolymorphicDeserialization_IntegrationDiamondThreeTypes() throws Exception {
         assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SCHEMA_ADD_PARENT_TYPE));
+        assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SEARCH_RESULT_PARENT_TYPES));
 
         mSession.setSchemaAsync(new SetSchemaRequest.Builder()
                 .addSchemas(new AppSearchSchema.Builder("UnknownA")
@@ -2617,17 +2718,15 @@ public abstract class AnnotationProcessorTestBase {
                 new PutDocumentsRequest.Builder().addGenericDocuments(genericDoc).build()));
 
         // Query to get the document back, with parent information added.
-        SearchResults searchResults = mSession.search("", new SearchSpec.Builder().build());
-        List<GenericDocument> documents = convertSearchResultsToDocuments(searchResults);
-        assertThat(documents).hasSize(1);
-        GenericDocument actualGenericDoc = documents.get(0);
-        GenericDocument expectedGenericDoc = new GenericDocument.Builder<>(genericDoc)
-                .setParentTypes(new ArrayList<>(Arrays.asList("Person", "InterfaceRoot")))
-                .build();
-        assertThat(actualGenericDoc).isEqualTo(expectedGenericDoc);
+        List<SearchResult> searchResults = retrieveAllSearchResults(
+                mSession.search("", new SearchSpec.Builder().build())
+        );
+        assertThat(searchResults).hasSize(1);
+        SearchResult result = searchResults.get(0);
+        assertThat(result.getGenericDocument()).isEqualTo(genericDoc);
 
         // Deserializing it to InterfaceRoot will get a Person instance back.
-        InterfaceRoot interfaceRoot = actualGenericDoc.toDocumentClass(InterfaceRoot.class,
+        InterfaceRoot interfaceRoot = result.getDocument(InterfaceRoot.class,
                 AppSearchDocumentClassMap.getGlobalMap());
         assertThat(interfaceRoot).isInstanceOf(Person.class);
         Person person = (Person) interfaceRoot;
@@ -2646,6 +2745,7 @@ public abstract class AnnotationProcessorTestBase {
     @Test
     public void testPolymorphicDeserialization_IntegrationDiamondTwoUnknown() throws Exception {
         assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SCHEMA_ADD_PARENT_TYPE));
+        assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SEARCH_RESULT_PARENT_TYPES));
 
         mSession.setSchemaAsync(new SetSchemaRequest.Builder()
                 .addSchemas(new AppSearchSchema.Builder("UnknownA")
@@ -2677,18 +2777,15 @@ public abstract class AnnotationProcessorTestBase {
                 new PutDocumentsRequest.Builder().addGenericDocuments(genericDoc).build()));
 
         // Query to get the document back, with parent information added.
-        SearchResults searchResults = mSession.search("", new SearchSpec.Builder().build());
-        List<GenericDocument> documents = convertSearchResultsToDocuments(searchResults);
-        assertThat(documents).hasSize(1);
-        GenericDocument actualGenericDoc = documents.get(0);
-        GenericDocument expectedGenericDoc = new GenericDocument.Builder<>(genericDoc)
-                .setParentTypes(new ArrayList<>(
-                        Arrays.asList("UnknownA", "Person", "InterfaceRoot")))
-                .build();
-        assertThat(actualGenericDoc).isEqualTo(expectedGenericDoc);
+        List<SearchResult> searchResults = retrieveAllSearchResults(
+                mSession.search("", new SearchSpec.Builder().build())
+        );
+        assertThat(searchResults).hasSize(1);
+        SearchResult result = searchResults.get(0);
+        assertThat(result.getGenericDocument()).isEqualTo(genericDoc);
 
         // Deserializing it to InterfaceRoot will get a Person instance back.
-        InterfaceRoot interfaceRoot = actualGenericDoc.toDocumentClass(InterfaceRoot.class,
+        InterfaceRoot interfaceRoot = result.getDocument(InterfaceRoot.class,
                 AppSearchDocumentClassMap.getGlobalMap());
         assertThat(interfaceRoot).isInstanceOf(Person.class);
         Person person = (Person) interfaceRoot;
@@ -2707,6 +2804,7 @@ public abstract class AnnotationProcessorTestBase {
     @Test
     public void testPolymorphicDeserialization_IntegrationDiamondOneUnknown() throws Exception {
         assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SCHEMA_ADD_PARENT_TYPE));
+        assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SEARCH_RESULT_PARENT_TYPES));
 
         mSession.setSchemaAsync(new SetSchemaRequest.Builder()
                 .addDocumentClasses(Person.class)
@@ -2742,19 +2840,16 @@ public abstract class AnnotationProcessorTestBase {
                 new PutDocumentsRequest.Builder().addGenericDocuments(genericDoc).build()));
 
         // Query to get the document back, with parent information added.
-        SearchResults searchResults = mSession.search("", new SearchSpec.Builder().build());
-        List<GenericDocument> documents = convertSearchResultsToDocuments(searchResults);
-        assertThat(documents).hasSize(1);
-        GenericDocument actualGenericDoc = documents.get(0);
-        GenericDocument expectedGenericDoc = new GenericDocument.Builder<>(genericDoc)
-                .setParentTypes(new ArrayList<>(
-                        Arrays.asList("Person", "Organization", "InterfaceRoot")))
-                .build();
-        assertThat(actualGenericDoc).isEqualTo(expectedGenericDoc);
+        List<SearchResult> searchResults = retrieveAllSearchResults(
+                mSession.search("", new SearchSpec.Builder().build())
+        );
+        assertThat(searchResults).hasSize(1);
+        SearchResult result = searchResults.get(0);
+        assertThat(result.getGenericDocument()).isEqualTo(genericDoc);
 
         // Deserializing it to InterfaceRoot will get a Person instance back, which is the first
         // known type, instead of an Organization.
-        InterfaceRoot interfaceRoot = actualGenericDoc.toDocumentClass(InterfaceRoot.class,
+        InterfaceRoot interfaceRoot = result.getDocument(InterfaceRoot.class,
                 AppSearchDocumentClassMap.getGlobalMap());
         assertThat(interfaceRoot).isInstanceOf(Person.class);
         assertThat(interfaceRoot).isNotInstanceOf(Organization.class);

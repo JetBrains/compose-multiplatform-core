@@ -256,11 +256,20 @@ internal class InProgressStrokesManagerTest {
         whenever(inProgressStrokesRenderHelper.requestDraw()).then {
             manager.onDraw()
             manager.onDrawComplete()
-            manager.setCustomLatencyDataField({ data: LatencyData, timeNanos: Long ->
+            manager.setCustomLatencyDataField { data: LatencyData, timeNanos: Long ->
                 data.canvasFrontBufferStrokesRenderHelperData.finishesDrawCalls = timeNanos
-            })
+            }
             manager.reportEstimatedPixelPresentationTime(clock.getNextTime())
             manager.handOffAllLatencyData()
+        }
+    }
+
+    private fun setUpMockInProgressStrokesRenderHelperForFlush(manager: InProgressStrokesManager) {
+        whenever(inProgressStrokesRenderHelper.requestStrokeCohortHandoffToHwui(any())).thenAnswer {
+            @Suppress("UNCHECKED_CAST")
+            val finishedStrokes = it.arguments[0] as Map<InProgressStrokeId, FinishedStroke>
+            manager.onStrokeCohortHandoffToHwui(finishedStrokes)
+            manager.onStrokeCohortHandoffToHwuiComplete()
         }
     }
 
@@ -1257,7 +1266,7 @@ internal class InProgressStrokesManagerTest {
                 toolType = InputToolType.TOUCH,
                 elapsedTimeMillis = 0
             )
-        val strokeId = manager.startStroke(downInput, makeBrush())
+        val strokeId = manager.startStroke(downInput, makeBrush(), Matrix())
         renderHelper.runRenderThreadToIdle()
         runUiThreadToEndOfFrame()
         clock.advanceByMillis(1000)
@@ -1615,10 +1624,10 @@ internal class InProgressStrokesManagerTest {
             BrushBehavior(
                 source = BrushBehavior.Source.TIME_SINCE_INPUT_IN_SECONDS,
                 target = BrushBehavior.Target.SIZE_MULTIPLIER,
-                sourceValueRangeLowerBound = 0f,
-                sourceValueRangeUpperBound = 0.25f,
-                targetModifierRangeLowerBound = 1.25f,
-                targetModifierRangeUpperBound = 1f,
+                sourceValueRangeStart = 0f,
+                sourceValueRangeEnd = 0.25f,
+                targetModifierRangeStart = 1.25f,
+                targetModifierRangeEnd = 1f,
             )
         val brush =
             Brush(
@@ -1733,6 +1742,7 @@ internal class InProgressStrokesManagerTest {
         val manager =
             makeAsyncInProgressStrokesManager(latencyDataRecorder, clock, inProgressStrokePool)
         setUpMockInProgressStrokesRenderHelperForSynchronousOperation(manager, clock)
+        setUpMockInProgressStrokesRenderHelperForFlush(manager)
 
         val finishedStrokes = mutableListOf<InProgressStrokeId>()
         manager.addListener(
@@ -1828,6 +1838,8 @@ internal class InProgressStrokesManagerTest {
         val manager =
             makeAsyncInProgressStrokesManager(latencyDataRecorder, clock, inProgressStrokePool)
         setUpMockInProgressStrokesRenderHelperForSynchronousOperation(manager, clock)
+        setUpMockInProgressStrokesRenderHelperForFlush(manager)
+
         manager.setHandoffDebounceTimeMs(5000)
         manager.setPauseStrokeCohortHandoffs(true)
 

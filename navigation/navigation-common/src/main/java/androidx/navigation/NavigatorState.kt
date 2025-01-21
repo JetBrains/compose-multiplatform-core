@@ -16,10 +16,10 @@
 
 package androidx.navigation
 
-import android.os.Bundle
 import androidx.annotation.CallSuper
 import androidx.annotation.RestrictTo
 import androidx.lifecycle.Lifecycle
+import androidx.savedstate.SavedState
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -91,7 +91,7 @@ public abstract class NavigatorState {
     /** Create a new [NavBackStackEntry] from a given [destination] and [arguments]. */
     public abstract fun createBackStackEntry(
         destination: NavDestination,
-        arguments: Bundle?
+        arguments: SavedState?
     ): NavBackStackEntry
 
     /**

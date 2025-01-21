@@ -360,7 +360,7 @@ public class LocalStorage {
                 /* storeParentInfoAsSyntheticProperty= */ false,
                 /* shouldRetrieveParentInfo= */ true
         );
-        AppSearchRevocableFileDescriptorStore revocableFileDescriptorStore = null;
+        RevocableFileDescriptorStore revocableFileDescriptorStore = null;
         if (Flags.enableBlobStore()) {
             revocableFileDescriptorStore = new JetpackRevocableFileDescriptorStore(config);
         }
@@ -409,7 +409,7 @@ public class LocalStorage {
         return new SearchSessionImpl(
                 mAppSearchImpl,
                 context.mExecutor,
-                new AlwaysSupportedFeatures(),
+                new FeaturesImpl(),
                 context.mContext,
                 context.mDatabaseName,
                 context.mLogger);
@@ -419,6 +419,6 @@ public class LocalStorage {
     private GlobalSearchSession doCreateGlobalSearchSession(
             @NonNull GlobalSearchContext context) {
         return new GlobalSearchSessionImpl(mAppSearchImpl, context.mExecutor,
-                new AlwaysSupportedFeatures(), context.mContext, context.mLogger);
+                new FeaturesImpl(), context.mContext, context.mLogger);
     }
 }

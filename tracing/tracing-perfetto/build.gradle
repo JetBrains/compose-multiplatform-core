@@ -79,5 +79,5 @@ android {
     buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
-    namespace "androidx.tracing.perfetto"
+    namespace = "androidx.tracing.perfetto"
 }

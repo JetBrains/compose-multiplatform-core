@@ -46,7 +46,7 @@ android {
                 "androidx/traceprocessor/testdata"
         )
     }
-    namespace "androidx.benchmark"
+    namespace = "androidx.benchmark"
     defaultConfig {
         externalNativeBuild {
             cmake {
@@ -57,7 +57,7 @@ android {
     externalNativeBuild {
         cmake {
             path file('src/main/cpp/CMakeLists.txt')
-            version libs.versions.cmake.get()
+            version = libs.versions.cmake.get()
         }
     }
 }
@@ -75,6 +75,7 @@ wire {
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation(libs.kotlinStdlib)
     api("androidx.annotation:annotation:1.8.1")
     api("androidx.annotation:annotation-experimental:1.4.1")

@@ -50,7 +50,7 @@ androidx {
 }
 
 android {
-    namespace "androidx.fragment.testing.manifest"
+    namespace = "androidx.fragment.testing.manifest"
 }
 
 tasks.withType(KotlinCompile).configureEach {

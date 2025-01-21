@@ -48,12 +48,12 @@ dependencies {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
 
     defaultConfig {
-        minSdkVersion 25
+        minSdk = 25
     }
-    namespace "androidx.wear.compose.navigation.samples"
+    namespace = "androidx.wear.compose.navigation.samples"
 }
 
 androidx {

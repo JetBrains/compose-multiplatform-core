@@ -26,7 +26,7 @@ import android.content.Intent;
 import android.support.customtabs.ICustomTabsCallback;
 import android.support.customtabs.ICustomTabsService;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Utilities for unit testing Custom Tabs.
@@ -34,21 +34,18 @@ import androidx.annotation.NonNull;
 // minSdk For Bundle#getBinder
 public class TestUtil {
 
-    @NonNull
-    public static CustomTabsSession makeMockSession() {
+    public static @NonNull CustomTabsSession makeMockSession() {
         return new CustomTabsSession(mock(ICustomTabsService.class),
                 mock(ICustomTabsCallback.class), new ComponentName("", ""),
                 makeMockPendingIntent());
     }
 
-    @NonNull
-    public static CustomTabsSession.PendingSession makeMockPendingSession() {
+    public static CustomTabsSession.@NonNull PendingSession makeMockPendingSession() {
         return new CustomTabsSession.PendingSession(
                 mock(CustomTabsCallback.class), makeMockPendingIntent());
     }
 
-    @NonNull
-    public static PendingIntent makeMockPendingIntent() {
+    public static @NonNull PendingIntent makeMockPendingIntent() {
         return PendingIntent.getBroadcast(mock(Context.class), 0, new Intent(), 0);
     }
 

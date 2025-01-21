@@ -49,13 +49,13 @@ private constructor(
         fun createFor(classLoader: ClassLoader): SandboxedSdkCompatProxyFactory {
             val sandboxedSdkCompatClass =
                 Class.forName(
-                    SandboxedSdkCompat::class.java.name,
+                    "androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat",
                     /* initialize = */ false,
                     classLoader
                 )
             val sandboxedSdkInfoClass =
                 Class.forName(
-                    SandboxedSdkInfo::class.java.name,
+                    "androidx.privacysandbox.sdkruntime.core.SandboxedSdkInfo",
                     /* initialize = */ false,
                     classLoader
                 )

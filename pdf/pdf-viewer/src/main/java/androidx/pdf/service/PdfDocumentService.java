@@ -31,7 +31,6 @@ import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
 import android.os.ext.SdkExtensions;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.data.PdfStatus;
 import androidx.pdf.models.Dimensions;
@@ -42,6 +41,8 @@ import androidx.pdf.models.PageSelection;
 import androidx.pdf.models.PdfDocumentRemote;
 import androidx.pdf.models.SelectionBoundary;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -50,9 +51,8 @@ import java.util.stream.Collectors;
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class PdfDocumentService extends Service {
 
-    @NonNull
     @Override
-    public IBinder onBind(Intent intent) {
+    public @NonNull IBinder onBind(Intent intent) {
         return new PdfDocumentRemoteImpl();
     }
 

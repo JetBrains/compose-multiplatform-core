@@ -82,7 +82,7 @@ object Arguments {
     internal val iterations: Int?
     internal val profiler: Profiler?
     internal val profilerDefault: Boolean
-    internal val profilerSampleFrequency: Int
+    internal val profilerSampleFrequencyHz: Int
     internal val profilerSampleDurationSeconds: Long
     internal val profilerSkipWhenDurationRisksAnr: Boolean
     internal val profilerPerfCompareEnable: Boolean
@@ -246,7 +246,7 @@ object Arguments {
         val profilerState = arguments.getProfiler(outputEnable)
         profiler = profilerState.first
         profilerDefault = profilerState.second
-        profilerSampleFrequency =
+        profilerSampleFrequencyHz =
             arguments.getBenchmarkArgument("profiling.sampleFrequency")?.ifBlank { null }?.toInt()
                 ?: 1000
         profilerSampleDurationSeconds =
@@ -263,7 +263,7 @@ object Arguments {
             Log.d(
                 BenchmarkState.TAG,
                 "Profiler ${profiler.javaClass.simpleName}, freq " +
-                    "$profilerSampleFrequency, duration $profilerSampleDurationSeconds"
+                    "$profilerSampleFrequencyHz, duration $profilerSampleDurationSeconds"
             )
         }
 

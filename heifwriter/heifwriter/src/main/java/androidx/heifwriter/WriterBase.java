@@ -16,7 +16,6 @@
 
 package androidx.heifwriter;
 
-import static android.media.MediaMuxer.OutputFormat.MUXER_OUTPUT_HEIF;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
@@ -33,11 +32,11 @@ import android.view.Surface;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 
-import java.io.FileDescriptor;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -106,8 +105,8 @@ public class WriterBase implements AutoCloseable {
     @SuppressWarnings("WeakerAccess") /* synthetic access */
     final ResultWaiter mResultWaiter = new ResultWaiter();
     @SuppressWarnings("WeakerAccess") /* synthetic access */
-    @NonNull protected MediaMuxer mMuxer;
-    @NonNull protected EncoderBase mEncoder;
+protected @NonNull MediaMuxer mMuxer;
+    protected @NonNull EncoderBase mEncoder;
     final AtomicBoolean mMuxerStarted = new AtomicBoolean(false);
     @SuppressWarnings("WeakerAccess") /* synthetic access */
     int[] mTrackIndexArray;
@@ -176,7 +175,7 @@ public class WriterBase implements AutoCloseable {
      *
      * @throws IllegalStateException if not started or not configured to use buffer input.
      */
-    void addYuvBuffer(int format, @NonNull byte[] data) {
+    void addYuvBuffer(int format, byte @NonNull [] data) {
         checkStartedAndMode(INPUT_MODE_BUFFER);
         synchronized (this) {
             if (mEncoder != null) {
@@ -246,7 +245,7 @@ public class WriterBase implements AutoCloseable {
      * @param offset offset of the Exif data block within exifData.
      * @param length length of the Exif data block.
      */
-    void addExifData(int imageIndex, @NonNull byte[] exifData, int offset, int length) {
+    void addExifData(int imageIndex, byte @NonNull [] exifData, int offset, int length) {
         checkStarted(true);
 
         ByteBuffer buffer = ByteBuffer.allocateDirect(length);
@@ -447,7 +446,7 @@ public class WriterBase implements AutoCloseable {
         }
 
         @Override
-        public void onError(@NonNull EncoderBase encoder, @NonNull MediaCodec.CodecException e) {
+        public void onError(@NonNull EncoderBase encoder, MediaCodec.@NonNull CodecException e) {
             stopAndNotify(e);
         }
 

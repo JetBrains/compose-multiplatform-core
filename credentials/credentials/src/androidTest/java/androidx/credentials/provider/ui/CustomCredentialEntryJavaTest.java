@@ -30,10 +30,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Icon;
+import android.os.Build;
 import android.os.Bundle;
 import android.service.credentials.CredentialEntry;
 
-import androidx.core.os.BuildCompat;
 import androidx.credentials.R;
 import androidx.credentials.TestUtilsKt;
 import androidx.credentials.provider.BeginGetCredentialOption;
@@ -325,7 +325,7 @@ public class CustomCredentialEntryJavaTest {
                 .setEntryGroupId(ENTRY_GROUP_ID)
                 .setDefaultIconPreferredAsSingleProvider(SINGLE_PROVIDER_ICON_BIT);
 
-        if (BuildCompat.isAtLeastV()) {
+        if (Build.VERSION.SDK_INT >= 35) {
             BiometricPromptData biometricPromptData = null;
             if (!nullBiometricPromptData) {
                 biometricPromptData = testBiometricPromptData();
@@ -369,7 +369,7 @@ public class CustomCredentialEntryJavaTest {
         assertThat(entry.getEntryGroupId()).isEqualTo(ENTRY_GROUP_ID);
         assertThat(entry.isDefaultIconPreferredAsSingleProvider()).isEqualTo(
                 SINGLE_PROVIDER_ICON_BIT);
-        if (BuildCompat.isAtLeastV() && entry.getBiometricPromptData() != null) {
+        if (Build.VERSION.SDK_INT >= 35 && entry.getBiometricPromptData() != null) {
             assertThat(entry.getBiometricPromptData().getAllowedAuthenticators()).isEqualTo(
                     testBiometricPromptData().getAllowedAuthenticators());
         } else {
@@ -390,7 +390,7 @@ public class CustomCredentialEntryJavaTest {
         assertThat(entry.getEntryGroupId()).isEqualTo(ENTRY_GROUP_ID);
         assertThat(entry.isDefaultIconPreferredAsSingleProvider()).isEqualTo(
                 SINGLE_PROVIDER_ICON_BIT);
-        if (BuildCompat.isAtLeastV() && entry.getBiometricPromptData() != null) {
+        if (Build.VERSION.SDK_INT >= 35 && entry.getBiometricPromptData() != null) {
             assertThat(entry.getBiometricPromptData().getAllowedAuthenticators()).isEqualTo(
                     testBiometricPromptData().getAllowedAuthenticators());
         } else {

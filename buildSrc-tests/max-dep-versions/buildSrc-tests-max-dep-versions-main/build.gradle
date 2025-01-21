@@ -17,7 +17,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.testapp"
+    namespace = "androidx.testapp"
 }
 
 androidx {

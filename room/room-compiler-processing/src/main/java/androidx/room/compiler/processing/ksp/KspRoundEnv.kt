@@ -58,7 +58,7 @@ internal class KspRoundEnv(
                         is KSClassDeclaration -> {
                             when (symbol.classKind) {
                                 ClassKind.ENUM_ENTRY -> add(KspEnumEntry.create(env, symbol))
-                                else -> add(KspTypeElement.create(env, symbol))
+                                else -> add(env.wrapClassDeclaration(symbol))
                             }
                         }
                         is KSFunctionDeclaration -> {

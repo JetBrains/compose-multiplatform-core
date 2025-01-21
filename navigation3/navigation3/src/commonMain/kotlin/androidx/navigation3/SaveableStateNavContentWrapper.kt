@@ -19,14 +19,13 @@ package androidx.navigation3
 import androidx.collection.MutableObjectIntMap
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.saveable.SaveableStateHolder
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 
 /**
- * Wraps the content of a [Record] with a [SaveableStateHolder.SaveableStateProvider] to ensure that
- * calls to [rememberSaveable] within the content work properly and that state can be saved.
+ * Wraps the content of a [NavRecord] with a [SaveableStateHolder.SaveableStateProvider] to ensure
+ * that calls to [rememberSaveable] within the content work properly and that state can be saved.
  *
  * This [NavContentWrapper] is the only one that is **required** as saving state is considered a
  * non-optional feature.
@@ -34,11 +33,15 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 public class SaveableStateNavContentWrapper : NavContentWrapper {
     private var savedStateHolder: SaveableStateHolder? = null
     private val refCount: MutableObjectIntMap<Any> = MutableObjectIntMap()
-    private var initializing = true
     private var backstackSize = 0
 
     @Composable
     override fun WrapBackStack(backStack: List<Any>) {
+        DisposableEffect(key1 = backStack) {
+            refCount.clear()
+            onDispose {}
+        }
+
         savedStateHolder = rememberSaveableStateHolder()
         backstackSize = backStack.size
         backStack.forEach { key ->
@@ -61,17 +64,10 @@ public class SaveableStateNavContentWrapper : NavContentWrapper {
                 }
             }
         }
-        LaunchedEffect(key1 = backStack) {
-            if (!initializing) {
-                refCount.clear()
-                initializing = true
-            }
-            initializing = false
-        }
     }
 
     @Composable
-    public override fun <T : Any> WrapContent(record: Record<T>) {
+    public override fun <T : Any> WrapContent(record: NavRecord<T>) {
         val key = record.key
         DisposableEffect(key1 = key) {
             refCount[key] = refCount.getOrDefault(key, 0).plus(1)

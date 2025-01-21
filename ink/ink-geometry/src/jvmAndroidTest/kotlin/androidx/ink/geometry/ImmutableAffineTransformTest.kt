@@ -142,6 +142,42 @@ class ImmutableAffineTransformTest {
     }
 
     @Test
+    fun computeInverse_correctlyReturnsNewAffineTransform() {
+        val identityTransform = AffineTransform.IDENTITY
+        val identityOutput = identityTransform.computeInverse()
+        assertThat(identityOutput).isEqualTo(AffineTransform.IDENTITY)
+
+        val scaleTransform = ImmutableAffineTransform.scale(4f, 10f)
+        val scaleOutput = scaleTransform.computeInverse()
+        assertThat(scaleOutput).isEqualTo(ImmutableAffineTransform.scale(0.25f, 0.1f))
+
+        val translateTransform = ImmutableAffineTransform.translate(ImmutableVec(5f, 10f))
+        val translateOutput = translateTransform.computeInverse()
+        assertThat(translateOutput)
+            .isEqualTo(ImmutableAffineTransform.translate(ImmutableVec(-5f, -10f)))
+
+        val shearXTransform = ImmutableAffineTransform(1f, 5F, 0f, 0f, 1f, 0f)
+        val shearXOutput = shearXTransform.computeInverse()
+        assertThat(shearXOutput).isEqualTo(ImmutableAffineTransform(1f, -5f, 0f, 0f, 1f, 0f))
+
+        val shearYTransform = ImmutableAffineTransform(1f, 0F, 0f, 5f, 1f, 0f)
+        val shearYOutput = shearYTransform.computeInverse()
+        assertThat(shearYOutput).isEqualTo(ImmutableAffineTransform(1f, 0f, 0f, -5f, 1f, 0f))
+    }
+
+    @Test
+    fun computeInverse_whenAppliedToTransformWithDeterminantOfZero_correctlyThrows() {
+        val zeroesTransform = MutableAffineTransform(0f, 0f, 0f, 0f, 0f, 0f)
+
+        assertFailsWith<IllegalArgumentException> { zeroesTransform.computeInverse() }
+
+        // Determinant = a * e - b * d = 2 * 16 - 4 * 8 = 0
+        val determinantOfZeroTransform = MutableAffineTransform(2f, 4f, 0f, 8f, 16f, 0f)
+
+        assertFailsWith<IllegalArgumentException> { determinantOfZeroTransform.computeInverse() }
+    }
+
+    @Test
     fun populateInverse_correctlyModifiesOutput() {
         val identityTransform = AffineTransform.IDENTITY
         val identityOutput = MutableAffineTransform()
@@ -201,6 +237,35 @@ class ImmutableAffineTransformTest {
     }
 
     @Test
+    fun applyTransform_whenAppliedToAVec_correctlyReturnsNewVec() {
+        val testVec = ImmutableVec(4F, 6F)
+
+        val identityTransform = AffineTransform.IDENTITY
+        val identityVec = identityTransform.applyTransform(testVec)
+        assertThat(identityVec).isEqualTo(MutableVec(4F, 6F))
+
+        val translateTransform = ImmutableAffineTransform.translate(ImmutableVec(3F, -20F))
+        val translateVec = translateTransform.applyTransform(testVec)
+        assertThat(translateVec).isEqualTo(MutableVec(7F, -14F))
+
+        val scaleBy2ValuesTransform = ImmutableAffineTransform.scale(2.5F, -.5F)
+        val scaleBy2ValuesVec = scaleBy2ValuesTransform.applyTransform(testVec)
+        assertThat(scaleBy2ValuesVec).isEqualTo(MutableVec(10F, -3F))
+
+        val scaleBy1ValueTransform = ImmutableAffineTransform.scale(2.5F)
+        val scaleBy1ValueVec = scaleBy1ValueTransform.applyTransform(testVec)
+        assertThat(scaleBy1ValueVec).isEqualTo(MutableVec(10F, 15F))
+
+        val scaleXTransform = ImmutableAffineTransform.scaleX(2.5F)
+        val scaleXVec = scaleXTransform.applyTransform(testVec)
+        assertThat(scaleXVec).isEqualTo(MutableVec(10F, 6F))
+
+        val scaleYTransform = ImmutableAffineTransform.scaleY(2.5F)
+        val scaleYVec = scaleYTransform.applyTransform(testVec)
+        assertThat(scaleYVec).isEqualTo(MutableVec(4F, 15F))
+    }
+
+    @Test
     fun applyTransform_whenAppliedToAVec_correctlyModifiesVec() {
         val testVec = ImmutableVec(4F, 6F)
 
@@ -242,6 +307,41 @@ class ImmutableAffineTransformTest {
         val translateTransform = ImmutableAffineTransform.translate(ImmutableVec(3F, -20F))
         translateTransform.applyTransform(testMutableVec, testMutableVec)
         assertThat(testMutableVec).isEqualTo(MutableVec(7F, -14F))
+    }
+
+    @Test
+    fun applyTransform_whenAppliedToASegment_correctlyReturnsNewSegment() {
+        val testSegment = ImmutableSegment(ImmutableVec(4F, 6F), ImmutableVec(40F, 60F))
+
+        val identityTransform = AffineTransform.IDENTITY
+        val identitySegment = identityTransform.applyTransform(testSegment)
+        assertThat(identitySegment)
+            .isEqualTo(MutableSegment(MutableVec(4F, 6F), MutableVec(40F, 60F)))
+
+        val translateTransform = ImmutableAffineTransform.translate(ImmutableVec(3F, -20F))
+        val translateSegment = translateTransform.applyTransform(testSegment)
+        assertThat(translateSegment)
+            .isEqualTo(MutableSegment(MutableVec(7F, -14F), MutableVec(43F, 40F)))
+
+        val scaleBy2ValuesTransform = ImmutableAffineTransform.scale(2.5F, -.5F)
+        val scaleBy2ValuesSegment = scaleBy2ValuesTransform.applyTransform(testSegment)
+        assertThat(scaleBy2ValuesSegment)
+            .isEqualTo(MutableSegment(MutableVec(10F, -3F), MutableVec(100F, -30F)))
+
+        val scaleBy1ValueTransform = ImmutableAffineTransform.scale(2.5F)
+        val scaleBy1ValueSegment = scaleBy1ValueTransform.applyTransform(testSegment)
+        assertThat(scaleBy1ValueSegment)
+            .isEqualTo(MutableSegment(MutableVec(10F, 15F), MutableVec(100F, 150F)))
+
+        val scaleXTransform = ImmutableAffineTransform.scaleX(2.5F)
+        val scaleXSegment = scaleXTransform.applyTransform(testSegment)
+        assertThat(scaleXSegment)
+            .isEqualTo(MutableSegment(MutableVec(10F, 6F), MutableVec(100F, 60F)))
+
+        val scaleYTransform = ImmutableAffineTransform.scaleY(2.5F)
+        val scaleYSegment = scaleYTransform.applyTransform(testSegment)
+        assertThat(scaleYSegment)
+            .isEqualTo(MutableSegment(MutableVec(4F, 15F), MutableVec(40F, 150F)))
     }
 
     @Test
@@ -293,6 +393,58 @@ class ImmutableAffineTransformTest {
         translateTransform.applyTransform(testMutableSegment, testMutableSegment)
         assertThat(testMutableSegment)
             .isEqualTo(MutableSegment(MutableVec(7F, -14F), MutableVec(43F, 40F)))
+    }
+
+    @Test
+    fun applyTransform_whenAppliedToATriangle_correctlyReturnsNewTriangle() {
+        val testTriangle =
+            ImmutableTriangle(ImmutableVec(1F, 2F), ImmutableVec(6F, -3F), ImmutableVec(-4F, -6F))
+
+        val identityTransform = AffineTransform.IDENTITY
+        val identityTriangle = identityTransform.applyTransform(testTriangle)
+        assertThat(identityTriangle)
+            .isEqualTo(
+                MutableTriangle(MutableVec(1F, 2F), MutableVec(6F, -3F), MutableVec(-4F, -6F))
+            )
+
+        val translateTransform = ImmutableAffineTransform.translate(ImmutableVec(3F, -20F))
+        val translateTriangle = translateTransform.applyTransform(testTriangle)
+        assertThat(translateTriangle)
+            .isEqualTo(
+                MutableTriangle(MutableVec(4F, -18F), MutableVec(9F, -23F), MutableVec(-1F, -26F))
+            )
+
+        val scaleBy2ValuesTransform = ImmutableAffineTransform.scale(2.5F, -.5F)
+        val scaleBy2ValuesTriangle = scaleBy2ValuesTransform.applyTransform(testTriangle)
+        assertThat(scaleBy2ValuesTriangle)
+            .isEqualTo(
+                MutableTriangle(MutableVec(2.5F, -1F), MutableVec(15F, 1.5F), MutableVec(-10F, 3F))
+            )
+
+        val scaleBy1ValueTransform = ImmutableAffineTransform.scale(2.5F)
+        val scaleBy1ValueTriangle = scaleBy1ValueTransform.applyTransform(testTriangle)
+        assertThat(scaleBy1ValueTriangle)
+            .isEqualTo(
+                MutableTriangle(
+                    MutableVec(2.5F, 5F),
+                    MutableVec(15F, -7.5F),
+                    MutableVec(-10F, -15F)
+                )
+            )
+
+        val scaleXTransform = ImmutableAffineTransform.scaleX(2.5F)
+        val scaleXTriangle = scaleXTransform.applyTransform(testTriangle)
+        assertThat(scaleXTriangle)
+            .isEqualTo(
+                MutableTriangle(MutableVec(2.5F, 2F), MutableVec(15F, -3F), MutableVec(-10F, -6F))
+            )
+
+        val scaleYTransform = ImmutableAffineTransform.scaleY(2.5F)
+        val scaleYTriangle = scaleYTransform.applyTransform(testTriangle)
+        assertThat(scaleYTriangle)
+            .isEqualTo(
+                MutableTriangle(MutableVec(1F, 5F), MutableVec(6F, -7.5F), MutableVec(-4F, -15F))
+            )
     }
 
     @Test
@@ -367,6 +519,75 @@ class ImmutableAffineTransformTest {
     }
 
     @Test
+    fun applyTransform_whenAppliedToABox_correctlyReturnsNewParallelogram() {
+        val testBox = ImmutableBox.fromCenterAndDimensions(ImmutableVec(4f, 1f), 6f, 8f)
+
+        val identityTransform = AffineTransform.IDENTITY
+        val identityParallelogram = identityTransform.applyTransform(testBox)
+        assertThat(identityParallelogram)
+            .isEqualTo(MutableParallelogram.fromCenterAndDimensions(MutableVec(4f, 1f), 6f, 8f))
+
+        val translateTransform = ImmutableAffineTransform.translate(ImmutableVec(1F, 3F))
+        val translateParallelogram = translateTransform.applyTransform(testBox)
+        assertThat(translateParallelogram)
+            .isEqualTo(MutableParallelogram.fromCenterAndDimensions(MutableVec(5f, 4f), 6f, 8f))
+
+        val scaleBy2ValuesTransform = ImmutableAffineTransform.scale(2.5F, -.5F)
+        val scaleBy2ValuesParallelogram = scaleBy2ValuesTransform.applyTransform(testBox)
+        assertThat(scaleBy2ValuesParallelogram)
+            .isEqualTo(
+                MutableParallelogram.fromCenterAndDimensions(MutableVec(10f, -0.5f), 15f, -4f)
+            )
+
+        val scaleBy1ValueTransform = ImmutableAffineTransform.scale(2.5F)
+        val scaleBy1ValueParallelogram = scaleBy1ValueTransform.applyTransform(testBox)
+        assertThat(scaleBy1ValueParallelogram)
+            .isEqualTo(
+                MutableParallelogram.fromCenterAndDimensions(MutableVec(10f, 2.5f), 15f, 20f)
+            )
+
+        val scaleXTransform = ImmutableAffineTransform.scaleX(2.5F)
+        val scaleXParallelogram = scaleXTransform.applyTransform(testBox)
+        assertThat(scaleXParallelogram)
+            .isEqualTo(MutableParallelogram.fromCenterAndDimensions(MutableVec(10f, 1f), 15f, 8f))
+
+        val scaleYTransform = ImmutableAffineTransform.scaleY(2.5F)
+        val scaleYParallelogram = scaleYTransform.applyTransform(testBox)
+        assertThat(scaleYParallelogram)
+            .isEqualTo(MutableParallelogram.fromCenterAndDimensions(MutableVec(4f, 2.5f), 6f, 20f))
+
+        val shearXTransform = ImmutableAffineTransform(1f, 2.5F, 0f, 0f, 1f, 0f)
+        val shearXParallelogram = shearXTransform.applyTransform(testBox)
+        assertThat(shearXParallelogram)
+            .isEqualTo(
+                MutableParallelogram.fromCenterDimensionsRotationAndShear(
+                    MutableVec(6.5f, 1f),
+                    6f,
+                    8f,
+                    0.0f,
+                    2.5f,
+                )
+            )
+
+        val sinPi = sin(Angle.HALF_TURN_RADIANS)
+        val cosPi = cos(Angle.HALF_TURN_RADIANS)
+        val rotateTransform = ImmutableAffineTransform(cosPi, -sinPi, 0f, sinPi, cosPi, 0f)
+        val rotateParallelogram = rotateTransform.applyTransform(testBox)
+        assertThat(
+                rotateParallelogram.isAlmostEqual(
+                    MutableParallelogram.fromCenterDimensionsAndRotation(
+                        MutableVec(-4f, -1f),
+                        6f,
+                        8f,
+                        Angle.HALF_TURN_RADIANS,
+                    ),
+                    tolerance = 0.0001f,
+                )
+            )
+            .isTrue()
+    }
+
+    @Test
     fun applyTransform_whenAppliedToABox_correctlyModifiesParallelogram() {
         val testBox = ImmutableBox.fromCenterAndDimensions(ImmutableVec(4f, 1f), 6f, 8f)
 
@@ -430,14 +651,134 @@ class ImmutableAffineTransformTest {
         val rotateParallelogram = MutableParallelogram()
         rotateTransform.applyTransform(testBox, rotateParallelogram)
         assertThat(
-                Parallelogram.areNear(
-                    rotateParallelogram,
+                rotateParallelogram.isAlmostEqual(
                     MutableParallelogram.fromCenterDimensionsAndRotation(
                         MutableVec(-4f, -1f),
                         6f,
                         8f,
                         Angle.HALF_TURN_RADIANS,
                     ),
+                    tolerance = 0.0001f,
+                )
+            )
+            .isTrue()
+    }
+
+    @Test
+    fun applyTransform_whenAppliedToAParallelogram_correctlyReturnsNewParallelogram() {
+        val testParallelogram =
+            ImmutableParallelogram.fromCenterDimensionsRotationAndShear(
+                ImmutableVec(4f, 1f),
+                6f,
+                8f,
+                Angle.QUARTER_TURN_RADIANS,
+                0.5f,
+            )
+
+        val identityTransform = AffineTransform.IDENTITY
+        val identityParallelogram = identityTransform.applyTransform(testParallelogram)
+        assertThat(identityParallelogram)
+            .isEqualTo(
+                MutableParallelogram.fromCenterDimensionsRotationAndShear(
+                    MutableVec(4f, 1f),
+                    6f,
+                    8f,
+                    Angle.QUARTER_TURN_RADIANS,
+                    0.5f,
+                )
+            )
+
+        val translateTransform = ImmutableAffineTransform.translate(ImmutableVec(1F, 3F))
+        val translateParallelogram = translateTransform.applyTransform(testParallelogram)
+        assertThat(translateParallelogram)
+            .isEqualTo(
+                MutableParallelogram.fromCenterDimensionsRotationAndShear(
+                    MutableVec(5f, 4f),
+                    6f,
+                    8f,
+                    Angle.QUARTER_TURN_RADIANS,
+                    0.5f,
+                )
+            )
+
+        val scaleBy2ValuesTransform = ImmutableAffineTransform.scale(2.5F, -.5F)
+        val scaleBy2ValuesParallelogram = scaleBy2ValuesTransform.applyTransform(testParallelogram)
+        assertThat(
+                scaleBy2ValuesParallelogram.isAlmostEqual(
+                    MutableParallelogram.fromCenterDimensionsRotationAndShear(
+                        MutableVec(10f, -0.5f),
+                        3f,
+                        -20f,
+                        Angle.QUARTER_TURN_RADIANS + Angle.HALF_TURN_RADIANS,
+                        -0.1f,
+                    ),
+                    tolerance = 0.0001f,
+                )
+            )
+            .isTrue()
+
+        val scaleBy1ValueTransform = ImmutableAffineTransform.scale(2.5F)
+        val scaleBy1ValueParallelogram = scaleBy1ValueTransform.applyTransform(testParallelogram)
+        assertThat(
+                scaleBy1ValueParallelogram.isAlmostEqual(
+                    MutableParallelogram.fromCenterDimensionsRotationAndShear(
+                        MutableVec(10f, 2.5f),
+                        15f,
+                        20f,
+                        Angle.QUARTER_TURN_RADIANS,
+                        0.5f,
+                    ),
+                    tolerance = 0.0001f,
+                )
+            )
+            .isTrue()
+
+        val scaleXTransform = ImmutableAffineTransform.scaleX(2.5F)
+        val scaleXParallelogram = scaleXTransform.applyTransform(testParallelogram)
+        assertThat(
+                scaleXParallelogram.isAlmostEqual(
+                    MutableParallelogram.fromCenterDimensionsRotationAndShear(
+                        MutableVec(10f, 1f),
+                        6f,
+                        20f,
+                        Angle.QUARTER_TURN_RADIANS,
+                        0.2f,
+                    ),
+                    tolerance = 0.0001f,
+                )
+            )
+            .isTrue()
+
+        val scaleYTransform = ImmutableAffineTransform.scaleY(2.5F)
+        val scaleYParallelogram = scaleYTransform.applyTransform(testParallelogram)
+        assertThat(
+                scaleYParallelogram.isAlmostEqual(
+                    MutableParallelogram.fromCenterDimensionsRotationAndShear(
+                        MutableVec(4f, 2.5f),
+                        15f,
+                        8f,
+                        Angle.QUARTER_TURN_RADIANS,
+                        1.25f,
+                    ),
+                    tolerance = 0.0001f,
+                )
+            )
+            .isTrue()
+
+        val sinPi = sin(Angle.HALF_TURN_RADIANS)
+        val cosPi = cos(Angle.HALF_TURN_RADIANS)
+        val rotateTransform = ImmutableAffineTransform(cosPi, -sinPi, 0f, sinPi, cosPi, 0f)
+        val rotateParallelogram = rotateTransform.applyTransform(testParallelogram)
+        assertThat(
+                rotateParallelogram.isAlmostEqual(
+                    MutableParallelogram.fromCenterDimensionsRotationAndShear(
+                        MutableVec(-4f, -1f),
+                        6f,
+                        8f,
+                        Angle.HALF_TURN_RADIANS + Angle.QUARTER_TURN_RADIANS,
+                        0.5f,
+                    ),
+                    tolerance = 0.0001f,
                 )
             )
             .isTrue()
@@ -486,8 +827,7 @@ class ImmutableAffineTransformTest {
         val scaleBy2ValuesParallelogram = MutableParallelogram()
         scaleBy2ValuesTransform.applyTransform(testParallelogram, scaleBy2ValuesParallelogram)
         assertThat(
-                Parallelogram.areNear(
-                    scaleBy2ValuesParallelogram,
+                scaleBy2ValuesParallelogram.isAlmostEqual(
                     MutableParallelogram.fromCenterDimensionsRotationAndShear(
                         MutableVec(10f, -0.5f),
                         3f,
@@ -504,8 +844,7 @@ class ImmutableAffineTransformTest {
         val scaleBy1ValueParallelogram = MutableParallelogram()
         scaleBy1ValueTransform.applyTransform(testParallelogram, scaleBy1ValueParallelogram)
         assertThat(
-                Parallelogram.areNear(
-                    scaleBy1ValueParallelogram,
+                scaleBy1ValueParallelogram.isAlmostEqual(
                     MutableParallelogram.fromCenterDimensionsRotationAndShear(
                         MutableVec(10f, 2.5f),
                         15f,
@@ -522,8 +861,7 @@ class ImmutableAffineTransformTest {
         val scaleXParallelogram = MutableParallelogram()
         scaleXTransform.applyTransform(testParallelogram, scaleXParallelogram)
         assertThat(
-                Parallelogram.areNear(
-                    scaleXParallelogram,
+                scaleXParallelogram.isAlmostEqual(
                     MutableParallelogram.fromCenterDimensionsRotationAndShear(
                         MutableVec(10f, 1f),
                         6f,
@@ -540,8 +878,7 @@ class ImmutableAffineTransformTest {
         val scaleYParallelogram = MutableParallelogram()
         scaleYTransform.applyTransform(testParallelogram, scaleYParallelogram)
         assertThat(
-                Parallelogram.areNear(
-                    scaleYParallelogram,
+                scaleYParallelogram.isAlmostEqual(
                     MutableParallelogram.fromCenterDimensionsRotationAndShear(
                         MutableVec(4f, 2.5f),
                         15f,
@@ -560,8 +897,7 @@ class ImmutableAffineTransformTest {
         val rotateParallelogram = MutableParallelogram()
         rotateTransform.applyTransform(testParallelogram, rotateParallelogram)
         assertThat(
-                Parallelogram.areNear(
-                    rotateParallelogram,
+                rotateParallelogram.isAlmostEqual(
                     MutableParallelogram.fromCenterDimensionsRotationAndShear(
                         MutableVec(-4f, -1f),
                         6f,
@@ -569,6 +905,7 @@ class ImmutableAffineTransformTest {
                         Angle.HALF_TURN_RADIANS + Angle.QUARTER_TURN_RADIANS,
                         0.5f,
                     ),
+                    tolerance = 0.0001f,
                 )
             )
             .isTrue()
@@ -648,6 +985,99 @@ class ImmutableAffineTransformTest {
 
         assertThat(output).isEqualTo(ImmutableAffineTransform(A, B, C, D, E, F))
         assertThat(output).isSameInstanceAs(affineTransform)
+    }
+
+    @Test
+    fun isAlmostEqual_returnsTrueForSameInstance() {
+        val affineTransform = ImmutableAffineTransform(A, B, C, D, E, F)
+
+        assertThat(
+                affineTransform.isAlmostEqual(
+                    ImmutableAffineTransform(A, B, C, D, E, F),
+                    tolerance = 0.0001f,
+                )
+            )
+            .isTrue()
+    }
+
+    @Test
+    fun isAlmostEqual_returnsTrueWithinTolerance() {
+        val affineTransform = ImmutableAffineTransform(A, B, C, D, E, F)
+        val otherTransform = ImmutableAffineTransform(A + 0.00001f, B, C, D, E, F)
+
+        assertThat(affineTransform.isAlmostEqual(otherTransform, tolerance = 0.0001f)).isTrue()
+    }
+
+    @Test
+    fun isAlmostEqual_returnsFalseOutsideTolerance() {
+        val affineTransform = ImmutableAffineTransform(A, B, C, D, E, F)
+        val otherTransform = ImmutableAffineTransform(A + 0.001f, B, C, D, E, F)
+
+        assertThat(affineTransform.isAlmostEqual(otherTransform, tolerance = 0.0001f)).isFalse()
+    }
+
+    @Test
+    fun multiply_returnsCorrectResult() {
+        var transform_lhs = ImmutableAffineTransform(0.0f, 0.0f, 4.0f, 0.0f, 0.0f, 6.0f)
+        var transform_rhs = ImmutableAffineTransform(13.0f, 0.0f, 0.0f, 0.0f, 13.0f, 0.0f)
+        var expected_result = ImmutableAffineTransform(0.0f, 0.0f, 4.0f, 0.0f, 0.0f, 6.0f)
+
+        val output = MutableAffineTransform()
+
+        AffineTransform.multiply(transform_lhs, transform_rhs, output)
+
+        assertThat(output).isEqualTo(expected_result)
+
+        transform_lhs = ImmutableAffineTransform(13.0f, 0.0f, 0.0f, 0.0f, 13.0f, 0.0f)
+        transform_rhs = ImmutableAffineTransform(0.0f, 0.0f, 4.0f, 0.0f, 0.0f, 6.0f)
+        expected_result = ImmutableAffineTransform(0.0f, 0.0f, 52.0f, 0.0f, 0.0f, 78.0f)
+
+        AffineTransform.multiply(transform_lhs, transform_rhs, output)
+
+        assertThat(output).isEqualTo(expected_result)
+
+        transform_lhs = ImmutableAffineTransform(2.0f, -5.0f, 4.0f, 3.0f, 9.0f, -6.0f)
+        transform_rhs = ImmutableAffineTransform(11.0f, 17.0f, -7.0f, -8.0f, 14.0f, 19.0f)
+        expected_result = ImmutableAffineTransform(62.0f, -36.0f, -105.0f, -39.0f, 177.0f, 144.0f)
+
+        AffineTransform.multiply(transform_lhs, transform_rhs, output)
+
+        assertThat(output).isEqualTo(expected_result)
+    }
+
+    @Test
+    fun shearX_returnsCorrectTransform() {
+        assertThat(ImmutableAffineTransform.shearX(0.0F)).isEqualTo(AffineTransform.IDENTITY)
+        assertThat(ImmutableAffineTransform.shearX(2.2F))
+            .isEqualTo(ImmutableAffineTransform(1.0F, 2.2F, 0.0F, 0.0F, 1.0F, 0.0F))
+    }
+
+    @Test
+    fun shearY_returnsCorrectTransform() {
+        assertThat(ImmutableAffineTransform.shearY(0.0F)).isEqualTo(AffineTransform.IDENTITY)
+        assertThat(ImmutableAffineTransform.shearY(2.2F))
+            .isEqualTo(ImmutableAffineTransform(1.0F, 0.0F, 0.0F, 2.2F, 1.0F, 0.0F))
+    }
+
+    @Test
+    fun rotate_returnsCorrectTransform() {
+        assertThat(ImmutableAffineTransform.rotate(Angle.ZERO)).isEqualTo(AffineTransform.IDENTITY)
+        assertThat(
+                ImmutableAffineTransform.rotate(Angle.HALF_TURN_RADIANS)
+                    .isAlmostEqual(
+                        ImmutableAffineTransform(-1F, 0F, 0.0F, 0F, -1F, 0.0F),
+                        tolerance = 0.0001f,
+                    )
+            )
+            .isTrue()
+        assertThat(
+                ImmutableAffineTransform.rotate(Angle.QUARTER_TURN_RADIANS)
+                    .isAlmostEqual(
+                        ImmutableAffineTransform(0F, -1F, 0.0F, 1F, 0F, 0.0F),
+                        tolerance = 0.0001f
+                    )
+            )
+            .isTrue()
     }
 
     companion object {

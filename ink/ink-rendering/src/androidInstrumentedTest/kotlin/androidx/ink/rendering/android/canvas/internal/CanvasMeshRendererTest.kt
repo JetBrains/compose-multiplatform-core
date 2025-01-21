@@ -19,7 +19,6 @@ package androidx.ink.rendering.android.canvas.internal
 import android.graphics.Matrix
 import android.graphics.RenderNode
 import android.os.Build
-import androidx.core.os.BuildCompat
 import androidx.ink.brush.Brush
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.InputToolType
@@ -169,7 +168,7 @@ class CanvasMeshRendererTest {
 
     @Test
     fun drawStroke_whenAndroidU_shouldSaveRecentlyDrawnMesh() {
-        if (BuildCompat.isAtLeastV()) {
+        if (Build.VERSION.SDK_INT >= 35) {
             return
         }
         val renderNode = RenderNode("test")
@@ -224,7 +223,7 @@ class CanvasMeshRendererTest {
      */
     @Test
     fun drawStroke_whenAndroidVPlus_shouldNotSaveRecentlyDrawnMeshes() {
-        if (!BuildCompat.isAtLeastV()) {
+        if (Build.VERSION.SDK_INT < 35) {
             return
         }
         val renderNode = RenderNode("test")

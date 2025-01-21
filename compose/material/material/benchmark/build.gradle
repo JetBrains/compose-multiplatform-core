@@ -49,8 +49,8 @@ dependencies {
 }
 
 android {
-    compileSdk 35
-    namespace "androidx.compose.material.benchmark"
+    compileSdk = 35
+    namespace = "androidx.compose.material.benchmark"
 }
 
 androidx {

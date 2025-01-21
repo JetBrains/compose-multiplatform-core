@@ -22,7 +22,7 @@ plugins {
 
 android {
     defaultConfig {
-        applicationId "androidx.camera.integration.antelope"
+        applicationId = "androidx.camera.integration.antelope"
         versionCode 35
         versionName "1.35"
     }
@@ -35,16 +35,16 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled = false
         }
     }
     testOptions {
         animationsDisabled = true
     }
     buildFeatures {
-        viewBinding true
+        viewBinding = true
     }
-    namespace "androidx.camera.integration.antelope"
+    namespace = "androidx.camera.integration.antelope"
 }
 
 dependencies {

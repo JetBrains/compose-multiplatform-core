@@ -14,12 +14,13 @@ plugins {
 
 android {
     defaultConfig {
-        minSdkVersion 28
+        minSdk = 28
     }
-    namespace "androidx.heifwriter"
+    namespace = "androidx.heifwriter"
 }
 
 dependencies {
+    api(libs.jspecify)
     api("androidx.annotation:annotation:1.8.1")
 
     androidTestImplementation(libs.testExtJunit)

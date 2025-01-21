@@ -21,16 +21,16 @@ plugins {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
     defaultConfig {
-        applicationId "androidx.window.demo2"
-        minSdkVersion 23
+        applicationId = "androidx.window.demo2"
+        minSdk = 23
         targetSdkVersion 35
     }
     buildFeatures {
-        viewBinding true
+        viewBinding = true
     }
-    namespace "androidx.window.demo2"
+    namespace = "androidx.window.demo2"
 }
 
 dependencies {

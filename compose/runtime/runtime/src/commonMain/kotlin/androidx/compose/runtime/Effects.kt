@@ -17,6 +17,8 @@
 package androidx.compose.runtime
 
 import androidx.compose.runtime.internal.PlatformOptimizedCancellationException
+import androidx.compose.runtime.platform.makeSynchronizedObject
+import androidx.compose.runtime.platform.synchronized
 import kotlin.concurrent.Volatile
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext

@@ -49,7 +49,7 @@ dependencies {
 }
 android {
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.camera.effects"
+    namespace = "androidx.camera.effects"
 }
 androidx {
     name = "Camera Effects"

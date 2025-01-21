@@ -467,9 +467,9 @@ public object Intersection {
         thisToCommonTransForm: AffineTransform,
         otherToCommonTransform: AffineTransform,
     ): Boolean {
-        return nativeMeshModeledShapeIntersects(
-            thisModeledShapeAddress = this.getNativeAddress(),
-            otherModeledShapeAddress = other.getNativeAddress(),
+        return nativeMeshPartitionedMeshIntersects(
+            thisPartitionedMeshAddress = this.getNativeAddress(),
+            otherPartitionedMeshAddress = other.getNativeAddress(),
             thisToCommonTransformA = thisToCommonTransForm.m00,
             thisToCommonTransformB = thisToCommonTransForm.m10,
             thisToCommonTransformC = thisToCommonTransForm.m20,
@@ -876,9 +876,9 @@ public object Intersection {
     ): Boolean
 
     @UsedByNative
-    private external fun nativeMeshModeledShapeIntersects(
-        thisModeledShapeAddress: Long,
-        otherModeledShapeAddress: Long,
+    private external fun nativeMeshPartitionedMeshIntersects(
+        thisPartitionedMeshAddress: Long,
+        otherPartitionedMeshAddress: Long,
         thisToCommonTransformA: Float,
         thisToCommonTransformB: Float,
         thisToCommonTransformC: Float,
