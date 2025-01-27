@@ -61,6 +61,10 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.RootMeasurePolicy.measure
+import androidx.compose.ui.node.LayoutModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.invalidateMeasurement
+import androidx.compose.ui.node.invalidatePlacement
 import androidx.compose.ui.platform.AndroidOwnerExtraAssertionsRule
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
@@ -2955,6 +2959,196 @@ class SubcomposeLayoutTest {
     @Test
     fun subcomposePlacementFromNotPlacedToPlaced() {
         alternateLookaheadPlacement(booleanArrayOf(false, true, false))
+    }
+
+    @Test
+    fun precomposeOverReusedNodeWithUpdatedModifierIsNotCausingEarlyRemeasureForIt() {
+        var addSlot by mutableStateOf(true)
+        val state = SubcomposeLayoutState(SubcomposeSlotReusePolicy(1))
+        var measured = 0
+        var placed = 0
+        var modifier: Modifier by mutableStateOf(Modifier)
+        val content: @Composable () -> Unit = { Box { Box(modifier) } }
+        var lastConstraints = Constraints()
+
+        rule.setContent {
+            SubcomposeLayout(state) { constraints ->
+                lastConstraints = constraints
+                val items =
+                    if (addSlot) {
+                        subcompose(Unit, content).map { it.measure(constraints) }
+                    } else {
+                        emptyList()
+                    }
+                layout(10, 10) { items.forEach { it.place(0, 0) } }
+            }
+        }
+
+        rule.runOnIdle { addSlot = false }
+
+        val handle =
+            rule.runOnIdle {
+                modifier =
+                    Modifier.layout { measurable, _ ->
+                        val placeable = measurable.measure(Constraints.fixed(10, 10))
+                        measured++
+                        layout(placeable.width, placeable.height) {
+                            placeable.place(0, 0)
+                            placed++
+                        }
+                    }
+                state.precompose(Unit, content)
+            }
+
+        rule.runOnIdle {
+            assertThat(measured).isEqualTo(0)
+            assertThat(placed).isEqualTo(0)
+            handle.premeasure(0, lastConstraints)
+        }
+
+        rule.runOnIdle {
+            assertThat(measured).isEqualTo(1)
+            assertThat(placed).isEqualTo(0)
+            addSlot = true
+        }
+
+        rule.runOnIdle {
+            assertThat(measured).isEqualTo(1)
+            assertThat(placed).isEqualTo(1)
+        }
+    }
+
+    @Test
+    fun precomposeOverReusedNodeWithUpdatedModifierIsNotCausingEarlyRemeasureForIt2() {
+        var addSlot by mutableStateOf(true)
+        val state = SubcomposeLayoutState(SubcomposeSlotReusePolicy(1))
+        var measured = 0
+        var placed = 0
+        val onMeasured: () -> Unit = { measured++ }
+        val onPlaced: () -> Unit = { placed++ }
+        var modifier: Modifier by
+            mutableStateOf(RemeasureAndRelayoutOnChangeModifierElement(onMeasured, onPlaced, 0))
+        val content: @Composable () -> Unit = { Box { Box(modifier) } }
+        var lastConstraints = Constraints()
+
+        rule.setContent {
+            SubcomposeLayout(state) { constraints ->
+                lastConstraints = constraints
+                val items =
+                    if (addSlot) {
+                        subcompose(Unit, content).map { it.measure(constraints) }
+                    } else {
+                        emptyList()
+                    }
+                layout(10, 10) { items.forEach { it.place(0, 0) } }
+            }
+        }
+
+        rule.runOnIdle { addSlot = false }
+
+        val handle =
+            rule.runOnIdle {
+                measured = 0
+                placed = 0
+                modifier = RemeasureAndRelayoutOnChangeModifierElement(onMeasured, onPlaced, 1)
+                state.precompose(Unit, content)
+            }
+
+        rule.runOnIdle {
+            assertThat(measured).isEqualTo(0)
+            assertThat(placed).isEqualTo(0)
+            handle.premeasure(0, lastConstraints)
+        }
+
+        rule.runOnIdle {
+            assertThat(measured).isEqualTo(1)
+            assertThat(placed).isEqualTo(0)
+            addSlot = true
+        }
+
+        rule.runOnIdle {
+            assertThat(measured).isEqualTo(1)
+            assertThat(placed).isEqualTo(1)
+            addSlot = true
+        }
+    }
+
+    private class RemeasureAndRelayoutOnChangeModifierElement(
+        val onMeasured: () -> Unit,
+        val onPlaced: () -> Unit,
+        val identity: Int
+    ) : ModifierNodeElement<RemeasureAndRelayoutOnChangeModifier>() {
+        override fun create(): RemeasureAndRelayoutOnChangeModifier =
+            RemeasureAndRelayoutOnChangeModifier(onMeasured, onPlaced)
+
+        override fun update(node: RemeasureAndRelayoutOnChangeModifier) {
+            node.onMeasured = onMeasured
+            node.onPlaced = onPlaced
+            node.invalidateMeasurement()
+            node.invalidatePlacement()
+        }
+
+        override fun hashCode(): Int = identity
+
+        override fun equals(other: Any?) =
+            other is RemeasureAndRelayoutOnChangeModifierElement && other.identity == identity
+    }
+
+    private class RemeasureAndRelayoutOnChangeModifier(
+        var onMeasured: () -> Unit,
+        var onPlaced: () -> Unit,
+    ) : Modifier.Node(), LayoutModifierNode {
+        override fun MeasureScope.measure(
+            measurable: Measurable,
+            constraints: Constraints
+        ): MeasureResult {
+            val placeable = measurable.measure(constraints)
+            onMeasured()
+            return layout(placeable.width, placeable.height) {
+                onPlaced()
+                placeable.place(0, 0)
+            }
+        }
+
+        override val shouldAutoInvalidate: Boolean
+            get() = false
+    }
+
+    @Test
+    // regression test for b/382042245
+    fun remeasureRequestDuringSubcompositionIsNotSkippedForNotPlacedChild() {
+        var size by mutableStateOf(100)
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                SubcomposeLayout(Modifier.testTag("node")) { constraints ->
+                    // for a child to not read state directly, instead we have a new lambda
+                    val childSize = size
+                    val measurable =
+                        subcompose(Unit) {
+                            Box {
+                                Box(
+                                    Modifier.layout { measurable, _ ->
+                                        val placeable =
+                                            measurable.measure(
+                                                Constraints.fixed(childSize, childSize)
+                                            )
+                                        layout(placeable.width, placeable.height) {
+                                            placeable.place(0, 0)
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    val fab = measurable.first().measure(constraints)
+                    layout(fab.width, fab.height) {}
+                }
+            }
+        }
+
+        rule.runOnIdle { size = 150 }
+
+        rule.onNodeWithTag("node").assertWidthIsEqualTo(150.dp)
     }
 
     private fun alternateLookaheadPlacement(shouldPlaceItem: BooleanArray) {

@@ -95,23 +95,31 @@ class PlacementScopeMotionFrameOfReferenceTest {
             val itemId = it * 5
             offset = offsets[it]
             rule.runOnIdle { runBlocking { state.scrollToItem(itemId) } }
-            repeat(5) {
-                assertEquals(
-                    offset,
-                    coords[itemId + it]!!
-                        .let {
-                            rootCoords!!.localPositionOf(it, includeMotionFrameOfReference = false)
-                        }
-                        .round()
-                )
-                assertEquals(
-                    offset + IntOffset(0, it * 20),
-                    coords[itemId + it]!!
-                        .let {
-                            rootCoords!!.localPositionOf(it, includeMotionFrameOfReference = true)
-                        }
-                        .round()
-                )
+            rule.runOnIdle {
+                repeat(5) {
+                    assertEquals(
+                        offset,
+                        coords[itemId + it]!!
+                            .let {
+                                rootCoords!!.localPositionOf(
+                                    it,
+                                    includeMotionFrameOfReference = false
+                                )
+                            }
+                            .round()
+                    )
+                    assertEquals(
+                        offset + IntOffset(0, it * 20),
+                        coords[itemId + it]!!
+                            .let {
+                                rootCoords!!.localPositionOf(
+                                    it,
+                                    includeMotionFrameOfReference = true
+                                )
+                            }
+                            .round()
+                    )
+                }
             }
         }
     }
@@ -158,24 +166,31 @@ class PlacementScopeMotionFrameOfReferenceTest {
             val itemId = it * 5 * 2
             offset = offsets[it]
             rule.runOnIdle { runBlocking { state.scrollToItem(itemId) } }
-            rule.waitForIdle()
-            repeat(5) {
-                assertEquals(
-                    offset,
-                    coords[itemId + it]!!
-                        .let {
-                            rootCoords!!.localPositionOf(it, includeMotionFrameOfReference = false)
-                        }
-                        .round()
-                )
-                assertEquals(
-                    offset + IntOffset(0 + it % 2 * 20, it / 2 * 20),
-                    coords[itemId + it]!!
-                        .let {
-                            rootCoords!!.localPositionOf(it, includeMotionFrameOfReference = true)
-                        }
-                        .round()
-                )
+            rule.runOnIdle {
+                repeat(5) {
+                    assertEquals(
+                        offset,
+                        coords[itemId + it]!!
+                            .let {
+                                rootCoords!!.localPositionOf(
+                                    it,
+                                    includeMotionFrameOfReference = false
+                                )
+                            }
+                            .round()
+                    )
+                    assertEquals(
+                        offset + IntOffset(0 + it % 2 * 20, it / 2 * 20),
+                        coords[itemId + it]!!
+                            .let {
+                                rootCoords!!.localPositionOf(
+                                    it,
+                                    includeMotionFrameOfReference = true
+                                )
+                            }
+                            .round()
+                    )
+                }
             }
         }
     }
@@ -225,15 +240,20 @@ class PlacementScopeMotionFrameOfReferenceTest {
             val itemId = it * 10
             offset = offsets[it]
             rule.runOnIdle { runBlocking { state.scrollToItem(itemId) } }
-            repeat(5) {
-                assertEquals(
-                    offset,
-                    coords[itemId + it]!!
-                        .let {
-                            rootCoords!!.localPositionOf(it, includeMotionFrameOfReference = false)
-                        }
-                        .round()
-                )
+            rule.runOnIdle {
+                repeat(5) {
+                    assertEquals(
+                        offset,
+                        coords[itemId + it]!!
+                            .let {
+                                rootCoords!!.localPositionOf(
+                                    it,
+                                    includeMotionFrameOfReference = false
+                                )
+                            }
+                            .round()
+                    )
+                }
             }
         }
     }
@@ -278,15 +298,20 @@ class PlacementScopeMotionFrameOfReferenceTest {
             val itemId = it * 5
             offset = offsets[it]
             rule.runOnIdle { runBlocking { state.scrollToPage(itemId) } }
-            repeat(5) {
-                assertEquals(
-                    offset,
-                    requireNotNull(coords[itemId + it]) { "item $itemId, it = $it" }
-                        .let {
-                            rootCoords!!.localPositionOf(it, includeMotionFrameOfReference = false)
-                        }
-                        .round(),
-                )
+            rule.runOnIdle {
+                repeat(5) {
+                    assertEquals(
+                        offset,
+                        requireNotNull(coords[itemId + it]) { "item $itemId, it = $it" }
+                            .let {
+                                rootCoords!!.localPositionOf(
+                                    it,
+                                    includeMotionFrameOfReference = false
+                                )
+                            }
+                            .round(),
+                    )
+                }
             }
         }
     }
