@@ -16,6 +16,7 @@
 
 package androidx.compose.mpp.demo
 
+import WasmLayouts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -40,7 +41,7 @@ fun main() {
     ComposeViewport(viewportContainerId = "composeApplication") {
         val fontFamilyResolver = LocalFontFamilyResolver.current
         val fontsLoaded = remember { mutableStateOf(false) }
-        val app = remember { App() }
+        val app = remember { App(extraScreens = listOf(WasmLayouts)) }
 
         if (fontsLoaded.value) {
             app.Content()

@@ -22,7 +22,6 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.OutlinedTextField
-import androidx.compose.mpp.demo.addHtmlElementWithCompose
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,36 +71,31 @@ fun KeyboardActionsExample() {
         item {
             TextBlock(
                 imeActionName = ImeAction.Default,
-                KeyboardActions(onAny = { localKeyboardController?.hide() }),
-                id = "1"
+                KeyboardActions(onAny = { localKeyboardController?.hide() })
             )
         }
-        item { TextBlock(imeActionName = ImeAction.Done, keyboardActions = definedKeyboardActions, id = "2") }
-        item { TextBlock(imeActionName = ImeAction.Go, keyboardActions = definedKeyboardActions, id = "3") }
-        item { TextBlock(imeActionName = ImeAction.Next, keyboardActions = definedKeyboardActions, id = "4") }
+        item { TextBlock(imeActionName = ImeAction.Done, keyboardActions = definedKeyboardActions) }
+        item { TextBlock(imeActionName = ImeAction.Go, keyboardActions = definedKeyboardActions) }
+        item { TextBlock(imeActionName = ImeAction.Next, keyboardActions = definedKeyboardActions) }
         item {
             TextBlock(
                 imeActionName = ImeAction.Previous,
                 keyboardActions = definedKeyboardActions,
-                id = "5"
             )
         }
         item {
             TextBlock(
                 imeActionName = ImeAction.Search,
                 keyboardActions = definedKeyboardActions,
-                id = "6"
             )
         }
-        item { TextBlock(imeActionName = ImeAction.Send, keyboardActions = definedKeyboardActions, id = "7") }
+        item { TextBlock(imeActionName = ImeAction.Send, keyboardActions = definedKeyboardActions) }
     }
 }
-
 @Composable
 private fun TextBlock(
     imeActionName: ImeAction,
     keyboardActions: KeyboardActions = KeyboardActions(),
-    id: String,
 ) {
     Column(Modifier.fillMaxSize().padding(horizontal = 32.dp, vertical = 16.dp)) {
         val textState = remember {
@@ -114,7 +108,14 @@ private fun TextBlock(
         OutlinedTextField(
             value = textState.value,
             onValueChange = { textState.value = it },
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp).addHtmlElementWithCompose(id).onKeyEvent { println("KEY EVENT $this"); false },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+                .onKeyEvent { event ->
+                    // Handle the key event
+                    println("KEY EVENT $event")
+                    false
+                },
             textStyle = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Normal),
             keyboardOptions = KeyboardOptions(imeAction = imeActionName),
             keyboardActions = keyboardActions

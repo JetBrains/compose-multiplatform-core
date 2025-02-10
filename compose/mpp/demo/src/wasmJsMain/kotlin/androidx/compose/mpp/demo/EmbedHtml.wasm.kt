@@ -18,74 +18,107 @@ package androidx.compose.mpp.demo
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Modifier.Element
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.round
 import kotlinx.browser.document
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.HTMLElement
 
-fun getCanvasCoordinates(): Pair<Double, Double>? {
-    val canvasElement = document.querySelector("canvas") as? HTMLCanvasElement
-    return canvasElement?.getBoundingClientRect()?.let {
+fun getCanvasCoordinates(): Pair<Double, Double> {
+    val canvasElement = document.querySelector("canvas") as HTMLCanvasElement
+    return canvasElement.getBoundingClientRect().let {
         it.left to it.top
     }
 }
 
-@Composable
-actual fun Modifier.addHtmlElementWithCompose(id: String): Modifier {
-    val density = LocalDensity.current.density
-    val canvasCoordinates = getCanvasCoordinates()
+fun createHtmlElement(
+    tagName: String,
+    id: String,
+    configure: HTMLElement.() -> Unit
+): HTMLElement {
+    val element = document.createElement(tagName) as HTMLElement
 
-    DisposableEffect(id) {
-        val div = document.createElement("div") as HTMLDivElement
-        div.id = id
-        div.style.apply {
-            position = "absolute"
-            backgroundColor = "red"
-            color = "white"
-            padding = "2px"
-            borderRadius = "5px"
-        }
-        div.innerText = "Hello"
-        document.body?.appendChild(div)
+    element.id = id
+    element.style.color = "black"
+    element.configure()
+    document.body?.appendChild(element)
+
+    return element
+}
+
+private class ComponentInfo {
+    var component: HTMLElement? = null;
+    var isHidden: Boolean = false;
+}
+
+@Composable
+fun Modifier.addHtmlElementWithCompose(
+    tagName: String,
+    id: String,
+    configure: HTMLElement.() -> Unit
+): Modifier {
+    val componentInfo = remember { ComponentInfo() }
+    val canvasCoordinates = getCanvasCoordinates()
+    val density = LocalDensity.current.density
+
+    DisposableEffect(id, tagName) {
+        val element = createHtmlElement(tagName, id, configure)
+        componentInfo.component = element
 
         onDispose {
-            div.remove()
+            componentInfo.component = null
+            element.remove()
         }
     }
 
-    return this then Modifier.onGloballyPositioned { coordinates ->
+    return this.then(Modifier.onGloballyPositioned { coordinates ->
         val bounds = coordinates.boundsInRoot()
         val position = coordinates.positionInRoot()
-        val existingDiv = document.getElementById(id) as HTMLDivElement
+        val existingElement = componentInfo.component ?: return@onGloballyPositioned
+//        val parentBounds = existingElement.parentElement?.getBoundingClientRect() ?: return@onGloballyPositioned
+
         val scaledX = position.x / density
         val scaledY = position.y / density
 
-        if (canvasCoordinates != null) {
-            val (canvasX, canvasY) = canvasCoordinates
-            val adjustedX = canvasX + scaledX
-            val adjustedY = canvasY + scaledY
+        val (canvasX, canvasY) = canvasCoordinates
+        val adjustedX = canvasX + scaledX
+        val adjustedY = canvasY + scaledY
 
-            existingDiv.style.apply {
+        if (!componentInfo.isHidden) {
+            existingElement.style.apply {
                 left = "${adjustedX}px"
                 top = "${adjustedY}px"
             }
-        } else {
-            existingDiv.style.apply {
-                left = "${scaledX}px"
-                top = "${scaledY}px"
+        }
+
+//        if (existingElement.id == "1:1"){
+//            print("existingElement ${existingElement.id} - position Y ${position.y} - offsetHeight ${existingElement.offsetHeight} - offsetTop ${existingElement.offsetTop} - offsetParent ${existingElement.offsetParent}")
+//            print("Bounds - height ${bounds.height} - bottom ${bounds.bottom} - top ${bounds.top}")
+//            print("parentBounds - height ${parentBounds.height} - bottom ${parentBounds.bottom} - top ${parentBounds.top}")
+//        }
+
+        if (existingElement.offsetWidth > 0 && existingElement.offsetHeight > 0) {
+            val topClip = maxOf((bounds.top.toDouble() - position.y) / density, 0.0)
+            val leftClip = maxOf((bounds.left.toDouble() - position.x) / density, 0.0)
+
+            val newHiddenState = topClip == existingElement.offsetHeight.toDouble() ||
+                leftClip == existingElement.offsetWidth.toDouble()
+
+            if (newHiddenState != componentInfo.isHidden) {
+                existingElement.style.visibility = if (newHiddenState) "hidden" else "visible"
+                componentInfo.isHidden = newHiddenState
             }
-        }
 
-        val topClip = maxOf((bounds.top.toDouble() - position.y) / density, 0.0)
-
-        if (topClip > 0) {
-            existingDiv.style.setProperty("clip-path", "inset(${topClip}px 0 0 0)")
-        } else {
-            existingDiv.style.removeProperty("clip-path")
+            existingElement.style.setProperty("clip-path", "inset(${topClip}px 0px 0px ${leftClip}px)")
         }
-    }
+    })
 }
