@@ -61,22 +61,25 @@ private fun WasmExampleTwoDirectionsAndRTL() {
                 Modifier.fillMaxSize().padding(all = 20.dp),
             ) {
                 items(rows) { row ->
-                    LazyRow(Modifier.height(rowHeight)) {
+                    LazyRow(Modifier.height(rowHeight).fillMaxSize()) {
                         items(columns) { col ->
                             val color = colors[(row + col) % colors.size]
                             val elementId = "$row:$col"
 
                             Box(
                                 Modifier
-                                    .size(200.dp, rowHeight)
+                                    .size(rowHeight, rowHeight)
                                     .background(color)
                                     .addHtmlElementWithCompose (id = elementId, tagName = "div"){
                                         innerText = elementId
                                         style.apply {
                                             position = "absolute"
-                                            backgroundColor = "white"
-                                            padding = "10px"
-                                            borderRadius = "2px"
+                                            backgroundColor = "lightgray"
+                                            textAlign = "center"
+                                            border = "2px solid white"
+                                            boxSizing = "border-box"
+                                            width = "200px"
+                                            height = "200px"
                                         }
                                     }
                             )

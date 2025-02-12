@@ -18,19 +18,14 @@ package androidx.compose.mpp.demo
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.Modifier.Element
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.round
 import kotlinx.browser.document
 import org.w3c.dom.HTMLCanvasElement
-import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 
 fun getCanvasCoordinates(): Pair<Double, Double> {
@@ -48,7 +43,10 @@ fun createHtmlElement(
     val element = document.createElement(tagName) as HTMLElement
 
     element.id = id
-    element.style.color = "black"
+    element.style.setProperty("pointer-events", "none")
+    element.style.apply {
+        color = "white"
+    }
     element.configure()
     document.body?.appendChild(element)
 
@@ -84,7 +82,6 @@ fun Modifier.addHtmlElementWithCompose(
         val bounds = coordinates.boundsInRoot()
         val position = coordinates.positionInRoot()
         val existingElement = componentInfo.component ?: return@onGloballyPositioned
-//        val parentBounds = existingElement.parentElement?.getBoundingClientRect() ?: return@onGloballyPositioned
 
         val scaledX = position.x / density
         val scaledY = position.y / density
@@ -100,15 +97,11 @@ fun Modifier.addHtmlElementWithCompose(
             }
         }
 
-//        if (existingElement.id == "1:1"){
-//            print("existingElement ${existingElement.id} - position Y ${position.y} - offsetHeight ${existingElement.offsetHeight} - offsetTop ${existingElement.offsetTop} - offsetParent ${existingElement.offsetParent}")
-//            print("Bounds - height ${bounds.height} - bottom ${bounds.bottom} - top ${bounds.top}")
-//            print("parentBounds - height ${parentBounds.height} - bottom ${parentBounds.bottom} - top ${parentBounds.top}")
-//        }
-
         if (existingElement.offsetWidth > 0 && existingElement.offsetHeight > 0) {
             val topClip = maxOf((bounds.top.toDouble() - position.y) / density, 0.0)
             val leftClip = maxOf((bounds.left.toDouble() - position.x) / density, 0.0)
+            val bottomClip = maxOf((position.y + existingElement.offsetHeight * 2 - bounds.bottom.toDouble()) / density, 0.0)
+            val rightClip = maxOf((position.x + existingElement.offsetWidth * 2 - bounds.right.toDouble() ) / density, 0.0)
 
             val newHiddenState = topClip == existingElement.offsetHeight.toDouble() ||
                 leftClip == existingElement.offsetWidth.toDouble()
@@ -118,7 +111,7 @@ fun Modifier.addHtmlElementWithCompose(
                 componentInfo.isHidden = newHiddenState
             }
 
-            existingElement.style.setProperty("clip-path", "inset(${topClip}px 0px 0px ${leftClip}px)")
+            existingElement.style.setProperty("clip-path", "inset(${topClip}px ${rightClip}px ${bottomClip}px ${leftClip}px)")
         }
     })
 }
