@@ -71,6 +71,7 @@ wire = "4.9.7"
 core = "1.12.0"
 xmlApis = "1.4.01"
 yarn = "1.22.17"
+storytale = "0.0.3+dev9"
 
 [libraries]
 agpTestingPlatformCoreProto =  { module = "com.google.testing.platform:core-proto", version = "0.0.8-alpha08" }
@@ -221,7 +222,7 @@ kotlinTestJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit" }
 kotlinTestJs = { module = "org.jetbrains.kotlin:kotlin-test-js", version.ref = "kotlin" }
 kotlinTestWasm = { module = "org.jetbrains.kotlin:kotlin-test-wasm-js", version.ref = "kotlin" }
 kotlinReflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
-kotlinPoet = { module = "com.squareup:kotlinpoet", version = "1.14.2" }
+kotlinPoet = { module = "com.squareup:kotlinpoet", version = "1.18.1" }
 kotlinPoetJavaPoet = { module = "com.squareup:kotlinpoet-javapoet", version = "1.14.2" }
 kotlinXHtml = { module = "org.jetbrains.kotlinx:kotlinx-html-jvm", version = "0.7.3" }
 kotlinXw3c = { module = "org.jetbrains.kotlinx:kotlinx-browser", version = "0.3" }
@@ -323,6 +324,8 @@ kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinMp = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 atomicFu = { id = "org.jetbrains.kotlin.plugin.atomicfu", version.ref = "atomicFu" }
+storytale = { id = "org.jetbrains.compose.storytale", version.ref = "storytale" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin"}
 
 [bundles]
 # prevent androidAccessibilityFramework 3.1 which pulls hamcrest 2.2, breaking espresso-core
