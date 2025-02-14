@@ -77,14 +77,12 @@ import androidx.compose.ui.util.fastFirstOrNull
 import kotlin.math.roundToInt
 
 /**
- * [Material Design bottom navigation
- * bar](https://m3.material.io/components/navigation-bar/overview)
+ * [Material Design bottom navigation bar](https://m3.material.io/components/navigation-bar/overview)
  *
  * Navigation bars offer a persistent and convenient way to switch between primary destinations in
  * an app.
  *
- * ![Navigation bar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/navigation-bar.png)
+ * ![Navigation bar image](https://developer.android.com/images/reference/androidx/compose/material3/navigation-bar.png)
  *
  * [NavigationBar] should contain three to five [NavigationBarItem]s, each representing a singular
  * destination.
@@ -107,6 +105,8 @@ import kotlin.math.roundToInt
  *   darker color in light theme and lighter color in dark theme. See also: [Surface].
  * @param windowInsets a window insets of the navigation bar.
  * @param content the content of this navigation bar, typically 3-5 [NavigationBarItem]s
+ *
+ * @story /stories?embedded=true#story/NavigationBar%2520Story
  */
 @OptIn(ExperimentalMaterial3ComponentOverrideApi::class)
 @Composable
@@ -193,6 +193,8 @@ object DefaultNavigationBarOverride : NavigationBarOverride {
  *   emitting [Interaction]s for this item. You can use this to change the item's appearance or
  *   preview the item in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
+ *
+ * @story /stories?embedded=true#story/NavigationBarItem%2520Story
  */
 @Composable
 fun RowScope.NavigationBarItem(

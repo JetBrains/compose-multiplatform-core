@@ -145,8 +145,7 @@ import kotlinx.coroutines.launch
  * value. They are ideal for adjusting settings such as volume, brightness, or applying image
  * filters.
  *
- * ![Sliders
- * image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqe2zb2b-1.png?alt=media)
+ * ![Sliders image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqe2zb2b-1.png?alt=media)
  *
  * Use continuous sliders to allow users to make meaningful selections that don’t require a specific
  * value:
@@ -178,6 +177,8 @@ import kotlinx.coroutines.launch
  * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
  *   for this slider. You can create and pass in your own `remember`ed instance to observe
  *   [Interaction]s and customize the appearance / behavior of this slider in different states.
+ *
+ * @story /stories?embedded=true#story/Slider%2520Story
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -224,8 +225,7 @@ fun Slider(
  * value. They are ideal for adjusting settings such as volume, brightness, or applying image
  * filters.
  *
- * ![Sliders
- * image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqe2zb2b-1.png?alt=media)
+ * ![Sliders image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqe2zb2b-1.png?alt=media)
  *
  * Use continuous sliders to allow users to make meaningful selections that don’t require a specific
  * value:
@@ -326,8 +326,7 @@ fun Slider(
  * value. They are ideal for adjusting settings such as volume, brightness, or applying image
  * filters.
  *
- * ![Sliders
- * image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqe2zb2b-1.png?alt=media)
+ * ![Sliders image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqe2zb2b-1.png?alt=media)
  *
  * Use continuous sliders to allow users to make meaningful selections that don’t require a specific
  * value:
@@ -510,6 +509,8 @@ fun VerticalSlider(
  *   to know when the user has completed selecting a new value by ending a drag or a click.
  * @param colors [SliderColors] that will be used to determine the color of the Range Slider parts
  *   in different state. See [SliderDefaults.colors] to customize.
+ *
+ * @story /stories?embedded=true#story/RangeSlider%2520Story
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

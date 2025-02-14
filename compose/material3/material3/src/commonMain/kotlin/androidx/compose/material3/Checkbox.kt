@@ -65,8 +65,7 @@ import kotlin.math.max
  * Checkboxes allow users to select one or more items from a set. Checkboxes can turn an option on
  * or off.
  *
- * ![Checkbox
- * image](https://developer.android.com/images/reference/androidx/compose/material3/checkbox.png)
+ * ![Checkbox image](https://developer.android.com/images/reference/androidx/compose/material3/checkbox.png)
  *
  * Simple Checkbox sample:
  *
@@ -151,6 +150,8 @@ fun Checkbox(
  *   or preview the checkbox in different states. Note that if `null` is provided, interactions will
  *   still happen internally.
  * @see [TriStateCheckbox] if you require support for an indeterminate state.
+ *
+ * @story /stories?embedded=true#story/Checkbox%2520Story
  */
 @Composable
 fun Checkbox(
@@ -188,8 +189,7 @@ fun Checkbox(
  * checkboxes are unchecked. If some, but not all, child checkboxes are checked, the parent checkbox
  * becomes an indeterminate checkbox.
  *
- * ![Checkbox
- * image](https://developer.android.com/images/reference/androidx/compose/material3/indeterminate-checkbox.png)
+ * ![Checkbox image](https://developer.android.com/images/reference/androidx/compose/material3/indeterminate-checkbox.png)
  *
  * @sample androidx.compose.material3.samples.TriStateCheckboxSample
  * @param state whether this checkbox is checked, unchecked, or in an indeterminate state
@@ -265,6 +265,8 @@ fun TriStateCheckbox(
  *   or preview the checkbox in different states. Note that if `null` is provided, interactions will
  *   still happen internally.
  * @see [Checkbox] if you want a simple component that represents Boolean state
+ *
+ * @story /stories?embedded=true#story/TriStateCheckbox%2520Story
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

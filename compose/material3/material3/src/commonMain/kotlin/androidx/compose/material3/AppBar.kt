@@ -124,8 +124,7 @@ import kotlin.math.roundToInt
  *
  * This small TopAppBar has slots for a title, navigation icon, and actions.
  *
- * ![Small top app bar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/small-top-app-bar.png)
+ * ![Small top app bar image](https://developer.android.com/images/reference/androidx/compose/material3/small-top-app-bar.png)
  *
  * A simple top app bar looks like:
  *
@@ -187,8 +186,7 @@ fun TopAppBar(
  *
  * This small TopAppBar has slots for a title, navigation icon, and actions.
  *
- * ![Small top app bar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/small-top-app-bar.png)
+ * ![Small top app bar image](https://developer.android.com/images/reference/androidx/compose/material3/small-top-app-bar.png)
  *
  * A simple top app bar looks like:
  *
@@ -278,6 +276,8 @@ fun TopAppBar(
  *   work in conjunction with a scrolled content to change the top app bar appearance as the content
  *   scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
  * @param contentPadding the padding applied to the content of this TopAppBar.
+ *
+ * @story /stories?embedded=true#story/TopAppBar%2520Story
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -314,15 +314,13 @@ fun TopAppBar(
     )
 
 /**
- * [Material Design center-aligned small top app
- * bar](https://m3.material.io/components/top-app-bar/overview)
+ * <a href="https://m3.material.io/components/top-app-bar/overview" class="external" target="_blank">Material Design center-aligned small top app bar</a>.
  *
  * Top app bars display information and actions at the top of a screen.
  *
  * This small top app bar has a header title that is horizontally aligned to the center.
  *
- * ![Center-aligned top app bar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/center-aligned-top-app-bar.png)
+ * ![Center-aligned top app bar image](https://developer.android.com/images/reference/androidx/compose/material3/center-aligned-top-app-bar.png)
  *
  * This CenterAlignedTopAppBar has slots for a title, navigation icon, and actions.
  *
@@ -371,15 +369,13 @@ fun CenterAlignedTopAppBar(
     )
 
 /**
- * [Material Design center-aligned small top app
- * bar](https://m3.material.io/components/top-app-bar/overview)
+ * <a href="https://m3.material.io/components/top-app-bar/overview" class="external" target="_blank">Material Design center-aligned small top app bar</a>.
  *
  * Top app bars display information and actions at the top of a screen.
  *
  * This small top app bar has a header title that is horizontally aligned to the center.
  *
- * ![Center-aligned top app bar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/center-aligned-top-app-bar.png)
+ * ![Center-aligned top app bar image](https://developer.android.com/images/reference/androidx/compose/material3/center-aligned-top-app-bar.png)
  *
  * This CenterAlignedTopAppBar has slots for a title, navigation icon, and actions.
  *
@@ -404,6 +400,8 @@ fun CenterAlignedTopAppBar(
  *   applied by this top app bar to set up its height and colors. A scroll behavior is designed to
  *   work in conjunction with a scrolled content to change the top app bar appearance as the content
  *   scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
+ *
+ * @story /stories?embedded=true#story/CenterAlignedTopAppBar%2520Story
  */
 @Deprecated(
     message = "Deprecated in favor of CenterAlignedTopAppBar with contentPadding parameter",
@@ -581,8 +579,7 @@ fun TopAppBar(
  *
  * Top app bars display information and actions at the top of a screen.
  *
- * ![Medium top app bar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/medium-top-app-bar.png)
+ * ![Medium top app bar image](https://developer.android.com/images/reference/androidx/compose/material3/medium-top-app-bar.png)
  *
  * This MediumTopAppBar has slots for a title, navigation icon, and actions. In its default expanded
  * state, the title is displayed in a second row under the navigation and actions.
@@ -641,8 +638,7 @@ fun MediumTopAppBar(
  *
  * Top app bars display information and actions at the top of a screen.
  *
- * ![Medium top app bar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/medium-top-app-bar.png)
+ * ![Medium top app bar image](https://developer.android.com/images/reference/androidx/compose/material3/medium-top-app-bar.png)
  *
  * This MediumTopAppBar has slots for a title, navigation icon, and actions. In its default expanded
  * state, the title is displayed in a second row under the navigation and actions.
@@ -677,6 +673,8 @@ fun MediumTopAppBar(
  *   scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
  * @throws IllegalArgumentException if the provided [expandedHeight] is smaller than the
  *   [collapsedHeight]
+ *
+ * @story /stories?embedded=true#story/MediumTopAppBar%2520Story
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -831,8 +829,7 @@ fun MediumFlexibleTopAppBar(
  *
  * Top app bars display information and actions at the top of a screen.
  *
- * ![Large top app bar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/large-top-app-bar.png)
+ * ![Large top app bar image](https://developer.android.com/images/reference/androidx/compose/material3/large-top-app-bar.png)
  *
  * This LargeTopAppBar has slots for a title, navigation icon, and actions. In its default expanded
  * state, the title is displayed in a second row under the navigation and actions.
@@ -891,8 +888,7 @@ fun LargeTopAppBar(
  *
  * Top app bars display information and actions at the top of a screen.
  *
- * ![Large top app bar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/large-top-app-bar.png)
+ * ![Large top app bar image](https://developer.android.com/images/reference/androidx/compose/material3/large-top-app-bar.png)
  *
  * This LargeTopAppBar has slots for a title, navigation icon, and actions. In its default expanded
  * state, the title is displayed in a second row under the navigation and actions.
@@ -927,6 +923,8 @@ fun LargeTopAppBar(
  *   scrolls. See [TopAppBarScrollBehavior.nestedScrollConnection].
  * @throws IllegalArgumentException if the provided [expandedHeight] is smaller to the
  *   [collapsedHeight]
+ *
+ * @story /stories?embedded=true#story/LargeTopAppBar%2520Story
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -1191,8 +1189,7 @@ fun TwoRowsTopAppBar(
  *
  * A bottom app bar displays navigation and key actions at the bottom of small screens.
  *
- * ![Bottom app bar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/bottom-app-bar.png)
+ * ![Bottom app bar image](https://developer.android.com/images/reference/androidx/compose/material3/bottom-app-bar.png)
  *
  * @sample androidx.compose.material3.samples.SimpleBottomAppBar
  *
@@ -1216,6 +1213,8 @@ fun TwoRowsTopAppBar(
  *   darker color in light theme and lighter color in dark theme. See also: [Surface].
  * @param contentPadding the padding applied to the content of this BottomAppBar
  * @param windowInsets a window insets that app bar will respect.
+ *
+ * @story /stories?embedded=true#story/BottomAppBar%2520Story
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1246,8 +1245,7 @@ fun BottomAppBar(
  *
  * A bottom app bar displays navigation and key actions at the bottom of small screens.
  *
- * ![Bottom app bar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/bottom-app-bar.png)
+ * ![Bottom app bar image](https://developer.android.com/images/reference/androidx/compose/material3/bottom-app-bar.png)
  *
  * @sample androidx.compose.material3.samples.SimpleBottomAppBar
  *
@@ -1326,8 +1324,7 @@ fun BottomAppBar(
  *
  * A bottom app bar displays navigation and key actions at the bottom of small screens.
  *
- * ![Bottom app bar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/bottom-app-bar.png)
+ * ![Bottom app bar image](https://developer.android.com/images/reference/androidx/compose/material3/bottom-app-bar.png)
  *
  * If you are interested in displaying a [FloatingActionButton], consider using another overload.
  *
@@ -1374,8 +1371,7 @@ fun BottomAppBar(
  *
  * A bottom app bar displays navigation and key actions at the bottom of small screens.
  *
- * ![Bottom app bar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/bottom-app-bar.png)
+ * ![Bottom app bar image](https://developer.android.com/images/reference/androidx/compose/material3/bottom-app-bar.png)
  *
  * If you are interested in displaying a [FloatingActionButton], consider using another overload.
  *

@@ -31,7 +31,7 @@ dagger = "2.49"
 datetime = "0.7.1"
 dependencyAnalysisGradlePlugin = "1.32.0"
 dexmaker = "2.28.3"
-dokka = "1.8.20-dev-214"
+dokka = "2.0.0"
 espresso = "3.6.1"
 espressoDevice = "1.0.1"
 grpc = "1.52.0"
@@ -72,6 +72,7 @@ wire = "4.9.7"
 core = "1.12.0"
 xmlApis = "1.4.01"
 yarn = "1.22.17"
+storytale = "0.0.4-alpha01+dev17"
 
 [libraries]
 agpTestingPlatformCoreProto =  { module = "com.google.testing.platform:core-proto", version = "0.0.8-alpha08" }
@@ -225,7 +226,7 @@ kotlinTestJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit" }
 kotlinTestJs = { module = "org.jetbrains.kotlin:kotlin-test-js", version.ref = "kotlin" }
 kotlinTestWasm = { module = "org.jetbrains.kotlin:kotlin-test-wasm-js", version.ref = "kotlin" }
 kotlinReflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
-kotlinPoet = { module = "com.squareup:kotlinpoet", version = "1.14.2" }
+kotlinPoet = { module = "com.squareup:kotlinpoet", version = "1.18.1" }
 kotlinPoetJavaPoet = { module = "com.squareup:kotlinpoet-javapoet", version = "1.14.2" }
 kotlinXHtml = { module = "org.jetbrains.kotlinx:kotlinx-html-jvm", version = "0.7.3" }
 kotlinXw3c = { module = "org.jetbrains.kotlinx:kotlinx-browser", version = "0.3.1" }
@@ -320,6 +321,7 @@ xmlApis = { module = "xml-apis:xml-apis", version.ref = "xmlApis" }
 xpp3 = { module = "xpp3:xpp3", version = "1.1.4c" }
 xmlpull = { module = "xmlpull:xmlpull", version = "1.1.3.1" }
 androidx-core = { group = "androidx.core", name = "core", version.ref = "core" }
+storytale-dokka-plugin = { module = "org.jetbrains.compose.storytale:storytale-dokka-plugin", version.ref = "storytale" }
 
 [plugins]
 kotlinBenchmark = { id = "org.jetbrains.kotlinx.benchmark", version.ref = "kotlinBenchmark" }
@@ -327,6 +329,9 @@ kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinMp = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 atomicFu = { id = "org.jetbrains.kotlin.plugin.atomicfu", version.ref = "atomicFu" }
+storytale = { id = "org.jetbrains.compose.storytale", version.ref = "storytale" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin"}
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 
 [bundles]
 # prevent androidAccessibilityFramework 3.1 which pulls hamcrest 2.2, breaking espresso-core

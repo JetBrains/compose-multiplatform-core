@@ -47,8 +47,7 @@ import androidx.compose.ui.util.fastFirst
  *
  * Badges can be icon only or contain short text.
  *
- * ![Badge
- * image](https://developer.android.com/images/reference/androidx/compose/material3/badge.png)
+ * ![Badge image](https://developer.android.com/images/reference/androidx/compose/material3/badge.png)
  *
  * A common use case is to display a badge with navigation bar items. For more information, see
  * [Navigation Bar](https://m3.material.io/components/navigation-bar/overview)
@@ -59,6 +58,8 @@ import androidx.compose.ui.util.fastFirst
  * @param badge the badge to be displayed - typically a [Badge]
  * @param modifier the [Modifier] to be applied to this BadgedBox
  * @param content the anchor to which this badge will be positioned
+ *
+ * @story /stories?embedded=true#story/BadgedBox%2520Story
  */
 @Composable
 fun BadgedBox(
@@ -134,8 +135,7 @@ fun BadgedBox(
  *
  * Badges can be icon only or contain short text.
  *
- * ![Badge
- * image](https://developer.android.com/images/reference/androidx/compose/material3/badge.png)
+ * ![Badge image](https://developer.android.com/images/reference/androidx/compose/material3/badge.png)
  *
  * See [BadgedBox] for a top level layout that will properly place the badge relative to content
  * such as text or an icon.
@@ -146,6 +146,8 @@ fun BadgedBox(
  *   matching content color for [containerColor], or to the current [LocalContentColor] if
  *   [containerColor] is not a color from the theme.
  * @param content optional content to be rendered inside this badge
+ *
+ * @story /stories?embedded=true#story/Badge%2520Story
  */
 @Composable
 fun Badge(

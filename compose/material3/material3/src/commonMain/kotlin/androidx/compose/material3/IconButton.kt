@@ -116,8 +116,7 @@ fun IconButton(
  * Icon buttons help people take supplementary actions with a single tap. They’re used when a
  * compact button is required, such as in a toolbar or image list.
  *
- * ![Standard icon button
- * image](https://developer.android.com/images/reference/androidx/compose/material3/standard-icon-button.png)
+ * ![Standard icon button image](https://developer.android.com/images/reference/androidx/compose/material3/standard-icon-button.png)
  *
  * [content] should typically be an [Icon] (see [androidx.compose.material.icons.Icons]). If using a
  * custom icon, note that the typical size for the internal icon is 24 x 24 dp. This icon button has
@@ -205,6 +204,8 @@ fun IconButton(
  *   appearance or preview the icon button in different states. Note that if `null` is provided,
  *   interactions will still happen internally.
  * @param content the content of this icon button, typically an [Icon]
+ *
+ * @story /stories?embedded=true#story/IconButton%2520Story
  */
 @ExperimentalMaterial3ExpressiveApi
 @Composable
@@ -266,14 +267,12 @@ private fun IconButtonImpl(
 }
 
 /**
- * [Material Design standard icon toggle
- * button](https://m3.material.io/components/icon-button/overview)
+ * [Material Design standard icon toggle button](https://m3.material.io/components/icon-button/overview)
  *
  * Icon buttons help people take supplementary actions with a single tap. They’re used when a
  * compact button is required, such as in a toolbar or image list.
  *
- * ![Standard icon toggle button
- * image](https://developer.android.com/images/reference/androidx/compose/material3/standard-icon-toggle-button.png)
+ * ![Standard icon toggle button image](https://developer.android.com/images/reference/androidx/compose/material3/standard-icon-toggle-button.png)
  *
  * [content] should typically be an [Icon] (see [androidx.compose.material.icons.Icons]). If using a
  * custom icon, note that the typical size for the internal icon is 24 x 24 dp. This icon button has
@@ -293,6 +292,8 @@ private fun IconButtonImpl(
  *   appearance or preview the icon button in different states. Note that if `null` is provided,
  *   interactions will still happen internally.
  * @param content the content of this icon button, typically an [Icon]
+ *
+ * @story /stories?embedded=true#story/IconToggleButton%2520Story
  */
 @Deprecated(
     message = "Use overload with `shape`",
@@ -478,8 +479,7 @@ private fun IconToggleButtonImpl(
  * Icon buttons help people take supplementary actions with a single tap. They’re used when a
  * compact button is required, such as in a toolbar or image list.
  *
- * ![Filled icon button
- * image](https://developer.android.com/images/reference/androidx/compose/material3/filled-icon-button.png)
+ * ![Filled icon button image](https://developer.android.com/images/reference/androidx/compose/material3/filled-icon-button.png)
  *
  * [content] should typically be an [Icon] (see [androidx.compose.material.icons.Icons]). If using a
  * custom icon, note that the typical size for the internal icon is 24 x 24 dp. This icon button has
@@ -501,6 +501,8 @@ private fun IconToggleButtonImpl(
  *   appearance or preview the icon button in different states. Note that if `null` is provided,
  *   interactions will still happen internally.
  * @param content the content of this icon button, typically an [Icon]
+ *
+ * @story /stories?embedded=true#story/FilledIconButton%2520Story
  */
 @Composable
 fun FilledIconButton(
@@ -688,14 +690,12 @@ fun FilledIconToggleButton(
     )
 
 /**
- * [Material Design filled tonal icon
- * button](https://m3.material.io/components/icon-button/overview)
+ * [Material Design filled tonal icon button](https://m3.material.io/components/icon-button/overview)
  *
  * Icon buttons help people take supplementary actions with a single tap. They’re used when a
  * compact button is required, such as in a toolbar or image list.
  *
- * ![Filled tonal icon button
- * image](https://developer.android.com/images/reference/androidx/compose/material3/filled-tonal-icon-button.png)
+ * ![Filled tonal icon button image](https://developer.android.com/images/reference/androidx/compose/material3/filled-tonal-icon-button.png)
  *
  * A filled tonal icon button is a medium-emphasis icon button that is an alternative middle ground
  * between the default [FilledIconButton] and [OutlinedIconButton]. They can be used in contexts
@@ -721,6 +721,8 @@ fun FilledIconToggleButton(
  *   appearance or preview the icon button in different states. Note that if `null` is provided,
  *   interactions will still happen internally.
  * @param content the content of this icon button, typically an [Icon]
+ *
+ * @story /stories?embedded=true#story/FilledTonalIconButton%2520Story
  */
 @Composable
 fun FilledTonalIconButton(
@@ -802,14 +804,12 @@ fun FilledTonalIconButton(
     )
 
 /**
- * [Material Design filled tonal icon toggle
- * button](https://m3.material.io/components/icon-button/overview)
+ * [Material Design filled tonal icon toggle button](https://m3.material.io/components/icon-button/overview)
  *
  * Icon buttons help people take supplementary actions with a single tap. They’re used when a
  * compact button is required, such as in a toolbar or image list.
  *
- * ![Filled tonal icon toggle button
- * image](https://developer.android.com/images/reference/androidx/compose/material3/filled-tonal-icon-toggle-button.png)
+ * ![Filled tonal icon toggle button image](https://developer.android.com/images/reference/androidx/compose/material3/filled-tonal-icon-toggle-button.png)
  *
  * A filled tonal toggle icon button is a medium-emphasis icon button that is an alternative middle
  * ground between the default [FilledIconToggleButton] and [OutlinedIconToggleButton]. They can be
@@ -837,6 +837,8 @@ fun FilledTonalIconButton(
  *   appearance or preview the icon button in different states. Note that if `null` is provided,
  *   interactions will still happen internally.
  * @param content the content of this icon button, typically an [Icon]
+ *
+ * @story /stories?embedded=true#story/FilledIconToggleButton%2520Story
  */
 @Composable
 fun FilledTonalIconToggleButton(
@@ -862,14 +864,12 @@ fun FilledTonalIconToggleButton(
     )
 
 /**
- * [Material Design filled tonal icon toggle
- * button](https://m3.material.io/components/icon-button/overview)
+ * [Material Design filled tonal icon toggle button](https://m3.material.io/components/icon-button/overview)
  *
  * Icon buttons help people take supplementary actions with a single tap. They’re used when a
  * compact button is required, such as in a toolbar or image list.
  *
- * ![Filled tonal icon toggle button
- * image](https://developer.android.com/images/reference/androidx/compose/material3/small_tonal_filled_icon_button_round_unselected_select.png)
+ * ![Filled tonal icon toggle button image](https://developer.android.com/images/reference/androidx/compose/material3/small_tonal_filled_icon_button_round_unselected_select.png)
  *
  * A filled tonal toggle icon button is a medium-emphasis icon button that is an alternative middle
  * ground between the default [FilledIconToggleButton] and [OutlinedIconToggleButton]. They can be
@@ -898,6 +898,8 @@ fun FilledTonalIconToggleButton(
  *   appearance or preview the icon button in different states. Note that if `null` is provided,
  *   interactions will still happen internally.
  * @param content the content of this icon button, typically an [Icon]
+ *
+ * @story /stories?embedded=true#story/FilledTonalIconToggleButton%2520Story
  */
 @ExperimentalMaterial3ExpressiveApi
 @Composable
@@ -929,8 +931,7 @@ fun FilledTonalIconToggleButton(
  * Icon buttons help people take supplementary actions with a single tap. They’re used when a
  * compact button is required, such as in a toolbar or image list.
  *
- * ![Outlined icon button
- * image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-icon-button.png)
+ * ![Outlined icon button image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-icon-button.png)
  *
  * Icon buttons help people take supplementary actions with a single tap. They’re used when a
  * compact button is required, such as in a toolbar or image list.
@@ -965,6 +966,8 @@ fun FilledTonalIconToggleButton(
  *   appearance or preview the icon button in different states. Note that if `null` is provided,
  *   interactions will still happen internally.
  * @param content the content of this icon button, typically an [Icon]
+ *
+ * @story /stories?embedded=true#story/OutlinedIconButton%2520Story
  */
 @Composable
 fun OutlinedIconButton(
@@ -1053,14 +1056,12 @@ fun OutlinedIconButton(
     )
 
 /**
- * [Material Design outlined icon toggle
- * button](https://m3.material.io/components/icon-button/overview)
+ * [Material Design outlined icon toggle button](https://m3.material.io/components/icon-button/overview)
  *
  * Icon buttons help people take supplementary actions with a single tap. They’re used when a
  * compact button is required, such as in a toolbar or image list.
  *
- * ![Outlined icon toggle button
- * image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-icon-toggle-button.png)
+ * ![Outlined icon toggle button image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-icon-toggle-button.png)
  *
  * [content] should typically be an [Icon] (see [androidx.compose.material.icons.Icons]). If using a
  * custom icon, note that the typical size for the internal icon is 24 x 24 dp. This icon button has
@@ -1086,6 +1087,8 @@ fun OutlinedIconButton(
  *   appearance or preview the icon button in different states. Note that if `null` is provided,
  *   interactions will still happen internally.
  * @param content the content of this icon button, typically an [Icon]
+ *
+ * @story /stories?embedded=true#story/OutlinedIconToggleButton%2520Story
  */
 @Composable
 fun OutlinedIconToggleButton(

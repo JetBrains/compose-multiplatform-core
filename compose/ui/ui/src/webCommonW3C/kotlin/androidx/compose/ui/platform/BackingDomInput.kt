@@ -55,12 +55,17 @@ internal class BackingDomInput(
 
     internal val backingElement = inputStrategy.htmlInput
 
+    // TODO: Make a PR? For now, it's a workaround for an embedded Storytale
+    // https://youtrack.jetbrains.com/issue/CMP-8141
+    private var isPositioned = false
+
     fun register() {
         setBackingInputBox(container = inputContainer, 0f, 0f, 0f, 0f)
         inputContainer.appendChild(backingElement)
     }
 
     fun focus() {
+        if (!isPositioned) return
         // we focus twice to be sure that ios and non-ios browser both manage to focus
         // see https://youtrack.jetbrains.com/issue/CMP-8013
         // and https://youtrack.jetbrains.com/issue/CMP-7836/
@@ -83,11 +88,16 @@ internal class BackingDomInput(
         // the lags become more noticeable.
         // I assume it has something to do with text layout. Read more in the comments of the linked issue.
         setBackingInputBox(container = inputContainer, left, top, width.coerceAtLeast(1f), height)
+        isPositioned = true
     }
 
     fun updateState(textFieldValue: TextFieldValue) {
         inputStrategy.updateState(textFieldValue)
-        focus()
+        if (isPositioned) {
+            window.requestAnimationFrame {
+                focus()
+            }
+        }
     }
 
     fun dispose() {

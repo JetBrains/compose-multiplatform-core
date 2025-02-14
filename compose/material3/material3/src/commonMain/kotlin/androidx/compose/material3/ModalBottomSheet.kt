@@ -87,8 +87,7 @@ import kotlinx.coroutines.launch
  * app functionality when they appear, and remaining on screen until confirmed, dismissed, or a
  * required action has been taken.
  *
- * ![Bottom sheet
- * image](https://developer.android.com/images/reference/androidx/compose/material3/bottom_sheet.png)
+ * ![Bottom sheet image](https://developer.android.com/images/reference/androidx/compose/material3/bottom_sheet.png)
  *
  * A simple example of a modal bottom sheet looks like this:
  *
@@ -117,6 +116,8 @@ import kotlinx.coroutines.launch
  * @param properties [ModalBottomSheetProperties] for further customization of this modal bottom
  *   sheet's window behavior.
  * @param content The content to be displayed inside the bottom sheet.
+ *
+ * @story /stories?embedded=true#story/ModalBottomSheet%2520Story
  */
 @Composable
 @ExperimentalMaterial3Api

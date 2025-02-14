@@ -324,8 +324,7 @@ fun rememberDrawerState(
  * Modal navigation drawers block interaction with the rest of an app’s content with a scrim. They
  * are elevated above most of the app’s UI and don’t affect the screen’s layout grid.
  *
- * ![Navigation drawer
- * image](https://developer.android.com/images/reference/androidx/compose/material3/navigation-drawer.png)
+ * ![Navigation drawer image](https://developer.android.com/images/reference/androidx/compose/material3/navigation-drawer.png)
  *
  * @sample androidx.compose.material3.samples.ModalNavigationDrawerSample
  * @param drawerContent content inside this drawer
@@ -474,8 +473,7 @@ fun ModalNavigationDrawer(
  * Navigation drawers provide ergonomic access to destinations in an app. They’re often next to app
  * content and affect the screen’s layout grid.
  *
- * ![Navigation drawer
- * image](https://developer.android.com/images/reference/androidx/compose/material3/navigation-drawer.png)
+ * ![Navigation drawer image](https://developer.android.com/images/reference/androidx/compose/material3/navigation-drawer.png)
  *
  * Dismissible standard drawers can be used for layouts that prioritize content (such as a photo
  * gallery) or for apps where users are unlikely to switch destinations often. They should use a
@@ -595,14 +593,12 @@ fun DismissibleNavigationDrawer(
 }
 
 /**
- * [Material Design navigation permanent
- * drawer](https://m3.material.io/components/navigation-drawer/overview)
+ * [Material Design navigation permanent drawer](https://m3.material.io/components/navigation-drawer/overview)
  *
  * Navigation drawers provide ergonomic access to destinations in an app. They’re often next to app
  * content and affect the screen’s layout grid.
  *
- * ![Navigation drawer
- * image](https://developer.android.com/images/reference/androidx/compose/material3/navigation-drawer.png)
+ * ![Navigation drawer image](https://developer.android.com/images/reference/androidx/compose/material3/navigation-drawer.png)
  *
  * The permanent navigation drawer is always visible and usually used for frequently switching
  * destinations. On mobile screens, use [ModalNavigationDrawer] instead.
@@ -611,6 +607,8 @@ fun DismissibleNavigationDrawer(
  * @param drawerContent content inside this drawer
  * @param modifier the [Modifier] to be applied to this drawer
  * @param content content of the rest of the UI
+ *
+ * @story /stories?embedded=true#story/PermanentNavigationDrawer%2520Story
  */
 @Composable
 fun PermanentNavigationDrawer(
@@ -732,6 +730,8 @@ fun ModalDrawerSheet(
  *   result in a darker color in light theme and lighter color in dark theme. See also: [Surface].
  * @param windowInsets a window insets for the sheet.
  * @param content content inside of a dismissible navigation drawer
+ *
+ * @story /stories?embedded=true#story/DismissibleDrawerSheet%2520Story
  */
 @Composable
 fun DismissibleDrawerSheet(

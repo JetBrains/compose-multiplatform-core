@@ -8,6 +8,10 @@ pluginManagement {
             url = "https://plugins.gradle.org/m2/"
         }
         maven { url = "https://redirector.kotlinlang.org/maven/dev" }
+        maven {
+            // For storytale
+            url = "https://maven.pkg.jetbrains.space/public/p/compose/dev"
+        }
     }
 }
 
@@ -165,6 +169,7 @@ includeProject(":compose:lint:common")
 includeProject(":compose:lint:common-test")
 includeProject(":compose:material")
 includeProject(":compose:material3:material3")
+includeProject(":compose:material3:material3-stories")
 includeProject(":compose:material3:adaptive:adaptive")
 includeProject(":compose:material3:adaptive:adaptive-layout")
 includeProject(":compose:material3:adaptive:adaptive-navigation")
@@ -262,4 +267,4 @@ includeProject(":internal-testutils-xctest", "testutils/testutils-xctest")
 includeBuild("placeholder")
 
 includeProject(":mpp")
-
+includeProject(":mpp:apiReferences")

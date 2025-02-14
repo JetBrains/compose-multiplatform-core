@@ -125,6 +125,8 @@ import kotlinx.coroutines.launch
  *   content will displace to show the checked icon, or pass different icon lambdas for unchecked
  *   and checked in which case the icons will crossfade.
  * @param label content to be rendered inside this button
+ *
+ * @story /stories?embedded=true#story/SegmentedButton%2520Story
  */
 @Composable
 fun MultiChoiceSegmentedButtonRowScope.SegmentedButton(
@@ -359,6 +361,8 @@ fun SingleChoiceSegmentedButtonRow(
  *   used on the items.
  * @param content the content of this Segmented Button Row, typically a sequence of
  *   [SegmentedButton]s
+ *
+ * @story /stories?embedded=true#story/MultiChoiceSegmentedButtonRow%2520Story
  */
 @Composable
 fun MultiChoiceSegmentedButtonRow(

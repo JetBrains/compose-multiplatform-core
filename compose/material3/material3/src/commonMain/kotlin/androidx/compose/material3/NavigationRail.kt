@@ -83,14 +83,12 @@ import androidx.compose.ui.util.fastFirstOrNull
 import kotlin.math.roundToInt
 
 /**
- * [Material Design bottom navigation
- * rail](https://m3.material.io/components/navigation-rail/overview)
+ * [Material Design bottom navigation rail](https://m3.material.io/components/navigation-rail/overview)
  *
  * Navigation rails provide access to primary destinations in apps when using tablet and desktop
  * screens.
  *
- * ![Navigation rail
- * image](https://developer.android.com/images/reference/androidx/compose/material3/navigation-rail.png)
+ * ![Navigation rail image](https://developer.android.com/images/reference/androidx/compose/material3/navigation-rail.png)
  *
  * The navigation rail should be used to display three to seven app destinations and, optionally, a
  * [FloatingActionButton] or a logo header. Each destination is typically represented by an icon and
@@ -115,6 +113,8 @@ import kotlin.math.roundToInt
  * @param header optional header that may hold a [FloatingActionButton] or a logo
  * @param windowInsets a window insets of the navigation rail.
  * @param content the content of this navigation rail, typically 3-7 [NavigationRailItem]s
+ *
+ * @story /stories?embedded=true#story/NavigationRail%2520Story
  */
 @OptIn(ExperimentalMaterial3ComponentOverrideApi::class)
 @Composable
@@ -197,6 +197,8 @@ object DefaultNavigationRailOverride : NavigationRailOverride {
  *   emitting [Interaction]s for this item. You can use this to change the item's appearance or
  *   preview the item in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
+ *
+ * @story /stories?embedded=true#story/NavigationRailItem%2520Story
  */
 @Composable
 fun NavigationRailItem(

@@ -47,8 +47,7 @@ import androidx.compose.ui.unit.dp
  *
  * Radio buttons allow users to select one option from a set.
  *
- * ![Radio button
- * image](https://developer.android.com/images/reference/androidx/compose/material3/radio-button.png)
+ * ![Radio button image](https://developer.android.com/images/reference/androidx/compose/material3/radio-button.png)
  *
  * @sample androidx.compose.material3.samples.RadioButtonSample
  *
@@ -69,6 +68,8 @@ import androidx.compose.ui.unit.dp
  *   emitting [Interaction]s for this radio button. You can use this to change the radio button's
  *   appearance or preview the radio button in different states. Note that if `null` is provided,
  *   interactions will still happen internally.
+ *
+ * @story /stories?embedded=true#story/RadioButton%2520Story
  */
 @Composable
 fun RadioButton(

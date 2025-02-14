@@ -62,8 +62,7 @@ import kotlinx.coroutines.launch
  *
  * Switches toggle the state of a single item on or off.
  *
- * ![Switch
- * image](https://developer.android.com/images/reference/androidx/compose/material3/switch.png)
+ * ![Switch image](https://developer.android.com/images/reference/androidx/compose/material3/switch.png)
  *
  * @sample androidx.compose.material3.samples.SwitchSample
  *
@@ -85,6 +84,8 @@ import kotlinx.coroutines.launch
  *   emitting [Interaction]s for this switch. You can use this to change the switch's appearance or
  *   preview the switch in different states. Note that if `null` is provided, interactions will
  *   still happen internally.
+ *
+ * @story /stories?embedded=true#story/Switch%2520Story
  */
 @Composable
 @Suppress("ComposableLambdaParameterNaming", "ComposableLambdaParameterPosition")

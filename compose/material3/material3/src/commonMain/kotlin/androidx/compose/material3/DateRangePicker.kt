@@ -72,8 +72,7 @@ import kotlinx.coroutines.launch
  *
  * Date range pickers let people select a range of dates and can be embedded into Dialogs.
  *
- * ![Date range picker
- * image](https://developer.android.com/images/reference/androidx/compose/material3/range-picker.png)
+ * ![Date range picker image](https://developer.android.com/images/reference/androidx/compose/material3/range-picker.png)
  *
  * A simple DateRangePicker looks like:
  *
@@ -95,7 +94,8 @@ import kotlinx.coroutines.launch
  * @param focusRequester a focus requester that will be used to focus the text field when the date
  *   picker is in an input mode. Pass `null` to not focus the text field if that's the desired
  *   behavior.
- */
+ *
+ * @story /stories?embedded=true#story/DateRangePicker%2520Story*/
 @Composable
 fun DateRangePicker(
     state: DateRangePickerState,

@@ -58,8 +58,7 @@ import androidx.compose.ui.unit.Dp
  * This Card does not handle input events - see the other Card overloads if you want a clickable or
  * selectable Card.
  *
- * ![Filled card
- * image](https://developer.android.com/images/reference/androidx/compose/material3/filled-card.png)
+ * ![Filled card image](https://developer.android.com/images/reference/androidx/compose/material3/filled-card.png)
  *
  * Card sample:
  *
@@ -75,6 +74,8 @@ import androidx.compose.ui.unit.Dp
  *   also: [Surface].
  * @param border the border to draw around the container of this card
  * @param content The content displayed on the card
+ *
+ * @story /stories?embedded=true#story/Card%2520Story
  */
 @Composable
 fun Card(
@@ -106,8 +107,7 @@ fun Card(
  *
  * This Card handles click events, calling its [onClick] lambda.
  *
- * ![Filled card
- * image](https://developer.android.com/images/reference/androidx/compose/material3/filled-card.png)
+ * ![Filled card image](https://developer.android.com/images/reference/androidx/compose/material3/filled-card.png)
  *
  * Clickable card sample:
  *
@@ -171,8 +171,7 @@ fun Card(
  * This ElevatedCard does not handle input events - see the other ElevatedCard overloads if you want
  * a clickable or selectable ElevatedCard.
  *
- * ![Elevated card
- * image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-card.png)
+ * ![Elevated card image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-card.png)
  *
  * Elevated card sample:
  *
@@ -186,6 +185,8 @@ fun Card(
  *   [ColorScheme.surface], this controls the amount of primary color applied as an overlay. See
  *   also: [Surface].
  * @param content The content displayed on the card
+ *
+ * @story /stories?embedded=true#story/ElevatedCard%2520Story
  */
 @Composable
 fun ElevatedCard(
@@ -213,8 +214,7 @@ fun ElevatedCard(
  *
  * This ElevatedCard handles click events, calling its [onClick] lambda.
  *
- * ![Elevated card
- * image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-card.png)
+ * ![Elevated card image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-card.png)
  *
  * Clickable elevated card sample:
  *
@@ -269,8 +269,7 @@ fun ElevatedCard(
  * This OutlinedCard does not handle input events - see the other OutlinedCard overloads if you want
  * a clickable or selectable OutlinedCard.
  *
- * ![Outlined card
- * image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-card.png)
+ * ![Outlined card image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-card.png)
  *
  * Outlined card sample:
  *
@@ -286,6 +285,8 @@ fun ElevatedCard(
  *   also: [Surface].
  * @param border the border to draw around the container of this card
  * @param content The content displayed on the card
+ *
+ * @story /stories?embedded=true#story/OutlinedCard%2520Story
  */
 @Composable
 fun OutlinedCard(
@@ -313,8 +314,7 @@ fun OutlinedCard(
  *
  * This OutlinedCard handles click events, calling its [onClick] lambda.
  *
- * ![Outlined card
- * image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-card.png)
+ * ![Outlined card image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-card.png)
  *
  * Clickable outlined card sample:
  *

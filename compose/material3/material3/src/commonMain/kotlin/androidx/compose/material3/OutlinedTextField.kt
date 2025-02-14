@@ -121,8 +121,7 @@ import kotlin.math.roundToInt
  * places like forms, where many text fields are placed together, their reduced emphasis helps
  * simplify the layout.
  *
- * ![Outlined text field
- * image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-text-field.png)
+ * ![Outlined text field image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-text-field.png)
  *
  * If you are looking for a filled version, see [TextField]. For a text field specifically designed
  * for passwords or other secure content, see [OutlinedSecureTextField].
@@ -364,6 +363,8 @@ fun OutlinedTextField(
  * @param shape defines the shape of this text field's border
  * @param colors [TextFieldColors] that will be used to resolve the colors used for this text field
  *   in different states. See [OutlinedTextFieldDefaults.colors].
+ *
+ * @story /stories?embedded=true#story/OutlinedTextField%2520Story
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -476,8 +477,7 @@ fun OutlinedTextField(
  * places like forms, where many text fields are placed together, their reduced emphasis helps
  * simplify the layout.
  *
- * ![Outlined text field
- * image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-text-field.png)
+ * ![Outlined text field image](https://developer.android.com/images/reference/androidx/compose/material3/outlined-text-field.png)
  *
  * This overload provides access to the input text, cursor position and selection range and IME
  * composition. If you only want to observe an input text change, use the OutlinedTextField overload

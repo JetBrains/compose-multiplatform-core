@@ -145,6 +145,8 @@ import kotlinx.coroutines.launch
  * @param tabs the tabs inside this tab row. Typically this will be multiple [Tab]s. Each element
  *   inside this lambda will be measured and placed evenly across the row, each taking up equal
  *   space.
+ *
+ * @story /stories?embedded=true#story/PrimaryTabRow%2520Story
  */
 @Composable
 fun PrimaryTabRow(
@@ -196,6 +198,8 @@ fun PrimaryTabRow(
  * @param tabs the tabs inside this tab row. Typically this will be multiple [Tab]s. Each element
  *   inside this lambda will be measured and placed evenly across the row, each taking up equal
  *   space.
+ *
+ * @story /stories?embedded=true#story/SecondaryTabRow%2520Story
  */
 @Composable
 fun SecondaryTabRow(
@@ -248,6 +252,8 @@ fun SecondaryTabRow(
  * @param tabs the tabs inside this tab row. Typically this will be multiple [Tab]s. Each element
  *   inside this lambda will be measured and placed evenly across the row, each taking up equal
  *   space.
+ *
+ * @story /stories?embedded=true#story/PrimaryScrollableTabRow%2520Story
  */
 @Composable
 fun PrimaryScrollableTabRow(
@@ -319,6 +325,8 @@ fun PrimaryScrollableTabRow(
  * @param tabs the tabs inside this tab row. Typically this will be multiple [Tab]s. Each element
  *   inside this lambda will be measured and placed evenly across the row, each taking up equal
  *   space.
+ *
+ * @story /stories?embedded=true#story/SecondaryScrollableTabRow%2520Story
  */
 @Composable
 fun SecondaryScrollableTabRow(

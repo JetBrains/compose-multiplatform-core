@@ -146,8 +146,7 @@ import kotlinx.coroutines.launch
  * By default, a date picker lets you pick a date via a calendar UI. However, it also allows
  * switching into a date input mode for a manual entry of dates using the numbers on a keyboard.
  *
- * ![Date picker
- * image](https://developer.android.com/images/reference/androidx/compose/material3/date-picker.png)
+ * ![Date picker image](https://developer.android.com/images/reference/androidx/compose/material3/date-picker.png)
  *
  * A simple DatePicker looks like:
  *
@@ -178,6 +177,8 @@ import kotlinx.coroutines.launch
  * @param focusRequester a focus requester that will be used to focus the text field when the date
  *   picker is in an input mode. Pass `null` to not focus the text field if that's the desired
  *   behavior.
+ *
+ * @story /stories?embedded=true#story/DatePicker%2520Story
  */
 @Composable
 fun DatePicker(

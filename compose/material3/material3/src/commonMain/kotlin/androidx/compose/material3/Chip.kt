@@ -98,8 +98,7 @@ import androidx.compose.ui.util.fastSumBy
  * calendar event from the home screen. Assist chips function as though the user asked an assistant
  * to complete the action. They should appear dynamically and contextually in a UI.
  *
- * ![Assist chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/assist-chip.png)
+ * ![Assist chip image](https://developer.android.com/images/reference/androidx/compose/material3/assist-chip.png)
  *
  * This assist chip is applied with a flat style. If you want an elevated style, use the
  * [ElevatedAssistChip].
@@ -129,6 +128,8 @@ import androidx.compose.ui.util.fastSumBy
  *   emitting [Interaction]s for this chip. You can use this to change the chip's appearance or
  *   preview the chip in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
+ *
+ * @story /stories?embedded=true#story/AssistChip%2520Story
  */
 @Composable
 fun AssistChip(
@@ -173,8 +174,7 @@ fun AssistChip(
  * calendar event from the home screen. Assist chips function as though the user asked an assistant
  * to complete the action. They should appear dynamically and contextually in a UI.
  *
- * ![Assist chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/assist-chip.png)
+ * ![Assist chip image](https://developer.android.com/images/reference/androidx/compose/material3/assist-chip.png)
  *
  * This assist chip is applied with a flat style. If you want an elevated style, use the
  * [ElevatedAssistChip].
@@ -258,8 +258,7 @@ fun AssistChip(
  * calendar event from the home screen. Assist chips function as though the user asked an assistant
  * to complete the action. They should appear dynamically and contextually in a UI.
  *
- * ![Assist chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-assist-chip.png)
+ * ![Assist chip image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-assist-chip.png)
  *
  * This assist chip is applied with an elevated style. If you want a flat style, use the
  * [AssistChip].
@@ -288,6 +287,8 @@ fun AssistChip(
  *   emitting [Interaction]s for this chip. You can use this to change the chip's appearance or
  *   preview the chip in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
+ *
+ * @story /stories?embedded=true#story/ElevatedAssistChip%2520Story
  */
 @Composable
 fun ElevatedAssistChip(
@@ -332,8 +333,7 @@ fun ElevatedAssistChip(
  * calendar event from the home screen. Assist chips function as though the user asked an assistant
  * to complete the action. They should appear dynamically and contextually in a UI.
  *
- * ![Assist chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-assist-chip.png)
+ * ![Assist chip image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-assist-chip.png)
  *
  * This assist chip is applied with an elevated style. If you want a flat style, use the
  * [AssistChip].
@@ -415,8 +415,7 @@ fun ElevatedAssistChip(
  * Filter chips use tags or descriptive words to filter content. They can be a good alternative to
  * toggle buttons or checkboxes.
  *
- * ![Filter chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/filter-chip.png)
+ * ![Filter chip image](https://developer.android.com/images/reference/androidx/compose/material3/filter-chip.png)
  *
  * This filter chip is applied with a flat style. If you want an elevated style, use the
  * [ElevatedFilterChip].
@@ -460,6 +459,8 @@ fun ElevatedAssistChip(
  *   emitting [Interaction]s for this chip. You can use this to change the chip's appearance or
  *   preview the chip in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
+ *
+ * @story /stories?embedded=true#story/FilterChip%2520Story
  */
 @Composable
 fun FilterChip(
@@ -505,8 +506,7 @@ fun FilterChip(
  * Filter chips use tags or descriptive words to filter content. They can be a good alternative to
  * toggle buttons or checkboxes.
  *
- * ![Filter chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-filter-chip.png)
+ * ![Filter chip image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-filter-chip.png)
  *
  * This filter chip is applied with an elevated style. If you want a flat style, use the
  * [FilterChip].
@@ -542,6 +542,8 @@ fun FilterChip(
  *   emitting [Interaction]s for this chip. You can use this to change the chip's appearance or
  *   preview the chip in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
+ *
+ * @story /stories?embedded=true#story/ElevatedFilterChip%2520Story
  */
 @Composable
 fun ElevatedFilterChip(
@@ -586,8 +588,7 @@ fun ElevatedFilterChip(
  *
  * Input chips represent discrete pieces of information entered by a user.
  *
- * ![Input chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/input-chip.png)
+ * ![Input chip image](https://developer.android.com/images/reference/androidx/compose/material3/input-chip.png)
  *
  * An Input Chip can have a leading icon or an avatar at its start. In case both are provided, the
  * avatar will take precedence and will be displayed.
@@ -631,6 +632,8 @@ fun ElevatedFilterChip(
  *   emitting [Interaction]s for this chip. You can use this to change the chip's appearance or
  *   preview the chip in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
+ *
+ * @story /stories?embedded=true#story/InputChip%2520Story
  */
 @Composable
 fun InputChip(
@@ -704,8 +707,7 @@ fun InputChip(
  * Suggestion chips help narrow a user's intent by presenting dynamically generated suggestions,
  * such as possible responses or search filters.
  *
- * ![Suggestion chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/suggestion-chip.png)
+ * ![Suggestion chip image](https://developer.android.com/images/reference/androidx/compose/material3/suggestion-chip.png)
  *
  * This suggestion chip is applied with a flat style. If you want an elevated style, use the
  * [ElevatedSuggestionChip].
@@ -734,6 +736,8 @@ fun InputChip(
  *   emitting [Interaction]s for this chip. You can use this to change the chip's appearance or
  *   preview the chip in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
+ *
+ * @story /stories?embedded=true#story/SuggestionChip%2520Story
  */
 @Composable
 fun SuggestionChip(
@@ -776,8 +780,7 @@ fun SuggestionChip(
  * Suggestion chips help narrow a user's intent by presenting dynamically generated suggestions,
  * such as possible responses or search filters.
  *
- * ![Suggestion chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/suggestion-chip.png)
+ * ![Suggestion chip image](https://developer.android.com/images/reference/androidx/compose/material3/suggestion-chip.png)
  *
  * This suggestion chip is applied with a flat style. If you want an elevated style, use the
  * [ElevatedSuggestionChip].
@@ -858,8 +861,7 @@ fun SuggestionChip(
  * Suggestion chips help narrow a user's intent by presenting dynamically generated suggestions,
  * such as possible responses or search filters.
  *
- * ![Suggestion chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-suggestion-chip.png)
+ * ![Suggestion chip image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-suggestion-chip.png)
  *
  * This suggestion chip is applied with an elevated style. If you want a flat style, use the
  * [SuggestionChip].
@@ -887,6 +889,8 @@ fun SuggestionChip(
  *   emitting [Interaction]s for this chip. You can use this to change the chip's appearance or
  *   preview the chip in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
+ *
+ *   @story /stories?embedded=true#story/ElevatedSuggestionChip%2520Story
  */
 @Composable
 fun ElevatedSuggestionChip(
@@ -929,8 +933,7 @@ fun ElevatedSuggestionChip(
  * Suggestion chips help narrow a user's intent by presenting dynamically generated suggestions,
  * such as possible responses or search filters.
  *
- * ![Suggestion chip
- * image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-suggestion-chip.png)
+ * ![Suggestion chip image](https://developer.android.com/images/reference/androidx/compose/material3/elevated-suggestion-chip.png)
  *
  * This suggestion chip is applied with an elevated style. If you want a flat style, use the
  * [SuggestionChip].

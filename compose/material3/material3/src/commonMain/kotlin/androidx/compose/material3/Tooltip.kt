@@ -189,7 +189,9 @@ fun TooltipBox(
  *   component.
  * @param enableUserInput [Boolean] which determines if this TooltipBox will handle long press and
  *   mouse hover to trigger the tooltip through the state provided.
- * @param content the composable that the tooltip will anchor to.
+ * @param content the composable that the tooltip will anchor to
+ *
+ * @story /stories?embedded=true#story/TooltipBox%2520Story
  */
 @Deprecated(
     "Deprecated in favor of TooltipBox API that contains hasAction param.",
@@ -477,6 +479,8 @@ fun TooltipScope.PlainTooltip(
  * @param tonalElevation the tonal elevation of the tooltip.
  * @param shadowElevation the shadow elevation of the tooltip.
  * @param content the composable that will be used to populate the tooltip's content.
+ *
+ * @story /stories?embedded=true#story/PlainTooltip%2520Story
  */
 @Composable
 @ExperimentalMaterial3Api
@@ -588,6 +592,8 @@ fun TooltipScope.RichTooltip(
  * @param tonalElevation the tonal elevation of the tooltip.
  * @param shadowElevation the shadow elevation of the tooltip.
  * @param text the composable that will be used to populate the rich tooltip's text.
+ *
+ * @story /stories?embedded=true#story/RichTooltip%2520Story
  */
 @Composable
 @ExperimentalMaterial3Api

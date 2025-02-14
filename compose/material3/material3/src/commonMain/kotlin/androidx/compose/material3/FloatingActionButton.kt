@@ -98,8 +98,7 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
 /**
- * [Material Design floating action
- * button](https://m3.material.io/components/floating-action-button/overview)
+ * [Material Design floating action button](https://m3.material.io/components/floating-action-button/overview)
  *
  * The FAB represents the most important action on a screen. It puts key actions within reach.
  *
@@ -126,6 +125,8 @@ import kotlinx.coroutines.launch
  *   preview the FAB in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
  * @param content the content of this FAB, typically an [Icon]
+ *
+ * @story /stories?embedded=true#story/FloatingActionButton%2520Story
  */
 @Composable
 fun FloatingActionButton(
@@ -190,13 +191,11 @@ private fun FloatingActionButton(
 }
 
 /**
- * [Material Design small floating action
- * button](https://m3.material.io/components/floating-action-button/overview)
+ * [Material Design small floating action button](https://m3.material.io/components/floating-action-button/overview)
  *
  * The FAB represents the most important action on a screen. It puts key actions within reach.
  *
- * ![Small FAB
- * image](https://developer.android.com/images/reference/androidx/compose/material3/small-fab.png)
+ * ![Small FAB image](https://developer.android.com/images/reference/androidx/compose/material3/small-fab.png)
  *
  * @sample androidx.compose.material3.samples.SmallFloatingActionButtonSample
  *
@@ -220,6 +219,8 @@ private fun FloatingActionButton(
  *   preview the FAB in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
  * @param content the content of this FAB, typically an [Icon]
+ *
+ * @story /stories?embedded=true#story/SmallFloatingActionButton%2520Story
  */
 @Composable
 fun SmallFloatingActionButton(
@@ -306,13 +307,11 @@ fun MediumFloatingActionButton(
 }
 
 /**
- * [Material Design large floating action
- * button](https://m3.material.io/components/floating-action-button/overview)
+ * [Material Design large floating action button](https://m3.material.io/components/floating-action-button/overview)
  *
  * The FAB represents the most important action on a screen. It puts key actions within reach.
  *
- * ![Large FAB
- * image](https://developer.android.com/images/reference/androidx/compose/material3/large-fab.png)
+ * ![Large FAB image](https://developer.android.com/images/reference/androidx/compose/material3/large-fab.png)
  *
  * @sample androidx.compose.material3.samples.LargeFloatingActionButtonSample
  *
@@ -336,6 +335,8 @@ fun MediumFloatingActionButton(
  *   preview the FAB in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
  * @param content the content of this FAB, typically an [Icon]
+ *
+ * @story /stories?embedded=true#story/LargeFloatingActionButton%2520Story
  */
 @Composable
 fun LargeFloatingActionButton(
@@ -366,8 +367,7 @@ fun LargeFloatingActionButton(
 
 // TODO link to image
 /**
- * [Material Design small extended floating action
- * button](https://m3.material.io/components/extended-fab/overview)
+ * [Material Design small extended floating action button](https://m3.material.io/components/extended-fab/overview)
  *
  * Extended FABs help people take primary actions. They're wider than FABs to accommodate a text
  * label and larger target area.
@@ -569,8 +569,7 @@ fun LargeExtendedFloatingActionButton(
  * Extended FABs help people take primary actions. They're wider than FABs to accommodate a text
  * label and larger target area.
  *
- * ![Extended FAB
- * image](https://developer.android.com/images/reference/androidx/compose/material3/extended-fab.png)
+ * ![Extended FAB image](https://developer.android.com/images/reference/androidx/compose/material3/extended-fab.png)
  *
  * The other extended floating action button overload supports a text label and icon.
  *
@@ -592,6 +591,8 @@ fun LargeExtendedFloatingActionButton(
  *   preview the FAB in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
  * @param content the content of this FAB, typically a [Text] label
+ *
+ * @story /stories?embedded=true#story/ExtendedFloatingActionButton%2520Story
  */
 @Composable
 fun ExtendedFloatingActionButton(
@@ -625,8 +626,7 @@ fun ExtendedFloatingActionButton(
 }
 
 /**
- * [Material Design small extended floating action
- * button](https://m3.material.io/components/extended-fab/overview)
+ * [Material Design small extended floating action button](https://m3.material.io/components/extended-fab/overview)
  *
  * Extended FABs help people take primary actions. They're wider than FABs to accommodate a text
  * label and larger target area.
@@ -835,8 +835,7 @@ fun LargeExtendedFloatingActionButton(
  * Extended FABs help people take primary actions. They're wider than FABs to accommodate a text
  * label and larger target area.
  *
- * ![Extended FAB
- * image](https://developer.android.com/images/reference/androidx/compose/material3/extended-fab.png)
+ * ![Extended FAB image](https://developer.android.com/images/reference/androidx/compose/material3/extended-fab.png)
  *
  * The other extended floating action button overload is for FABs without an icon.
  *

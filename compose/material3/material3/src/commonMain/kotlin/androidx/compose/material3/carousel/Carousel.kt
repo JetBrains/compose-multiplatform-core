@@ -103,6 +103,8 @@ import kotlin.math.roundToInt
  *   after it has been clipped. You can use it to add a padding before the first item or after the
  *   last one. Use [itemSpacing] to add spacing between the items.
  * @param content The carousel's content Composable
+ *
+ * @story /stories?embedded=true#story/HorizontalMultiBrowseCarousel%2520Story
  */
 @ExperimentalMaterial3Api
 @Composable
@@ -203,6 +205,8 @@ fun HorizontalMultiBrowseCarousel(
  *   after it has been clipped. You can use it to add a padding before the first item or after the
  *   last one. Use [itemSpacing] to add spacing between the items.
  * @param content The carousel's content Composable
+ *
+ * @story /stories?embedded=true#story/HorizontalUncontainedCarousel%2520Story
  */
 @ExperimentalMaterial3Api
 @Composable

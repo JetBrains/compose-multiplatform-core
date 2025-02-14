@@ -300,6 +300,8 @@ fun rememberSwipeToDismissBoxState(
  * @param onDismiss Optional callback to be called when [content] is dismissed. onDismissed provides
  *   the current dismissed direction.
  * @param content The content that can be dismissed.
+ *
+ * @story /stories?embedded=true#story/SwipeToDismissBox%2520Story
  */
 @Composable
 fun SwipeToDismissBox(

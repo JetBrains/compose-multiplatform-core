@@ -58,13 +58,11 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
- * [Material Design determinate linear progress
- * indicator](https://m3.material.io/components/progress-indicators/overview)
+ * [Material Design determinate linear progress indicator](https://m3.material.io/components/progress-indicators/overview)
  *
  * Progress indicators express an unspecified wait time or display the duration of a process.
  *
- * ![Linear progress indicator
- * image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqdiyyvh-1P-progress-indicator-configurations.png?alt=media)
+ * ![Linear progress indicator image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqdiyyvh-1P-progress-indicator-configurations.png?alt=media)
  *
  * By default there is no animation between [progress] values. You can use
  * [ProgressIndicatorDefaults.ProgressAnimationSpec] as the default recommended [AnimationSpec] when
@@ -110,13 +108,11 @@ fun LinearProgressIndicator(
 }
 
 /**
- * [Material Design determinate linear progress
- * indicator](https://m3.material.io/components/progress-indicators/overview)
+ * [Material Design determinate linear progress indicator](https://m3.material.io/components/progress-indicators/overview)
  *
  * Progress indicators express an unspecified wait time or display the duration of a process.
  *
- * ![Linear progress indicator
- * image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqdiyyvh-1P-progress-indicator-configurations.png?alt=media)
+ * ![Linear progress indicator image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqdiyyvh-1P-progress-indicator-configurations.png?alt=media)
  *
  * By default there is no animation between [progress] values. You can use
  * [ProgressIndicatorDefaults.ProgressAnimationSpec] as the default recommended [AnimationSpec] when
@@ -133,6 +129,8 @@ fun LinearProgressIndicator(
  * @param gapSize size of the gap between the progress indicator and the track
  * @param drawStopIndicator lambda that will be called to draw the stop indicator. Note that a
  *   custom indicator implementation should also handle RTL layouts.
+ *
+ * @story /stories?embedded=true#story/LinearProgressIndicator%2520Story
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -187,13 +185,11 @@ fun LinearProgressIndicator(
 }
 
 /**
- * [Material Design indeterminate linear progress
- * indicator](https://m3.material.io/components/progress-indicators/overview)
+ * [Material Design indeterminate linear progress indicator](https://m3.material.io/components/progress-indicators/overview)
  *
  * Progress indicators express an unspecified wait time or display the duration of a process.
  *
- * ![Linear progress indicator
- * image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqdiyyvh-1P-progress-indicator-configurations.png?alt=media)
+ * ![Linear progress indicator image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqdiyyvh-1P-progress-indicator-configurations.png?alt=media)
  *
  * @sample androidx.compose.material3.samples.IndeterminateLinearProgressIndicatorSample
  * @param modifier the [Modifier] to be applied to this progress indicator
@@ -228,13 +224,11 @@ fun LinearProgressIndicator(
 }
 
 /**
- * [Material Design indeterminate linear progress
- * indicator](https://m3.material.io/components/progress-indicators/overview)
+ * [Material Design indeterminate linear progress indicator](https://m3.material.io/components/progress-indicators/overview)
  *
  * Progress indicators express an unspecified wait time or display the duration of a process.
  *
- * ![Linear progress indicator
- * image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqdiyyvh-1P-progress-indicator-configurations.png?alt=media)
+ * ![Linear progress indicator image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqdiyyvh-1P-progress-indicator-configurations.png?alt=media)
  *
  * @sample androidx.compose.material3.samples.IndeterminateLinearProgressIndicatorSample
  * @param modifier the [Modifier] to be applied to this progress indicator
@@ -436,13 +430,11 @@ private fun DrawScope.drawLinearIndicator(
 }
 
 /**
- * [Material Design determinate circular progress
- * indicator](https://m3.material.io/components/progress-indicators/overview)
+ * [Material Design determinate circular progress indicator](https://m3.material.io/components/progress-indicators/overview)
  *
  * Progress indicators express an unspecified wait time or display the duration of a process.
  *
- * ![Circular progress indicator
- * image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqdiyyvh-1P-progress-indicator-configurations.png?alt=media)
+ * ![Circular progress indicator image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqdiyyvh-1P-progress-indicator-configurations.png?alt=media)
  *
  * By default there is no animation between [progress] values. You can use
  * [ProgressIndicatorDefaults.ProgressAnimationSpec] as the default recommended [AnimationSpec] when
@@ -491,13 +483,11 @@ fun CircularProgressIndicator(
 }
 
 /**
- * [Material Design determinate circular progress
- * indicator](https://m3.material.io/components/progress-indicators/overview)
+ * [Material Design determinate circular progress indicator](https://m3.material.io/components/progress-indicators/overview)
  *
  * Progress indicators express an unspecified wait time or display the duration of a process.
  *
- * ![Circular progress indicator
- * image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqdiyyvh-1P-progress-indicator-configurations.png?alt=media)
+ * ![Circular progress indicator image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqdiyyvh-1P-progress-indicator-configurations.png?alt=media)
  *
  * By default there is no animation between [progress] values. You can use
  * [ProgressIndicatorDefaults.ProgressAnimationSpec] as the default recommended [AnimationSpec] when
@@ -513,6 +503,8 @@ fun CircularProgressIndicator(
  *   reached the area of the overall indicator yet
  * @param strokeCap stroke cap to use for the ends of this progress indicator
  * @param gapSize size of the gap between the progress indicator and the track
+ *
+ * @story /stories?embedded=true#story/CircularProgressIndicator%2520Story
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -558,8 +550,7 @@ fun CircularProgressIndicator(
 }
 
 /**
- * [Material Design determinate circular progress
- * indicator](https://m3.material.io/components/progress-indicators/overview)
+ * [Material Design determinate circular progress indicator](https://m3.material.io/components/progress-indicators/overview)
  *
  * Progress indicators express an unspecified wait time or display the duration of a process.
  *
@@ -607,8 +598,7 @@ fun CircularProgressIndicator(
  *
  * Progress indicators express an unspecified wait time or display the duration of a process.
  *
- * ![Circular progress indicator
- * image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqdiyyvh-1P-progress-indicator-configurations.png?alt=media)
+ * ![Circular progress indicator image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqdiyyvh-1P-progress-indicator-configurations.png?alt=media)
  *
  * @sample androidx.compose.material3.samples.IndeterminateCircularProgressIndicatorSample
  * @param modifier the [Modifier] to be applied to this progress indicator

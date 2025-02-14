@@ -37,13 +37,14 @@ import androidx.compose.ui.unit.dp
  *
  * A divider is a thin line that groups content in lists and layouts.
  *
- * ![Divider
- * image](https://developer.android.com/images/reference/androidx/compose/material3/divider.png)
+ * ![Divider image](https://developer.android.com/images/reference/androidx/compose/material3/divider.png)
  *
  * @param modifier the [Modifier] to be applied to this divider line.
  * @param thickness thickness of this divider line. Using [Dp.Hairline] will produce a single pixel
  *   divider regardless of screen density.
  * @param color color of this divider line.
+ *
+ * @story /stories?embedded=true#story/HorizontalDivider%2520Story
  */
 @Composable
 fun HorizontalDivider(
@@ -65,13 +66,14 @@ fun HorizontalDivider(
  *
  * A divider is a thin line that groups content in lists and layouts.
  *
- * ![Divider
- * image](https://developer.android.com/images/reference/androidx/compose/material3/divider.png)
+ * ![Divider image](https://developer.android.com/images/reference/androidx/compose/material3/divider.png)
  *
  * @param modifier the [Modifier] to be applied to this divider line.
  * @param thickness thickness of this divider line. Using [Dp.Hairline] will produce a single pixel
  *   divider regardless of screen density.
  * @param color color of this divider line.
+ *
+ * @story /stories?embedded=true#story/VerticalDivider%2520Story
  */
 @Composable
 fun VerticalDivider(

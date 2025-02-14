@@ -26,12 +26,14 @@ plugins {
     id("kotlinx-atomicfu")
     id("JetBrainsAndroidXPlugin")
     //id("AndroidXPaparazziPlugin") // isn't supported on Windows
+    alias(libs.plugins.dokka)
 }
 
 AndroidXComposePlugin.applyAndConfigureKotlinPlugin(project)
 JetBrainsAndroidXPlugin.applyAndConfigure(project)
 
 dependencies {
+    dokkaHtmlPlugin(libs.storytale.dokka.plugin)
 
 
     if(!AndroidXComposePlugin.isMultiplatformEnabled(project)) {
@@ -350,4 +352,21 @@ android {
     sourceSets.androidTest.assets.srcDirs +=
             project.rootDir.absolutePath + "/golden/compose/material3/material3"
     namespace "androidx.compose.material3"
+}
+
+dokka {
+    moduleName.set("Compose Multiplatform Material3")
+    modulePath.set("material3")
+
+    dokkaSourceSets {
+        configureEach {
+            suppress.set(!name.contains("commonMain"))
+        }
+    }
+
+    pluginsConfiguration.named("html").configure {
+        def apiReferenceProjectDir = project(":mpp:apiReferences").projectDir
+        customStyleSheets.from(file("${apiReferenceProjectDir}/material3-api-storytale-style.css"))
+        templatesDir.set(file("${apiReferenceProjectDir}/dokka-templates"))
+    }
 }

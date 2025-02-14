@@ -92,6 +92,8 @@ import androidx.compose.ui.unit.dp
  *   you want to change the drawing order you can use `Modifier.zIndex`.
  * @param border Optional border to draw on top of the surface
  * @param content The content to be displayed on this Surface
+ *
+ * @story /stories?embedded=true#story/Surface%2520Story
  */
 @Composable
 @NonRestartableComposable

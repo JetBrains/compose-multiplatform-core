@@ -687,8 +687,7 @@ fun ExpandedDockedSearchBar(
  * A search bar expands into a search "view" and can be used to display dynamic suggestions or
  * search results.
  *
- * ![Search bar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/search-bar.png)
+ * ![Search bar image](https://developer.android.com/images/reference/androidx/compose/material3/search-bar.png)
  *
  * A [SearchBar] tries to occupy the entirety of its allowed size in the expanded state. For
  * full-screen behavior as specified by Material guidelines, parent layouts of the [SearchBar] must
@@ -715,6 +714,8 @@ fun ExpandedDockedSearchBar(
  * @param shadowElevation the elevation for the shadow below this search bar
  * @param windowInsets the window insets that this search bar will respect
  * @param content the content of this search bar to display search results below the [inputField].
+ *
+ * @story /stories?embedded=true#story/SearchBar%2520Story
  */
 @ExperimentalMaterial3Api
 @Composable
@@ -807,8 +808,7 @@ fun SearchBar(
  * An search bar expands into a search "view" and can be used to display dynamic suggestions or
  * search results.
  *
- * ![Search bar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/docked-search-bar.png)
+ * ![Search bar image](https://developer.android.com/images/reference/androidx/compose/material3/docked-search-bar.png)
  *
  * A [DockedSearchBar] displays search results in a bounded table below the input field. It is an
  * alternative to [SearchBar] when expanding to full-screen size is undesirable on large screens
@@ -829,6 +829,8 @@ fun SearchBar(
  *   [Surface].
  * @param shadowElevation the elevation for the shadow below the search bar.
  * @param content the content of this search bar to display search results below the [inputField].
+ *
+ * @story /stories?embedded=true#story/DockedSearchBar%2520Story
  */
 @ExperimentalMaterial3Api
 @Composable

@@ -50,8 +50,7 @@ import kotlin.math.min
  *
  * Snackbars provide brief messages about app processes at the bottom of the screen.
  *
- * ![Snackbar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/snackbar.png)
+ * ![Snackbar image](https://developer.android.com/images/reference/androidx/compose/material3/snackbar.png)
  *
  * Snackbars inform users of a process that an app has performed or will perform. They appear
  * temporarily, towards the bottom of the screen. They shouldn’t interrupt the user experience, and
@@ -95,6 +94,8 @@ import kotlin.math.min
  *   inside this snackbar
  * @param content content to show information about a process that an app has performed or will
  *   perform
+ *
+ * @story /stories?embedded=true#story/Snackbar%2520Story
  */
 @Composable
 fun Snackbar(
@@ -148,8 +149,7 @@ fun Snackbar(
  *
  * Snackbars provide brief messages about app processes at the bottom of the screen.
  *
- * ![Snackbar
- * image](https://developer.android.com/images/reference/androidx/compose/material3/snackbar.png)
+ * ![Snackbar image](https://developer.android.com/images/reference/androidx/compose/material3/snackbar.png)
  *
  * Snackbars inform users of a process that an app has performed or will perform. They appear
  * temporarily, towards the bottom of the screen. They shouldn’t interrupt the user experience, and
