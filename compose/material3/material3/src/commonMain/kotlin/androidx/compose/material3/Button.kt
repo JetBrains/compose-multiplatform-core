@@ -103,6 +103,8 @@ import androidx.compose.ui.unit.dp
  *   emitting [Interaction]s for this button. You can use this to change the button's appearance or
  *   preview the button in different states. Note that if `null` is provided, interactions will
  *   still happen internally.
+ *
+ * @story http://localhost:8080/#org.jetbrains.compose.storytale.gallery.navigation.Route.MobileHome
  */
 @Composable
 fun Button(
