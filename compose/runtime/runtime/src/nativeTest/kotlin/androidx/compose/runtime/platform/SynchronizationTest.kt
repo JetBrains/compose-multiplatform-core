@@ -39,13 +39,14 @@ private fun nest(lock: SynchronizedObject, nestedLocks: Int, count: AtomicInt) {
 /**
  * Test is taken from [kotlinx-atomicfu](https://github.com/Kotlin/kotlinx-atomicfu) with a few modifications.
 */
+@OptIn(ObsoleteWorkersApi::class)
 class SynchronizedTest {
     @Test
     fun stressCounterTest() {
         repeat(iterations) {
             val workers = Array(nWorkers) { Worker.start() }
             val counter = AtomicInt(0)
-            val so = SynchronizedObject()
+            val so = makeSynchronizedObject()
             workers.forEach { worker ->
                 worker.execute(TransferMode.SAFE, {
                     counter to so
@@ -68,7 +69,7 @@ class SynchronizedTest {
         repeat(iterations) {
             val workers = Array(nWorkers) { Worker.start() }
             val counters = Array(nLocks) { AtomicInt(0) }
-            val locks = Array(nLocks) { SynchronizedObject() }
+            val locks = Array(nLocks) { makeSynchronizedObject() }
             workers.forEach { worker ->
                 worker.execute(TransferMode.SAFE, {
                     counters to locks

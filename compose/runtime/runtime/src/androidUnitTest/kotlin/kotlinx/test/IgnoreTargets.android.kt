@@ -16,4 +16,4 @@
 
 package kotlinx.test
 
-actual typealias IgnoreAndroidUnitTestTarget = org.junit.Ignore
+actual typealias IgnoreAndroidUnitTestTarget = kotlinx.test.Ignore

@@ -73,6 +73,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.test.IgnoreJsTarget
+import kotlinx.test.IgnoreWasmTarget
 
 @Composable fun Container(content: @Composable () -> Unit) = content()
 
@@ -2565,7 +2566,9 @@ class CompositionTests {
         assertArrayEquals(listOf(observed), abandonedObjects)
     }
 
-    @IgnoreJsTarget // The test is properly implemented in CompositionTestWeb
+    // The test is properly implemented in CompositionTests.web.kt
+    @IgnoreJsTarget
+    @IgnoreWasmTarget
     @Test
     fun testRememberObserver_Abandon_Recompose() {
         val abandonedObjects = mutableListOf<RememberObserver>()

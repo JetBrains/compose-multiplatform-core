@@ -17,6 +17,7 @@
 package androidx.compose.runtime.platform
 
 import androidx.compose.runtime.internal.currentThreadId
+import kotlin.experimental.ExperimentalNativeApi
 import kotlin.native.ref.createCleaner
 import kotlinx.atomicfu.AtomicInt
 import kotlinx.atomicfu.AtomicLong
@@ -122,6 +123,7 @@ internal actual class SynchronizedObject {
 
     private class MonitorWrapper {
         val monitor: NativeMonitor = NativeMonitor()
+        @OptIn(ExperimentalNativeApi::class)
         val cleaner = createCleaner(monitor, NativeMonitor::dispose)
     }
 
@@ -156,6 +158,7 @@ internal actual class SynchronizedObject {
     }
 }
 
+@Suppress("NOTHING_TO_INLINE")
 internal actual inline fun makeSynchronizedObject(ref: Any?) = SynchronizedObject()
 
 @PublishedApi

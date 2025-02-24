@@ -25,6 +25,7 @@ import androidx.compose.runtime.mock.ViewApplier
 import androidx.compose.runtime.mock.compositionTest
 import androidx.compose.runtime.mock.validate
 import androidx.compose.runtime.mock.view
+import androidx.compose.runtime.runTest
 import kotlin.coroutines.resume
 import kotlin.test.Ignore
 import kotlin.test.Test
@@ -32,9 +33,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.test.runTest
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @Stable
 class PausableCompositionTests {
     @Test
@@ -356,8 +358,8 @@ class PausableCompositionTests {
         )
     }
 
-    @Test(expected = IllegalStateException::class)
-    fun pausableComposition_throwInResume() = runTest {
+    @Test
+    fun pausableComposition_throwInResume() = runTest(expected = IllegalStateException::class) {
         val recomposer = Recomposer(coroutineContext)
         val pausableComposition = PausableComposition(EmptyApplier(), recomposer)
 
@@ -371,8 +373,8 @@ class PausableCompositionTests {
         }
     }
 
-    @Test(expected = IllegalStateException::class)
-    fun pausableComposition_throwInApply() = runTest {
+    @Test
+    fun pausableComposition_throwInApply() = runTest(expected = IllegalStateException::class) {
         val recomposer = Recomposer(coroutineContext)
         val pausableComposition = PausableComposition(EmptyApplier(), recomposer)
 

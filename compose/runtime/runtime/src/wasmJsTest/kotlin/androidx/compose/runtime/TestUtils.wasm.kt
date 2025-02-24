@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,15 @@
  * limitations under the License.
  */
 
-package kotlinx.test
+package androidx.compose.runtime
 
-annotation class NotIgnored
+import kotlinx.coroutines.*
 
-actual typealias IgnoreAndroidUnitTestTarget = NotIgnored
+@OptIn(DelicateCoroutinesApi::class)
+// TODO: Make a proper implementation with timeoutMs
+//  https://youtrack.jetbrains.com/issue/CMP-662
+actual suspend fun testWithTimeout(timeoutMs: Long, block: suspend CoroutineScope.() -> Unit) {
+    GlobalScope.launch {
+        block()
+    }
+}

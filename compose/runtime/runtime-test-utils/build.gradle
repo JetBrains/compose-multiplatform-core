@@ -13,8 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
@@ -33,8 +36,15 @@ androidXMultiplatform {
             it.defaultSourceSetName = "androidUnitTest"
         }
     }
-    jvmStubs()
-    linuxX64Stubs()
+    desktop()
+    mingwX64()
+    linux()
+    mac()
+    ios()
+    tvos()
+    watchos()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -43,7 +53,7 @@ androidXMultiplatform {
             dependencies {
                 implementation(libs.kotlinStdlibCommon)
                 implementation(project(":compose:runtime:runtime"))
-                implementation kotlin("test")
+                implementation(libs.kotlinTest)
                 implementation(libs.kotlinCoroutinesTest)
                 implementation(libs.kotlinReflect)
             }
@@ -61,14 +71,30 @@ androidXMultiplatform {
             }
         }
 
-        commonStubsMain {
-            dependsOn(commonMain)
-        }
-        jvmStubsMain {
+        desktopMain {
             dependsOn(jvmMain)
         }
-        linuxx64StubsMain {
-            dependsOn(commonStubsMain)
+
+        nonJvmMain {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.atomicFu)
+            }
+        }
+
+        nonJvmTest {
+            dependsOn(commonTest)
+        }
+
+        targets.configureEach { target ->
+            if (target.platformType !in [
+                    KotlinPlatformType.androidJvm,
+                    KotlinPlatformType.jvm,
+                    KotlinPlatformType.common
+            ]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(nonJvmMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(nonJvmTest)
+            }
         }
     }
 }

@@ -34,11 +34,14 @@ androidXMultiplatform {
         namespace = "androidx.compose.runtime.annotation"
     }
     jvm()
-    mac()
+    mingwX64()
     linux()
+    mac()
     ios()
-    watchos()
     tvos()
+    watchos()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.JVM)
 

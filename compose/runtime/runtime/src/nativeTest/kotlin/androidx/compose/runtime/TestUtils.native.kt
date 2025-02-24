@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,15 @@
  * limitations under the License.
  */
 
-package kotlinx.test
+package androidx.compose.runtime
 
-actual typealias IgnoreJsTarget = kotlin.test.Ignore
-actual typealias IgnoreNativeTarget = DoNothing
-actual typealias IgnoreJsAndNative = kotlin.test.Ignore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+
+actual suspend fun testWithTimeout(timeoutMs: Long, block: suspend CoroutineScope.() -> Unit) =
+    runBlocking {
+        // TODO: k/native tests run in debug mode and much-much slower than jvm,
+        // so we adjust for it here by multiplying by 10 :(
+        withTimeout(timeoutMs * 10, block)
+    }

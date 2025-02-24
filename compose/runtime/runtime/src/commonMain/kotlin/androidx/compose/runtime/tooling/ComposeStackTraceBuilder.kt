@@ -42,14 +42,14 @@ internal class ReaderTraceBuilder(private val reader: SlotReader) : ComposeStack
 }
 
 internal abstract class ComposeStackTraceBuilder {
-    private val trace = mutableListOf<ComposeStackTraceFrame>()
+    private val _trace = mutableListOf<ComposeStackTraceFrame>()
 
-    fun trace(): List<ComposeStackTraceFrame> = trace
+    fun trace(): List<ComposeStackTraceFrame> = _trace
 
     private fun appendTraceFrame(groupSourceInformation: GroupSourceInformation, child: Any?) {
         val frame = extractTraceFrame(groupSourceInformation, child)
         if (frame != null) {
-            trace += frame
+            _trace += frame
         }
     }
 

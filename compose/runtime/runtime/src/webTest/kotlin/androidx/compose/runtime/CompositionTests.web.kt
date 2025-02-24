@@ -29,7 +29,7 @@ import kotlinx.coroutines.test.TestResult
 // Here we make sure it runs (not ignored) by wrapping it in another Promise returned from the Test method.
 class CompositionTestWeb {
 
-    @Test // https://youtrack.jetbrains.com/issue/CMP-7453/testRememberObserverAbandonRecompose-fails-on-JS-after-1.8.0-alpha08-merge
+    @Test // https://youtrack.jetbrains.com/issue/CMP-7453
     fun testRememberObserver_Abandon_Recompose() = wrapTestWithCoroutine {
         val abandonedObjects = mutableListOf<RememberObserver>()
         val observed =

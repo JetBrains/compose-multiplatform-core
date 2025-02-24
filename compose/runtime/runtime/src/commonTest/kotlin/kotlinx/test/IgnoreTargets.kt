@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,18 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalMultiplatform::class)
+
 package kotlinx.test
 
+@OptionalExpectation
 expect annotation class IgnoreAndroidUnitTestTarget()
+
+@OptionalExpectation
+expect annotation class IgnoreNativeTarget()
+
+@OptionalExpectation
+expect annotation class IgnoreWasmTarget()
+
+@OptionalExpectation
+expect annotation class IgnoreJsTarget()

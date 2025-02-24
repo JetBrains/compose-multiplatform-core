@@ -20,7 +20,6 @@ package androidx.compose.runtime.internal
 import androidx.compose.runtime.ComposeCompilerApi
 import androidx.compose.runtime.Composer
 import androidx.compose.runtime.InternalComposeApi
-import androidx.compose.runtime.RecomposeScope
 import androidx.compose.runtime.Stable
 
 /**
