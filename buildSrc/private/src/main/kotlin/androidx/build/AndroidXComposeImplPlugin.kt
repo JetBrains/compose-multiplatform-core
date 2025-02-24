@@ -29,6 +29,7 @@ import org.gradle.kotlin.dsl.create
 import org.jetbrains.kotlin.gradle.plugin.CompilerPluginConfig
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 const val zipComposeReportsTaskName = "zipComposeCompilerReports"
@@ -185,13 +186,19 @@ private fun configureComposeCompilerPlugin(project: Project, extension: AndroidX
         val enableMetrics = project.enableComposeCompilerMetrics()
         val enableReports = project.enableComposeCompilerReports()
 
-        val compileTasks = project.tasks.withType(KotlinCompile::class.java)
+        val compileTasks = project.tasks.withType(KotlinCompilationTask::class.java)
 
         compileTasks.configureEach { compile ->
             compile.inputs.property("composeMetricsEnabled", enableMetrics)
             compile.inputs.property("composeReportsEnabled", enableReports)
 
-            compile.pluginClasspath.from(kotlinPluginProvider.get())
+            // TODO: Figure out why `onlyIf` is required here
+            //  Why touching `freeCompilerArgs` inside `addPluginOption` doesn't break things?
+            //  Context: https://github.com/JetBrains/compose-multiplatform-core/pull/369
+            compile.onlyIf {
+                compile.compilerOptions.freeCompilerArgs.add("-Xplugin=${kotlinPluginProvider.get().first()}")
+                true
+            }
 
             compile.enableFeatureFlag(ComposeFeatureFlag.OptimizeNonSkippingGroups)
             compile.enableFeatureFlag(ComposeFeatureFlag.PausableComposition)
@@ -228,24 +235,20 @@ private fun configureComposeCompilerPlugin(project: Project, extension: AndroidX
     }
 }
 
-private fun KotlinCompile.addPluginOption(
+private fun KotlinCompilationTask<*>.addPluginOption(
     composeCompileOptions: ComposeCompileOptions,
     value: String
-) =
-    pluginOptions.add(
-        CompilerPluginConfig().apply {
-            addPluginArgument(
-                composeCompileOptions.pluginId,
-                SubpluginOption(composeCompileOptions.key, value)
-            )
-        }
+) {
+    compilerOptions.freeCompilerArgs.addAll(
+        listOf("-P", "plugin:${composeCompileOptions.pluginId}:${composeCompileOptions.key}=$value")
     )
+}
 
-private fun KotlinCompile.enableFeatureFlag(featureFlag: ComposeFeatureFlag) {
+private fun KotlinCompilationTask<*>.enableFeatureFlag(featureFlag: ComposeFeatureFlag) {
     addPluginOption(ComposeCompileOptions.FeatureFlagOption, featureFlag.featureName)
 }
 
-private fun KotlinCompile.disableFeatureFlag(featureFlag: ComposeFeatureFlag) {
+private fun KotlinCompilationTask<*>.disableFeatureFlag(featureFlag: ComposeFeatureFlag) {
     addPluginOption(ComposeCompileOptions.FeatureFlagOption, "-${featureFlag.featureName}")
 }
 
