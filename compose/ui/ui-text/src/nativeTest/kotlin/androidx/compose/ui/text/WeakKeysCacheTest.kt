@@ -16,13 +16,12 @@
 
 package androidx.compose.ui.text
 
-import kotlin.native.internal.GC
-import kotlin.native.ref.WeakReference
-import kotlin.test.Ignore
+import kotlin.native.runtime.GC
+import kotlin.native.runtime.NativeRuntimeApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
+@OptIn(NativeRuntimeApi::class)
 class WeakKeysCacheTest {
     data class MyKey(val v: Int)
 

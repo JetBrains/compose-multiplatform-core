@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.text
 
+import kotlin.experimental.ExperimentalNativeApi
 import kotlin.jvm.JvmInline
 import org.jetbrains.skia.BreakIterator
 
@@ -49,6 +50,7 @@ internal typealias CodePoint = Int
 /**
  * Converts a surrogate pair to a unicode code point.
  */
+@OptIn(ExperimentalNativeApi::class)
 private fun Char.Companion.toCodePoint(high: Char, low: Char): CodePoint =
     (((high - MIN_HIGH_SURROGATE) shl 10) or (low - MIN_LOW_SURROGATE)) + MIN_SUPPLEMENTARY_CODE_POINT
 

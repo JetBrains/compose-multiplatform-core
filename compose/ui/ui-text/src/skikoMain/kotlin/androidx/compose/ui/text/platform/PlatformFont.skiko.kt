@@ -288,6 +288,7 @@ class FontLoader : Font.ResourceLoader {
 
 class FontLoadResult(val typeface: SkTypeface?, val aliases: List<String>)
 
+@OptIn(ExperimentalTextApi::class)
 internal class FontCache {
     internal val fonts = FontCollection()
     private val fontProvider = TypefaceFontProviderWithFallback()
