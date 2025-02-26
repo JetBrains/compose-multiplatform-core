@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,7 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.graphics
+package androidx.compose.ui.graphics.internal
 
-import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.usePinned
-import kotlinx.cinterop.addressOf
-import platform.posix.memcpy
-
-@OptIn(ExperimentalForeignApi::class)
-internal actual fun ByteArray.putBytesInto(array: IntArray, offset: Int, length: Int) {
-    this.usePinned { bytes ->
-        array.usePinned { ints ->
-            // Assuming little endian.
-            memcpy(ints.addressOf(offset), bytes.addressOf(0), (length*4).toULong())
-        }
-    }
-}
-
+@OptionalExpectation
+expect annotation class IgnoreJs()

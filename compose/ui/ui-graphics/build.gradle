@@ -25,17 +25,24 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
+    id("com.android.library")
 }
 
 androidXMultiplatform {
     androidTarget()
-    jvmStubs()
+    desktop()
+    mac()
+    ios()
+    js()
+    wasmJs()
+
+    // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
     linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
@@ -49,18 +56,26 @@ androidXMultiplatform {
                 api(project(":compose:ui:ui-unit"))
                 implementation(project(":compose:runtime:runtime"))
                 implementation(project(":compose:ui:ui-util"))
-                implementation("androidx.collection:collection:1.4.2")
+                implementation("androidx.collection:collection:1.5.0")
             }
         }
 
         commonTest {
             dependencies {
-                implementation(kotlin("test"))
+                implementation(libs.kotlinTest)
             }
         }
 
-        androidMain {
+        jvmMain {
             dependsOn(commonMain)
+        }
+
+        jvmTest {
+            dependsOn(commonTest)
+        }
+
+        androidMain {
+            dependsOn(jvmMain)
             dependencies {
                 // This has stub APIs for access to legacy Android APIs, so we don't want
                 // any dependency on this module.
@@ -71,17 +86,8 @@ androidXMultiplatform {
             }
         }
 
-        commonStubsMain {
-            dependsOn(commonMain)
-        }
-        jvmStubsMain {
-            dependsOn(commonStubsMain)
-        }
-        linuxx64StubsMain {
-            dependsOn(commonStubsMain)
-        }
-
         androidInstrumentedTest {
+            dependsOn(jvmTest)
             dependencies {
                 implementation(project(":compose:ui:ui-graphics:ui-graphics-samples"))
                 implementation(project(":compose:ui:ui-test-junit4"))
@@ -95,6 +101,7 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
+            dependsOn(jvmTest)
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
@@ -103,6 +110,102 @@ androidXMultiplatform {
                 implementation(libs.robolectric)
                 implementation(project(":compose:test-utils"))
             }
+        }
+
+        // TODO: Align naming: nonAndroidMain
+        skikoMain {
+            dependsOn(commonMain)
+            dependencies {
+                api(libs.skiko)
+            }
+        }
+
+        skikoTest {
+            dependsOn(commonTest)
+            dependencies {
+
+                // TODO: Why junit4 added to non JVM tests?
+                //implementation(project(":compose:ui:ui-test-junit4"))
+            }
+        }
+
+        skikoExcludingWebMain {
+            dependsOn(skikoMain)
+        }
+
+        skikoExcludingWebTest {
+            dependsOn(skikoTest)
+        }
+
+        desktopMain {
+            dependsOn(jvmMain)
+            dependsOn(skikoMain)
+            dependsOn(skikoExcludingWebMain)
+        }
+
+        desktopTest {
+            dependsOn(jvmTest)
+            dependsOn(skikoTest)
+            dependsOn(skikoExcludingWebTest)
+            dependencies {
+                implementation(libs.skikoCurrentOs)
+            }
+        }
+
+        nonJvmMain {
+            dependsOn(skikoMain)
+        }
+
+        nonJvmTest {
+            dependsOn(skikoTest)
+        }
+
+        nativeMain {
+            dependsOn(nonJvmMain)
+            dependsOn(skikoExcludingWebMain)
+        }
+
+        nativeTest {
+            dependsOn(nonJvmTest)
+            dependsOn(skikoExcludingWebTest)
+        }
+
+        webMain {
+            dependsOn(nonJvmMain)
+        }
+
+        webTest {
+            dependsOn(nonJvmTest)
+        }
+
+        wasmJsMain {
+            dependsOn(webMain)
+            dependencies {
+                implementation(libs.skikoWasmJs)
+                implementation(libs.skikoJsWasmRuntime)
+            }
+        }
+
+        targets.configureEach { target ->
+
+            // TODO: Ignore stubs. Remove together with stubs target
+            if (target.name.endsWith("Stubs")) return
+
+            if (target.platformType == KotlinPlatformType.native) {
+                target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
+            }
+        }
+
+        // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
+        commonStubsMain {
+            dependsOn(commonMain)
+        }
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
         }
     }
 }

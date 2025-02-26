@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.graphics.layer
 
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -51,6 +52,7 @@ import kotlin.test.assertTrue
 import org.jetbrains.skia.IRect
 import org.jetbrains.skia.Surface
 
+@OptIn(InternalComposeUiApi::class)
 class SkiaGraphicsLayerTest {
 
     @Test
