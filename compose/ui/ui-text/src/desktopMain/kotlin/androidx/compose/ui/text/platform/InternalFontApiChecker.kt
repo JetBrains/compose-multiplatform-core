@@ -19,7 +19,7 @@ package androidx.compose.ui.text.platform
 import kotlinx.atomicfu.atomic
 
 internal object InternalFontApiChecker {
-
+    // TODO: This is Desktop, so it can be replaced to JVM atomic
     private var hasCheckedAccess by atomic(false)
     private var isSunFontAccessible by atomic(false)
 

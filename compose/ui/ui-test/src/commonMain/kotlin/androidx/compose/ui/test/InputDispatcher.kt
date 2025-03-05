@@ -18,6 +18,7 @@ package androidx.compose.ui.test
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.node.RootForTest
+import androidx.compose.ui.test.internal.identityHashCode
 
 internal expect fun createInputDispatcher(
     testContext: TestContext,

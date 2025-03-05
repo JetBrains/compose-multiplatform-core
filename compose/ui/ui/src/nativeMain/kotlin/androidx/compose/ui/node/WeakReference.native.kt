@@ -16,6 +16,9 @@
 
 package androidx.compose.ui.node
 
+import kotlin.experimental.ExperimentalNativeApi
+
+@OptIn(ExperimentalNativeApi::class)
 internal actual class WeakReference<T : Any> actual constructor(referent: T) {
     private val kotlinNativeReference = kotlin.native.ref.WeakReference(referent)
     actual fun get(): T? = kotlinNativeReference.get()

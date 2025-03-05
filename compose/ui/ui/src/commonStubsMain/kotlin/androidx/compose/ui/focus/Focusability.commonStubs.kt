@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.internal
+package androidx.compose.ui.focus
 
-import kotlinx.coroutines.CancellationException
+import androidx.compose.ui.implementedInJetBrainsFork
+import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 
-internal actual abstract class PlatformOptimizedCancellationException
-actual constructor(message: String?) : CancellationException(message)
+internal actual fun systemDefinedCanFocus(node: CompositionLocalConsumerModifierNode): Boolean =
+    implementedInJetBrainsFork()

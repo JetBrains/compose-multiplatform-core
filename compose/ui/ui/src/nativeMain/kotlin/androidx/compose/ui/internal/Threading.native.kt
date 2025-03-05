@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.internal
 
+import kotlin.native.concurrent.ThreadLocal
 import kotlinx.atomicfu.atomic
 
 private val threadCounter = atomic(0L)

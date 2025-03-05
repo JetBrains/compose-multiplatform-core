@@ -14,9 +14,15 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.internal
+package androidx.compose.ui.input.pointer.util
 
-import kotlinx.coroutines.CancellationException
+// TODO: Upstream https://youtrack.jetbrains.com/issue/CMP-6853
 
-internal actual abstract class PlatformOptimizedCancellationException
-actual constructor(message: String?) : CancellationException(message)
+internal actual const val HistorySize: Int = 20
+
+internal actual fun VelocityTracker1D.shouldUseDataPoints(
+    points: FloatArray,
+    times: FloatArray,
+    count: Int,
+    afterPointerStop: Boolean
+): Boolean = true

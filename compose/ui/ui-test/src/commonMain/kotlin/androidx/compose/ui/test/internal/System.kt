@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.test
+package androidx.compose.ui.test.internal
 
 /**
  * Returns the hash code for the given object that is unique across all currently allocated objects.

@@ -31,6 +31,7 @@ import kotlin.math.sign
 import kotlin.math.sqrt
 
 private const val AssumePointerMoveStoppedMilliseconds: Int = 40
+// TODO: Upstream https://youtrack.jetbrains.com/issue/CMP-6853
 internal expect val HistorySize: Int
 
 // TODO(b/204895043): Keep value in sync with VelocityPathFinder.HorizonMilliSeconds

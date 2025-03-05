@@ -24,6 +24,8 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
@@ -33,7 +35,13 @@ plugins {
 
 androidXMultiplatform {
     androidTarget()
-    jvmStubs()
+    desktop()
+    mac()
+    ios()
+    js()
+    wasmJs()
+
+    // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
     linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
@@ -49,12 +57,13 @@ androidXMultiplatform {
                 api(libs.kotlinCoroutinesCore)
                 api(libs.kotlinCoroutinesTest)
                 implementation(project(":compose:ui:ui-util"))
-                implementation("androidx.collection:collection:1.4.2")
+                implementation("androidx.collection:collection:1.5.0")
             }
         }
 
         commonTest {
             dependencies {
+                implementation(libs.kotlinTest)
             }
         }
 
@@ -62,6 +71,10 @@ androidXMultiplatform {
             dependsOn(commonMain)
             dependencies {
             }
+        }
+
+        jvmTest {
+            dependsOn(commonTest)
         }
 
         androidMain {
@@ -77,21 +90,8 @@ androidXMultiplatform {
             }
         }
 
-        commonStubsMain {
-            dependsOn(commonMain)
-        }
-
-        jvmStubsMain {
-            dependsOn(commonStubsMain)
-            dependsOn(jvmMain)
-        }
-
-        linuxx64StubsMain {
-            dependsOn(commonStubsMain)
-        }
-
         androidCommonTest {
-            dependsOn(commonTest)
+            dependsOn(jvmTest)
             dependencies {
                 implementation(project(":compose:test-utils"))
                 implementation(libs.truth)
@@ -99,7 +99,6 @@ androidXMultiplatform {
         }
 
         androidInstrumentedTest {
-            dependsOn(commonTest)
             dependsOn(androidCommonTest)
             dependencies {
                 implementation(project(":compose:foundation:foundation"))
@@ -121,7 +120,6 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(commonTest)
             dependsOn(androidCommonTest)
             dependencies {
                 implementation(libs.truth)
@@ -135,6 +133,112 @@ androidXMultiplatform {
                 implementation(project(":compose:material:material"))
                 implementation(project(":compose:test-utils"))
             }
+        }
+
+        // TODO: Align naming: nonAndroidMain
+        skikoMain {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.atomicFu)
+            }
+        }
+
+        skikoTest {
+            dependsOn(commonTest)
+            dependencies {
+                // TODO: Uncomment after fix foundation/material build scripts
+//                implementation(project(":compose:material:material"))
+//                implementation(project(":compose:foundation:foundation"))
+            }
+        }
+
+        desktopMain {
+            dependsOn(jvmMain)
+            dependsOn(skikoMain)
+            dependencies {
+                implementation(libs.junit)
+                implementation(libs.truth)
+                implementation(libs.skiko)
+            }
+        }
+
+        desktopTest {
+            dependsOn(jvmTest)
+            dependsOn(skikoTest)
+            dependencies {
+                implementation(libs.skikoCurrentOs)
+            }
+        }
+
+        // TODO: Align naming: nonJvmMain
+        jsNativeMain {
+            dependsOn(skikoMain)
+        }
+
+        jsNativeTest {
+            dependsOn(skikoTest)
+        }
+
+        nativeMain {
+            dependsOn(jsNativeMain)
+        }
+
+        nativeTest {
+            dependsOn(jsNativeTest)
+        }
+
+        macosMain {
+            dependsOn(nativeMain)
+        }
+
+        macosTest {
+            dependsOn(nativeTest)
+        }
+
+        uikitMain {
+            dependsOn(nativeMain)
+        }
+
+        uikitTest {
+            dependsOn(nativeTest)
+        }
+
+        webMain {
+            dependsOn(jsNativeMain)
+        }
+
+        webTest {
+            dependsOn(jsNativeTest)
+        }
+
+        targets.configureEach { target ->
+
+            // TODO: Ignore stubs. Remove together with stubs target
+            if (target.name.endsWith("Stubs")) return
+
+            if (target.platformType == KotlinPlatformType.native) {
+                if (target.konanTarget.family == Family.IOS) {
+                    target.compilations["main"].defaultSourceSet.dependsOn(uikitMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(uikitTest)
+                } else if (target.konanTarget.family == Family.OSX) {
+                    target.compilations["main"].defaultSourceSet.dependsOn(macosMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(macosTest)
+                } else {
+                    target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
+                }
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
+            }
+        }
+
+        // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
+        commonStubsMain {
+            dependsOn(commonMain)
+        }
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
         }
     }
 }
