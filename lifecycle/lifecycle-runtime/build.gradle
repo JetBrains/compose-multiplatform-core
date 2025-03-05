@@ -18,9 +18,14 @@ plugins {
 androidXMultiplatform {
     androidTarget()
     desktop()
-    mac()
+    mingwX64()
     linux()
+    mac()
     ios()
+    tvos()
+    watchos()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -96,6 +101,10 @@ androidXMultiplatform {
             dependsOn(commonMain)
         }
 
+        nonJvmTest {
+            dependsOn(commonTest)
+        }
+
         nativeMain {
             dependsOn(nonJvmMain)
 
@@ -104,7 +113,15 @@ androidXMultiplatform {
         }
 
         nativeTest {
-            dependsOn(commonTest)
+            dependsOn(nonJvmTest)
+        }
+
+        webMain {
+            dependsOn(nonJvmMain)
+        }
+
+        webTest {
+            dependsOn(nonJvmTest)
         }
 
         targets.configureEach { target ->
@@ -118,6 +135,9 @@ androidXMultiplatform {
                 target.compilations["test"].defaultSourceSet {
                     dependsOn(nativeTest)
                 }
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
             }
         }
     }

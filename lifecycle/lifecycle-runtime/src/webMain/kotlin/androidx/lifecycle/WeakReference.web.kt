@@ -16,9 +16,7 @@
 
 package androidx.lifecycle
 
-// TODO: https://youtrack.jetbrains.com/issue/COMPOSE-1286/Properly-implement-WeakReference-on-Web
-internal actual class WeakReference<T : Any> actual constructor(
-    private val reference: T
-) {
+// TODO: https://youtrack.jetbrains.com/issue/CMP-1286
+internal actual class WeakReference<T : Any> actual constructor(private val reference: T) {
     actual fun get(): T? = reference
 }

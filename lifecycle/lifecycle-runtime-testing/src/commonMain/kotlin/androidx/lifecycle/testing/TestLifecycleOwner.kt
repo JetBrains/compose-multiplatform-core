@@ -22,7 +22,6 @@ import androidx.lifecycle.LifecycleRegistry
 import kotlin.jvm.JvmOverloads
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 /**
@@ -55,7 +54,7 @@ constructor(
      * safe to mutate on any thread, but will block that thread during execution.
      */
     public fun handleLifecycleEvent(event: Lifecycle.Event) {
-        runBlocking(coroutineDispatcher) { lifecycleRegistry.handleLifecycleEvent(event) }
+        runBlockingIfPossible(coroutineDispatcher) { lifecycleRegistry.handleLifecycleEvent(event) }
     }
 
     /**
@@ -64,9 +63,9 @@ constructor(
      * instead).
      */
     public var currentState: Lifecycle.State
-        get() = runBlocking(coroutineDispatcher) { lifecycleRegistry.currentState }
+        get() = runBlockingIfPossible(coroutineDispatcher) { lifecycleRegistry.currentState }
         set(value) {
-            runBlocking(coroutineDispatcher) { lifecycleRegistry.currentState = value }
+            runBlockingIfPossible(coroutineDispatcher) { lifecycleRegistry.currentState = value }
         }
 
     /**
@@ -82,3 +81,9 @@ constructor(
     public val observerCount: Int
         get() = lifecycleRegistry.observerCount
 }
+
+// Because k/js and k/wasm don't have runBlocking
+internal expect fun <T> runBlockingIfPossible(
+    dispatcher: CoroutineDispatcher,
+    block: () -> T
+): T
