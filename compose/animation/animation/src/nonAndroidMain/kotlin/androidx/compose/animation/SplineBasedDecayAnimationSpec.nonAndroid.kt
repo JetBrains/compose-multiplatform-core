@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:JvmName("SplineBasedDecayAnimationSpec_desktopKt")
+
 package androidx.compose.animation
 
 import androidx.compose.animation.core.DecayAnimationSpec
@@ -21,11 +23,12 @@ import androidx.compose.animation.core.generateDecayAnimationSpec
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalDensity
+import kotlin.jvm.JvmName
 
 internal actual val platformFlingScrollFriction = 0.015f
 
 @Composable
-actual fun <T> rememberSplineBasedDecay(): DecayAnimationSpec<T> {
+public actual fun <T> rememberSplineBasedDecay(): DecayAnimationSpec<T> {
     // This function will internally update the calculation of fling decay when the density changes,
     // but the reference to the returned spec will not change across calls.
     val density = LocalDensity.current

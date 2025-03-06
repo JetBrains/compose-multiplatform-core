@@ -33,7 +33,13 @@ plugins {
 
 androidXMultiplatform {
     androidTarget()
-    jvmStubs()
+    desktop()
+    mac()
+    ios()
+    js()
+    wasmJs()
+
+    // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
     linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
@@ -61,31 +67,22 @@ androidXMultiplatform {
 
         commonTest {
             dependencies {
+                implementation(libs.kotlinTest)
             }
         }
 
         jvmMain {
             dependsOn(commonMain)
-            dependencies {
-            }
+        }
+
+        jvmTest {
+            dependsOn(commonTest)
         }
 
         androidMain {
             dependsOn(jvmMain)
             dependencies {
             }
-        }
-
-        commonStubsMain {
-            dependsOn(commonMain)
-        }
-
-        jvmStubsMain {
-            dependsOn(commonStubsMain)
-        }
-
-        linuxx64StubsMain {
-            dependsOn(commonStubsMain)
         }
 
         androidInstrumentedTest {
@@ -102,7 +99,7 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(commonTest)
+            dependsOn(jvmTest)
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
