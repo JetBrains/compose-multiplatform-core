@@ -1,15 +1,18 @@
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.mpp.demo.HtmlElement
+import androidx.compose.mpp.demo.LayoutModifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -23,8 +26,9 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
+
 @Composable
-fun WasmExampleTwoDirectionsAndRTL() {
+fun WasmExampleTwoDirectionsAndRTL2() {
     val colors = listOf(
         Color.Black,
         Color.LightGray,
@@ -51,39 +55,37 @@ fun WasmExampleTwoDirectionsAndRTL() {
             }) {
                 Text("Toggle layout direction")
             }
-            LazyColumn(
-                Modifier.fillMaxSize().padding(all = 20.dp),
+            Column(
+                Modifier.fillMaxSize().padding(all = 20.dp).verticalScroll(rememberScrollState()),
             ) {
-                items(rows) { row ->
-                    LazyRow(Modifier.height(rowHeight).fillMaxSize()) {
-                        items(columns) { col ->
+                repeat(rows) { row ->
+                    Row(Modifier.height(rowHeight).fillMaxSize().horizontalScroll(rememberScrollState())) {
+                        repeat(columns) { col ->
                             val itemColor = colors[(row + col) % colors.size]
                             val elementId = "$row:$col"
 
                             Box(
-                                Modifier
+                                modifier = Modifier
                                     .size(rowHeight, rowHeight)
-                                    .background(itemColor)
-                                ,
-                                contentAlignment = Alignment.Center
+                                    .background(itemColor),
                             ) {
                                 HtmlElement(
                                     id = elementId,
                                     tagName = "div",
-                                    modifier = Modifier.size(50.dp, 50.dp).background(color = Color.Gray),
+                                    modifier = Modifier.size(50.dp, 50.dp)
+                                        .background(color = Color.Gray),
                                     configure = {
                                         innerText = elementId
                                         style.apply {
+                                            position = "absolute"
                                             textAlign = "center"
                                             border = "2px solid white"
                                             boxSizing = "border-box"
-                                            background = "white"
                                             width = "50px"
                                             height = "50px"
                                             color = "white"
-                                            maxWidth = "50px"
-                                            overflowX = "scroll"
                                         }
+                                        style.setProperty("pointer-events", "none")
                                     },
                                     onClick = { println("Clicked on $elementId") },
                                 )

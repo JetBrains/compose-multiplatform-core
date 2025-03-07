@@ -16,7 +16,7 @@
 
 package androidx.compose.mpp.demo
 
-import WasmLayouts
+import androidx.compose.mpp.demo.components.text.WasmLayouts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
