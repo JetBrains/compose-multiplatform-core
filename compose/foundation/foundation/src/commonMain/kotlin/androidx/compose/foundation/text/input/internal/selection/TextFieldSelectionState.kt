@@ -417,7 +417,7 @@ internal class TextFieldSelectionState(
      * Starts observing changes in the current state for reactive rules. For example, the cursor
      * handle or the selection handles should hide whenever the text content changes.
      */
-    suspend fun observeChanges() {
+    suspend fun startToolbarAndHandlesVisibilityObserver() {
         try {
             coroutineScope {
                 launch { observeTextChanges() }

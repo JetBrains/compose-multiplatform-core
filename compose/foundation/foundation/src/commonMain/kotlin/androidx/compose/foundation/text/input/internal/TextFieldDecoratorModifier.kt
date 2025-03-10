@@ -340,9 +340,10 @@ internal class TextFieldDecoratorModifierNode(
 
     /**
      * We observe text changes to show/hide text toolbar and cursor handles. This job is only run
-     * when [isFocused] is true, and cancels when focus is lost.
+     * when [isFocused] is true, and cancels when focus is lost. It should also be restarted
+     * whenever [textFieldSelectionState] instance changes.
      */
-    private var observeChangesJob: Job? = null
+    private var toolbarAndHandlesVisibilityObserverJob: Job? = null
 
     /**
      * Manages key events. These events often are sourced by a hardware keyboard but it's also
@@ -488,6 +489,14 @@ internal class TextFieldDecoratorModifierNode(
             if (isAttached) {
                 textFieldSelectionState.receiveContentConfiguration =
                     receiveContentConfigurationProvider
+
+                if (isFocused && toolbarAndHandlesVisibilityObserverJob != null) {
+                    toolbarAndHandlesVisibilityObserverJob?.cancel()
+                    toolbarAndHandlesVisibilityObserverJob =
+                        coroutineScope.launch {
+                            textFieldSelectionState.startToolbarAndHandlesVisibilityObserver()
+                        }
+                }
             }
             textFieldSelectionState.requestAutofillAction = { requestAutofill() }
         }
@@ -656,12 +665,15 @@ internal class TextFieldDecoratorModifierNode(
      */
     private fun onFocusChange() {
         textFieldSelectionState.isFocused = this.isFocused
-        if (isFocused && observeChangesJob == null) {
+        if (isFocused && toolbarAndHandlesVisibilityObserverJob == null) {
             // only start a new job is there's not an ongoing one.
-            observeChangesJob = coroutineScope.launch { textFieldSelectionState.observeChanges() }
+            toolbarAndHandlesVisibilityObserverJob =
+                coroutineScope.launch {
+                    textFieldSelectionState.startToolbarAndHandlesVisibilityObserver()
+                }
         } else if (!isFocused) {
-            observeChangesJob?.cancel()
-            observeChangesJob = null
+            toolbarAndHandlesVisibilityObserverJob?.cancel()
+            toolbarAndHandlesVisibilityObserverJob = null
         }
     }
 
