@@ -20,74 +20,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.MeasurePolicy
-import androidx.compose.ui.layout.boundsInWindow
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.IntRect
-import androidx.compose.ui.unit.roundToIntRect
 import kotlinx.browser.document
+import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLElement
-
-//val NoOpUpdate: Element.() -> Unit = {}
-//
-//@Composable
-//private fun <T : Any> createNodeFactory(
-//    factory: () -> T,
-//): () -> LayoutNode {
-//
-//    return {
-//        factory().layoutNode
-//    }
-//}
-//
-//internal abstract class WebUiApplier(root: Element) : AbstractApplier<Element>(root) {
-//    override fun remove(index: Int, count: Int) {
-//        current.remove()
-//        // Реализация удаления узлов
-//    }
-//
-//    override fun move(from: Int, to: Int, count: Int) {
-//        // Реализация перемещения узлов
-//    }
-//}
-//
-//@Composable
-//fun <T : Element> WebView (
-//    factory: () -> T,
-//    modifier: Modifier = Modifier,
-//    update: (T) -> Unit = NoOpUpdate,
-//) {
-//    WebView(factory = factory, modifier = modifier, update = update, onRelease = NoOpUpdate)
-//}
-//
-//@Composable
-//fun <T : Element> WebView (
-//    factory: () -> T,
-//    modifier: Modifier = Modifier,
-//    update: (T) -> Unit = NoOpUpdate,
-//    onRelease: (T) -> Unit = NoOpUpdate,
-//    onReset: ((T) -> Unit)? = null,
-//){
-//    val compositeKeyHash = currentCompositeKeyHash
-////    val materializedModifiermaterializedModifier = currentComposer.materialize(modifier.focusInteropModifier())
-//    val density = LocalDensity.current
-//    val layoutDirection = LocalLayoutDirection.current
-//    val compositionLocalMap = currentComposer.currentCompositionLocalMap
-//
-//    val lifecycleOwner = LocalLifecycleOwner.current
-////    val savedStateRegistryOwner = LocalSavedStateRegistryOwner.current
-//
-//    if (onReset != null) {
-//        ReusableComposeNode<LayoutNode, WebUiApplier>(
-//            factory = createNodeFactory(factory),
-//            update = {}
-//        )
-//    } else {
-//        ComposeNode<LayoutNode, WebUiApplier>(
-//            factory = {},
-//            update = {}
-//        )
-//    }
-//}
 
 @Suppress("ACTUAL_WITHOUT_EXPECT") // https://youtrack.jetbrains.com/issue/KT-37316
 internal actual typealias InteropViewGroup = HTMLElement
@@ -101,12 +39,18 @@ fun <T : HTMLElement> WebUiView(
     onReset: ((T) -> Unit)? = null,
 ) {
     val interopContainer = LocalInteropContainer.current
+    val properties: WebInteropProperties = WebInteropProperties();
 
     InteropView(
         factory = { compositeKeyHash ->
-            WebUiInteropViewHolder()
+            WebUiInteropViewHolder(
+                factory,
+                interopContainer,
+                properties,
+                compositeKeyHash
+            )
         },
-        modifier.onGloballyPositioned {  },
+        modifier,
         onReset,
         onRelease,
         update = {
@@ -185,6 +129,8 @@ internal abstract class WebUiInteropElementHolder<T : HTMLElement>(
 
     private var currentRect: IntRect? = null
 
+    private var isHidden: Boolean = false
+
     var properties = properties
         set(value) {
             if (field != value) {
@@ -195,12 +141,34 @@ internal abstract class WebUiInteropElementHolder<T : HTMLElement>(
 
     protected abstract var userComponentRect: String
 
+    fun getCanvasCoordinates(): Pair<Double, Double> {
+        val canvasElement = document.querySelector("canvas") as HTMLCanvasElement
+        return canvasElement.getBoundingClientRect().let {
+            it.left to it.top
+        }
+    }
+
     override fun layoutAccordingTo(layoutCoordinates: LayoutCoordinates) {
-        val newRect = layoutCoordinates.boundsInWindow().roundToIntRect()
+        val bounds = layoutCoordinates.boundsInRoot()
+        val position = layoutCoordinates.positionInRoot()
+
+        val scaledX = position.x / density.density
+        val scaledY = position.y / density.density
+
+        val (canvasX, canvasY) = getCanvasCoordinates()
+        val adjustedX = canvasX + scaledX
+        val adjustedY = canvasY + scaledY
+
+        val newRect = IntRect(
+            adjustedX.toInt(),
+            adjustedY.toInt(),
+            bounds.width.toInt(),
+            bounds.height.toInt()
+        )
 
         if (currentRect != newRect) {
-            interopContainer.scheduleUpdate {
-                group.style.apply {
+            container.scheduleUpdate {
+                interopWrapper.style.apply {
                     left = "${newRect.left}px"
                     top = "${newRect.top}px"
                     width = "${newRect.width}px"
@@ -209,11 +177,34 @@ internal abstract class WebUiInteropElementHolder<T : HTMLElement>(
             }
             currentRect = newRect
         }
+
+
+        updateClipPath(bounds, position)
+        currentRect = newRect
+    }
+
+    private fun updateClipPath(bounds: androidx.compose.ui.geometry.Rect, position: androidx.compose.ui.geometry.Offset) {
+        if (interopWrapper.offsetWidth <= 0 || interopWrapper.offsetHeight <= 0) return
+
+        val topClip = maxOf(bounds.top - position.y, 0f)
+        val leftClip = maxOf(bounds.left - position.x, 0f)
+        val bottomClip = maxOf(position.y + interopWrapper.offsetHeight * 2 - bounds.bottom, 0f)
+        val rightClip = maxOf(position.x + interopWrapper.offsetWidth * 2 - bounds.right, 0f)
+
+        val newHiddenState = topClip == interopWrapper.offsetHeight.toFloat() || leftClip == interopWrapper.offsetWidth.toFloat()
+
+        if (newHiddenState != isHidden) {
+            interopWrapper.style.visibility = if (newHiddenState) "hidden" else "visible"
+            isHidden = newHiddenState
+        }
+
+        interopWrapper.style.setProperty("clip-path", "inset(${topClip}px ${rightClip}px ${bottomClip}px ${leftClip}px)")
     }
 
     private fun onPropertiesChanged() {
+        interopWrapper.style.setProperty("pointer-events", if (properties.isInteractive) "auto" else "none")
+
         interopWrapper.style.apply {
-            pointerEvents = if (properties.isInteractive) "auto" else "none"
             visibility = if (properties.isVisible) "visible" else "hidden"
         }
     }

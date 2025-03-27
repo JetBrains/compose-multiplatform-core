@@ -25,5 +25,5 @@ val WasmLayouts = Screen.Selection(
     "WasmLayouts",
     Screen.Example("WasmExampleTwoDirectionsAndRTL") { WasmExampleTwoDirectionsAndRTL() },
     Screen.Example("WasmExampleTwoDirectionsAndRTL2") { WasmExampleTwoDirectionsAndRTL2() },
-    Screen.Example("Map") { MapExample() }
+    Screen.Example("Map") { MapExample() },
 )
