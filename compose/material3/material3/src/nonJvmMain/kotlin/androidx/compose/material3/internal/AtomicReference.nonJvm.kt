@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-package androidx.compose.material3
+package androidx.compose.material3.internal
 
-/**
- * Returns a string representation of an integer for the current Locale.
- */
-internal actual fun Int.toLocalString(
-    minDigits: Int,
-    maxDigits: Int,
-    isGroupingUsed: Boolean
-): String = toString().padStart(minDigits, '0')
+import kotlinx.atomicfu.atomic
+
+internal actual class AtomicReference<V> actual constructor(value: V) {
+    private val delegate = atomic(value)
+    actual fun get() = delegate.value
+    actual fun set(value: V) {
+        delegate.value = value
+    }
+    actual fun getAndSet(value: V) = delegate.getAndSet(value)
+    actual fun compareAndSet(expect: V, newValue: V) = delegate.compareAndSet(expect, newValue)
+}

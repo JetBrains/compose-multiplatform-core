@@ -22,7 +22,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalWindowInfo
 
 internal actual val defaultTimePickerLayoutType
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     @ReadOnlyComposable
     get(): TimePickerLayoutType {

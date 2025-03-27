@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,18 @@
  * limitations under the License.
  */
 
-package androidx.graphics.shapes
+package androidx.compose.material3.internal
 
-internal actual fun Float.toStringWithLessPrecision(): String {
-    return this.toString()
+import androidx.compose.material3.implementedInJetBrainsFork
+
+internal actual class AtomicReference<V> actual constructor(value: V) {
+    actual fun get(): V = implementedInJetBrainsFork()
+
+    actual fun set(value: V) {
+        implementedInJetBrainsFork()
+    }
+
+    actual fun getAndSet(value: V): V = implementedInJetBrainsFork()
+
+    actual fun compareAndSet(expect: V, newValue: V): Boolean = implementedInJetBrainsFork()
 }

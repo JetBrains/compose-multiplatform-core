@@ -24,6 +24,8 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
@@ -33,7 +35,13 @@ plugins {
 
 androidXMultiplatform {
     androidTarget()
-    jvmStubs()
+    desktop()
+    mac()
+    ios()
+    js()
+    wasmJs()
+
+    // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
     linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
@@ -43,27 +51,36 @@ androidXMultiplatform {
             dependencies {
                 implementation(libs.kotlinStdlib)
                 // Keep pinned unless there is a need for tip of tree behavior
-                implementation("androidx.collection:collection:1.4.5")
-                implementation("androidx.compose.animation:animation-core:1.7.5")
-                implementation("androidx.compose.ui:ui-util:1.7.5")
-                api("androidx.compose.foundation:foundation-layout:1.7.5")
-                api("androidx.compose.foundation:foundation:1.7.5")
-                api("androidx.compose.material:material-ripple:1.7.5")
-                api("androidx.compose.runtime:runtime:1.7.5")
-                api("androidx.compose.ui:ui:1.7.5")
-                api("androidx.compose.ui:ui-text:1.7.5")
-                api("androidx.graphics:graphics-shapes:1.0.1")
+                implementation(project(":collection:collection"))
+                implementation(project(":compose:animation:animation-core"))
+                implementation(project(":compose:ui:ui-util"))
+                api(project(":compose:foundation:foundation-layout"))
+                api(project(":compose:foundation:foundation"))
+                api(project(":compose:material:material-ripple"))
+                api(project(":compose:runtime:runtime"))
+                api(project(":compose:ui:ui"))
+                api(project(":compose:ui:ui-text"))
+                api(project(":graphics:graphics-shapes"))
             }
         }
 
         commonTest {
             dependencies {
+                implementation(libs.kotlinTest)
+                implementation(project(":compose:ui:ui-test"))
             }
         }
 
         jvmMain {
             dependsOn(commonMain)
+        }
+
+        jvmTest {
+            dependsOn(commonTest)
             dependencies {
+                implementation(project(":compose:ui:ui-test-junit4"))
+                implementation(libs.truth)
+                implementation(libs.junit)
             }
         }
 
@@ -77,25 +94,11 @@ androidXMultiplatform {
             }
         }
 
-        commonStubsMain {
-            dependsOn(commonMain)
-        }
-
-        jvmStubsMain {
-            dependsOn(commonStubsMain)
-        }
-
-        linuxx64StubsMain {
-            dependsOn(commonStubsMain)
-        }
-
         androidUnitTest {
-            dependsOn(commonTest)
+            dependsOn(jvmTest)
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
-                implementation(libs.junit)
-                implementation(libs.truth)
             }
         }
 
@@ -120,6 +123,130 @@ androidXMultiplatform {
                 implementation(libs.mockitoKotlin)
                 implementation(libs.testUiautomator)
             }
+        }
+
+        // TODO: Align naming: nonAndroidMain
+        skikoMain {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.datetime)
+                implementation(project(":compose:ui:ui-backhandler"))
+            }
+        }
+
+        skikoTest {
+            dependsOn(commonTest)
+        }
+
+        desktopMain {
+            dependsOn(jvmMain)
+            dependsOn(skikoMain)
+        }
+
+        desktopTest {
+            dependsOn(jvmTest)
+            dependsOn(skikoTest)
+            dependencies {
+                implementation(libs.skikoCurrentOs)
+            }
+        }
+
+        nonJvmMain {
+            dependsOn(skikoMain)
+            dependencies {
+                implementation(libs.atomicFu)
+            }
+        }
+
+        nonJvmTest {
+            dependsOn(skikoTest)
+        }
+
+        nativeMain {
+            dependsOn(nonJvmMain)
+        }
+
+        nativeTest {
+            dependsOn(nonJvmTest)
+        }
+
+        darwinMain {
+            dependsOn(nativeMain)
+        }
+
+        darwinTest {
+            dependsOn(nativeTest)
+        }
+
+        uikitMain {
+            dependsOn(darwinMain)
+        }
+
+        uikitTest {
+            dependsOn(darwinTest)
+        }
+
+        // TODO: Align naming: webMain
+        jsWasmMain {
+            dependsOn(nonJvmMain)
+        }
+
+        jsWasmTest {
+            dependsOn(nonJvmTest)
+        }
+
+        jsMain {
+            kotlin.srcDir("src/webCommonW3C/kotlin")
+            dependsOn(jsWasmMain)
+        }
+
+        jsTest {
+            dependsOn(jsWasmTest)
+        }
+
+        wasmJsMain {
+            kotlin.srcDir("src/webCommonW3C/kotlin")
+            dependsOn(jsWasmMain)
+            dependencies {
+                implementation(libs.kotlinXw3c)
+            }
+        }
+
+        wasmJsTest {
+            dependsOn(jsWasmTest)
+        }
+
+        targets.configureEach { target ->
+
+            // TODO: Ignore stubs. Remove together with stubs target
+            if (target.name.endsWith("Stubs")) return
+
+            if (target.platformType == KotlinPlatformType.native) {
+                if (target.konanTarget.family == Family.IOS) {
+                    target.compilations["main"].defaultSourceSet.dependsOn(uikitMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(uikitTest)
+                } else if (target.konanTarget.family.appleFamily) {
+                    target.compilations["main"].defaultSourceSet.dependsOn(darwinMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(darwinTest)
+                } else {
+                    target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
+                }
+            }
+        }
+
+        // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
+        commonStubsMain {
+            dependsOn(commonMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
+        }
+
+        // TODO: Align it with AOSP or make explicit
+        configureEach {
+            languageSettings.optIn("androidx.compose.material3.ExperimentalMaterial3Api")
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,12 @@
 
 package androidx.compose.material3.internal
 
-import androidx.compose.material3.implementedInJetBrainsFork
+internal expect class AtomicReference<V>(value: V) {
+    fun get(): V
 
-internal actual class InternalAtomicReference<V> actual constructor(value: V) {
-    actual fun get(): V = implementedInJetBrainsFork()
+    fun set(value: V)
 
-    actual fun set(value: V) {
-        implementedInJetBrainsFork()
-    }
+    fun getAndSet(value: V): V
 
-    actual fun getAndSet(value: V): V = implementedInJetBrainsFork()
-
-    actual fun compareAndSet(expect: V, newValue: V): Boolean = implementedInJetBrainsFork()
+    fun compareAndSet(expect: V, newValue: V): Boolean
 }
