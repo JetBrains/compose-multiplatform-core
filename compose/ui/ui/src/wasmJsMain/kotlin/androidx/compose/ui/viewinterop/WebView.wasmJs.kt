@@ -17,6 +17,8 @@
 package androidx.compose.ui.viewinterop
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.SnapshotStateObserver
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.MeasurePolicy
@@ -25,25 +27,74 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.IntRect
 import kotlinx.browser.document
 import org.w3c.dom.HTMLCanvasElement
+import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 
 @Suppress("ACTUAL_WITHOUT_EXPECT") // https://youtrack.jetbrains.com/issue/KT-37316
 internal actual typealias InteropViewGroup = HTMLElement
 
+
+fun createElementAndAddToBody(): HTMLElement {
+    val root = (document.createElement("div") as HTMLDivElement).apply {
+        style.apply {
+            width = "300px"
+            height = "300px"
+            position = "absolute"
+            top = "0"
+        }
+    }
+
+    // Добавляем элемент в body
+    document.body?.appendChild(root)
+
+    // Возвращаем сам элемент
+    return root
+}
+
+
+internal class WebInteropContainer(
+    override val root: InteropViewGroup = document.body as HTMLElement
+
+) : InteropContainer {
+    override var rootModifier: TrackInteropPlacementModifierNode? = null
+
+    override val snapshotObserver: SnapshotStateObserver = SnapshotStateObserver { }
+
+    override fun contains(holder: InteropViewHolder): Boolean {
+        return root.contains(holder.getInteropView() as HTMLElement)
+    }
+
+    override fun holderOfView(view: InteropView): InteropViewHolder? {
+        return null
+    }
+
+    override fun place(holder: InteropViewHolder) {
+        root.appendChild(holder.getInteropView() as HTMLElement)
+    }
+
+    override fun unplace(holder: InteropViewHolder) {
+        root.removeChild(holder.getInteropView() as HTMLElement)
+    }
+
+    override fun scheduleUpdate(action: () -> Unit) {
+        action()
+    }
+}
+
 @Composable
-fun <T : HTMLElement> WebUiView(
+fun <T : HTMLElement> WebElementView(
     factory: () -> T,
     modifier: Modifier = Modifier,
     update: (T) -> Unit = NoOp,
     onRelease: (T) -> Unit = NoOp,
     onReset: ((T) -> Unit)? = null,
 ) {
-    val interopContainer = LocalInteropContainer.current
+    val interopContainer = WebInteropContainer()
     val properties: WebInteropProperties = WebInteropProperties();
 
     InteropView(
         factory = { compositeKeyHash ->
-            WebUiInteropViewHolder(
+            WebElementViewHolder(
                 factory,
                 interopContainer,
                 properties,
@@ -55,16 +106,18 @@ fun <T : HTMLElement> WebUiView(
         onRelease,
         update = {
             update(it)
+            val holder = interopContainer.holderOfView(it) as? WebElementViewHolder<*>
+            holder?.properties = properties
         }
     )
 }
 
-internal class WebUiInteropViewHolder<T : HTMLElement>(
+internal class WebElementViewHolder<T : HTMLElement>(
     factory: () -> T,
     interopContainer: InteropContainer,
     properties: WebInteropProperties,
     compositeKeyHash: Int,
-) : WebUiInteropElementHolder<T>(
+) : WebElementHolder<T>(
     factory,
     interopContainer,
     properties,
@@ -97,7 +150,7 @@ internal class WebUiInteropViewHolder<T : HTMLElement>(
     }
 }
 
-internal abstract class WebUiInteropElementHolder<T : HTMLElement>(
+internal abstract class WebElementHolder<T : HTMLElement>(
     factory: () -> T,
     interopContainer: InteropContainer,
     private val interopWrapper: HTMLElement,
@@ -209,7 +262,6 @@ internal abstract class WebUiInteropElementHolder<T : HTMLElement>(
         }
     }
 }
-
 
 data class WebInteropProperties(
     val isInteractive: Boolean = true,

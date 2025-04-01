@@ -22,6 +22,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.WebElementView
+import kotlinx.browser.document
+import org.w3c.dom.HTMLDivElement
 
 @Composable
 fun WasmExampleTwoDirectionsAndRTL() {
@@ -67,25 +70,24 @@ fun WasmExampleTwoDirectionsAndRTL() {
                                 ,
                                 contentAlignment = Alignment.Center
                             ) {
-                                HtmlElement(
-                                    id = elementId,
-                                    tagName = "div",
-                                    modifier = Modifier.size(50.dp, 50.dp).background(color = Color.Gray),
-                                    configure = {
-                                        innerText = elementId
-                                        style.apply {
-                                            textAlign = "center"
-                                            border = "2px solid white"
-                                            boxSizing = "border-box"
-                                            background = "white"
-                                            width = "50px"
-                                            height = "50px"
-                                            color = "white"
-                                            maxWidth = "50px"
-                                            overflowX = "scroll"
+                                WebElementView(
+                                    factory = {
+                                        (document.createElement("div") as HTMLDivElement).apply {
+                                            innerText = elementId
+                                            id = elementId
+                                            style.apply {
+                                                textAlign = "center"
+                                                border = "2px solid white"
+                                                boxSizing = "border-box"
+                                                background = "white"
+                                                width = "50px"
+                                                height = "50px"
+                                                color = "white"
+                                                maxWidth = "50px"
+                                                overflowX = "scroll"
+                                            }
                                         }
-                                    },
-                                    onClick = { println("Clicked on $elementId") },
+                                    }
                                 )
                             }
                         }
