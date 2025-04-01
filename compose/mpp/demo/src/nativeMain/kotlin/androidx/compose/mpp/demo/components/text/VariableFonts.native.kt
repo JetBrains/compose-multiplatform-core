@@ -16,11 +16,13 @@
 
 package androidx.compose.mpp.demo.components.text
 
+import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.readBytes
 import platform.Foundation.NSBundle
 import platform.Foundation.NSData
 import platform.Foundation.dataWithContentsOfFile
 
+@OptIn(ExperimentalForeignApi::class)
 actual suspend fun loadResource(file: String): ByteArray? {
     val lastDotIndex = file.lastIndexOf('.')
     val name = file.substring(0, lastDotIndex)

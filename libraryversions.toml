@@ -212,6 +212,7 @@ CARDVIEW = { group = "androidx.cardview", atomicGroupVersion = "versions.CARDVIE
 CAR_APP = { group = "androidx.car.app", atomicGroupVersion = "versions.CAR_APP" }
 COLLECTION = { group = "androidx.collection", atomicGroupVersion = "versions.COLLECTION" }
 COMPOSE_ANIMATION = { group = "androidx.compose.animation", atomicGroupVersion = "versions.COMPOSE" }
+COMPOSE_DESKTOP = { group = "androidx.compose.desktop", atomicGroupVersion = "versions.COMPOSE" }
 COMPOSE_FOUNDATION = { group = "androidx.compose.foundation", atomicGroupVersion = "versions.COMPOSE" }
 COMPOSE_MATERIAL = { group = "androidx.compose.material" }
 COMPOSE_MATERIAL3 = { group = "androidx.compose.material3", atomicGroupVersion = "versions.COMPOSE_MATERIAL3" }
