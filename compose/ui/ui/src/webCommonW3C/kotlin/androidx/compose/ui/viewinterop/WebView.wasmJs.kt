@@ -17,9 +17,10 @@
 package androidx.compose.ui.viewinterop
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateObserver
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.boundsInRoot
@@ -33,54 +34,6 @@ import org.w3c.dom.HTMLElement
 @Suppress("ACTUAL_WITHOUT_EXPECT") // https://youtrack.jetbrains.com/issue/KT-37316
 internal actual typealias InteropViewGroup = HTMLElement
 
-
-fun createElementAndAddToBody(): HTMLElement {
-    val root = (document.createElement("div") as HTMLDivElement).apply {
-        style.apply {
-            width = "300px"
-            height = "300px"
-            position = "absolute"
-            top = "0"
-        }
-    }
-
-    // Добавляем элемент в body
-    document.body?.appendChild(root)
-
-    // Возвращаем сам элемент
-    return root
-}
-
-
-internal class WebInteropContainer(
-    override val root: InteropViewGroup = document.body as HTMLElement
-
-) : InteropContainer {
-    override var rootModifier: TrackInteropPlacementModifierNode? = null
-
-    override val snapshotObserver: SnapshotStateObserver = SnapshotStateObserver { }
-
-    override fun contains(holder: InteropViewHolder): Boolean {
-        return root.contains(holder.getInteropView() as HTMLElement)
-    }
-
-    override fun holderOfView(view: InteropView): InteropViewHolder? {
-        return null
-    }
-
-    override fun place(holder: InteropViewHolder) {
-        root.appendChild(holder.getInteropView() as HTMLElement)
-    }
-
-    override fun unplace(holder: InteropViewHolder) {
-        root.removeChild(holder.getInteropView() as HTMLElement)
-    }
-
-    override fun scheduleUpdate(action: () -> Unit) {
-        action()
-    }
-}
-
 @Composable
 fun <T : HTMLElement> WebElementView(
     factory: () -> T,
@@ -89,12 +42,12 @@ fun <T : HTMLElement> WebElementView(
     onRelease: (T) -> Unit = NoOp,
     onReset: ((T) -> Unit)? = null,
 ) {
-    val interopContainer = WebInteropContainer()
+    val interopContainer = LocalInteropContainer.current
     val properties: WebInteropProperties = WebInteropProperties();
 
     InteropView(
         factory = { compositeKeyHash ->
-            WebElementViewHolder(
+            WebInteropViewHolder(
                 factory,
                 interopContainer,
                 properties,
@@ -106,18 +59,82 @@ fun <T : HTMLElement> WebElementView(
         onRelease,
         update = {
             update(it)
-            val holder = interopContainer.holderOfView(it) as? WebElementViewHolder<*>
+            val holder = interopContainer.holderOfView(it) as? WebInteropViewHolder<*>
             holder?.properties = properties
         }
     )
 }
 
-internal class WebElementViewHolder<T : HTMLElement>(
+internal class WebInteropContainer(
+    override val root: InteropViewGroup = document.body as HTMLElement,
+) : InteropContainer {
+    override var rootModifier: TrackInteropPlacementModifierNode? = null
+    private var interopViews = mutableMapOf<InteropView, InteropViewHolder>()
+
+    override val snapshotObserver = SnapshotStateObserver { command ->
+        command()
+    }
+
+    override fun contains(holder: InteropViewHolder): Boolean =
+        interopViews.contains(holder.getInteropView())
+
+    override fun holderOfView(view: InteropView): InteropViewHolder? =
+        interopViews[view]
+
+    override fun place(holder: InteropViewHolder) {
+        val interopView = checkNotNull(holder.getInteropView())
+
+        if (interopViews.isEmpty()) {
+            snapshotObserver.start()
+        }
+
+        val isAdded = interopViews.put(interopView, holder) == null
+
+        val countBelow = countInteropComponentsBelow(holder)
+        println(interopView)
+        println(interopViews)
+
+        if (isAdded) {
+            scheduleUpdate {
+                holder.insertInteropView(root = root, index = countBelow)
+            }
+        } else {
+            scheduleUpdate {
+                holder.changeInteropViewIndex(root = root, index = countBelow)
+            }
+        }
+    }
+
+    override fun unplace(holder: InteropViewHolder) {
+        val interopView = requireNotNull(holder.getInteropView())
+
+        interopViews.remove(interopView)
+
+        if (interopViews.isEmpty()) {
+            snapshotObserver.stop()
+        }
+
+        scheduleUpdate {
+            holder.removeInteropView(root = root)
+        }
+    }
+
+    override fun scheduleUpdate(action: () -> Unit) {
+        action()
+    }
+
+    private fun countInteropComponentsBelow(holder: InteropViewHolder): Int {
+        val interopView = checkNotNull(holder.getInteropView())
+        return interopViews.keys.indexOf(interopView).coerceAtLeast(0)
+    }
+}
+
+internal class WebInteropViewHolder<T : HTMLElement>(
     factory: () -> T,
     interopContainer: InteropContainer,
     properties: WebInteropProperties,
     compositeKeyHash: Int,
-) : WebElementHolder<T>(
+) : WebInteropElementHolder<T>(
     factory,
     interopContainer,
     properties,
@@ -150,7 +167,7 @@ internal class WebElementViewHolder<T : HTMLElement>(
     }
 }
 
-internal abstract class WebElementHolder<T : HTMLElement>(
+internal abstract class WebInteropElementHolder<T : HTMLElement>(
     factory: () -> T,
     interopContainer: InteropContainer,
     private val interopWrapper: HTMLElement,
@@ -175,7 +192,7 @@ internal abstract class WebElementHolder<T : HTMLElement>(
     ) : this(
         factory,
         interopContainer,
-        interopWrapper = document.createElement("div") as HTMLElement,
+        interopWrapper = (document.createElement("div") as HTMLDivElement).apply { style.position = "absolute "} as HTMLElement,
         properties,
         compositeKeyHash
     )
@@ -215,8 +232,8 @@ internal abstract class WebElementHolder<T : HTMLElement>(
         val newRect = IntRect(
             adjustedX.toInt(),
             adjustedY.toInt(),
-            bounds.width.toInt(),
-            bounds.height.toInt()
+            bounds.width.toInt() / density.density.toInt(),
+            bounds.height.toInt() / density.density.toInt()
         )
 
         if (currentRect != newRect) {
@@ -236,7 +253,13 @@ internal abstract class WebElementHolder<T : HTMLElement>(
         currentRect = newRect
     }
 
-    private fun updateClipPath(bounds: androidx.compose.ui.geometry.Rect, position: androidx.compose.ui.geometry.Offset) {
+    override fun changeInteropViewIndex(root: InteropViewGroup, index: Int) {
+        val referenceNode = root.children.item(index)
+
+        root.insertBefore(group, referenceNode)
+    }
+
+    private fun updateClipPath(bounds: Rect, position: Offset) {
         if (interopWrapper.offsetWidth <= 0 || interopWrapper.offsetHeight <= 0) return
 
         val topClip = maxOf(bounds.top - position.y, 0f)

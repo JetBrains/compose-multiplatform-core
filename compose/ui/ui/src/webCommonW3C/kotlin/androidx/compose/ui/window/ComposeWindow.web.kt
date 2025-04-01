@@ -49,6 +49,8 @@ import androidx.compose.ui.scene.ComposeScenePointer
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.LocalInteropContainer
+import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -72,6 +74,7 @@ import org.jetbrains.skiko.SkikoRenderDelegate
 import org.w3c.dom.AddEventListenerOptions
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
+import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLStyleElement
 import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.HTMLTitleElement
@@ -321,11 +324,16 @@ internal class ComposeWindow(
 
         scene.density = density
 
+        val interopContainerElement = document.createElement("div") as HTMLElement
+        document.body!!.appendChild(interopContainerElement)
+        val interopContainer = WebInteropContainer(interopContainerElement)
+
         scene.setContent {
             CompositionLocalProvider(
                 LocalSystemTheme provides systemThemeObserver.currentSystemTheme.value,
                 LocalLifecycleOwner provides this,
                 LocalInternalViewModelStoreOwner provides this,
+                LocalInteropContainer provides interopContainer,
                 content = {
                     content()
                     rememberCoroutineScope().launch {

@@ -7,12 +7,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.Text
-import androidx.compose.mpp.demo.HtmlElement
-import androidx.compose.mpp.demo.LayoutModifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -25,6 +24,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.WebElementView
+import kotlinx.browser.document
+import org.w3c.dom.HTMLDivElement
 
 
 @Composable
@@ -66,28 +68,23 @@ fun WasmExampleTwoDirectionsAndRTL2() {
 
                             Box(
                                 modifier = Modifier
-                                    .size(rowHeight, rowHeight)
+                                    .width(rowHeight).height(rowHeight)
                                     .background(itemColor),
                             ) {
-                                HtmlElement(
-                                    id = elementId,
-                                    tagName = "div",
-                                    modifier = Modifier.size(50.dp, 50.dp)
-                                        .background(color = Color.Gray),
-                                    configure = {
-                                        innerText = elementId
-                                        style.apply {
-                                            position = "absolute"
-                                            textAlign = "center"
-                                            border = "2px solid white"
-                                            boxSizing = "border-box"
-                                            width = "50px"
-                                            height = "50px"
-                                            color = "white"
+                                WebElementView(
+                                    factory = {
+                                        (document.createElement("div") as HTMLDivElement).apply {
+                                            innerText = elementId
+                                            id = elementId
+                                            style.apply {
+                                                textAlign = "center"
+                                                border = "2px solid white"
+                                                boxSizing = "border-box"
+                                                background = "white"
+                                                color = "black"
+                                            }
                                         }
-                                        style.setProperty("pointer-events", "none")
-                                    },
-                                    onClick = { println("Clicked on $elementId") },
+                                    }
                                 )
                             }
                         }

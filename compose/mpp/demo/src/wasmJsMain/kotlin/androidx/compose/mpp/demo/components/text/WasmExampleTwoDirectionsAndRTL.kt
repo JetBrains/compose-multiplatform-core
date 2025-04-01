@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.Button
 import androidx.compose.material.Text
-import androidx.compose.mpp.demo.HtmlElement
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -80,11 +79,7 @@ fun WasmExampleTwoDirectionsAndRTL() {
                                                 border = "2px solid white"
                                                 boxSizing = "border-box"
                                                 background = "white"
-                                                width = "50px"
-                                                height = "50px"
-                                                color = "white"
-                                                maxWidth = "50px"
-                                                overflowX = "scroll"
+                                                color = "black"
                                             }
                                         }
                                     }
