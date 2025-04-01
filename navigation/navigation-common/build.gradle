@@ -24,8 +24,8 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
@@ -39,6 +39,8 @@ androidXMultiplatform {
     mac()
     linux()
     ios()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -49,44 +51,53 @@ androidXMultiplatform {
 
         commonMain {
             dependencies {
-                api("androidx.annotation:annotation:1.8.1")
+                api(libs.kotlinStdlib)
+                api("androidx.annotation:annotation:1.9.1")
                 api(project(":lifecycle:lifecycle-common"))
                 api(project(":lifecycle:lifecycle-runtime"))
                 api(project(":lifecycle:lifecycle-viewmodel"))
                 api(project(":lifecycle:lifecycle-viewmodel-savedstate"))
                 api(project(":savedstate:savedstate"))
-                api(libs.kotlinStdlib)
-                implementation("androidx.collection:collection:1.4.2")
+                implementation("androidx.collection:collection:1.5.0")
                 implementation(libs.kotlinSerializationCore)
             }
         }
         commonTest {
             dependencies {
                 implementation(libs.kotlinTest)
+                implementation(libs.kotlinCoroutinesTest)
                 implementation(project(":kruth:kruth"))
+                implementation(project(":navigation:navigation-testing"))
             }
         }
 
         nonAndroidMain {
             dependsOn(commonMain)
         }
+
         nonAndroidTest {
             dependsOn(commonTest)
         }
+
+        // TODO: Sync names: jvmMain
         jvmCommonMain {
             dependsOn(commonMain)
         }
+
         jvmCommonTest {
             dependsOn(commonTest)
         }
+
         desktopMain {
             dependsOn(jvmCommonMain)
             dependsOn(nonAndroidMain)
         }
+
         desktopTest {
             dependsOn(jvmCommonTest)
             dependsOn(nonAndroidTest)
         }
+
         androidMain {
             dependsOn(jvmCommonMain)
             dependencies {
@@ -123,27 +134,60 @@ androidXMultiplatform {
             }
         }
 
-        nonJvmCommonMain { dependsOn(nonAndroidMain) }
+        // TODO: Sync names: nonJvmMain
+        nonJvmCommonMain {
+            dependsOn(nonAndroidMain)
+        }
 
         nonJvmCommonTest { dependsOn(nonAndroidTest) }
 
-        nativeMain { dependsOn(nonJvmCommonMain) }
-        linuxMain { dependsOn(nativeMain) }
-        darwinMain { dependsOn(nativeMain) }
+        nativeMain {
+            dependsOn(nonJvmCommonMain)
+        }
 
-        nativeTest { dependsOn(nonJvmCommonTest) }
-        linuxTest { dependsOn(nativeTest) }
-        darwinTest { dependsOn(nativeTest) }
+        nativeTest {
+            dependsOn(nonJvmCommonTest)
+        }
+
+        linuxMain {
+            dependsOn(nativeMain)
+        }
+
+        linuxTest {
+            dependsOn(nativeTest)
+        }
+
+        darwinMain {
+            dependsOn(nativeMain)
+        }
+
+        darwinTest {
+            dependsOn(nativeTest)
+        }
+
+        webMain {
+            dependsOn(nonJvmCommonMain)
+        }
+
+        webTest {
+            dependsOn(nonJvmCommonTest)
+        }
 
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 if (target.konanTarget.family.appleFamily) {
                     target.compilations["main"].defaultSourceSet.dependsOn(darwinMain)
                     target.compilations["test"].defaultSourceSet.dependsOn(darwinTest)
-                } else if (target.konanTarget.family == org.jetbrains.kotlin.konan.target.Family.LINUX) {
+                } else if (target.konanTarget.family == Family.LINUX) {
                     target.compilations["main"].defaultSourceSet.dependsOn(linuxMain)
                     target.compilations["test"].defaultSourceSet.dependsOn(linuxTest)
+                } else {
+                    target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
                 }
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
             }
         }
     }

@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 
-package androidx.navigation.internal
+package androidx.navigation.compose.internal
 
-internal actual fun identityHashCode(instance: Any?): Int = System.identityHashCode(instance)
+internal actual typealias DefaultNavTransitions = StandardDefaultNavTransitions

@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 @RequiresOptIn(message = "This is an experimental browser API.")
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
-annotation class ExperimentalBrowserHistoryApi
+public annotation class ExperimentalBrowserHistoryApi
 
 /**
  * Binds the browser window state to the given navigation controller.
@@ -224,5 +224,5 @@ internal external interface BrowserConsole {
     fun warn(msg: String)
 }
 
-external fun decodeURIComponent(str: String): String
-external fun encodeURIComponent(str: String): String
+private external fun decodeURIComponent(str: String): String
+private external fun encodeURIComponent(str: String): String
