@@ -51,8 +51,7 @@ androidXMultiplatform {
         commonTest {
             dependencies {
                 implementation(project(":kruth:kruth"))
-                // https://youtrack.jetbrains.com/issue/KT-71032
-                implementation(libs.kotlinTestForWasmTests)
+                implementation(libs.kotlinTest)
             }
         }
 
