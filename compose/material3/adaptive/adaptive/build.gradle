@@ -25,6 +25,7 @@
 import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
@@ -34,8 +35,11 @@ plugins {
 
 androidXMultiplatform {
     androidTarget()
-    jvmStubs()
-    linuxX64Stubs()
+    desktop()
+    mac()
+    ios()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -43,9 +47,9 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 implementation(libs.kotlinStdlib)
-                api("androidx.compose.foundation:foundation:1.7.8")
-                api("androidx.compose.ui:ui-geometry:1.7.8")
-                api("androidx.window:window-core:1.4.0-rc01")
+                api(project(":compose:foundation:foundation"))
+                api(project(":compose:ui:ui-geometry"))
+                api(project(":window:window-core"))
             }
         }
 
@@ -60,6 +64,10 @@ androidXMultiplatform {
             }
         }
 
+        jvmTest {
+            dependsOn(commonTest)
+        }
+
         androidMain {
             dependsOn(jvmMain)
             dependencies {
@@ -67,18 +75,6 @@ androidXMultiplatform {
                 api("androidx.annotation:annotation-experimental:1.4.1")
                 api("androidx.window:window:1.4.0-rc01")
             }
-        }
-
-        commonStubsMain {
-            dependsOn(commonMain)
-        }
-
-        jvmStubsMain {
-            dependsOn(commonStubsMain)
-        }
-
-        linuxx64StubsMain {
-            dependsOn(commonStubsMain)
         }
 
         androidInstrumentedTest {
@@ -94,11 +90,27 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(commonTest)
+            dependsOn(jvmTest)
             dependencies {
                 implementation(libs.junit)
                 implementation(libs.testRunner)
                 implementation(libs.truth)
+            }
+        }
+
+        // TODO: Align naming: nonAndroidMain
+        skikoMain {
+            dependsOn(commonMain)
+        }
+
+        skikoTest {
+            dependsOn(commonTest)
+        }
+
+        targets.configureEach { target ->
+            if (target.platformType !in [KotlinPlatformType.androidJvm, KotlinPlatformType.common]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(skikoMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(skikoTest)
             }
         }
     }

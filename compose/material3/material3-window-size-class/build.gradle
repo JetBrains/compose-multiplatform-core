@@ -24,6 +24,7 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
@@ -45,7 +46,13 @@ androidXMultiplatform {
         compileSdk = 35
         aarMetadata.minCompileSdk = 35
     }
-    jvmStubs()
+    desktop()
+    mac()
+    ios()
+    js()
+    wasmJs()
+
+    // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
     linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
@@ -54,22 +61,25 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 implementation(libs.kotlinStdlib)
-                implementation("androidx.compose.ui:ui-util:1.7.1")
-                api("androidx.compose.runtime:runtime:1.7.1")
-                api("androidx.compose.ui:ui:1.7.1")
-                api("androidx.compose.ui:ui-unit:1.7.1")
+                implementation(project(":compose:ui:ui-util"))
+                api(project(":compose:runtime:runtime"))
+                api(project(":compose:ui:ui"))
+                api(project(":compose:ui:ui-unit"))
             }
         }
 
         commonTest {
             dependencies {
+                implementation(libs.kotlinTest)
             }
         }
 
         jvmMain {
             dependsOn(commonMain)
-            dependencies {
-            }
+        }
+
+        jvmTest {
+            dependsOn(commonTest)
         }
 
         androidMain {
@@ -78,18 +88,6 @@ androidXMultiplatform {
                 api("androidx.annotation:annotation-experimental:1.4.1")
                 implementation("androidx.window:window:1.0.0")
             }
-        }
-
-        commonStubsMain {
-            dependsOn(commonMain)
-        }
-
-        jvmStubsMain {
-            dependsOn(commonStubsMain)
-        }
-
-        linuxx64StubsMain {
-            dependsOn(commonStubsMain)
         }
 
         androidInstrumentedTest {
@@ -111,6 +109,72 @@ androidXMultiplatform {
                 implementation(libs.kotlinTest)
                 implementation(libs.truth)
             }
+        }
+
+        // TODO: Align naming: nonAndroidMain
+        skikoMain {
+            dependsOn(commonMain)
+        }
+
+        skikoTest {
+            dependsOn(commonTest)
+        }
+
+        desktopMain {
+            dependsOn(jvmMain)
+            dependsOn(skikoMain)
+        }
+
+        desktopTest {
+            dependsOn(jvmTest)
+            dependsOn(skikoTest)
+        }
+
+        nonJvmMain {
+            dependsOn(skikoMain)
+        }
+
+        nonJvmTest {
+            dependsOn(skikoTest)
+        }
+
+        nativeMain {
+            dependsOn(nonJvmMain)
+        }
+
+        nativeTest {
+            dependsOn(nonJvmTest)
+        }
+
+        webMain {
+            dependsOn(nonJvmMain)
+        }
+
+        webTest {
+            dependsOn(nonJvmTest)
+        }
+
+        targets.configureEach { target ->
+
+            // TODO: Ignore stubs. Remove together with stubs target
+            if (target.name.endsWith("Stubs")) return
+
+            if (target.platformType == KotlinPlatformType.native) {
+                target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
+            }
+        }
+
+        // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
+        commonStubsMain {
+            dependsOn(commonMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
         }
     }
 }
