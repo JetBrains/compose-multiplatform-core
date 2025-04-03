@@ -71,7 +71,7 @@ wire = "4.9.7"
 core = "1.12.0"
 xmlApis = "1.4.01"
 yarn = "1.22.17"
-storytale = "0.0.3+dev9"
+storytale = "0.0.3+dev12"
 
 [libraries]
 agpTestingPlatformCoreProto =  { module = "com.google.testing.platform:core-proto", version = "0.0.8-alpha08" }

@@ -28,8 +28,21 @@ val `PrimaryButton default state` by story {
 }
 
 val `Checkbox` by story {
-    val checked by parameter(false)
+    var checked by parameter(false)
     Checkbox(checked = checked, onCheckedChange = {
-//         checked = it
+         checked = it
     })
+}
+
+// A hack for development needs:
+// If we need to customize the parameters controller UI, for example for a missing parameter type,
+// then we can do it here.
+// This relies on the fact that Storytale compile plugin will invoke the initialization of all properties in any file with stories.
+private val initialization: Int = initializationForParameters()
+private fun initializationForParameters(): Int {
+    @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+    org.jetbrains.compose.storytale.gallery.material3.parameterUiControllerCustomizer = null
+        // org.jetbrains.compose.storytale.gallery.material3.ParameterUiControllerCustomizer { { Text(it.name) } }
+
+    return 1
 }
