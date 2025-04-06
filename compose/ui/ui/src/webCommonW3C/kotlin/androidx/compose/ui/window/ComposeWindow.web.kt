@@ -76,7 +76,6 @@ import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLStyleElement
-import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.HTMLTitleElement
 import org.w3c.dom.MediaQueryListEvent
 import org.w3c.dom.TouchEvent

@@ -30,7 +30,7 @@ import org.w3c.dom.HTMLDivElement
 
 
 @Composable
-fun WasmExampleTwoDirectionsAndRTL2() {
+fun Directions() {
     val colors = listOf(
         Color.Black,
         Color.LightGray,
@@ -72,6 +72,7 @@ fun WasmExampleTwoDirectionsAndRTL2() {
                                     .background(itemColor),
                             ) {
                                 WebElementView(
+                                    modifier = Modifier.size(50.dp).background(Color.Yellow).padding(5.dp),
                                     factory = {
                                         (document.createElement("div") as HTMLDivElement).apply {
                                             innerText = elementId

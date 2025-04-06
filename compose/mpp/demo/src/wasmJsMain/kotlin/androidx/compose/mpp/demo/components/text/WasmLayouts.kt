@@ -16,14 +16,15 @@
 
 package androidx.compose.mpp.demo.components.text
 
-import MapExample
-import WasmExampleTwoDirectionsAndRTL
-import WasmExampleTwoDirectionsAndRTL2
+import Map
+import Directions
+import LazyDirections
 import androidx.compose.mpp.demo.Screen
 
 val WasmLayouts = Screen.Selection(
     "WasmLayouts",
-    Screen.Example("WasmExampleTwoDirectionsAndRTL") { WasmExampleTwoDirectionsAndRTL() },
-    Screen.Example("WasmExampleTwoDirectionsAndRTL2") { WasmExampleTwoDirectionsAndRTL2() },
-    Screen.Example("Map") { MapExample() },
+    Screen.Example("Directions") { Directions() },
+    Screen.Example("LazyDirections") { LazyDirections() },
+    Screen.Example("Map") { Map() },
+    Screen.Example("Hole") { Hole() },
 )

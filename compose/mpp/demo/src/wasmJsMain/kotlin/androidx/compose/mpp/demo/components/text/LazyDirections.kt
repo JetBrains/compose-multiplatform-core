@@ -26,7 +26,7 @@ import kotlinx.browser.document
 import org.w3c.dom.HTMLDivElement
 
 @Composable
-fun WasmExampleTwoDirectionsAndRTL() {
+fun LazyDirections() {
     val colors = listOf(
         Color.Black,
         Color.LightGray,
@@ -70,6 +70,7 @@ fun WasmExampleTwoDirectionsAndRTL() {
                                 contentAlignment = Alignment.Center
                             ) {
                                 WebElementView(
+                                    modifier = Modifier.size(50.dp).background(Color.Yellow).padding(5.dp),
                                     factory = {
                                         (document.createElement("div") as HTMLDivElement).apply {
                                             innerText = elementId
