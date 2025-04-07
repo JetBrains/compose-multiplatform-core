@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.TEST_FONT_FAMILY
 import androidx.compose.runtime.CompositionLocalProvider
@@ -99,6 +100,21 @@ class TextFieldDragAndDropTest {
             assertThat(state.selection).isEqualTo(TextRange(2))
             drag(Offset(fontSize.toPx() * 3, 10f), "hello")
             assertThat(state.selection).isEqualTo(TextRange(3))
+        }
+    }
+
+    @Test
+    fun draggingText_doesNotUpdateSelection_ifDecoratorSkipsInnerTextField() {
+        rule.setContentAndTestDragAndDrop(
+            textContent = "world",
+            decorator = { BasicText("world") }
+        ) {
+            drag(Offset(fontSize.toPx() * 1, 10f), "hello")
+            assertThat(state.selection).isEqualTo(TextRange(0))
+            drag(Offset(fontSize.toPx() * 2, 10f), "hello")
+            assertThat(state.selection).isEqualTo(TextRange(0))
+            drag(Offset(fontSize.toPx() * 3, 10f), "hello")
+            assertThat(state.selection).isEqualTo(TextRange(0))
         }
     }
 
@@ -464,6 +480,7 @@ class TextFieldDragAndDropTest {
         style: TextStyle = TextStyle.Default,
         interactionSource: MutableInteractionSource? = null,
         modifier: Modifier = Modifier,
+        decorator: TextFieldDecorator? = null,
         block: DragAndDropTestScope.() -> Unit
     ) {
         val state = TextFieldState(textContent, initialSelection = TextRange.Zero)
@@ -486,7 +503,8 @@ class TextFieldDragAndDropTest {
                     textStyle = mergedStyle,
                     lineLimits = TextFieldLineLimits.SingleLine,
                     interactionSource = interactionSource,
-                    modifier = modifier
+                    modifier = modifier,
+                    decorator = decorator
                 )
             }
         }
