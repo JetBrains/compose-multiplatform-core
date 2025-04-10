@@ -16,8 +16,9 @@
 
 package androidx.wear.protolayout.expression;
 
-import androidx.annotation.NonNull;
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicType;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.function.Function;
 

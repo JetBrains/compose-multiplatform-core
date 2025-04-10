@@ -28,9 +28,6 @@ import android.util.Rational;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.Logger;
@@ -45,6 +42,9 @@ import androidx.camera.core.resolutionselector.AspectRatioStrategy;
 import androidx.camera.core.resolutionselector.ResolutionFilter;
 import androidx.camera.core.resolutionselector.ResolutionSelector;
 import androidx.camera.core.resolutionselector.ResolutionStrategy;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,7 +65,6 @@ import java.util.Map;
  *   <li>High resolution enabled flags
  * </ul>
  */
-@RequiresApi(21)
 public class SupportedOutputSizesSorter {
     private static final String TAG = "SupportedOutputSizesCollector";
     private final CameraInfoInternal mCameraInfoInternal;
@@ -89,8 +88,8 @@ public class SupportedOutputSizesSorter {
     /**
      * Calculates the full FOV ratio by the active array size.
      */
-    @NonNull
-    private Rational calculateFullFovRatioFromActiveArraySize(@NonNull Size activeArraySize) {
+    private @NonNull Rational calculateFullFovRatioFromActiveArraySize(
+            @NonNull Size activeArraySize) {
         return new Rational(activeArraySize.getWidth(), activeArraySize.getHeight());
     }
 
@@ -101,8 +100,7 @@ public class SupportedOutputSizesSorter {
      * output sizes. The active pixel array info is not used because it may cause robolectric
      * test to fail if it is not set in the test environment.
      */
-    @Nullable
-    private Rational calculateFullFovRatioFromSupportedOutputSizes(
+    private @Nullable Rational calculateFullFovRatioFromSupportedOutputSizes(
             @NonNull CameraInfoInternal cameraInfoInternal) {
         List<Size> jpegOutputSizes = cameraInfoInternal.getSupportedResolutions(ImageFormat.JPEG);
         if (jpegOutputSizes.isEmpty()) {
@@ -119,8 +117,8 @@ public class SupportedOutputSizesSorter {
      * sorted according to the ResolutionSelector setting and logic. Otherwise, the output sizes
      * will be sorted according to the legacy resolution API settings and logic.
      */
-    @NonNull
-    public List<Size> getSortedSupportedOutputSizes(@NonNull UseCaseConfig<?> useCaseConfig) {
+    public @NonNull List<Size> getSortedSupportedOutputSizes(
+            @NonNull UseCaseConfig<?> useCaseConfig) {
         ImageOutputConfig imageOutputConfig = (ImageOutputConfig) useCaseConfig;
         List<Size> customOrderedResolutions = imageOutputConfig.getCustomOrderedResolutions(null);
 
@@ -142,7 +140,7 @@ public class SupportedOutputSizesSorter {
             Size maxResolution = ((ImageOutputConfig) useCaseConfig).getMaxResolution(null);
             int targetRotation = imageOutputConfig.getTargetRotation(Surface.ROTATION_0);
             // Applies the high resolution settings onto the resolution candidate list.
-            if (!useCaseConfig.isHigResolutionDisabled(false)) {
+            if (!useCaseConfig.isHighResolutionDisabled(false)) {
                 candidateSizes = applyHighResolutionSettings(candidateSizes,
                         resolutionSelector, useCaseConfig.getInputFormat());
             }
@@ -157,8 +155,7 @@ public class SupportedOutputSizesSorter {
         }
     }
 
-    @Nullable
-    private List<Size> getSizeListByFormat(
+    private @Nullable List<Size> getSizeListByFormat(
             @Nullable List<Pair<Integer, Size[]>> resolutionsPairList,
             int imageFormat) {
         Size[] outputSizes = null;
@@ -204,8 +201,7 @@ public class SupportedOutputSizesSorter {
      * @throws IllegalArgumentException if the specified resolution filter returns any size which
      *                                  is not included in the provided supported size list.
      */
-    @NonNull
-    public static List<Size> sortSupportedOutputSizesByResolutionSelector(
+    public static @NonNull List<Size> sortSupportedOutputSizesByResolutionSelector(
             @NonNull ResolutionSelector resolutionSelector,
             @NonNull List<Size> candidateSizes,
             @Nullable Size maxResolution,
@@ -252,8 +248,7 @@ public class SupportedOutputSizesSorter {
      *
      * @return the resolution candidate list sorted in descending order.
      */
-    @NonNull
-    private List<Size> getResolutionCandidateList(
+    private @NonNull List<Size> getResolutionCandidateList(
             @Nullable List<Pair<Integer, Size[]>> customResolutions, int imageFormat) {
         // Tries to get the custom supported resolutions list if it is set
         List<Size> resolutionCandidateList = getSizeListByFormat(customResolutions, imageFormat);
@@ -291,8 +286,8 @@ public class SupportedOutputSizesSorter {
      * @return the resolution candidate list including the high resolution output sizes sorted in
      * descending order.
      */
-    @NonNull
-    private List<Size> applyHighResolutionSettings(@NonNull List<Size> resolutionCandidateList,
+    private @NonNull List<Size> applyHighResolutionSettings(
+            @NonNull List<Size> resolutionCandidateList,
             @NonNull ResolutionSelector resolutionSelector, int imageFormat) {
         // Appends high resolution output sizes if high resolution is enabled by ResolutionSelector
         if (resolutionSelector.getAllowedResolutionMode()
@@ -316,8 +311,7 @@ public class SupportedOutputSizesSorter {
      * @return an aspect ratio to size list linked hash map which the aspect ratio fallback rule
      * is applied and is sorted against the preferred aspect ratio.
      */
-    @NonNull
-    private static LinkedHashMap<Rational, List<Size>> applyAspectRatioStrategy(
+    private static @NonNull LinkedHashMap<Rational, List<Size>> applyAspectRatioStrategy(
             @NonNull List<Size> resolutionCandidateList,
             @NonNull AspectRatioStrategy aspectRatioStrategy,
             Rational fullFovRatio) {
@@ -484,8 +478,7 @@ public class SupportedOutputSizesSorter {
      * @throws IllegalArgumentException if the specified resolution filter returns any size which
      *                                  is not included in the provided supported size list.
      */
-    @NonNull
-    private static List<Size> applyResolutionFilter(@NonNull List<Size> sizeList,
+    private static @NonNull List<Size> applyResolutionFilter(@NonNull List<Size> sizeList,
             @Nullable ResolutionFilter resolutionFilter,
             @ImageOutputConfig.RotationValue int targetRotation,
             int sensorOrientation,
@@ -602,8 +595,7 @@ public class SupportedOutputSizesSorter {
     /**
      * Returns the target aspect ratio rational value according to the ResolutionSelector settings.
      */
-    @Nullable
-    static Rational getTargetAspectRatioRationalValue(@AspectRatio.Ratio int aspectRatio,
+    static @Nullable Rational getTargetAspectRatioRationalValue(@AspectRatio.Ratio int aspectRatio,
             boolean isSensorLandscapeResolution) {
         Rational outputRatio = null;
 
@@ -631,8 +623,7 @@ public class SupportedOutputSizesSorter {
      * <p>Some sizes might be mod16 case. When grouping, those sizes will be grouped into an
      * existing aspect ratio group if the aspect ratio can match by the mod16 rule.
      */
-    @NonNull
-    static List<Rational> getResolutionListGroupingAspectRatioKeys(
+    static @NonNull List<Rational> getResolutionListGroupingAspectRatioKeys(
             @NonNull List<Size> resolutionCandidateList) {
         List<Rational> aspectRatios = new ArrayList<>();
 

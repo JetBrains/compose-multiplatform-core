@@ -18,9 +18,6 @@ package androidx.camera.view;
 
 import androidx.annotation.GuardedBy;
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.CameraCaptureCallback;
@@ -36,6 +33,9 @@ import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.lifecycle.MutableLiveData;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,7 +54,6 @@ import java.util.List;
  * {@link CameraInternal#getCameraState()} and the observer should be registered to run on main
  * thread.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 final class PreviewStreamStateObserver implements Observable.Observer<CameraInternal.State> {
 
     private static final String TAG = "StreamStateObserver";
@@ -82,7 +81,7 @@ final class PreviewStreamStateObserver implements Observable.Observer<CameraInte
 
     @Override
     @MainThread
-    public void onNewData(@Nullable CameraInternal.State value) {
+    public void onNewData(CameraInternal.@Nullable State value) {
         if (value == CameraInternal.State.CLOSING
                 || value == CameraInternal.State.CLOSED
                 || value == CameraInternal.State.RELEASING
@@ -179,7 +178,7 @@ final class PreviewStreamStateObserver implements Observable.Observer<CameraInte
                     // The callback will be invoked in camera executor thread.
                     CameraCaptureCallback callback = new CameraCaptureCallback() {
                         @Override
-                        public void onCaptureCompleted(
+                        public void onCaptureCompleted(int captureConfigId,
                                 @NonNull CameraCaptureResult result) {
                             completer.set(null);
                             ((CameraInfoInternal) cameraInfo).removeSessionCaptureCallback(

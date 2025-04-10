@@ -22,6 +22,8 @@ import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.filters.LargeTest
 import androidx.testutils.createStartupCompilationParams
 import androidx.testutils.measureStartup
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,17 +35,28 @@ class StartupBenchmark(
     private val startupMode: StartupMode,
     private val compilationMode: CompilationMode
 ) {
-    @get:Rule
-    val benchmarkRule = MacrobenchmarkRule()
+    @get:Rule val benchmarkRule = MacrobenchmarkRule()
+
+    @Before
+    fun setUp() {
+        disableChargingExperience()
+    }
+
+    @After
+    fun destroy() {
+        enableChargingExperience()
+    }
 
     @Test
-    fun startup() = benchmarkRule.measureStartup(
-        compilationMode = compilationMode,
-        startupMode = startupMode,
-        packageName = "androidx.wear.benchmark.integration.macrobenchmark.target"
-    ) {
-        action = "androidx.wear.benchmark.integration.macrobenchmark.target" + ".STARTUP_ACTIVITY"
-    }
+    fun startup() =
+        benchmarkRule.measureStartup(
+            compilationMode = compilationMode,
+            startupMode = startupMode,
+            packageName = "androidx.wear.benchmark.integration.macrobenchmark.target"
+        ) {
+            action =
+                "androidx.wear.benchmark.integration.macrobenchmark.target" + ".STARTUP_ACTIVITY"
+        }
 
     companion object {
         @Parameterized.Parameters(name = "startup={0},compilation={1}")

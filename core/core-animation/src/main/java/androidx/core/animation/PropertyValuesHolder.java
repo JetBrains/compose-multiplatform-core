@@ -22,8 +22,8 @@ import android.graphics.PointF;
 import android.util.Log;
 import android.util.Property;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -147,8 +147,8 @@ public class PropertyValuesHolder implements Cloneable {
      * @param values The values that the named property will animate between.
      * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
      */
-    @NonNull
-    public static PropertyValuesHolder ofInt(@NonNull String propertyName, @NonNull int... values) {
+    public static @NonNull PropertyValuesHolder ofInt(@NonNull String propertyName,
+            int @NonNull ... values) {
         return new IntPropertyValuesHolder(propertyName, values);
     }
 
@@ -159,9 +159,8 @@ public class PropertyValuesHolder implements Cloneable {
      * @param values The values that the property will animate between.
      * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
      */
-    @NonNull
-    public static PropertyValuesHolder ofInt(@NonNull Property<?, Integer> property,
-            @NonNull int... values) {
+    public static @NonNull PropertyValuesHolder ofInt(@NonNull Property<?, Integer> property,
+            int @NonNull ... values) {
         return new IntPropertyValuesHolder(property, values);
     }
 
@@ -179,10 +178,9 @@ public class PropertyValuesHolder implements Cloneable {
      * @see IntArrayEvaluator#IntArrayEvaluator(int[])
      * @see ObjectAnimator#ofMultiInt(Object, String, TypeConverter, TypeEvaluator, Object[])
      */
-    @NonNull
-    public static PropertyValuesHolder ofMultiInt(
+    public static @NonNull PropertyValuesHolder ofMultiInt(
             @NonNull String propertyName,
-            @SuppressLint("ArrayReturn") /* Platform API */ @NonNull int[][] values
+            @SuppressLint("ArrayReturn") /* Platform API */ int @NonNull [][] values
     ) {
         if (values.length < 2) {
             throw new IllegalArgumentException("At least 2 values must be supplied");
@@ -215,8 +213,7 @@ public class PropertyValuesHolder implements Cloneable {
      * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
      * @see ObjectAnimator#ofPropertyValuesHolder(Object, PropertyValuesHolder...)
      */
-    @NonNull
-    public static PropertyValuesHolder ofMultiInt(@NonNull String propertyName,
+    public static @NonNull PropertyValuesHolder ofMultiInt(@NonNull String propertyName,
             @NonNull Path path) {
         Keyframes keyframes = KeyframeSet.ofPath(path);
         PointFToIntArray converter = new PointFToIntArray();
@@ -240,10 +237,9 @@ public class PropertyValuesHolder implements Cloneable {
      * @see ObjectAnimator#ofPropertyValuesHolder(Object, PropertyValuesHolder...)
      */
     @SafeVarargs
-    @NonNull
-    public static <V> PropertyValuesHolder ofMultiInt(@NonNull String propertyName,
+    public static <V> @NonNull PropertyValuesHolder ofMultiInt(@NonNull String propertyName,
             @NonNull TypeConverter<V, int[]> converter,
-            @NonNull TypeEvaluator<V> evaluator, @NonNull V... values) {
+            @NonNull TypeEvaluator<V> evaluator, V @NonNull ... values) {
         return new MultiIntValuesHolder(propertyName, converter, evaluator, values);
     }
 
@@ -265,10 +261,9 @@ public class PropertyValuesHolder implements Cloneable {
      * @return A PropertyValuesHolder for a multi-int parameter setter.
      */
     @SafeVarargs
-    @NonNull
-    public static <T> PropertyValuesHolder ofMultiInt(@NonNull String propertyName,
+    public static <T> @NonNull PropertyValuesHolder ofMultiInt(@NonNull String propertyName,
             @Nullable TypeConverter<T, int[]> converter, @NonNull TypeEvaluator<T> evaluator,
-            @NonNull Keyframe... values) {
+            Keyframe @NonNull ... values) {
         KeyframeSet keyframeSet = KeyframeSet.ofKeyframe(values);
         return new MultiIntValuesHolder(propertyName, converter, evaluator, keyframeSet);
     }
@@ -280,9 +275,8 @@ public class PropertyValuesHolder implements Cloneable {
      * @param values The values that the named property will animate between.
      * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
      */
-    @NonNull
-    public static PropertyValuesHolder ofFloat(@NonNull String propertyName,
-            @NonNull float... values) {
+    public static @NonNull PropertyValuesHolder ofFloat(@NonNull String propertyName,
+            float @NonNull ... values) {
         return new FloatPropertyValuesHolder(propertyName, values);
     }
 
@@ -293,9 +287,8 @@ public class PropertyValuesHolder implements Cloneable {
      * @param values The values that the property will animate between.
      * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
      */
-    @NonNull
-    public static PropertyValuesHolder ofFloat(@NonNull Property<?, Float> property,
-            @NonNull float... values) {
+    public static @NonNull PropertyValuesHolder ofFloat(@NonNull Property<?, Float> property,
+            float @NonNull ... values) {
         return new FloatPropertyValuesHolder(property, values);
     }
 
@@ -313,10 +306,9 @@ public class PropertyValuesHolder implements Cloneable {
      * @see FloatArrayEvaluator#FloatArrayEvaluator(float[])
      * @see ObjectAnimator#ofMultiFloat(Object, String, TypeConverter, TypeEvaluator, Object[])
      */
-    @NonNull
-    public static PropertyValuesHolder ofMultiFloat(
+    public static @NonNull PropertyValuesHolder ofMultiFloat(
             @NonNull String propertyName,
-            @SuppressLint("ArrayReturn") /* Platform API */ @NonNull float[][] values
+            @SuppressLint("ArrayReturn") /* Platform API */ float @NonNull [][] values
     ) {
         if (values.length < 2) {
             throw new IllegalArgumentException("At least 2 values must be supplied");
@@ -349,8 +341,7 @@ public class PropertyValuesHolder implements Cloneable {
      * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
      * @see ObjectAnimator#ofPropertyValuesHolder(Object, PropertyValuesHolder...)
      */
-    @NonNull
-    public static PropertyValuesHolder ofMultiFloat(@NonNull String propertyName,
+    public static @NonNull PropertyValuesHolder ofMultiFloat(@NonNull String propertyName,
             @NonNull Path path) {
         Keyframes keyframes = KeyframeSet.ofPath(path);
         PointFToFloatArray converter = new PointFToFloatArray();
@@ -373,10 +364,9 @@ public class PropertyValuesHolder implements Cloneable {
      * @see ObjectAnimator#ofMultiFloat(Object, String, TypeConverter, TypeEvaluator, Object[])
      */
     @SafeVarargs
-    @NonNull
-    public static <V> PropertyValuesHolder ofMultiFloat(@NonNull String propertyName,
+    public static <V> @NonNull PropertyValuesHolder ofMultiFloat(@NonNull String propertyName,
             @NonNull TypeConverter<V, float[]> converter,
-            @NonNull TypeEvaluator<V> evaluator, @NonNull V... values) {
+            @NonNull TypeEvaluator<V> evaluator, V @NonNull ... values) {
         return new MultiFloatValuesHolder(propertyName, converter, evaluator, values);
     }
 
@@ -398,11 +388,10 @@ public class PropertyValuesHolder implements Cloneable {
      * @return A PropertyValuesHolder for a multi-float parameter setter.
      */
     @SafeVarargs
-    @NonNull
-    public static <T> PropertyValuesHolder ofMultiFloat(@NonNull String propertyName,
+    public static <T> @NonNull PropertyValuesHolder ofMultiFloat(@NonNull String propertyName,
             @Nullable TypeConverter<T, float[]> converter,
             @NonNull TypeEvaluator<T> evaluator,
-            @NonNull Keyframe... values) {
+            Keyframe @NonNull ... values) {
         KeyframeSet keyframeSet = KeyframeSet.ofKeyframe(values);
         return new MultiFloatValuesHolder(propertyName, converter, evaluator, keyframeSet);
     }
@@ -424,9 +413,8 @@ public class PropertyValuesHolder implements Cloneable {
      * @param values The values that the named property will animate between.
      * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
      */
-    @NonNull
-    public static PropertyValuesHolder ofObject(@NonNull String propertyName,
-            @NonNull TypeEvaluator evaluator, @NonNull Object... values) {
+    public static @NonNull PropertyValuesHolder ofObject(@NonNull String propertyName,
+            @NonNull TypeEvaluator evaluator, Object @NonNull ... values) {
         PropertyValuesHolder pvh = new PropertyValuesHolder(propertyName);
         pvh.setObjectValues(values);
         pvh.setEvaluator(evaluator);
@@ -449,8 +437,7 @@ public class PropertyValuesHolder implements Cloneable {
      * @param path The Path along which the values should be animated.
      * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
      */
-    @NonNull
-    public static PropertyValuesHolder ofObject(@NonNull String propertyName,
+    public static @NonNull PropertyValuesHolder ofObject(@NonNull String propertyName,
             @Nullable TypeConverter<PointF, ?> converter, @NonNull Path path) {
         PropertyValuesHolder pvh = new PropertyValuesHolder(propertyName);
         pvh.mKeyframes = KeyframeSet.ofPath(path);
@@ -477,9 +464,8 @@ public class PropertyValuesHolder implements Cloneable {
      * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
      */
     @SafeVarargs
-    @NonNull
-    public static <V> PropertyValuesHolder ofObject(@NonNull Property property,
-            @NonNull TypeEvaluator<V> evaluator, @NonNull V... values) {
+    public static <V> @NonNull PropertyValuesHolder ofObject(@NonNull Property property,
+            @NonNull TypeEvaluator<V> evaluator, V @NonNull ... values) {
         PropertyValuesHolder pvh = new PropertyValuesHolder(property);
         pvh.setObjectValues(values);
         pvh.setEvaluator(evaluator);
@@ -511,10 +497,9 @@ public class PropertyValuesHolder implements Cloneable {
      * @see TypeConverter
      */
     @SafeVarargs
-    @NonNull
-    public static <T, V> PropertyValuesHolder ofObject(@NonNull Property<?, V> property,
+    public static <T, V> @NonNull PropertyValuesHolder ofObject(@NonNull Property<?, V> property,
             @NonNull TypeConverter<T, V> converter, @NonNull TypeEvaluator<T> evaluator,
-            @NonNull T... values) {
+            T @NonNull ... values) {
         PropertyValuesHolder pvh = new PropertyValuesHolder(property);
         pvh.setConverter(converter);
         pvh.setObjectValues(values);
@@ -538,8 +523,7 @@ public class PropertyValuesHolder implements Cloneable {
      * @param path The Path along which the values should be animated.
      * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
      */
-    @NonNull
-    public static <V> PropertyValuesHolder ofObject(@NonNull Property<?, V> property,
+    public static <V> @NonNull PropertyValuesHolder ofObject(@NonNull Property<?, V> property,
             @Nullable TypeConverter<PointF, V> converter, @NonNull Path path) {
         PropertyValuesHolder pvh = new PropertyValuesHolder(property);
         pvh.mKeyframes = KeyframeSet.ofPath(path);
@@ -567,9 +551,8 @@ public class PropertyValuesHolder implements Cloneable {
      * @param values The set of values to animate between.
      */
     @SafeVarargs
-    @NonNull
-    public static PropertyValuesHolder ofKeyframe(@NonNull String propertyName,
-            @NonNull Keyframe... values) {
+    public static @NonNull PropertyValuesHolder ofKeyframe(@NonNull String propertyName,
+            Keyframe @NonNull ... values) {
         KeyframeSet keyframeSet = KeyframeSet.ofKeyframe(values);
         return ofKeyframes(propertyName, keyframeSet);
     }
@@ -591,9 +574,8 @@ public class PropertyValuesHolder implements Cloneable {
      * @param values The set of values to animate between.
      */
     @SafeVarargs
-    @NonNull
-    public static PropertyValuesHolder ofKeyframe(@NonNull Property property,
-            @NonNull Keyframe... values) {
+    public static @NonNull PropertyValuesHolder ofKeyframe(@NonNull Property property,
+            Keyframe @NonNull ... values) {
         KeyframeSet keyframeSet = KeyframeSet.ofKeyframe(values);
         return ofKeyframes(property, keyframeSet);
     }
@@ -637,7 +619,7 @@ public class PropertyValuesHolder implements Cloneable {
      *
      * @param values One or more values that the animation will animate between.
      */
-    public void setIntValues(@NonNull int... values) {
+    public void setIntValues(int @NonNull ... values) {
         mValueType = int.class;
         mKeyframes = KeyframeSet.ofInt(values);
     }
@@ -654,7 +636,7 @@ public class PropertyValuesHolder implements Cloneable {
      *
      * @param values One or more values that the animation will animate between.
      */
-    public void setFloatValues(@NonNull float... values) {
+    public void setFloatValues(float @NonNull ... values) {
         mValueType = float.class;
         mKeyframes = KeyframeSet.ofFloat(values);
     }
@@ -664,7 +646,7 @@ public class PropertyValuesHolder implements Cloneable {
      *
      * @param values One or more values that the animation will animate between.
      */
-    public void setKeyframes(@NonNull Keyframe... values) {
+    public void setKeyframes(Keyframe @NonNull ... values) {
         int numKeyframes = values.length;
         Keyframe[] keyframes = new Keyframe[Math.max(numKeyframes, 2)];
         mValueType = values[0].getType();
@@ -691,7 +673,7 @@ public class PropertyValuesHolder implements Cloneable {
      *
      * @param values One or more values that the animation will animate between.
      */
-    public void setObjectValues(@NonNull Object... values) {
+    public void setObjectValues(Object @NonNull ... values) {
         mValueType = values[0].getClass();
         mKeyframes = KeyframeSet.ofObject(values);
         if (mEvaluator != null) {
@@ -979,9 +961,8 @@ public class PropertyValuesHolder implements Cloneable {
     }
 
     @SuppressLint("NoClone") /* Platform API */
-    @NonNull
     @Override
-    public PropertyValuesHolder clone() {
+    public @NonNull PropertyValuesHolder clone() {
         try {
             PropertyValuesHolder newPVH = (PropertyValuesHolder) super.clone();
             newPVH.mPropertyName = mPropertyName;
@@ -1102,8 +1083,7 @@ public class PropertyValuesHolder implements Cloneable {
      * <code>valueFrom</code> or <code>valueTo</code> is null, then a getter function will
      * also be derived and called.
      */
-    @NonNull
-    public String getPropertyName() {
+    public @NonNull String getPropertyName() {
         return mPropertyName;
     }
 
@@ -1120,9 +1100,8 @@ public class PropertyValuesHolder implements Cloneable {
         return mValueType;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return mPropertyName + ": " + mKeyframes.toString();
     }
 
@@ -1196,7 +1175,7 @@ public class PropertyValuesHolder implements Cloneable {
         }
 
         @Override
-        public void setIntValues(@NonNull int... values) {
+        public void setIntValues(int @NonNull ... values) {
             super.setIntValues(values);
             mIntKeyframes = (Keyframes.IntKeyframes) mKeyframes;
         }
@@ -1211,9 +1190,8 @@ public class PropertyValuesHolder implements Cloneable {
             return mIntAnimatedValue;
         }
 
-        @NonNull
         @Override
-        public IntPropertyValuesHolder clone() {
+        public @NonNull IntPropertyValuesHolder clone() {
             IntPropertyValuesHolder newPVH = (IntPropertyValuesHolder) super.clone();
             newPVH.mIntKeyframes = (Keyframes.IntKeyframes) newPVH.mKeyframes;
             return newPVH;
@@ -1295,7 +1273,7 @@ public class PropertyValuesHolder implements Cloneable {
         }
 
         @Override
-        public void setFloatValues(@NonNull float... values) {
+        public void setFloatValues(float @NonNull ... values) {
             super.setFloatValues(values);
             mFloatKeyframes = (Keyframes.FloatKeyframes) mKeyframes;
         }
@@ -1310,9 +1288,8 @@ public class PropertyValuesHolder implements Cloneable {
             return mFloatAnimatedValue;
         }
 
-        @NonNull
         @Override
-        public FloatPropertyValuesHolder clone() {
+        public @NonNull FloatPropertyValuesHolder clone() {
             FloatPropertyValuesHolder newPVH = (FloatPropertyValuesHolder) super.clone();
             newPVH.mFloatKeyframes = (Keyframes.FloatKeyframes) newPVH.mKeyframes;
             return newPVH;
@@ -1559,9 +1536,8 @@ public class PropertyValuesHolder implements Cloneable {
             super(PointF.class, float[].class);
         }
 
-        @NonNull
         @Override
-        public float[] convert(@NonNull PointF value) {
+        public float @NonNull [] convert(@NonNull PointF value) {
             mCoordinates[0] = value.x;
             mCoordinates[1] = value.y;
             return mCoordinates;
@@ -1578,9 +1554,8 @@ public class PropertyValuesHolder implements Cloneable {
             super(PointF.class, int[].class);
         }
 
-        @NonNull
         @Override
-        public int[] convert(@NonNull PointF value) {
+        public int @NonNull [] convert(@NonNull PointF value) {
             mCoordinates[0] = Math.round(value.x);
             mCoordinates[1] = Math.round(value.y);
             return mCoordinates;

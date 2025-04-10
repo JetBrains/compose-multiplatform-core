@@ -18,7 +18,7 @@ package androidx.remotecallback;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * An objects that can receive remote callbacks.
@@ -80,7 +80,12 @@ import androidx.annotation.NonNull;
  *
  * @see RemoteCallable
  * @see ExternalInput
+ *
+ * @deprecated Slice framework has been deprecated, it will not receive any updates moving
+ * forward. If you are looking for a framework that handles communication across apps,
+ * consider using {@link android.app.appsearch.AppSearchManager}.
  */
+@Deprecated
 public interface CallbackReceiver<T> {
 
     /**
@@ -106,6 +111,5 @@ public interface CallbackReceiver<T> {
      *     }
      * </pre>
      */
-    @NonNull
-    T createRemoteCallback(@NonNull Context context);
+    @NonNull T createRemoteCallback(@NonNull Context context);
 }

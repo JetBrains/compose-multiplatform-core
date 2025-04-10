@@ -13,34 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// VERSION: v0_103
+// VERSION: 14_1_0
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 package androidx.compose.material3.tokens
 
-import androidx.compose.ui.unit.dp
-
 internal object FilledIconButtonTokens {
     val ContainerColor = ColorSchemeKeyTokens.Primary
-    val ContainerShape = ShapeKeyTokens.CornerFull
-    val ContainerSize = 40.0.dp
     val DisabledContainerColor = ColorSchemeKeyTokens.OnSurface
-    const val DisabledContainerOpacity = 0.12f
+    val DisabledContainerOpacity = 0.1f
     val DisabledColor = ColorSchemeKeyTokens.OnSurface
-    const val DisabledOpacity = 0.38f
-    val FocusColor = ColorSchemeKeyTokens.OnPrimary
-    val HoverColor = ColorSchemeKeyTokens.OnPrimary
+    val DisabledOpacity = 0.38f
+    val FocusedColor = ColorSchemeKeyTokens.OnPrimary
+    val HoveredColor = ColorSchemeKeyTokens.OnPrimary
     val Color = ColorSchemeKeyTokens.OnPrimary
-    val Size = 24.0.dp
     val PressedColor = ColorSchemeKeyTokens.OnPrimary
     val SelectedContainerColor = ColorSchemeKeyTokens.Primary
-    val ToggleSelectedFocusColor = ColorSchemeKeyTokens.OnPrimary
-    val ToggleSelectedHoverColor = ColorSchemeKeyTokens.OnPrimary
-    val ToggleSelectedColor = ColorSchemeKeyTokens.OnPrimary
-    val ToggleSelectedPressedColor = ColorSchemeKeyTokens.OnPrimary
-    val ToggleUnselectedFocusColor = ColorSchemeKeyTokens.Primary
-    val ToggleUnselectedHoverColor = ColorSchemeKeyTokens.Primary
-    val ToggleUnselectedColor = ColorSchemeKeyTokens.Primary
-    val ToggleUnselectedPressedColor = ColorSchemeKeyTokens.Primary
-    val UnselectedContainerColor = ColorSchemeKeyTokens.SurfaceVariant
+    val SelectedFocusedColor = ColorSchemeKeyTokens.OnPrimary
+    val SelectedHoveredColor = ColorSchemeKeyTokens.OnPrimary
+    val SelectedColor = ColorSchemeKeyTokens.OnPrimary
+    val SelectedPressedColor = ColorSchemeKeyTokens.OnPrimary
+    val UnselectedContainerColor = ColorSchemeKeyTokens.SurfaceContainer
+    val UnselectedFocusedColor = ColorSchemeKeyTokens.OnSurfaceVariant
+    val UnselectedHoveredColor = ColorSchemeKeyTokens.OnSurfaceVariant
+    val UnselectedColor = ColorSchemeKeyTokens.OnSurfaceVariant
+    val UnselectedPressedColor = ColorSchemeKeyTokens.OnSurfaceVariant
 }

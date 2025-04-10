@@ -17,7 +17,9 @@
 package androidx.compose.ui.focus
 
 import android.view.View
+import android.widget.FrameLayout
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusStateImpl.Active
@@ -26,14 +28,18 @@ import androidx.compose.ui.focus.FocusStateImpl.Inactive
 import androidx.compose.ui.input.InputMode.Companion.Keyboard
 import androidx.compose.ui.input.InputMode.Companion.Touch
 import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,23 +47,23 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class FocusManagerCompositionLocalTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private lateinit var focusManager: FocusManager
     private lateinit var inputModeManager: InputModeManager
     private val focusStates = mutableListOf<FocusState>()
 
+    @SdkSuppress(minSdkVersion = 28)
     @Test
     fun clearFocus_singleLayout_focusIsRestoredAfterClear() {
         // Arrange.
         val focusRequester = FocusRequester()
         rule.setTestContent(extraItemForInitialFocus = false) {
             Box(
-                modifier = Modifier
-                    .focusRequester(focusRequester)
-                    .onFocusChanged { focusStates += it }
-                    .focusTarget()
+                modifier =
+                    Modifier.focusRequester(focusRequester)
+                        .onFocusChanged { focusStates += it }
+                        .focusTarget()
             )
         }
         rule.runOnIdle {
@@ -93,21 +99,13 @@ class FocusManagerCompositionLocalTest {
         val focusRequester = FocusRequester()
         rule.setTestContent {
             focusManager = LocalFocusManager.current
-            Box(
-                modifier = Modifier
-                    .onFocusChanged { grandparentFocusState = it }
-                    .focusTarget()
-            ) {
-                Box(
-                    modifier = Modifier
-                        .onFocusChanged { parentFocusState = it }
-                        .focusTarget()
-                ) {
+            Box(modifier = Modifier.onFocusChanged { grandparentFocusState = it }.focusTarget()) {
+                Box(modifier = Modifier.onFocusChanged { parentFocusState = it }.focusTarget()) {
                     Box(
-                        modifier = Modifier
-                            .focusRequester(focusRequester)
-                            .onFocusChanged { focusState = it }
-                            .focusTarget()
+                        modifier =
+                            Modifier.focusRequester(focusRequester)
+                                .onFocusChanged { focusState = it }
+                                .focusTarget()
                     )
                 }
             }
@@ -131,16 +129,62 @@ class FocusManagerCompositionLocalTest {
     }
 
     @Test
+    fun clearFocus_nestedComposeView_entireHierarchyIsCleared() {
+        // Arrange.
+        lateinit var focusManager: FocusManager
+        lateinit var focusState: FocusState
+        lateinit var androidViewFocusState: FocusState
+        val focusRequester = FocusRequester()
+        rule.setTestContent {
+            focusManager = LocalFocusManager.current
+            AndroidView(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .onFocusChanged { androidViewFocusState = it }
+                        .focusTarget(),
+                factory = {
+                    FrameLayout(it).apply {
+                        addView(
+                            ComposeView(it).apply {
+                                setContent {
+                                    Box(
+                                        modifier =
+                                            Modifier.focusRequester(focusRequester)
+                                                .onFocusChanged { focusState = it }
+                                                .focusTarget()
+                                    )
+                                }
+                            }
+                        )
+                    }
+                }
+            )
+        }
+
+        rule.runOnIdle {
+            focusRequester.requestFocus()
+            assertThat(androidViewFocusState.hasFocus).isTrue()
+            assertThat(focusState.isFocused).isTrue()
+        }
+
+        // Act.
+        rule.runOnIdle { focusManager.clearFocus() }
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(androidViewFocusState.hasFocus).isFalse()
+            assertThat(focusState.isFocused).isFalse()
+        }
+    }
+
+    @Ignore("b/325466015")
+    @Test
     fun takeFocus_whenRootIsInactive() {
         // Arrange.
         lateinit var view: View
         rule.setTestContent(extraItemForInitialFocus = false) {
             view = LocalView.current
-            Box(
-                modifier = Modifier
-                    .onFocusChanged { focusStates += it }
-                    .focusTarget()
-            )
+            Box(modifier = Modifier.onFocusChanged { focusStates += it }.focusTarget())
         }
 
         // Act.
@@ -162,11 +206,7 @@ class FocusManagerCompositionLocalTest {
         lateinit var view: View
         rule.setTestContent(extraItemForInitialFocus = false) {
             view = LocalView.current
-            Box(
-                modifier = Modifier
-                    .onFocusChanged { focusStates += it }
-                    .focusTarget()
-            )
+            Box(modifier = Modifier.onFocusChanged { focusStates += it }.focusTarget())
         }
 
         // Act.
@@ -179,6 +219,7 @@ class FocusManagerCompositionLocalTest {
         }
     }
 
+    @SdkSuppress(minSdkVersion = 28)
     @Test
     fun releaseFocus_whenOwnerFocusIsCleared() {
         // Arrange.
@@ -187,10 +228,10 @@ class FocusManagerCompositionLocalTest {
         rule.setTestContent(extraItemForInitialFocus = false) {
             view = LocalView.current
             Box(
-                modifier = Modifier
-                    .focusRequester(focusRequester)
-                    .onFocusChanged { focusStates += it }
-                    .focusTarget()
+                modifier =
+                    Modifier.focusRequester(focusRequester)
+                        .onFocusChanged { focusStates += it }
+                        .focusTarget()
             )
         }
         rule.runOnIdle {
@@ -199,9 +240,7 @@ class FocusManagerCompositionLocalTest {
         }
 
         // Act.
-        rule.runOnIdle {
-            view.clearFocus()
-        }
+        rule.runOnIdle { view.clearFocus() }
 
         // Assert.
         rule.runOnIdle {
@@ -226,10 +265,10 @@ class FocusManagerCompositionLocalTest {
         val focusRequester = FocusRequester()
         rule.setTestContent {
             Box(
-                modifier = Modifier
-                    .focusRequester(focusRequester)
-                    .onFocusChanged { focusStates += it }
-                    .focusTarget()
+                modifier =
+                    Modifier.focusRequester(focusRequester)
+                        .onFocusChanged { focusStates += it }
+                        .focusTarget()
             )
         }
         rule.runOnIdle { focusStates.clear() }
@@ -253,16 +292,17 @@ class FocusManagerCompositionLocalTest {
         }
     }
 
+    @SdkSuppress(minSdkVersion = 28)
     @Test
     fun clearFocus_whenRootIsActiveParent() {
         // Arrange.
         val focusRequester = FocusRequester()
         rule.setTestContent(extraItemForInitialFocus = false) {
             Box(
-                modifier = Modifier
-                    .focusRequester(focusRequester)
-                    .onFocusChanged { focusStates += it }
-                    .focusTarget()
+                modifier =
+                    Modifier.focusRequester(focusRequester)
+                        .onFocusChanged { focusStates += it }
+                        .focusTarget()
             )
         }
         rule.runOnIdle {
@@ -296,10 +336,10 @@ class FocusManagerCompositionLocalTest {
         rule.setTestContent {
             focusManager = LocalFocusManager.current
             Box(
-                modifier = Modifier
-                    .focusRequester(focusRequester)
-                    .onFocusChanged { focusStates += it }
-                    .focusTarget()
+                modifier =
+                    Modifier.focusRequester(focusRequester)
+                        .onFocusChanged { focusStates += it }
+                        .focusTarget()
             )
         }
         rule.runOnIdle {
@@ -318,17 +358,17 @@ class FocusManagerCompositionLocalTest {
         }
     }
 
+    @SdkSuppress(minSdkVersion = 28)
     @Test
     fun clearFocus_forced_whenHierarchyHasCapturedFocus() {
         // Arrange.
         val focusRequester = FocusRequester()
         rule.setTestContent(extraItemForInitialFocus = false) {
-
             Box(
-                modifier = Modifier
-                    .focusRequester(focusRequester)
-                    .onFocusChanged { focusStates += it }
-                    .focusTarget()
+                modifier =
+                    Modifier.focusRequester(focusRequester)
+                        .onFocusChanged { focusStates += it }
+                        .focusTarget()
             )
         }
         rule.runOnIdle {

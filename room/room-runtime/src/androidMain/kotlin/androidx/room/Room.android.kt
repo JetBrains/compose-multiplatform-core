@@ -16,69 +16,25 @@
 package androidx.room
 
 import android.content.Context
-import androidx.annotation.RestrictTo
+import androidx.room.util.findAndInstantiateDatabaseImpl
 
-/**
- * Utility functions for Room.
- */
-object Room {
+/** Entry point for building and initializing a [RoomDatabase]. */
+actual object Room {
 
     internal const val LOG_TAG = "ROOM"
 
-    /**
-     * The master table where room keeps its metadata information.
-     */
-    const val MASTER_TABLE_NAME = RoomMasterTable.TABLE_NAME
-
-    private const val CURSOR_CONV_SUFFIX = "_CursorConverter"
-
-    @Suppress("UNCHECKED_CAST")
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @JvmStatic
-    fun <T, C> getGeneratedImplementation(
-        klass: Class<C>,
-        suffix: String
-    ): T {
-        val fullPackage = klass.getPackage()!!.name
-        val name: String = klass.canonicalName!!
-        val postPackageName =
-            if (fullPackage.isEmpty()) name else name.substring(fullPackage.length + 1)
-        val implName = postPackageName.replace('.', '_') + suffix
-        return try {
-            val fullClassName = if (fullPackage.isEmpty()) {
-                implName
-            } else {
-                "$fullPackage.$implName"
-            }
-            val aClass = Class.forName(
-                fullClassName, true, klass.classLoader
-            ) as Class<T>
-            aClass.getDeclaredConstructor().newInstance()
-        } catch (e: ClassNotFoundException) {
-            throw RuntimeException(
-                "Cannot find implementation for ${klass.canonicalName}. $implName does not " +
-                    "exist"
-            )
-        } catch (e: IllegalAccessException) {
-            throw RuntimeException(
-                "Cannot access the constructor ${klass.canonicalName}"
-            )
-        } catch (e: InstantiationException) {
-            throw RuntimeException(
-                "Failed to create an instance of ${klass.canonicalName}"
-            )
-        }
-    }
+    /** The master table name where Room keeps its metadata information. */
+    actual const val MASTER_TABLE_NAME = RoomMasterTable.TABLE_NAME
 
     /**
      * Creates a RoomDatabase.Builder for an in memory database. Information stored in an in memory
-     * database disappears when the process is killed.
-     * Once a database is built, you should keep a reference to it and re-use it.
+     * database disappears when the process is killed. Once a database is built, you should keep a
+     * reference to it and re-use it.
      *
      * @param context The context for the database. This is usually the Application context.
-     * @param klass   The abstract class which is annotated with [Database] and extends
-     * [RoomDatabase].
-     * @param T     The type of the database class.
+     * @param klass The abstract class which is annotated with [Database] and extends
+     *   [RoomDatabase].
+     * @param T The type of the database class.
      * @return A `RoomDatabaseBuilder<T>` which you can use to create the database.
      */
     @JvmStatic
@@ -90,14 +46,33 @@ object Room {
     }
 
     /**
+     * Creates a RoomDatabase.Builder for an in memory database. Information stored in an in memory
+     * database disappears when the process is killed. Once a database is built, you should keep a
+     * reference to it and re-use it.
+     *
+     * @param context The context for the database. This is usually the Application context.
+     * @param factory An optional lambda calling [RoomDatabaseConstructor.initialize] corresponding
+     *   to the database class of this builder. If not provided then reflection is used to find and
+     *   instantiate the database implementation class.
+     * @param T The type of the database class.
+     * @return A `RoomDatabaseBuilder<T>` which you can use to create the database.
+     */
+    inline fun <reified T : RoomDatabase> inMemoryDatabaseBuilder(
+        context: Context,
+        noinline factory: () -> T = { findAndInstantiateDatabaseImpl(T::class.java) }
+    ): RoomDatabase.Builder<T> {
+        return RoomDatabase.Builder(T::class, null, factory, context)
+    }
+
+    /**
      * Creates a RoomDatabase.Builder for a persistent database. Once a database is built, you
      * should keep a reference to it and re-use it.
      *
      * @param context The context for the database. This is usually the Application context.
-     * @param klass   The abstract class which is annotated with [Database] and extends
-     * [RoomDatabase].
-     * @param name    The name of the database file.
-     * @param T     The type of the database class.
+     * @param klass The abstract class which is annotated with [Database] and extends
+     *   [RoomDatabase].
+     * @param name The name of the database file.
+     * @param T The type of the database class.
      * @return A `RoomDatabaseBuilder<T>` which you can use to create the database.
      */
     @JvmStatic
@@ -111,6 +86,41 @@ object Room {
                 " If you are trying to create an in memory database, use Room" +
                 ".inMemoryDatabaseBuilder"
         }
+        require(name != ":memory:") {
+            "Cannot build a database with the special name ':memory:'." +
+                " If you are trying to create an in memory database, use Room" +
+                ".inMemoryDatabaseBuilder"
+        }
         return RoomDatabase.Builder(context, klass, name)
+    }
+
+    /**
+     * Creates a RoomDatabase.Builder for a persistent database. Once a database is built, you
+     * should keep a reference to it and re-use it.
+     *
+     * @param context The context for the database. This is usually the Application context.
+     * @param name The name of the database file.
+     * @param factory An optional lambda calling [RoomDatabaseConstructor.initialize] corresponding
+     *   to the database class of this builder. If not provided then reflection is used to find and
+     *   instantiate the database implementation class.
+     * @param T The type of the database class.
+     * @return A `RoomDatabaseBuilder<T>` which you can use to create the database.
+     */
+    inline fun <reified T : RoomDatabase> databaseBuilder(
+        context: Context,
+        name: String,
+        noinline factory: () -> T = { findAndInstantiateDatabaseImpl(T::class.java) }
+    ): RoomDatabase.Builder<T> {
+        require(name.isNotBlank()) {
+            "Cannot build a database with empty name." +
+                " If you are trying to create an in memory database, use Room" +
+                ".inMemoryDatabaseBuilder()."
+        }
+        require(name != ":memory:") {
+            "Cannot build a database with the special name ':memory:'." +
+                " If you are trying to create an in memory database, use Room" +
+                ".inMemoryDatabaseBuilder()."
+        }
+        return RoomDatabase.Builder(T::class, name, factory, context)
     }
 }

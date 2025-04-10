@@ -24,14 +24,15 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.wearable.complications.ComplicationData;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
 import androidx.wear.watchface.complications.data.ComplicationExperimental;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -44,20 +45,17 @@ import java.util.List;
 @SuppressLint("BanParcelableUsage") // TODO(b/169214666): Remove Parcelable
 public final class ComplicationStateWireFormat implements VersionedParcelable, Parcelable {
     @ParcelField(1)
-    @NonNull
-    Rect mBounds;
+    @NonNull Rect mBounds;
 
     @ParcelField(2)
     int mBoundsType;
 
     @ParcelField(3)
-    @NonNull
     @ComplicationData.ComplicationType
-    int[] mSupportedTypes;
+    int @NonNull [] mSupportedTypes;
 
     @ParcelField(4)
-    @Nullable
-    List<ComponentName> mDefaultDataSourcesToTry;
+    @Nullable List<ComponentName> mDefaultDataSourcesToTry;
 
     @ParcelField(5)
     int mFallbackSystemProvider;
@@ -80,8 +78,7 @@ public final class ComplicationStateWireFormat implements VersionedParcelable, P
     boolean mFixedComplicationProvider;
 
     @ParcelField(11)
-    @NonNull
-    Bundle mComplicationConfigExtras;
+    @NonNull Bundle mComplicationConfigExtras;
 
     // Not supported in library v1.0.
     @ParcelField(12)
@@ -103,12 +100,10 @@ public final class ComplicationStateWireFormat implements VersionedParcelable, P
 
     // Only valid for edge complications. Not supported in library v1.0.
     @ParcelField(16)
-    @Nullable
-    BoundingArcWireFormat mBoundingArc;
+    @Nullable BoundingArcWireFormat mBoundingArc;
 
     @ParcelField(value = 17, defaultValue = "null")
-    @Nullable
-    Rect mBoundsWithMargins;
+    @Nullable Rect mBoundsWithMargins;
 
     // NB 0 is not a valid resource id.
     private static final int NULL_NAME_RESOURCE_ID = 0;
@@ -121,7 +116,7 @@ public final class ComplicationStateWireFormat implements VersionedParcelable, P
             @NonNull Rect bounds,
             @NonNull Rect boundsWithMargins,
             int boundsType,
-            @NonNull @ComplicationData.ComplicationType int[] supportedTypes,
+            @ComplicationData.ComplicationType int @NonNull [] supportedTypes,
             @Nullable List<ComponentName> defaultDataSourcesToTry,
             int fallbackSystemProvider,
             @ComplicationData.ComplicationType int defaultDataSourceType,
@@ -161,7 +156,7 @@ public final class ComplicationStateWireFormat implements VersionedParcelable, P
     public ComplicationStateWireFormat(
             @NonNull Rect bounds,
             int boundsType,
-            @NonNull @ComplicationData.ComplicationType int[] supportedTypes,
+            @ComplicationData.ComplicationType int @NonNull [] supportedTypes,
             @Nullable List<ComponentName> defaultDataSourcesToTry,
             int fallbackSystemProvider,
             @ComplicationData.ComplicationType int defaultDataSourceType,
@@ -202,7 +197,7 @@ public final class ComplicationStateWireFormat implements VersionedParcelable, P
     public ComplicationStateWireFormat(
             @NonNull Rect bounds,
             int boundsType,
-            @NonNull @ComplicationData.ComplicationType int[] supportedTypes,
+            @ComplicationData.ComplicationType int @NonNull [] supportedTypes,
             @Nullable List<ComponentName> defaultDataSourcesToTry,
             int fallbackSystemProvider,
             @ComplicationData.ComplicationType int defaultDataSourceType,
@@ -225,13 +220,11 @@ public final class ComplicationStateWireFormat implements VersionedParcelable, P
         mComplicationConfigExtras = complicationConfigExtras;
     }
 
-    @NonNull
-    public Rect getBounds() {
+    public @NonNull Rect getBounds() {
         return mBounds;
     }
 
-    @Nullable
-    public Rect getBoundsWithMargins() {
+    public @Nullable Rect getBoundsWithMargins() {
         return mBoundsWithMargins;
     }
 
@@ -239,9 +232,8 @@ public final class ComplicationStateWireFormat implements VersionedParcelable, P
         return mBoundsType;
     }
 
-    @NonNull
     @ComplicationData.ComplicationType
-    public int[] getSupportedTypes() {
+    public int @NonNull [] getSupportedTypes() {
         return mSupportedTypes;
     }
 
@@ -252,8 +244,7 @@ public final class ComplicationStateWireFormat implements VersionedParcelable, P
      * @deprecated Use {@link #getDefaultDataSourcesToTry} instead.
      */
     @Deprecated
-    @Nullable
-    public List<ComponentName> getDefaultProvidersToTry() {
+    public @Nullable List<ComponentName> getDefaultProvidersToTry() {
         return mDefaultDataSourcesToTry;
     }
 
@@ -261,8 +252,7 @@ public final class ComplicationStateWireFormat implements VersionedParcelable, P
      * Along with {@link #getFallbackSystemProvider} this is the wire format for
      * DefaultComplicationDataSourcePolicy.
      */
-    @Nullable
-    public List<ComponentName> getDefaultDataSourcesToTry() {
+    public @Nullable List<ComponentName> getDefaultDataSourcesToTry() {
         return mDefaultDataSourcesToTry;
     }
 
@@ -334,26 +324,22 @@ public final class ComplicationStateWireFormat implements VersionedParcelable, P
         return mCurrentType;
     }
 
-    @NonNull
-    public Bundle getComplicationConfigExtras() {
+    public @NonNull Bundle getComplicationConfigExtras() {
         return mComplicationConfigExtras;
     }
 
-    @Nullable
-    public Integer getNameResourceId() {
+    public @Nullable Integer getNameResourceId() {
         return mNameResourceId != NULL_NAME_RESOURCE_ID ? mNameResourceId : null;
     }
 
-    @Nullable
-    public Integer getScreenReaderNameResourceId() {
+    public @Nullable Integer getScreenReaderNameResourceId() {
         return mScreenReaderNameResourceId != NULL_NAME_RESOURCE_ID
                 ? mScreenReaderNameResourceId
                 : null;
     }
 
-    @Nullable
     @ComplicationExperimental
-    public BoundingArcWireFormat getBoundingArc() {
+    public @Nullable BoundingArcWireFormat getBoundingArc() {
         return mBoundingArc;
     }
 

@@ -1,12 +1,21 @@
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation(project(":dynamicanimation:dynamicanimation"))
 }
 
 android {
-    namespace "com.example.android.support.animation"
+    compileSdk = 35
+    namespace = "com.example.android.support.animation"
 }

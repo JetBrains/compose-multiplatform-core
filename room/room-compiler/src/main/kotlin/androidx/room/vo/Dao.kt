@@ -24,15 +24,15 @@ import androidx.room.compiler.processing.XTypeElement
 data class Dao(
     val element: XTypeElement,
     val type: XType,
-    val queryMethods: List<QueryMethod>,
-    val rawQueryMethods: List<RawQueryMethod>,
-    val insertionMethods: List<InsertionMethod>,
-    val deletionMethods: List<DeletionMethod>,
-    val updateMethods: List<UpdateMethod>,
-    val upsertionMethods: List<UpsertionMethod>,
-    val transactionMethods: List<TransactionMethod>,
-    val kotlinBoxedPrimitiveMethodDelegates: List<KotlinBoxedPrimitiveMethodDelegate>,
-    val kotlinDefaultMethodDelegates: List<KotlinDefaultMethodDelegate>,
+    val queryFunctions: List<QueryFunction>,
+    val rawQueryFunctions: List<RawQueryFunction>,
+    val insertFunctions: List<InsertFunction>,
+    val deleteFunctions: List<DeleteFunction>,
+    val updateFunctions: List<UpdateFunction>,
+    val upsertFunctions: List<UpsertFunction>,
+    val transactionFunctions: List<TransactionFunction>,
+    val kotlinBoxedPrimitiveFunctionDelegates: List<KotlinBoxedPrimitiveFunctionDelegate>,
+    val kotlinDefaultFunctionDelegates: List<KotlinDefaultFunctionDelegate>,
     val constructorParamType: XTypeName?
 ) {
     // parsed dao might have a suffix if it is used in multiple databases.
@@ -46,12 +46,12 @@ data class Dao(
 
     val typeName: XClassName by lazy { element.asClassName() }
 
-    val deleteOrUpdateShortcutMethods: List<DeleteOrUpdateShortcutMethod> by lazy {
-        deletionMethods + updateMethods
+    val mDeleteOrUpdateShortcutFunctions: List<DeleteOrUpdateShortcutFunction> by lazy {
+        deleteFunctions + updateFunctions
     }
 
-    val insertOrUpsertShortcutMethods: List<InsertOrUpsertShortcutMethod> by lazy {
-        insertionMethods + upsertionMethods
+    val mInsertOrUpsertShortcutFunctions: List<InsertOrUpsertShortcutFunction> by lazy {
+        insertFunctions + upsertFunctions
     }
 
     val implTypeName: XClassName by lazy {

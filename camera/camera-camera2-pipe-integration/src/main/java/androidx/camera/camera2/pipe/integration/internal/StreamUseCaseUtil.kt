@@ -24,7 +24,6 @@ import android.hardware.camera2.CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES
 import android.hardware.camera2.CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE
 import android.hardware.camera2.CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.core.Log
@@ -47,59 +46,58 @@ import androidx.camera.core.impl.SurfaceConfig
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
 import androidx.camera.core.streamsharing.StreamSharingConfig
+import androidx.core.util.Preconditions.checkState
 
-@RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-object StreamUseCaseUtil {
+public object StreamUseCaseUtil {
 
     @VisibleForTesting
-    val STREAM_USE_CASE_STREAM_SPEC_OPTION: Config.Option<Long> = Config.Option.create(
-        "camera2.streamSpec.streamUseCase",
-        Long::class.javaPrimitiveType!!
-    )
-    private val STREAM_USE_CASE_TO_ELIGIBLE_CAPTURE_TYPES_MAP:
-        Map<Long, Set<CaptureType>> = buildMap {
-        if (Build.VERSION.SDK_INT >= 33) {
-            put(
-                SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW_VIDEO_STILL.toLong(),
-                setOf(CaptureType.PREVIEW)
-            )
-            put(
-                SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
-                setOf(CaptureType.PREVIEW, CaptureType.IMAGE_ANALYSIS)
-            )
-            put(
-                SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE.toLong(),
-                setOf(CaptureType.IMAGE_CAPTURE)
-            )
-            put(
-                SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
-                setOf(CaptureType.VIDEO_CAPTURE)
-            )
+    public val STREAM_USE_CASE_STREAM_SPEC_OPTION: Config.Option<Long> =
+        Config.Option.create("camera2.streamSpec.streamUseCase", Long::class.javaPrimitiveType!!)
+    private val STREAM_USE_CASE_TO_ELIGIBLE_CAPTURE_TYPES_MAP: Map<Long, Set<CaptureType>> =
+        buildMap {
+            if (Build.VERSION.SDK_INT >= 33) {
+                put(
+                    SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW_VIDEO_STILL.toLong(),
+                    setOf(CaptureType.PREVIEW)
+                )
+                put(
+                    SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
+                    setOf(CaptureType.PREVIEW, CaptureType.IMAGE_ANALYSIS)
+                )
+                put(
+                    SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE.toLong(),
+                    setOf(CaptureType.IMAGE_CAPTURE)
+                )
+                put(
+                    SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
+                    setOf(CaptureType.VIDEO_CAPTURE)
+                )
+            }
         }
-    }
 
     private val STREAM_USE_CASE_TO_ELIGIBLE_STREAM_SHARING_CHILDREN_TYPES_MAP:
-        Map<Long, Set<CaptureType>> = buildMap {
-        if (Build.VERSION.SDK_INT >= 33) {
-            put(
-                SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW_VIDEO_STILL.toLong(),
-                setOf(CaptureType.PREVIEW, CaptureType.IMAGE_CAPTURE, CaptureType.VIDEO_CAPTURE)
-            )
-            put(
-                SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
-                setOf(CaptureType.PREVIEW, CaptureType.VIDEO_CAPTURE)
-            )
+        Map<Long, Set<CaptureType>> =
+        buildMap {
+            if (Build.VERSION.SDK_INT >= 33) {
+                put(
+                    SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW_VIDEO_STILL.toLong(),
+                    setOf(CaptureType.PREVIEW, CaptureType.IMAGE_CAPTURE, CaptureType.VIDEO_CAPTURE)
+                )
+                put(
+                    SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
+                    setOf(CaptureType.PREVIEW, CaptureType.VIDEO_CAPTURE)
+                )
+            }
         }
-    }
 
     /**
      * Populates the mapping between surfaces of a capture session and the Stream Use Case of their
      * associated stream.
      *
-     * @param sessionConfigs   collection of all session configs for this capture session
+     * @param sessionConfigs collection of all session configs for this capture session
      * @param streamUseCaseMap the mapping between surfaces and Stream Use Case flag
      */
-    fun populateSurfaceToStreamUseCaseMapping(
+    public fun populateSurfaceToStreamUseCaseMapping(
         sessionConfigs: Collection<SessionConfig>,
         useCaseConfigs: Collection<UseCaseConfig<*>>,
         streamUseCaseMap: MutableMap<DeferrableSurface, Long>
@@ -108,7 +106,8 @@ object StreamUseCaseUtil {
         var hasStreamUseCase = false
         val useCaseConfigArrayList = ArrayList(useCaseConfigs)
         for (sessionConfig: SessionConfig in sessionConfigs) {
-            if (sessionConfig.implementationOptions.containsOption(
+            if (
+                sessionConfig.implementationOptions.containsOption(
                     STREAM_USE_CASE_STREAM_SPEC_OPTION
                 ) && sessionConfig.surfaces.size != 1
             ) {
@@ -119,7 +118,8 @@ object StreamUseCaseUtil {
                 }
                 return
             }
-            if (sessionConfig.implementationOptions.containsOption(
+            if (
+                sessionConfig.implementationOptions.containsOption(
                     STREAM_USE_CASE_STREAM_SPEC_OPTION
                 )
             ) {
@@ -129,22 +129,29 @@ object StreamUseCaseUtil {
         }
         if (hasStreamUseCase) {
             for (sessionConfig: SessionConfig in sessionConfigs) {
-                if ((useCaseConfigArrayList[position].captureType
-                        == CaptureType.METERING_REPEATING)
+                if (
+                    (useCaseConfigArrayList[position].captureType == CaptureType.METERING_REPEATING)
                 ) {
                     // MeteringRepeating is attached after the StreamUseCase population logic and
                     // therefore won't have the StreamUseCase option. It should always have
                     // SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW
+                    checkState(
+                        sessionConfig.surfaces.isNotEmpty(),
+                        "MeteringRepeating should contain a surface"
+                    )
                     streamUseCaseMap[sessionConfig.surfaces[0]] =
                         SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong()
-                } else if (sessionConfig.implementationOptions.containsOption(
+                } else if (
+                    sessionConfig.implementationOptions.containsOption(
                         STREAM_USE_CASE_STREAM_SPEC_OPTION
                     )
                 ) {
-                    streamUseCaseMap[sessionConfig.surfaces[0]] =
-                        sessionConfig.implementationOptions.retrieveOption(
-                            STREAM_USE_CASE_STREAM_SPEC_OPTION
-                        )!!
+                    if (sessionConfig.surfaces.isNotEmpty()) {
+                        streamUseCaseMap[sessionConfig.surfaces[0]] =
+                            sessionConfig.implementationOptions.retrieveOption(
+                                STREAM_USE_CASE_STREAM_SPEC_OPTION
+                            )!!
+                    }
                 }
                 position++
             }
@@ -155,7 +162,7 @@ object StreamUseCaseUtil {
      * Populate all implementation options needed to determine the StreamUseCase option in the
      * StreamSpec for this UseCaseConfig
      */
-    fun getStreamSpecImplementationOptions(
+    public fun getStreamSpecImplementationOptions(
         useCaseConfig: UseCaseConfig<*>
     ): Camera2ImplConfig {
         val optionsBundle = MutableOptionsBundle.create()
@@ -174,26 +181,20 @@ object StreamUseCaseUtil {
         if (useCaseConfig.containsOption(ImageCaptureConfig.OPTION_IMAGE_CAPTURE_MODE)) {
             optionsBundle.insertOption(
                 ImageCaptureConfig.OPTION_IMAGE_CAPTURE_MODE,
-                useCaseConfig
-                    .retrieveOption(ImageCaptureConfig.OPTION_IMAGE_CAPTURE_MODE)
+                useCaseConfig.retrieveOption(ImageCaptureConfig.OPTION_IMAGE_CAPTURE_MODE)
             )
         }
         if (useCaseConfig.containsOption(UseCaseConfig.OPTION_INPUT_FORMAT)) {
             optionsBundle.insertOption(
                 UseCaseConfig.OPTION_INPUT_FORMAT,
-                useCaseConfig
-                    .retrieveOption(UseCaseConfig.OPTION_INPUT_FORMAT)
+                useCaseConfig.retrieveOption(UseCaseConfig.OPTION_INPUT_FORMAT)
             )
         }
         return Camera2ImplConfig(optionsBundle)
     }
 
-    /**
-     * Return true if the given camera characteristics support stream use case
-     */
-    fun isStreamUseCaseSupported(
-        cameraMetadata: CameraMetadata
-    ): Boolean {
+    /** Return true if the given camera characteristics support stream use case */
+    public fun isStreamUseCaseSupported(cameraMetadata: CameraMetadata): Boolean {
         if (Build.VERSION.SDK_INT < 33) {
             return false
         }
@@ -202,10 +203,8 @@ object StreamUseCaseUtil {
         return !(availableStreamUseCases == null || availableStreamUseCases.isEmpty())
     }
 
-    /**
-     * Return true if the given feature settings is appropriate for stream use case usage.
-     */
-    fun shouldUseStreamUseCase(
+    /** Return true if the given feature settings is appropriate for stream use case usage. */
+    public fun shouldUseStreamUseCase(
         featureSettings: SupportedSurfaceCombination.FeatureSettings
     ): Boolean {
         return (featureSettings.cameraMode == CameraMode.DEFAULT &&
@@ -213,20 +212,20 @@ object StreamUseCaseUtil {
     }
 
     /**
-     * Populate the [STREAM_USE_CASE_STREAM_SPEC_OPTION] option in StreamSpecs for both
-     * existing UseCases and new UseCases to be attached. This option will be written into the
-     * session configurations of the UseCases. When creating a new capture session during
-     * downstream, it will be used to set the StreamUseCase flag via
+     * Populate the [STREAM_USE_CASE_STREAM_SPEC_OPTION] option in StreamSpecs for both existing
+     * UseCases and new UseCases to be attached. This option will be written into the session
+     * configurations of the UseCases. When creating a new capture session during downstream, it
+     * will be used to set the StreamUseCase flag via
      * [android.hardware.camera2.params.OutputConfiguration.setStreamUseCase]
      *
-     * @param cameraMetadata               the camera characteristics of the device
-     * @param attachedSurfaces             surface info of the already attached use cases
-     * @param suggestedStreamSpecMap       the UseCaseConfig-to-StreamSpec map for new use cases
+     * @param cameraMetadata the camera characteristics of the device
+     * @param attachedSurfaces surface info of the already attached use cases
+     * @param suggestedStreamSpecMap the UseCaseConfig-to-StreamSpec map for new use cases
      * @param attachedSurfaceStreamSpecMap the SurfaceInfo-to-StreamSpec map for attached use cases
-     * whose StreamSpecs needs to be updated
+     *   whose StreamSpecs needs to be updated
      * @return true if StreamSpec options are populated. False if not.
      */
-    fun populateStreamUseCaseStreamSpecOptionWithInteropOverride(
+    public fun populateStreamUseCaseStreamSpecOptionWithInteropOverride(
         cameraMetadata: CameraMetadata,
         attachedSurfaces: List<AttachedSurfaceInfo>,
         suggestedStreamSpecMap: MutableMap<UseCaseConfig<*>, StreamSpec>,
@@ -243,11 +242,7 @@ object StreamUseCaseUtil {
         }
         // All StreamSpecs in the map should have implementation options
         for (useCaseConfig in newUseCaseConfigs) {
-            checkNotNull(
-                checkNotNull(
-                    suggestedStreamSpecMap[useCaseConfig]
-                ).implementationOptions
-            )
+            checkNotNull(checkNotNull(suggestedStreamSpecMap[useCaseConfig]).implementationOptions)
         }
         val availableStreamUseCases: LongArray? =
             cameraMetadata[CameraCharacteristics.SCALER_AVAILABLE_STREAM_USE_CASES]
@@ -258,31 +253,35 @@ object StreamUseCaseUtil {
         for (availableStreamUseCase in availableStreamUseCases) {
             availableStreamUseCaseSet.add(availableStreamUseCase)
         }
-        if (isValidCamera2InteropOverride(
-                attachedSurfaces, newUseCaseConfigs,
+        if (
+            isValidCamera2InteropOverride(
+                attachedSurfaces,
+                newUseCaseConfigs,
                 availableStreamUseCaseSet
             )
         ) {
             for (attachedSurfaceInfo in attachedSurfaces) {
                 val oldImplementationOptions = attachedSurfaceInfo.implementationOptions
                 getUpdatedImplementationOptionsWithUseCaseStreamSpecOption(
-                    oldImplementationOptions!!,
-                    oldImplementationOptions.retrieveOption(STREAM_USE_CASE_OPTION)
-                )?.also {
-                    attachedSurfaceStreamSpecMap[attachedSurfaceInfo] =
-                        attachedSurfaceInfo.toStreamSpec(it)
-                }
+                        oldImplementationOptions!!,
+                        oldImplementationOptions.retrieveOption(STREAM_USE_CASE_OPTION)
+                    )
+                    ?.also {
+                        attachedSurfaceStreamSpecMap[attachedSurfaceInfo] =
+                            attachedSurfaceInfo.toStreamSpec(it)
+                    }
             }
             for (newUseCaseConfig in newUseCaseConfigs) {
                 val oldStreamSpec = suggestedStreamSpecMap[newUseCaseConfig]
                 val oldImplementationOptions = oldStreamSpec!!.implementationOptions
                 getUpdatedImplementationOptionsWithUseCaseStreamSpecOption(
-                    oldImplementationOptions!!,
-                    oldImplementationOptions.retrieveOption(STREAM_USE_CASE_OPTION)
-                )?.also {
-                    suggestedStreamSpecMap[newUseCaseConfig] =
-                        oldStreamSpec.toBuilder().setImplementationOptions(it).build()
-                }
+                        oldImplementationOptions!!,
+                        oldImplementationOptions.retrieveOption(STREAM_USE_CASE_OPTION)
+                    )
+                    ?.also {
+                        suggestedStreamSpecMap[newUseCaseConfig] =
+                            oldStreamSpec.toBuilder().setImplementationOptions(it).build()
+                    }
             }
             return true
         }
@@ -290,10 +289,10 @@ object StreamUseCaseUtil {
     }
 
     /**
-     * Return true if  the stream use cases in the given surface configurations are available for
-     * the device.
+     * Return true if the stream use cases in the given surface configurations are available for the
+     * device.
      */
-    fun areStreamUseCasesAvailableForSurfaceConfigs(
+    public fun areStreamUseCasesAvailableForSurfaceConfigs(
         cameraMetadata: CameraMetadata,
         surfaceConfigs: List<SurfaceConfig>
     ): Boolean {
@@ -318,9 +317,9 @@ object StreamUseCaseUtil {
     }
 
     /**
-     * Return true if the given capture type and stream use case are a eligible pair. If the
-     * given captureType is STREAM_SHARING, checks the streamSharingTypes, which are the capture
-     * types of the children, are eligible with the stream use case.
+     * Return true if the given capture type and stream use case are a eligible pair. If the given
+     * captureType is STREAM_SHARING, checks the streamSharingTypes, which are the capture types of
+     * the children, are eligible with the stream use case.
      */
     private fun isEligibleCaptureType(
         captureType: CaptureType,
@@ -331,7 +330,8 @@ object StreamUseCaseUtil {
             return false
         }
         return if (captureType == CaptureType.STREAM_SHARING) {
-            if (!STREAM_USE_CASE_TO_ELIGIBLE_STREAM_SHARING_CHILDREN_TYPES_MAP.containsKey(
+            if (
+                !STREAM_USE_CASE_TO_ELIGIBLE_STREAM_SHARING_CHILDREN_TYPES_MAP.containsKey(
                     streamUseCase
                 )
             ) {
@@ -350,9 +350,7 @@ object StreamUseCaseUtil {
             true
         } else {
             STREAM_USE_CASE_TO_ELIGIBLE_CAPTURE_TYPES_MAP.containsKey(streamUseCase) &&
-                STREAM_USE_CASE_TO_ELIGIBLE_CAPTURE_TYPES_MAP[streamUseCase]!!.contains(
-                    captureType
-                )
+                STREAM_USE_CASE_TO_ELIGIBLE_CAPTURE_TYPES_MAP[streamUseCase]!!.contains(captureType)
         }
     }
 
@@ -361,16 +359,14 @@ object StreamUseCaseUtil {
      * eligible capture type pairing with the use cases that these surfaceConfigs are constructed
      * from.
      *
-     * @param surfaceConfigIndexAttachedSurfaceInfoMap mapping between an surfaceConfig's index
-     *                                                 in the list and the attachedSurfaceInfo it
-     *                                                 is constructed from
-     * @param surfaceConfigIndexUseCaseConfigMap       mapping between an surfaceConfig's index
-     *                                                 in the list and the useCaseConfig it is
-     *                                                 constructed from
-     * @param surfaceConfigsWithStreamUseCase          the supported surfaceConfigs that contains
-     *                                                 accurate streamUseCases
+     * @param surfaceConfigIndexAttachedSurfaceInfoMap mapping between an surfaceConfig's index in
+     *   the list and the attachedSurfaceInfo it is constructed from
+     * @param surfaceConfigIndexUseCaseConfigMap mapping between an surfaceConfig's index in the
+     *   list and the useCaseConfig it is constructed from
+     * @param surfaceConfigsWithStreamUseCase the supported surfaceConfigs that contains accurate
+     *   streamUseCases
      */
-    fun areCaptureTypesEligible(
+    public fun areCaptureTypesEligible(
         surfaceConfigIndexAttachedSurfaceInfoMap: Map<Int, AttachedSurfaceInfo?>,
         surfaceConfigIndexUseCaseConfigMap: Map<Int, UseCaseConfig<*>>,
         surfaceConfigsWithStreamUseCase: List<SurfaceConfig>
@@ -380,9 +376,11 @@ object StreamUseCaseUtil {
             val streamUseCase = surfaceConfigsWithStreamUseCase[i].streamUseCase
             if (surfaceConfigIndexAttachedSurfaceInfoMap.containsKey(i)) {
                 val attachedSurfaceInfo = surfaceConfigIndexAttachedSurfaceInfoMap[i]
-                if (!isEligibleCaptureType(
+                if (
+                    !isEligibleCaptureType(
                         if (attachedSurfaceInfo!!.captureTypes.size == 1)
-                            attachedSurfaceInfo.captureTypes[0] else CaptureType.STREAM_SHARING,
+                            attachedSurfaceInfo.captureTypes[0]
+                        else CaptureType.STREAM_SHARING,
                         streamUseCase,
                         attachedSurfaceInfo.captureTypes
                     )
@@ -391,11 +389,13 @@ object StreamUseCaseUtil {
                 }
             } else if (surfaceConfigIndexUseCaseConfigMap.containsKey(i)) {
                 val newUseCaseConfig = surfaceConfigIndexUseCaseConfigMap[i]!!
-                if (!isEligibleCaptureType(
-                        newUseCaseConfig.captureType, streamUseCase,
-                        if (newUseCaseConfig.captureType
-                            == CaptureType.STREAM_SHARING
-                        ) (newUseCaseConfig as StreamSharingConfig).captureTypes else emptyList()
+                if (
+                    !isEligibleCaptureType(
+                        newUseCaseConfig.captureType,
+                        streamUseCase,
+                        if (newUseCaseConfig.captureType == CaptureType.STREAM_SHARING)
+                            (newUseCaseConfig as StreamSharingConfig).captureTypes
+                        else emptyList()
                     )
                 ) {
                     return false
@@ -408,23 +408,17 @@ object StreamUseCaseUtil {
     }
 
     /**
-     * @param suggestedStreamSpecMap                   mapping between useCaseConfig and its
-     *                                                 streamSpecs
-     * @param attachedSurfaceStreamSpecMap             mapping between attachedSurfaceInfo and its
-     *                                                 streamSpecs that contains streamUseCases.
-     *                                                 All streamSpecs in this map has
-     *                                                 streamUseCases
-     * @param surfaceConfigIndexAttachedSurfaceInfoMap mapping between an surfaceConfig's index
-     *                                                 in the list and the
-     *                                                 attachedSurfaceInfo it
-     *                                                 is constructed from
-     * @param surfaceConfigIndexUseCaseConfigMap       mapping between an surfaceConfig's
-     *                                                 index in the list and the useCaseConfig
-     *                                                 it is constructed from
-     * @param surfaceConfigsWithStreamUseCase          the supported surfaceConfigs that contains
-     *                                                 accurate streamUseCases
+     * @param suggestedStreamSpecMap mapping between useCaseConfig and its streamSpecs
+     * @param attachedSurfaceStreamSpecMap mapping between attachedSurfaceInfo and its streamSpecs
+     *   that contains streamUseCases. All streamSpecs in this map has streamUseCases
+     * @param surfaceConfigIndexAttachedSurfaceInfoMap mapping between an surfaceConfig's index in
+     *   the list and the attachedSurfaceInfo it is constructed from
+     * @param surfaceConfigIndexUseCaseConfigMap mapping between an surfaceConfig's index in the
+     *   list and the useCaseConfig it is constructed from
+     * @param surfaceConfigsWithStreamUseCase the supported surfaceConfigs that contains accurate
+     *   streamUseCases
      */
-    fun populateStreamUseCaseStreamSpecOptionWithSupportedSurfaceConfigs(
+    public fun populateStreamUseCaseStreamSpecOptionWithSupportedSurfaceConfigs(
         suggestedStreamSpecMap: MutableMap<UseCaseConfig<*>, StreamSpec>,
         attachedSurfaceStreamSpecMap: MutableMap<AttachedSurfaceInfo, StreamSpec>,
         surfaceConfigIndexAttachedSurfaceInfoMap: Map<Int, AttachedSurfaceInfo>,
@@ -439,7 +433,8 @@ object StreamUseCaseUtil {
                 val oldImplementationOptions = attachedSurfaceInfo!!.implementationOptions
                 val newImplementationOptions: Config? =
                     getUpdatedImplementationOptionsWithUseCaseStreamSpecOption(
-                        oldImplementationOptions!!, streamUseCase
+                        oldImplementationOptions!!,
+                        streamUseCase
                     )
                 if (newImplementationOptions != null) {
                     attachedSurfaceStreamSpecMap[attachedSurfaceInfo] =
@@ -451,12 +446,15 @@ object StreamUseCaseUtil {
                 val oldImplementationOptions = oldStreamSpec!!.implementationOptions
                 val newImplementationOptions: Config? =
                     getUpdatedImplementationOptionsWithUseCaseStreamSpecOption(
-                        oldImplementationOptions!!, streamUseCase
+                        oldImplementationOptions!!,
+                        streamUseCase
                     )
                 if (newImplementationOptions != null) {
-                    val newStreamSpec = oldStreamSpec.toBuilder().setImplementationOptions(
-                        newImplementationOptions
-                    ).build()
+                    val newStreamSpec =
+                        oldStreamSpec
+                            .toBuilder()
+                            .setImplementationOptions(newImplementationOptions)
+                            .build()
                     suggestedStreamSpecMap[newUseCaseConfig] = newStreamSpec
                 }
             } else {
@@ -472,9 +470,10 @@ object StreamUseCaseUtil {
         oldImplementationOptions: Config,
         streamUseCase: Long?
     ): Config? {
-        if (oldImplementationOptions.containsOption(STREAM_USE_CASE_STREAM_SPEC_OPTION) &&
-            oldImplementationOptions.retrieveOption(STREAM_USE_CASE_STREAM_SPEC_OPTION) ==
-            streamUseCase
+        if (
+            oldImplementationOptions.containsOption(STREAM_USE_CASE_STREAM_SPEC_OPTION) &&
+                oldImplementationOptions.retrieveOption(STREAM_USE_CASE_STREAM_SPEC_OPTION) ==
+                    streamUseCase
         ) {
             // The old options already has the same stream use case. No need to update
             return null
@@ -484,21 +483,15 @@ object StreamUseCaseUtil {
         return Camera2ImplConfig(optionsBundle)
     }
 
-    /**
-     * Return true if any one of the existing or new UseCases is ZSL.
-     */
-    fun containsZslUseCase(
+    /** Return true if any one of the existing or new UseCases is ZSL. */
+    public fun containsZslUseCase(
         attachedSurfaces: List<AttachedSurfaceInfo>,
         newUseCaseConfigs: List<UseCaseConfig<*>>
     ): Boolean {
         for (attachedSurfaceInfo: AttachedSurfaceInfo in attachedSurfaces) {
             val captureTypes = attachedSurfaceInfo.captureTypes
             val captureType = captureTypes[0]
-            if (isZslUseCase(
-                    attachedSurfaceInfo.implementationOptions!!,
-                    captureType
-                )
-            ) {
+            if (isZslUseCase(attachedSurfaceInfo.implementationOptions!!, captureType)) {
                 return true
             }
         }
@@ -510,13 +503,8 @@ object StreamUseCaseUtil {
         return false
     }
 
-    /**
-     * Check whether a UseCase is ZSL.
-     */
-    private fun isZslUseCase(
-        config: Config,
-        captureType: CaptureType
-    ): Boolean {
+    /** Check whether a UseCase is ZSL. */
+    private fun isZslUseCase(config: Config, captureType: CaptureType): Boolean {
         if (config.retrieveOption(UseCaseConfig.OPTION_ZSL_DISABLED, false)!!) {
             return false
         }
@@ -524,15 +512,13 @@ object StreamUseCaseUtil {
         if (!config.containsOption(ImageCaptureConfig.OPTION_IMAGE_CAPTURE_MODE)) {
             return false
         }
-        @CaptureMode val captureMode: Int =
-            config.retrieveOption(ImageCaptureConfig.OPTION_IMAGE_CAPTURE_MODE)!!
-        return (getSessionConfigTemplateType(captureType, captureMode)
-            == CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG)
+        @CaptureMode
+        val captureMode: Int = config.retrieveOption(ImageCaptureConfig.OPTION_IMAGE_CAPTURE_MODE)!!
+        return (getSessionConfigTemplateType(captureType, captureMode) ==
+            CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG)
     }
 
-    /**
-     * Check whether the given StreamUseCases are available to the device.
-     */
+    /** Check whether the given StreamUseCases are available to the device. */
     private fun areStreamUseCasesAvailable(
         availableStreamUseCasesSet: Set<Long>,
         streamUseCases: Set<Long>
@@ -553,8 +539,8 @@ object StreamUseCaseUtil {
     }
 
     /**
-     * Return true if all existing UseCases and new UseCases have Camera2Interop override and
-     * these StreamUseCases are all available to the device.
+     * Return true if all existing UseCases and new UseCases have Camera2Interop override and these
+     * StreamUseCases are all available to the device.
      */
     private fun isValidCamera2InteropOverride(
         attachedSurfaces: List<AttachedSurfaceInfo>,
@@ -565,15 +551,16 @@ object StreamUseCaseUtil {
         var hasNonDefaultStreamUseCase = false
         var hasDefaultOrNullStreamUseCase = false
         for (attachedSurfaceInfo: AttachedSurfaceInfo in attachedSurfaces) {
-            if (!attachedSurfaceInfo.implementationOptions!!.containsOption(
-                    STREAM_USE_CASE_OPTION
-                )
+            if (
+                !attachedSurfaceInfo.implementationOptions!!.containsOption(STREAM_USE_CASE_OPTION)
             ) {
                 hasDefaultOrNullStreamUseCase = true
                 break
             }
-            val streamUseCaseOverride: Long = (attachedSurfaceInfo.implementationOptions!!
-                .retrieveOption(STREAM_USE_CASE_OPTION))!!
+            val streamUseCaseOverride: Long =
+                (attachedSurfaceInfo.implementationOptions!!.retrieveOption(
+                    STREAM_USE_CASE_OPTION
+                ))!!
             if ((streamUseCaseOverride == SCALER_AVAILABLE_STREAM_USE_CASES_DEFAULT.toLong())) {
                 hasDefaultOrNullStreamUseCase = true
                 break
@@ -590,8 +577,7 @@ object StreamUseCaseUtil {
             } else {
                 val streamUseCaseOverride: Long =
                     useCaseConfig.retrieveOption(STREAM_USE_CASE_OPTION)!!
-                if ((streamUseCaseOverride == SCALER_AVAILABLE_STREAM_USE_CASES_DEFAULT.toLong())
-                ) {
+                if ((streamUseCaseOverride == SCALER_AVAILABLE_STREAM_USE_CASES_DEFAULT.toLong())) {
                     hasDefaultOrNullStreamUseCase = true
                     if (hasNonDefaultStreamUseCase) {
                         throwInvalidCamera2InteropOverrideException()
@@ -605,10 +591,8 @@ object StreamUseCaseUtil {
                 }
             }
         }
-        return !hasDefaultOrNullStreamUseCase && areStreamUseCasesAvailable(
-            availableStreamUseCases,
-            streamUseCases
-        )
+        return !hasDefaultOrNullStreamUseCase &&
+            areStreamUseCasesAvailable(availableStreamUseCases, streamUseCases)
     }
 
     @androidx.annotation.OptIn(markerClass = [ExperimentalZeroShutterLag::class])
@@ -619,10 +603,12 @@ object StreamUseCaseUtil {
         return when (captureType) {
             CaptureType.IMAGE_CAPTURE ->
                 if (captureMode == ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG)
-                    CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG else CameraDevice.TEMPLATE_PREVIEW
-
-            CaptureType.VIDEO_CAPTURE, CaptureType.STREAM_SHARING -> CameraDevice.TEMPLATE_RECORD
-            CaptureType.PREVIEW, CaptureType.IMAGE_ANALYSIS -> CameraDevice.TEMPLATE_PREVIEW
+                    CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG
+                else CameraDevice.TEMPLATE_PREVIEW
+            CaptureType.VIDEO_CAPTURE,
+            CaptureType.STREAM_SHARING -> CameraDevice.TEMPLATE_RECORD
+            CaptureType.PREVIEW,
+            CaptureType.IMAGE_ANALYSIS -> CameraDevice.TEMPLATE_PREVIEW
             else -> CameraDevice.TEMPLATE_PREVIEW
         }
     }

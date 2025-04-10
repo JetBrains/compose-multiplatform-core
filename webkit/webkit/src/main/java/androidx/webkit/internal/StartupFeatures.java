@@ -33,4 +33,8 @@ public class StartupFeatures {
     // ProcessGlobalConfig#setDirectoryBasePath(String)
     public static final String STARTUP_FEATURE_SET_DIRECTORY_BASE_PATH =
             "STARTUP_FEATURE_SET_DIRECTORY_BASE_PATH";
+
+    // ProcessGlobalConfig#setPartitionedCookiesEnabled(boolean)
+    public static final String STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES =
+            "STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES";
 }

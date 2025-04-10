@@ -16,10 +16,11 @@
 
 package androidx.wear.protolayout.expression.pipeline;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.wear.protolayout.expression.DynamicDataKey;
 import androidx.wear.protolayout.expression.proto.DynamicDataProto.DynamicDataValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * {@link DynamicDataKey} to {@link DynamicDataValue} storage for ProtoLayout, which also supports
@@ -44,6 +45,5 @@ abstract class DataStore {
      * Retrieve the {@link DynamicDataValue} associated with the given {@link DynamicDataKey} in
      * the store.
      */
-    @Nullable
-    abstract DynamicDataValue getDynamicDataValuesProto(@NonNull DynamicDataKey<?> key);
+    abstract @Nullable DynamicDataValue getDynamicDataValuesProto(@NonNull DynamicDataKey<?> key);
 }

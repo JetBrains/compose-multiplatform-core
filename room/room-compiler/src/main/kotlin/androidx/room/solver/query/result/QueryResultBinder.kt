@@ -17,24 +17,30 @@
 package androidx.room.solver.query.result
 
 import androidx.room.compiler.codegen.XPropertySpec
+import androidx.room.compiler.codegen.XTypeName
 import androidx.room.solver.CodeGenScope
 
 /**
  * Connects the query, db and the ResultAdapter.
+ *
  * <p>
  * The default implementation is InstantResultBinder. If the query is deferred rather than executed
  * directly, such alternative implementations can be implement using this interface (e.g. LiveData,
  * Rx, caching etc)
  */
 abstract class QueryResultBinder(val adapter: QueryResultAdapter?) {
+
+    open val usesCompatQueryWriter: Boolean = false
+
     /**
-     * receives the sql, bind args and adapter and generates the code that runs the query
-     * and returns the result.
+     * Receives the SQL and a function to bind args into a statement, it must then generate the code
+     * that steps on the query, reads its columns and returns the result.
      */
     abstract fun convertAndReturn(
-        roomSQLiteQueryVar: String,
-        canReleaseQuery: Boolean, // false if query is provided by the user
+        sqlQueryVar: String,
         dbProperty: XPropertySpec,
+        bindStatement: (CodeGenScope.(String) -> Unit)?,
+        returnTypeName: XTypeName,
         inTransaction: Boolean,
         scope: CodeGenScope
     )

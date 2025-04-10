@@ -18,12 +18,11 @@ package androidx.car.app.sample.showcase.common.screens;
 
 import static androidx.car.app.model.Action.BACK;
 
-import androidx.annotation.NonNull;
 import androidx.car.app.CarContext;
 import androidx.car.app.Screen;
 import androidx.car.app.constraints.ConstraintManager;
 import androidx.car.app.model.Action;
-import androidx.car.app.model.ActionStrip;
+import androidx.car.app.model.Header;
 import androidx.car.app.model.ItemList;
 import androidx.car.app.model.ListTemplate;
 import androidx.car.app.model.Row;
@@ -34,9 +33,12 @@ import androidx.car.app.sample.showcase.common.screens.templatelayouts.ListTempl
 import androidx.car.app.sample.showcase.common.screens.templatelayouts.MessageTemplateDemoScreen;
 import androidx.car.app.sample.showcase.common.screens.templatelayouts.PaneTemplateDemoScreen;
 import androidx.car.app.sample.showcase.common.screens.templatelayouts.SearchTemplateDemoScreen;
+import androidx.car.app.sample.showcase.common.screens.templatelayouts.SectionedItemTemplateDemoScreen;
 import androidx.car.app.sample.showcase.common.screens.templatelayouts.SignInTemplateDemoScreen;
 import androidx.car.app.sample.showcase.common.screens.templatelayouts.TabTemplateLayoutsDemoScreen;
 import androidx.car.app.versioning.CarAppApiLevels;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,10 +54,13 @@ public final class TemplateLayoutsDemoScreen extends Screen {
         mPage = 0;
     }
 
-    @NonNull
     @Override
-    public Template onGetTemplate() {
+    public @NonNull Template onGetTemplate() {
         List<Row> screenList = new ArrayList<>();
+        if (getCarContext().getCarAppApiLevel() >= CarAppApiLevels.LEVEL_8) {
+            screenList.add(buildRowForTemplate(new SectionedItemTemplateDemoScreen(getCarContext()),
+                    R.string.sectioned_item_template_demo_title));
+        }
         screenList.add(buildRowForTemplate(new ListTemplateDemoScreen(getCarContext()),
                 R.string.list_template_demo_title));
         screenList.add(buildRowForTemplate(new GridTemplateMenuDemoScreen(getCarContext()),
@@ -92,24 +97,24 @@ public final class TemplateLayoutsDemoScreen extends Screen {
             }
         }
 
+        Header.Builder headerBuilder = new Header.Builder()
+                .setStartHeaderAction(BACK)
+                .setTitle(getCarContext().getString(R.string.template_layouts_demo_title));
+
         ListTemplate.Builder builder = new ListTemplate.Builder()
-                .setSingleList(listBuilder.build())
-                .setTitle(getCarContext().getString(R.string.template_layouts_demo_title))
-                .setHeaderAction(BACK);
+                .setSingleList(listBuilder.build());
 
         // If the current page does not cover the last item, we will show a More button
         if ((mPage + 1) * listLimit < screenList.size() && mPage + 1 < MAX_PAGES) {
-            builder.setActionStrip(new ActionStrip.Builder()
-                    .addAction(new Action.Builder()
+            headerBuilder.addEndHeaderAction(new Action.Builder()
                             .setTitle(getCarContext().getString(R.string.more_action_title))
                             .setOnClickListener(() -> {
                                 mPage++;
                                 invalidate();
                             })
-                            .build())
-                    .build());
+                            .build());
         }
-        return builder.build();
+        return builder.setHeader(headerBuilder.build()).build();
     }
 
     private Row buildRowForTemplate(Screen screen, int title) {

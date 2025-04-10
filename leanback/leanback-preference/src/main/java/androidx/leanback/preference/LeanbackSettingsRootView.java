@@ -23,8 +23,9 @@ import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  */

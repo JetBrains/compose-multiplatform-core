@@ -17,9 +17,10 @@ package androidx.core.view;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A class that allows you to host and
@@ -64,7 +65,7 @@ public interface MenuHost {
      */
     @SuppressLint("LambdaLast")
     void addMenuProvider(@NonNull MenuProvider provider, @NonNull LifecycleOwner owner,
-            @NonNull Lifecycle.State state);
+            Lifecycle.@NonNull State state);
 
     /**
      * Removes the given {@link MenuProvider} from this {@link MenuHost}.

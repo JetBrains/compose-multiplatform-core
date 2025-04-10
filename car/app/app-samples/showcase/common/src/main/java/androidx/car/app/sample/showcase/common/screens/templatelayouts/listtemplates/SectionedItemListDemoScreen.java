@@ -16,13 +16,10 @@
 
 package androidx.car.app.sample.showcase.common.screens.templatelayouts.listtemplates;
 
-import static androidx.car.app.model.Action.BACK;
-
-import androidx.annotation.NonNull;
 import androidx.car.app.CarContext;
 import androidx.car.app.Screen;
 import androidx.car.app.model.Action;
-import androidx.car.app.model.ActionStrip;
+import androidx.car.app.model.Header;
 import androidx.car.app.model.ItemList;
 import androidx.car.app.model.ListTemplate;
 import androidx.car.app.model.Row;
@@ -30,6 +27,7 @@ import androidx.car.app.model.SectionedItemList;
 import androidx.car.app.model.Template;
 import androidx.car.app.sample.showcase.common.R;
 
+import org.jspecify.annotations.NonNull;
 
 /** A screen demonstrating lists with sectioned item list */
 public class SectionedItemListDemoScreen extends Screen {
@@ -37,9 +35,8 @@ public class SectionedItemListDemoScreen extends Screen {
         super(carContext);
     }
 
-    @NonNull
     @Override
-    public Template onGetTemplate() {
+    public @NonNull Template onGetTemplate() {
 
         ItemList.Builder listBuilderOne = new ItemList.Builder();
         listBuilderOne.addItem(buildRowForTemplate(R.string.sectioned_item_list_subtext));
@@ -57,19 +54,17 @@ public class SectionedItemListDemoScreen extends Screen {
                 .addSectionedList(SectionedItemList.create(listBuilderTwo.build(),
                         getCarContext()
                                 .getString(R.string.sectioned_item_list_two_title)))
-                .setTitle(getCarContext()
-                        .getString(R.string.sectioned_item_list_demo_title))
-                .setHeaderAction(BACK)
-                .setActionStrip(
-                        new ActionStrip.Builder()
-                                .addAction(
-                                        new Action.Builder()
-                                                .setTitle(getCarContext().getString(
-                                                        R.string.home_caps_action_title))
-                                                .setOnClickListener(
-                                                        () -> getScreenManager().popToRoot())
-                                                .build())
+                .setHeader(new Header.Builder()
+                        .setTitle(getCarContext()
+                                .getString(R.string.sectioned_item_list_demo_title))
+                        .setStartHeaderAction(Action.BACK)
+                        .addEndHeaderAction(new Action.Builder()
+                                .setTitle(getCarContext().getString(
+                                        R.string.home_caps_action_title))
+                                .setOnClickListener(
+                                        () -> getScreenManager().popToRoot())
                                 .build())
+                        .build())
                 .build();
     }
 

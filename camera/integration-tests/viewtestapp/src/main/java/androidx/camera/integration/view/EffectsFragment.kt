@@ -33,7 +33,6 @@ import androidx.camera.core.CameraEffect.IMAGE_CAPTURE
 import androidx.camera.core.CameraEffect.PREVIEW
 import androidx.camera.core.CameraEffect.VIDEO_CAPTURE
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.CameraSelector.LENS_FACING_BACK
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.core.ImageCaptureException
@@ -51,9 +50,7 @@ import androidx.camera.view.PreviewView
 import androidx.camera.view.video.AudioConfig
 import androidx.fragment.app.Fragment
 
-/**
- * Fragment for testing effects integration.
- */
+/** Fragment for testing effects integration. */
 class EffectsFragment : Fragment() {
 
     private lateinit var cameraController: LifecycleCameraController
@@ -69,6 +66,7 @@ class EffectsFragment : Fragment() {
     private var recording: Recording? = null
     private lateinit var surfaceProcessor: ToneMappingSurfaceProcessor
     private var imageEffect: ToneMappingImageEffect? = null
+    private var isBackCamera = true
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -98,13 +96,7 @@ class EffectsFragment : Fragment() {
                 stopRecording()
             }
         }
-        flip.setOnClickListener {
-            if (cameraController.cameraSelector.lensFacing == LENS_FACING_BACK) {
-                cameraController.cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
-            } else {
-                cameraController.cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-            }
-        }
+        flip.setOnClickListener { toggleCamera() }
         // Set up the surface processor.
         surfaceProcessor = ToneMappingSurfaceProcessor()
         // Set up the camera controller.
@@ -129,12 +121,7 @@ class EffectsFragment : Fragment() {
                 surfaceEffectTarget = surfaceEffectTarget or IMAGE_CAPTURE
             }
             if (surfaceEffectTarget != 0) {
-                effects.add(
-                    ToneMappingSurfaceEffect(
-                        surfaceEffectTarget,
-                        surfaceProcessor
-                    )
-                )
+                effects.add(ToneMappingSurfaceEffect(surfaceEffectTarget, surfaceProcessor))
             }
             if (imageEffectForImageCapture.isChecked) {
                 // Use ImageEffect for image capture
@@ -178,16 +165,14 @@ class EffectsFragment : Fragment() {
         createDefaultPictureFolderIfNotExist()
         val contentValues = ContentValues()
         contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-        val outputFileOptions = OutputFileOptions.Builder(
-            requireContext().contentResolver,
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            contentValues
-        ).build()
-        cameraController.takePicture(
-            outputFileOptions,
-            directExecutor(),
-            onImageSavedCallback
-        )
+        val outputFileOptions =
+            OutputFileOptions.Builder(
+                    requireContext().contentResolver,
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    contentValues
+                )
+                .build()
+        cameraController.takePicture(outputFileOptions, directExecutor(), onImageSavedCallback)
     }
 
     @SuppressLint("MissingPermission")
@@ -195,23 +180,20 @@ class EffectsFragment : Fragment() {
         record.text = "Stop recording"
         val outputOptions: MediaStoreOutputOptions = getNewVideoOutputMediaStoreOptions()
         val audioConfig = AudioConfig.create(true)
-        recording = cameraController.startRecording(
-            outputOptions, audioConfig,
-            directExecutor()
-        ) {
-            if (it is VideoRecordEvent.Finalize) {
-                val uri = it.outputResults.outputUri
-                when (it.error) {
-                    VideoRecordEvent.Finalize.ERROR_NONE,
-                    ERROR_FILE_SIZE_LIMIT_REACHED,
-                    ERROR_DURATION_LIMIT_REACHED,
-                    ERROR_INSUFFICIENT_STORAGE,
-                    ERROR_SOURCE_INACTIVE -> toast("Video saved to: $uri")
-
-                    else -> toast("Failed to save video: uri $uri with code (${it.error})")
+        recording =
+            cameraController.startRecording(outputOptions, audioConfig, directExecutor()) {
+                if (it is VideoRecordEvent.Finalize) {
+                    val uri = it.outputResults.outputUri
+                    when (it.error) {
+                        VideoRecordEvent.Finalize.ERROR_NONE,
+                        ERROR_FILE_SIZE_LIMIT_REACHED,
+                        ERROR_DURATION_LIMIT_REACHED,
+                        ERROR_INSUFFICIENT_STORAGE,
+                        ERROR_SOURCE_INACTIVE -> toast("Video saved to: $uri")
+                        else -> toast("Failed to save video: uri $uri with code (${it.error})")
+                    }
                 }
             }
-        }
     }
 
     private fun stopRecording() {
@@ -228,21 +210,32 @@ class EffectsFragment : Fragment() {
         contentValues.put(MediaStore.Video.Media.TITLE, videoFileName)
         contentValues.put(MediaStore.Video.Media.DISPLAY_NAME, videoFileName)
         return MediaStoreOutputOptions.Builder(
-            resolver,
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-        ).setContentValues(contentValues)
+                resolver,
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+            )
+            .setContentValues(contentValues)
             .build()
     }
 
     private fun createDefaultPictureFolderIfNotExist() {
-        val pictureFolder = Environment.getExternalStoragePublicDirectory(
-            Environment.DIRECTORY_PICTURES
-        )
+        val pictureFolder =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
         if (!pictureFolder.exists()) {
             if (!pictureFolder.mkdir()) {
                 toast("Failed to create directory: $pictureFolder")
             }
         }
+    }
+
+    fun toggleCamera() {
+        cameraController.cameraSelector =
+            if (isBackCamera) {
+                isBackCamera = false
+                CameraSelector.DEFAULT_FRONT_CAMERA
+            } else {
+                isBackCamera = true
+                CameraSelector.DEFAULT_BACK_CAMERA
+            }
     }
 
     @VisibleForTesting

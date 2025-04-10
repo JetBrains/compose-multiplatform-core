@@ -17,7 +17,8 @@
 package androidx.appsearch.app;
 
 import android.annotation.SuppressLint;
-import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
 
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
@@ -25,6 +26,11 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
+import androidx.appsearch.flags.FlaggedApi;
+import androidx.appsearch.flags.Flags;
+import androidx.appsearch.safeparcel.AbstractSafeParcelable;
+import androidx.appsearch.safeparcel.SafeParcelable;
+import androidx.appsearch.safeparcel.stub.StubCreators.GetSchemaResponseCreator;
 import androidx.collection.ArrayMap;
 import androidx.collection.ArraySet;
 import androidx.core.util.Preconditions;
@@ -36,58 +42,81 @@ import java.util.Map;
 import java.util.Set;
 
 /** The response class of {@link AppSearchSession#getSchemaAsync} */
-public final class GetSchemaResponse {
-    private static final String VERSION_FIELD = "version";
-    private static final String SCHEMAS_FIELD = "schemas";
-    private static final String SCHEMAS_NOT_DISPLAYED_BY_SYSTEM_FIELD =
-            "schemasNotDisplayedBySystem";
-    private static final String SCHEMAS_VISIBLE_TO_PACKAGES_FIELD = "schemasVisibleToPackages";
-    private static final String SCHEMAS_VISIBLE_TO_PERMISSION_FIELD =
-            "schemasVisibleToPermissions";
-    private static final String ALL_REQUIRED_PERMISSION_FIELD =
-            "allRequiredPermission";
+@SafeParcelable.Class(creator = "GetSchemaResponseCreator")
+// TODO(b/384721898): Switch to JSpecify annotations
+@SuppressWarnings({"HiddenSuperclass", "JSpecifyNullness"})
+public final class GetSchemaResponse extends AbstractSafeParcelable {
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @FlaggedApi(Flags.FLAG_ENABLE_SAFE_PARCELABLE_2)
+    public static final @NonNull Parcelable.Creator<GetSchemaResponse> CREATOR =
+            new GetSchemaResponseCreator();
+
+    @Field(id = 1, getter = "getVersion")
+    private final int mVersion;
+
+    @Field(id = 2)
+    final List<AppSearchSchema> mSchemas;
+
+    /**
+     * List of VisibilityConfigs for the current schema. May be {@code null} if retrieving the
+     * visibility settings is not possible on the current backend.
+     */
+    @Field(id = 3)
+    final @Nullable List<InternalVisibilityConfig> mVisibilityConfigs;
+
+    /**
+     * This set contains all schemas most recently successfully provided to
+     * {@link AppSearchSession#setSchemaAsync}. We do lazy fetch, the object will be created when
+     * you first time fetch it.
+     */
+    private @Nullable Set<AppSearchSchema> mSchemasCached;
+
     /**
      * This Set contains all schemas that are not displayed by the system. All values in the set are
      * prefixed with the package-database prefix. We do lazy fetch, the object will be created
      * when you first time fetch it.
      */
-    @Nullable
-    private Set<String> mSchemasNotDisplayedBySystem;
+    private @Nullable Set<String> mSchemasNotDisplayedBySystemCached;
+
     /**
      * This map contains all schemas and {@link PackageIdentifier} that has access to the schema.
      * All keys in the map are prefixed with the package-database prefix. We do lazy fetch, the
      * object will be created when you first time fetch it.
      */
-    @Nullable
-    private Map<String, Set<PackageIdentifier>> mSchemasVisibleToPackages;
+    private @Nullable Map<String, Set<PackageIdentifier>> mSchemasVisibleToPackagesCached;
 
     /**
      * This map contains all schemas and Android Permissions combinations that are required to
      * access the schema. All keys in the map are prefixed with the package-database prefix. We
      * do lazy fetch, the object will be created when you first time fetch it.
      * The Map is constructed in ANY-ALL cases. The querier could read the {@link GenericDocument}
-     * objects under the {@code schemaType} if they holds ALL required permissions of ANY
+     * objects under the {@code schemaType} if they hold ALL required permissions of ANY
      * combinations.
-     * The value set represents
-     * {@link androidx.appsearch.app.SetSchemaRequest.AppSearchSupportedPermission}.
+     * @see SetSchemaRequest.Builder#addRequiredPermissionsForSchemaTypeVisibility(String, Set)
      */
-    @Nullable
-    private Map<String, Set<Set<Integer>>> mSchemasVisibleToPermissions;
-
-    private final Bundle mBundle;
-
-    GetSchemaResponse(@NonNull Bundle bundle) {
-        mBundle = Preconditions.checkNotNull(bundle);
-    }
+    private @Nullable Map<String, Set<Set<Integer>>> mSchemasVisibleToPermissionsCached;
 
     /**
-     * Returns the {@link Bundle} populated by this builder.
-     * @exportToFramework:hide
+     * This map contains all publicly visible schemas and the {@link PackageIdentifier} specifying
+     * the package that the schemas are from.
      */
-    @NonNull
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public Bundle getBundle() {
-        return mBundle;
+    private @Nullable Map<String, PackageIdentifier> mPubliclyVisibleSchemasCached;
+
+    /**
+     * This map contains all {@link SchemaVisibilityConfig}s that has access to the schema.
+     * All keys in the map are prefixed with the package-database prefix. We do lazy fetch, the
+     * object will be created when you first time fetch it.
+     */
+    private @Nullable Map<String, Set<SchemaVisibilityConfig>> mSchemasVisibleToConfigsCached;
+
+    @Constructor
+    GetSchemaResponse(
+            @Param(id = 1) int version,
+            @Param(id = 2) @NonNull List<AppSearchSchema> schemas,
+            @Param(id = 3) @Nullable List<InternalVisibilityConfig> visibilityConfigs) {
+        mVersion = version;
+        mSchemas = Preconditions.checkNotNull(schemas);
+        mVisibilityConfigs = visibilityConfigs;
     }
 
     /**
@@ -97,25 +126,18 @@ public final class GetSchemaResponse {
      */
     @IntRange(from = 0)
     public int getVersion() {
-        return mBundle.getInt(VERSION_FIELD);
+        return mVersion;
     }
 
     /**
      * Return the schemas most recently successfully provided to
      * {@link AppSearchSession#setSchemaAsync}.
-     *
-     * <p>It is inefficient to call this method repeatedly.
      */
-    @NonNull
-    @SuppressWarnings("deprecation")
-    public Set<AppSearchSchema> getSchemas() {
-        ArrayList<Bundle> schemaBundles = Preconditions.checkNotNull(
-                    mBundle.getParcelableArrayList(SCHEMAS_FIELD));
-        Set<AppSearchSchema> schemas = new ArraySet<>(schemaBundles.size());
-        for (int i = 0; i < schemaBundles.size(); i++) {
-            schemas.add(new AppSearchSchema(schemaBundles.get(i)));
+    public @NonNull Set<AppSearchSchema> getSchemas() {
+        if (mSchemasCached == null) {
+            mSchemasCached = Collections.unmodifiableSet(new ArraySet<>(mSchemas));
         }
-        return schemas;
+        return mSchemasCached;
     }
 
     /**
@@ -126,21 +148,21 @@ public final class GetSchemaResponse {
      * called with false.
      * <!--@exportToFramework:else()-->
      */
-    // @exportToFramework:startStrip()
     @RequiresFeature(
             enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
             name = Features.ADD_PERMISSIONS_AND_GET_VISIBILITY)
-    // @exportToFramework:endStrip()
-    @NonNull
-    public Set<String> getSchemaTypesNotDisplayedBySystem() {
-        checkGetVisibilitySettingSupported();
-        if (mSchemasNotDisplayedBySystem == null) {
-            List<String> schemasNotDisplayedBySystemList =
-                    mBundle.getStringArrayList(SCHEMAS_NOT_DISPLAYED_BY_SYSTEM_FIELD);
-            mSchemasNotDisplayedBySystem =
-                    Collections.unmodifiableSet(new ArraySet<>(schemasNotDisplayedBySystemList));
+    public @NonNull Set<String> getSchemaTypesNotDisplayedBySystem() {
+        List<InternalVisibilityConfig> visibilityConfigs = getVisibilityConfigsOrThrow();
+        if (mSchemasNotDisplayedBySystemCached == null) {
+            Set<String> copy = new ArraySet<>();
+            for (int i = 0; i < visibilityConfigs.size(); i++) {
+                if (visibilityConfigs.get(i).isNotDisplayedBySystem()) {
+                    copy.add(visibilityConfigs.get(i).getSchemaType());
+                }
+            }
+            mSchemasNotDisplayedBySystemCached = Collections.unmodifiableSet(copy);
         }
-        return mSchemasNotDisplayedBySystem;
+        return mSchemasNotDisplayedBySystemCached;
     }
 
     /**
@@ -151,37 +173,31 @@ public final class GetSchemaResponse {
      * called with false.
      * <!--@exportToFramework:else()-->
      */
-    // @exportToFramework:startStrip()
     @RequiresFeature(
             enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
             name = Features.ADD_PERMISSIONS_AND_GET_VISIBILITY)
-    // @exportToFramework:endStrip()
-    @NonNull
-    @SuppressWarnings("deprecation")
-    public Map<String, Set<PackageIdentifier>> getSchemaTypesVisibleToPackages() {
-        checkGetVisibilitySettingSupported();
-        if (mSchemasVisibleToPackages == null) {
-            Bundle schemaVisibleToPackagesBundle = Preconditions.checkNotNull(
-                        mBundle.getBundle(SCHEMAS_VISIBLE_TO_PACKAGES_FIELD));
+    public @NonNull Map<String, Set<PackageIdentifier>> getSchemaTypesVisibleToPackages() {
+        List<InternalVisibilityConfig> visibilityConfigs = getVisibilityConfigsOrThrow();
+        if (mSchemasVisibleToPackagesCached == null) {
             Map<String, Set<PackageIdentifier>> copy = new ArrayMap<>();
-            for (String key : schemaVisibleToPackagesBundle.keySet()) {
-                List<Bundle> PackageIdentifierBundles = Preconditions.checkNotNull(
-                            schemaVisibleToPackagesBundle.getParcelableArrayList(key));
-                Set<PackageIdentifier> packageIdentifiers =
-                        new ArraySet<>(PackageIdentifierBundles.size());
-                for (int i = 0; i < PackageIdentifierBundles.size(); i++) {
-                    packageIdentifiers.add(new PackageIdentifier(PackageIdentifierBundles.get(i)));
+            for (int i = 0; i < visibilityConfigs.size(); i++) {
+                InternalVisibilityConfig visibilityConfig = visibilityConfigs.get(i);
+                List<PackageIdentifier> visibleToPackages =
+                        visibilityConfig.getVisibilityConfig().getAllowedPackages();
+                if (!visibleToPackages.isEmpty()) {
+                    copy.put(
+                            visibilityConfig.getSchemaType(),
+                            Collections.unmodifiableSet(new ArraySet<>(visibleToPackages)));
                 }
-                copy.put(key, packageIdentifiers);
             }
-            mSchemasVisibleToPackages = Collections.unmodifiableMap(copy);
+            mSchemasVisibleToPackagesCached = Collections.unmodifiableMap(copy);
         }
-        return mSchemasVisibleToPackages;
+        return mSchemasVisibleToPackagesCached;
     }
 
     /**
-     * Returns a mapping of schema types to the Map of {@link android.Manifest.permission}
-     * combinations that querier must hold to access that schema type.
+     * Returns a mapping of schema types to the set of {@link android.Manifest.permission}
+     * combination sets that querier must hold to access that schema type.
      *
      * <p> The querier could read the {@link GenericDocument} objects under the {@code schemaType}
      * if they holds ALL required permissions of ANY of the individual value sets.
@@ -189,12 +205,12 @@ public final class GetSchemaResponse {
      * <p>For example, if the Map contains {@code {% verbatim %}{{permissionA, PermissionB},
      * { PermissionC, PermissionD}, {PermissionE}}{% endverbatim %}}.
      * <ul>
-     *     <li>A querier holds both PermissionA and PermissionB has access.</li>
-     *     <li>A querier holds both PermissionC and PermissionD has access.</li>
-     *     <li>A querier holds only PermissionE has access.</li>
-     *     <li>A querier holds both PermissionA and PermissionE has access.</li>
-     *     <li>A querier holds only PermissionA doesn't have access.</li>
-     *     <li>A querier holds both PermissionA and PermissionC doesn't have access.</li>
+     *     <li>A querier holding both PermissionA and PermissionB has access.</li>
+     *     <li>A querier holding both PermissionC and PermissionD has access.</li>
+     *     <li>A querier holding only PermissionE has access.</li>
+     *     <li>A querier holding both PermissionA and PermissionE has access.</li>
+     *     <li>A querier holding only PermissionA doesn't have access.</li>
+     *     <li>A querier holding only PermissionA and PermissionC doesn't have access.</li>
      * </ul>
      *
      * @return The map contains schema type and all combinations of required permission for querier
@@ -208,61 +224,138 @@ public final class GetSchemaResponse {
      * called with false.
      * <!--@exportToFramework:else()-->
      */
-    // @exportToFramework:startStrip()
+    // TODO(b/237388235): add enterprise permissions to javadocs after they're unhidden
+    // Annotation is here to suppress lint error. Lint error is erroneous since the method does not
+    // require the caller to hold any permission for the method to function.
+    @SuppressLint("RequiresPermission")
     @RequiresFeature(
             enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
             name = Features.ADD_PERMISSIONS_AND_GET_VISIBILITY)
-    // @exportToFramework:endStrip()
-    @NonNull
-    @SuppressWarnings("deprecation")
-    public Map<String, Set<Set<Integer>>> getRequiredPermissionsForSchemaTypeVisibility() {
-        checkGetVisibilitySettingSupported();
-        if (mSchemasVisibleToPermissions == null) {
+    public @NonNull Map<String, Set<Set<Integer>>> getRequiredPermissionsForSchemaTypeVisibility() {
+        List<InternalVisibilityConfig> visibilityConfigs = getVisibilityConfigsOrThrow();
+        if (mSchemasVisibleToPermissionsCached == null) {
             Map<String, Set<Set<Integer>>> copy = new ArrayMap<>();
-            Bundle schemaVisibleToPermissionBundle = Preconditions.checkNotNull(
-                        mBundle.getBundle(SCHEMAS_VISIBLE_TO_PERMISSION_FIELD));
-            for (String key : schemaVisibleToPermissionBundle.keySet()) {
-                ArrayList<Bundle> allRequiredPermissionsBundle =
-                        schemaVisibleToPermissionBundle.getParcelableArrayList(key);
-                Set<Set<Integer>> visibleToPermissions = new ArraySet<>();
-                if (allRequiredPermissionsBundle != null) {
-                    // This should never be null
-                    for (int i = 0; i < allRequiredPermissionsBundle.size(); i++) {
-                        visibleToPermissions.add(new ArraySet<>(allRequiredPermissionsBundle.get(i)
-                                .getIntegerArrayList(ALL_REQUIRED_PERMISSION_FIELD)));
-                    }
+            for (int i = 0; i < visibilityConfigs.size(); i++) {
+                InternalVisibilityConfig visibilityConfig = visibilityConfigs.get(i);
+                Set<Set<Integer>> visibleToPermissions =
+                        visibilityConfig.getVisibilityConfig().getRequiredPermissions();
+                if (!visibleToPermissions.isEmpty()) {
+                    copy.put(
+                            visibilityConfig.getSchemaType(),
+                            Collections.unmodifiableSet(visibleToPermissions));
                 }
-                copy.put(key, visibleToPermissions);
             }
-            mSchemasVisibleToPermissions = Collections.unmodifiableMap(copy);
+            mSchemasVisibleToPermissionsCached = Collections.unmodifiableMap(copy);
         }
-        return mSchemasVisibleToPermissions;
+        return mSchemasVisibleToPermissionsCached;
     }
 
-    private void checkGetVisibilitySettingSupported() {
-        if (!mBundle.containsKey(SCHEMAS_VISIBLE_TO_PACKAGES_FIELD)) {
+    /**
+     * Returns a mapping of publicly visible schemas to the {@link PackageIdentifier} specifying
+     * the package the schemas are from.
+     *
+     * <p> If no schemas have been set as publicly visible, an empty set will be returned.
+     * <!--@exportToFramework:ifJetpack()-->
+     * @throws UnsupportedOperationException if {@link Builder#setVisibilitySettingSupported} was
+     * called with false.
+     * <!--@exportToFramework:else()-->
+     */
+    @FlaggedApi(Flags.FLAG_ENABLE_SET_PUBLICLY_VISIBLE_SCHEMA)
+    @RequiresFeature(
+            enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
+            name = Features.ADD_PERMISSIONS_AND_GET_VISIBILITY)
+    public @NonNull Map<String, PackageIdentifier> getPubliclyVisibleSchemas() {
+        List<InternalVisibilityConfig> visibilityConfigs = getVisibilityConfigsOrThrow();
+        if (mPubliclyVisibleSchemasCached == null) {
+            Map<String, PackageIdentifier> copy = new ArrayMap<>();
+            for (int i = 0; i < visibilityConfigs.size(); i++) {
+                InternalVisibilityConfig visibilityConfig = visibilityConfigs.get(i);
+                PackageIdentifier publiclyVisibleTargetPackage =
+                        visibilityConfig.getVisibilityConfig().getPubliclyVisibleTargetPackage();
+                if (publiclyVisibleTargetPackage != null) {
+                    copy.put(visibilityConfig.getSchemaType(), publiclyVisibleTargetPackage);
+                }
+            }
+            mPubliclyVisibleSchemasCached = Collections.unmodifiableMap(copy);
+        }
+        return mPubliclyVisibleSchemasCached;
+    }
+
+    /**
+     * Returns a mapping of schema types to the set of {@link SchemaVisibilityConfig} that have
+     * access to that schema type.
+     *
+     * @see SetSchemaRequest.Builder#addSchemaTypeVisibleToConfig
+     */
+    @FlaggedApi(Flags.FLAG_ENABLE_SET_SCHEMA_VISIBLE_TO_CONFIGS)
+    @RequiresFeature(
+            enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
+            name = Features.ADD_PERMISSIONS_AND_GET_VISIBILITY)
+    public @NonNull Map<String, Set<SchemaVisibilityConfig>> getSchemaTypesVisibleToConfigs() {
+        List<InternalVisibilityConfig> visibilityConfigs = getVisibilityConfigsOrThrow();
+        if (mSchemasVisibleToConfigsCached == null) {
+            Map<String, Set<SchemaVisibilityConfig>> copy = new ArrayMap<>();
+            for (int i = 0; i < visibilityConfigs.size(); i++) {
+                InternalVisibilityConfig visibilityConfig = visibilityConfigs.get(i);
+                Set<SchemaVisibilityConfig> nestedVisibilityConfigs =
+                        visibilityConfig.getVisibleToConfigs();
+                if (!nestedVisibilityConfigs.isEmpty()) {
+                    copy.put(visibilityConfig.getSchemaType(),
+                            Collections.unmodifiableSet(nestedVisibilityConfigs));
+                }
+            }
+            mSchemasVisibleToConfigsCached = Collections.unmodifiableMap(copy);
+        }
+        return mSchemasVisibleToConfigsCached;
+    }
+
+    private @NonNull List<InternalVisibilityConfig> getVisibilityConfigsOrThrow() {
+        List<InternalVisibilityConfig> visibilityConfigs = mVisibilityConfigs;
+        if (visibilityConfigs == null) {
             throw new UnsupportedOperationException("Get visibility setting is not supported with "
                     + "this backend/Android API level combination.");
         }
+        return visibilityConfigs;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @FlaggedApi(Flags.FLAG_ENABLE_SAFE_PARCELABLE_2)
+    @Override
+    public void writeToParcel(@NonNull Parcel dest, int flags) {
+        GetSchemaResponseCreator.writeToParcel(this, dest, flags);
     }
 
     /** Builder for {@link GetSchemaResponse} objects. */
     public static final class Builder {
         private int mVersion = 0;
-        private ArrayList<Bundle> mSchemaBundles = new ArrayList<>();
+        private ArrayList<AppSearchSchema> mSchemas = new ArrayList<>();
         /**
          * Creates the object when we actually set them. If we never set visibility settings, we
          * should throw {@link UnsupportedOperationException} in the visibility getters.
          */
-        @Nullable
-        private ArrayList<String> mSchemasNotDisplayedBySystem;
-        private Bundle mSchemasVisibleToPackages;
-        private Bundle mSchemasVisibleToPermissions;
+        private @Nullable Map<String, InternalVisibilityConfig.Builder> mVisibilityConfigBuilders;
         private boolean mBuilt = false;
 
-        /** Create a {@link Builder} object} */
+        /** Creates a new {@link Builder} */
         public Builder() {
             setVisibilitySettingSupported(true);
+        }
+
+        /** Creates a new {@link Builder} from the given {@link GetSchemaResponse}. */
+        @ExperimentalAppSearchApi
+        @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
+        public Builder(@NonNull GetSchemaResponse getSchemaResponse) {
+            setVisibilitySettingSupported(true);
+            mVersion = getSchemaResponse.mVersion;
+            mSchemas.addAll(getSchemaResponse.mSchemas);
+            if (getSchemaResponse.mVisibilityConfigs != null) {
+                int count = getSchemaResponse.mVisibilityConfigs.size();
+                for (int i = 0; i < count; i++) {
+                    InternalVisibilityConfig config = getSchemaResponse.mVisibilityConfigs.get(i);
+                    mVisibilityConfigBuilders.put(config.getSchemaType(),
+                            new InternalVisibilityConfig.Builder(config));
+                }
+            }
         }
 
         /**
@@ -271,20 +364,29 @@ public final class GetSchemaResponse {
          * <p>Default version is 0
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setVersion(@IntRange(from = 0) int version) {
+        public @NonNull Builder setVersion(@IntRange(from = 0) int version) {
+            Preconditions.checkArgument(version >= 0, "Version must be a non-negative number.");
             resetIfBuilt();
             mVersion = version;
             return this;
         }
 
-        /**  Adds one {@link AppSearchSchema} to the schema list.  */
+        /** Adds one {@link AppSearchSchema} to the schema list. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder addSchema(@NonNull AppSearchSchema schema) {
+        public @NonNull Builder addSchema(@NonNull AppSearchSchema schema) {
             Preconditions.checkNotNull(schema);
             resetIfBuilt();
-            mSchemaBundles.add(schema.getBundle());
+            mSchemas.add(schema);
+            return this;
+        }
+
+        /** Clears all {@link AppSearchSchema}s from the list of schemas. */
+        @ExperimentalAppSearchApi
+        @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
+        @CanIgnoreReturnValue
+        public @NonNull Builder clearSchemas() {
+            resetIfBuilt();
+            mSchemas.clear();
             return this;
         }
 
@@ -298,14 +400,32 @@ public final class GetSchemaResponse {
         // Getter getSchemaTypesNotDisplayedBySystem returns plural objects.
         @CanIgnoreReturnValue
         @SuppressLint("MissingGetterMatchingBuilder")
-        @NonNull
-        public Builder addSchemaTypeNotDisplayedBySystem(@NonNull String schemaType) {
+        public @NonNull Builder addSchemaTypeNotDisplayedBySystem(@NonNull String schemaType) {
             Preconditions.checkNotNull(schemaType);
             resetIfBuilt();
-            if (mSchemasNotDisplayedBySystem == null) {
-                mSchemasNotDisplayedBySystem = new ArrayList<>();
+            InternalVisibilityConfig.Builder visibilityConfigBuilder =
+                    getOrCreateVisibilityConfigBuilder(schemaType);
+            visibilityConfigBuilder.setNotDisplayedBySystem(true);
+            return this;
+        }
+
+        /**
+         * Clears the visibility setting for the given schema type that prevents the schema from
+         * being displayed and visible on any system UI surface.
+         *
+         * @see Builder#addSchemaTypeNotDisplayedBySystem
+         */
+        @ExperimentalAppSearchApi
+        @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
+        @CanIgnoreReturnValue
+        public @NonNull Builder clearSchemaTypeNotDisplayedBySystem(@NonNull String schemaType) {
+            Preconditions.checkNotNull(schemaType);
+            resetIfBuilt();
+            InternalVisibilityConfig.Builder visibilityConfigBuilder =
+                    getVisibilityConfigBuilder(schemaType);
+            if (visibilityConfigBuilder != null) {
+                visibilityConfigBuilder.setNotDisplayedBySystem(false);
             }
-            mSchemasNotDisplayedBySystem.add(schemaType);
             return this;
         }
 
@@ -330,18 +450,36 @@ public final class GetSchemaResponse {
         // Getter getSchemaTypesVisibleToPackages returns a map contains all schema types.
         @CanIgnoreReturnValue
         @SuppressLint("MissingGetterMatchingBuilder")
-        @NonNull
-        public Builder setSchemaTypeVisibleToPackages(
+        public @NonNull Builder setSchemaTypeVisibleToPackages(
                 @NonNull String schemaType,
                 @NonNull Set<PackageIdentifier> packageIdentifiers) {
             Preconditions.checkNotNull(schemaType);
             Preconditions.checkNotNull(packageIdentifiers);
             resetIfBuilt();
-            ArrayList<Bundle> bundles = new ArrayList<>(packageIdentifiers.size());
+            InternalVisibilityConfig.Builder visibilityConfigBuilder =
+                    getOrCreateVisibilityConfigBuilder(schemaType);
             for (PackageIdentifier packageIdentifier : packageIdentifiers) {
-                bundles.add(packageIdentifier.getBundle());
+                visibilityConfigBuilder.addVisibleToPackage(packageIdentifier);
             }
-            mSchemasVisibleToPackages.putParcelableArrayList(schemaType, bundles);
+            return this;
+        }
+
+        /**
+         * Clears the set of packages that can read the given schema type.
+         *
+         * @see Builder#setSchemaTypeVisibleToPackages
+         */
+        @ExperimentalAppSearchApi
+        @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
+        @CanIgnoreReturnValue
+        public @NonNull Builder clearSchemaTypeVisibleToPackages(@NonNull String schemaType) {
+            Preconditions.checkNotNull(schemaType);
+            resetIfBuilt();
+            InternalVisibilityConfig.Builder visibilityConfigBuilder =
+                    getVisibilityConfigBuilder(schemaType);
+            if (visibilityConfigBuilder != null) {
+                visibilityConfigBuilder.clearVisibleToPackages();
+            }
             return this;
         }
 
@@ -364,41 +502,165 @@ public final class GetSchemaResponse {
          *     <li>A querier holds both PermissionA and PermissionC doesn't have access.</li>
          * </ul>
          *
+         * @param schemaType              The schema type to set visibility on.
+         * @param visibleToPermissionSets The Sets of Android permissions that will be required to
+         *                                access the given schema.
          * @see android.Manifest.permission#READ_SMS
          * @see android.Manifest.permission#READ_CALENDAR
          * @see android.Manifest.permission#READ_CONTACTS
          * @see android.Manifest.permission#READ_EXTERNAL_STORAGE
          * @see android.Manifest.permission#READ_HOME_APP_SEARCH_DATA
          * @see android.Manifest.permission#READ_ASSISTANT_APP_SEARCH_DATA
-         *
-         * @param schemaType             The schema type to set visibility on.
-         * @param visibleToPermissions   The Android permissions that will be required to access
-         *                               the given schema.
          */
+        // TODO(b/237388235): add enterprise permissions to javadocs after they're unhidden
         // Getter getRequiredPermissionsForSchemaTypeVisibility returns a map for all schemaTypes.
+        // To use this API doesn't require permissions.
+        @CanIgnoreReturnValue
+        @SuppressLint({"MissingGetterMatchingBuilder", "RequiresPermission"})
+        // @SetSchemaRequest is an IntDef annotation applied to Set<Set<Integer>>.
+        @SuppressWarnings("SupportAnnotationUsage")
+        public @NonNull Builder setRequiredPermissionsForSchemaTypeVisibility(
+                @NonNull String schemaType,
+                @SetSchemaRequest.AppSearchSupportedPermission
+                @NonNull Set<Set<Integer>> visibleToPermissionSets) {
+            Preconditions.checkNotNull(schemaType);
+            Preconditions.checkNotNull(visibleToPermissionSets);
+            resetIfBuilt();
+            InternalVisibilityConfig.Builder visibilityConfigBuilder =
+                    getOrCreateVisibilityConfigBuilder(schemaType);
+            for (Set<Integer> visibleToPermissions : visibleToPermissionSets) {
+                visibilityConfigBuilder.addVisibleToPermissions(visibleToPermissions);
+            }
+            return this;
+        }
+
+        /**
+         * Clears the set of required {@link android.Manifest.permission} combinations to read the
+         * given schema type.
+         *
+         * @see Builder#setRequiredPermissionsForSchemaTypeVisibility
+         */
+        // To use this API doesn't require permissions.
+        @ExperimentalAppSearchApi
+        @SuppressLint("RequiresPermission")
+        @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
+        @CanIgnoreReturnValue
+        public @NonNull Builder clearRequiredPermissionsForSchemaTypeVisibility(
+                @NonNull String schemaType) {
+            Preconditions.checkNotNull(schemaType);
+            resetIfBuilt();
+            InternalVisibilityConfig.Builder visibilityConfigBuilder =
+                    getVisibilityConfigBuilder(schemaType);
+            if (visibilityConfigBuilder != null) {
+                visibilityConfigBuilder.clearVisibleToPermissions();
+            }
+            return this;
+        }
+
+        /**
+         * Specify that the schema should be publicly available, to packages which already have
+         * visibility to {@code packageIdentifier}.
+         *
+         * @param schemaType the schema to make publicly accessible.
+         * @param packageIdentifier the package from which the document schema is from.
+         * @see SetSchemaRequest.Builder#setPubliclyVisibleSchema
+         */
+        // Merged list available from getPubliclyVisibleSchemas
         @CanIgnoreReturnValue
         @SuppressLint("MissingGetterMatchingBuilder")
-        @NonNull
-        public Builder setRequiredPermissionsForSchemaTypeVisibility(
-                @NonNull String schemaType,
-                @SetSchemaRequest.AppSearchSupportedPermission @NonNull
-                        Set<Set<Integer>> visibleToPermissions) {
+        @FlaggedApi(Flags.FLAG_ENABLE_SET_PUBLICLY_VISIBLE_SCHEMA)
+        public @NonNull Builder setPubliclyVisibleSchema(
+                @NonNull String schemaType, @NonNull PackageIdentifier packageIdentifier) {
             Preconditions.checkNotNull(schemaType);
-            Preconditions.checkNotNull(visibleToPermissions);
+            Preconditions.checkNotNull(packageIdentifier);
             resetIfBuilt();
-            ArrayList<Bundle> visibleToPermissionsBundle = new ArrayList<>();
-            for (Set<Integer> allRequiredPermissions : visibleToPermissions) {
-                for (int permission : allRequiredPermissions) {
-                    Preconditions.checkArgumentInRange(permission, SetSchemaRequest.READ_SMS,
-                            SetSchemaRequest.READ_ASSISTANT_APP_SEARCH_DATA, "permission");
-                }
-                Bundle allRequiredPermissionsBundle = new Bundle();
-                allRequiredPermissionsBundle.putIntegerArrayList(
-                        ALL_REQUIRED_PERMISSION_FIELD, new ArrayList<>(allRequiredPermissions));
-                visibleToPermissionsBundle.add(allRequiredPermissionsBundle);
+            InternalVisibilityConfig.Builder visibilityConfigBuilder =
+                    getOrCreateVisibilityConfigBuilder(schemaType);
+            visibilityConfigBuilder.setPubliclyVisibleTargetPackage(packageIdentifier);
+            return this;
+        }
+
+        /**
+         * Clears the visibility setting that specifies that the given schema type should be
+         * publicly available to packages which already have visibility to a specified package.
+         *
+         * @see Builder#setPubliclyVisibleSchema
+         */
+        @ExperimentalAppSearchApi
+        @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
+        @CanIgnoreReturnValue
+        public @NonNull Builder clearPubliclyVisibleSchema(@NonNull String schemaType) {
+            Preconditions.checkNotNull(schemaType);
+            resetIfBuilt();
+            InternalVisibilityConfig.Builder visibilityConfigBuilder =
+                    getVisibilityConfigBuilder(schemaType);
+            if (visibilityConfigBuilder != null) {
+                visibilityConfigBuilder.setPubliclyVisibleTargetPackage(null);
             }
-            mSchemasVisibleToPermissions.putParcelableArrayList(schemaType,
-                    visibleToPermissionsBundle);
+            return this;
+        }
+
+        /**
+         * Sets the documents from the provided {@code schemaType} can be read by the caller if they
+         * match the ALL visibility requirements set in {@link SchemaVisibilityConfig}.
+         *
+         * <p> The requirements in a {@link SchemaVisibilityConfig} is "AND" relationship. A
+         * caller must match ALL requirements to access the schema. For example, a caller must hold
+         * required permissions AND it is a specified package.
+         *
+         * <p> The querier could have access if they match ALL requirements in ANY of the given
+         * {@link SchemaVisibilityConfig}s
+         *
+         * <p>For example, if the Set contains {@code {% verbatim %}{{PackageA and Permission1},
+         * {PackageB and Permission2}}{% endverbatim %}}.
+         * <ul>
+         *     <li>A querier from packageA could read if they holds Permission1.</li>
+         *     <li>A querier from packageA could NOT read if they only holds Permission2 instead of
+         *     Permission1.</li>
+         *     <li>A querier from packageB could read if they holds Permission2.</li>
+         *     <li>A querier from packageC could never read.</li>
+         *     <li>A querier holds both PermissionA and PermissionE has access.</li>
+         * </ul>
+         *
+         * @param schemaType         The schema type to set visibility on.
+         * @param visibleToConfigs   The {@link SchemaVisibilityConfig}s hold all requirements that
+         *                           a call must to match to access the schema.
+         */
+        // Merged map available from getSchemasVisibleToConfigs
+        @CanIgnoreReturnValue
+        @SuppressLint("MissingGetterMatchingBuilder")
+        @FlaggedApi(Flags.FLAG_ENABLE_SET_SCHEMA_VISIBLE_TO_CONFIGS)
+        public @NonNull Builder setSchemaTypeVisibleToConfigs(@NonNull String schemaType,
+                @NonNull Set<SchemaVisibilityConfig> visibleToConfigs) {
+            Preconditions.checkNotNull(schemaType);
+            Preconditions.checkNotNull(visibleToConfigs);
+            resetIfBuilt();
+            InternalVisibilityConfig.Builder visibilityConfigBuilder =
+                    getOrCreateVisibilityConfigBuilder(schemaType);
+            for (SchemaVisibilityConfig visibleToConfig : visibleToConfigs) {
+                visibilityConfigBuilder.addVisibleToConfig(visibleToConfig);
+            }
+            return this;
+        }
+
+        /**
+         * Clears the {@link SchemaVisibilityConfig}s for the given schema type which allow
+         * visibility to the schema if the caller matches ALL visibility requirements of ANY
+         * {@link SchemaVisibilityConfig}.
+         *
+         * @see Builder#setSchemaTypeVisibleToConfigs
+         */
+        @ExperimentalAppSearchApi
+        @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
+        @CanIgnoreReturnValue
+        public @NonNull Builder clearSchemaTypeVisibleToConfigs(@NonNull String schemaType) {
+            Preconditions.checkNotNull(schemaType);
+            resetIfBuilt();
+            InternalVisibilityConfig.Builder visibilityConfigBuilder =
+                    getVisibilityConfigBuilder(schemaType);
+            if (visibilityConfigBuilder != null) {
+                visibilityConfigBuilder.clearVisibleToConfig();
+            }
             return this;
         }
 
@@ -416,51 +678,58 @@ public final class GetSchemaResponse {
          * @exportToFramework:hide
          */
          // Visibility setting is determined by SDK version, so it won't be needed in framework
+        @CanIgnoreReturnValue
         @SuppressLint("MissingGetterMatchingBuilder")
-        @NonNull
-        public Builder setVisibilitySettingSupported(boolean visibilitySettingSupported) {
+        public @NonNull Builder setVisibilitySettingSupported(boolean visibilitySettingSupported) {
             if (visibilitySettingSupported) {
-                mSchemasNotDisplayedBySystem = new ArrayList<>();
-                mSchemasVisibleToPackages = new Bundle();
-                mSchemasVisibleToPermissions = new Bundle();
+                mVisibilityConfigBuilders = new ArrayMap<>();
             } else {
-                mSchemasNotDisplayedBySystem = null;
-                mSchemasVisibleToPackages = null;
-                mSchemasVisibleToPermissions = null;
+                mVisibilityConfigBuilders = null;
             }
             return this;
         }
 
         /** Builds a {@link GetSchemaResponse} object. */
-        @NonNull
-        public GetSchemaResponse build() {
-            Bundle bundle = new Bundle();
-            bundle.putInt(VERSION_FIELD, mVersion);
-            bundle.putParcelableArrayList(SCHEMAS_FIELD, mSchemaBundles);
-            if (mSchemasNotDisplayedBySystem != null) {
-                // Only save the visibility fields if it was actually set.
-                bundle.putStringArrayList(SCHEMAS_NOT_DISPLAYED_BY_SYSTEM_FIELD,
-                        mSchemasNotDisplayedBySystem);
-                bundle.putBundle(SCHEMAS_VISIBLE_TO_PACKAGES_FIELD, mSchemasVisibleToPackages);
-                bundle.putBundle(SCHEMAS_VISIBLE_TO_PERMISSION_FIELD, mSchemasVisibleToPermissions);
+        public @NonNull GetSchemaResponse build() {
+            List<InternalVisibilityConfig> visibilityConfigs = null;
+            if (mVisibilityConfigBuilders != null) {
+                visibilityConfigs = new ArrayList<>();
+                for (InternalVisibilityConfig.Builder builder :
+                        mVisibilityConfigBuilders.values()) {
+                    visibilityConfigs.add(builder.build());
+                }
             }
             mBuilt = true;
-            return new GetSchemaResponse(bundle);
+            return new GetSchemaResponse(mVersion, mSchemas, visibilityConfigs);
+        }
+
+        private @NonNull InternalVisibilityConfig.Builder getOrCreateVisibilityConfigBuilder(
+                @NonNull String schemaType) {
+            if (mVisibilityConfigBuilders == null) {
+                throw new IllegalStateException("GetSchemaResponse is not configured with"
+                        + "visibility setting support");
+            }
+            InternalVisibilityConfig.Builder builder = mVisibilityConfigBuilders.get(schemaType);
+            if (builder == null) {
+                builder = new InternalVisibilityConfig.Builder(schemaType);
+                mVisibilityConfigBuilders.put(schemaType, builder);
+            }
+            return builder;
+        }
+
+        private @Nullable InternalVisibilityConfig.Builder getVisibilityConfigBuilder(
+                @NonNull String schemaType) {
+            if (mVisibilityConfigBuilders == null) {
+                throw new IllegalStateException("GetSchemaResponse is not configured with"
+                        + "visibility setting support");
+            }
+            return mVisibilityConfigBuilders.get(schemaType);
         }
 
         private void resetIfBuilt() {
             if (mBuilt) {
-                mSchemaBundles = new ArrayList<>(mSchemaBundles);
-                if (mSchemasNotDisplayedBySystem != null) {
-                    // Only reset the visibility fields if it was actually set.
-                    mSchemasNotDisplayedBySystem = new ArrayList<>(mSchemasNotDisplayedBySystem);
-                    Bundle copyVisibleToPackages = new Bundle();
-                    copyVisibleToPackages.putAll(mSchemasVisibleToPackages);
-                    mSchemasVisibleToPackages = copyVisibleToPackages;
-                    Bundle copyVisibleToPermissions = new Bundle();
-                    copyVisibleToPermissions.putAll(mSchemasVisibleToPermissions);
-                    mSchemasVisibleToPermissions = copyVisibleToPermissions;
-                }
+                // No need to copy mVisibilityConfigBuilders -- it gets copied during build().
+                mSchemas = new ArrayList<>(mSchemas);
                 mBuilt = false;
             }
         }

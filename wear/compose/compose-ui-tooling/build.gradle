@@ -14,7 +14,15 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -24,23 +32,20 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.5.0")
+    api("androidx.annotation:annotation:1.8.1")
+    api("androidx.compose.ui:ui-tooling-preview:1.7.4")
 
-    implementation(libs.kotlinStdlibCommon)
-    implementation(project(":compose:ui:ui-tooling-preview"))
     implementation("androidx.wear:wear-tooling-preview:1.0.0")
-
-    samples(project(":wear:compose:compose-material-samples"))
 }
 
 android {
-    namespace "androidx.wear.compose.ui.tooling"
+    namespace = "androidx.wear.compose.ui.tooling"
 }
 
 androidx {
     name = "Wear Compose Tools"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2023"
     description = "Tools for Wear Composable"
-    metalavaK2UastEnabled = true
+    samples(project(":wear:compose:compose-material-samples"))
 }

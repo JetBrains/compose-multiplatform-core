@@ -16,26 +16,24 @@
 
 package androidx.camera.camera2.internal;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
 import androidx.camera.camera2.internal.compat.workaround.ImageCapturePixelHDRPlus;
 import androidx.camera.core.impl.CaptureConfig;
 import androidx.camera.core.impl.ImageCaptureConfig;
 import androidx.camera.core.impl.UseCaseConfig;
 
+import org.jspecify.annotations.NonNull;
+
 /**
  * A {@link Camera2CaptureOptionUnpacker} extender for unpacking ImageCapture options into
  * {@link CaptureConfig.Builder}.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 final class ImageCaptureOptionUnpacker extends Camera2CaptureOptionUnpacker {
 
     static final ImageCaptureOptionUnpacker INSTANCE = new ImageCaptureOptionUnpacker(
             new ImageCapturePixelHDRPlus());
 
-    @NonNull
-    private final ImageCapturePixelHDRPlus mImageCapturePixelHDRPlus;
+    private final @NonNull ImageCapturePixelHDRPlus mImageCapturePixelHDRPlus;
 
     private ImageCaptureOptionUnpacker(@NonNull ImageCapturePixelHDRPlus imageCapturePixelHDRPlus) {
         mImageCapturePixelHDRPlus = imageCapturePixelHDRPlus;
@@ -43,7 +41,7 @@ final class ImageCaptureOptionUnpacker extends Camera2CaptureOptionUnpacker {
 
     @Override
     public void unpack(@NonNull UseCaseConfig<?> config,
-            @NonNull final CaptureConfig.Builder builder) {
+            final CaptureConfig.@NonNull Builder builder) {
         super.unpack(config, builder);
 
         if (!(config instanceof ImageCaptureConfig)) {

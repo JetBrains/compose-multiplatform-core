@@ -26,31 +26,53 @@ import org.junit.runner.RunWith
 @SmallTest
 class CreateCredentialNoCreateOptionExceptionTest {
     @Test(expected = CreateCredentialNoCreateOptionException::class)
-    @Throws(
-        CreateCredentialNoCreateOptionException::class
-    )
+    @Throws(CreateCredentialNoCreateOptionException::class)
     fun construct_inputNonEmpty_success() {
         throw CreateCredentialNoCreateOptionException("msg")
     }
 
     @Test(expected = CreateCredentialNoCreateOptionException::class)
-    @Throws(
-        CreateCredentialNoCreateOptionException::class
-    )
+    @Throws(CreateCredentialNoCreateOptionException::class)
     fun construct_errorMessageNull_success() {
         throw CreateCredentialNoCreateOptionException(null)
     }
 
     @Test
     fun getter_success() {
-        val expectedClass =
-            CreateCredentialNoCreateOptionException::class.java
+        val expectedClass = CreateCredentialNoCreateOptionException::class.java
         val expectedMessage = "message"
         val exception = CreateCredentialNoCreateOptionException(expectedMessage)
         assertThat(exception.javaClass).isEqualTo(expectedClass)
         assertThat(exception.errorMessage).isEqualTo(expectedMessage)
-        assertThat(exception.type).isEqualTo(
-            CreateCredentialNoCreateOptionException.TYPE_CREATE_CREDENTIAL_NO_CREATE_OPTION
-        )
+        assertThat(exception.type)
+            .isEqualTo(
+                CreateCredentialNoCreateOptionException.TYPE_CREATE_CREDENTIAL_NO_CREATE_OPTION
+            )
+    }
+
+    @Test
+    fun bundleConversion_withMessage_success() {
+        val expectedClass = CreateCredentialNoCreateOptionException::class.java
+        val expectedMessage = "message"
+        val exception = CreateCredentialNoCreateOptionException(expectedMessage)
+
+        val actual =
+            CreateCredentialException.fromBundle(CreateCredentialException.asBundle(exception))
+
+        assertThat(actual).isInstanceOf(expectedClass)
+        assertThat(actual.errorMessage).isEqualTo(expectedMessage)
+    }
+
+    @Test
+    fun bundleConversion_withoutMessage_success() {
+        val expectedClass = CreateCredentialNoCreateOptionException::class.java
+        val expectedMessage = null
+        val exception = CreateCredentialNoCreateOptionException(expectedMessage)
+
+        val actual =
+            CreateCredentialException.fromBundle(CreateCredentialException.asBundle(exception))
+
+        assertThat(actual).isInstanceOf(expectedClass)
+        assertThat(actual.errorMessage).isEqualTo(expectedMessage)
     }
 }

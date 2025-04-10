@@ -17,9 +17,11 @@
 package androidx.wear.tiles;
 
 import android.widget.RemoteViews;
+import androidx.wear.tiles.InteractionEventsCallback;
 import androidx.wear.tiles.TileCallback;
 import androidx.wear.tiles.TileAddEventData;
 import androidx.wear.tiles.TileEnterEventData;
+import androidx.wear.tiles.TileInteractionEventData;
 import androidx.wear.tiles.TileLeaveEventData;
 import androidx.wear.tiles.TileRequestData;
 import androidx.wear.tiles.TileRemoveEventData;
@@ -33,8 +35,7 @@ import androidx.wear.tiles.ResourcesRequestData;
   */
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)")
 interface TileProvider {
-
-    const int API_VERSION = 1;
+    const int API_VERSION = 4;
 
     /**
       * Gets the version of this TileProvider interface implemented by this
@@ -92,4 +93,18 @@ interface TileProvider {
      * @since version 1
      */
     oneway void onTileLeaveEvent(in TileLeaveEventData requestData) = 8;
+
+    /**
+     * Called daily when the renderer sends batched Tile interaction events.
+     *
+     * @since version 3
+     */
+    oneway void processRecentInteractionEvents(in List<TileInteractionEventData> events) = 10;
+
+    /**
+     * Called daily when the renderer sends batched Tile interaction events.
+     *
+     * @since version 4
+     */
+    oneway void onRecentInteractionEvents(in List<TileInteractionEventData> events, InteractionEventsCallback callback) = 11;
 }

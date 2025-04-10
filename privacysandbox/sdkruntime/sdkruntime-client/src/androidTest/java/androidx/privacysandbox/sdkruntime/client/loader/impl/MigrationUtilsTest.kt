@@ -17,11 +17,9 @@
 package androidx.privacysandbox.sdkruntime.client.loader.impl
 
 import android.content.Context
-import android.os.Build
 import android.system.Os
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import java.io.DataInputStream
@@ -33,7 +31,6 @@ import org.junit.runner.RunWith
 
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
 class MigrationUtilsTest {
 
     private lateinit var context: Context
@@ -61,9 +58,7 @@ class MigrationUtilsTest {
         val fileToMove = File(fromDir, "testFile")
         fileToMove.createNewFile()
         fileToMove.outputStream().use { outputStream ->
-            DataOutputStream(outputStream).use { dataStream ->
-                dataStream.writeInt(42)
-            }
+            DataOutputStream(outputStream).use { dataStream -> dataStream.writeInt(42) }
         }
 
         val result = MigrationUtils.moveFiles(fromDir, toDir, fileToMove.name)
@@ -73,14 +68,12 @@ class MigrationUtilsTest {
         val resultFile = File(toDir, fileToMove.name)
         assertThat(resultFile.exists()).isTrue()
 
-        val content = resultFile.inputStream().use { inputStream ->
-            DataInputStream(inputStream).use { dataStream ->
-                dataStream.readInt()
+        val content =
+            resultFile.inputStream().use { inputStream ->
+                DataInputStream(inputStream).use { dataStream -> dataStream.readInt() }
             }
-        }
 
-        assertThat(content)
-            .isEqualTo(42)
+        assertThat(content).isEqualTo(42)
     }
 
     @Test
@@ -127,23 +120,19 @@ class MigrationUtilsTest {
     fun moveFiles_whenSameFromAndTo_keepExistingFile() {
         val fileToMove = File(fromDir, "testFile")
         fileToMove.outputStream().use { outputStream ->
-            DataOutputStream(outputStream).use { dataStream ->
-                dataStream.writeInt(42)
-            }
+            DataOutputStream(outputStream).use { dataStream -> dataStream.writeInt(42) }
         }
 
         val result = MigrationUtils.moveFiles(fromDir, fromDir, fileToMove.name)
         assertThat(result).isTrue()
 
         assertThat(fileToMove.exists()).isTrue()
-        val content = fileToMove.inputStream().use { inputStream ->
-            DataInputStream(inputStream).use { dataStream ->
-                dataStream.readInt()
+        val content =
+            fileToMove.inputStream().use { inputStream ->
+                DataInputStream(inputStream).use { dataStream -> dataStream.readInt() }
             }
-        }
 
-        assertThat(content)
-            .isEqualTo(42)
+        assertThat(content).isEqualTo(42)
     }
 
     @Test

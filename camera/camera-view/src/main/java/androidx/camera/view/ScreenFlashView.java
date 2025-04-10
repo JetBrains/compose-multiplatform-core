@@ -19,6 +19,8 @@ package androidx.camera.view;
 import static androidx.camera.core.ImageCapture.FLASH_MODE_SCREEN;
 import static androidx.camera.core.impl.utils.Threads.checkMainThread;
 
+import android.animation.Animator;
+import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
@@ -27,23 +29,23 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
 import androidx.camera.core.ImageCapture;
-import androidx.camera.core.ImageCapture.ScreenFlashUiCompleter;
-import androidx.camera.core.ImageCapture.ScreenFlashUiControl;
+import androidx.camera.core.ImageCapture.ScreenFlash;
 import androidx.camera.core.Logger;
 import androidx.camera.view.internal.ScreenFlashUiInfo;
 import androidx.fragment.app.Fragment;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 /**
  * Custom View that implements a basic UI for screen flash photo capture.
  *
- * <p> This class provides an {@link ScreenFlashUiControl} implementation with
- * {@link #getScreenFlashUiControl()} for the
- * {@link ImageCapture#setScreenFlashUiControl(ScreenFlashUiControl)} API. If a
+ * <p> This class provides an {@link ScreenFlash} implementation with
+ * {@link #getScreenFlash()} for the
+ * {@link ImageCapture#setScreenFlash(ImageCapture.ScreenFlash)} API. If a
  * {@link CameraController} is used for CameraX operations,{@link #setController(CameraController)}
  * should be used to set the controller to this view. Normally, this view is kept fully
  * transparent. It becomes fully visible for the duration of screen flash photo capture. The
@@ -60,15 +62,17 @@ import androidx.fragment.app.Fragment;
  * {@link PreviewView} does not encompass the full screen, users may want to use this view
  * separately so that whole screen can be encompassed during screen flash operation.
  *
+ * @see #getScreenFlash
  * @see ImageCapture#FLASH_MODE_SCREEN
- * @see PreviewView#getScreenFlashUiControl
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class ScreenFlashView extends View {
     private static final String TAG = "ScreenFlashView";
     private CameraController mCameraController;
     private Window mScreenFlashWindow;
-    private ScreenFlashUiControl mScreenFlashUiControl;
+    private ImageCapture.ScreenFlash mScreenFlash;
+
+    /** The timeout in seconds for the visibility animation at {@link ScreenFlash#apply}. */
+    private static final long ANIMATION_DURATION_MILLIS = 1000;
 
     @UiThread
     public ScreenFlashView(@NonNull Context context) {
@@ -83,7 +87,7 @@ public final class ScreenFlashView extends View {
     @UiThread
     public ScreenFlashView(@NonNull Context context, @Nullable AttributeSet attrs,
             int defStyleAttr) {
-        this(context, attrs,  defStyleAttr, 0);
+        this(context, attrs, defStyleAttr, 0);
     }
 
     @UiThread
@@ -97,9 +101,9 @@ public final class ScreenFlashView extends View {
     }
 
     /**
-     * Sets {@link ScreenFlashUiInfo} to a {@link CameraController}.
+     * Sets the {@link CameraController}.
      *
-     * <p> Once set, the controller will use {@link ScreenFlashView} for screen flash related UI
+     * <p> Once set, the controller will use the {@code ScreenFlashView} for screen flash related UI
      * operations.
      *
      * @throws IllegalStateException If {@link ImageCapture#FLASH_MODE_SCREEN} is set to the
@@ -112,7 +116,7 @@ public final class ScreenFlashView extends View {
         checkMainThread();
 
         if (mCameraController != null && mCameraController != cameraController) {
-            // If already bound to a different controller, remove the ScreenFlashUiControl from the
+            // If already bound to a different controller, remove the ScreenFlash instance from the
             // old controller.
             setScreenFlashUiInfo(null);
         }
@@ -128,21 +132,21 @@ public final class ScreenFlashView extends View {
                     "No window set despite setting FLASH_MODE_SCREEN in CameraController");
         }
 
-        setScreenFlashUiInfo(getScreenFlashUiControl());
+        setScreenFlashUiInfo(getScreenFlash());
     }
 
-    private void setScreenFlashUiInfo(ScreenFlashUiControl control) {
+    private void setScreenFlashUiInfo(ImageCapture.ScreenFlash control) {
         if (mCameraController == null) {
-            Logger.d(TAG, "setScreenFlashUiControl: mCameraController is null!");
+            Logger.d(TAG, "setScreenFlashUiInfo: mCameraController is null!");
             return;
         }
         mCameraController.setScreenFlashUiInfo(new ScreenFlashUiInfo(
-                        ScreenFlashUiInfo.ProviderType.SCREEN_FLASH_VIEW, control));
+                ScreenFlashUiInfo.ProviderType.SCREEN_FLASH_VIEW, control));
     }
 
     /**
      * Sets a {@link Window} instance for subsequent photo capture requests with
-     * {@link ImageCapture} use case when{@link ImageCapture#FLASH_MODE_SCREEN} is set.
+     * {@link ImageCapture} use case when {@link ImageCapture#FLASH_MODE_SCREEN} is set.
      *
      * <p>The calling of this API will take effect for {@code ImageCapture#FLASH_MODE_SCREEN} only
      * and the {@code Window} will be ignored for other flash modes. During screen flash photo
@@ -163,70 +167,161 @@ public final class ScreenFlashView extends View {
     @UiThread
     public void setScreenFlashWindow(@Nullable Window screenFlashWindow) {
         checkMainThread();
-        updateScreenFlashUiControl(screenFlashWindow);
+        updateScreenFlash(screenFlashWindow);
         mScreenFlashWindow = screenFlashWindow;
-        setScreenFlashUiInfo(getScreenFlashUiControl());
+        setScreenFlashUiInfo(getScreenFlash());
     }
 
-    /** Update {@link #mScreenFlashUiControl} if required. */
-    private void updateScreenFlashUiControl(Window window) {
+    /** Update {@link #mScreenFlash} if required. */
+    private void updateScreenFlash(Window window) {
+        Logger.d(TAG, "updateScreenFlash: is new window null = " + (window == null)
+                + ",  is new window same as previous = " + (window == mScreenFlashWindow));
+
         if (mScreenFlashWindow != window) {
-            mScreenFlashUiControl = window == null ? null : new ScreenFlashUiControl() {
+            mScreenFlash = window == null ? null : new ScreenFlash() {
                 private float mPreviousBrightness;
+                private ValueAnimator mAnimator;
 
                 @Override
-                public void applyScreenFlashUi(
-                        @NonNull ScreenFlashUiCompleter screenFlashUiCompleter) {
-                    Logger.d(TAG, "ScreenFlashUiControl#applyScreenFlashUi");
+                public void apply(long expirationTimeMillis,
+                        ImageCapture.@NonNull ScreenFlashListener screenFlashListener) {
+                    Logger.d(TAG, "ScreenFlash#apply");
 
-                    setAlpha(1f);
+                    mPreviousBrightness = getBrightness();
+                    setBrightness(1.0f);
 
-                    // Maximize screen brightness
-                    WindowManager.LayoutParams layoutParam = mScreenFlashWindow.getAttributes();
-                    mPreviousBrightness = layoutParam.screenBrightness;
-                    layoutParam.screenBrightness = 1F;
-                    mScreenFlashWindow.setAttributes(layoutParam);
-
-                    screenFlashUiCompleter.complete();
+                    if (mAnimator != null) {
+                        mAnimator.cancel();
+                    }
+                    mAnimator = animateToFullOpacity(screenFlashListener::onCompleted);
                 }
 
                 @Override
-                public void clearScreenFlashUi() {
-                    Logger.d(TAG, "ScreenFlashUiControl#clearScreenFlashUi");
+                public void clear() {
+                    Logger.d(TAG, "ScreenFlash#clear");
+
+                    if (mAnimator != null) {
+                        mAnimator.cancel();
+                        mAnimator = null;
+                    }
 
                     setAlpha(0f);
 
                     // Restore screen brightness
-                    WindowManager.LayoutParams layoutParam = mScreenFlashWindow.getAttributes();
-                    layoutParam.screenBrightness = mPreviousBrightness;
-                    mScreenFlashWindow.setAttributes(layoutParam);
+                    setBrightness(mPreviousBrightness);
                 }
             };
         }
     }
 
+    private ValueAnimator animateToFullOpacity(@Nullable Runnable onAnimationEnd) {
+        Logger.d(TAG, "animateToFullOpacity");
+
+        ValueAnimator animator = ValueAnimator.ofFloat(0F, 1F);
+
+        // TODO: b/355168952 - Allow users to overwrite the animation duration.
+        animator.setDuration(getVisibilityRampUpAnimationDurationMillis());
+
+        animator.addUpdateListener(animation -> {
+            Logger.d(TAG, "animateToFullOpacity: value = " + (float) animation.getAnimatedValue());
+            setAlpha((float) animation.getAnimatedValue());
+        });
+
+        animator.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(@NonNull Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(@NonNull Animator animation) {
+                Logger.d(TAG, "ScreenFlash#apply: onAnimationEnd");
+                if (onAnimationEnd != null) {
+                    onAnimationEnd.run();
+                }
+            }
+
+            @Override
+            public void onAnimationCancel(@NonNull Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(@NonNull Animator animation) {
+
+            }
+        });
+
+        animator.start();
+
+        return animator;
+    }
+
+    private float getBrightness() {
+        if (mScreenFlashWindow == null) {
+            Logger.e(TAG, "setBrightness: mScreenFlashWindow is null!");
+            return Float.NaN;
+        }
+
+        WindowManager.LayoutParams layoutParam = mScreenFlashWindow.getAttributes();
+        return layoutParam.screenBrightness;
+    }
+
+    private void setBrightness(float value) {
+        if (mScreenFlashWindow == null) {
+            Logger.e(TAG, "setBrightness: mScreenFlashWindow is null!");
+            return;
+        }
+
+        if (Float.isNaN(value)) {
+            Logger.e(TAG, "setBrightness: value is NaN!");
+            return;
+        }
+
+        WindowManager.LayoutParams layoutParam = mScreenFlashWindow.getAttributes();
+        layoutParam.screenBrightness = value;
+        mScreenFlashWindow.setAttributes(layoutParam);
+        Logger.d(TAG, "Brightness set to " + layoutParam.screenBrightness);
+    }
+
     /**
-     * Returns an {@link ScreenFlashUiControl} implementation based on the {@link Window} instance
+     * Returns an {@link ScreenFlash} implementation based on the {@link Window} instance
      * set via {@link #setScreenFlashWindow(Window)}.
      *
-     * <p> When {@link ScreenFlashUiControl#applyScreenFlashUi(ScreenFlashUiCompleter)} is invoked,
-     * this view becomes fully visible and screen brightness is maximized using the provided
-     * {@code Window}. The default color of the overlay view is {@link Color#WHITE}. To change
+     * <p> When {@link ScreenFlash#apply(long, ImageCapture.ScreenFlashListener)} is invoked,
+     * this view becomes fully visible gradually with an animation and screen brightness is
+     * maximized using the provided {@code Window}. Since brightness change of the display happens
+     * asynchronously and may take some time to be completed, the animation to ramp up visibility
+     * may require a duration of sufficient delay (decided internally) before
+     * {@link ImageCapture.ScreenFlashListener#onCompleted()} is invoked.
+     *
+     * <p> The default color of the overlay view is {@link Color#WHITE}. To change
      * the color, use {@link #setBackgroundColor(int)}.
      *
-     * <p> When {@link ScreenFlashUiControl#clearScreenFlashUi()} is invoked, the view
+     * <p> When {@link ScreenFlash#clear()} is invoked, the view
      * becomes transparent and screen brightness is restored.
      *
      * <p> The {@code Window} instance parameter can usually be provided from the activity using
      * the {@link PreviewView}, see {@link Activity#getWindow()} for details. If a null {@code
      * Window} is set or none set at all, a null value will be returned by this method.
      *
-     * @return A simple {@link ScreenFlashUiControl} implementation, or null value if a non-null
-     *         {@code Window} instance hasn't been set.
+     * @return A simple {@link ScreenFlash} implementation, or null value if a non-null
+     * {@code Window} instance hasn't been set.
      */
     @UiThread
-    @Nullable
-    public ScreenFlashUiControl getScreenFlashUiControl() {
-        return mScreenFlashUiControl;
+    public @Nullable ScreenFlash getScreenFlash() {
+        return mScreenFlash;
+    }
+
+    /**
+     * Returns the duration of the visibility ramp-up animation.
+     *
+     * <p> This is currently used in {@link ScreenFlash#apply}.
+     *
+     * @see #getScreenFlash()
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public long getVisibilityRampUpAnimationDurationMillis() {
+        return ANIMATION_DURATION_MILLIS;
     }
 }

@@ -20,15 +20,16 @@ import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.OutcomeReceiver;
 import android.os.RemoteException;
 import android.util.Log;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.concurrent.futures.ResolvableFuture;
@@ -38,6 +39,7 @@ import androidx.wear.protolayout.proto.DeviceParametersProto.DeviceParameters;
 import androidx.wear.protolayout.protobuf.InvalidProtocolBufferException;
 import androidx.wear.tiles.EventBuilders.TileAddEvent;
 import androidx.wear.tiles.EventBuilders.TileEnterEvent;
+import androidx.wear.tiles.EventBuilders.TileInteractionEvent;
 import androidx.wear.tiles.EventBuilders.TileLeaveEvent;
 import androidx.wear.tiles.EventBuilders.TileRemoveEvent;
 import androidx.wear.tiles.RequestBuilders.ResourcesRequest;
@@ -49,11 +51,18 @@ import androidx.wear.tiles.proto.RequestProto;
 import androidx.wear.tiles.proto.TileProto;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.wear.Sdk;
+import com.google.wear.services.tiles.TileInstance;
+import com.google.wear.services.tiles.TilesManager;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -77,7 +86,7 @@ public abstract class TileService extends Service {
     static final VersionInfo DEFAULT_VERSION =
             VersionInfo.newBuilder().setMajor(1).setMinor(0).build();
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("deprecation") // For backward compatibility
     private static final ListenableFuture<androidx.wear.tiles.ResourceBuilders.Resources>
             ON_RESOURCES_REQUEST_NOT_IMPLEMENTED =
                     createFailedFuture(
@@ -130,7 +139,9 @@ public abstract class TileService extends Service {
      */
     private static final long INACTIVE_TILE_PERIOD_MS = Duration.ofDays(60).toMillis();
 
-    private static TimeSourceClockImpl sTimeSourceClock = new TimeSourceClockImpl();
+    private static final TimeSourceClockImpl sTimeSourceClock = new TimeSourceClockImpl();
+
+    private static Boolean sUseWearSdkImpl;
 
     /**
      * Called when the system is requesting a new timeline from this Tile Provider. The returned
@@ -142,8 +153,8 @@ public abstract class TileService extends Service {
      * @param requestParams Parameters about the request. See {@link TileRequest} for more info.
      */
     @MainThread
-    @NonNull
-    protected abstract ListenableFuture<Tile> onTileRequest(@NonNull TileRequest requestParams);
+    protected abstract @NonNull ListenableFuture<Tile> onTileRequest(
+            @NonNull TileRequest requestParams);
 
     /**
      * Called when the system is requesting a resource bundle from this Tile Provider. The returned
@@ -157,10 +168,9 @@ public abstract class TileService extends Service {
      * @deprecated Use {@link #onTileResourcesRequest} instead.
      */
     @MainThread
-    @NonNull
     @Deprecated
-    protected ListenableFuture<androidx.wear.tiles.ResourceBuilders.Resources> onResourcesRequest(
-            @NonNull ResourcesRequest requestParams) {
+    protected @NonNull ListenableFuture<androidx.wear.tiles.ResourceBuilders.Resources>
+            onResourcesRequest(@NonNull ResourcesRequest requestParams) {
         return ON_RESOURCES_REQUEST_NOT_IMPLEMENTED;
     }
 
@@ -180,9 +190,8 @@ public abstract class TileService extends Service {
      *     info.
      */
     @MainThread
-    @NonNull
     @SuppressWarnings({"AsyncSuffixFuture", "deprecation"}) // For backward compatibility
-    protected ListenableFuture<Resources> onTileResourcesRequest(
+    protected @NonNull ListenableFuture<Resources> onTileResourcesRequest(
             @NonNull ResourcesRequest requestParams) {
         // We are offering a default implementation for onTileResourcesRequest for backward
         // compatibility as older clients are overriding onResourcesRequest.
@@ -234,8 +243,10 @@ public abstract class TileService extends Service {
      * <p>Note that this is called from your app's main thread, which is usually also the UI thread.
      *
      * @param requestParams Parameters about the request. See {@link TileEnterEvent} for more info.
+     * @deprecated use {@link #onRecentInteractionEventsAsync(List)}.
      */
     @MainThread
+    @Deprecated
     protected void onTileEnterEvent(@NonNull TileEnterEvent requestParams) {}
 
     /**
@@ -244,9 +255,32 @@ public abstract class TileService extends Service {
      * <p>Note that this is called from your app's main thread, which is usually also the UI thread.
      *
      * @param requestParams Parameters about the request. See {@link TileLeaveEvent} for more info.
+     * @deprecated use {@link #onRecentInteractionEventsAsync(List)}.
      */
     @MainThread
+    @Deprecated
     protected void onTileLeaveEvent(@NonNull TileLeaveEvent requestParams) {}
+
+    /**
+     * Called when the system sends a batch of Tile interaction events that happened since the last
+     * time this method was called. The time between calls to this method may vary, do not depend on
+     * it for time-sensitive or critical tasks.
+     *
+     * <p>Interaction events represent user direct interaction with a tile, when a tile comes into
+     * view (enter event) or when the tiles goes out of view (leave event).
+     *
+     * <p>The returned future must complete after at most 10 seconds from the moment this method is
+     * called (exact timeout length subject to change, but 10 seconds is guaranteed).
+     *
+     * <p>This method is called from your app's main thread, which is usually also the UI thread.
+     *
+     * @param events A list of {@link TileInteractionEvent} representing interactions that occurred.
+     */
+    @MainThread
+    protected @NonNull ListenableFuture<Void> onRecentInteractionEventsAsync(
+            @NonNull List<TileInteractionEvent> events) {
+        return createImmediateFuture();
+    }
 
     /**
      * Gets an instance of {@link TileUpdateRequester} to allow a Tile Provider to notify the tile's
@@ -254,8 +288,7 @@ public abstract class TileService extends Service {
      *
      * @param context The application context.
      */
-    @NonNull
-    public static TileUpdateRequester getUpdater(@NonNull Context context) {
+    public static @NonNull TileUpdateRequester getUpdater(@NonNull Context context) {
 
         List<TileUpdateRequester> requesters = new ArrayList<>();
         requesters.add(new SysUiTileUpdateRequester(context));
@@ -265,40 +298,45 @@ public abstract class TileService extends Service {
     }
 
     /**
-     * Returns the list of active tiles belonging to the passed {@param context}'s package name. A
+     * Returns the list of active tiles belonging to the passed {@code context}'s package name. A
      * tile is considered to be active if it is present in the carousel.
      *
      * <p>The result reflects the state of carousel at the time the call was made, which might've
      * changed by the time the result is received. {@link TileService#onTileAddEvent} and {@link
      * TileService#onTileRemoveEvent} should be used instead for live updates.
      *
-     * <p>This method may not always return all tiles present in the carousel. The possibly
-     * omitted tiles being the pre-installed tiles, all tiles if the user has cleared the app
-     * data, or the tiles a user hasn't visited in the last 60 days, while tiles removed by an
-     * app update may be shown as active for 60 days afterwards.
+     * <p>Compatibility behavior:
+     *
+     * <p>On SDKs older than U, this method is a best-effort to match platform behavior, but may not
+     * always return all tiles present in the carousel. The possibly omitted tiles being the
+     * pre-installed tiles, all tiles if the user has cleared the app data, or the tiles a user
+     * hasn't visited in the last 60 days, while tiles removed by an app update may be shown as
+     * active for 60 days afterwards.
      *
      * @param context The application context.
      * @param executor The executor on which methods should be invoked. To dispatch events through
-     *     the main thread of your application, you can use {@link
-     *     android.content.Context#getMainExecutor()}.
-     * @return A list of {@link ActiveTileIdentifier} for the tiles belonging to the passed {@param
+     *     the main thread of your application, you can use {@link Context#getMainExecutor()}.
+     * @return A list of {@link ActiveTileIdentifier} for the tiles belonging to the passed {@code
      *     context} present in the carousel, or a value based on platform-specific fallback
      *     behavior.
      */
-    @NonNull
-    public static ListenableFuture<List<ActiveTileIdentifier>> getActiveTilesSnapshotAsync(
+    public static @NonNull ListenableFuture<List<ActiveTileIdentifier>> getActiveTilesAsync(
             @NonNull Context context, @NonNull Executor executor) {
-        return getActiveTilesSnapshotAsync(context, executor, sTimeSourceClock);
+        if (useWearSdkImpl(context)
+                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            return Api34Impl.getActiveTilesAsync(
+                    Sdk.getWearManager(context, TilesManager.class), executor);
+        }
+        return getActiveTilesAsyncLegacy(context, executor, sTimeSourceClock);
     }
 
     @VisibleForTesting
-    @NonNull
-    static ListenableFuture<List<ActiveTileIdentifier>> getActiveTilesSnapshotAsync(
+    static @NonNull ListenableFuture<List<ActiveTileIdentifier>> getActiveTilesAsyncLegacy(
             @NonNull Context context,
             @NonNull Executor executor,
             @NonNull TimeSourceClock timeSourceClock) {
-        return readActiveTilesSharedPref(
-                getActiveTilesSharedPreferences(context),
+        return readActiveTilesSharedPrefLegacy(
+                getActiveTilesSharedPrefLegacy(context),
                 context.getPackageName(),
                 executor,
                 timeSourceClock);
@@ -311,8 +349,7 @@ public abstract class TileService extends Service {
     private TileProvider.Stub mBinder;
 
     @Override
-    @Nullable
-    public IBinder onBind(@NonNull Intent intent) {
+    public @Nullable IBinder onBind(@NonNull Intent intent) {
         if (ACTION_BIND_TILE_PROVIDER.equals(intent.getAction())) {
             if (mBinder == null) {
                 mBinder = new TileProviderWrapper(this, new Handler(getMainLooper()));
@@ -352,12 +389,7 @@ public abstract class TileService extends Service {
                                                 + requestParams.getVersion());
                                 return;
                             }
-
-                            tileService.markTileAsActive(
-                                    tileId,
-                                    new ComponentName(
-                                            tileService, tileService.getClass().getName()),
-                                    tileService.getTimeSourceClock());
+                            tileService.markTileAsActiveLegacy(tileId);
                             TileRequest tileRequest;
 
                             try {
@@ -438,12 +470,8 @@ public abstract class TileService extends Service {
                                                 + requestParams.getVersion());
                                 return;
                             }
+                            tileService.markTileAsActiveLegacy(tileId);
 
-                            tileService.markTileAsActive(
-                                    tileId,
-                                    new ComponentName(
-                                            tileService, tileService.getClass().getName()),
-                                    tileService.getTimeSourceClock());
                             ResourcesRequest req;
 
                             try {
@@ -534,11 +562,7 @@ public abstract class TileService extends Service {
                                         TileAddEvent.fromProto(
                                                 EventProto.TileAddEvent.parseFrom(
                                                         data.getContents()));
-                                tileService.markTileAsActive(
-                                        evt.getTileId(),
-                                        new ComponentName(
-                                                tileService, tileService.getClass().getName()),
-                                        tileService.getTimeSourceClock());
+                                tileService.markTileAsActiveLegacy(evt.getTileId());
                                 tileService.onTileAddEvent(evt);
                             } catch (InvalidProtocolBufferException ex) {
                                 Log.e(TAG, "Error deserializing TileAddEvent payload.", ex);
@@ -567,10 +591,8 @@ public abstract class TileService extends Service {
                                         TileRemoveEvent.fromProto(
                                                 EventProto.TileRemoveEvent.parseFrom(
                                                         data.getContents()));
-                                tileService.markTileAsInactive(
-                                        evt.getTileId(),
-                                        new ComponentName(
-                                                tileService, tileService.getClass().getName()));
+
+                                tileService.markTileAsInactiveLegacy(evt.getTileId());
                                 tileService.onTileRemoveEvent(evt);
                             } catch (InvalidProtocolBufferException ex) {
                                 Log.e(TAG, "Error deserializing TileRemoveEvent payload.", ex);
@@ -599,12 +621,16 @@ public abstract class TileService extends Service {
                                         TileEnterEvent.fromProto(
                                                 EventProto.TileEnterEvent.parseFrom(
                                                         data.getContents()));
-                                tileService.markTileAsActive(
-                                        evt.getTileId(),
-                                        new ComponentName(
-                                                tileService, tileService.getClass().getName()),
-                                        tileService.getTimeSourceClock());
+                                tileService.markTileAsActiveLegacy(evt.getTileId());
+
                                 tileService.onTileEnterEvent(evt);
+                                sendRecentInteractionEventsInternal(
+                                        List.of(
+                                                new TileInteractionEvent.Builder(
+                                                                evt.getTileId(),
+                                                                TileInteractionEvent.ENTER)
+                                                        .build()),
+                                        /* callback= */ null);
                             } catch (InvalidProtocolBufferException ex) {
                                 Log.e(TAG, "Error deserializing TileEnterEvent payload.", ex);
                             }
@@ -632,17 +658,90 @@ public abstract class TileService extends Service {
                                         TileLeaveEvent.fromProto(
                                                 EventProto.TileLeaveEvent.parseFrom(
                                                         data.getContents()));
-                                tileService.markTileAsActive(
-                                        evt.getTileId(),
-                                        new ComponentName(
-                                                tileService, tileService.getClass().getName()),
-                                        tileService.getTimeSourceClock());
+                                tileService.markTileAsActiveLegacy(evt.getTileId());
+
                                 tileService.onTileLeaveEvent(evt);
+                                sendRecentInteractionEventsInternal(
+                                        List.of(
+                                                new TileInteractionEvent.Builder(
+                                                                evt.getTileId(),
+                                                                TileInteractionEvent.LEAVE)
+                                                        .build()),
+                                        /* callback= */ null);
                             } catch (InvalidProtocolBufferException ex) {
                                 Log.e(TAG, "Error deserializing TileLeaveEvent payload.", ex);
                             }
                         }
                     });
+        }
+
+        @Override
+        public void processRecentInteractionEvents(List<TileInteractionEventData> data) {
+            onRecentInteractionEvents(data, /* callback= */ null);
+        }
+
+        @Override
+        @SuppressWarnings("JdkCollectors")
+        public void onRecentInteractionEvents(
+                List<TileInteractionEventData> data, InteractionEventsCallback callback) {
+            mHandler.post(
+                    () -> {
+                        TileService tileService = mServiceRef.get();
+
+                        if (data.isEmpty() || tileService == null) {
+                            return;
+                        }
+
+                        if (data.get(0).getVersion() != TileInteractionEventData.VERSION_PROTOBUF) {
+                            Log.e(
+                                    TAG,
+                                    "TileInteractionEventData had unexpected version: "
+                                            + data.get(0).getVersion());
+                            return;
+                        }
+
+                        List<TileInteractionEvent> events =
+                                data.stream()
+                                        .map(TileProviderWrapper::tileInteractionEventFromProto)
+                                        .filter(Optional::isPresent)
+                                        .map(Optional::get)
+                                        .collect(Collectors.toList());
+                        sendRecentInteractionEventsInternal(events, callback);
+                    });
+        }
+
+        private void sendRecentInteractionEventsInternal(
+                @NonNull List<TileInteractionEvent> events,
+                @Nullable InteractionEventsCallback callback) {
+            TileService tileService = mServiceRef.get();
+            ListenableFuture<Void> future = tileService.onRecentInteractionEventsAsync(events);
+            future.addListener(
+                    () -> {
+                        try {
+                            future.get();
+                            if (callback != null) {
+                                callback.finish();
+                            }
+                        } catch (ExecutionException
+                                | InterruptedException
+                                | CancellationException
+                                | RemoteException ex) {
+                            Log.e(TAG, "onRecentInteractionEventsAsync Future failed", ex);
+                        }
+                    },
+                    mHandler::post);
+        }
+
+        private static @NonNull Optional<TileInteractionEvent> tileInteractionEventFromProto(
+                TileInteractionEventData data) {
+            try {
+                return Optional.of(
+                        TileInteractionEvent.fromProto(
+                                EventProto.TileInteractionEvent.parseFrom(data.getContents())));
+            } catch (InvalidProtocolBufferException ex) {
+                Log.e(TAG, "Error deserializing TileInteractionEvent payload.", ex);
+                return Optional.empty();
+            }
         }
     }
 
@@ -651,6 +750,76 @@ public abstract class TileService extends Service {
             callback.updateResources(new ResourcesData(resources, ResourcesData.VERSION_PROTOBUF));
         } catch (RemoteException ex) {
             Log.e(TAG, "RemoteException while returning resources payload", ex);
+        }
+    }
+
+    private static <T> ListenableFuture<T> createFailedFuture(@NonNull Throwable throwable) {
+        ResolvableFuture<T> errorFuture = ResolvableFuture.create();
+        errorFuture.setException(throwable);
+        return errorFuture;
+    }
+
+    private static boolean packageNameMatches(
+            String packageName, List<ActiveTileIdentifier> activeTileIdentifiers) {
+        return activeTileIdentifiers.stream()
+                .allMatch(i -> i.getComponentName().getPackageName().equals(packageName));
+    }
+
+    private static Boolean useWearSdkImpl(Context context) {
+        if (sUseWearSdkImpl == null) {
+            setUseWearSdkImpl(context);
+        }
+        return sUseWearSdkImpl;
+    }
+
+    private static void setUseWearSdkImpl(Context context) {
+        if (context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WATCH)
+                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+                && !"robolectric".equalsIgnoreCase(Build.FINGERPRINT)) {
+            sUseWearSdkImpl = (Sdk.getWearManager(context, TilesManager.class) != null);
+            return;
+        }
+        sUseWearSdkImpl = false;
+    }
+
+    @VisibleForTesting
+    static void setUseWearSdkImpl(@Nullable Boolean value) {
+        sUseWearSdkImpl = value;
+    }
+
+    @RequiresApi(34)
+    private static class Api34Impl {
+        static @NonNull ListenableFuture<List<ActiveTileIdentifier>> getActiveTilesAsync(
+                @NonNull TilesManager tilesManager, @NonNull Executor executor) {
+            return CallbackToFutureAdapter.getFuture(
+                    completer -> {
+                        tilesManager.getActiveTiles(
+                                executor,
+                                new OutcomeReceiver<List<TileInstance>, Exception>() {
+                                    @Override
+                                    public void onResult(List<TileInstance> tileInstanceList) {
+                                        completer.set(
+                                                tileInstanceToActiveTileIdentifier(
+                                                        tileInstanceList));
+                                    }
+
+                                    @Override
+                                    public void onError(@NonNull Exception error) {
+                                        completer.setException(error);
+                                    }
+                                });
+                        return "getActiveTilesAsync";
+                    });
+        }
+
+        private static List<ActiveTileIdentifier> tileInstanceToActiveTileIdentifier(
+                @NonNull List<TileInstance> tileInstanceList) {
+            return tileInstanceList.stream()
+                    .map(
+                            i ->
+                                    new ActiveTileIdentifier(
+                                            i.getTileProvider().getComponentName(), i.getId()))
+                    .collect(Collectors.toList());
         }
     }
 
@@ -664,18 +833,19 @@ public abstract class TileService extends Service {
      * TileService#onTileRequest}, {@link TileService#onTileResourcesRequest} when an interaction
      * with the tile is observed, indicating its presence in the carousel.
      */
-    private void markTileAsActive(
-            @NonNull Integer tileId,
-            @NonNull ComponentName componentName,
-            @NonNull TimeSourceClock timeSourceClock) {
-        SharedPreferences sharedPref = getActiveTilesSharedPreferences(this);
-        cleanupActiveTilesSharedPref(sharedPref, timeSourceClock);
-        String key = new ActiveTileIdentifier(componentName, tileId).flattenToString();
-        if (sharedPref.contains(key)
-                && !timestampNeedsUpdate(sharedPref.getLong(key, -1L), timeSourceClock)) {
-            return;
+    private void markTileAsActiveLegacy(int tileId) {
+        if (!useWearSdkImpl(this)) {
+            ComponentName componentName = new ComponentName(this, this.getClass().getName());
+            DiskAccessAllowedPrefs sharedPref = getActiveTilesSharedPrefLegacy(this);
+            cleanupActiveTilesSharedPrefLegacy(sharedPref, getTimeSourceClock());
+            String key = new ActiveTileIdentifier(componentName, tileId).flattenToString();
+            if (sharedPref.contains(key)
+                    && !timestampNeedsUpdateLegacy(
+                            sharedPref.getLong(key, -1L), getTimeSourceClock())) {
+                return;
+            }
+            sharedPref.putLong(key, getTimeSourceClock().getCurrentTimestampMillis());
         }
-        sharedPref.edit().putLong(key, timeSourceClock.getCurrentTimestampMillis()).apply();
     }
 
     /**
@@ -685,13 +855,18 @@ public abstract class TileService extends Service {
      * <p>This method is called from {@link TileService#onTileRemoveEvent} when a tile instance is
      * removed from the carousel.
      */
-    private void markTileAsInactive(@NonNull Integer tileId, @NonNull ComponentName componentName) {
-        SharedPreferences sharedPref = getActiveTilesSharedPreferences(this);
-        String key = new ActiveTileIdentifier(componentName, tileId).flattenToString();
-        if (!sharedPref.contains(key)) {
-            return;
+    private void markTileAsInactiveLegacy(int tileId) {
+        if (!useWearSdkImpl(this)) {
+            DiskAccessAllowedPrefs sharedPref = getActiveTilesSharedPrefLegacy(this);
+            String key =
+                    new ActiveTileIdentifier(
+                                    new ComponentName(this, this.getClass().getName()), tileId)
+                            .flattenToString();
+            if (!sharedPref.contains(key)) {
+                return;
+            }
+            sharedPref.remove(key);
         }
-        sharedPref.edit().remove(key).apply();
     }
 
     /**
@@ -704,18 +879,18 @@ public abstract class TileService extends Service {
      * <p>This method is called on any user interactions with the tiles and before the
      * SharedPreferences are read.
      */
-    private static void cleanupActiveTilesSharedPref(
-            @NonNull SharedPreferences activeTilesSharedPref,
+    private static void cleanupActiveTilesSharedPrefLegacy(
+            @NonNull DiskAccessAllowedPrefs activeTilesSharedPref,
             @NonNull TimeSourceClock timeSourceClock) {
         for (String key : activeTilesSharedPref.getAll().keySet()) {
-            if (isTileInactive(activeTilesSharedPref.getLong(key, -1L), timeSourceClock)) {
-                activeTilesSharedPref.edit().remove(key).apply();
+            if (isTileInactiveLegacy(activeTilesSharedPref.getLong(key, -1L), timeSourceClock)) {
+                activeTilesSharedPref.remove(key);
             }
         }
     }
 
-    private static ListenableFuture<List<ActiveTileIdentifier>> readActiveTilesSharedPref(
-            @NonNull SharedPreferences activeTilesSharedPref,
+    private static ListenableFuture<List<ActiveTileIdentifier>> readActiveTilesSharedPrefLegacy(
+            @NonNull DiskAccessAllowedPrefs activeTilesSharedPref,
             @NonNull String packageName,
             @NonNull Executor executor,
             @NonNull TimeSourceClock timeSourceClock) {
@@ -724,7 +899,7 @@ public abstract class TileService extends Service {
                     executor.execute(
                             () -> {
                                 if (activeTilesSharedPref != null) {
-                                    cleanupActiveTilesSharedPref(
+                                    cleanupActiveTilesSharedPrefLegacy(
                                             activeTilesSharedPref, timeSourceClock);
                                     List<ActiveTileIdentifier> activeTilesList =
                                             activeTilesSharedPref.getAll().entrySet().stream()
@@ -750,12 +925,12 @@ public abstract class TileService extends Service {
                                 }
                             });
 
-                    return "readActiveTilesSharedPref";
+                    return "readActiveTilesSharedPrefLegacy";
                 });
     }
 
-    private static SharedPreferences getActiveTilesSharedPreferences(@NonNull Context context) {
-        return context.getSharedPreferences(ACTIVE_TILES_SHARED_PREF_NAME, MODE_PRIVATE);
+    private static DiskAccessAllowedPrefs getActiveTilesSharedPrefLegacy(@NonNull Context context) {
+        return DiskAccessAllowedPrefs.wrap(context, ACTIVE_TILES_SHARED_PREF_NAME);
     }
 
     /**
@@ -763,10 +938,16 @@ public abstract class TileService extends Service {
      * UPDATE_TILE_TIMESTAMP_PERIOD_MS}. Returns false if the timestamp has been updated in the past
      * {@code UPDATE_TILE_TIMESTAMP_PERIOD_MS} or if the current time cannot be obtained.
      */
-    private static boolean timestampNeedsUpdate(
+    private static boolean timestampNeedsUpdateLegacy(
             long timestampMs, @NonNull TimeSourceClock timeSourceClock) {
         return timeSourceClock.getCurrentTimestampMillis() - timestampMs
                 >= UPDATE_TILE_TIMESTAMP_PERIOD_MS;
+    }
+
+    private static ListenableFuture<Void> createImmediateFuture() {
+        ResolvableFuture<Void> future = ResolvableFuture.create();
+        future.set(null);
+        return future;
     }
 
     /**
@@ -774,21 +955,13 @@ public abstract class TileService extends Service {
      * INACTIVE_TILE_PERIOD_MS}. Returns false if the timestamp has been updated in the past {@code
      * INACTIVE_TILE_PERIOD_MS} or if the current time cannot be obtained.
      */
-    private static boolean isTileInactive(
+    private static boolean isTileInactiveLegacy(
             long timestampMs, @NonNull TimeSourceClock timeSourceClock) {
         return timeSourceClock.getCurrentTimestampMillis() - timestampMs >= INACTIVE_TILE_PERIOD_MS;
     }
 
-    private static boolean packageNameMatches(
-            String packageName, List<ActiveTileIdentifier> activeTileIdentifiers) {
-        return activeTileIdentifiers.stream()
-                .allMatch(i -> i.getComponentName().getPackageName().equals(packageName));
-    }
-
     interface TimeSourceClock {
-        /**
-         * @return Time agnostic timestamp with the current time.
-         */
+        /** Returns time agnostic timestamp with the current time. */
         long getCurrentTimestampMillis();
     }
 
@@ -797,11 +970,5 @@ public abstract class TileService extends Service {
         public long getCurrentTimestampMillis() {
             return System.currentTimeMillis();
         }
-    }
-
-    private static <T> ListenableFuture<T> createFailedFuture(@NonNull Throwable throwable) {
-        ResolvableFuture<T> errorFuture = ResolvableFuture.create();
-        errorFuture.setException(throwable);
-        return errorFuture;
     }
 }

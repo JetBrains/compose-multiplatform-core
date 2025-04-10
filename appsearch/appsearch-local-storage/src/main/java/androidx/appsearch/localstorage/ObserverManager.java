@@ -19,8 +19,6 @@ package androidx.appsearch.localstorage;
 import android.util.Log;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.localstorage.util.PrefixUtil;
 import androidx.appsearch.localstorage.visibilitystore.CallerAccess;
@@ -31,10 +29,14 @@ import androidx.appsearch.observer.DocumentChangeInfo;
 import androidx.appsearch.observer.ObserverCallback;
 import androidx.appsearch.observer.ObserverSpec;
 import androidx.appsearch.observer.SchemaChangeInfo;
+import androidx.appsearch.util.ExceptionUtil;
 import androidx.collection.ArrayMap;
 import androidx.collection.ArraySet;
 import androidx.core.util.ObjectsCompat;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -75,8 +77,12 @@ public class ObserverManager {
 
         @Override
         public boolean equals(@Nullable Object o) {
-            if (this == o) return true;
-            if (!(o instanceof DocumentChangeGroupKey)) return false;
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof DocumentChangeGroupKey)) {
+                return false;
+            }
             DocumentChangeGroupKey that = (DocumentChangeGroupKey) o;
             return mPackageName.equals(that.mPackageName)
                     && mDatabaseName.equals(that.mDatabaseName)
@@ -327,8 +333,7 @@ public class ObserverManager {
      * {@code packageName}, {@code databaseName} and unprefixed {@code schemaType}, only if they
      * have access to that type according to the provided {@code visibilityChecker}.
      */
-    @NonNull
-    public Set<String> getObserversForSchemaType(
+    public @NonNull Set<String> getObserversForSchemaType(
             @NonNull String packageName,
             @NonNull String databaseName,
             @NonNull String schemaType,
@@ -410,8 +415,9 @@ public class ObserverManager {
 
                     try {
                         observerInfo.mObserverCallback.onSchemaChanged(schemaChangeInfo);
-                    } catch (Throwable t) {
-                        Log.w(TAG, "ObserverCallback threw exception during dispatch", t);
+                    } catch (RuntimeException e) {
+                        Log.w(TAG, "ObserverCallback threw exception during dispatch", e);
+                        ExceptionUtil.handleException(e);
                     }
                 }
             }
@@ -429,8 +435,9 @@ public class ObserverManager {
 
                     try {
                         observerInfo.mObserverCallback.onDocumentChanged(documentChangeInfo);
-                    } catch (Throwable t) {
-                        Log.w(TAG, "ObserverCallback threw exception during dispatch", t);
+                    } catch (RuntimeException e) {
+                        Log.w(TAG, "ObserverCallback threw exception during dispatch", e);
+                        ExceptionUtil.handleException(e);
                     }
                 }
             }

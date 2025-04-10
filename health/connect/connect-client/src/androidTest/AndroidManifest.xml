@@ -32,6 +32,7 @@
     <uses-permission android:name="android.permission.health.READ_ELEVATION_GAINED"/>
     <uses-permission android:name="android.permission.health.READ_EXERCISE"/>
     <uses-permission android:name="android.permission.health.READ_FLOORS_CLIMBED"/>
+    <uses-permission android:name="android.permission.health.READ_PLANNED_EXERCISE"/>
     <uses-permission android:name="android.permission.health.READ_STEPS"/>
     <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED"/>
     <uses-permission android:name="android.permission.health.READ_VO2_MAX"/>
@@ -50,6 +51,7 @@
 
     <!-- Read permissions for CYCLE_TRACKING. -->
     <uses-permission android:name="android.permission.health.READ_CERVICAL_MUCUS"/>
+    <uses-permission android:name="android.permission.health.READ_INTERMENSTRUAL_BLEEDING"/>
     <uses-permission android:name="android.permission.health.READ_MENSTRUATION"/>
     <uses-permission android:name="android.permission.health.READ_OVULATION_TEST"/>
     <uses-permission android:name="android.permission.health.READ_SEXUAL_ACTIVITY"/>
@@ -71,6 +73,24 @@
     <uses-permission android:name="android.permission.health.READ_OXYGEN_SATURATION"/>
     <uses-permission android:name="android.permission.health.READ_RESPIRATORY_RATE"/>
     <uses-permission android:name="android.permission.health.READ_RESTING_HEART_RATE"/>
+    <uses-permission android:name="android.permission.health.READ_SKIN_TEMPERATURE"/>
+
+    <!-- Read permissions for PERSONAL HEALTH RECORD. -->
+    <uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_ALLERGIES_INTOLERANCES"/>
+    <uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_CONDITIONS"/>
+    <uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_LABORATORY_RESULTS"/>
+    <uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_MEDICATIONS"/>
+    <uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_PERSONAL_DETAILS"/>
+    <uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_PRACTITIONER_DETAILS"/>
+    <uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_PREGNANCY"/>
+    <uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_PROCEDURES"/>
+    <uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_SOCIAL_HISTORY"/>
+    <uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_VACCINES"/>
+    <uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_VISITS"/>
+    <uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_VITAL_SIGNS"/>
+
+    <!-- Write permissions for PERSONAL HEALTH RECORD. -->
+    <uses-permission android:name="android.permission.health.WRITE_MEDICAL_DATA"/>
 
     <!-- Write permissions for ACTIVITY. -->
     <uses-permission android:name="android.permission.health.WRITE_ACTIVE_CALORIES_BURNED"/>
@@ -78,6 +98,7 @@
     <uses-permission android:name="android.permission.health.WRITE_ELEVATION_GAINED"/>
     <uses-permission android:name="android.permission.health.WRITE_EXERCISE"/>
     <uses-permission android:name="android.permission.health.WRITE_FLOORS_CLIMBED"/>
+    <uses-permission android:name="android.permission.health.WRITE_PLANNED_EXERCISE"/>
     <uses-permission android:name="android.permission.health.WRITE_STEPS"/>
     <uses-permission android:name="android.permission.health.WRITE_TOTAL_CALORIES_BURNED"/>
     <uses-permission android:name="android.permission.health.WRITE_VO2_MAX"/>
@@ -118,4 +139,6 @@
     <uses-permission android:name="android.permission.health.WRITE_OXYGEN_SATURATION"/>
     <uses-permission android:name="android.permission.health.WRITE_RESPIRATORY_RATE"/>
     <uses-permission android:name="android.permission.health.WRITE_RESTING_HEART_RATE"/>
+    <uses-permission android:name="android.permission.health.WRITE_SKIN_TEMPERATURE"/>
+
 </manifest>

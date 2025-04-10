@@ -35,11 +35,9 @@ class SnapshotDoubleIndexHeapTests {
     fun canAddAndRemoveNumbersInSequence() {
         val heap = SnapshotDoubleIndexHeap()
         val handles = IntArray(100)
+        repeat(100) { handles[it] = heap.add(it.toLong()) }
         repeat(100) {
-            handles[it] = heap.add(it)
-        }
-        repeat(100) {
-            assertEquals(it, heap.lowestOrDefault(-1))
+            assertEquals(it.toLong(), heap.lowestOrDefault(-1))
             heap.remove(handles[it])
         }
         assertEquals(0, heap.size)
@@ -57,7 +55,7 @@ class SnapshotDoubleIndexHeapTests {
             if (shouldAdd) {
                 val indexToAdd = random.nextInt(toAdd.size)
                 val value = toAdd[indexToAdd]
-                val handle = heap.add(value)
+                val handle = heap.add(value.toLong())
                 toRemove.add(value to handle)
                 toAdd.removeAt(indexToAdd)
             } else {
@@ -70,12 +68,11 @@ class SnapshotDoubleIndexHeapTests {
 
             heap.validate()
             for ((value, handle) in toRemove) {
-                heap.validateHandle(handle, value)
+                heap.validateHandle(handle, value.toLong())
             }
-            val lowestAdded = toRemove.fold(400) { lowest, (value, _) ->
-                if (value < lowest) value else lowest
-            }
-            assertEquals(lowestAdded, heap.lowestOrDefault(400))
+            val lowestAdded =
+                toRemove.fold(400) { lowest, (value, _) -> if (value < lowest) value else lowest }
+            assertEquals(lowestAdded, heap.lowestOrDefault(400).toInt())
         }
     }
 }

@@ -16,8 +16,7 @@
 
 package androidx.camera.core.processing;
 
-import static android.graphics.ImageFormat.JPEG;
-
+import static androidx.camera.core.internal.utils.ImageUtil.isJpegFormats;
 import static androidx.core.util.Preconditions.checkNotNull;
 
 import android.graphics.Bitmap;
@@ -25,12 +24,8 @@ import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.media.Image;
-import android.os.Build;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.ImageInfo;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.impl.CameraCaptureResult;
@@ -38,6 +33,9 @@ import androidx.camera.core.impl.utils.Exif;
 import androidx.camera.core.impl.utils.TransformUtils;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 
@@ -59,7 +57,6 @@ import java.nio.ByteBuffer;
  * @param <T> image data type. Possible values are {@link ImageProxy}, {@link ByteBuffer},
  *            {@link Bitmap} etc.
  */
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 @AutoValue
 public abstract class Packet<T> {
 
@@ -71,8 +68,7 @@ public abstract class Packet<T> {
      * Instead, the caller should use the metadata of the {@link Packet}. e.g.
      * {@link #getCropRect()}.
      */
-    @NonNull
-    public abstract T getData();
+    public abstract @NonNull T getData();
 
     /**
      * The Exif info extracted from JPEG bytes.
@@ -81,15 +77,15 @@ public abstract class Packet<T> {
      * work with non-JPEG format. In that case, the exif data can be obtained via
      * {@link ImageInfo#populateExifData}.
      */
-    @Nullable
-    public abstract Exif getExif();
+    public abstract @Nullable Exif getExif();
 
     /**
      * Gets the format of the image.
      *
      * <p>This value must match the format of the image in {@link #getData()}.
      *
-     * <p>For {@link Bitmap} type, the value is {@link ImageFormat#FLEX_RGBA_8888}.
+     * <p>For {@link Bitmap} type, the value is {@link ImageFormat#FLEX_RGBA_8888}. If the Bitmap
+     * has a gainmap, it can be converted to JPEG_R format on API level 34+
      */
     public abstract int getFormat();
 
@@ -98,16 +94,14 @@ public abstract class Packet<T> {
      *
      * <p>This value must match the dimension of the image in {@link #getData()}.
      */
-    @NonNull
-    public abstract Size getSize();
+    public abstract @NonNull Size getSize();
 
     /**
      * Gets the crop rect.
      *
      * <p>This value is based on the coordinate system of the image in {@link #getData()}.
      */
-    @NonNull
-    public abstract Rect getCropRect();
+    public abstract @NonNull Rect getCropRect();
 
     /**
      * Gets rotation degrees
@@ -122,15 +116,13 @@ public abstract class Packet<T> {
      * <p>This value represents the transformation from sensor coordinate system to the
      * coordinate system of the image buffer in {@link #getData()}.
      */
-    @NonNull
-    public abstract Matrix getSensorToBufferTransform();
+    public abstract @NonNull Matrix getSensorToBufferTransform();
 
 
     /**
      * Gets the {@link CameraCaptureResult} associated with this frame.
      */
-    @NonNull
-    public abstract CameraCaptureResult getCameraCaptureResult();
+    public abstract @NonNull CameraCaptureResult getCameraCaptureResult();
 
     /**
      * Returns true if the {@link Packet} needs cropping.
@@ -142,8 +134,7 @@ public abstract class Packet<T> {
     /**
      * Creates {@link Bitmap} based {@link Packet}.
      */
-    @NonNull
-    public static Packet<Bitmap> of(@NonNull Bitmap data, @NonNull Exif exif,
+    public static @NonNull Packet<Bitmap> of(@NonNull Bitmap data, @NonNull Exif exif,
             @NonNull Rect cropRect, int rotationDegrees, @NonNull Matrix sensorToBufferTransform,
             @NonNull CameraCaptureResult cameraCaptureResult) {
         return new AutoValue_Packet<>(data, exif, ImageFormat.FLEX_RGBA_8888,
@@ -154,8 +145,7 @@ public abstract class Packet<T> {
     /**
      * Creates {@link ImageProxy} based {@link Packet}.
      */
-    @NonNull
-    public static Packet<ImageProxy> of(@NonNull ImageProxy data, @Nullable Exif exif,
+    public static @NonNull Packet<ImageProxy> of(@NonNull ImageProxy data, @Nullable Exif exif,
             @NonNull Rect cropRect, int rotationDegrees, @NonNull Matrix sensorToBufferTransform,
             @NonNull CameraCaptureResult cameraCaptureResult) {
         return of(data, exif, new Size(data.getWidth(), data.getHeight()), cropRect,
@@ -169,12 +159,11 @@ public abstract class Packet<T> {
      * match the image content. We might need to override it with the correct value. The size of
      * the {@link Image} class always matches the {@link android.view.Surface} size.
      */
-    @NonNull
-    public static Packet<ImageProxy> of(@NonNull ImageProxy data, @Nullable Exif exif,
+    public static @NonNull Packet<ImageProxy> of(@NonNull ImageProxy data, @Nullable Exif exif,
             @NonNull Size size, @NonNull Rect cropRect, int rotationDegrees,
             @NonNull Matrix sensorToBufferTransform,
             @NonNull CameraCaptureResult cameraCaptureResult) {
-        if (data.getFormat() == JPEG) {
+        if (isJpegFormats(data.getFormat())) {
             checkNotNull(exif, "JPEG image must have Exif.");
         }
         return new AutoValue_Packet<>(data, exif, data.getFormat(), size, cropRect, rotationDegrees,
@@ -184,8 +173,7 @@ public abstract class Packet<T> {
     /**
      * Creates byte array based {@link Packet}.
      */
-    @NonNull
-    public static Packet<byte[]> of(@NonNull byte[] data, @NonNull Exif exif,
+    public static @NonNull Packet<byte[]> of(byte @NonNull [] data, @NonNull Exif exif,
             int format, @NonNull Size size, @NonNull Rect cropRect,
             int rotationDegrees, @NonNull Matrix sensorToBufferTransform,
             @NonNull CameraCaptureResult cameraCaptureResult) {

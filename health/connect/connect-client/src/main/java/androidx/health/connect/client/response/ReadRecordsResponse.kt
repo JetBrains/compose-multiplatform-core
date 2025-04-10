@@ -15,6 +15,7 @@
  */
 package androidx.health.connect.client.response
 
+import androidx.annotation.RestrictTo
 import androidx.health.connect.client.records.Record
 
 /**
@@ -23,10 +24,10 @@ import androidx.health.connect.client.records.Record
  * @param T the record type
  * @property records a collection of records
  * @property pageToken an optional page token to use for
- * [androidx.health.connect.client.request.ReadRecordsRequest.pageToken] in the next request if more
- * records can be fetched; contains value `null` if no more pages.
- *
+ *   [androidx.health.connect.client.request.ReadRecordsRequest.pageToken] in the next request if
+ *   more records can be fetched; contains value `null` if no more pages.
  * @see androidx.health.connect.client.HealthConnectClient.readRecords
  */
 class ReadRecordsResponse<T : Record>
-internal constructor(val records: List<T>, val pageToken: String?)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+constructor(val records: List<T>, val pageToken: String?)

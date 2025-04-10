@@ -14,27 +14,40 @@
  * limitations under the License.
  */
 
-import androidx.build.KmpPlatformsKt
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+
+
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-import androidx.build.Publish
 import org.jetbrains.kotlin.konan.target.Family
 
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
 }
-
-def macEnabled = KmpPlatformsKt.enableMac(project)
-def linuxEnabled = KmpPlatformsKt.enableLinux(project)
 
 androidXMultiplatform {
     jvm()
     mac()
     linux()
     ios()
-    android()
+    watchos()
+    tvos()
+    androidLibrary {
+        namespace = "androidx.paging.common"
+        withAndroidTestOnDeviceBuilder {
+            it.compilationName = "instrumentedTest"
+            it.defaultSourceSetName = "androidInstrumentedTest"
+            it.sourceSetTreeName = "test"
+        }
+    }
 
     defaultPlatform(PlatformIdentifier.JVM)
 
@@ -43,7 +56,7 @@ androidXMultiplatform {
             dependencies {
                 api(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
-                api("androidx.annotation:annotation:1.7.0")
+                api("androidx.annotation:annotation:1.9.1")
             }
         }
 
@@ -92,38 +105,35 @@ androidXMultiplatform {
             dependencies {
                 implementation(libs.testRunner)
                 implementation(libs.mockitoAndroid5)
-                implementation(libs.multidex)
             }
         }
 
-        if (macEnabled || linuxEnabled) {
-            nativeMain {
-                dependsOn(commonMain)
-                dependencies {
-                    implementation(libs.atomicFu)
-                }
-            }
-            nativeTest {
-                dependsOn(commonTest)
+        nativeMain {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.atomicFu)
             }
         }
-        if (macEnabled) {
-            darwinMain {
-                dependsOn(nativeMain)
-            }
+        nativeTest {
+            dependsOn(commonTest)
         }
 
-        if (linuxEnabled) {
-            linuxMain {
-                dependsOn(nativeMain)
-            }
+        darwinMain {
+            dependsOn(nativeMain)
         }
 
-        targets.all { target ->
+        linuxMain {
+            dependsOn(nativeMain)
+        }
+
+        targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet {
                     def konanTargetFamily = target.konanTarget.family
-                    if (konanTargetFamily == Family.OSX || konanTargetFamily == Family.IOS) {
+                    if (konanTargetFamily == Family.OSX ||
+                            konanTargetFamily == Family.IOS ||
+                            konanTargetFamily == Family.WATCHOS ||
+                            konanTargetFamily == Family.TVOS) {
                         dependsOn(darwinMain)
                     } else if (konanTargetFamily == Family.LINUX) {
                         dependsOn(linuxMain)
@@ -139,23 +149,11 @@ androidXMultiplatform {
     }
 }
 
-// top level declaration because the KGP sourceSets declaration used by androidXMultiplatform
-// does not support constraints or samples configurations yet
-dependencies {
-    samples(project(":paging:paging-samples"))
-}
-
 androidx {
     name = "Paging-Common"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Paging-Common"
-}
-
-android {
-    namespace "androidx.paging.common"
-
-    defaultConfig {
-        multiDexEnabled = true
-    }
+    legacyDisableKotlinStrictApiMode = true
+    samples(project(":paging:paging-samples"))
 }

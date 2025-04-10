@@ -16,22 +16,31 @@
 
 package androidx.kruth
 
+import androidx.kruth.Fact.Companion.fact
+import androidx.kruth.Fact.Companion.simpleFact
+
 /**
  * Propositions for [Iterable] subjects.
  *
  * **Note:**
+ * - Assertions may iterate through the given [Iterable] more than once. If you have an unusual
+ *   implementation of [Iterable] which does not support multiple iterations (sometimes known as a
+ *   "one-shot iterable"), you must copy your iterable into a collection which does (e.g.
+ *   `iterable.toList()`). If you don't, you may see surprising failures.
+ * - Assertions may also require that the elements in the given [Iterable] implement [Any.hashCode]
+ *   correctly.
  *
- * - Assertions may iterate through the given [Iterable] more than once. If you have an
- * unusual implementation of [Iterable] which does not support multiple iterations
- * (sometimes known as a "one-shot iterable"), you must copy your iterable into a collection
- * which does (e.g. `iterable.toList()`). If you don't, you may see surprising failures.
- * - Assertions may also require that the elements in the given [Iterable] implement
- * [Any.hashCode] correctly.
+ * @constructor Constructor for use by subclasses. If you want to create an instance of this class
+ *   itself, call [check(...)][Subject.check].[that(actual)][StandardSubjectBuilder.that].
  */
-open class IterableSubject<T> internal constructor(
+// Can't be final since MultisetSubject and SortedSetSubject extend it
+open class IterableSubject<T>
+protected constructor(
+    metadata: FailureMetadata,
     actual: Iterable<T>?,
-    metadata: FailureMetadata = FailureMetadata(),
-) : Subject<Iterable<T>>(actual = actual, metadata = metadata) {
+) : Subject<Iterable<T>>(actual, metadata = metadata, typeDescriptionOverride = null) {
+
+    internal constructor(actual: Iterable<T>?, metadata: FailureMetadata) : this(metadata, actual)
 
     override fun isEqualTo(expected: Any?) {
         // method contract requires testing iterables for equality
@@ -43,75 +52,79 @@ open class IterableSubject<T> internal constructor(
         when {
             (actual is List<*>) && (expected is List<*>) ->
                 containsExactlyElementsIn(expected).inOrder()
+            (actual is Set<*>) && (expected is Set<*>) -> containsExactlyElementsIn(expected)
 
-            (actual is Set<*>) && (expected is Set<*>) ->
-                containsExactlyElementsIn(expected)
-
-            // TODO(b/18430105): Consider a special message if comparing incompatible collection types
+            // TODO(b/18430105): Consider a special message if comparing incompatible collection
+            // types
             else -> super.isEqualTo(expected)
         }
     }
 
     /** Fails if the subject is not empty. */
     fun isEmpty() {
-        requireNonNull(actual) { "Expected to be empty, but was null" }
+        requireNonNull(actual)
 
         if (!actual.isEmpty()) {
-            failWithoutActual("Expected to be empty")
+            failWithoutActual(simpleFact("expected to be empty"))
         }
     }
 
     /** Fails if the subject is empty. */
     fun isNotEmpty() {
-        requireNonNull(actual) { "Expected not to be empty, but was null" }
+        requireNonNull(actual)
 
         if (actual.isEmpty()) {
-            failWithoutActual("Expected to be not empty")
+            failWithoutActual(simpleFact("expected to be not empty"))
         }
     }
 
     /** Fails if the subject does not have the given size. */
     fun hasSize(expectedSize: Int) {
-        require(expectedSize >= 0) { "expectedSize must be >= 0, but was $expectedSize" }
-        requireNonNull(actual) { "Expected to have size $expectedSize, but was null" }
+        require(expectedSize >= 0) { "expectedSize($expectedSize) must be >= 0" }
+        requireNonNull(actual)
 
-        metadata.assertEquals(expectedSize, actual.count())
+        check("count()").that(actual.count()).isEqualTo(expectedSize)
     }
 
     /** Checks (with a side-effect failure) that the subject contains the supplied item. */
     fun contains(element: Any?) {
-        requireNonNull(actual) { "Expected to contain $element, but was null" }
+        requireNonNull(actual)
 
         if (element !in actual) {
             val matchingItems = actual.retainMatchingToString(listOf(element))
             if (matchingItems.isNotEmpty()) {
                 failWithoutActual(
-                    "Expected to contain $element, but did not. " +
-                        "Though it did contain $matchingItems"
+                    fact("expected to contain", element),
+                    fact("an instance of", element.typeName()),
+                    simpleFact("but did not"),
+                    fact("though it did contain", matchingItems)
                 )
             } else {
-                failWithoutActual("Expected to contain $element, but did not")
+                failWithActual("expected to contain", element)
             }
         }
     }
 
     /** Checks (with a side-effect failure) that the subject does not contain the supplied item. */
     fun doesNotContain(element: Any?) {
-        requireNonNull(actual) { "Expected not to contain $element, but was null" }
+        requireNonNull(actual)
 
         if (element in actual) {
-            failWithoutActual("Expected not to contain $element")
+            failWithActual("expected not to contain", element)
         }
     }
 
     /** Checks that the subject does not contain duplicate elements. */
     fun containsNoDuplicates() {
-        requireNonNull(actual) { "Expected not to contain duplicates, but was null" }
+        requireNonNull(actual)
 
         val duplicates = actual.groupBy { it }.values.filter { it.size > 1 }
-
         if (duplicates.isNotEmpty()) {
-            failWithoutActual("Expected not to contain duplicates, but contained $duplicates")
+            failWithoutActual(
+                simpleFact("expected not to contain duplicates"),
+                fact("but contained", duplicates),
+                fact("full contents", actualCustomStringRepresentation())
+            )
         }
     }
 
@@ -135,29 +148,47 @@ open class IterableSubject<T> internal constructor(
         val matchingItems = actual.retainMatchingToString(expected)
         if (matchingItems.isNotEmpty()) {
             failWithoutActual(
-                "Expected to contain any of $expected, but did not. " +
-                    "Though it did contain $matchingItems"
+                fact("expected to contain any of", expected),
+                simpleFact("but did not"),
+                fact("though it did contain", matchingItems)
             )
         } else {
-            failWithoutActual("Expected to contain any of $expected, but did not")
+            failWithActual("expected to contain any of", expected)
         }
     }
 
     /**
-     * Checks that the subject contains at least one of the objects contained in the provided array or
-     * fails.
+     * Checks that the subject contains at least one of the objects contained in the provided array
+     * or fails.
      */
     fun containsAnyIn(expected: Array<out Any?>?) {
         containsAnyIn(requireNonNull(expected).asList())
     }
 
+    /**
+     * Checks that the actual iterable contains at least all of the expected elements or fails. If
+     * an element appears more than once in the expected elements to this call then it must appear
+     * at least that number of times in the actual elements.
+     *
+     * To also test that the contents appear in the given order, make a call to `inOrder()` on the
+     * object returned by this method. The expected elements must appear in the given order within
+     * the actual elements, but they are not required to be consecutive.
+     */
     fun containsAtLeast(
         firstExpected: Any?,
         secondExpected: Any?,
         vararg restOfExpected: Any?,
-    ): Ordered =
-        containsAtLeastElementsIn(listOf(firstExpected, secondExpected, *restOfExpected))
+    ): Ordered = containsAtLeastElementsIn(listOf(firstExpected, secondExpected, *restOfExpected))
 
+    /**
+     * Checks that the actual iterable contains at least all of the expected elements or fails. If
+     * an element appears more than once in the expected elements then it must appear at least that
+     * number of times in the actual elements.
+     *
+     * To also test that the contents appear in the given order, make a call to `inOrder()` on the
+     * object returned by this method. The expected elements must appear in the given order within
+     * the actual elements, but they are not required to be consecutive.
+     */
     fun containsAtLeastElementsIn(expected: Iterable<*>?): Ordered {
         requireNonNull(expected)
         val actualList = requireNonNull(actual).toMutableList()
@@ -171,9 +202,7 @@ open class IterableSubject<T> internal constructor(
             val index = actualList.indexOf(e)
             if (index != -1) { // if we find the element in the actual list...
                 // drain all the elements that come before that element into actualNotInOrder
-                repeat(index) {
-                    actualNotInOrder += actualList.removeAt(0)
-                }
+                repeat(index) { actualNotInOrder += actualList.removeAt(0) }
 
                 // and remove the element from the actual list
                 actualList.removeAt(0)
@@ -192,11 +221,13 @@ open class IterableSubject<T> internal constructor(
         if (missing.isNotEmpty()) {
             val nearMissing = actualList.retainMatchingToString(missing)
 
-            failWithoutActual(
-                """
-                    Expected to contain at least $expected, but did not.
-                    Missing $missing, though it did contain $nearMissing.
-                """.trimIndent()
+            // TODO(dustinlam): Message is still a bit different from Truth.
+            failWithActual(
+                fact("missing", missing),
+                simpleFact(""),
+                fact("though it did contain", nearMissing),
+                simpleFact("---"),
+                fact("expected to contain at least", expected)
             )
         }
 
@@ -206,8 +237,8 @@ open class IterableSubject<T> internal constructor(
 
         return FailingOrdered(metadata) {
             buildString {
-                append("Required elements were all found, but order was wrong.")
-                append("Expected order: $expected.")
+                append("required elements were all found, but order was wrong")
+                append("expected order for required elements $expected.")
 
                 if (actualList.any { it !in expected }) {
                     append("Actual order: $actualList.")
@@ -221,10 +252,9 @@ open class IterableSubject<T> internal constructor(
      * an element appears more than once in the expected elements then it must appear at least that
      * number of times in the actual elements.
      *
-     *
-     * To also test that the contents appear in the given order, make a call to `inOrder()`
-     * on the object returned by this method. The expected elements must appear in the given order
-     * within the actual elements, but they are not required to be consecutive.
+     * To also test that the contents appear in the given order, make a call to `inOrder()` on the
+     * object returned by this method. The expected elements must appear in the given order within
+     * the actual elements, but they are not required to be consecutive.
      */
     fun containsAtLeastElementsIn(expected: Array<out Any?>?): Ordered =
         containsAtLeastElementsIn(expected?.asList())
@@ -233,10 +263,11 @@ open class IterableSubject<T> internal constructor(
      * Checks that a subject contains exactly the provided objects or fails.
      *
      * Multiplicity is respected. For example, an object duplicated exactly 3 times in the
-     * parameters asserts that the object must likewise be duplicated exactly 3 times in the subject.
+     * parameters asserts that the object must likewise be duplicated exactly 3 times in the
+     * subject.
      *
-     * To also test that the contents appear in the given order, make a call to [Ordered.inOrder]
-     * on the object returned by this method.
+     * To also test that the contents appear in the given order, make a call to [Ordered.inOrder] on
+     * the object returned by this method.
      *
      * To test that the iterable contains the same elements as an array, prefer
      * [containsExactlyElementsIn]. It makes clear that the given array is a list of elements, not
@@ -252,8 +283,8 @@ open class IterableSubject<T> internal constructor(
      * [Iterable] parameter asserts that the object must likewise be duplicated exactly 3 times in
      * the subject.
      *
-     * To also test that the contents appear in the given order, make a call to [Ordered.inOrder]
-     * on the object returned by this method.
+     * To also test that the contents appear in the given order, make a call to [Ordered.inOrder] on
+     * the object returned by this method.
      */
     fun containsExactlyElementsIn(required: Iterable<*>?): Ordered {
         val actualIter = requireNonNull(actual).iterator()
@@ -288,15 +319,17 @@ open class IterableSubject<T> internal constructor(
                      * already made. So we expose a special method for this and call it from here.
                      *
                      * TODO(b/135918662): Consider always throwing ComparisonFailure if there is exactly one
-                     * missing and exactly one extra element, even if there were additional (matching)
-                     * elements. However, this will probably be useful less often, and it will be tricky to
-                     * explain. First, what would we say, "value of: iterable.onlyElementThatDidNotMatch()?"
-                     * And second, it feels weirder to call out a single element when the expected and actual
-                     * values had multiple elements. Granted, Fuzzy Truth already does this, so maybe it's OK?
-                     * But Fuzzy Truth doesn't (yet) make the mismatched value so prominent.
+                     *  missing and exactly one extra element, even if there were additional (matching)
+                     *  elements. However, this will probably be useful less often, and it will be tricky to
+                     *  explain. First, what would we say, "value of: iterable.onlyElementThatDidNotMatch()?"
+                     *  And second, it feels weirder to call out a single element when the expected and actual
+                     *  values had multiple elements. Granted, Fuzzy Truth already does this, so maybe it's OK?
+                     *  But Fuzzy Truth doesn't (yet) make the mismatched value so prominent.
                      */
                     failWithoutActual(
-                        "Expected $actualElement to be equal to $requiredElement, but was not"
+                        simpleFact(
+                            "Expected $actualElement to be equal to $requiredElement, but was not"
+                        )
                     )
                 }
 
@@ -329,23 +362,23 @@ open class IterableSubject<T> internal constructor(
                      * This containsExactly() call is a success. But the iterables were not in the same order,
                      * so return an object that will fail the test if the user calls inOrder().
                      */
-
                     return FailingOrdered(metadata) {
                         """
                              Contents match. Expected the order to also match, but was not.
                              Expected: $required.
                              Actual: $actual.
-                        """.trimIndent()
+                        """
+                            .trimIndent()
                     }
                 }
 
                 failWithActual(
-                    """
-                        Contents do not match.
-                        Expected: $required.
-                        Missing: $missing.
-                        Unexpected: $extra.
-                    """.trimIndent()
+                    fact("missing", missing),
+                    simpleFact(""),
+                    fact("unexpected", extra),
+                    simpleFact("---"),
+                    fact("expected", required),
+                    fact("but was", actual)
                 )
             }
 
@@ -355,24 +388,21 @@ open class IterableSubject<T> internal constructor(
         // Here, we must have reached the end of one of the iterators without finding any
         // pairs of elements that differ. If the actual iterator still has elements, they're
         // extras. If the required iterator has elements, they're missing elements.
-
         if (actualIter.hasNext()) {
-            failWithActual(
-                """
-                    Contents do not match.
-                    Expected: $required.
-                    Unexpected: ${actualIter.asSequence().toList()}.
-                """.trimIndent()
+            failWithoutActual(
+                fact("unexpected", actualIter.asSequence().toList()),
+                simpleFact("---"),
+                fact("expected", required),
+                fact("but was", actual)
             )
         }
 
         if (requiredIter.hasNext()) {
-            failWithActual(
-                """
-                    Contents do not match.
-                    Expected: $required.
-                    Missing: ${requiredIter.asSequence().toList()}.
-                """.trimIndent()
+            failWithoutActual(
+                fact("missing", requiredIter.asSequence().toList()),
+                simpleFact("---"),
+                fact("expected", required),
+                fact("but was", actual)
             )
         }
 
@@ -384,13 +414,11 @@ open class IterableSubject<T> internal constructor(
     /**
      * Checks that a subject contains exactly the [expected] objects or fails.
      *
-     *
      * Multiplicity is respected. For example, an object duplicated exactly 3 times in the array
      * parameter asserts that the object must likewise be duplicated exactly 3 times in the subject.
      *
-     *
-     * To also test that the contents appear in the given order, make a call to `inOrder()`
-     * on the object returned by this method.
+     * To also test that the contents appear in the given order, make a call to `inOrder()` on the
+     * object returned by this method.
      */
     fun containsExactlyElementsIn(expected: Array<out Any?>?): Ordered =
         containsExactlyElementsIn(expected?.asList())
@@ -418,7 +446,9 @@ open class IterableSubject<T> internal constructor(
         val present = excluded.intersect(actual)
 
         if (present.isNotEmpty()) {
-            failWithActual("Expected not to contain any of $excluded but contained $present.")
+            failWithActual(
+                simpleFact("Expected not to contain any of $excluded but contained $present.")
+            )
         }
     }
 
@@ -439,22 +469,21 @@ open class IterableSubject<T> internal constructor(
      * @throws ClassCastException if any pair of elements is not mutually Comparable
      * @throws NullPointerException if any element is null
      */
-    fun isInStrictOrder() {
+    open fun isInStrictOrder() {
         isInStrictOrder(compareBy<Comparable<Any>> { it })
     }
 
     /**
      * Fails if the iterable is not strictly ordered, according to the given [comparator]. Strictly
-     * ordered means that each element in the iterable is *strictly* greater than the element
-     * that preceded it.
+     * ordered means that each element in the iterable is *strictly* greater than the element that
+     * preceded it.
      *
      * Note: star-projection in `Comparator<*>` is for compatibility with Truth.
      *
      * @throws ClassCastException if any pair of elements is not mutually Comparable
      */
     fun isInStrictOrder(comparator: Comparator<*>?) {
-        @Suppress("UNCHECKED_CAST")
-        val cmp = requireNonNull(comparator) as Comparator<in Any?>
+        @Suppress("UNCHECKED_CAST") val cmp = requireNonNull(comparator) as Comparator<in Any?>
 
         verifyInOrder(
             predicate = { a, b -> cmp.compare(a, b) < 0 },
@@ -470,7 +499,7 @@ open class IterableSubject<T> internal constructor(
      * @throws ClassCastException if any pair of elements is not mutually Comparable
      * @throws NullPointerException if any element is null
      */
-    fun isInOrder() {
+    open fun isInOrder() {
         isInOrder(compareBy<Comparable<Any>> { it })
     }
 
@@ -481,8 +510,7 @@ open class IterableSubject<T> internal constructor(
      * @throws ClassCastException if any pair of elements is not mutually Comparable
      */
     fun isInOrder(comparator: Comparator<*>?) {
-        @Suppress("UNCHECKED_CAST")
-        val cmp = requireNonNull(comparator) as Comparator<in Any?>
+        @Suppress("UNCHECKED_CAST") val cmp = requireNonNull(comparator) as Comparator<in Any?>
 
         verifyInOrder(
             predicate = { a, b -> cmp.compare(a, b) <= 0 },
@@ -494,19 +522,13 @@ open class IterableSubject<T> internal constructor(
         predicate: (a: Any?, b: Any?) -> Boolean,
         message: (a: Any?, b: Any?) -> String,
     ) {
-        requireNonNull(actual)
-            .asSequence()
-            .zipWithNext(::Pair)
-            .forEach { (a, b) ->
-                if (!predicate(a, b)) {
-                    failWithActual(message(a, b))
-                }
+        requireNonNull(actual).asSequence().zipWithNext(::Pair).forEach { (a, b) ->
+            if (!predicate(a, b)) {
+                failWithActual(simpleFact(message(a, b)))
             }
+        }
     }
 
-    /**
-     * @deprecated You probably meant to call [containsNoneOf] instead.
-     */
     @Deprecated(
         message = "You probably meant to call containsNoneOf instead.",
         replaceWith = ReplaceWith(expression = "containsNoneOf"),
@@ -527,11 +549,13 @@ open class IterableSubject<T> internal constructor(
         val nonIterables = iterable.filterNot { it is Iterable<*> }
         if (nonIterables.isNotEmpty()) {
             failWithoutActual(
-                "The actual value is an Iterable, and you've written a test that compares it to " +
-                    "some objects that are not Iterables. Did you instead mean to check " +
-                    "whether its *contents* match any of the *contents* of the given values? " +
-                    "If so, call containsNoneOf(...)/containsNoneIn(...) instead. " +
-                    "Non-iterables: $nonIterables"
+                simpleFact(
+                    "The actual value is an Iterable, and you've written a test that compares it " +
+                        "to some objects that are not Iterables. Did you instead mean to check " +
+                        "whether its *contents* match any of the *contents* of the given values? " +
+                        "If so, call containsNoneOf(...)/containsNoneIn(...) instead. " +
+                        "Non-iterables: $nonIterables"
+                )
             )
         }
     }

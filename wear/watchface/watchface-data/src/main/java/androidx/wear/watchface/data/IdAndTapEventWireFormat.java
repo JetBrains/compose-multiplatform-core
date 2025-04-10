@@ -20,13 +20,14 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Px;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Pair of a ComplicationSlotID and a TapEvent, the wire format of Map<Int, TapEvent>

@@ -21,12 +21,12 @@ import static androidx.core.util.Preconditions.checkNotNull;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.concurrent.BlockingQueue;
@@ -51,17 +51,13 @@ import java.util.concurrent.TimeoutException;
  * in a {@code UndeclaredThrowableException} so that this class can get access to the cause.
  *
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 class ChainingListenableFuture<I, O> extends FutureChain<O> implements Runnable {
-    @Nullable
-    private AsyncFunction<? super I, ? extends O> mFunction;
+    private @Nullable AsyncFunction<? super I, ? extends O> mFunction;
     private final BlockingQueue<Boolean> mMayInterruptIfRunningChannel =
             new LinkedBlockingQueue<>(1);
     private final CountDownLatch mOutputCreated = new CountDownLatch(1);
-    @Nullable
-    private ListenableFuture<? extends I> mInputFuture;
-    @Nullable
-    volatile ListenableFuture<? extends O> mOutputFuture;
+    private @Nullable ListenableFuture<? extends I> mInputFuture;
+    volatile @Nullable ListenableFuture<? extends O> mOutputFuture;
 
     ChainingListenableFuture(
             @NonNull AsyncFunction<? super I, ? extends O> function,
@@ -77,8 +73,7 @@ class ChainingListenableFuture<I, O> extends FutureChain<O> implements Runnable 
      * own get() is invoked.
      */
     @Override
-    @Nullable
-    public O get() throws InterruptedException, ExecutionException {
+    public @Nullable O get() throws InterruptedException, ExecutionException {
         if (!isDone()) {
             // Invoking get on the mInputFuture will ensure our own run()
             // method below is invoked as a listener when mInputFuture sets
@@ -113,8 +108,7 @@ class ChainingListenableFuture<I, O> extends FutureChain<O> implements Runnable 
      * own get() is invoked.
      */
     @Override
-    @Nullable
-    public O get(long timeout, @NonNull TimeUnit unit) throws TimeoutException,
+    public @Nullable O get(long timeout, @NonNull TimeUnit unit) throws TimeoutException,
             ExecutionException, InterruptedException {
         if (!isDone()) {
             // Use a single time unit so we can decrease mRemaining timeout

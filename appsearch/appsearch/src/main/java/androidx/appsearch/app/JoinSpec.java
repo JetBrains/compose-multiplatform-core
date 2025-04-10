@@ -16,16 +16,23 @@
 
 package androidx.appsearch.app;
 
-import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
+import androidx.appsearch.flags.FlaggedApi;
+import androidx.appsearch.flags.Flags;
+import androidx.appsearch.safeparcel.AbstractSafeParcelable;
+import androidx.appsearch.safeparcel.SafeParcelable;
+import androidx.appsearch.safeparcel.stub.StubCreators.JoinSpecCreator;
 import androidx.core.util.Preconditions;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.Objects;
 
 /**
  * This class represents the specifications for the joining operation in search.
@@ -117,12 +124,29 @@ import java.lang.annotation.RetentionPolicy;
  * return the signals calculated by scoring the joined documents using the scoring strategy in the
  * nested {@link SearchSpec}, as in {@link SearchResult#getRankingSignal}.
  */
-public final class JoinSpec {
-    static final String NESTED_QUERY = "nestedQuery";
-    static final String NESTED_SEARCH_SPEC = "nestedSearchSpec";
-    static final String CHILD_PROPERTY_EXPRESSION = "childPropertyExpression";
-    static final String MAX_JOINED_RESULT_COUNT = "maxJoinedResultCount";
-    static final String AGGREGATION_SCORING_STRATEGY = "aggregationScoringStrategy";
+@SafeParcelable.Class(creator = "JoinSpecCreator")
+// TODO(b/384721898): Switch to JSpecify annotations
+@SuppressWarnings({"HiddenSuperclass", "JSpecifyNullness"})
+public final class JoinSpec extends AbstractSafeParcelable {
+    /** Creator class for {@link JoinSpec}. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @FlaggedApi(Flags.FLAG_ENABLE_SAFE_PARCELABLE_2)
+    public static final @NonNull Parcelable.Creator<JoinSpec> CREATOR = new JoinSpecCreator();
+
+    @Field(id = 1, getter = "getNestedQuery")
+    private final String mNestedQuery;
+
+    @Field(id = 2, getter = "getNestedSearchSpec")
+    private final SearchSpec mNestedSearchSpec;
+
+    @Field(id = 3, getter = "getChildPropertyExpression")
+    private final String mChildPropertyExpression;
+
+    @Field(id = 4, getter = "getMaxJoinedResultCount")
+    private final int mMaxJoinedResultCount;
+
+    @Field(id = 5, getter = "getAggregationScoringStrategy")
+    private final int mAggregationScoringStrategy;
 
     private static final int DEFAULT_MAX_JOINED_RESULT_COUNT = 10;
 
@@ -158,8 +182,10 @@ public final class JoinSpec {
     public @interface AggregationScoringStrategy {
     }
 
-    /** Do not score the aggregation of joined documents. This is for the case where we want to
-     * perform a join, but keep the parent ranking signal. */
+    /**
+     * Do not score the aggregation of joined documents. This is for the case where we want to
+     * perform a join, but keep the parent ranking signal.
+     */
     public static final int AGGREGATION_SCORING_OUTER_RESULT_RANKING_SIGNAL = 0;
     /** Score the aggregation of joined documents by counting the number of results. */
     public static final int AGGREGATION_SCORING_RESULT_COUNT = 1;
@@ -172,33 +198,26 @@ public final class JoinSpec {
     /** Score the aggregation of joined documents using the sum of ranking signal. */
     public static final int AGGREGATION_SCORING_SUM_RANKING_SIGNAL = 5;
 
-    private final Bundle mBundle;
-
-    /** @exportToFramework:hide */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public JoinSpec(@NonNull Bundle bundle) {
-        Preconditions.checkNotNull(bundle);
-        mBundle = bundle;
+    @Constructor
+    JoinSpec(
+            @Param(id = 1) @NonNull String nestedQuery,
+            @Param(id = 2) @NonNull SearchSpec nestedSearchSpec,
+            @Param(id = 3) @NonNull String childPropertyExpression,
+            @Param(id = 4) int maxJoinedResultCount,
+            @Param(id = 5) @AggregationScoringStrategy int aggregationScoringStrategy) {
+        mNestedQuery = Objects.requireNonNull(nestedQuery);
+        mNestedSearchSpec = Objects.requireNonNull(nestedSearchSpec);
+        mChildPropertyExpression = Objects.requireNonNull(childPropertyExpression);
+        mMaxJoinedResultCount = maxJoinedResultCount;
+        mAggregationScoringStrategy = aggregationScoringStrategy;
     }
 
-    /**
-     * Returns the {@link Bundle} populated by this builder.
-     *
-     * @exportToFramework:hide
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
-    public Bundle getBundle() {
-        return mBundle;
-    }
 
     /**
      * Returns the query to run on the joined documents.
-     *
      */
-    @NonNull
-    public String getNestedQuery() {
-        return mBundle.getString(NESTED_QUERY);
+    public @NonNull String getNestedQuery() {
+        return mNestedQuery;
     }
 
     /**
@@ -209,9 +228,8 @@ public final class JoinSpec {
      * @return the property expression to match in the child documents.
      * @see Builder
      */
-    @NonNull
-    public String getChildPropertyExpression() {
-        return mBundle.getString(CHILD_PROPERTY_EXPRESSION);
+    public @NonNull String getChildPropertyExpression() {
+        return mChildPropertyExpression;
     }
 
     /**
@@ -219,7 +237,7 @@ public final class JoinSpec {
      * with a default of 10 SearchResults.
      */
     public int getMaxJoinedResultCount() {
-        return mBundle.getInt(MAX_JOINED_RESULT_COUNT);
+        return mMaxJoinedResultCount;
     }
 
     /**
@@ -229,9 +247,8 @@ public final class JoinSpec {
      * with all default values. This will match every document, as the nested search query will
      * be "" and no schema will be filtered out.
      */
-    @NonNull
-    public SearchSpec getNestedSearchSpec() {
-        return new SearchSpec(mBundle.getBundle(NESTED_SEARCH_SPEC));
+    public @NonNull SearchSpec getNestedSearchSpec() {
+        return mNestedSearchSpec;
     }
 
     /**
@@ -244,7 +261,14 @@ public final class JoinSpec {
      */
     @AggregationScoringStrategy
     public int getAggregationScoringStrategy() {
-        return mBundle.getInt(AGGREGATION_SCORING_STRATEGY);
+        return mAggregationScoringStrategy;
+    }
+
+    @Override
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @FlaggedApi(Flags.FLAG_ENABLE_SAFE_PARCELABLE_2)
+    public void writeToParcel(@NonNull Parcel dest, int flags) {
+        JoinSpecCreator.writeToParcel(this, dest, flags);
     }
 
     /** Builder for {@link JoinSpec objects}. */
@@ -255,15 +279,16 @@ public final class JoinSpec {
 
         private String mNestedQuery = "";
         private SearchSpec mNestedSearchSpec = EMPTY_SEARCH_SPEC;
-        private final String mChildPropertyExpression;
+        private String mChildPropertyExpression;
         private int mMaxJoinedResultCount = DEFAULT_MAX_JOINED_RESULT_COUNT;
-        @AggregationScoringStrategy private int mAggregationScoringStrategy =
+        @AggregationScoringStrategy
+        private int mAggregationScoringStrategy =
                 AGGREGATION_SCORING_OUTER_RESULT_RANKING_SIGNAL;
 
         /**
          * Create a specification for the joining operation in search.
          *
-         * <p> The child property expressions Specifies how to join documents. Documents with
+         * <p> The child property expression specifies how to join documents. Documents with
          * a child property expression equal to the qualified id of the parent will be retrieved.
          *
          * <p> Property expressions differ from {@link PropertyPath} as property expressions may
@@ -289,6 +314,46 @@ public final class JoinSpec {
             mChildPropertyExpression = childPropertyExpression;
         }
 
+        /** Creates a new {@link Builder} from the given {@link JoinSpec}. */
+        @ExperimentalAppSearchApi
+        @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
+        public Builder(@NonNull JoinSpec joinSpec) {
+            Preconditions.checkNotNull(joinSpec);
+            mNestedQuery = joinSpec.getNestedQuery();
+            mNestedSearchSpec = joinSpec.getNestedSearchSpec();
+            mChildPropertyExpression = joinSpec.getChildPropertyExpression();
+            mMaxJoinedResultCount = joinSpec.getMaxJoinedResultCount();
+            mAggregationScoringStrategy = joinSpec.getAggregationScoringStrategy();
+        }
+
+        /**
+         * Sets the child property expression.
+         *
+         * <p> The child property expression specifies how to join documents. Documents with
+         * a child property expression equal to the qualified id of the parent will be retrieved.
+         *
+         * <p> Property expressions differ from {@link PropertyPath} as property expressions may
+         * refer to document properties or nested document properties such as "person.business.id"
+         * as well as a property expression. Currently the only property expression is
+         * "this.qualifiedId()". {@link PropertyPath} objects may only reference document properties
+         * and nested document properties.
+         *
+         * <p> In order to join a child document to a parent document, the child document must
+         * contain the parent's qualified id at the property expression specified by this
+         * method.
+         *
+         * @param childPropertyExpression the property to match in the child documents.
+         */
+        @ExperimentalAppSearchApi
+        @FlaggedApi(Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS)
+        @CanIgnoreReturnValue
+        public @NonNull Builder setChildPropertyExpression(
+                @NonNull String childPropertyExpression) {
+            Preconditions.checkNotNull(childPropertyExpression);
+            mChildPropertyExpression = childPropertyExpression;
+            return this;
+        }
+
         /**
          * Sets the query and the SearchSpec for the documents being joined. This will score and
          * rank the joined documents as well as filter the joined documents.
@@ -310,14 +375,12 @@ public final class JoinSpec {
         @SuppressWarnings("MissingGetterMatchingBuilder")
         // See getNestedQuery & getNestedSearchSpec
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setNestedSearch(@NonNull String nestedQuery,
+        public @NonNull Builder setNestedSearch(@NonNull String nestedQuery,
                 @NonNull SearchSpec nestedSearchSpec) {
             Preconditions.checkNotNull(nestedQuery);
             Preconditions.checkNotNull(nestedSearchSpec);
             mNestedQuery = nestedQuery;
             mNestedSearchSpec = nestedSearchSpec;
-
             return this;
         }
 
@@ -331,8 +394,7 @@ public final class JoinSpec {
          * all results that are joined with a parent will factor into the score.
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setMaxJoinedResultCount(int maxJoinedResultCount) {
+        public @NonNull Builder setMaxJoinedResultCount(int maxJoinedResultCount) {
             mMaxJoinedResultCount = maxJoinedResultCount;
             return this;
         }
@@ -347,8 +409,7 @@ public final class JoinSpec {
          * @see SearchSpec#RANKING_STRATEGY_JOIN_AGGREGATE_SCORE
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setAggregationScoringStrategy(
+        public @NonNull Builder setAggregationScoringStrategy(
                 @AggregationScoringStrategy int aggregationScoringStrategy) {
             Preconditions.checkArgumentInRange(aggregationScoringStrategy,
                     AGGREGATION_SCORING_OUTER_RESULT_RANKING_SIGNAL,
@@ -360,15 +421,14 @@ public final class JoinSpec {
         /**
          * Constructs a new {@link JoinSpec} from the contents of this builder.
          */
-        @NonNull
-        public JoinSpec build() {
-            Bundle bundle = new Bundle();
-            bundle.putString(NESTED_QUERY, mNestedQuery);
-            bundle.putBundle(NESTED_SEARCH_SPEC, mNestedSearchSpec.getBundle());
-            bundle.putString(CHILD_PROPERTY_EXPRESSION, mChildPropertyExpression);
-            bundle.putInt(MAX_JOINED_RESULT_COUNT, mMaxJoinedResultCount);
-            bundle.putInt(AGGREGATION_SCORING_STRATEGY, mAggregationScoringStrategy);
-            return new JoinSpec(bundle);
+        public @NonNull JoinSpec build() {
+            return new JoinSpec(
+                    mNestedQuery,
+                    mNestedSearchSpec,
+                    mChildPropertyExpression,
+                    mMaxJoinedResultCount,
+                    mAggregationScoringStrategy
+            );
         }
     }
 }

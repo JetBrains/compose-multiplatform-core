@@ -20,12 +20,13 @@ import android.annotation.SuppressLint
 import android.os.Build
 import androidx.benchmark.macro.FileLinkingRule
 import androidx.benchmark.macro.Packages
+import androidx.benchmark.macro.runSingleSessionServer
 import androidx.benchmark.perfetto.PerfettoCapture
 import androidx.benchmark.perfetto.PerfettoConfig
 import androidx.benchmark.perfetto.PerfettoHelper
 import androidx.benchmark.perfetto.PerfettoHelper.Companion.MIN_BUNDLED_SDK_VERSION
 import androidx.benchmark.perfetto.PerfettoHelper.Companion.isAbiSupported
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
+import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.tracing.Trace
@@ -44,8 +45,8 @@ import org.junit.runners.Parameterized
 /**
  * Trace validation tests for PerfettoCapture
  *
- * Note: this test is defined in benchmark-macro instead of benchmark-common so that it can
- * validate trace contents with TraceProcessor
+ * Note: this test is defined in benchmark-macro instead of benchmark-common so that it can validate
+ * trace contents with TraceProcessor
  */
 @SdkSuppress(minSdkVersion = MIN_BUNDLED_SDK_VERSION)
 @LargeTest
@@ -54,13 +55,12 @@ class PerfettoCaptureSweepTest(
     // this test is repeated several times to verify stability
     @Suppress("UNUSED_PARAMETER") iteration: Int
 ) {
-    @get:Rule
-    val linkRule = FileLinkingRule()
+    @get:Rule val linkRule = FileLinkingRule()
 
     @Before
     @After
     fun cleanup() {
-        PerfettoHelper.stopAllPerfettoProcesses()
+        PerfettoHelper.cleanupPerfettoState()
     }
 
     @Ignore("b/258216025")
@@ -112,38 +112,29 @@ class PerfettoCaptureSweepTest(
          *
          * We use unique, app tag names to avoid conflicting with other legitimate platform tracing.
          */
-        val traceSectionLabels = List(20) {
-            "PerfettoCaptureTest_$it".also { label ->
-                trace(label) { Thread.sleep(50) }
+        val traceSectionLabels =
+            List(20) {
+                "PerfettoCaptureTest_$it".also { label -> trace(label) { Thread.sleep(50) } }
             }
-        }
 
         perfettoCapture.stop(traceFilePath)
 
-        val matchingSlices = PerfettoTraceProcessor.runSingleSessionServer(traceFilePath) {
-            querySlices("PerfettoCaptureTest_%", packageName = null)
-        }
+        val matchingSlices =
+            TraceProcessor.runSingleSessionServer(traceFilePath) {
+                querySlices("PerfettoCaptureTest_%", packageName = null)
+            }
 
         // Note: this test avoids validating platform-triggered trace sections, to avoid flakes
         // from legitimate (and coincidental) platform use during test.
-        assertEquals(
-            traceSectionLabels,
-            matchingSlices.sortedBy { it.ts }.map { it.name }
-        )
-        matchingSlices
-            .forEach {
-                assertTrue(
-                    "Expected dur > 30ms, was ${it.dur / 1_000_000.0} ms",
-                    it.dur > 30_000_000
-                )
-            }
+        assertEquals(traceSectionLabels, matchingSlices.sortedBy { it.ts }.map { it.name })
+        matchingSlices.forEach {
+            assertTrue("Expected dur > 30ms, was ${it.dur / 1_000_000.0} ms", it.dur > 30_000_000)
+        }
     }
 
     companion object {
         @Parameterized.Parameters(name = "iter={0}")
         @JvmStatic
-        fun parameters(): List<Array<Any>> = List(20) {
-            arrayOf(it)
-        }
+        fun parameters(): List<Array<Any>> = List(20) { arrayOf(it) }
     }
 }

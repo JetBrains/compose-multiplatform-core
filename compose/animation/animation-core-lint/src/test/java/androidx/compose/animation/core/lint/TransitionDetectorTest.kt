@@ -27,12 +27,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-/* ktlint-disable max-line-length */
 @RunWith(JUnit4::class)
 
-/**
- * Test for [TransitionDetector].
- */
+/** Test for [TransitionDetector]. */
 class TransitionDetectorTest : LintDetectorTest() {
     override fun getDetector(): Detector = TransitionDetector()
 
@@ -40,11 +37,12 @@ class TransitionDetectorTest : LintDetectorTest() {
         mutableListOf(TransitionDetector.UnusedTransitionTargetStateParameter)
 
     // Simplified Transition.kt stubs
-    private val TransitionStub = bytecodeStub(
-        filename = "Transition.kt",
-        filepath = "androidx/compose/animation/core",
-        checksum = 0x7997109d,
-        """
+    private val TransitionStub =
+        bytecodeStub(
+            filename = "Transition.kt",
+            filepath = "androidx/compose/animation/core",
+            checksum = 0x7997109d,
+            """
             package androidx.compose.animation.core
 
             import androidx.compose.runtime.Composable
@@ -60,13 +58,13 @@ class TransitionDetectorTest : LintDetectorTest() {
                 targetValueByState: @Composable (state: S) -> Float
             ): Float = 5f
         """,
-"""
+            """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijg0ueST8xLKcrPTKnQS87PLcgvTtVL
         zMvMTSzJzM8DihSlCvGEFCXmFWeCBLxLuHi5mNPy84XYQlKLS7xLlBi0GAD5
         +CagWAAAAA==
         """,
-        """
+            """
         androidx/compose/animation/core/Transition＄Segment.class:
         H4sIAAAAAAAA/5VRTW/TQBB9u3bixnWpW74SvqGVKDngNqqEBFUlqIRkyYCE
         q1xy2sSrdBt7jbybqsf8Fv4BJyQOKOLIj0KMTSQkuMDlzbw3M7tvZ7//+PIV
@@ -80,7 +78,7 @@ class TransitionDetectorTest : LintDetectorTest() {
         wQ7FZ1QPaGZjBCfGlRibMUJsUYrtGFdxbQRmcB03RnAN1g1uGnQNvJ/VVf1q
         rwIAAA==
         """,
-        """
+            """
         androidx/compose/animation/core/Transition.class:
         H4sIAAAAAAAA/41RTW/TQBB9u3HsxE1bt3wlfEN7KBHCbcQpVJWgEpIlAxKu
         cslpE6/Sbew18m6qHvNb+AeckDigiCM/CjE2kZDgUll6M+/tvNnZ8c9f374D
@@ -94,7 +92,7 @@ class TransitionDetectorTest : LintDetectorTest() {
         Wsf72KM4pPMOeTbHaETYirAdIcAOpdiNcAM3x2AGt3B7jKbBhsEdg66BZ9D7
         DXTP2E6vAgAA
         """,
-        """
+            """
         androidx/compose/animation/core/TransitionKt＄animateFloat＄1.class:
         H4sIAAAAAAAA/81WX1MbVRT/3U0gyZLyJ6V/AEUssYWAXYLYKkmxkRJZCSk2
         kRmHp5vkNixs7nZ2Nxl846EfwU/gJ2h1xjo64zA++qEcz91sKbHRFnzxIfee
@@ -120,7 +118,7 @@ class TransitionDetectorTest : LintDetectorTest() {
         xhrBTnBv4Cu6/xdti0cUySqleJu+XGMPERNLJrImlvGRSf9/PjZxB3f3wDx8
         gk/3MOBh1UPOQ97DlEfFrhB+mPBF+nwR6G3+BSprltw9CQAA
         """,
-        """
+            """
         androidx/compose/animation/core/TransitionKt.class:
         H4sIAAAAAAAA/8VWz1PbVhD+nizbsjFgFKDgJG5KnAQIRMZQt40dGkKhqDFO
         pqZcOHQe9sMRyBIjyUxy6dBe+g/0klunhx576CnTQ4ch00v/pk6nK2EbgztD
@@ -149,14 +147,15 @@ class TransitionDetectorTest : LintDetectorTest() {
         8oe0wSXMj3aQdOlR4GMXn7i44UJ18dBFIVhRXBRdjAbyuItHLpZdfPoPx8wC
         mQAKAAA=
         """
-    )
+        )
 
     @Test
     fun unreferencedParameters() {
-        lint().files(
-            kotlin(
-                """
-                package foo
+        lint()
+            .files(
+                kotlin(
+                    """
+                package test.foo
 
                 import androidx.compose.animation.core.*
                 import androidx.compose.runtime.*
@@ -175,29 +174,29 @@ class TransitionDetectorTest : LintDetectorTest() {
                     transition.animateFloat(targetValueByState = { _ -> if (foo) 1f else 0f })
                 }
             """
-            ),
-            TransitionStub,
-            Stubs.Composable
-        )
+                ),
+                TransitionStub,
+                Stubs.Composable
+            )
             .run()
             .expect(
                 """
-src/foo/test.kt:13: Error: Target state parameter it is not used [UnusedTransitionTargetStateParameter]
+src/test/foo/test.kt:13: Error: Target state parameter it is not used [UnusedTransitionTargetStateParameter]
                     transition.animateFloat { if (foo) 1f else 0f }
                                             ~~~~~~~~~~~~~~~~~~~~~~~
-src/foo/test.kt:14: Error: Target state parameter it is not used [UnusedTransitionTargetStateParameter]
+src/test/foo/test.kt:14: Error: Target state parameter it is not used [UnusedTransitionTargetStateParameter]
                     transition.animateFloat(targetValueByState = { if (foo) 1f else 0f })
                                                                  ~~~~~~~~~~~~~~~~~~~~~~~
-src/foo/test.kt:15: Error: Target state parameter param is not used [UnusedTransitionTargetStateParameter]
+src/test/foo/test.kt:15: Error: Target state parameter param is not used [UnusedTransitionTargetStateParameter]
                     transition.animateFloat { param -> if (foo) 1f else 0f }
                                               ~~~~~
-src/foo/test.kt:16: Error: Target state parameter param is not used [UnusedTransitionTargetStateParameter]
+src/test/foo/test.kt:16: Error: Target state parameter param is not used [UnusedTransitionTargetStateParameter]
                     transition.animateFloat(targetValueByState = { param -> if (foo) 1f else 0f })
                                                                    ~~~~~
-src/foo/test.kt:17: Error: Target state parameter _ is not used [UnusedTransitionTargetStateParameter]
+src/test/foo/test.kt:17: Error: Target state parameter _ is not used [UnusedTransitionTargetStateParameter]
                     transition.animateFloat { _ -> if (foo) 1f else 0f }
                                               ~
-src/foo/test.kt:18: Error: Target state parameter _ is not used [UnusedTransitionTargetStateParameter]
+src/test/foo/test.kt:18: Error: Target state parameter _ is not used [UnusedTransitionTargetStateParameter]
                     transition.animateFloat(targetValueByState = { _ -> if (foo) 1f else 0f })
                                                                    ~
 6 errors, 0 warnings
@@ -207,10 +206,11 @@ src/foo/test.kt:18: Error: Target state parameter _ is not used [UnusedTransitio
 
     @Test
     fun unreferencedParameter_shadowedNames() {
-        lint().files(
-            kotlin(
-                """
-                package foo
+        lint()
+            .files(
+                kotlin(
+                    """
+                package test.foo
 
                 import androidx.compose.animation.core.*
                 import androidx.compose.runtime.*
@@ -239,17 +239,17 @@ src/foo/test.kt:18: Error: Target state parameter _ is not used [UnusedTransitio
                     }
                 }
             """
-            ),
-            TransitionStub,
-            Stubs.Composable
-        )
+                ),
+                TransitionStub,
+                Stubs.Composable
+            )
             .run()
             .expect(
                 """
-src/foo/test.kt:13: Error: Target state parameter it is not used [UnusedTransitionTargetStateParameter]
+src/test/foo/test.kt:13: Error: Target state parameter it is not used [UnusedTransitionTargetStateParameter]
                     transition.animateFloat {
                                             ^
-src/foo/test.kt:22: Error: Target state parameter param is not used [UnusedTransitionTargetStateParameter]
+src/test/foo/test.kt:22: Error: Target state parameter param is not used [UnusedTransitionTargetStateParameter]
                     transition.animateFloat { param ->
                                               ~~~~~
 2 errors, 0 warnings
@@ -259,10 +259,11 @@ src/foo/test.kt:22: Error: Target state parameter param is not used [UnusedTrans
 
     @Test
     fun noErrors() {
-        lint().files(
-            kotlin(
-                """
-            package foo
+        lint()
+            .files(
+                kotlin(
+                    """
+            package test.foo
 
             import androidx.compose.animation.core.*
             import androidx.compose.runtime.*
@@ -312,12 +313,11 @@ src/foo/test.kt:22: Error: Target state parameter param is not used [UnusedTrans
                 }
             }
         """
-            ),
-            TransitionStub,
-            Stubs.Composable
-        )
+                ),
+                TransitionStub,
+                Stubs.Composable
+            )
             .run()
             .expectClean()
     }
 }
-/* ktlint-enable max-line-length */

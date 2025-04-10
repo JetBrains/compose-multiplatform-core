@@ -24,10 +24,11 @@ import android.content.BroadcastReceiver;
 import android.content.ContentProvider;
 import android.content.Intent;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Instance of AppComponentFactory for support libraries.
@@ -36,39 +37,37 @@ import androidx.annotation.RestrictTo;
 @RequiresApi(api = 28)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class CoreComponentFactory extends AppComponentFactory {
-    @NonNull
     @Override
-    public Activity instantiateActivity(
+    public @NonNull Activity instantiateActivity(
             @NonNull ClassLoader cl, @NonNull String className, @Nullable Intent intent)
             throws InstantiationException, IllegalAccessException, ClassNotFoundException {
         return checkCompatWrapper(super.instantiateActivity(cl, className, intent));
     }
 
-    @NonNull
     @Override
-    public Application instantiateApplication(@NonNull ClassLoader cl, @NonNull String className)
+    public @NonNull Application instantiateApplication(@NonNull ClassLoader cl,
+            @NonNull String className)
             throws InstantiationException, IllegalAccessException, ClassNotFoundException {
         return checkCompatWrapper(super.instantiateApplication(cl, className));
     }
 
-    @NonNull
     @Override
-    public BroadcastReceiver instantiateReceiver(@NonNull ClassLoader cl, @NonNull String className,
+    public @NonNull BroadcastReceiver instantiateReceiver(@NonNull ClassLoader cl,
+            @NonNull String className,
             @Nullable Intent intent)
             throws InstantiationException, IllegalAccessException, ClassNotFoundException {
         return checkCompatWrapper(super.instantiateReceiver(cl, className, intent));
     }
 
-    @NonNull
     @Override
-    public ContentProvider instantiateProvider(@NonNull ClassLoader cl, @NonNull String className)
+    public @NonNull ContentProvider instantiateProvider(@NonNull ClassLoader cl,
+            @NonNull String className)
             throws InstantiationException, IllegalAccessException, ClassNotFoundException {
         return checkCompatWrapper(super.instantiateProvider(cl, className));
     }
 
-    @NonNull
     @Override
-    public Service instantiateService(
+    public @NonNull Service instantiateService(
             @NonNull ClassLoader cl, @NonNull String className, @Nullable Intent intent)
             throws InstantiationException, IllegalAccessException, ClassNotFoundException {
         return checkCompatWrapper(super.instantiateService(cl, className, intent));

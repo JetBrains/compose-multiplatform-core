@@ -16,16 +16,15 @@
 
 package androidx.webkit.internal;
 
-import androidx.annotation.NonNull;
 import androidx.webkit.WebViewRenderProcess;
 
 import org.chromium.support_lib_boundary.WebViewRendererBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationHandler;
 import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
 
 /**
  * Implementation of {@link WebViewRenderProcess}.
@@ -43,12 +42,12 @@ public class WebViewRenderProcessImpl extends WebViewRenderProcess {
     }
 
     public WebViewRenderProcessImpl(
-                @NonNull android.webkit.WebViewRenderProcess frameworkRenderer) {
+                android.webkit.@NonNull WebViewRenderProcess frameworkRenderer) {
         mFrameworkObject = new WeakReference<>(frameworkRenderer);
     }
 
     /**
-     * Get a support library WebViewRenderProcess object that is 1:1 with the webview object.
+     * Get a support library WebViewRenderProcess object that is 1:1 with the WebView object.
      */
     public static @NonNull WebViewRenderProcessImpl forInvocationHandler(
             @NonNull InvocationHandler invocationHandler) {
@@ -61,19 +60,14 @@ public class WebViewRenderProcessImpl extends WebViewRenderProcess {
         // Ask WebView to either call us back to create the wrapper object, or
         // to return a previously created wrapper object.
         return (WebViewRenderProcessImpl) boundaryInterface.getOrCreatePeer(
-                new Callable<Object>() {
-                    @Override
-                    public Object call() {
-                        return new WebViewRenderProcessImpl(boundaryInterface);
-                    }
-                });
+                () -> new WebViewRenderProcessImpl(boundaryInterface));
     }
 
     /**
      * Get a support library WebViewRenderProcess object that is 1:1 with the framework object.
      */
     public static @NonNull WebViewRenderProcessImpl forFrameworkObject(
-            @NonNull android.webkit.WebViewRenderProcess frameworkRenderer) {
+            android.webkit.@NonNull WebViewRenderProcess frameworkRenderer) {
         WebViewRenderProcessImpl renderer = sFrameworkMap.get(frameworkRenderer);
         if (renderer != null) {
             return renderer;

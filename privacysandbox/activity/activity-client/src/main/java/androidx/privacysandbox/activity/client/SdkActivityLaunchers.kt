@@ -36,33 +36,58 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Returns an SdkActivityLauncher that launches activities on behalf of an SDK by using this
- * activity as a starting context.
+ * Returns a lifecycle-aware SdkActivityLauncher that launches activities on behalf of an SDK by
+ * using this activity as a starting context. The created launcher will be automatically disposed
+ * when the current activity is destroyed, with no additional work required.
  *
- * @param T the current activity from which new SDK activities will be launched. If this activity is
- * destroyed any further SDK activity launches will simply be ignored.
- * @param allowLaunch predicate called each time an activity is about to be launched by the
- * SDK, the activity will only be launched if it returns true.
+ * @param T the current [LifecycleOwner] activity from which new SDK activities will be launched. If
+ *   this activity is destroyed, any further SDK activity launches will simply be ignored, and
+ *   [LocalManagedSdkActivityLauncher.launchSdkActivity] will return 'false'.
+ * @param allowLaunch predicate called each time an activity is about to be launched by the SDK, the
+ *   activity will only be launched if it returns true.
  */
-fun <T> T.createSdkActivityLauncher(
+fun <T> T.createManagedSdkActivityLauncher(
     allowLaunch: () -> Boolean
-): LocalSdkActivityLauncher<T>
-    where T : Activity, T : LifecycleOwner {
+): LocalManagedSdkActivityLauncher<T> where T : Activity, T : LifecycleOwner {
     val cancellationJob = Job(parent = lifecycleScope.coroutineContext[Job])
-    val launcher = LocalSdkActivityLauncherImpl(
-        activity = this,
-        allowLaunch = allowLaunch,
-        onDispose = { cancellationJob.cancel() },
-    )
-    cancellationJob.invokeOnCompletion {
-        launcher.dispose()
-    }
+    val launcher =
+        LocalManagedSdkActivityLauncher(
+            activity = this,
+            allowLaunch = allowLaunch,
+            onDispose = { cancellationJob.cancel() },
+        )
+    cancellationJob.invokeOnCompletion { launcher.dispose() }
     return launcher
 }
 
 /**
- * Returns a [Bundle] with the information necessary to recreate this launcher.
- * Possibly in a different process.
+ * Returns a lifecycle-unaware SdkActivityLauncher that launches activities on behalf of an SDK by
+ * using this activity as a starting context. The created launcher will need to be manually disposed
+ * explicitly by the caller.
+ *
+ * It is recommended to use a lifecycle-aware launcher created using
+ * [createManagedSdkActivityLauncher] instead. It is automatically disposed when the current
+ * activity is destroyed, making it less prone to memory leaks.
+ *
+ * @param T the current activity from which new SDK activities will be launched. If this activity is
+ *   destroyed any further SDK activity launches will simply be ignored, and
+ *   [LocalUnmanagedSdkActivityLauncher.launchSdkActivity] will return 'false'.
+ * @param allowLaunch predicate called each time an activity is about to be launched by the SDK, the
+ *   activity will only be launched if it returns true.
+ * @see [createManagedSdkActivityLauncher]
+ */
+fun <T> T.createUnmanagedSdkActivityLauncher(
+    allowLaunch: () -> Boolean
+): LocalUnmanagedSdkActivityLauncher<T> where T : Activity {
+    return LocalUnmanagedSdkActivityLauncher(
+        activity = this,
+        allowLaunch = allowLaunch,
+    )
+}
+
+/**
+ * Returns a [Bundle] with the information necessary to recreate this launcher. Possibly in a
+ * different process.
  */
 fun SdkActivityLauncher.toLauncherInfo(): Bundle {
     val binderDelegate = SdkActivityLauncherBinderDelegate(this)
@@ -72,47 +97,108 @@ fun SdkActivityLauncher.toLauncherInfo(): Bundle {
 }
 
 /**
- * Local implementation of an SDK Activity launcher.
+ * Local version of [SdkActivityLauncher] that allows callers in the app process to dispose the
+ * launcher resources.
  *
- * It allows callers in the app process to dispose resources used to launch SDK activities.
+ * @see LocalManagedSdkActivityLauncher
+ * @see LocalUnmanagedSdkActivityLauncher
  */
-interface LocalSdkActivityLauncher<T> : SdkActivityLauncher where T : Activity, T : LifecycleOwner {
+interface LocalSdkActivityLauncher : SdkActivityLauncher {
     /**
      * Clears references used to launch activities.
      *
-     * After this method is called all further attempts to launch activities wil be rejected.
+     * After this method is called, all further attempts to launch activities wil be rejected, and
+     * [LocalSdkActivityLauncher.launchSdkActivity] will return 'false'.
+     *
      * Doesn't do anything if the launcher was already disposed of.
      */
     fun dispose()
 }
 
-private class LocalSdkActivityLauncherImpl<T>(
+/**
+ * Local implementation of a lifecycle-aware SDK Activity launcher. Its resources will be
+ * automatically disposed when its parent activity is destroyed. In this case, no additional work
+ * will be required from the caller.
+ *
+ * It allows callers in the app process to dispose resources used to launch SDK activities.
+ */
+class LocalManagedSdkActivityLauncher<T>
+internal constructor(activity: T, allowLaunch: () -> Boolean, onDispose: () -> Unit) :
+    LocalSdkActivityLauncher where T : Activity, T : LifecycleOwner {
+    private val launcherDelegate =
+        LocalSdkActivityLauncherDelegate(activity, allowLaunch, onDispose)
+
+    /** @see [SdkActivityLauncher.launchSdkActivity] */
+    override suspend fun launchSdkActivity(sdkActivityHandlerToken: IBinder): Boolean =
+        launcherDelegate.launchSdkActivity(sdkActivityHandlerToken)
+
+    /**
+     * Clears references used to launch activities. This method __doesn't need__ to be called as
+     * system will automatically dispose the launcher when the parent activity is destroyed.
+     * However, the user __can__ optionally call it the launcher is not needed anymore.
+     *
+     * After this method is called all further attempts to launch activities wil be rejected, and
+     * [LocalManagedSdkActivityLauncher.launchSdkActivity] will return 'false'.
+     *
+     * Doesn't do anything if the launcher was already disposed of.
+     */
+    override fun dispose() = launcherDelegate.dispose()
+}
+
+/**
+ * Local implementation of an SDK Activity launcher. This launcher is not lifecycle-aware, meaning
+ * its resources need to be released manually by the caller to avoid memory leaks.
+ *
+ * @see [LocalManagedSdkActivityLauncher]
+ */
+class LocalUnmanagedSdkActivityLauncher<T>
+internal constructor(activity: T, allowLaunch: () -> Boolean) : LocalSdkActivityLauncher where
+T : Activity {
+
+    private val launcherDelegate = LocalSdkActivityLauncherDelegate(activity, allowLaunch)
+
+    /** @see [SdkActivityLauncher.launchSdkActivity] */
+    override suspend fun launchSdkActivity(sdkActivityHandlerToken: IBinder): Boolean =
+        launcherDelegate.launchSdkActivity(sdkActivityHandlerToken)
+
+    /**
+     * Clears references used to launch activities. This method __must__ be called once the launcher
+     * is not needed anymore to avoid memory leaks.
+     *
+     * After this method is called all further attempts to launch activities wil be rejected, and
+     * [LocalUnmanagedSdkActivityLauncher.launchSdkActivity] will return 'false'.
+     *
+     * Doesn't do anything if the launcher was already disposed of.
+     */
+    override fun dispose() = launcherDelegate.dispose()
+}
+
+private class LocalSdkActivityLauncherDelegate<T>(
     activity: T,
     allowLaunch: () -> Boolean,
-    onDispose: () -> Unit
-) : LocalSdkActivityLauncher<T> where T : Activity, T : LifecycleOwner {
-
-    /** Internal state for [LocalSdkActivityLauncher], cleared when the launcher is disposed. */
+    onDispose: (() -> Unit)? = null
+) : LocalSdkActivityLauncher where T : Activity {
+    /**
+     * Internal state for [LocalManagedSdkActivityLauncher], cleared when the launcher is disposed.
+     */
     private class LocalLauncherState<T>(
         val activity: T,
         val allowLaunch: () -> Boolean,
         val sdkSandboxManager: SdkSandboxManagerCompat,
-        val onDispose: () -> Unit
-    ) where T : Activity, T : LifecycleOwner
+        val onDispose: (() -> Unit)?
+    ) where T : Activity
 
     private val stateReference: AtomicReference<LocalLauncherState<T>?> =
         AtomicReference<LocalLauncherState<T>?>(
-        LocalLauncherState(
-            activity,
-            allowLaunch,
-            SdkSandboxManagerCompat.from(activity),
-            onDispose
+            LocalLauncherState(
+                activity,
+                allowLaunch,
+                SdkSandboxManagerCompat.from(activity),
+                onDispose
+            )
         )
-    )
 
-    override suspend fun launchSdkActivity(
-        sdkActivityHandlerToken: IBinder
-    ): Boolean {
+    override suspend fun launchSdkActivity(sdkActivityHandlerToken: IBinder): Boolean {
         val state = stateReference.get() ?: return false
         return withContext(Dispatchers.Main.immediate) {
             state.run {
@@ -126,9 +212,7 @@ private class LocalSdkActivityLauncherImpl<T>(
     }
 
     override fun dispose() {
-        stateReference.getAndSet(null)?.run {
-            onDispose()
-        }
+        stateReference.getAndSet(null)?.run { onDispose?.invoke() }
     }
 }
 
@@ -145,12 +229,13 @@ private class SdkActivityLauncherBinderDelegate(private val launcher: SdkActivit
         requireNotNull(callback)
 
         coroutineScope.launch {
-            val accepted = try {
-                launcher.launchSdkActivity(sdkActivityHandlerToken)
-            } catch (t: Throwable) {
-                callback.onLaunchError(t.message ?: "Unknown error launching SDK activity.")
-                return@launch
-            }
+            val accepted =
+                try {
+                    launcher.launchSdkActivity(sdkActivityHandlerToken)
+                } catch (t: Throwable) {
+                    callback.onLaunchError(t.message ?: "Unknown error launching SDK activity.")
+                    return@launch
+                }
 
             if (accepted) {
                 callback.onLaunchAccepted(sdkActivityHandlerToken)

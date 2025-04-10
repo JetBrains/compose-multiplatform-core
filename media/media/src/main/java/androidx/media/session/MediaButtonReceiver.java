@@ -36,21 +36,22 @@ import android.support.v4.media.session.PlaybackStateCompat.MediaKeyAction;
 import android.util.Log;
 import android.view.KeyEvent;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.content.ContextCompat;
 import androidx.media.MediaBrowserServiceCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
 /**
  * A media button receiver receives and helps translate hardware media playback buttons, such as
  * those found on wired and wireless headsets, into the appropriate callbacks in your app.
- * <p />
- * You can add this MediaButtonReceiver to your app by adding it directly to your
+ *
+ * <p>You can add this MediaButtonReceiver to your app by adding it directly to your
  * AndroidManifest.xml:
+ *
  * <pre>
  * &lt;receiver android:name="androidx.media.session.MediaButtonReceiver" &gt;
  *   &lt;intent-filter&gt;
@@ -61,16 +62,19 @@ import java.util.List;
  *
  * This class assumes you have a {@link Service} in your app that controls media playback via a
  * {@link MediaSessionCompat}. Once a key event is received by MediaButtonReceiver, this class tries
- * to find a {@link Service} that can handle {@link Intent#ACTION_MEDIA_BUTTON}, and a
- * {@link MediaBrowserServiceCompat} in turn. If an appropriate service is found, this class
- * forwards the key event to the service. If neither is available or more than one valid
- * service/media browser service is found, an {@link IllegalStateException} will be thrown. Thus,
- * your app should have one of the following services to get a key event properly.
- * <p />
+ * to find a {@link Service} that can handle {@link Intent#ACTION_MEDIA_BUTTON}, and a {@link
+ * MediaBrowserServiceCompat} in turn. If an appropriate service is found, this class forwards the
+ * key event to the service. If neither is available or more than one valid service/media browser
+ * service is found, an {@link IllegalStateException} will be thrown. Thus, your app should have one
+ * of the following services to get a key event properly.
+ *
+ * <p>
  *
  * <h4>Service Handling ACTION_MEDIA_BUTTON</h4>
- * A service can receive a key event by including an intent filter that handles
- * {@link Intent#ACTION_MEDIA_BUTTON}:
+ *
+ * A service can receive a key event by including an intent filter that handles {@link
+ * Intent#ACTION_MEDIA_BUTTON}:
+ *
  * <pre>
  * &lt;service android:name="com.example.android.MediaPlaybackService" &gt;
  *   &lt;intent-filter&gt;
@@ -79,9 +83,10 @@ import java.util.List;
  * &lt;/service&gt;
  * </pre>
  *
- * Events can then be handled in {@link Service#onStartCommand(Intent, int, int)} by calling
- * {@link MediaButtonReceiver#handleIntent(MediaSessionCompat, Intent)}, passing in your current
- * {@link MediaSessionCompat}:
+ * Events can then be handled in {@link Service#onStartCommand(Intent, int, int)} by calling {@link
+ * MediaButtonReceiver#handleIntent(MediaSessionCompat, Intent)}, passing in your current {@link
+ * MediaSessionCompat}:
+ *
  * <pre>
  * private MediaSessionCompat mMediaSessionCompat = ...;
  *
@@ -93,14 +98,20 @@ import java.util.List;
  *
  * This ensures that the correct callbacks to {@link MediaSessionCompat.Callback} will be triggered
  * based on the incoming {@link KeyEvent}.
+ *
  * <p class="note"><strong>Note:</strong> Once the service is started, it must start to run in the
- * foreground.</p>
+ * foreground.
  *
  * <h4>MediaBrowserService</h4>
+ *
  * If you already have a {@link MediaBrowserServiceCompat} in your app, MediaButtonReceiver will
  * deliver the received key events to the {@link MediaBrowserServiceCompat} by default. You can
  * handle them in your {@link MediaSessionCompat.Callback}.
+ *
+ * @deprecated androidx.media is deprecated. Please migrate to <a
+ *     href="https://developer.android.com/media/media3">androidx.media3</a>.
  */
+@Deprecated
 public class MediaButtonReceiver extends BroadcastReceiver {
     private static final String TAG = "MediaButtonReceiver";
 
@@ -366,7 +377,6 @@ public class MediaButtonReceiver extends BroadcastReceiver {
          * Returns true if the passed exception is a
          * {@link ForegroundServiceStartNotAllowedException}.
          */
-        @DoNotInline
         public static boolean instanceOfForegroundServiceStartNotAllowedException(
                 IllegalStateException e) {
             return e instanceof ForegroundServiceStartNotAllowedException;
@@ -377,7 +387,6 @@ public class MediaButtonReceiver extends BroadcastReceiver {
          * {@link ForegroundServiceStartNotAllowedException} and throws an exception if the cast
          * fails.
          */
-        @DoNotInline
         public static ForegroundServiceStartNotAllowedException
                 castToForegroundServiceStartNotAllowedException(IllegalStateException e) {
             return (ForegroundServiceStartNotAllowedException) e;

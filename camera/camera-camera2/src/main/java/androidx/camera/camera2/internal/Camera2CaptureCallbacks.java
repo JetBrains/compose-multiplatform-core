@@ -24,9 +24,10 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.os.Build;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.ApiCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,14 +36,12 @@ import java.util.List;
 /**
  * Different implementations of {@link CameraCaptureSession.CaptureCallback}.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class Camera2CaptureCallbacks {
     private Camera2CaptureCallbacks() {
     }
 
     /** Returns a session capture callback which does nothing. */
-    @NonNull
-    public static CameraCaptureSession.CaptureCallback createNoOpCallback() {
+    public static CameraCaptureSession.@NonNull CaptureCallback createNoOpCallback() {
         return new NoOpSessionCaptureCallback();
     }
 
@@ -53,9 +52,8 @@ public final class Camera2CaptureCallbacks {
     }
 
     /** Returns a session capture callback which calls a list of other callbacks. */
-    @NonNull
-    public static CameraCaptureSession.CaptureCallback createComboCallback(
-            @NonNull CameraCaptureSession.CaptureCallback... callbacks) {
+    public static CameraCaptureSession.@NonNull CaptureCallback createComboCallback(
+            CameraCaptureSession.CaptureCallback @NonNull ... callbacks) {
         return createComboCallback(Arrays.asList(callbacks));
     }
 
@@ -105,7 +103,6 @@ public final class Camera2CaptureCallbacks {
         }
     }
 
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     private static final class ComboSessionCaptureCallback
             extends CameraCaptureSession.CaptureCallback {
         private final List<CameraCaptureSession.CaptureCallback> mCallbacks = new ArrayList<>();

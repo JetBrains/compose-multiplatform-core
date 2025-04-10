@@ -26,7 +26,7 @@ import android.view.inputmethod.InputConnection
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Matrix
-import androidx.compose.ui.input.pointer.PositionCalculator
+import androidx.compose.ui.input.pointer.MatrixPositionCalculator
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.MultiParagraph
 import androidx.compose.ui.text.TextLayoutInput
@@ -77,16 +77,17 @@ class TextInputServiceAndroidCursorAnchorInfoTest {
         Font(resId = R.font.sample_font, weight = FontWeight.Normal, style = FontStyle.Normal)
             .toFontFamily()
     private val rootPosition = Offset(1.2f, 3.4f)
-    private val positionCalculator = object : PositionCalculator {
-        override fun screenToLocal(positionOnScreen: Offset): Offset =
-            positionOnScreen - rootPosition
+    private val positionCalculator =
+        object : MatrixPositionCalculator {
+            override fun screenToLocal(positionOnScreen: Offset): Offset =
+                positionOnScreen - rootPosition
 
-        override fun localToScreen(localPosition: Offset): Offset = localPosition + rootPosition
+            override fun localToScreen(localPosition: Offset): Offset = localPosition + rootPosition
 
-        override fun localToScreen(localTransform: androidx.compose.ui.graphics.Matrix) {
-            localTransform.translate(rootPosition.x, rootPosition.y)
+            override fun localToScreen(localTransform: androidx.compose.ui.graphics.Matrix) {
+                localTransform.translate(rootPosition.x, rootPosition.y)
+            }
         }
-    }
 
     private lateinit var textInputService: TextInputServiceAndroid
     private lateinit var inputMethodManager: InputMethodManager

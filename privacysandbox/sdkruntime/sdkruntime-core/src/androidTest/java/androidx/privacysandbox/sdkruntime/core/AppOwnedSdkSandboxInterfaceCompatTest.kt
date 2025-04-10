@@ -35,7 +35,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 // TODO(b/262577044) Remove RequiresExtension after extensions support in @SdkSuppress
 @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 8)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 class AppOwnedSdkSandboxInterfaceCompatTest {
 
     @Before
@@ -48,11 +48,8 @@ class AppOwnedSdkSandboxInterfaceCompatTest {
 
     @Test
     fun toAppOwnedSdkSandboxInterfaceTest() {
-        val compatObj = AppOwnedSdkSandboxInterfaceCompat(
-            name = "SDK",
-            version = 1,
-            binder = Binder()
-        )
+        val compatObj =
+            AppOwnedSdkSandboxInterfaceCompat(name = "SDK", version = 1, binder = Binder())
 
         val platformObj = compatObj.toAppOwnedSdkSandboxInterface()
 
@@ -63,9 +60,7 @@ class AppOwnedSdkSandboxInterfaceCompatTest {
 
     @Test
     fun fromAppOwnedSdkSandboxInterfaceTest() {
-        val platformObj = AppOwnedSdkSandboxInterface(
-            "SDK", 1, Binder()
-        )
+        val platformObj = AppOwnedSdkSandboxInterface("SDK", 1, Binder())
         val compatObj = AppOwnedSdkSandboxInterfaceCompat(platformObj)
 
         assertThat(compatObj.getName()).isEqualTo(platformObj.getName())

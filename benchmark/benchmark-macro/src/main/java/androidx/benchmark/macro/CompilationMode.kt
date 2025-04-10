@@ -25,10 +25,6 @@ import androidx.benchmark.Arguments
 import androidx.benchmark.DeviceInfo
 import androidx.benchmark.Shell
 import androidx.benchmark.inMemoryTrace
-import androidx.benchmark.macro.CompilationMode.Full
-import androidx.benchmark.macro.CompilationMode.Ignore
-import androidx.benchmark.macro.CompilationMode.None
-import androidx.benchmark.macro.CompilationMode.Partial
 import androidx.profileinstaller.ProfileInstallReceiver
 import org.junit.AssumptionViolatedException
 
@@ -39,29 +35,27 @@ import org.junit.AssumptionViolatedException
  * blocks of the benchmark.
  *
  * On Android N+ (API 24+), there are different levels of compilation supported:
- *
  * * [Partial] - the default configuration of [Partial] will partially pre-compile your application,
- * if a Baseline Profile is included in your app. This represents the most realistic fresh-install
- * experience on an end-user's device. You can additionally or instead use
- * [Partial.warmupIterations] to use Profile Guided Optimization, using the benchmark content to
- * guide pre-compilation to mimic an application's performance after some, and JIT-ing has occurred.
- *
+ *   if a Baseline Profile is included in your app. This represents the most realistic fresh-install
+ *   experience on an end-user's device. You can additionally or instead use
+ *   [Partial.warmupIterations] to use Profile Guided Optimization, using the benchmark content to
+ *   guide pre-compilation. This can mimic an application's performance after background dexopt has
+ *   partially compiled the app during device idle time, after the app has been used (generally
+ *   after a day or more of usage after update/install).
  * * [Full] - the app is fully pre-compiled. This is generally not representative of real user
- * experience, as apps are not fully pre-compiled on user devices more recent than Android N
- * (API 24). `Full` can be used to show unrealistic but potentially more stable performance by
- * removing the noise/inconsistency from just-in-time compilation within benchmark runs. Note that
- * `Full` compilation will often be slower than [Partial] compilation, as the increased code size
- * creates more cost for disk loading during startup, and increases pressure in the instruction
- * cache.
- *
+ *   experience, as apps are not fully pre-compiled on user devices more recent than Android N (API
+ *   24). `Full` can be used to show unrealistic but potentially more stable performance by removing
+ *   the noise/inconsistency from just-in-time compilation within benchmark runs. Note that `Full`
+ *   compilation will often be slower than [Partial] compilation, as the increased code size creates
+ *   more cost for disk loading during startup, and increases pressure in the instruction cache.
  * * [None] - the app isn't pre-compiled at all, bypassing the default compilation that should
- * generally be done at install time, e.g. by the Play Store. This will illustrate worst case
- * performance, and will show you performance of your app if you do not enable baseline profiles,
- * useful for judging the performance impact of the baseline profiles included in your application.
- *
+ *   generally be done at install time, e.g. by the Play Store. This will illustrate worst case
+ *   performance, and will show you performance of your app if you do not enable baseline profiles,
+ *   useful for judging the performance impact of the baseline profiles included in your
+ *   application.
  * * [Ignore] - the state of compilation will be ignored. The intended use-case is for a developer
- * to customize the compilation state for an app; and then tell Macrobenchmark to leave it
- * unchanged.
+ *   to customize the compilation state for an app; and then tell Macrobenchmark to leave it
+ *   unchanged.
  *
  * On Android M (API 23), only [Full] is supported, as all apps are always fully compiled.
  *
@@ -80,29 +74,38 @@ sealed class CompilationMode {
         val packageName = scope.packageName
         if (Build.VERSION.SDK_INT >= 24) {
             if (Arguments.enableCompilation || !allowCompilationSkipping) {
-                Log.d(TAG, "Resetting $packageName")
+                Log.d(TAG, "Clearing ART profiles for $packageName")
                 // The compilation mode chooses whether a reset is required or not.
                 // Currently the only compilation mode that does not perform a reset is
                 // CompilationMode.Ignore.
                 if (shouldReset()) {
+                    // Package reset enabled
+                    Log.d(TAG, "Resetting profiles for $packageName")
                     // It's not possible to reset the compilation profile on `user` builds.
                     // The flag `enablePackageReset` can be set to `true` on `userdebug` builds in
                     // order to speed-up the profile reset. When set to false, reset is performed
                     // uninstalling and reinstalling the app.
-                    if (Build.VERSION.SDK_INT >= 34 || Shell.isSessionRooted()) {
-                        // Package reset enabled
-                        Log.d(TAG, "Re-compiling $packageName")
-                        // cmd package compile --reset returns a "Success" or a "Failure" to stdout.
-                        // Rather than rely on exit codes which are not always correct, we
-                        // specifically look for the work "Success" in stdout to make sure reset
-                        // actually happened.
-                        val output = Shell.executeScriptCaptureStdout(
-                            "cmd package compile --reset $packageName"
-                        )
+                    if (Build.VERSION.SDK_INT >= 34) {
+                        // Starting API 34, --reset restores the state of the compiled code based
+                        // on prior install state. This means, e.g. if AGP version 8.3+ installs a
+                        // DM alongside the APK, reset != clear.
+                        // Use --verify to replace the contents of the odex file with that of an
+                        // empty file.
+                        cmdPackageCompile(packageName, "verify")
+                        // This does not clear the state of the `cur` and `ref` profiles.
+                        // To do that we also need to call `pm art clear-app-profiles <package>`.
+                        // pm art clear-app-profiles returns a "Profiles cleared"
+                        // to stdout upon success. Otherwise it includes an Error: <error reason>.
+                        val output =
+                            Shell.executeScriptCaptureStdout(
+                                "pm art clear-app-profiles $packageName"
+                            )
 
-                        check(output.trim() == "Success" || output.contains("PERFORMED")) {
+                        check(output.trim() == "Profiles cleared") {
                             compileResetErrorString(packageName, output, DeviceInfo.isEmulator)
                         }
+                    } else if (Shell.isSessionRooted()) {
+                        cmdPackageCompileReset(packageName)
                     } else {
                         // User builds pre-U. Kick off a full uninstall-reinstall
                         Log.d(TAG, "Reinstalling $packageName")
@@ -119,58 +122,86 @@ sealed class CompilationMode {
     }
 
     /**
-     * A more expensive alternative to `compile --reset` which doesn't preserve app data, but
-     * does work on older APIs without root
+     * A more expensive alternative to `compile --reset` which doesn't preserve app data, but does
+     * work on older APIs without root.
      */
-    private fun reinstallPackage(packageName: String) {
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    fun reinstallPackage(packageName: String) {
         inMemoryTrace("reinstallPackage") {
-
-            // Copy APKs to /data/local/temp
-            val apkPaths = Shell.pmPath(packageName)
-
-            val tempApkPaths: List<String> = apkPaths.mapIndexed { index, apkPath ->
-                val tempApkPath =
-                    "/data/local/tmp/$packageName-$index-${System.currentTimeMillis()}.apk"
-                Log.d(TAG, "Copying APK $apkPath to $tempApkPath")
-                Shell.executeScriptSilent(
-                    "cp $apkPath $tempApkPath"
-                )
-                tempApkPath
-            }
-            val tempApkPathsString = tempApkPaths.joinToString(" ")
-
+            val copiedApkPaths = copiedApkPaths(packageName)
             try {
                 // Uninstall package
                 // This is what effectively clears the ART profiles
-                Log.d(TAG, "Uninstalling $packageName")
-                var output = Shell.executeScriptCaptureStdout("pm uninstall $packageName")
-                check(output.trim() == "Success") {
-                    "Unable to uninstall $packageName ($output)"
-                }
+                uninstallPackage(packageName)
                 // Install the APK from /data/local/tmp
-                Log.d(TAG, "Installing $packageName")
-                // Provide a `-t` argument to `pm install` to ensure test packages are
-                // correctly installed. (b/231294733)
-                output = Shell.executeScriptCaptureStdout("pm install -t $tempApkPathsString")
-
-                check(output.trim() == "Success" || output.contains("PERFORMED")) {
-                    "Unable to install $packageName (out=$output)"
-                }
+                installPackageFromPaths(packageName = packageName, copiedApkPaths = copiedApkPaths)
             } finally {
                 // Cleanup the temporary APK
-                Log.d(TAG, "Deleting $tempApkPathsString")
-                Shell.executeScriptSilent("rm $tempApkPathsString")
+                Log.d(TAG, "Deleting $copiedApkPaths")
+                Shell.rm(copiedApkPaths)
             }
         }
     }
 
     /**
-     * Writes a skip file via a [ProfileInstallReceiver] broadcast, so profile installation
-     * does not interfere with benchmarks.
+     * Copies the APKs obtained from the current install location, into `/data/local/tmp` and
+     * returns a `<space>` delimited list of paths that can be used to reinstall the app package
+     * after uninstall.
      */
-    private fun writeProfileInstallerSkipFile(
-        scope: MacrobenchmarkScope
-    ) {
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    fun copiedApkPaths(packageName: String): String {
+        // Copy APKs to /data/local/temp
+        val apkPaths = Shell.pmPath(packageName)
+
+        val tempApkPaths: List<String> =
+            apkPaths.mapIndexed { index, apkPath ->
+                val tempApkPath =
+                    "/data/local/tmp/$packageName-$index-${System.currentTimeMillis()}.apk"
+                Log.d(TAG, "Copying APK $apkPath to $tempApkPath")
+                Shell.cp(from = apkPath, to = tempApkPath)
+                tempApkPath
+            }
+        return tempApkPaths.joinToString(" ")
+    }
+
+    /** Uninstalls an app package by using `pm uninstall` under the hood. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    fun uninstallPackage(packageName: String) {
+        Log.d(TAG, "Uninstalling $packageName")
+        val output = Shell.executeScriptCaptureStdout("pm uninstall $packageName")
+        check(output.trim() == "Success") { "Unable to uninstall $packageName ($output)" }
+    }
+
+    /**
+     * Installs the app using a set of APKs that were previously copied and staged into
+     * `/data/local/tmp` from a pre-existing install session.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    fun installPackageFromPaths(packageName: String, copiedApkPaths: String) {
+        Log.d(TAG, "Installing $packageName")
+        val builder = StringBuilder("pm install")
+        // Provide a `-t` argument to `pm install` to ensure test packages are
+        // correctly installed. (b/231294733)
+        builder.append(" -t")
+        if (Build.VERSION.SDK_INT >= 30) {
+            // Use --skip-verification to disable Play protect.
+            // This option was introduced in Android R (30)
+            // b/308100444 has additional context.
+            builder.append(" --skip-verification")
+        }
+        builder.append(" $copiedApkPaths")
+        val output = Shell.executeScriptCaptureStdout(builder.toString())
+
+        check(output.trim() == "Success" || output.contains("PERFORMED")) {
+            "Unable to install $packageName (out=$output)"
+        }
+    }
+
+    /**
+     * Writes a skip file via a [ProfileInstallReceiver] broadcast, so profile installation does not
+     * interfere with benchmarks.
+     */
+    private fun writeProfileInstallerSkipFile(scope: MacrobenchmarkScope) {
         val packageName = scope.packageName
         val result = ProfileInstallBroadcast.skipFileOperation(packageName, "WRITE_SKIP_FILE")
         if (result != null) {
@@ -179,7 +210,8 @@ sealed class CompilationMode {
                 """
                     $packageName should use the latest version of `androidx.profileinstaller`
                     for stable benchmarks. ($result)"
-                """.trimIndent()
+                """
+                    .trimIndent()
             )
         }
         Log.d(TAG, "Killing process $packageName")
@@ -192,29 +224,36 @@ sealed class CompilationMode {
         warmupBlock: () -> Unit,
     )
 
-    @RequiresApi(24)
-    internal abstract fun shouldReset(): Boolean
+    @RequiresApi(24) internal abstract fun shouldReset(): Boolean
+
+    internal open fun requiresClearArtRuntimeImage(): Boolean = false
 
     /**
      * No pre-compilation - a compilation profile reset is performed and the entire app will be
      * allowed to Just-In-Time compile as it runs.
      *
-     * Note that later iterations may perform differently, as app code is jitted.
+     * Note that later iterations may perform differently if the app is not killed each iteration
+     * (such as will `StartupMode.COLD`), as app code is jitted.
      */
-    // Leaving possibility for future configuration (such as interpreted = true)
     @Suppress("CanSealedSubClassBeObject")
     @RequiresApi(24)
     class None : CompilationMode() {
+
         override fun toString(): String = "None"
 
-        override fun compileImpl(
-            scope: MacrobenchmarkScope,
-            warmupBlock: () -> Unit
-        ) {
+        override fun compileImpl(scope: MacrobenchmarkScope, warmupBlock: () -> Unit) {
             // nothing to do!
         }
 
         override fun shouldReset(): Boolean = true
+
+        /**
+         * To get worst-case `cmd package compile -f -m verify` performance on API 34+, we must
+         * clear the art runtime *EACH TIME* the app is killed.
+         */
+        override fun requiresClearArtRuntimeImage(): Boolean {
+            return DeviceInfo.supportsRuntimeImages
+        }
     }
 
     /**
@@ -227,10 +266,7 @@ sealed class CompilationMode {
     class Ignore : CompilationMode() {
         override fun toString(): String = "Ignore"
 
-        override fun compileImpl(
-            scope: MacrobenchmarkScope,
-            warmupBlock: () -> Unit
-        ) {
+        override fun compileImpl(scope: MacrobenchmarkScope, warmupBlock: () -> Unit) {
             // Do nothing.
         }
 
@@ -251,7 +287,9 @@ sealed class CompilationMode {
      * baseline profile in the APK.
      */
     @RequiresApi(24)
-    class Partial @JvmOverloads constructor(
+    class Partial
+    @JvmOverloads
+    constructor(
         /**
          * Controls whether a Baseline Profile should be used to partially pre compile the app.
          *
@@ -265,16 +303,13 @@ sealed class CompilationMode {
          * If greater than 0, your macrobenchmark will run an extra [warmupIterations] times before
          * compilation, to prepare
          */
-        @IntRange(from = 0)
-        val warmupIterations: Int = 0
+        @IntRange(from = 0) val warmupIterations: Int = 0
     ) : CompilationMode() {
         init {
             require(warmupIterations >= 0) {
                 "warmupIterations must be non-negative, was $warmupIterations"
             }
-            require(
-                baselineProfileMode != BaselineProfileMode.Disable || warmupIterations > 0
-            ) {
+            require(baselineProfileMode != BaselineProfileMode.Disable || warmupIterations > 0) {
                 "Must set baselineProfileMode != Ignore, or warmup iterations > 0 to define" +
                     " which portion of the app to pre-compile."
             }
@@ -292,10 +327,7 @@ sealed class CompilationMode {
             }
         }
 
-        override fun compileImpl(
-            scope: MacrobenchmarkScope,
-            warmupBlock: () -> Unit
-        ) {
+        override fun compileImpl(scope: MacrobenchmarkScope, warmupBlock: () -> Unit) {
             val packageName = scope.packageName
             if (baselineProfileMode != BaselineProfileMode.Disable) {
                 // Ignores the presence of a skip file.
@@ -303,6 +335,7 @@ sealed class CompilationMode {
                 if (installErrorString == null) {
                     // baseline profile install success, kill process before compiling
                     Log.d(TAG, "Killing process $packageName")
+                    // We don't really need to flush ART profiles here, but its safer to do it.
                     scope.killProcess()
                     cmdPackageCompile(packageName, "speed-profile")
                 } else {
@@ -314,15 +347,19 @@ sealed class CompilationMode {
                 }
             }
             if (warmupIterations > 0) {
-                scope.flushArtProfiles = true
-                try {
-                    repeat(this.warmupIterations) {
-                        warmupBlock()
+                scope.withKillMode(
+                    current = scope.killMode,
+                    override = scope.killMode.copy(flushArtProfiles = true)
+                ) {
+                    check(!scope.hasFlushedArtProfiles)
+                    repeat(warmupIterations) { warmupBlock() }
+                    scope.killProcess()
+                    check(scope.hasFlushedArtProfiles) {
+                        "Process $packageName never flushed profiles in any process - check that" +
+                            " you launched the process, and that you only killed it with" +
+                            " scope.killProcess, which will save profiles."
                     }
-                    scope.killProcessAndFlushArtProfiles()
                     cmdPackageCompile(packageName, "speed-profile")
-                } finally {
-                    scope.flushArtProfiles = false
                 }
             }
         }
@@ -331,21 +368,18 @@ sealed class CompilationMode {
     }
 
     /**
-     * Full ahead-of-time compilation.
+     * Full ahead-of-time compilation of all method (but not classes) in the target application.
      *
      * Equates to `cmd package compile -f -m speed <package>` on API 24+.
      *
-     * On Android M (API 23), this is the only supported compilation mode, as all apps are
-     * fully compiled ahead-of-time.
+     * On Android M (API 23), this is the only supported compilation mode, as all apps are fully
+     * compiled ahead-of-time.
      */
     @Suppress("CanSealedSubClassBeObject") // Leaving possibility for future configuration
     class Full : CompilationMode() {
         override fun toString(): String = "Full"
 
-        override fun compileImpl(
-            scope: MacrobenchmarkScope,
-            warmupBlock: () -> Unit
-        ) {
+        override fun compileImpl(scope: MacrobenchmarkScope, warmupBlock: () -> Unit) {
             if (Build.VERSION.SDK_INT >= 24) {
                 cmdPackageCompile(scope.packageName, "speed")
             }
@@ -362,16 +396,12 @@ sealed class CompilationMode {
      * it's only available for internal benchmarking.
      *
      * TODO: migrate this to an internal-only flag on [None] instead
-     *
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     object Interpreted : CompilationMode() {
         override fun toString(): String = "Interpreted"
 
-        override fun compileImpl(
-            scope: MacrobenchmarkScope,
-            warmupBlock: () -> Unit
-        ) {
+        override fun compileImpl(scope: MacrobenchmarkScope, warmupBlock: () -> Unit) {
             // Nothing to do - handled externally
         }
 
@@ -384,8 +414,8 @@ sealed class CompilationMode {
          * Represents the default compilation mode for the platform, on an end user's device.
          *
          * This is a post-store-install app configuration for this device's SDK
-         * version - [`Partial(BaselineProfileMode.UseIfAvailable)`][Partial] on API 24+, and
-         * [Full] prior to API 24 (where all apps are fully AOT compiled).
+         * version - [`Partial(BaselineProfileMode.UseIfAvailable)`][Partial] on API 24+, and [Full]
+         * prior to API 24 (where all apps are fully AOT compiled).
          *
          * On API 24+, Baseline Profile pre-compilation is used if possible, but no error will be
          * thrown if installation fails.
@@ -395,23 +425,39 @@ sealed class CompilationMode {
          * an app's BaselineProfile can be correctly used.
          */
         @JvmField
-        val DEFAULT: CompilationMode = if (Build.VERSION.SDK_INT >= 24) {
-            Partial(
-                baselineProfileMode = BaselineProfileMode.UseIfAvailable,
-                warmupIterations = 0
-            )
-        } else {
-            // API 23 is always fully compiled
-            Full()
-        }
+        val DEFAULT: CompilationMode =
+            if (Build.VERSION.SDK_INT >= 24) {
+                Partial(
+                    baselineProfileMode = BaselineProfileMode.UseIfAvailable,
+                    warmupIterations = 0
+                )
+            } else {
+                // API 23 is always fully compiled
+                Full()
+            }
 
         @RequiresApi(24)
         internal fun cmdPackageCompile(packageName: String, compileArgument: String) {
-            val stdout = Shell.executeScriptCaptureStdout(
-                "cmd package compile -f -m $compileArgument $packageName"
-            )
+            val stdout =
+                Shell.executeScriptCaptureStdout(
+                    "cmd package compile -f -m $compileArgument $packageName"
+                )
             check(stdout.trim() == "Success" || stdout.contains("PERFORMED")) {
                 "Failed to compile (out=$stdout)"
+            }
+        }
+
+        @RequiresApi(24)
+        internal fun cmdPackageCompileReset(packageName: String) {
+            // cmd package compile --reset returns a "Success" or a "Failure" to stdout.
+            // Rather than rely on exit codes which are not always correct, we
+            // specifically look for the work "Success" in stdout to make sure reset
+            // actually happened.
+            val output =
+                Shell.executeScriptCaptureStdout("cmd package compile --reset $packageName")
+
+            check(output.trim() == "Success" || output.contains("PERFORMED")) {
+                compileResetErrorString(packageName, output, DeviceInfo.isEmulator)
             }
         }
 
@@ -436,7 +482,6 @@ sealed class CompilationMode {
  * Returns true if the CompilationMode can be run with the device's current VM settings.
  *
  * Used by jetpack-internal benchmarks to skip CompilationModes that would self-suppress.
- *
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 fun CompilationMode.isSupportedWithVmSettings(): Boolean {
@@ -462,13 +507,15 @@ internal fun CompilationMode.assumeSupportedWithVmSettings() {
                         To run benchmarks with CompilationMode $this,
                         you must disable jit on your device with the following command:
                         `adb shell setprop dalvik.vm.extra-opts -Xusejit:false; adb shell stop; adb shell start`                         
-                    """.trimIndent()
+                    """
+                        .trimIndent()
                 DeviceInfo.isRooted && this != CompilationMode.Interpreted ->
                     """
                         To run benchmarks with CompilationMode $this,
                         you must enable jit on your device with the following command:
                         `adb shell setprop dalvik.vm.extra-opts \"\"; adb shell stop; adb shell start` 
-                    """.trimIndent()
+                    """
+                        .trimIndent()
                 else ->
                     "You must toggle usejit on the VM to use CompilationMode $this, this requires" +
                         "rooting your device."

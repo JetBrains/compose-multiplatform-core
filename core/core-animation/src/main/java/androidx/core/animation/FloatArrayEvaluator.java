@@ -17,8 +17,8 @@
 package androidx.core.animation;
 
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This evaluator can be used to perform type interpolation between <code>float[]</code> values.
@@ -48,7 +48,7 @@ public final class FloatArrayEvaluator implements TypeEvaluator<float[]> {
      *
      * @param reuseArray The array to modify and return from <code>evaluate</code>.
      */
-    public FloatArrayEvaluator(@Nullable float[] reuseArray) {
+    public FloatArrayEvaluator(float @Nullable [] reuseArray) {
         mArray = reuseArray;
     }
 
@@ -65,9 +65,8 @@ public final class FloatArrayEvaluator implements TypeEvaluator<float[]> {
      *         the same index in startValue and endValue.
      */
     @Override
-    @NonNull
-    public float[] evaluate(float fraction, @NonNull float[] startValue,
-            @NonNull float[] endValue) {
+    public float @NonNull [] evaluate(float fraction, float @NonNull [] startValue,
+            float @NonNull [] endValue) {
         float[] array = mArray;
         if (array == null) {
             array = new float[startValue.length];

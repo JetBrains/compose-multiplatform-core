@@ -20,12 +20,13 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Wire format to encode a pair of id to {@link ComplicationStateWireFormat}.
@@ -41,8 +42,7 @@ public final class IdAndComplicationStateWireFormat implements VersionedParcelab
 
     /** The {@link ComplicationStateWireFormat} for the complication. */
     @ParcelField(2)
-    @NonNull
-    ComplicationStateWireFormat mComplicationState;
+    @NonNull ComplicationStateWireFormat mComplicationState;
 
     /** Used by VersionedParcelable. */
     IdAndComplicationStateWireFormat() {}
@@ -57,8 +57,7 @@ public final class IdAndComplicationStateWireFormat implements VersionedParcelab
         return mId;
     }
 
-    @NonNull
-    public ComplicationStateWireFormat getComplicationState() {
+    public @NonNull ComplicationStateWireFormat getComplicationState() {
         return mComplicationState;
     }
 

@@ -17,14 +17,12 @@
 package androidx.health.platform.client.exerciseroute
 
 import android.os.Parcelable
+import androidx.annotation.RestrictTo
 import androidx.health.platform.client.impl.data.ProtoParcelable
 import androidx.health.platform.client.proto.DataProto
 
-/**
- * Internal parcelable wrapper over proto object.
- *
- * @suppress
- */
+/** Internal parcelable wrapper over proto object. */
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 class ExerciseRoute(override val proto: DataProto.DataPoint.SubTypeDataList) :
     ProtoParcelable<DataProto.DataPoint.SubTypeDataList>() {
 

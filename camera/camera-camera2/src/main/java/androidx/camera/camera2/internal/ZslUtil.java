@@ -18,9 +18,9 @@ package androidx.camera.camera2.internal;
 
 import static android.hardware.camera2.CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Utility class for Zero-Shutter Lag.
@@ -30,7 +30,6 @@ final class ZslUtil {
     private ZslUtil() {
     }
 
-    @RequiresApi(21)
     public static boolean isCapabilitySupported(
             @NonNull CameraCharacteristicsCompat cameraCharacteristicsCompat,
             int targetCapability) {

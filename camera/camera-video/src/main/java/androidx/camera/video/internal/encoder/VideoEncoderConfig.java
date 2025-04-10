@@ -20,14 +20,13 @@ import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.Timebase;
 
 import com.google.auto.value.AutoValue;
 
+import org.jspecify.annotations.NonNull;
+
 /** {@inheritDoc} */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @AutoValue
 public abstract class VideoEncoderConfig implements EncoderConfig {
 
@@ -40,8 +39,7 @@ public abstract class VideoEncoderConfig implements EncoderConfig {
     }
 
     /** Returns a build for this config. */
-    @NonNull
-    public static Builder builder() {
+    public static @NonNull Builder builder() {
         return new AutoValue_VideoEncoderConfig.Builder()
                 .setProfile(EncoderConfig.CODEC_PROFILE_NONE)
                 .setIFrameInterval(VIDEO_INTRA_FRAME_INTERVAL_DEFAULT)
@@ -49,30 +47,32 @@ public abstract class VideoEncoderConfig implements EncoderConfig {
                 .setDataSpace(VideoEncoderDataSpace.ENCODER_DATA_SPACE_UNSPECIFIED);
     }
 
+    /** Returns a build from the input config. */
+    public abstract @NonNull Builder toBuilder();
+
     @Override
-    @NonNull
-    public abstract String getMimeType();
+    public abstract @NonNull String getMimeType();
 
     @Override
     public abstract int getProfile();
 
     @Override
-    @NonNull
-    public abstract Timebase getInputTimebase();
+    public abstract @NonNull Timebase getInputTimebase();
 
     /** Gets the resolution. */
-    @NonNull
-    public abstract Size getResolution();
+    public abstract @NonNull Size getResolution();
 
     /** Gets the color format. */
     public abstract int getColorFormat();
 
     /** Gets the color data space. */
-    @NonNull
-    public abstract VideoEncoderDataSpace getDataSpace();
+    public abstract @NonNull VideoEncoderDataSpace getDataSpace();
 
-    /** Gets the frame rate. */
-    public abstract int getFrameRate();
+    /** Gets the capture frame rate. */
+    public abstract int getCaptureFrameRate();
+
+    /** Gets the encode frame rate. */
+    public abstract int getEncodeFrameRate();
 
     /** Gets the i-frame interval. */
     public abstract int getIFrameInterval();
@@ -81,15 +81,21 @@ public abstract class VideoEncoderConfig implements EncoderConfig {
     public abstract int getBitrate();
 
     /** {@inheritDoc} */
-    @NonNull
     @Override
-    public MediaFormat toMediaFormat() {
+    public @NonNull MediaFormat toMediaFormat() {
         Size size = getResolution();
         MediaFormat format = MediaFormat.createVideoFormat(getMimeType(), size.getWidth(),
                 size.getHeight());
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, getColorFormat());
         format.setInteger(MediaFormat.KEY_BIT_RATE, getBitrate());
-        format.setInteger(MediaFormat.KEY_FRAME_RATE, getFrameRate());
+        format.setInteger(MediaFormat.KEY_FRAME_RATE, getEncodeFrameRate());
+        if (getEncodeFrameRate() != getCaptureFrameRate()) {
+            // MediaCodec will adjust the frame timestamp when KEY_CAPTURE_RATE is different from
+            // KEY_FRAME_RATE.
+            format.setInteger(MediaFormat.KEY_CAPTURE_RATE, getCaptureFrameRate());
+            format.setInteger(MediaFormat.KEY_OPERATING_RATE, getCaptureFrameRate());
+            format.setInteger(MediaFormat.KEY_PRIORITY, 0); // Smaller value, higher priority.
+        }
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, getIFrameInterval());
         if (getProfile() != EncoderConfig.CODEC_PROFILE_NONE) {
             format.setInteger(MediaFormat.KEY_PROFILE, getProfile());
@@ -115,43 +121,36 @@ public abstract class VideoEncoderConfig implements EncoderConfig {
         }
 
         /** Sets the mime type. */
-        @NonNull
-        public abstract Builder setMimeType(@NonNull String mimeType);
+        public abstract @NonNull Builder setMimeType(@NonNull String mimeType);
 
         /** Sets (optional) profile for the mime type specified by {@link #setMimeType(String)}. */
-        @NonNull
-        public abstract Builder setProfile(int profile);
+        public abstract @NonNull Builder setProfile(int profile);
 
         /** Sets the source timebase. */
-        @NonNull
-        public abstract Builder setInputTimebase(@NonNull Timebase timebase);
+        public abstract @NonNull Builder setInputTimebase(@NonNull Timebase timebase);
 
         /** Sets the resolution. */
-        @NonNull
-        public abstract Builder setResolution(@NonNull Size resolution);
+        public abstract @NonNull Builder setResolution(@NonNull Size resolution);
 
         /** Sets the color format. */
-        @NonNull
-        public abstract Builder setColorFormat(int colorFormat);
+        public abstract @NonNull Builder setColorFormat(int colorFormat);
 
         /** Sets the color data space. */
-        @NonNull
-        public abstract Builder setDataSpace(@NonNull VideoEncoderDataSpace dataSpace);
+        public abstract @NonNull Builder setDataSpace(@NonNull VideoEncoderDataSpace dataSpace);
 
-        /** Sets the frame rate. */
-        @NonNull
-        public abstract Builder setFrameRate(int frameRate);
+        /** Sets the capture frame rate. */
+        public abstract @NonNull Builder setCaptureFrameRate(int frameRate);
+
+        /** Sets the encode frame rate. */
+        public abstract @NonNull Builder setEncodeFrameRate(int frameRate);
 
         /** Sets the i-frame interval. */
-        @NonNull
-        public abstract Builder setIFrameInterval(int iFrameInterval);
+        public abstract @NonNull Builder setIFrameInterval(int iFrameInterval);
 
         /** Sets the bitrate. */
-        @NonNull
-        public abstract Builder setBitrate(int bitrate);
+        public abstract @NonNull Builder setBitrate(int bitrate);
 
         /** Builds the config instance. */
-        @NonNull
-        public abstract VideoEncoderConfig build();
+        public abstract @NonNull VideoEncoderConfig build();
     }
 }

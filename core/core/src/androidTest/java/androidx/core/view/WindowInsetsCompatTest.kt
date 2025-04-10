@@ -108,6 +108,46 @@ class WindowInsetsCompatTest {
         assertEquals(13, insets.bottom)
     }
 
+    /** On API 34+ we can test more types such as SYSTEM_OVERLAYS. */
+    @Test
+    @SdkSuppress(minSdkVersion = 34)
+    public fun builder_min34_types() {
+        val statusBars = Insets.of(0, 50, 0, 0)
+        val navigationBars = Insets.of(0, 0, 0, 100)
+        val tappableElement = Insets.of(0, 10, 0, 10)
+        val mandatorySystemGestures = Insets.of(0, 20, 0, 20)
+        val systemGestures = Insets.of(0, 30, 0, 30)
+        val displayCutout = Insets.of(0, 5, 0, 0)
+        val captionBar = Insets.of(0, 50, 0, 0)
+        val ime = Insets.of(0, 0, 0, 300)
+        val systemOverlays = Insets.of(10, 0, 0, 10)
+
+        val result =
+            WindowInsetsCompat.Builder()
+                .setInsets(Type.statusBars(), statusBars)
+                .setInsets(Type.navigationBars(), navigationBars)
+                .setInsets(Type.tappableElement(), tappableElement)
+                .setInsets(Type.mandatorySystemGestures(), mandatorySystemGestures)
+                .setInsets(Type.systemGestures(), systemGestures)
+                .setInsets(Type.displayCutout(), displayCutout)
+                .setInsets(Type.captionBar(), captionBar)
+                .setInsets(Type.ime(), ime)
+                .setInsets(Type.systemOverlays(), systemOverlays)
+                .build()
+
+        assertEquals(statusBars, result.getInsets(Type.statusBars()))
+        assertEquals(navigationBars, result.getInsets(Type.navigationBars()))
+        assertEquals(tappableElement, result.getInsets(Type.tappableElement()))
+        assertEquals(mandatorySystemGestures, result.getInsets(Type.mandatorySystemGestures()))
+        assertEquals(systemGestures, result.getInsets(Type.systemGestures()))
+        assertEquals(displayCutout, result.getInsets(Type.displayCutout()))
+        assertEquals(captionBar, result.getInsets(Type.captionBar()))
+        assertEquals(ime, result.getInsets(Type.ime()))
+        assertEquals(systemOverlays, result.getInsets(Type.systemOverlays()))
+        assertEquals(Insets.of(10, 50, 0, 100), result.getInsets(Type.systemBars()))
+        assertEquals(Insets.of(10, 50, 0, 100), result.systemWindowInsets)
+    }
+
     /** On API 29+ we can test more types. */
     @Test
     @SdkSuppress(minSdkVersion = 29)

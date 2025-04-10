@@ -36,7 +36,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color
@@ -50,7 +49,6 @@ import kotlinx.coroutines.launch
 @Sampled
 @Composable
 fun OnPlaced() {
-    @OptIn(ExperimentalComposeUiApi::class)
     fun Modifier.animatePlacement(): Modifier = composed {
         val scope = rememberCoroutineScope()
         var targetOffset by remember { mutableStateOf(IntOffset.Zero) }
@@ -58,32 +56,33 @@ fun OnPlaced() {
             mutableStateOf<Animatable<IntOffset, AnimationVector2D>?>(null)
         }
         this.onPlaced {
-            // Calculate the position in the parent layout
-            targetOffset = it.positionInParent().round()
-        }.offset {
-            // Animate to the new target offset when alignment changes.
-            val anim = animatable ?: Animatable(targetOffset, IntOffset.VectorConverter)
-                .also { animatable = it }
-            if (anim.targetValue != targetOffset) {
-                scope.launch {
-                    anim.animateTo(targetOffset, spring(stiffness = StiffnessMediumLow))
-                }
+                // Calculate the position in the parent layout
+                targetOffset = it.positionInParent().round()
             }
-            // Offset the child in the opposite direction to the targetOffset, and slowly catch
-            // up to zero offset via an animation to achieve an overall animated movement.
-            animatable?.let { it.value - targetOffset } ?: IntOffset.Zero
-        }
+            .offset {
+                // Animate to the new target offset when alignment changes.
+                val anim =
+                    animatable
+                        ?: Animatable(targetOffset, IntOffset.VectorConverter).also {
+                            animatable = it
+                        }
+                if (anim.targetValue != targetOffset) {
+                    scope.launch {
+                        anim.animateTo(targetOffset, spring(stiffness = StiffnessMediumLow))
+                    }
+                }
+                // Offset the child in the opposite direction to the targetOffset, and slowly catch
+                // up to zero offset via an animation to achieve an overall animated movement.
+                animatable?.let { it.value - targetOffset } ?: IntOffset.Zero
+            }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Composable
     fun AnimatedChildAlignment(alignment: Alignment) {
-        Box(
-            Modifier.fillMaxSize().padding(4.dp).border(1.dp, Color.Red)
-        ) {
+        Box(Modifier.fillMaxSize().padding(4.dp).border(1.dp, Color.Red)) {
             Box(
-                modifier = Modifier.animatePlacement().align(alignment).size(100.dp)
-                    .background(Color.Red)
+                modifier =
+                    Modifier.animatePlacement().align(alignment).size(100.dp).background(Color.Red)
             )
         }
     }

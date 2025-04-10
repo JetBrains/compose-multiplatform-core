@@ -16,6 +16,10 @@
 
 package androidx.camera.integration.core;
 
+import static androidx.camera.core.MirrorMode.MIRROR_MODE_OFF;
+import static androidx.camera.core.MirrorMode.MIRROR_MODE_ON;
+import static androidx.camera.core.MirrorMode.MIRROR_MODE_ON_FRONT_ONLY;
+
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -24,10 +28,10 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.camera2.Camera2Config;
+import androidx.camera.camera2.pipe.integration.CameraPipeConfig;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.Logger;
@@ -47,6 +51,9 @@ import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -62,6 +69,7 @@ public class VideoCameraSwitchingActivity extends AppCompatActivity {
     private static final String INTENT_EXTRA_DURATION = "recording_duration";
     // Launch the activity with the specified camera switching time.
     private static final String INTENT_EXTRA_SWITCH_TIME = "recording_switch_time";
+    private static final String INTENT_EXTRA_MIRROR_MODE = "mirror_mode";
     private static final long INVALID_TIME_VALUE = -1;
     private static final int REQUEST_CODE_PERMISSIONS = 1001;
     private static final String[] REQUIRED_PERMISSIONS = new String[] {
@@ -72,31 +80,30 @@ public class VideoCameraSwitchingActivity extends AppCompatActivity {
     private static final String VIDEO_FILE_PREFIX = "video";
     private static final String INFO_FILE_PREFIX = "video_camera_switching_test_info";
     private static final String KEY_DEVICE_ORIENTATION = "device_orientation";
+    private static final String INTENT_EXTRA_CAMERA_IMPLEMENTATION = "camera_implementation";
+    // Camera2 implementation.
+    private static final String CAMERA2_IMPLEMENTATION_OPTION = "camera2";
+    // Camera-pipe implementation.
+    private static final String CAMERA_PIPE_IMPLEMENTATION_OPTION = "camera_pipe";
 
-    @NonNull
-    private CameraSelector mCameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
-    @Nullable
-    private ProcessCameraProvider mCameraProvider;
-    @Nullable
-    private PreviewView mPreviewView;
-    @Nullable
-    private EditText mDurationText;
-    @Nullable
-    private EditText mSwitchTimeText;
-    @Nullable
-    private Button mStartButton;
-    @Nullable
-    private Preview mPreview;
-    @Nullable
-    private VideoCapture<Recorder> mVideoCapture;
-    @Nullable
-    private Camera mCamera;
-    @Nullable
-    private Recording mRecording;
+    private static String sCameraImplementationType;
+
+    private @NonNull CameraSelector mCameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
+    private @Nullable ProcessCameraProvider mCameraProvider;
+    private @Nullable PreviewView mPreviewView;
+    private @Nullable EditText mDurationText;
+    private @Nullable EditText mSwitchTimeText;
+    private @Nullable Button mStartButton;
+    private @Nullable Preview mPreview;
+    private @Nullable VideoCapture<Recorder> mVideoCapture;
+    private @Nullable Camera mCamera;
+    private @Nullable Recording mRecording;
     private boolean mNotYetSwitched = true;
     private Integer mDeviceOrientation = null;
     private OrientationEventListener mOrientationEventListener;
+    private int mMirrorMode = MIRROR_MODE_OFF;
 
+    @OptIn(markerClass = androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration.class)
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -108,7 +115,7 @@ public class VideoCameraSwitchingActivity extends AppCompatActivity {
         if (bundle != null) {
             String extraCameraDirection = bundle.getString(INTENT_EXTRA_CAMERA_DIRECTION);
             if (extraCameraDirection != null) {
-                if (extraCameraDirection.equals("FORWARD")) {
+                if (extraCameraDirection.equalsIgnoreCase("FORWARD")) {
                     mCameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA;
                 } else {
                     mCameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
@@ -116,6 +123,29 @@ public class VideoCameraSwitchingActivity extends AppCompatActivity {
             }
             extraDurationMillis = bundle.getLong(INTENT_EXTRA_DURATION, INVALID_TIME_VALUE);
             extraSwitchTimeMillis = bundle.getLong(INTENT_EXTRA_SWITCH_TIME, INVALID_TIME_VALUE);
+            String mirrorMode = bundle.getString(INTENT_EXTRA_MIRROR_MODE, "OFF");
+            if (mirrorMode.equalsIgnoreCase("ON")) {
+                mMirrorMode = MIRROR_MODE_ON;
+            } else if (mirrorMode.equalsIgnoreCase("FRONT_ONLY")) {
+                mMirrorMode = MIRROR_MODE_ON_FRONT_ONLY;
+            } else {
+                mMirrorMode = MIRROR_MODE_OFF;
+            }
+
+            String cameraImplementation = bundle.getString(INTENT_EXTRA_CAMERA_IMPLEMENTATION);
+            if (cameraImplementation != null && sCameraImplementationType == null) {
+                if (cameraImplementation.equals(CAMERA2_IMPLEMENTATION_OPTION)) {
+                    ProcessCameraProvider.configureInstance(Camera2Config.defaultConfig());
+                    sCameraImplementationType = cameraImplementation;
+                } else if (cameraImplementation.equals(CAMERA_PIPE_IMPLEMENTATION_OPTION)) {
+                    ProcessCameraProvider.configureInstance(
+                            CameraPipeConfig.defaultConfig());
+                    sCameraImplementationType = cameraImplementation;
+                } else {
+                    throw new IllegalArgumentException("Failed to configure the CameraProvider "
+                            + "using unknown " + cameraImplementation + " implementation option.");
+                }
+            }
         }
 
         mOrientationEventListener = new OrientationEventListener(this) {
@@ -185,7 +215,8 @@ public class VideoCameraSwitchingActivity extends AppCompatActivity {
         mPreviewView.setImplementationMode(PreviewView.ImplementationMode.COMPATIBLE);
         mPreview = new Preview.Builder().build();
         mPreview.setSurfaceProvider(mPreviewView.getSurfaceProvider());
-        mVideoCapture = VideoCapture.withOutput(new Recorder.Builder().build());
+        mVideoCapture = new VideoCapture.Builder<>(new Recorder.Builder().build()).setMirrorMode(
+                mMirrorMode).build();
         mCamera = cameraProvider.bindToLifecycle(this, mCameraSelector, mPreview, mVideoCapture);
     }
 
@@ -278,8 +309,7 @@ public class VideoCameraSwitchingActivity extends AppCompatActivity {
                 generateFileName(INFO_FILE_PREFIX, true), "txt");
     }
 
-    @NonNull
-    private String generateFileName(@Nullable String prefix, boolean isUnique) {
+    private @NonNull String generateFileName(@Nullable String prefix, boolean isUnique) {
         if (!isUnique && !FileUtil.isFileNameValid(prefix)) {
             throw new IllegalArgumentException("Invalid arguments for generating file name.");
         }
@@ -308,8 +338,8 @@ public class VideoCameraSwitchingActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
-            @NonNull String[] permissions,
-            @NonNull int[] grantResults) {
+            String @NonNull [] permissions,
+            int @NonNull [] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (allPermissionsGranted()) {

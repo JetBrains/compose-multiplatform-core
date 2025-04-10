@@ -15,7 +15,7 @@
  */
 package androidx.core.animation;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Abstract base class used convert type T to another type V and back again. This
@@ -48,8 +48,7 @@ public abstract class BidirectionalTypeConverter<T, V> extends TypeConverter<T, 
      * @param value The Object to convert.
      * @return A value of type T, converted from <code>value</code>.
      */
-    @NonNull
-    public abstract T convertBack(@NonNull V value);
+    public abstract @NonNull T convertBack(@NonNull V value);
 
     /**
      * Returns the inverse of this converter, where the from and to classes are reversed.
@@ -58,8 +57,7 @@ public abstract class BidirectionalTypeConverter<T, V> extends TypeConverter<T, 
      * {@link #convertBack(Object)} calls.
      * @return The inverse of this converter, where the from and to classes are reversed.
      */
-    @NonNull
-    public BidirectionalTypeConverter<V, T> invert() {
+    public @NonNull BidirectionalTypeConverter<V, T> invert() {
         if (mInvertedConverter == null) {
             mInvertedConverter = new InvertedConverter<>(this);
         }
@@ -74,15 +72,13 @@ public abstract class BidirectionalTypeConverter<T, V> extends TypeConverter<T, 
             mConverter = converter;
         }
 
-        @NonNull
         @Override
-        public From convertBack(@NonNull To value) {
+        public @NonNull From convertBack(@NonNull To value) {
             return mConverter.convert(value);
         }
 
-        @NonNull
         @Override
-        public To convert(@NonNull From value) {
+        public @NonNull To convert(@NonNull From value) {
             return mConverter.convertBack(value);
         }
     }

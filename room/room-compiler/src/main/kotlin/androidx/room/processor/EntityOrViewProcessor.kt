@@ -21,7 +21,7 @@ import androidx.room.Entity
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.processing.XTypeElement
 import androidx.room.vo.EntityOrView
-import androidx.room.vo.Fields
+import androidx.room.vo.Properties
 
 interface EntityOrViewProcessor {
     fun process(): EntityOrView
@@ -40,17 +40,19 @@ private class NonEntityOrViewProcessor(
     override fun process(): EntityOrView {
         context.logger.e(element, ProcessorErrors.NOT_ENTITY_OR_VIEW)
         // Parse this as a Pojo in case there are more errors.
-        PojoProcessor.createFor(
-            context = context,
-            element = element,
-            bindingScope = FieldProcessor.BindingScope.READ_FROM_CURSOR,
-            parent = null,
-            referenceStack = referenceStack
-        ).process()
+        DataClassProcessor.createFor(
+                context = context,
+                element = element,
+                bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
+                parent = null,
+                referenceStack = referenceStack
+            )
+            .process()
         return object : EntityOrView {
-            override val fields: Fields = Fields()
+            override val properties: Properties = Properties()
             override val tableName: String
                 get() = typeName.toString()
+
             override val typeName: XTypeName
                 get() = element.type.asTypeName()
         }
@@ -64,11 +66,8 @@ fun EntityOrViewProcessor(
     referenceStack: LinkedHashSet<String> = LinkedHashSet()
 ): EntityOrViewProcessor {
     return when {
-        element.hasAnnotation(Entity::class) ->
-            EntityProcessor(context, element, referenceStack)
-        element.hasAnnotation(DatabaseView::class) ->
-            DatabaseViewProcessor(context, element)
-        else ->
-            NonEntityOrViewProcessor(context, element, referenceStack)
+        element.hasAnnotation(Entity::class) -> EntityProcessor(context, element, referenceStack)
+        element.hasAnnotation(DatabaseView::class) -> DatabaseViewProcessor(context, element)
+        else -> NonEntityOrViewProcessor(context, element, referenceStack)
     }
 }

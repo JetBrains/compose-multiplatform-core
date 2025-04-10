@@ -23,13 +23,14 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatImageView;
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat;
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat;
 
 import com.example.android.support.vectordrawable.R;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A demo for AnimatedVectorDrawableCompat's listener support.

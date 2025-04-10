@@ -17,6 +17,7 @@
 package androidx.room.ext
 
 import androidx.room.compiler.codegen.XTypeName
+import androidx.room.compiler.processing.XNullability
 import androidx.room.compiler.processing.XType
 import androidx.room.compiler.processing.isArray
 import androidx.room.compiler.processing.isByte
@@ -25,54 +26,37 @@ import androidx.room.compiler.processing.isKotlinUnit
 import androidx.room.compiler.processing.isVoid
 import androidx.room.compiler.processing.isVoidObject
 
-/**
- * Returns `true` if this type is not the `void` type.
- */
+/** Returns `true` if this type is not the `void` type. */
 fun XType.isNotVoid() = !isVoid()
 
-/**
- * Returns `true` if this does not represent a [Void] type.
- */
+/** Returns `true` if this does not represent a [Void] type. */
 fun XType.isNotVoidObject() = !isVoidObject()
 
-/**
- * Returns `true` if this type does not represent a [Unit] type.
- */
+/** Returns `true` if this type does not represent a [Unit] type. */
 fun XType.isNotKotlinUnit() = !isKotlinUnit()
 
-/**
- * Returns `true` if this type represents a valid resolvable type.
- */
+/** Returns `true` if this type represents a valid resolvable type. */
 fun XType.isNotError() = !isError()
 
-/**
- * Returns `true` if this is not the None type.
- */
+/** Returns `true` if this is not the None type. */
 fun XType.isNotNone() = !isNone()
 
-/**
- * Returns `true` if this is not `byte` type.
- */
+/** Returns `true` if this is not `byte` type. */
 fun XType.isNotByte() = !isByte()
 
-/**
- * Returns `true` if this is a `ByteBuffer` type.
- */
+/** Returns `true` if this is a `ByteBuffer` type. */
 fun XType.isByteBuffer() = asTypeName().equalsIgnoreNullability(CommonTypeNames.BYTE_BUFFER)
 
-/**
- * Returns `true` if this represents a `UUID` type.
- */
+/** Returns `true` if this represents a `UUID` type. */
 fun XType.isUUID() = asTypeName().equalsIgnoreNullability(CommonTypeNames.UUID)
 
 /**
- * Checks if the class of the provided type has the equals() and hashCode() methods declared.
+ * Checks if the class of the provided type has the equals() and hashCode() functions declared.
  *
- * Certain Room types and database primitive types are considered to implements equals and
- * hashcode.
+ * Certain Room types and database primitive types are considered to implements equals and hashcode.
  *
- * If they are not found at the current class level, the method recursively moves on to the
- * super class level and continues to look for these declared methods.
+ * If they are not found at the current class level, the function recursively moves on to the super
+ * class level and continues to look for these declared functions.
  */
 fun XType.implementsEqualsAndHashcode(): Boolean {
     if (this.isSupportedMapTypeArg()) return true
@@ -85,17 +69,19 @@ fun XType.implementsEqualsAndHashcode(): Boolean {
     if (typeElement.isDataClass()) {
         return true
     }
-    val hasEquals = typeElement.getDeclaredMethods().any {
-        it.jvmName == "equals" &&
-            it.returnType.asTypeName() == XTypeName.PRIMITIVE_BOOLEAN &&
-            it.parameters.count() == 1 &&
-            it.parameters[0].type.asTypeName().equalsIgnoreNullability(XTypeName.ANY_OBJECT)
-    }
-    val hasHashCode = typeElement.getDeclaredMethods().any {
-        it.jvmName == "hashCode" &&
-            it.returnType.asTypeName() == XTypeName.PRIMITIVE_INT &&
-            it.parameters.count() == 0
-    }
+    val hasEquals =
+        typeElement.getDeclaredMethods().any {
+            it.jvmName == "equals" &&
+                it.returnType.asTypeName() == XTypeName.PRIMITIVE_BOOLEAN &&
+                it.parameters.count() == 1 &&
+                it.parameters[0].type.asTypeName().equalsIgnoreNullability(XTypeName.ANY_OBJECT)
+        }
+    val hasHashCode =
+        typeElement.getDeclaredMethods().any {
+            it.jvmName == "hashCode" &&
+                it.returnType.asTypeName() == XTypeName.PRIMITIVE_INT &&
+                it.parameters.count() == 0
+        }
 
     if (hasEquals && hasHashCode) return true
 
@@ -117,14 +103,22 @@ fun XType.isSupportedMapTypeArg(): Boolean {
     return false
 }
 
-/**
- * Returns `true` if this is a [List]
- */
+/** Returns `true` if this is a [List] */
 fun XType.isList(): Boolean = isTypeOf(List::class)
 
-/**
- * Returns true if this is a [List] or [Set].
- */
+/** Returns true if this is a [List] or [Set]. */
 fun XType.isCollection(): Boolean {
     return isTypeOf(List::class) || isTypeOf(Set::class)
+}
+
+/**
+ * Returns true if this is assignable from [other] considering unknown nullability as nullable.
+ *
+ * Different from [XType.isAssignableFrom] where a type of unknown nullability can be assigned to a
+ * same non-null type.
+ */
+fun XType.isAssignableFromWithNullability(other: XType): Boolean {
+    val to = if (this.nullability == XNullability.UNKNOWN) this.makeNullable() else this
+    val from = if (other.nullability == XNullability.UNKNOWN) other.makeNullable() else other
+    return to.isAssignableFrom(from)
 }

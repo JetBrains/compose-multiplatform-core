@@ -21,7 +21,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.provider.Property
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
@@ -30,7 +30,7 @@ import org.gradle.api.tasks.TaskAction
 /** Finds the outputs of every task and saves this mapping into a file */
 @CacheableTask
 abstract class ListTaskOutputsTask : DefaultTask() {
-    @OutputFile val outputFile: Property<File> = project.objects.property(File::class.java)
+    @OutputFile val outputFile: RegularFileProperty = project.objects.fileProperty()
     @Input val removePrefixes: MutableList<String> = mutableListOf()
     @Input val tasks: MutableList<Task> = mutableListOf()
 
@@ -99,7 +99,7 @@ abstract class ListTaskOutputsTask : DefaultTask() {
     @TaskAction
     fun exec() {
         val outputFile = outputFile.get()
-        outputFile.writeText(outputText)
+        outputFile.asFile.writeText(outputText)
     }
 }
 
@@ -118,10 +118,39 @@ val taskNamesKnownToDuplicateOutputs =
         "transformIosTestCInteropDependenciesMetadataForIde",
         "transformNativeTestCInteropDependenciesMetadataForIde",
         "transformNativeMainCInteropDependenciesMetadataForIde",
+        "transformLinuxMainCInteropDependenciesMetadataForIde",
+        "transformNonJvmCommonMainCInteropDependenciesMetadataForIde",
 
         // The following tests intentionally have the same output of golden images
         "updateGoldenDesktopTest",
-        "updateGoldenDebugUnitTest"
+        "updateGoldenDebugUnitTest",
+
+        // The following tasks have the same output file:
+        // ../../prebuilts/androidx/javascript-for-kotlin/yarn.lock
+        "kotlinRestoreYarnLock",
+        "kotlinNpmInstall",
+        "kotlinUpgradePackageLock",
+        "kotlinUpgradeYarnLock",
+        "kotlinStorePackageLock",
+        "kotlinStoreYarnLock",
+
+        // The following tasks have the same output configFile file:
+        // projectBuildDir/js/packages/projectName-wasm-js/webpack.config.js
+        // Remove when https://youtrack.jetbrains.com/issue/KT-70029 / b/361319689 is resolved
+        // and set configFile location for each task
+        "wasmJsBrowserDevelopmentWebpack",
+        "wasmJsBrowserDevelopmentRun",
+        "wasmJsBrowserProductionWebpack",
+        "wasmJsBrowserProductionRun",
+        "jsTestTestDevelopmentExecutableCompileSync",
+
+        // Remove when https://youtrack.jetbrains.com/issue/KT-71688 is resolved and set
+        // destinationDirectory to the project's build directory
+        "wasmJsTestTestDevelopmentExecutableCompileSync",
+        "wasmJsTestTestProductionExecutableCompileSync",
+
+        // TODO file a bug
+        "kotlinNodeJsSetup",
     )
 
 fun shouldValidateTaskOutput(task: Task): Boolean {

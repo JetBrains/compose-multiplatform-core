@@ -16,10 +16,10 @@
 
 package androidx.camera.core;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.impl.MutableConfig;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Extendable builders are used to add externally defined options that can be passed to the
@@ -27,7 +27,6 @@ import androidx.camera.core.impl.MutableConfig;
  *
  * @param <T> the type being built by this builder.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public interface ExtendableBuilder<T> {
 
     /**
@@ -36,10 +35,8 @@ public interface ExtendableBuilder<T> {
      * @return The underlying {@link MutableConfig}.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
-    MutableConfig getMutableConfig();
+    @NonNull MutableConfig getMutableConfig();
 
     /** Creates an instance of the object that this builder produces. */
-    @NonNull
-    T build();
+    @NonNull T build();
 }

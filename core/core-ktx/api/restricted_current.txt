@@ -3,12 +3,12 @@ package androidx.core.animation {
 
   public final class AnimatorKt {
     method public static inline android.animation.Animator.AnimatorListener addListener(android.animation.Animator, optional kotlin.jvm.functions.Function1<? super android.animation.Animator,kotlin.Unit> onEnd, optional kotlin.jvm.functions.Function1<? super android.animation.Animator,kotlin.Unit> onStart, optional kotlin.jvm.functions.Function1<? super android.animation.Animator,kotlin.Unit> onCancel, optional kotlin.jvm.functions.Function1<? super android.animation.Animator,kotlin.Unit> onRepeat);
-    method @RequiresApi(19) public static android.animation.Animator.AnimatorPauseListener addPauseListener(android.animation.Animator, optional kotlin.jvm.functions.Function1<? super android.animation.Animator,kotlin.Unit> onResume, optional kotlin.jvm.functions.Function1<? super android.animation.Animator,kotlin.Unit> onPause);
+    method public static android.animation.Animator.AnimatorPauseListener addPauseListener(android.animation.Animator, optional kotlin.jvm.functions.Function1<? super android.animation.Animator,kotlin.Unit> onResume, optional kotlin.jvm.functions.Function1<? super android.animation.Animator,kotlin.Unit> onPause);
     method public static inline android.animation.Animator.AnimatorListener doOnCancel(android.animation.Animator, kotlin.jvm.functions.Function1<? super android.animation.Animator,kotlin.Unit> action);
     method public static inline android.animation.Animator.AnimatorListener doOnEnd(android.animation.Animator, kotlin.jvm.functions.Function1<? super android.animation.Animator,kotlin.Unit> action);
-    method @RequiresApi(19) public static android.animation.Animator.AnimatorPauseListener doOnPause(android.animation.Animator, kotlin.jvm.functions.Function1<? super android.animation.Animator,kotlin.Unit> action);
+    method public static android.animation.Animator.AnimatorPauseListener doOnPause(android.animation.Animator, kotlin.jvm.functions.Function1<? super android.animation.Animator,kotlin.Unit> action);
     method public static inline android.animation.Animator.AnimatorListener doOnRepeat(android.animation.Animator, kotlin.jvm.functions.Function1<? super android.animation.Animator,kotlin.Unit> action);
-    method @RequiresApi(19) public static android.animation.Animator.AnimatorPauseListener doOnResume(android.animation.Animator, kotlin.jvm.functions.Function1<? super android.animation.Animator,kotlin.Unit> action);
+    method public static android.animation.Animator.AnimatorPauseListener doOnResume(android.animation.Animator, kotlin.jvm.functions.Function1<? super android.animation.Animator,kotlin.Unit> action);
     method public static inline android.animation.Animator.AnimatorListener doOnStart(android.animation.Animator, kotlin.jvm.functions.Function1<? super android.animation.Animator,kotlin.Unit> action);
   }
 
@@ -17,11 +17,11 @@ package androidx.core.animation {
 package androidx.core.content {
 
   public final class ContentValuesKt {
-    method public static android.content.ContentValues contentValuesOf(kotlin.Pair<java.lang.String,?>... pairs);
+    method public static android.content.ContentValues contentValuesOf(kotlin.Pair<java.lang.String,? extends java.lang.Object?>... pairs);
   }
 
   public final class ContextKt {
-    method public static inline <reified T> T! getSystemService(android.content.Context);
+    method public static inline <reified T> T? getSystemService(android.content.Context);
     method public static inline void withStyledAttributes(android.content.Context, optional android.util.AttributeSet? set, int[] attrs, optional @AttrRes int defStyleAttr, optional @StyleRes int defStyleRes, kotlin.jvm.functions.Function1<? super android.content.res.TypedArray,kotlin.Unit> block);
     method public static inline void withStyledAttributes(android.content.Context, @StyleRes int resourceId, int[] attrs, kotlin.jvm.functions.Function1<? super android.content.res.TypedArray,kotlin.Unit> block);
   }
@@ -48,7 +48,7 @@ package androidx.core.content.res {
     method public static int getIntegerOrThrow(android.content.res.TypedArray, @StyleableRes int index);
     method @AnyRes public static int getResourceIdOrThrow(android.content.res.TypedArray, @StyleableRes int index);
     method public static String getStringOrThrow(android.content.res.TypedArray, @StyleableRes int index);
-    method public static CharSequence![] getTextArrayOrThrow(android.content.res.TypedArray, @StyleableRes int index);
+    method public static CharSequence[] getTextArrayOrThrow(android.content.res.TypedArray, @StyleableRes int index);
     method public static CharSequence getTextOrThrow(android.content.res.TypedArray, @StyleableRes int index);
     method public static inline <R> R use(android.content.res.TypedArray, kotlin.jvm.functions.Function1<? super android.content.res.TypedArray,? extends R> block);
   }
@@ -142,6 +142,19 @@ package androidx.core.graphics {
     method @ColorInt public static inline int toColorInt(String);
     method @ColorInt @RequiresApi(26) public static inline int toColorInt(@ColorLong long);
     method @ColorLong @RequiresApi(26) public static inline long toColorLong(@ColorInt int);
+    property public static inline int int.alpha;
+    property @RequiresApi(26) public static inline float long.alpha;
+    property public static inline int int.blue;
+    property @RequiresApi(26) public static inline float long.blue;
+    property @RequiresApi(26) public static inline android.graphics.ColorSpace long.colorSpace;
+    property public static inline int int.green;
+    property @RequiresApi(26) public static inline float long.green;
+    property @RequiresApi(26) public static inline boolean long.isSrgb;
+    property @RequiresApi(26) public static inline boolean long.isWideGamut;
+    property @RequiresApi(26) public static inline float int.luminance;
+    property @RequiresApi(26) public static inline float long.luminance;
+    property public static inline int int.red;
+    property @RequiresApi(26) public static inline float long.red;
   }
 
   public final class ImageDecoderKt {
@@ -162,12 +175,12 @@ package androidx.core.graphics {
   }
 
   public final class PathKt {
-    method @RequiresApi(19) public static inline infix android.graphics.Path and(android.graphics.Path, android.graphics.Path p);
+    method public static inline infix android.graphics.Path and(android.graphics.Path, android.graphics.Path p);
     method @RequiresApi(26) public static Iterable<androidx.core.graphics.PathSegment> flatten(android.graphics.Path, optional float error);
-    method @RequiresApi(19) public static inline operator android.graphics.Path minus(android.graphics.Path, android.graphics.Path p);
-    method @RequiresApi(19) public static inline infix android.graphics.Path or(android.graphics.Path, android.graphics.Path p);
-    method @RequiresApi(19) public static inline operator android.graphics.Path plus(android.graphics.Path, android.graphics.Path p);
-    method @RequiresApi(19) public static inline infix android.graphics.Path xor(android.graphics.Path, android.graphics.Path p);
+    method public static inline operator android.graphics.Path minus(android.graphics.Path, android.graphics.Path p);
+    method public static inline infix android.graphics.Path or(android.graphics.Path, android.graphics.Path p);
+    method public static inline operator android.graphics.Path plus(android.graphics.Path, android.graphics.Path p);
+    method public static inline infix android.graphics.Path xor(android.graphics.Path, android.graphics.Path p);
   }
 
   public final class PictureKt {
@@ -314,7 +327,7 @@ package androidx.core.os {
 
   public final class BundleKt {
     method public static android.os.Bundle bundleOf();
-    method public static android.os.Bundle bundleOf(kotlin.Pair<java.lang.String,?>... pairs);
+    method public static android.os.Bundle bundleOf(kotlin.Pair<java.lang.String,? extends java.lang.Object?>... pairs);
   }
 
   public final class HandlerKt {
@@ -328,8 +341,8 @@ package androidx.core.os {
 
   public final class PersistableBundleKt {
     method @RequiresApi(21) public static android.os.PersistableBundle persistableBundleOf();
-    method @RequiresApi(21) public static android.os.PersistableBundle persistableBundleOf(kotlin.Pair<java.lang.String,?>... pairs);
-    method @RequiresApi(21) public static android.os.PersistableBundle toPersistableBundle(java.util.Map<java.lang.String,?>);
+    method @RequiresApi(21) public static android.os.PersistableBundle persistableBundleOf(kotlin.Pair<java.lang.String,? extends java.lang.Object?>... pairs);
+    method @RequiresApi(21) public static android.os.PersistableBundle toPersistableBundle(java.util.Map<java.lang.String,? extends java.lang.Object?>);
   }
 
   public final class TraceKt {
@@ -352,6 +365,7 @@ package androidx.core.text {
 
   public final class LocaleKt {
     method public static inline int getLayoutDirection(java.util.Locale);
+    property public static inline int java.util.Locale.layoutDirection;
   }
 
   public final class SpannableStringBuilderKt {
@@ -360,7 +374,7 @@ package androidx.core.text {
     method public static inline android.text.SpannedString buildSpannedString(kotlin.jvm.functions.Function1<? super android.text.SpannableStringBuilder,kotlin.Unit> builderAction);
     method public static inline android.text.SpannableStringBuilder color(android.text.SpannableStringBuilder, @ColorInt int color, kotlin.jvm.functions.Function1<? super android.text.SpannableStringBuilder,kotlin.Unit> builderAction);
     method public static inline android.text.SpannableStringBuilder inSpans(android.text.SpannableStringBuilder, Object span, kotlin.jvm.functions.Function1<? super android.text.SpannableStringBuilder,kotlin.Unit> builderAction);
-    method public static inline android.text.SpannableStringBuilder inSpans(android.text.SpannableStringBuilder, Object![] spans, kotlin.jvm.functions.Function1<? super android.text.SpannableStringBuilder,kotlin.Unit> builderAction);
+    method public static inline android.text.SpannableStringBuilder inSpans(android.text.SpannableStringBuilder, Object[] spans, kotlin.jvm.functions.Function1<? super android.text.SpannableStringBuilder,kotlin.Unit> builderAction);
     method public static inline android.text.SpannableStringBuilder italic(android.text.SpannableStringBuilder, kotlin.jvm.functions.Function1<? super android.text.SpannableStringBuilder,kotlin.Unit> builderAction);
     method public static inline android.text.SpannableStringBuilder scale(android.text.SpannableStringBuilder, float proportion, kotlin.jvm.functions.Function1<? super android.text.SpannableStringBuilder,kotlin.Unit> builderAction);
     method public static inline android.text.SpannableStringBuilder strikeThrough(android.text.SpannableStringBuilder, kotlin.jvm.functions.Function1<? super android.text.SpannableStringBuilder,kotlin.Unit> builderAction);
@@ -377,7 +391,7 @@ package androidx.core.text {
   }
 
   public final class SpannedStringKt {
-    method public static inline <reified T> T![] getSpans(android.text.Spanned, optional int start, optional int end);
+    method public static inline <reified T> T[] getSpans(android.text.Spanned, optional int start, optional int end);
     method public static inline android.text.Spanned toSpanned(CharSequence);
   }
 
@@ -390,12 +404,12 @@ package androidx.core.text {
 package androidx.core.transition {
 
   public final class TransitionKt {
-    method @RequiresApi(19) public static inline android.transition.Transition.TransitionListener addListener(android.transition.Transition, optional kotlin.jvm.functions.Function1<? super android.transition.Transition,kotlin.Unit> onEnd, optional kotlin.jvm.functions.Function1<? super android.transition.Transition,kotlin.Unit> onStart, optional kotlin.jvm.functions.Function1<? super android.transition.Transition,kotlin.Unit> onCancel, optional kotlin.jvm.functions.Function1<? super android.transition.Transition,kotlin.Unit> onResume, optional kotlin.jvm.functions.Function1<? super android.transition.Transition,kotlin.Unit> onPause);
-    method @RequiresApi(19) public static inline android.transition.Transition.TransitionListener doOnCancel(android.transition.Transition, kotlin.jvm.functions.Function1<? super android.transition.Transition,kotlin.Unit> action);
-    method @RequiresApi(19) public static inline android.transition.Transition.TransitionListener doOnEnd(android.transition.Transition, kotlin.jvm.functions.Function1<? super android.transition.Transition,kotlin.Unit> action);
-    method @RequiresApi(19) public static inline android.transition.Transition.TransitionListener doOnPause(android.transition.Transition, kotlin.jvm.functions.Function1<? super android.transition.Transition,kotlin.Unit> action);
-    method @RequiresApi(19) public static inline android.transition.Transition.TransitionListener doOnResume(android.transition.Transition, kotlin.jvm.functions.Function1<? super android.transition.Transition,kotlin.Unit> action);
-    method @RequiresApi(19) public static inline android.transition.Transition.TransitionListener doOnStart(android.transition.Transition, kotlin.jvm.functions.Function1<? super android.transition.Transition,kotlin.Unit> action);
+    method public static inline android.transition.Transition.TransitionListener addListener(android.transition.Transition, optional kotlin.jvm.functions.Function1<? super android.transition.Transition,kotlin.Unit> onEnd, optional kotlin.jvm.functions.Function1<? super android.transition.Transition,kotlin.Unit> onStart, optional kotlin.jvm.functions.Function1<? super android.transition.Transition,kotlin.Unit> onCancel, optional kotlin.jvm.functions.Function1<? super android.transition.Transition,kotlin.Unit> onResume, optional kotlin.jvm.functions.Function1<? super android.transition.Transition,kotlin.Unit> onPause);
+    method public static inline android.transition.Transition.TransitionListener doOnCancel(android.transition.Transition, kotlin.jvm.functions.Function1<? super android.transition.Transition,kotlin.Unit> action);
+    method public static inline android.transition.Transition.TransitionListener doOnEnd(android.transition.Transition, kotlin.jvm.functions.Function1<? super android.transition.Transition,kotlin.Unit> action);
+    method public static inline android.transition.Transition.TransitionListener doOnPause(android.transition.Transition, kotlin.jvm.functions.Function1<? super android.transition.Transition,kotlin.Unit> action);
+    method public static inline android.transition.Transition.TransitionListener doOnResume(android.transition.Transition, kotlin.jvm.functions.Function1<? super android.transition.Transition,kotlin.Unit> action);
+    method public static inline android.transition.Transition.TransitionListener doOnStart(android.transition.Transition, kotlin.jvm.functions.Function1<? super android.transition.Transition,kotlin.Unit> action);
   }
 
 }
@@ -441,10 +455,11 @@ package androidx.core.util {
     method public static <T> boolean remove(android.util.LongSparseArray<T>, long key, T value);
     method public static inline operator <T> void set(android.util.LongSparseArray<T>, long key, T value);
     method public static <T> java.util.Iterator<T> valueIterator(android.util.LongSparseArray<T>);
+    property public static inline <T> int android.util.LongSparseArray<T>.size;
   }
 
   public final class LruCacheKt {
-    method public static inline <K, V> android.util.LruCache<K,V> lruCache(int maxSize, optional kotlin.jvm.functions.Function2<? super K,? super V,java.lang.Integer> sizeOf, optional kotlin.jvm.functions.Function1<? super K,? extends V> create, optional kotlin.jvm.functions.Function4<? super java.lang.Boolean,? super K,? super V,? super V,kotlin.Unit> onEntryRemoved);
+    method public static inline <K, V> android.util.LruCache<K,V> lruCache(int maxSize, optional kotlin.jvm.functions.Function2<? super K,? super V,java.lang.Integer> sizeOf, optional kotlin.jvm.functions.Function1<? super K,? extends V?> create, optional kotlin.jvm.functions.Function4<? super java.lang.Boolean,? super K,? super V,? super V?,kotlin.Unit> onEntryRemoved);
   }
 
   public final class PairKt {
@@ -496,6 +511,7 @@ package androidx.core.util {
     method public static <T> boolean remove(android.util.SparseArray<T>, int key, T value);
     method public static inline operator <T> void set(android.util.SparseArray<T>, int key, T value);
     method public static <T> java.util.Iterator<T> valueIterator(android.util.SparseArray<T>);
+    property public static inline <T> int android.util.SparseArray<T>.size;
   }
 
   public final class SparseBooleanArrayKt {
@@ -514,6 +530,7 @@ package androidx.core.util {
     method public static boolean remove(android.util.SparseBooleanArray, int key, boolean value);
     method public static inline operator void set(android.util.SparseBooleanArray, int key, boolean value);
     method public static kotlin.collections.BooleanIterator valueIterator(android.util.SparseBooleanArray);
+    property public static inline int android.util.SparseBooleanArray.size;
   }
 
   public final class SparseIntArrayKt {
@@ -532,6 +549,7 @@ package androidx.core.util {
     method public static boolean remove(android.util.SparseIntArray, int key, int value);
     method public static inline operator void set(android.util.SparseIntArray, int key, int value);
     method public static kotlin.collections.IntIterator valueIterator(android.util.SparseIntArray);
+    property public static inline int android.util.SparseIntArray.size;
   }
 
   public final class SparseLongArrayKt {
@@ -550,6 +568,7 @@ package androidx.core.util {
     method public static boolean remove(android.util.SparseLongArray, int key, long value);
     method public static inline operator void set(android.util.SparseLongArray, int key, long value);
     method public static kotlin.collections.LongIterator valueIterator(android.util.SparseLongArray);
+    property public static inline int android.util.SparseLongArray.size;
   }
 
 }
@@ -568,6 +587,8 @@ package androidx.core.view {
     method public static operator java.util.Iterator<android.view.MenuItem> iterator(android.view.Menu);
     method public static inline operator void minusAssign(android.view.Menu, android.view.MenuItem item);
     method public static inline void removeItemAt(android.view.Menu, int index);
+    property public static kotlin.sequences.Sequence<android.view.MenuItem> android.view.Menu.children;
+    property public static inline int android.view.Menu.size;
   }
 
   public final class ViewGroupKt {
@@ -587,6 +608,10 @@ package androidx.core.view {
     method public static inline void setMargins(android.view.ViewGroup.MarginLayoutParams, @Px int size);
     method public static inline void updateMargins(android.view.ViewGroup.MarginLayoutParams, optional @Px int left, optional @Px int top, optional @Px int right, optional @Px int bottom);
     method public static inline void updateMarginsRelative(android.view.ViewGroup.MarginLayoutParams, optional @Px int start, optional @Px int top, optional @Px int end, optional @Px int bottom);
+    property public static kotlin.sequences.Sequence<android.view.View> android.view.ViewGroup.children;
+    property public static kotlin.sequences.Sequence<android.view.View> android.view.ViewGroup.descendants;
+    property public static inline kotlin.ranges.IntRange android.view.ViewGroup.indices;
+    property public static inline int android.view.ViewGroup.size;
   }
 
   public final class ViewKt {
@@ -617,6 +642,17 @@ package androidx.core.view {
     method public static inline <reified T extends android.view.ViewGroup.LayoutParams> void updateLayoutParamsTyped(android.view.View, kotlin.jvm.functions.Function1<? super T,kotlin.Unit> block);
     method public static inline void updatePadding(android.view.View, optional @Px int left, optional @Px int top, optional @Px int right, optional @Px int bottom);
     method public static inline void updatePaddingRelative(android.view.View, optional @Px int start, optional @Px int top, optional @Px int end, optional @Px int bottom);
+    property public static kotlin.sequences.Sequence<android.view.View> android.view.View.allViews;
+    property public static kotlin.sequences.Sequence<android.view.ViewParent> android.view.View.ancestors;
+    property public static inline boolean android.view.View.isGone;
+    property public static inline boolean android.view.View.isInvisible;
+    property public static inline boolean android.view.View.isVisible;
+    property public static inline int android.view.View.marginBottom;
+    property public static inline int android.view.View.marginEnd;
+    property public static inline int android.view.View.marginLeft;
+    property public static inline int android.view.View.marginRight;
+    property public static inline int android.view.View.marginStart;
+    property public static inline int android.view.View.marginTop;
   }
 
 }
@@ -624,10 +660,10 @@ package androidx.core.view {
 package androidx.core.widget {
 
   public final class TextViewKt {
-    method public static inline android.text.TextWatcher addTextChangedListener(android.widget.TextView, optional kotlin.jvm.functions.Function4<? super java.lang.CharSequence,? super java.lang.Integer,? super java.lang.Integer,? super java.lang.Integer,kotlin.Unit> beforeTextChanged, optional kotlin.jvm.functions.Function4<? super java.lang.CharSequence,? super java.lang.Integer,? super java.lang.Integer,? super java.lang.Integer,kotlin.Unit> onTextChanged, optional kotlin.jvm.functions.Function1<? super android.text.Editable,kotlin.Unit> afterTextChanged);
-    method public static inline android.text.TextWatcher doAfterTextChanged(android.widget.TextView, kotlin.jvm.functions.Function1<? super android.text.Editable,kotlin.Unit> action);
-    method public static inline android.text.TextWatcher doBeforeTextChanged(android.widget.TextView, kotlin.jvm.functions.Function4<? super java.lang.CharSequence,? super java.lang.Integer,? super java.lang.Integer,? super java.lang.Integer,kotlin.Unit> action);
-    method public static inline android.text.TextWatcher doOnTextChanged(android.widget.TextView, kotlin.jvm.functions.Function4<? super java.lang.CharSequence,? super java.lang.Integer,? super java.lang.Integer,? super java.lang.Integer,kotlin.Unit> action);
+    method public static inline android.text.TextWatcher addTextChangedListener(android.widget.TextView, optional kotlin.jvm.functions.Function4<? super java.lang.CharSequence?,? super java.lang.Integer,? super java.lang.Integer,? super java.lang.Integer,kotlin.Unit> beforeTextChanged, optional kotlin.jvm.functions.Function4<? super java.lang.CharSequence?,? super java.lang.Integer,? super java.lang.Integer,? super java.lang.Integer,kotlin.Unit> onTextChanged, optional kotlin.jvm.functions.Function1<? super android.text.Editable?,kotlin.Unit> afterTextChanged);
+    method public static inline android.text.TextWatcher doAfterTextChanged(android.widget.TextView, kotlin.jvm.functions.Function1<? super android.text.Editable?,kotlin.Unit> action);
+    method public static inline android.text.TextWatcher doBeforeTextChanged(android.widget.TextView, kotlin.jvm.functions.Function4<? super java.lang.CharSequence?,? super java.lang.Integer,? super java.lang.Integer,? super java.lang.Integer,kotlin.Unit> action);
+    method public static inline android.text.TextWatcher doOnTextChanged(android.widget.TextView, kotlin.jvm.functions.Function4<? super java.lang.CharSequence?,? super java.lang.Integer,? super java.lang.Integer,? super java.lang.Integer,kotlin.Unit> action);
   }
 
 }

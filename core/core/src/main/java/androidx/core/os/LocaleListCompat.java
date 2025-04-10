@@ -19,13 +19,13 @@ package androidx.core.os;
 import android.os.Build;
 import android.os.LocaleList;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.Size;
 import androidx.core.text.ICUCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 
@@ -52,8 +52,7 @@ public final class LocaleListCompat {
      * Creates a new instance of {@link LocaleListCompat} from the Locale list.
      */
     @RequiresApi(24)
-    @NonNull
-    public static LocaleListCompat wrap(@NonNull LocaleList localeList) {
+    public static @NonNull LocaleListCompat wrap(@NonNull LocaleList localeList) {
         return new LocaleListCompat(new LocaleListPlatformWrapper(localeList));
     }
 
@@ -62,16 +61,14 @@ public final class LocaleListCompat {
      *
      * @return an android.os.LocaleList object if API &gt;= 24 , or {@code null} if not.
      */
-    @Nullable
-    public Object unwrap() {
+    public @Nullable Object unwrap() {
         return mImpl.getLocaleList();
     }
 
     /**
      * Creates a new instance of {@link LocaleListCompat} from the {@link Locale} array.
      */
-    @NonNull
-    public static LocaleListCompat create(@NonNull Locale... localeList) {
+    public static @NonNull LocaleListCompat create(Locale @NonNull ... localeList) {
         if (Build.VERSION.SDK_INT >= 24) {
             return wrap(Api24Impl.createLocaleList(localeList));
         }
@@ -84,8 +81,7 @@ public final class LocaleListCompat {
      * @param index The position to retrieve.
      * @return The {@link Locale} in the given index
      */
-    @Nullable
-    public Locale get(int index) {
+    public @Nullable Locale get(int index) {
         return mImpl.get(index);
     }
 
@@ -123,8 +119,7 @@ public final class LocaleListCompat {
     /**
      * Retrieves a String representation of the language tags in this list.
      */
-    @NonNull
-    public String toLanguageTags() {
+    public @NonNull String toLanguageTags() {
         return mImpl.toLanguageTags();
     }
 
@@ -135,16 +130,14 @@ public final class LocaleListCompat {
      * @return The first {@link Locale} from this list that appears in the given array, or
      *         {@code null} if the {@link LocaleListCompat} is empty.
      */
-    @Nullable
-    public Locale getFirstMatch(@NonNull String[] supportedLocales) {
+    public @Nullable Locale getFirstMatch(String @NonNull [] supportedLocales) {
         return mImpl.getFirstMatch(supportedLocales);
     }
 
     /**
      * Retrieve an empty instance of {@link LocaleListCompat}.
      */
-    @NonNull
-    public static LocaleListCompat getEmptyLocaleList() {
+    public static @NonNull LocaleListCompat getEmptyLocaleList() {
         return sEmptyLocaleList;
     }
 
@@ -156,8 +149,7 @@ public final class LocaleListCompat {
      * @param list The language tags to be included as a single {@link String} separated by commas.
      * @return A new instance with the {@link Locale} items identified by the given tags.
      */
-    @NonNull
-    public static LocaleListCompat forLanguageTags(@Nullable String list) {
+    public static @NonNull LocaleListCompat forLanguageTags(@Nullable String list) {
         if (list == null || list.isEmpty()) {
             return getEmptyLocaleList();
         } else {
@@ -203,8 +195,8 @@ public final class LocaleListCompat {
      * Returns the default locale list, adjusted by moving the default locale to its first
      * position.
      */
-    @NonNull @Size(min = 1)
-    public static LocaleListCompat getAdjustedDefault() {
+    @Size(min = 1)
+    public static @NonNull LocaleListCompat getAdjustedDefault() {
         if (Build.VERSION.SDK_INT >= 24) {
             return LocaleListCompat.wrap(Api24Impl.getAdjustedDefault());
         } else {
@@ -223,8 +215,8 @@ public final class LocaleListCompat {
      * called. This method takes that into account by always checking the output of
      * Locale.getDefault() and recalculating the default LocaleList if needed.</p>
      */
-    @NonNull @Size(min = 1)
-    public static LocaleListCompat getDefault() {
+    @Size(min = 1)
+    public static @NonNull LocaleListCompat getDefault() {
         if (Build.VERSION.SDK_INT >= 24) {
             return LocaleListCompat.wrap(Api24Impl.getDefault());
         } else {
@@ -263,7 +255,6 @@ public final class LocaleListCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static boolean matchesLanguageAndScript(@NonNull Locale supported,
                 @NonNull Locale desired) {
             if (supported.equals(desired)) {
@@ -306,7 +297,6 @@ public final class LocaleListCompat {
             return false;
         }
 
-        @DoNotInline
         static Locale forLanguageTag(String languageTag) {
             return Locale.forLanguageTag(languageTag);
         }
@@ -322,9 +312,8 @@ public final class LocaleListCompat {
         return mImpl.hashCode();
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return mImpl.toString();
     }
 
@@ -334,17 +323,14 @@ public final class LocaleListCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static LocaleList createLocaleList(Locale... list) {
             return new LocaleList(list);
         }
 
-        @DoNotInline
         static LocaleList getAdjustedDefault() {
             return LocaleList.getAdjustedDefault();
         }
 
-        @DoNotInline
         static LocaleList getDefault() {
             return LocaleList.getDefault();
         }

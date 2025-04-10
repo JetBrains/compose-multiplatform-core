@@ -21,7 +21,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import android.content.Context;
-import android.os.Build;
 
 import androidx.arch.core.executor.ArchTaskExecutor;
 import androidx.arch.core.executor.TaskExecutor;
@@ -37,10 +36,24 @@ import androidx.room.integration.testapp.vo.UserAndAllPets;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 
 import com.google.common.collect.Lists;
+
+import io.reactivex.Completable;
+import io.reactivex.Flowable;
+import io.reactivex.Maybe;
+import io.reactivex.Observable;
+import io.reactivex.Single;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.exceptions.UndeliverableException;
+import io.reactivex.functions.Predicate;
+import io.reactivex.observers.TestObserver;
+import io.reactivex.plugins.RxJavaPlugins;
+import io.reactivex.schedulers.TestScheduler;
+import io.reactivex.subscribers.TestSubscriber;
+
+import kotlin.Unit;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -53,18 +66,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
-
-import io.reactivex.Flowable;
-import io.reactivex.Maybe;
-import io.reactivex.Observable;
-import io.reactivex.Single;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.exceptions.UndeliverableException;
-import io.reactivex.functions.Predicate;
-import io.reactivex.observers.TestObserver;
-import io.reactivex.plugins.RxJavaPlugins;
-import io.reactivex.schedulers.TestScheduler;
-import io.reactivex.subscribers.TestSubscriber;
+import java.util.concurrent.locks.LockSupport;
 
 @SmallTest
 @RunWith(AndroidJUnit4.class)
@@ -585,7 +587,6 @@ public class RxJava2Test extends TestDatabaseTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.JELLY_BEAN)
     public void withFtsTable_Flowable() throws InterruptedException {
         final Context context = ApplicationProvider.getApplicationContext();
         final FtsTestDatabase db = Room.inMemoryDatabaseBuilder(context, FtsTestDatabase.class)
@@ -693,5 +694,47 @@ public class RxJava2Test extends TestDatabaseTest {
 
         testObserver.assertNoValues();
         testObserver.assertNotTerminated();
+    }
+
+    @Test
+    public void createCompletable_cancellable() {
+        TestObserver<Void> testObserver = new TestObserver<>();
+        Completable completable = RxRoom.createCompletable(mDatabase, false, false,
+                sqLiteConnection -> {
+                    LockSupport.parkNanos(Long.MAX_VALUE);
+                    return Unit.INSTANCE;
+                });
+        completable.subscribe(testObserver);
+        testObserver.assertNotComplete();
+        testObserver.dispose();
+        testObserver.assertNoErrors();
+    }
+
+    @Test
+    public void createSingle_cancellable() {
+        TestObserver<String> testObserver = new TestObserver<>();
+        Single<String> single = RxRoom.createSingle(mDatabase, false, false,
+                sqLiteConnection -> {
+                    LockSupport.parkNanos(Long.MAX_VALUE);
+                    return "";
+                });
+        single.subscribe(testObserver);
+        testObserver.assertNotComplete();
+        testObserver.dispose();
+        testObserver.assertNoErrors();
+    }
+
+    @Test
+    public void createMaybe_cancellable() {
+        TestObserver<String> testObserver = new TestObserver<>();
+        Maybe<String> maybe = RxRoom.createMaybe(mDatabase, false, false,
+                sqLiteConnection -> {
+                    LockSupport.parkNanos(Long.MAX_VALUE);
+                    return "";
+                });
+        maybe.subscribe(testObserver);
+        testObserver.assertNotComplete();
+        testObserver.dispose();
+        testObserver.assertNoErrors();
     }
 }

@@ -1,0 +1,9 @@
+// Baseline format: 1.0
+RemovedMethod: androidx.constraintlayout.compose.DebugFlags#getShowBounds():
+    Removed method androidx.constraintlayout.compose.DebugFlags.getShowBounds()
+RemovedMethod: androidx.constraintlayout.compose.DebugFlags#getShowKeyPositions():
+    Removed method androidx.constraintlayout.compose.DebugFlags.getShowKeyPositions()
+RemovedMethod: androidx.constraintlayout.compose.DebugFlags#getShowPaths():
+    Removed method androidx.constraintlayout.compose.DebugFlags.getShowPaths()
+RemovedMethod: androidx.constraintlayout.compose.GridFlag#isPlaceLayoutsOnSpansFirst():
+    Removed method androidx.constraintlayout.compose.GridFlag.isPlaceLayoutsOnSpansFirst()

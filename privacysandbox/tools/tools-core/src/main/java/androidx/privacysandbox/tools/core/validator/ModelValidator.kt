@@ -16,12 +16,15 @@
 
 package androidx.privacysandbox.tools.core.validator
 
+import androidx.privacysandbox.tools.core.model.AnnotatedDataClass
+import androidx.privacysandbox.tools.core.model.AnnotatedEnumClass
 import androidx.privacysandbox.tools.core.model.AnnotatedInterface
 import androidx.privacysandbox.tools.core.model.AnnotatedValue
 import androidx.privacysandbox.tools.core.model.ParsedApi
 import androidx.privacysandbox.tools.core.model.Type
 import androidx.privacysandbox.tools.core.model.Types
 import androidx.privacysandbox.tools.core.model.Types.asNonNull
+import javax.lang.model.SourceVersion.isKeyword as isJavaKeyword
 
 class ModelValidator private constructor(val api: ParsedApi) {
     private val values = api.values.map(AnnotatedValue::type)
@@ -41,6 +44,7 @@ class ModelValidator private constructor(val api: ParsedApi) {
         validateServiceAndInterfaceMethods()
         validateValuePropertyTypes()
         validateCallbackMethods()
+        validateNames()
         return ValidationResult(errors)
     }
 
@@ -56,11 +60,11 @@ class ModelValidator private constructor(val api: ParsedApi) {
     private fun validateServiceSupertypes() {
         val superTypes = api.services.first().superTypes
         if (superTypes.isNotEmpty()) {
-            if (superTypes.contains(Types.sandboxedUiAdapter)) {
+            if (superTypes.intersect(Types.uiAdapters).isNotEmpty()) {
                 errors.add(
                     "Interfaces annotated with @PrivacySandboxService may not extend any other " +
-                        "interface. To define a SandboxedUiAdapter, use @PrivacySandboxInterface " +
-                        "and return it from this service."
+                        "interface. To define a SandboxedUiAdapter or a SharedUiAdapter, use " +
+                        "@PrivacySandboxInterface and return it from this service."
                 )
             } else {
                 errors.add(
@@ -72,7 +76,7 @@ class ModelValidator private constructor(val api: ParsedApi) {
     }
 
     private fun validateNonSuspendFunctionsReturnUnit() {
-        val annotatedInterfaces = api.services + api.interfaces
+        val annotatedInterfaces = api.services + api.interfaces + api.callbacks
         for (annotatedInterface in annotatedInterfaces) {
             for (method in annotatedInterface.methods) {
                 if (!method.isSuspend && method.returnType != Types.unit) {
@@ -86,13 +90,13 @@ class ModelValidator private constructor(val api: ParsedApi) {
     }
 
     private fun validateServiceAndInterfaceMethods() {
-        val annotatedInterfaces = api.services + api.interfaces
+        val annotatedInterfaces = api.services + api.interfaces + api.callbacks
         for (annotatedInterface in annotatedInterfaces) {
             for (method in annotatedInterface.methods) {
                 if (method.parameters.any { !(isValidInterfaceParameterType(it.type)) }) {
                     errors.add(
                         "Error in ${annotatedInterface.type.qualifiedName}.${method.name}: " +
-                            "only primitives, lists, data classes annotated with " +
+                            "only primitives, lists, data/enum classes annotated with " +
                             "@PrivacySandboxValue, interfaces annotated with " +
                             "@PrivacySandboxCallback or @PrivacySandboxInterface, and " +
                             "SdkActivityLaunchers are supported as parameter types."
@@ -101,7 +105,7 @@ class ModelValidator private constructor(val api: ParsedApi) {
                 if (!isValidInterfaceReturnType(method.returnType)) {
                     errors.add(
                         "Error in ${annotatedInterface.type.qualifiedName}.${method.name}: " +
-                            "only primitives, lists, data classes annotated with " +
+                            "only primitives, lists, data/enum classes annotated with " +
                             "@PrivacySandboxValue, interfaces annotated with " +
                             "@PrivacySandboxInterface, and SdkActivityLaunchers are supported as " +
                             "return types."
@@ -113,11 +117,14 @@ class ModelValidator private constructor(val api: ParsedApi) {
 
     private fun validateValuePropertyTypes() {
         for (value in api.values) {
+            if (value !is AnnotatedDataClass) {
+                continue
+            }
             for (property in value.properties) {
                 if (!isValidValuePropertyType(property.type)) {
                     errors.add(
                         "Error in ${value.type.qualifiedName}.${property.name}: " +
-                            "only primitives, lists, data classes annotated with " +
+                            "only primitives, lists, data/enum classes annotated with " +
                             "@PrivacySandboxValue, interfaces annotated with " +
                             "@PrivacySandboxInterface, and SdkActivityLaunchers are supported as " +
                             "properties."
@@ -133,16 +140,43 @@ class ModelValidator private constructor(val api: ParsedApi) {
                 if (method.parameters.any { !isValidCallbackParameterType(it.type) }) {
                     errors.add(
                         "Error in ${callback.type.qualifiedName}.${method.name}: " +
-                            "only primitives, lists, data classes annotated with " +
+                            "only primitives, lists, data/enum classes annotated with " +
                             "@PrivacySandboxValue, interfaces annotated with " +
                             "@PrivacySandboxInterface, and SdkActivityLaunchers are supported as " +
                             "callback parameter types."
                     )
                 }
-                if (method.returnType != Types.unit || method.isSuspend) {
+            }
+        }
+    }
+
+    private fun validateNames() {
+        for (value in api.values.filterIsInstance<AnnotatedDataClass>()) {
+            for (property in value.properties) {
+                if (isJavaKeyword(property.name)) {
                     errors.add(
-                        "Error in ${callback.type.qualifiedName}.${method.name}: callback " +
-                            "methods should be non-suspending and have no return values."
+                        "Error in ${value.type.qualifiedName}.${property.name}: property name " +
+                            "must not be a Java keyword."
+                    )
+                }
+            }
+        }
+        for (value in api.values.filterIsInstance<AnnotatedEnumClass>()) {
+            for (variant in value.variants) {
+                if (isJavaKeyword(variant)) {
+                    errors.add(
+                        "Error in ${value.type.qualifiedName}.$variant: enum constant " +
+                            "name must not be a Java keyword."
+                    )
+                }
+            }
+        }
+        for (iface in api.interfaces + api.callbacks + api.services) {
+            for (method in iface.methods) {
+                if (isJavaKeyword(method.name)) {
+                    errors.add(
+                        "Error in ${iface.type.qualifiedName}.${method.name}: method name " +
+                            "must not be a Java keyword."
                     )
                 }
             }
@@ -150,25 +184,42 @@ class ModelValidator private constructor(val api: ParsedApi) {
     }
 
     private fun isValidInterfaceParameterType(type: Type) =
-        isValue(type) || isInterface(type) || isPrimitive(type) || isList(type) ||
-            isCallback(type) || isBundledType(type)
+        isValue(type) ||
+            isInterface(type) ||
+            isPrimitive(type) ||
+            isList(type) ||
+            isCallback(type) ||
+            isBundledType(type)
 
     private fun isValidInterfaceReturnType(type: Type) =
-        isValue(type) || isInterface(type) || isPrimitive(type) || isList(type) ||
+        isValue(type) ||
+            isInterface(type) ||
+            isPrimitive(type) ||
+            isList(type) ||
             isBundledType(type)
 
     private fun isValidValuePropertyType(type: Type) =
-        isValue(type) || isInterface(type) || isPrimitive(type) || isList(type) ||
+        isValue(type) ||
+            isInterface(type) ||
+            isPrimitive(type) ||
+            isList(type) ||
             isBundledType(type)
 
     private fun isValidCallbackParameterType(type: Type) =
-        isValue(type) || isInterface(type) || isPrimitive(type) || isList(type) ||
+        isValue(type) ||
+            isInterface(type) ||
+            isPrimitive(type) ||
+            isList(type) ||
             isBundledType(type)
 
     private fun isValue(type: Type) = values.contains(type.asNonNull())
+
     private fun isInterface(type: Type) = interfaces.contains(type.asNonNull())
+
     private fun isCallback(type: Type) = callbacks.contains(type.asNonNull())
+
     private fun isPrimitive(type: Type) = Types.primitiveTypes.contains(type.asNonNull())
+
     private fun isList(type: Type): Boolean {
         if (type.qualifiedName == "kotlin.collections.List") {
             require(type.typeParameters.size == 1) {
@@ -177,12 +228,26 @@ class ModelValidator private constructor(val api: ParsedApi) {
             if (type.isNullable) {
                 errors.add("Nullable lists are not supported")
             }
-            return type.typeParameters[0].let { isValue(it) || isPrimitive(it) }
+            val typeParameter = type.typeParameters.first()
+            if (typeParameter.isNullable) {
+                errors.add(
+                    "Nullable type parameters are not supported in lists, found ${
+                        typeParameter.qualifiedName
+                    }"
+                )
+            }
+            val holdsValidType =
+                isValue(typeParameter) || isPrimitive(typeParameter) || isBundledType(typeParameter)
+            if (!holdsValidType) {
+                errors.add("Invalid type parameter in list, found ${typeParameter.qualifiedName}.")
+            }
+            return true
         }
         return false
     }
 
-    private fun isBundledType(type: Type) = type == Types.sdkActivityLauncher
+    private fun isBundledType(type: Type) =
+        type == Types.sdkActivityLauncher || type.asNonNull() == Types.bundle
 }
 
 data class ValidationResult(val errors: List<String>) {

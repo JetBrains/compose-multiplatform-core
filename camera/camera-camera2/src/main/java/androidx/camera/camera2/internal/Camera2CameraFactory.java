@@ -16,15 +16,10 @@
 
 package androidx.camera.camera2.internal;
 
-import static android.hardware.camera2.CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE;
+import static androidx.camera.camera2.internal.CameraIdUtil.isBackwardCompatible;
 
 import android.content.Context;
-import android.hardware.camera2.CameraCharacteristics;
-import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.CameraAccessExceptionCompat;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
 import androidx.camera.camera2.internal.concurrent.Camera2CameraCoordinator;
@@ -38,6 +33,9 @@ import androidx.camera.core.impl.CameraInternal;
 import androidx.camera.core.impl.CameraStateRegistry;
 import androidx.camera.core.impl.CameraThreadConfig;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -48,13 +46,11 @@ import java.util.Set;
 /**
  * The factory class that creates {@link Camera2CameraImpl} instances.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class Camera2CameraFactory implements CameraFactory {
     private static final String TAG = "Camera2CameraFactory";
     private static final int DEFAULT_ALLOWED_CONCURRENT_OPEN_CAMERAS = 1;
 
-    @NonNull
-    private final Context mContext;
+    private final @NonNull Context mContext;
 
     private final CameraCoordinator mCameraCoordinator;
     private final CameraThreadConfig mThreadConfig;
@@ -86,8 +82,8 @@ public final class Camera2CameraFactory implements CameraFactory {
     }
 
     @Override
-    @NonNull
-    public CameraInternal getCamera(@NonNull String cameraId) throws CameraUnavailableException {
+    public @NonNull CameraInternal getCamera(@NonNull String cameraId)
+            throws CameraUnavailableException {
         if (!mAvailableCameraIds.contains(cameraId)) {
             throw new IllegalArgumentException(
                     "The given camera id is not on the available camera id list.");
@@ -118,21 +114,18 @@ public final class Camera2CameraFactory implements CameraFactory {
         }
     }
     @Override
-    @NonNull
-    public Set<String> getAvailableCameraIds() {
+    public @NonNull Set<String> getAvailableCameraIds() {
         // Use a LinkedHashSet to preserve order
         return new LinkedHashSet<>(mAvailableCameraIds);
     }
 
-    @NonNull
     @Override
-    public CameraCoordinator getCameraCoordinator() {
+    public @NonNull CameraCoordinator getCameraCoordinator() {
         return mCameraCoordinator;
     }
 
-    @NonNull
     @Override
-    public CameraManagerCompat getCameraManager() {
+    public @NonNull CameraManagerCompat getCameraManager() {
         return mCameraManager;
     }
 
@@ -146,7 +139,7 @@ public final class Camera2CameraFactory implements CameraFactory {
             if (cameraId.equals("0") || cameraId.equals("1")) {
                 backwardCompatibleCameraIds.add(cameraId);
                 continue;
-            } else if (isBackwardCompatible(cameraId)) {
+            } else if (isBackwardCompatible(mCameraManager, cameraId)) {
                 backwardCompatibleCameraIds.add(cameraId);
             } else {
                 Logger.d(TAG, "Camera " + cameraId + " is filtered out because its capabilities "
@@ -155,33 +148,5 @@ public final class Camera2CameraFactory implements CameraFactory {
         }
 
         return backwardCompatibleCameraIds;
-    }
-
-    private boolean isBackwardCompatible(@NonNull String cameraId) throws InitializationException {
-        // Always returns true to not break robolectric tests because the cameras setup in
-        // robolectric don't have REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE capability
-        // by default.
-        if ("robolectric".equals(Build.FINGERPRINT)) {
-            return true;
-        }
-
-        int[] availableCapabilities;
-
-        try {
-            availableCapabilities = mCameraManager.getCameraCharacteristicsCompat(cameraId).get(
-                    CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES);
-        } catch (CameraAccessExceptionCompat e) {
-            throw new InitializationException(CameraUnavailableExceptionHelper.createFrom(e));
-        }
-
-        if (availableCapabilities != null) {
-            for (int capability : availableCapabilities) {
-                if (capability == REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 }

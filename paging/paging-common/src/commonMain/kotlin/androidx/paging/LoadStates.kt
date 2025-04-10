@@ -18,10 +18,10 @@ package androidx.paging
 
 import androidx.annotation.RestrictTo
 import androidx.paging.LoadState.NotLoading
+import kotlin.jvm.JvmName
 
-/**
- * Collection of pagination [LoadState]s - refresh, prepend, and append.
- */
+/** Collection of pagination [LoadState]s - refresh, prepend, and append. */
+@Suppress("DataClassDefinition")
 public data class LoadStates(
     /** [LoadState] corresponding to [LoadType.REFRESH] loads. */
     public val refresh: LoadState,
@@ -39,29 +39,36 @@ public data class LoadStates(
 
     internal fun modifyState(loadType: LoadType, newState: LoadState): LoadStates {
         return when (loadType) {
-            LoadType.APPEND -> copy(
-                append = newState
-            )
-            LoadType.PREPEND -> copy(
-                prepend = newState
-            )
-            LoadType.REFRESH -> copy(
-                refresh = newState
-            )
+            LoadType.APPEND -> copy(append = newState)
+            LoadType.PREPEND -> copy(prepend = newState)
+            LoadType.REFRESH -> copy(refresh = newState)
         }
     }
 
-    internal fun get(loadType: LoadType) = when (loadType) {
-        LoadType.REFRESH -> refresh
-        LoadType.APPEND -> append
-        LoadType.PREPEND -> prepend
-    }
+    internal fun get(loadType: LoadType) =
+        when (loadType) {
+            LoadType.REFRESH -> refresh
+            LoadType.APPEND -> append
+            LoadType.PREPEND -> prepend
+        }
+
+    /** Returns true if either one of [refresh], [append], or [prepend] is in [Error] state. */
+    @get:JvmName("hasError")
+    public val hasError =
+        refresh is LoadState.Error || append is LoadState.Error || prepend is LoadState.Error
+
+    /**
+     * Returns true if all three LoadState [refresh], [append], and [prepend] are in [NotLoading]
+     * state.
+     */
+    public val isIdle = refresh is NotLoading && append is NotLoading && prepend is NotLoading
 
     internal companion object {
-        val IDLE = LoadStates(
-            refresh = NotLoading.Incomplete,
-            prepend = NotLoading.Incomplete,
-            append = NotLoading.Incomplete
-        )
+        val IDLE =
+            LoadStates(
+                refresh = NotLoading.Incomplete,
+                prepend = NotLoading.Incomplete,
+                append = NotLoading.Incomplete
+            )
     }
 }

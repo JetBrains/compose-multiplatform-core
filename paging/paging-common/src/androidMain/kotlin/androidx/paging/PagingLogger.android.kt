@@ -22,11 +22,14 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public actual object PagingLogger {
     /**
-     * isLoggable returns true if Logging is enabled via adb shell  command i.e.
-     * "adb shell setprop log.tag.Paging VERBOSE"
+     * isLoggable returns true if Logging is enabled via adb shell command i.e. "adb shell setprop
+     * log.tag.Paging VERBOSE"
      */
     public actual fun isLoggable(level: Int): Boolean {
-        return Log.isLoggable(LOG_TAG, level)
+        // Disable logging for android unit tests with Build ID check. ID is null on unit tests but
+        // non-null on instrumented androidTests or tests run with Robolectric, which means
+        // logging can still be enabled in either case.
+        return android.os.Build.ID != null && Log.isLoggable(LOG_TAG, level)
     }
 
     public actual fun log(level: Int, message: String, tr: Throwable?) {

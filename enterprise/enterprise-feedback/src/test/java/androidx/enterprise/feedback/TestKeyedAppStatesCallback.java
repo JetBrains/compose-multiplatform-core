@@ -16,7 +16,7 @@
 
 package androidx.enterprise.feedback;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 class TestKeyedAppStatesCallback implements KeyedAppStatesCallback {
 

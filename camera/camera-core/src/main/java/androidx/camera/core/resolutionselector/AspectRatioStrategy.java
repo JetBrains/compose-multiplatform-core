@@ -20,13 +20,13 @@ import static androidx.camera.core.AspectRatio.RATIO_16_9;
 import static androidx.camera.core.AspectRatio.RATIO_4_3;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.UseCase;
 import androidx.lifecycle.LifecycleOwner;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -37,8 +37,12 @@ import java.lang.annotation.RetentionPolicy;
  *
  * <p>Applications can create a {@link ResolutionSelector} with a proper AspectRatioStrategy to
  * choose a resolution that matches the preferred aspect ratio.
+ *
+ * <p>By default, CameraX supports the common 4:3 and 16:9 aspect ratio settings. Some devices may
+ * offer additional output sizes. To access these, you'll need to create a
+ * {@link ResolutionSelector} with a {@link ResolutionFilter} to find and select those specific
+ * sizes.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class AspectRatioStrategy {
     /**
      * CameraX doesn't fall back to select sizes of any other aspect ratio when this fallback
@@ -76,8 +80,7 @@ public final class AspectRatioStrategy {
      * <a href="https://source.android.com/docs/core/camera/camera3_crop_reprocess">Output streams,
      * Cropping, and Zoom</a> introduction to know more about the camera FOV.
      */
-    @NonNull
-    public static final AspectRatioStrategy RATIO_4_3_FALLBACK_AUTO_STRATEGY =
+    public static final @NonNull AspectRatioStrategy RATIO_4_3_FALLBACK_AUTO_STRATEGY =
             new AspectRatioStrategy(RATIO_4_3, FALLBACK_RULE_AUTO);
 
     /**
@@ -89,8 +92,7 @@ public final class AspectRatioStrategy {
      * <a href="https://source.android.com/docs/core/camera/camera3_crop_reprocess">Output streams,
      * Cropping, and Zoom</a> introduction to know more about the camera FOV.
      */
-    @NonNull
-    public static final AspectRatioStrategy RATIO_16_9_FALLBACK_AUTO_STRATEGY =
+    public static final @NonNull AspectRatioStrategy RATIO_16_9_FALLBACK_AUTO_STRATEGY =
             new AspectRatioStrategy(RATIO_16_9, FALLBACK_RULE_AUTO);
 
     @AspectRatio.Ratio
@@ -116,8 +118,11 @@ public final class AspectRatioStrategy {
      * to bind {@link UseCase}s with the AspectRatioStrategy specified in the
      * {@link ResolutionSelector}.
      *
-     * @param preferredAspectRatio the preferred aspect ratio to select first.
-     * @param fallbackRule the rule to follow when the preferred aspect ratio is not available.
+     * @param preferredAspectRatio the preferred aspect ratio to select first which can be either
+     * {@link AspectRatio#RATIO_4_3} or {@link AspectRatio#RATIO_16_9}.
+     * @param fallbackRule the rule to follow when the preferred aspect ratio is unavailable.
+     *                     This can be either {@link AspectRatioStrategy#FALLBACK_RULE_AUTO} or
+     *                     {@link AspectRatioStrategy#FALLBACK_RULE_NONE}.
      */
     public AspectRatioStrategy(@AspectRatio.Ratio int preferredAspectRatio,
             @AspectRatioFallbackRule int fallbackRule) {

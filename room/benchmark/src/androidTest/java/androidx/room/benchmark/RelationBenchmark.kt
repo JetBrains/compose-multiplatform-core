@@ -18,17 +18,8 @@ package androidx.room.benchmark
 
 import androidx.benchmark.junit4.BenchmarkRule
 import androidx.benchmark.junit4.measureRepeated
-import androidx.room.Dao
-import androidx.room.Database
-import androidx.room.Embedded
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.PrimaryKey
-import androidx.room.Query
-import androidx.room.Relation
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.RoomWarnings
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.testutils.generateAllEnumerations
@@ -44,8 +35,7 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class RelationBenchmark(private val parentSampleSize: Int, private val childSampleSize: Int) {
 
-    @get:Rule
-    val benchmarkRule = BenchmarkRule()
+    @get:Rule val benchmarkRule = BenchmarkRule()
 
     val context = ApplicationProvider.getApplicationContext() as android.content.Context
 
@@ -61,17 +51,14 @@ class RelationBenchmark(private val parentSampleSize: Int, private val childSamp
 
     @Test
     fun largeRelationQuery() {
-        val db = Room.databaseBuilder(context, TestDatabase::class.java, DB_NAME)
-            .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
-            .build()
+        val db =
+            Room.databaseBuilder(context, TestDatabase::class.java, DB_NAME)
+                .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
+                .build()
         val dao = db.getUserDao()
 
-        val users = List(parentSampleSize) { i ->
-            User(i, "name$i")
-        }
-        val items = List(parentSampleSize * childSampleSize) { i ->
-            Item(i, i / childSampleSize)
-        }
+        val users = List(parentSampleSize) { i -> User(i, "name$i") }
+        val items = List(parentSampleSize * childSampleSize) { i -> Item(i, i / childSampleSize) }
         dao.insertUsers(users)
         dao.insertItems(items)
 
@@ -91,37 +78,5 @@ class RelationBenchmark(private val parentSampleSize: Int, private val childSamp
         fun data() = generateAllEnumerations(listOf(100, 500, 1000), listOf(10))
 
         private const val DB_NAME = "relation-benchmark-test"
-    }
-
-    @Database(entities = [User::class, Item::class], version = 1, exportSchema = false)
-    abstract class TestDatabase : RoomDatabase() {
-        abstract fun getUserDao(): UserDao
-    }
-
-    @Entity
-    data class User(@PrimaryKey val id: Int, val name: String)
-
-    @Entity
-    data class Item(@PrimaryKey val id: Int, val ownerId: Int)
-
-    data class UserWithItems(
-        @Embedded
-        val user: User,
-
-        @Relation(parentColumn = "id", entityColumn = "ownerId")
-        val items: List<Item>
-    )
-
-    @Dao
-    interface UserDao {
-        @Insert
-        fun insertUsers(user: List<User>)
-
-        @Insert
-        fun insertItems(item: List<Item>)
-
-        @SuppressWarnings(RoomWarnings.RELATION_QUERY_WITHOUT_TRANSACTION)
-        @Query("SELECT * FROM User")
-        fun getUserWithItems(): List<UserWithItems>
     }
 }

@@ -27,26 +27,20 @@ public interface CurvedAlignment {
      */
     @kotlin.jvm.JvmInline
     public value class Radial internal constructor(internal val ratio: Float) {
-        companion object {
-            /**
-             * Put the child closest to the center of the container, within the available space
-             */
-            val Inner = Radial(1f)
+        public companion object {
+            /** Put the child closest to the center of the container, within the available space */
+            public val Inner: Radial = Radial(1f)
 
-            /**
-             * Put the child in the middle point of the available space.
-             */
-            val Center = Radial(0.5f)
+            /** Put the child in the middle point of the available space. */
+            public val Center: Radial = Radial(0.5f)
 
             /**
              * Put the child farthest from the center of the container, within the available space
              */
-            val Outer = Radial(0f)
+            public val Outer: Radial = Radial(0f)
 
-            /**
-             * Align the child in a custom position, 0 means Outer, 1 means Inner
-             */
-            fun Custom(ratio: Float): Radial {
+            /** Align the child in a custom position, 0 means Outer, 1 means Inner */
+            public fun Custom(ratio: Float): Radial {
                 return Radial(ratio)
             }
         }
@@ -58,28 +52,24 @@ public interface CurvedAlignment {
      */
     @kotlin.jvm.JvmInline
     public value class Angular internal constructor(internal val ratio: Float) {
-        companion object {
+        public companion object {
             /**
              * Put the child at the angular start of the layout of the container, within the
              * available space
              */
-            val Start = Angular(0f)
+            public val Start: Angular = Angular(0f)
 
-            /**
-             * Put the child in the middle point of the available space.
-             */
-            val Center = Angular(0.5f)
+            /** Put the child in the middle point of the available space. */
+            public val Center: Angular = Angular(0.5f)
 
             /**
              * Put the child at the angular end of the layout of the container, within the available
              * space
              */
-            val End = Angular(1f)
+            public val End: Angular = Angular(1f)
 
-            /**
-             * Align the child in a custom position, 0 means Start, 1 means End
-             */
-            fun Custom(ratio: Float): Angular {
+            /** Align the child in a custom position, 0 means Start, 1 means End */
+            public fun Custom(ratio: Float): Angular {
                 return Angular(ratio)
             }
         }

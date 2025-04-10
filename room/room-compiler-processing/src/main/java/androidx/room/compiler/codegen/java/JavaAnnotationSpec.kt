@@ -19,22 +19,19 @@ package androidx.room.compiler.codegen.java
 import androidx.room.compiler.codegen.JAnnotationSpecBuilder
 import androidx.room.compiler.codegen.XAnnotationSpec
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.XSpec
+import androidx.room.compiler.codegen.impl.XCodeBlockImpl
 import com.squareup.kotlinpoet.javapoet.JAnnotationSpec
 
-internal class JavaAnnotationSpec(
-    internal val actual: JAnnotationSpec
-) : JavaLang(), XAnnotationSpec {
+internal class JavaAnnotationSpec(internal val actual: JAnnotationSpec) : XSpec(), XAnnotationSpec {
 
-    internal class Builder(
-        internal val actual: JAnnotationSpecBuilder
-    ) : JavaLang(), XAnnotationSpec.Builder {
+    internal class Builder(internal val actual: JAnnotationSpecBuilder) :
+        XSpec.Builder(), XAnnotationSpec.Builder {
         override fun addMember(name: String, code: XCodeBlock) = apply {
-            require(code is JavaCodeBlock)
-            actual.addMember(name, code.actual)
+            require(code is XCodeBlockImpl)
+            actual.addMember(name, code.java.actual)
         }
 
-        override fun build(): XAnnotationSpec {
-            return JavaAnnotationSpec(actual.build())
-        }
+        override fun build() = JavaAnnotationSpec(actual.build())
     }
 }

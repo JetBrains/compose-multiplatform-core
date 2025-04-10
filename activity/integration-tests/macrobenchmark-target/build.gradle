@@ -1,0 +1,22 @@
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+plugins {
+    id("AndroidXPlugin")
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+}
+
+android {
+   compileSdk = 36
+   namespace = "androidx.activity.integration.macrobenchmark.target"
+}
+
+dependencies {
+    implementation(libs.kotlinStdlib)
+    implementation(project(":activity:activity"))
+}

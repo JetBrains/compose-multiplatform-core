@@ -1,5 +1,11 @@
-import androidx.build.LibraryType
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -7,13 +13,12 @@ plugins {
 }
 
 android {
-    namespace "androidx.buildSrc.tests.lib"
+    namespace = "androidx.buildSrc.tests.lib"
 }
 
 androidx {
     name = "Sample"
-    publish = Publish.SNAPSHOT_AND_RELEASE
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     inceptionYear = "2020"
     description = "This is a sample library for confirming that maxDepVersions builds work correctly"
 }

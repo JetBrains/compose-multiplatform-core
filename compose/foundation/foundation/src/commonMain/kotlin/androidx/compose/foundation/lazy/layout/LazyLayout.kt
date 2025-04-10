@@ -16,8 +16,10 @@
 
 package androidx.compose.foundation.lazy.layout
 
+import androidx.collection.mutableObjectIntMapOf
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
@@ -28,38 +30,11 @@ import androidx.compose.ui.layout.SubcomposeSlotReusePolicy
 import androidx.compose.ui.unit.Constraints
 
 /**
- * A layout that only composes and lays out currently needed items. Can be used to build
- * efficient scrollable layouts.
+ * A layout that only composes and lays out currently needed items. Can be used to build efficient
+ * scrollable layouts.
  *
- * @param itemProvider provides all the needed info about the items which could be used to
- * compose and measure items as part of [measurePolicy].
- * @param modifier to apply on the layout
- * @param prefetchState allows to schedule items for prefetching
- * @param measurePolicy Measure policy which allows to only compose and measure needed items.
- */
-@Deprecated(
-    message = "Use an overload accepting a lambda prodicing an item provider instead",
-    replaceWith = ReplaceWith(
-        "LazyLayout({ itemProvider }, modifier, prefetchState, measurePolicy)"
-    )
-)
-@ExperimentalFoundationApi
-@Composable
-fun LazyLayout(
-    itemProvider: LazyLayoutItemProvider,
-    modifier: Modifier = Modifier,
-    prefetchState: LazyLayoutPrefetchState? = null,
-    measurePolicy: LazyLayoutMeasureScope.(Constraints) -> MeasureResult
-) {
-    LazyLayout({ itemProvider }, modifier, prefetchState, measurePolicy)
-}
-
-/**
- * A layout that only composes and lays out currently needed items. Can be used to build
- * efficient scrollable layouts.
- *
- * @param itemProvider lambda producing an item provider containing all the needed info about
- * the items which could be used to compose and measure items as part of [measurePolicy].
+ * @param itemProvider lambda producing an item provider containing all the needed info about the
+ *   items which could be used to compose and measure items as part of [measurePolicy].
  * @param modifier to apply on the layout
  * @param prefetchState allows to schedule items for prefetching
  * @param measurePolicy Measure policy which allows to only compose and measure needed items.
@@ -85,25 +60,25 @@ fun LazyLayout(
         val subcomposeLayoutState = remember {
             SubcomposeLayoutState(LazyLayoutItemReusePolicy(itemContentFactory))
         }
-        prefetchState?.let {
-            LazyLayoutPrefetcher(
-                prefetchState,
-                itemContentFactory,
-                subcomposeLayoutState
-            )
+        if (prefetchState != null) {
+            val executor = prefetchState.prefetchScheduler ?: rememberDefaultPrefetchScheduler()
+            DisposableEffect(prefetchState, itemContentFactory, subcomposeLayoutState, executor) {
+                prefetchState.prefetchHandleProvider =
+                    PrefetchHandleProvider(itemContentFactory, subcomposeLayoutState, executor)
+                onDispose {
+                    // clean up prefetch handle provider
+                    prefetchState.prefetchHandleProvider?.onDisposed()
+                    prefetchState.prefetchHandleProvider = null
+                }
+            }
         }
 
         SubcomposeLayout(
             subcomposeLayoutState,
-            modifier,
+            modifier.traversablePrefetchState(prefetchState),
             remember(itemContentFactory, measurePolicy) {
                 { constraints ->
-                    with(
-                        LazyLayoutMeasureScopeImpl(
-                            itemContentFactory,
-                            this
-                        )
-                    ) {
+                    with(LazyLayoutMeasureScopeImpl(itemContentFactory, this)) {
                         measurePolicy(constraints)
                     }
                 }
@@ -112,24 +87,19 @@ fun LazyLayout(
     }
 }
 
-@ExperimentalFoundationApi
-private class LazyLayoutItemReusePolicy(
-    private val factory: LazyLayoutItemContentFactory
-) : SubcomposeSlotReusePolicy {
-    private val countPerType = mutableMapOf<Any?, Int>()
+private class LazyLayoutItemReusePolicy(private val factory: LazyLayoutItemContentFactory) :
+    SubcomposeSlotReusePolicy {
+    private val countPerType = mutableObjectIntMapOf<Any?>()
 
     override fun getSlotsToRetain(slotIds: SubcomposeSlotReusePolicy.SlotIdsSet) {
         countPerType.clear()
-        with(slotIds.iterator()) {
-            while (hasNext()) {
-                val slotId = next()
-                val type = factory.getContentType(slotId)
-                val currentCount = countPerType[type] ?: 0
-                if (currentCount == MaxItemsToRetainForReuse) {
-                    remove()
-                } else {
-                    countPerType[type] = currentCount + 1
-                }
+        slotIds.fastForEach { slotId ->
+            val type = factory.getContentType(slotId)
+            val currentCount = countPerType.getOrDefault(type, 0)
+            if (currentCount == MaxItemsToRetainForReuse) {
+                slotIds.remove(slotId)
+            } else {
+                countPerType[type] = currentCount + 1
             }
         }
     }
@@ -139,19 +109,7 @@ private class LazyLayoutItemReusePolicy(
 }
 
 /**
- * We currently use the same number of items to reuse (recycle) items as RecyclerView does:
- * 5 (RecycledViewPool.DEFAULT_MAX_SCRAP) + 2 (Recycler.DEFAULT_CACHE_SIZE)
+ * We currently use the same number of items to reuse (recycle) items as RecyclerView does: 5
+ * (RecycledViewPool.DEFAULT_MAX_SCRAP) + 2 (Recycler.DEFAULT_CACHE_SIZE)
  */
 private const val MaxItemsToRetainForReuse = 7
-
-/**
- * Platform specific implementation of lazy layout items prefetching - precomposing next items in
- * advance during the scrolling.
- */
-@ExperimentalFoundationApi
-@Composable
-internal expect fun LazyLayoutPrefetcher(
-    prefetchState: LazyLayoutPrefetchState,
-    itemContentFactory: LazyLayoutItemContentFactory,
-    subcomposeLayoutState: SubcomposeLayoutState
-)

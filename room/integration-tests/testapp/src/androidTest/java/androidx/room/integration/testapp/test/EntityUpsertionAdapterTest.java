@@ -19,10 +19,7 @@ package androidx.room.integration.testapp.test;
 import static com.google.common.truth.Truth.assertThat;
 
 import android.database.sqlite.SQLiteConstraintException;
-import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.room.EntityDeletionOrUpdateAdapter;
 import androidx.room.EntityInsertionAdapter;
 import androidx.room.EntityUpsertionAdapter;
@@ -36,8 +33,9 @@ import androidx.sqlite.db.SupportSQLiteStatement;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.filters.SdkSuppress;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,7 +47,6 @@ import java.util.UUID;
 
 @RunWith(AndroidJUnit4.class)
 @MediumTest
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.JELLY_BEAN)
 public class EntityUpsertionAdapterTest{
     private TestDatabase mTestDatabase;
     private PetDao mPetDao;
@@ -84,18 +81,16 @@ public class EntityUpsertionAdapterTest{
                         statement.bindString(4, entity.getAdoptionDate().toString());
                     }
 
-                    @NonNull
                     @Override
-                    protected String createQuery() {
+                    protected @NonNull String createQuery() {
                         return "INSERT INTO `Pet` (`mPetId`, `mUserId`, `mPetName`,`mAdoptionDate`)"
                                 + " VALUES (?,?,?,?)";
                     }
                 };
         mUpdateAdapter =
                 new EntityDeletionOrUpdateAdapter<Pet>(mTestDatabase) {
-                    @NonNull
                     @Override
-                    protected String createQuery() {
+                    protected @NonNull String createQuery() {
                         return "UPDATE `Pet` SET `mPetName` = ?, `mAdoptionDate` = ? WHERE `mPetId`"
                                 + " = ?";
                     }
@@ -117,18 +112,16 @@ public class EntityUpsertionAdapterTest{
                 statement.bindLong(3, entity.getPetId());
             }
 
-            @NonNull
             @Override
-            protected String createQuery() {
+            protected @NonNull String createQuery() {
                 return "INSERT INTO `TOY` (`mId`, `mName`, `mPetId`)"
                         + " VALUES (?,?,?)";
             }
         };
 
         mUpdateAdapterToy = new EntityDeletionOrUpdateAdapter<Toy>(mTestDatabase) {
-            @NonNull
             @Override
-            protected String createQuery() {
+            protected @NonNull String createQuery() {
                 return "UPDATE `Toy` SET `mName` = ?, `mPetId` = ? WHERE `mPetId`"
                         + " = ?";
             }
@@ -277,9 +270,8 @@ public class EntityUpsertionAdapterTest{
                 statement.bindString(4, entity.getAdoptionDate().toString());
             }
 
-            @NonNull
             @Override
-            protected String createQuery() {
+            protected @NonNull String createQuery() {
                 return "INSERT OR IGNORE INTO `Pet` (`mPetId`, `mUserId`, `mPetName`,"
                         + "`mAdoptionDate`)"
                         + " VALUES (?,?,?,?)";
@@ -311,9 +303,8 @@ public class EntityUpsertionAdapterTest{
                         statement.bindString(4, entity.getAdoptionDate().toString());
                     }
 
-                    @NonNull
                     @Override
-                    protected String createQuery() {
+                    protected @NonNull String createQuery() {
                         return "INSERT OR IGNORE INTO `Pet` (`mPetId`, `mUserId`, `mPetName`,"
                                 + "`mAdoptionDate`)"
                                 + " VALUES (?,?,?,?)";

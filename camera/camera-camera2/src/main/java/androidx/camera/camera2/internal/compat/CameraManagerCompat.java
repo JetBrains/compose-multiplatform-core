@@ -26,11 +26,12 @@ import android.os.Handler;
 import android.util.ArrayMap;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.impl.utils.MainThreadAsyncHandler;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Map;
 import java.util.Set;
@@ -39,7 +40,6 @@ import java.util.concurrent.Executor;
 /**
  * Helper for accessing features in {@link CameraManager} in a backwards compatible fashion.
  */
-@RequiresApi(21)
 public final class CameraManagerCompat {
     private final CameraManagerCompatImpl mImpl;
 
@@ -52,8 +52,7 @@ public final class CameraManagerCompat {
     }
 
     /** Get a {@link CameraManagerCompat} instance for a provided context. */
-    @NonNull
-    public static CameraManagerCompat from(@NonNull Context context) {
+    public static @NonNull CameraManagerCompat from(@NonNull Context context) {
         return CameraManagerCompat.from(context, MainThreadAsyncHandler.getInstance());
     }
 
@@ -67,8 +66,7 @@ public final class CameraManagerCompat {
      *                      executing on an Executor, it will first be posted to this handler and
      *                      the executor will be called from there.
      */
-    @NonNull
-    public static CameraManagerCompat from(@NonNull Context context,
+    public static @NonNull CameraManagerCompat from(@NonNull Context context,
             @NonNull Handler compatHandler) {
         return new CameraManagerCompat(CameraManagerCompatImpl.from(context, compatHandler));
     }
@@ -78,8 +76,7 @@ public final class CameraManagerCompat {
      *
      */
     @VisibleForTesting
-    @NonNull
-    public static CameraManagerCompat from(@NonNull final CameraManagerCompatImpl impl) {
+    public static @NonNull CameraManagerCompat from(final @NonNull CameraManagerCompatImpl impl) {
         return new CameraManagerCompat(impl);
     }
 
@@ -93,8 +90,7 @@ public final class CameraManagerCompat {
      *
      * @return The list of currently connected camera devices.
      */
-    @NonNull
-    public String[] getCameraIdList() throws CameraAccessExceptionCompat {
+    public String @NonNull [] getCameraIdList() throws CameraAccessExceptionCompat {
         return mImpl.getCameraIdList();
     }
 
@@ -111,8 +107,7 @@ public final class CameraManagerCompat {
      * @return Set of set of camera ids.
      * @throws CameraAccessExceptionCompat
      */
-    @NonNull
-    public Set<Set<String>> getConcurrentCameraIds() throws CameraAccessExceptionCompat {
+    public @NonNull Set<Set<String>> getConcurrentCameraIds() throws CameraAccessExceptionCompat {
         return mImpl.getConcurrentCameraIds();
     }
 
@@ -136,8 +131,8 @@ public final class CameraManagerCompat {
      * @throws IllegalArgumentException if the executor is {@code null}.
      */
     public void registerAvailabilityCallback(
-            @NonNull /* @CallbackExecutor */ Executor executor,
-            @NonNull CameraManager.AvailabilityCallback callback) {
+            /* @CallbackExecutor */ @NonNull Executor executor,
+            CameraManager.@NonNull AvailabilityCallback callback) {
         mImpl.registerAvailabilityCallback(executor, callback);
     }
 
@@ -154,7 +149,7 @@ public final class CameraManagerCompat {
      * @param callback The callback to remove from the notification list
      */
     public void unregisterAvailabilityCallback(
-            @NonNull CameraManager.AvailabilityCallback callback) {
+            CameraManager.@NonNull AvailabilityCallback callback) {
         mImpl.unregisterAvailabilityCallback(callback);
     }
 
@@ -177,9 +172,8 @@ public final class CameraManagerCompat {
      *                                     device is in Do Not Disturb mode with an early version
      *                                     of Android P.
      */
-    @NonNull
-    public CameraCharacteristicsCompat getCameraCharacteristicsCompat(@NonNull String cameraId)
-            throws CameraAccessExceptionCompat {
+    public @NonNull CameraCharacteristicsCompat getCameraCharacteristicsCompat(
+            @NonNull String cameraId) throws CameraAccessExceptionCompat {
         CameraCharacteristicsCompat characteristics;
         synchronized (mCameraCharacteristicsMap) {
             characteristics = mCameraCharacteristicsMap.get(cameraId);
@@ -226,8 +220,8 @@ public final class CameraManagerCompat {
      */
     @RequiresPermission(android.Manifest.permission.CAMERA)
     public void openCamera(@NonNull String cameraId,
-            @NonNull /*@CallbackExecutor*/ Executor executor,
-            @NonNull CameraDevice.StateCallback callback)
+            /*@CallbackExecutor*/ @NonNull Executor executor,
+            CameraDevice.@NonNull StateCallback callback)
             throws CameraAccessExceptionCompat {
         mImpl.openCamera(cameraId, executor, callback);
     }
@@ -238,8 +232,7 @@ public final class CameraManagerCompat {
      * <p>This method can be used gain access to {@link CameraManager} methods not exposed by
      * {@link CameraManagerCompat}.
      */
-    @NonNull
-    public CameraManager unwrap() {
+    public @NonNull CameraManager unwrap() {
         return mImpl.getCameraManager();
     }
 
@@ -250,33 +243,29 @@ public final class CameraManagerCompat {
          * Return the list of currently connected camera devices by identifier, including cameras
          * that may be in use by other camera API clients.
          */
-        @NonNull
-        String[] getCameraIdList() throws CameraAccessExceptionCompat;
+        String @NonNull [] getCameraIdList() throws CameraAccessExceptionCompat;
 
         /**
          * Return the set of concurrent camera id set which could operate concurrently.
          */
-        @NonNull
-        Set<Set<String>> getConcurrentCameraIds() throws CameraAccessExceptionCompat;
+        @NonNull Set<Set<String>> getConcurrentCameraIds() throws CameraAccessExceptionCompat;
 
         void registerAvailabilityCallback(
-                @NonNull /* @CallbackExecutor */ Executor executor,
-                @NonNull CameraManager.AvailabilityCallback callback);
+                /* @CallbackExecutor */ @NonNull Executor executor,
+                CameraManager.@NonNull AvailabilityCallback callback);
 
-        void unregisterAvailabilityCallback(@NonNull CameraManager.AvailabilityCallback callback);
+        void unregisterAvailabilityCallback(CameraManager.@NonNull AvailabilityCallback callback);
 
-        @NonNull
-        CameraCharacteristics getCameraCharacteristics(@NonNull String cameraId)
+        @NonNull CameraCharacteristics getCameraCharacteristics(@NonNull String cameraId)
                 throws CameraAccessExceptionCompat;
 
         @RequiresPermission(android.Manifest.permission.CAMERA)
         void openCamera(@NonNull String cameraId,
-                @NonNull /* @CallbackExecutor */ Executor executor,
-                @NonNull CameraDevice.StateCallback callback)
+                /* @CallbackExecutor */ @NonNull Executor executor,
+                CameraDevice.@NonNull StateCallback callback)
                 throws CameraAccessExceptionCompat;
 
-        @NonNull
-        CameraManager getCameraManager();
+        @NonNull CameraManager getCameraManager();
 
         /**
          * Returns a {@link CameraManagerCompatImpl} instance depending on the API level
@@ -287,8 +276,7 @@ public final class CameraManagerCompat {
          *                      directly executing on an Executor, it will first be posted to
          *                      this handler and the executor will be called from there.
          */
-        @NonNull
-        static CameraManagerCompatImpl from(@NonNull Context context,
+        static @NonNull CameraManagerCompatImpl from(@NonNull Context context,
                 @NonNull Handler compatHandler) {
             if (Build.VERSION.SDK_INT >= 30) {
                 return new CameraManagerCompatApi30Impl(context);
@@ -303,7 +291,6 @@ public final class CameraManagerCompat {
         }
     }
 
-    @RequiresApi(21)
     static final class AvailabilityCallbackExecutorWrapper extends
             CameraManager.AvailabilityCallback {
 
@@ -314,7 +301,7 @@ public final class CameraManagerCompat {
         private boolean mDisabled = false;
 
         AvailabilityCallbackExecutorWrapper(@NonNull Executor executor,
-                @NonNull CameraManager.AvailabilityCallback wrappedCallback) {
+                CameraManager.@NonNull AvailabilityCallback wrappedCallback) {
             mExecutor = executor;
             mWrappedCallback = wrappedCallback;
         }
@@ -339,7 +326,7 @@ public final class CameraManagerCompat {
         }
 
         @Override
-        public void onCameraAvailable(@NonNull final String cameraId) {
+        public void onCameraAvailable(final @NonNull String cameraId) {
             synchronized (mLock) {
                 if (!mDisabled) {
                     mExecutor.execute(() -> mWrappedCallback.onCameraAvailable(cameraId));
@@ -348,7 +335,7 @@ public final class CameraManagerCompat {
         }
 
         @Override
-        public void onCameraUnavailable(@NonNull final String cameraId) {
+        public void onCameraUnavailable(final @NonNull String cameraId) {
             synchronized (mLock) {
                 if (!mDisabled) {
                     mExecutor.execute(() -> mWrappedCallback.onCameraUnavailable(cameraId));

@@ -17,14 +17,57 @@
 package androidx.room.compiler.codegen
 
 typealias JCodeBlock = com.squareup.javapoet.CodeBlock
+
 typealias JCodeBlockBuilder = com.squareup.javapoet.CodeBlock.Builder
+
 typealias JAnnotationSpecBuilder = com.squareup.javapoet.AnnotationSpec.Builder
+
+typealias JPropertySpec = com.squareup.javapoet.FieldSpec
+
+typealias JPropertySpecBuilder = com.squareup.javapoet.FieldSpec.Builder
+
+typealias JParameterSpec = com.squareup.javapoet.ParameterSpec
+
+typealias JParameterSpecBuilder = com.squareup.javapoet.ParameterSpec.Builder
+
+typealias JFunSpec = com.squareup.javapoet.MethodSpec
+
+typealias JFunSpecBuilder = com.squareup.javapoet.MethodSpec.Builder
+
+typealias JModifier = javax.lang.model.element.Modifier
+
 typealias JTypeSpecBuilder = com.squareup.javapoet.TypeSpec.Builder
+
+typealias JFileSpec = com.squareup.javapoet.JavaFile
+
+typealias JFileSpecBuilder = com.squareup.javapoet.JavaFile.Builder
+
 typealias KCodeBlock = com.squareup.kotlinpoet.CodeBlock
+
 typealias KCodeBlockBuilder = com.squareup.kotlinpoet.CodeBlock.Builder
+
 typealias KAnnotationSpecBuilder = com.squareup.kotlinpoet.AnnotationSpec.Builder
+
+typealias KPropertySpec = com.squareup.kotlinpoet.PropertySpec
+
+typealias KPropertySpecBuilder = com.squareup.kotlinpoet.PropertySpec.Builder
+
+typealias KParameterSpec = com.squareup.kotlinpoet.ParameterSpec
+
+typealias KParameterSpecBuilder = com.squareup.kotlinpoet.ParameterSpec.Builder
+
+typealias KFunSpec = com.squareup.kotlinpoet.FunSpec
+
+typealias KFunSpecBuilder = com.squareup.kotlinpoet.FunSpec.Builder
+
 typealias KTypeSpecBuilder = com.squareup.kotlinpoet.TypeSpec.Builder
+
+typealias KFileSpec = com.squareup.kotlinpoet.FileSpec
+
+typealias KFileSpecBuilder = com.squareup.kotlinpoet.FileSpec.Builder
+
 typealias KMemberName = com.squareup.kotlinpoet.MemberName
+
 typealias JArrayTypeName = com.squareup.javapoet.ArrayTypeName
 
 // TODO(b/127483380): Recycle to room-compiler?

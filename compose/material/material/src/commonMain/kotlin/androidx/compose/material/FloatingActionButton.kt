@@ -50,11 +50,13 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 /**
- * <a href="https://material.io/components/buttons-floating-action-button" class="external" target="_blank">Material Design floating action button</a>.
+ * [Material Design floating action
+ * button](https://material.io/components/buttons-floating-action-button)
  *
  * A floating action button (FAB) represents the primary action of a screen.
  *
- * ![Floating action button image](https://developer.android.com/images/reference/androidx/compose/material/floating-action-button.png)
+ * ![Floating action button
+ * image](https://developer.android.com/images/reference/androidx/compose/material/floating-action-button.png)
  *
  * This FAB is typically used with an [Icon]:
  *
@@ -64,15 +66,15 @@ import kotlinx.coroutines.launch
  *
  * @param onClick callback invoked when this FAB is clicked
  * @param modifier [Modifier] to be applied to this FAB.
- * @param interactionSource the [MutableInteractionSource] representing the stream of
- * [Interaction]s for this FAB. You can create and pass in your own remembered
- * [MutableInteractionSource] if you want to observe [Interaction]s and customize the
- * appearance / behavior of this FAB in different [Interaction]s.
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this FAB. You can use this to change the FAB's appearance or
+ *   preview the FAB in different states. Note that if `null` is provided, interactions will still
+ *   happen internally.
  * @param shape The [Shape] of this FAB
  * @param backgroundColor The background color. Use [Color.Transparent] to have no color
  * @param contentColor The preferred content color for content inside this FAB
- * @param elevation [FloatingActionButtonElevation] used to resolve the elevation for this FAB
- * in different states. This controls the size of the shadow below the FAB.
+ * @param elevation [FloatingActionButtonElevation] used to resolve the elevation for this FAB in
+ *   different states. This controls the size of the shadow below the FAB.
  * @param content the content of this FAB - this is typically an [Icon].
  */
 @OptIn(ExperimentalMaterialApi::class)
@@ -80,13 +82,15 @@ import kotlinx.coroutines.launch
 fun FloatingActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    interactionSource: MutableInteractionSource? = null,
     shape: Shape = MaterialTheme.shapes.small.copy(CornerSize(percent = 50)),
     backgroundColor: Color = MaterialTheme.colors.secondary,
     contentColor: Color = contentColorFor(backgroundColor),
     elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
     content: @Composable () -> Unit
 ) {
+    @Suppress("NAME_SHADOWING")
+    val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
     Surface(
         onClick = onClick,
         modifier = modifier.semantics { role = Role.Button },
@@ -94,26 +98,29 @@ fun FloatingActionButton(
         color = backgroundColor,
         contentColor = contentColor,
         elevation = elevation.elevation(interactionSource).value,
-        interactionSource = interactionSource,
+        interactionSource = interactionSource
     ) {
         CompositionLocalProvider(LocalContentAlpha provides contentColor.alpha) {
             ProvideTextStyle(MaterialTheme.typography.button) {
                 Box(
-                    modifier = Modifier
-                        .defaultMinSize(minWidth = FabSize, minHeight = FabSize),
+                    modifier = Modifier.defaultMinSize(minWidth = FabSize, minHeight = FabSize),
                     contentAlignment = Alignment.Center
-                ) { content() }
+                ) {
+                    content()
+                }
             }
         }
     }
 }
 
 /**
- * <a href="https://material.io/components/buttons-floating-action-button#extended-fab" class="external" target="_blank">Material Design extended floating action button</a>.
+ * [Material Design extended floating action
+ * button](https://material.io/components/buttons-floating-action-button#extended-fab)
  *
  * The extended FAB is wider than a regular FAB, and it includes a text label.
  *
- * ![Extended floating action button image](https://developer.android.com/images/reference/androidx/compose/material/extended-floating-action-button.png)
+ * ![Extended floating action button
+ * image](https://developer.android.com/images/reference/androidx/compose/material/extended-floating-action-button.png)
  *
  * This extended FAB contains text and an optional icon that will be placed at the start. See
  * [FloatingActionButton] for a FAB that just contains some content, typically an icon.
@@ -121,25 +128,23 @@ fun FloatingActionButton(
  * @sample androidx.compose.material.samples.SimpleExtendedFabWithIcon
  *
  * If you want FAB’s container to have a fluid width (to be defined by its relationship to something
- * else on screen, such as screen width or the layout grid) just apply an appropriate modifier.
- * For example to fill the whole available width you can do:
+ * else on screen, such as screen width or the layout grid) just apply an appropriate modifier. For
+ * example to fill the whole available width you can do:
  *
  * @sample androidx.compose.material.samples.FluidExtendedFab
- *
  * @param text Text label displayed inside this FAB
  * @param onClick callback invoked when this FAB is clicked
  * @param modifier [Modifier] to be applied to this FAB
- * @param icon Optional icon for this FAB, typically this will be a
- * [Icon].
- * @param interactionSource the [MutableInteractionSource] representing the stream of
- * [Interaction]s for this FAB. You can create and pass in your own remembered
- * [MutableInteractionSource] if you want to observe [Interaction]s and customize the
- * appearance / behavior of this FAB in different [Interaction]s.
+ * @param icon Optional icon for this FAB, typically this will be a [Icon].
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this FAB. You can use this to change the FAB's appearance or
+ *   preview the FAB in different states. Note that if `null` is provided, interactions will still
+ *   happen internally.
  * @param shape The [Shape] of this FAB
  * @param backgroundColor The background color. Use [Color.Transparent] to have no color
  * @param contentColor The preferred content color. Will be used by text and iconography
- * @param elevation [FloatingActionButtonElevation] used to resolve the elevation for this FAB
- * in different states. This controls the size of the shadow below the FAB.
+ * @param elevation [FloatingActionButtonElevation] used to resolve the elevation for this FAB in
+ *   different states. This controls the size of the shadow below the FAB.
  */
 @Composable
 fun ExtendedFloatingActionButton(
@@ -147,17 +152,14 @@ fun ExtendedFloatingActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     icon: @Composable (() -> Unit)? = null,
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    interactionSource: MutableInteractionSource? = null,
     shape: Shape = MaterialTheme.shapes.small.copy(CornerSize(percent = 50)),
     backgroundColor: Color = MaterialTheme.colors.secondary,
     contentColor: Color = contentColorFor(backgroundColor),
     elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation()
 ) {
     FloatingActionButton(
-        modifier = modifier.sizeIn(
-            minWidth = ExtendedFabSize,
-            minHeight = ExtendedFabSize
-        ),
+        modifier = modifier.sizeIn(minWidth = ExtendedFabSize, minHeight = ExtendedFabSize),
         onClick = onClick,
         interactionSource = interactionSource,
         shape = shape,
@@ -167,10 +169,7 @@ fun ExtendedFloatingActionButton(
     ) {
         val startPadding = if (icon == null) ExtendedFabTextPadding else ExtendedFabIconPadding
         Row(
-            modifier = Modifier.padding(
-                start = startPadding,
-                end = ExtendedFabTextPadding
-            ),
+            modifier = Modifier.padding(start = startPadding, end = ExtendedFabTextPadding),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (icon != null) {
@@ -191,52 +190,45 @@ fun ExtendedFloatingActionButton(
 @Stable
 interface FloatingActionButtonElevation {
     /**
-     * Represents the elevation used in a floating action button, depending on
-     * [interactionSource].
+     * Represents the elevation used in a floating action button, depending on [interactionSource].
      *
      * @param interactionSource the [InteractionSource] for this floating action button
      */
-    @Composable
-    fun elevation(interactionSource: InteractionSource): State<Dp>
+    @Composable fun elevation(interactionSource: InteractionSource): State<Dp>
 }
 
-/**
- * Contains the default values used by [FloatingActionButton]
- */
+/** Contains the default values used by [FloatingActionButton] */
 object FloatingActionButtonDefaults {
     /**
      * Creates a [FloatingActionButtonElevation] that will animate between the provided values
      * according to the Material specification.
      *
      * @param defaultElevation the elevation to use when the [FloatingActionButton] has no
-     * [Interaction]s
-     * @param pressedElevation the elevation to use when the [FloatingActionButton] is
-     * pressed.
+     *   [Interaction]s
+     * @param pressedElevation the elevation to use when the [FloatingActionButton] is pressed.
      */
     @Deprecated("Use another overload of elevation", level = DeprecationLevel.HIDDEN)
     @Composable
     fun elevation(
         defaultElevation: Dp = 6.dp,
         pressedElevation: Dp = 12.dp,
-    ): FloatingActionButtonElevation = elevation(
-        defaultElevation,
-        pressedElevation,
-        hoveredElevation = 8.dp,
-        focusedElevation = 8.dp,
-    )
+    ): FloatingActionButtonElevation =
+        elevation(
+            defaultElevation,
+            pressedElevation,
+            hoveredElevation = 8.dp,
+            focusedElevation = 8.dp,
+        )
 
     /**
      * Creates a [FloatingActionButtonElevation] that will animate between the provided values
      * according to the Material specification.
      *
      * @param defaultElevation the elevation to use when the [FloatingActionButton] has no
-     * [Interaction]s
-     * @param pressedElevation the elevation to use when the [FloatingActionButton] is
-     * pressed.
-     * @param hoveredElevation the elevation to use when the [FloatingActionButton] is
-     * hovered.
-     * @param focusedElevation the elevation to use when the [FloatingActionButton] is
-     * focused.
+     *   [Interaction]s
+     * @param pressedElevation the elevation to use when the [FloatingActionButton] is pressed.
+     * @param hoveredElevation the elevation to use when the [FloatingActionButton] is hovered.
+     * @param focusedElevation the elevation to use when the [FloatingActionButton] is focused.
      */
     @Composable
     fun elevation(
@@ -256,9 +248,7 @@ object FloatingActionButtonDefaults {
     }
 }
 
-/**
- * Default [FloatingActionButtonElevation] implementation.
- */
+/** Default [FloatingActionButtonElevation] implementation. */
 @Stable
 private class DefaultFloatingActionButtonElevation(
     private val defaultElevation: Dp,
@@ -268,14 +258,15 @@ private class DefaultFloatingActionButtonElevation(
 ) : FloatingActionButtonElevation {
     @Composable
     override fun elevation(interactionSource: InteractionSource): State<Dp> {
-        val animatable = remember(interactionSource) {
-            FloatingActionButtonElevationAnimatable(
-                defaultElevation = defaultElevation,
-                pressedElevation = pressedElevation,
-                hoveredElevation = hoveredElevation,
-                focusedElevation = focusedElevation
-            )
-        }
+        val animatable =
+            remember(interactionSource) {
+                FloatingActionButtonElevationAnimatable(
+                    defaultElevation = defaultElevation,
+                    pressedElevation = pressedElevation,
+                    hoveredElevation = hoveredElevation,
+                    focusedElevation = focusedElevation
+                )
+            }
 
         LaunchedEffect(this) {
             animatable.updateElevation(
@@ -313,9 +304,7 @@ private class DefaultFloatingActionButtonElevation(
                     }
                 }
                 val targetInteraction = interactions.lastOrNull()
-                launch {
-                    animatable.animateElevation(to = targetInteraction)
-                }
+                launch { animatable.animateElevation(to = targetInteraction) }
             }
         }
 
@@ -392,11 +381,7 @@ private class FloatingActionButtonElevationAnimatable(
         targetInteraction = to
         try {
             if (animatable.targetValue != target) {
-                animatable.animateElevation(
-                    target = target,
-                    from = lastTargetInteraction,
-                    to = to
-                )
+                animatable.animateElevation(target = target, from = lastTargetInteraction, to = to)
             }
         } finally {
             lastTargetInteraction = to

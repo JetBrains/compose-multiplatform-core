@@ -18,13 +18,13 @@ package androidx.camera.camera2.internal.compat.workaround;
 
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.camera2.internal.compat.quirk.ExtraCroppingQuirk;
 import androidx.camera.core.impl.SurfaceConfig;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,11 +33,9 @@ import java.util.List;
  * Helper class that overrides user configured resolution with resolution selected based on device
  * quirks.
  */
-@RequiresApi(21)
 public class ResolutionCorrector {
 
-    @Nullable
-    private final ExtraCroppingQuirk mExtraCroppingQuirk;
+    private final @Nullable ExtraCroppingQuirk mExtraCroppingQuirk;
 
     /**
      * Constructs new {@link ResolutionCorrector}.
@@ -65,9 +63,8 @@ public class ResolutionCorrector {
      *                             calculated.
      * @param supportedResolutions a ordered list of resolutions calculated by CameraX.
      */
-    @NonNull
-    public List<Size> insertOrPrioritize(
-            @NonNull SurfaceConfig.ConfigType configType,
+    public @NonNull List<Size> insertOrPrioritize(
+            SurfaceConfig.@NonNull ConfigType configType,
             @NonNull List<Size> supportedResolutions) {
         if (mExtraCroppingQuirk == null) {
             return supportedResolutions;

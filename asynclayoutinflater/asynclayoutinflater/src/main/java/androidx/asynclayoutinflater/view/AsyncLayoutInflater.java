@@ -27,10 +27,11 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.LayoutRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.core.util.Pools.SynchronizedPool;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Executor;

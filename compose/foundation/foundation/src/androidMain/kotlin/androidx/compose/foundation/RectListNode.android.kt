@@ -23,32 +23,30 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.findRootCoordinates
-import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.GlobalPositionAwareModifierNode
-import androidx.compose.ui.node.currentValueOf
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.node.requireView
 import kotlin.math.roundToInt
 
-internal abstract class RectListNode(
-    open var rect: ((LayoutCoordinates) -> Rect)?
-) : Modifier.Node(), GlobalPositionAwareModifierNode, CompositionLocalConsumerModifierNode {
+internal abstract class RectListNode(open var rect: ((LayoutCoordinates) -> Rect)?) :
+    Modifier.Node(), GlobalPositionAwareModifierNode {
     private var androidRect: android.graphics.Rect? = null
 
     protected val view: View
-        get() = currentValueOf(LocalView)
+        get() = requireView()
 
     override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
-        val newRect = if (rect == null) {
-            val boundsInRoot = coordinates.boundsInRoot()
-            android.graphics.Rect(
-                boundsInRoot.left.roundToInt(),
-                boundsInRoot.top.roundToInt(),
-                boundsInRoot.right.roundToInt(),
-                boundsInRoot.bottom.roundToInt()
-            )
-        } else {
-            calcBounds(coordinates, rect!!.invoke(coordinates))
-        }
+        val newRect =
+            if (rect == null) {
+                val boundsInRoot = coordinates.boundsInRoot()
+                android.graphics.Rect(
+                    boundsInRoot.left.roundToInt(),
+                    boundsInRoot.top.roundToInt(),
+                    boundsInRoot.right.roundToInt(),
+                    boundsInRoot.bottom.roundToInt()
+                )
+            } else {
+                calcBounds(coordinates, rect!!.invoke(coordinates))
+            }
         replaceRect(newRect)
     }
 
@@ -58,6 +56,7 @@ internal abstract class RectListNode(
     }
 
     abstract fun currentRects(): MutableVector<android.graphics.Rect>
+
     abstract fun updateRects(rects: MutableVector<android.graphics.Rect>)
 
     private fun replaceRect(newRect: android.graphics.Rect?) {

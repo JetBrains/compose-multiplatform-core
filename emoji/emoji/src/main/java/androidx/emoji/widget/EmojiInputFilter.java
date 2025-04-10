@@ -24,11 +24,11 @@ import android.text.Spannable;
 import android.text.Spanned;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.emoji.text.EmojiCompat;
 import androidx.emoji.text.EmojiCompat.InitCallback;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
@@ -42,12 +42,11 @@ import java.lang.ref.WeakReference;
  *
  */
 @RestrictTo(LIBRARY_GROUP_PREFIX)
-@RequiresApi(19)
 final class EmojiInputFilter implements android.text.InputFilter {
     private final TextView mTextView;
     private InitCallback mInitCallback;
 
-    EmojiInputFilter(@NonNull final TextView textView) {
+    EmojiInputFilter(final @NonNull TextView textView) {
         mTextView = textView;
     }
 

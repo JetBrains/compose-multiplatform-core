@@ -23,7 +23,8 @@ import android.content.res.TypedArray;
 import android.util.AttributeSet;
 
 import androidx.annotation.FloatRange;
-import androidx.annotation.NonNull;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * An interpolator where the rate of change starts out slowly and

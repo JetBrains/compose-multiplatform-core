@@ -15,12 +15,14 @@
   -->
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content">
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal">
 
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
@@ -29,36 +31,56 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/callNumber"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="call # -" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="call # " />
 
-        <TextView
-            android:id="@+id/callIdTextView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="callId" />
+            <TextView
+                android:id="@+id/callNumber"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="\?" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=", ID:" />
+
+            <TextView
+                android:id="@+id/callIdTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=" ?" />
         </LinearLayout>
+
+
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/callStateTextView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="currentCallState=[null]; " />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="currentCallState=" />
+
+            <TextView
+                android:id="@+id/callStateTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="[null]" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="; currentEndpoint=" />
 
             <TextView
                 android:id="@+id/endpointStateTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="currentEndpoint=[null]" />
-
+                android:text="[null]" />
         </LinearLayout>
 
         <LinearLayout
@@ -71,6 +93,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:backgroundTint="#4CAF50"
                 android:text="Active" />
 
             <Button
@@ -85,7 +108,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Disc." />
+                android:backgroundTint="#F44336"
+                android:text="Disc" />
         </LinearLayout>
 
         <LinearLayout
@@ -94,7 +118,7 @@
             android:orientation="horizontal">
 
             <Button
-                android:id="@+id/earpieceButton"
+                android:id="@+id/selectEndpointButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -113,6 +137,79 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="bluetooth" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="participants=" />
+
+            <TextView
+                android:id="@+id/participantsTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="[null]" />
+        </LinearLayout>
+
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/addParticipantButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="+ Participant" />
+
+            <Button
+                android:id="@+id/removeParticipantButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="- Participant" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/FileProviderImage"
+                android:layout_width="40dp"
+                android:layout_height="match_parent"
+                android:visibility="visible"
+                app:srcCompat="@drawable/android"
+                tools:visibility="visible" />
+
+            <Button
+                android:id="@+id/ToggleFileProviderImage"
+                android:layout_width="154dp"
+                android:layout_height="match_parent"
+                android:text="Generate next icon" />
+
+            <ImageView
+                android:id="@+id/LocalCallSilenceImage"
+                android:layout_width="40dp"
+                android:layout_height="match_parent"
+                android:visibility="visible"
+                app:srcCompat="@drawable/mic"
+                tools:visibility="visible" />
+
+            <Button
+                android:id="@+id/toggleLocalCallSilence"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Toggle Local Silence" />
         </LinearLayout>
 
     </LinearLayout>

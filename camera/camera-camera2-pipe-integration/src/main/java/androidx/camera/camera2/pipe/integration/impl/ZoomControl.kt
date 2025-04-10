@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.pipe.integration.impl
 
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.integration.adapter.ZoomValue
 import androidx.camera.camera2.pipe.integration.adapter.asListenableFuture
 import androidx.camera.camera2.pipe.integration.adapter.propagateTo
@@ -26,6 +25,7 @@ import androidx.camera.camera2.pipe.integration.internal.ZoomMath.getLinearZoomF
 import androidx.camera.camera2.pipe.integration.internal.ZoomMath.getZoomRatioFromLinearZoom
 import androidx.camera.core.CameraControl
 import androidx.camera.core.ZoomState
+import androidx.camera.core.impl.utils.Threads
 import androidx.camera.core.impl.utils.futures.Futures
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -35,55 +35,51 @@ import dagger.Module
 import dagger.multibindings.IntoSet
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
-const val DEFAULT_ZOOM_RATIO = 1.0f
+public const val DEFAULT_ZOOM_RATIO: Float = 1.0f
 
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @CameraScope
-class ZoomControl @Inject constructor(
-    private val threads: UseCaseThreads,
+public class ZoomControl
+@Inject
+constructor(
     private val zoomCompat: ZoomCompat,
 ) : UseCaseCameraControl {
     // NOTE: minZoom may be lower than 1.0
     // NOTE: Default zoom ratio is 1.0 (DEFAULT_ZOOM_RATIO)
-    val minZoomRatio: Float = zoomCompat.minZoomRatio
-    val maxZoomRatio: Float = zoomCompat.maxZoomRatio
+    public val minZoomRatio: Float = zoomCompat.minZoomRatio
+    public val maxZoomRatio: Float = zoomCompat.maxZoomRatio
 
-    val defaultZoomState by lazy {
+    public val defaultZoomState: ZoomValue by lazy {
         ZoomValue(DEFAULT_ZOOM_RATIO, minZoomRatio, maxZoomRatio)
     }
 
-    private val _zoomState by lazy {
-        MutableLiveData<ZoomState>(defaultZoomState)
-    }
+    private val _zoomState by lazy { MutableLiveData<ZoomState>(defaultZoomState) }
 
-    val zoomStateLiveData: LiveData<ZoomState>
+    public val zoomStateLiveData: LiveData<ZoomState>
         get() = _zoomState
 
     /** Linear zoom is between 0.0f and 1.0f */
-    fun toLinearZoom(zoomRatio: Float) = getLinearZoomFromZoomRatio(
-        zoomRatio = zoomRatio,
-        minZoomRatio = minZoomRatio,
-        maxZoomRatio = maxZoomRatio
-    )
+    public fun toLinearZoom(zoomRatio: Float): Float =
+        getLinearZoomFromZoomRatio(
+            zoomRatio = zoomRatio,
+            minZoomRatio = minZoomRatio,
+            maxZoomRatio = maxZoomRatio
+        )
 
     /** Zoom ratio is commonly used as the "1x, 2x, 5x" zoom ratio. Zoom ratio may be less than 1 */
-    private fun toZoomRatio(linearZoom: Float) = getZoomRatioFromLinearZoom(
-        linearZoom = linearZoom,
-        minZoomRatio = minZoomRatio,
-        maxZoomRatio = maxZoomRatio
-    )
+    private fun toZoomRatio(linearZoom: Float) =
+        getZoomRatioFromLinearZoom(
+            linearZoom = linearZoom,
+            minZoomRatio = minZoomRatio,
+            maxZoomRatio = maxZoomRatio
+        )
 
-    private var _useCaseCamera: UseCaseCamera? = null
-    override var useCaseCamera: UseCaseCamera?
-        get() = _useCaseCamera
+    private var _requestControl: UseCaseCameraRequestControl? = null
+    override var requestControl: UseCaseCameraRequestControl?
+        get() = _requestControl
         set(value) {
-            _useCaseCamera = value
+            _requestControl = value
             applyZoomState(_zoomState.value ?: defaultZoomState, false)
         }
 
@@ -94,51 +90,47 @@ class ZoomControl @Inject constructor(
         applyZoomState(defaultZoomState)
     }
 
-    private suspend fun setZoomState(value: ZoomState) {
-        // TODO: camera-camera2 updates livedata with setValue if calling thread is main thread,
-        //  and updates with postValue otherwise. Need to consider if always using setValue
-        //  via main thread is alright in camera-pipe.
-        withContext(Dispatchers.Main) {
+    private fun setZoomState(value: ZoomState) {
+        if (Threads.isMainThread()) {
             _zoomState.value = value
+        } else {
+            _zoomState.postValue(value)
         }
     }
 
-    fun setLinearZoom(linearZoom: Float): ListenableFuture<Void> {
+    public fun setLinearZoom(linearZoom: Float): ListenableFuture<Void> {
         if (linearZoom > 1.0f || linearZoom < 0f) {
-            val outOfRangeDesc =
-                "Requested linearZoom $linearZoom is not within valid range [0, 1]"
-            return Futures.immediateFailedFuture(
-                IllegalArgumentException(outOfRangeDesc)
-            )
+            val outOfRangeDesc = "Requested linearZoom $linearZoom is not within valid range [0, 1]"
+            return Futures.immediateFailedFuture(IllegalArgumentException(outOfRangeDesc))
         }
 
-        val zoomValue = ZoomValue(
-            ZoomValue.LinearZoom(linearZoom),
-            minZoomRatio,
-            maxZoomRatio,
-        )
+        val zoomValue =
+            ZoomValue(
+                ZoomValue.LinearZoom(linearZoom),
+                minZoomRatio,
+                maxZoomRatio,
+            )
         return applyZoomState(zoomValue)
     }
 
-    fun setZoomRatio(zoomRatio: Float): ListenableFuture<Void> {
+    public fun setZoomRatio(zoomRatio: Float): ListenableFuture<Void> {
         if (zoomRatio > maxZoomRatio || zoomRatio < minZoomRatio) {
             val outOfRangeDesc =
                 "Requested zoomRatio $zoomRatio is not within valid range" +
                     " [$minZoomRatio, $maxZoomRatio]"
-            return Futures.immediateFailedFuture(
-                IllegalArgumentException(outOfRangeDesc)
-            )
+            return Futures.immediateFailedFuture(IllegalArgumentException(outOfRangeDesc))
         }
 
-        val zoomValue = ZoomValue(
-            zoomRatio,
-            minZoomRatio,
-            maxZoomRatio,
-        )
+        val zoomValue =
+            ZoomValue(
+                zoomRatio,
+                minZoomRatio,
+                maxZoomRatio,
+            )
         return applyZoomState(zoomValue)
     }
 
-    fun applyZoomState(
+    public fun applyZoomState(
         zoomState: ZoomState,
         cancelPreviousTask: Boolean = true,
     ): ListenableFuture<Void> {
@@ -159,29 +151,26 @@ class ZoomControl @Inject constructor(
         }
         updateSignal = signal
 
-        threads.sequentialScope.launch(start = CoroutineStart.UNDISPATCHED) {
-            setZoomState(zoomState)
+        setZoomState(zoomState)
 
-            useCaseCamera?.let {
-                zoomCompat.applyAsync(zoomState.zoomRatio, it).propagateTo(signal)
-            } ?: signal.completeExceptionally(
+        requestControl?.let { zoomCompat.applyAsync(zoomState.zoomRatio, it).propagateTo(signal) }
+            ?: signal.completeExceptionally(
                 CameraControl.OperationCanceledException("Camera is not active.")
             )
-        }
 
         /**
-         * TODO: Use signal.asListenableFuture() directly.
-         * Deferred<T>.asListenableFuture() returns a ListenableFuture<T>, so this currently reports
-         * a type mismatch error (Required: Void!, Found: Unit).
-         * Currently, Job.asListenableFuture() is used as a workaround for this problem.
+         * TODO: Use signal.asListenableFuture() directly. Deferred<T>.asListenableFuture() returns
+         *   a ListenableFuture<T>, so this currently reports a type mismatch error (Required:
+         *   Void!, Found: Unit). Currently, Job.asListenableFuture() is used as a workaround for
+         *   this problem.
          */
         return Futures.nonCancellationPropagating((signal as Job).asListenableFuture())
     }
 
     @Module
-    abstract class Bindings {
+    public abstract class Bindings {
         @Binds
         @IntoSet
-        abstract fun provideControls(zoomControl: ZoomControl): UseCaseCameraControl
+        public abstract fun provideControls(zoomControl: ZoomControl): UseCaseCameraControl
     }
 }

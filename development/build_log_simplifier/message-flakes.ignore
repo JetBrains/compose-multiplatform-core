@@ -35,6 +35,7 @@ Reusing configuration cache\.
 Calculating task graph as configuration cache cannot be reused because an input to task '[^ ]*' has changed\.
 Calculating task graph as configuration cache cannot be reused because the set of paths ignored in file\-system\-check input tracking has changed\.
 See the profiling report at\: file\:\/\/\$OUT_DIR\/buildSrc\/build\/reports\/profile\/profile\-[0-9]+\-[0-9]+\-[0-9]+\-[0-9]+\-[0-9]+\-[0-9]+\.html
+The build is running offline\. A build scan will not be published at this time, but it can be published if you run the 'buildScanPublishPrevious' task in the next build\.
 # Some messages that encode the number of a certain type of other error
 [0-9]+ errors, [0-9]+ warnings \([0-9]+ warnings filtered by baseline lint\-baseline\.xml\)
 [0-9]+ errors, [0-9]+ warnings \([0-9]+ warning filtered by baseline lint\-baseline\.xml\)
@@ -122,7 +123,15 @@ It looks like you are a Googler running without remote build cache.*
 > Run with \-\-info or \-\-debug option to get more log output\.
 > Run with \-\-scan to get full insights\.
 # developers already see this message when local builds fail and don't need to also see it in CI
-\* Get more help at https://help\.gradle\.org
+> Get more help at https://help\.gradle\.org.
+# developers already can tell when a build failed
+FAILURE: Build failed with an exception.
+# developers already expect the output to explain what went wrong
+\* What went wrong:
+# the compilation log is already displayed in the output
+.*> Compilation error. See log for more details
+# In practice, these failures are compilation failures
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers\$GradleKotlinCompilerWorkAction
 # Flaky printout from kapt
 WARNING: Illegal reflective access by org\.jetbrains\.kotlin\.kapt3\.util\.ModuleManipulationUtilsKt .* to constructor com\.sun\.tools\.javac\.util\.Context\(\)
 WARNING: Please consider reporting this to the maintainers of org\.jetbrains\.kotlin\.kapt3\.util\.ModuleManipulationUtilsKt
@@ -148,3 +157,11 @@ java\.lang\.RuntimeException: Could not connect to Kotlin compile daemon
 Errors were stored into \$SUPPORT/\.gradle/kotlin/errors/errors\-[0-9]+\.log
 # b/306244551
 Generating lint files for.*
+# When we change gradle.properties, we can get this error in incremental builds:
+Calculating task graph as configuration cache cannot be reused because the set of Gradle properties has changed\.
+Calculating task graph as configuration cache cannot be reused because properties file .*local\.properties has changed\.
+# https://youtrack.jetbrains.com/issue/KT-73311
+Unable to release compile session, maybe daemon is already down.*
+java\.net\.ConnectException: Connection refused
+java\.net\.SocketException: Connection reset
+java\.io\.EOFException

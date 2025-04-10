@@ -17,6 +17,10 @@
 package androidx.appsearch.builtintypes.testutil;
 
 import androidx.appsearch.app.AppSearchSchema;
+import androidx.appsearch.app.AppSearchSchema.BytesPropertyConfig;
+import androidx.appsearch.app.AppSearchSchema.LongPropertyConfig;
+import androidx.appsearch.app.AppSearchSchema.PropertyConfig;
+import androidx.appsearch.app.AppSearchSchema.StringPropertyConfig;
 
 public class FrameworkSchemaUtil {
     // TODO(b/261640992) Temporarily duplicate those two platform schema types for ContactsIndexer
@@ -187,6 +191,61 @@ public class FrameworkSchemaUtil {
                     .addProperty(new AppSearchSchema.StringPropertyConfig.Builder(
                             PERSON_PROPERTY_FINGERPRINT)
                             .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                            .build())
+                    .build();
+
+    public static final String MOBILE_APPLICATION_SCHEMA_NAME = "builtin:MobileApplication";
+    public static final String MOBILE_APPLICATION_PROPERTY_PACKAGE_NAME = "packageName";
+    public static final String MOBILE_APPLICATION_PROPERTY_DISPLAY_NAME = "displayName";
+    public static final String MOBILE_APPLICATION_PROPERTY_ALTERNATE_NAMES = "alternateNames";
+    public static final String MOBILE_APPLICATION_PROPERTY_ICON_URI = "iconUri";
+    public static final String MOBILE_APPLICATION_PROPERTY_UPDATED_TIMESTAMP = "updatedTimestamp";
+    public static final String MOBILE_APPLICATION_PROPERTY_CLASS_NAME = "className";
+    public static final String MOBILE_APPLICATION_PROPERTY_SHA256_CERTIFICATE = "sha256Certificate";
+
+    public static final AppSearchSchema MOBILE_APPLICATION_SCHEMA =
+            new AppSearchSchema.Builder(MOBILE_APPLICATION_SCHEMA_NAME)
+                    // packageName
+                    .addProperty(new StringPropertyConfig.Builder(
+                            MOBILE_APPLICATION_PROPERTY_PACKAGE_NAME)
+                            .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
+                            .setIndexingType(StringPropertyConfig.INDEXING_TYPE_PREFIXES)
+                            .setTokenizerType(StringPropertyConfig.TOKENIZER_TYPE_VERBATIM)
+                            .build())
+                    // displayName
+                    .addProperty(new StringPropertyConfig.Builder(
+                            MOBILE_APPLICATION_PROPERTY_DISPLAY_NAME)
+                            .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
+                            .setIndexingType(StringPropertyConfig.INDEXING_TYPE_PREFIXES)
+                            .setTokenizerType(StringPropertyConfig.TOKENIZER_TYPE_PLAIN)
+                            .build())
+                    // alternateNames
+                    .addProperty(new StringPropertyConfig.Builder(
+                            MOBILE_APPLICATION_PROPERTY_ALTERNATE_NAMES)
+                            .setCardinality(PropertyConfig.CARDINALITY_REPEATED)
+                            .setIndexingType(StringPropertyConfig.INDEXING_TYPE_PREFIXES)
+                            .setTokenizerType(StringPropertyConfig.TOKENIZER_TYPE_PLAIN)
+                            .build())
+                    // iconUri
+                    .addProperty(new StringPropertyConfig.Builder(
+                            MOBILE_APPLICATION_PROPERTY_ICON_URI)
+                            .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
+                            .build())
+                    // sha256Certificate
+                    .addProperty(new BytesPropertyConfig.Builder(
+                            MOBILE_APPLICATION_PROPERTY_SHA256_CERTIFICATE)
+                            .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
+                            .build())
+                    // updatedTimestamp
+                    .addProperty(new LongPropertyConfig.Builder(
+                            MOBILE_APPLICATION_PROPERTY_UPDATED_TIMESTAMP)
+                            .setIndexingType(LongPropertyConfig.INDEXING_TYPE_RANGE)
+                            .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
+                            .build())
+                    // className
+                    .addProperty(new StringPropertyConfig.Builder(
+                            MOBILE_APPLICATION_PROPERTY_CLASS_NAME)
+                            .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
                             .build())
                     .build();
 

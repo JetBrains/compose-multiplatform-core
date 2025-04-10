@@ -19,10 +19,15 @@ package androidx.work.impl.utils
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Build
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
+import androidx.work.Logger
 
 internal data class NetworkRequestCompat(val wrapped: Any? = null) {
+
+    companion object {
+        val TAG = Logger.tagWithPrefix("NetworkRequestCompat")
+    }
+
     @get:RequiresApi(21)
     val networkRequest: NetworkRequest?
         get() = wrapped as NetworkRequest?
@@ -30,80 +35,94 @@ internal data class NetworkRequestCompat(val wrapped: Any? = null) {
 
 @get:RequiresApi(28)
 val NetworkRequest.transportTypesCompat: IntArray
-    get() = if (Build.VERSION.SDK_INT >= 31) {
-        NetworkRequest31.transportTypes(this)
-    } else {
-        intArrayOf(
-            NetworkCapabilities.TRANSPORT_BLUETOOTH,
-            NetworkCapabilities.TRANSPORT_CELLULAR,
-            NetworkCapabilities.TRANSPORT_ETHERNET,
-            NetworkCapabilities.TRANSPORT_LOWPAN,
-            NetworkCapabilities.TRANSPORT_THREAD,
-            NetworkCapabilities.TRANSPORT_USB,
-            NetworkCapabilities.TRANSPORT_VPN,
-            NetworkCapabilities.TRANSPORT_WIFI,
-            NetworkCapabilities.TRANSPORT_WIFI_AWARE,
-        ).filter { NetworkRequest28.hasTransport(this, it) }.toIntArray()
-    }
+    get() =
+        if (Build.VERSION.SDK_INT >= 31) {
+            NetworkRequest31.transportTypes(this)
+        } else {
+            intArrayOf(
+                    NetworkCapabilities.TRANSPORT_BLUETOOTH,
+                    NetworkCapabilities.TRANSPORT_CELLULAR,
+                    NetworkCapabilities.TRANSPORT_ETHERNET,
+                    NetworkCapabilities.TRANSPORT_LOWPAN,
+                    NetworkCapabilities.TRANSPORT_THREAD,
+                    NetworkCapabilities.TRANSPORT_USB,
+                    NetworkCapabilities.TRANSPORT_VPN,
+                    NetworkCapabilities.TRANSPORT_WIFI,
+                    NetworkCapabilities.TRANSPORT_WIFI_AWARE,
+                )
+                .filter { NetworkRequest28.hasTransport(this, it) }
+                .toIntArray()
+        }
 
 @get:RequiresApi(28)
 val NetworkRequest.capabilitiesCompat: IntArray
-    get() = if (Build.VERSION.SDK_INT >= 31) {
-        NetworkRequest31.capabilities(this)
-    } else {
-        intArrayOf(
-            NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL,
-            NetworkCapabilities.NET_CAPABILITY_CBS,
-            NetworkCapabilities.NET_CAPABILITY_DUN,
-            NetworkCapabilities.NET_CAPABILITY_EIMS,
-            NetworkCapabilities.NET_CAPABILITY_ENTERPRISE,
-            NetworkCapabilities.NET_CAPABILITY_FOREGROUND,
-            NetworkCapabilities.NET_CAPABILITY_FOTA,
-            NetworkCapabilities.NET_CAPABILITY_HEAD_UNIT,
-            NetworkCapabilities.NET_CAPABILITY_IA,
-            NetworkCapabilities.NET_CAPABILITY_IMS,
-            NetworkCapabilities.NET_CAPABILITY_INTERNET,
-            NetworkCapabilities.NET_CAPABILITY_MCX,
-            NetworkCapabilities.NET_CAPABILITY_MMS,
-            NetworkCapabilities.NET_CAPABILITY_MMTEL,
-            NetworkCapabilities.NET_CAPABILITY_NOT_CONGESTED,
-            NetworkCapabilities.NET_CAPABILITY_NOT_METERED,
-            NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED,
-            NetworkCapabilities.NET_CAPABILITY_NOT_ROAMING,
-            NetworkCapabilities.NET_CAPABILITY_NOT_SUSPENDED,
-            NetworkCapabilities.NET_CAPABILITY_NOT_VPN,
-            NetworkCapabilities.NET_CAPABILITY_PRIORITIZE_BANDWIDTH,
-            NetworkCapabilities.NET_CAPABILITY_PRIORITIZE_LATENCY,
-            NetworkCapabilities.NET_CAPABILITY_RCS,
-            NetworkCapabilities.NET_CAPABILITY_SUPL,
-            NetworkCapabilities.NET_CAPABILITY_TEMPORARILY_NOT_METERED,
-            NetworkCapabilities.NET_CAPABILITY_TRUSTED,
-            NetworkCapabilities.NET_CAPABILITY_VALIDATED,
-            NetworkCapabilities.NET_CAPABILITY_WIFI_P2P,
-            NetworkCapabilities.NET_CAPABILITY_XCAP,
-        ).filter { NetworkRequest28.hasCapability(this, it) }.toIntArray()
-    }
+    get() =
+        if (Build.VERSION.SDK_INT >= 31) {
+            NetworkRequest31.capabilities(this)
+        } else {
+            intArrayOf(
+                    NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL,
+                    NetworkCapabilities.NET_CAPABILITY_CBS,
+                    NetworkCapabilities.NET_CAPABILITY_DUN,
+                    NetworkCapabilities.NET_CAPABILITY_EIMS,
+                    NetworkCapabilities.NET_CAPABILITY_ENTERPRISE,
+                    NetworkCapabilities.NET_CAPABILITY_FOREGROUND,
+                    NetworkCapabilities.NET_CAPABILITY_FOTA,
+                    NetworkCapabilities.NET_CAPABILITY_HEAD_UNIT,
+                    NetworkCapabilities.NET_CAPABILITY_IA,
+                    NetworkCapabilities.NET_CAPABILITY_IMS,
+                    NetworkCapabilities.NET_CAPABILITY_INTERNET,
+                    NetworkCapabilities.NET_CAPABILITY_MCX,
+                    NetworkCapabilities.NET_CAPABILITY_MMS,
+                    NetworkCapabilities.NET_CAPABILITY_MMTEL,
+                    NetworkCapabilities.NET_CAPABILITY_NOT_CONGESTED,
+                    NetworkCapabilities.NET_CAPABILITY_NOT_METERED,
+                    NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED,
+                    NetworkCapabilities.NET_CAPABILITY_NOT_ROAMING,
+                    NetworkCapabilities.NET_CAPABILITY_NOT_SUSPENDED,
+                    NetworkCapabilities.NET_CAPABILITY_NOT_VPN,
+                    NetworkCapabilities.NET_CAPABILITY_PRIORITIZE_BANDWIDTH,
+                    NetworkCapabilities.NET_CAPABILITY_PRIORITIZE_LATENCY,
+                    NetworkCapabilities.NET_CAPABILITY_RCS,
+                    NetworkCapabilities.NET_CAPABILITY_SUPL,
+                    NetworkCapabilities.NET_CAPABILITY_TEMPORARILY_NOT_METERED,
+                    NetworkCapabilities.NET_CAPABILITY_TRUSTED,
+                    NetworkCapabilities.NET_CAPABILITY_VALIDATED,
+                    NetworkCapabilities.NET_CAPABILITY_WIFI_P2P,
+                    NetworkCapabilities.NET_CAPABILITY_XCAP,
+                )
+                .filter { NetworkRequest28.hasCapability(this, it) }
+                .toIntArray()
+        }
 
 @RequiresApi(28)
 object NetworkRequest28 {
-    @DoNotInline
     internal fun hasCapability(request: NetworkRequest, capability: Int) =
         request.hasCapability(capability)
 
-    @DoNotInline
     internal fun hasTransport(request: NetworkRequest, transport: Int) =
         request.hasTransport(transport)
 
     @JvmStatic
-    @DoNotInline
     fun createNetworkRequest(capabilities: IntArray, transports: IntArray): NetworkRequest {
         val networkRequest = NetworkRequest.Builder()
-        capabilities.forEach { networkRequest.addCapability(it) }
+        capabilities.forEach {
+            try {
+                networkRequest.addCapability(it)
+            } catch (ex: IllegalArgumentException) {
+                // b/351180465 - Ignoring the IAE that addCapability() can throw on SDK < 35 and
+                // aligning with newer SDK behaviour. Capabilities are persisted in the database
+                // and the framework can by default add new ones. Catching this exception mitigates
+                // the case where decoding the capabilities from the database fails across OS
+                // changes.
+                Logger.get()
+                    .warning(NetworkRequestCompat.TAG, "Ignoring adding capability '$it'", ex)
+            }
+        }
         transports.forEach { networkRequest.addTransportType(it) }
         return networkRequest.build()
     }
 
-    @DoNotInline
     internal fun createNetworkRequestCompat(
         capabilities: IntArray,
         transports: IntArray
@@ -114,15 +133,12 @@ object NetworkRequest28 {
 
 @RequiresApi(31)
 private object NetworkRequest31 {
-    @DoNotInline
     fun capabilities(request: NetworkRequest) = request.capabilities
 
-    @DoNotInline
     fun transportTypes(request: NetworkRequest) = request.transportTypes
 }
 
 @RequiresApi(30)
 internal object NetworkRequest30 {
-    @DoNotInline
     fun getNetworkSpecifier(request: NetworkRequest) = request.networkSpecifier
 }

@@ -18,8 +18,9 @@ package androidx.core.content.res;
 
 import android.graphics.Color;
 
-import androidx.annotation.NonNull;
 import androidx.core.graphics.ColorUtils;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Collection of methods for transforming between color spaces.
@@ -132,7 +133,7 @@ final class CamUtils {
         return y;
     }
 
-    static void xyzFromInt(int argb, @NonNull float[] outXYZ) {
+    static void xyzFromInt(int argb, float @NonNull [] outXYZ) {
         final float r = linearized(Color.red(argb));
         final float g = linearized(Color.green(argb));
         final float b = linearized(Color.blue(argb));

@@ -20,15 +20,14 @@ import static androidx.camera.core.ImageCapture.FLASH_MODE_AUTO;
 import static androidx.camera.core.ImageCapture.FLASH_MODE_OFF;
 import static androidx.camera.core.ImageCapture.FLASH_MODE_ON;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.ImageCapture.FlashMode;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper class that defines certain enum-like methods for {@link FlashMode}
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 final class FlashModeConverter {
 
     private FlashModeConverter() {
@@ -41,7 +40,7 @@ final class FlashModeConverter {
      * @return The {@link FlashMode} constant for the specified name
      */
     @FlashMode
-    public static int valueOf(@Nullable final String name) {
+    public static int valueOf(final @Nullable String name) {
         if (name == null) {
             throw new NullPointerException("name cannot be null");
         }
@@ -64,8 +63,7 @@ final class FlashModeConverter {
      * @param flashMode A {@link FlashMode} constant
      * @return The name of the {@link FlashMode} constant.
      */
-    @NonNull
-    public static String nameOf(@FlashMode final int flashMode) {
+    public static @NonNull String nameOf(@FlashMode final int flashMode) {
         switch (flashMode) {
             case FLASH_MODE_AUTO:
                 return "AUTO";

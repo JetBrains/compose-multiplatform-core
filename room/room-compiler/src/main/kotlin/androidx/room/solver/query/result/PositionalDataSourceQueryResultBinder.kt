@@ -16,20 +16,21 @@
 
 package androidx.room.solver.query.result
 
+import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.VisibilityModifier
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.codegen.XFunSpec
-import androidx.room.compiler.codegen.XFunSpec.Builder.Companion.addStatement
 import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.XTypeSpec
-import androidx.room.ext.AndroidTypeNames.CURSOR
 import androidx.room.ext.CommonTypeNames.LIST
+import androidx.room.ext.RoomMemberNames.DB_UTIL_SUPPORT_DB_TO_CONNECTION
 import androidx.room.ext.RoomTypeNames
+import androidx.room.ext.SQLiteDriverTypeNames
+import androidx.room.ext.SQLiteDriverTypeNames.CONNECTION
 import androidx.room.solver.CodeGenScope
 
-/**
- * Used by Paging2 pipeline
- */
+/** Used by Paging2 pipeline */
 class PositionalDataSourceQueryResultBinder(
     val listAdapter: ListQueryResultAdapter?,
     val tableNames: Set<String>,
@@ -38,10 +39,13 @@ class PositionalDataSourceQueryResultBinder(
         listAdapter?.rowAdapters?.firstOrNull()?.out?.asTypeName() ?: XTypeName.ANY_OBJECT
     val typeName: XTypeName = RoomTypeNames.LIMIT_OFFSET_DATA_SOURCE.parametrizedBy(itemTypeName)
 
+    override val usesCompatQueryWriter = true
+
     override fun convertAndReturn(
-        roomSQLiteQueryVar: String,
-        canReleaseQuery: Boolean,
+        sqlQueryVar: String,
         dbProperty: XPropertySpec,
+        bindStatement: (CodeGenScope.(String) -> Unit)?,
+        returnTypeName: XTypeName,
         inTransaction: Boolean,
         scope: CodeGenScope
     ) {
@@ -49,41 +53,60 @@ class PositionalDataSourceQueryResultBinder(
         // we don't need a comma. If list is empty, this prevents generating bad code (it is still
         // an error to have empty list but that is already reported while item is processed)
         val tableNamesList = tableNames.joinToString("") { ", \"$it\"" }
-        val spec = XTypeSpec.anonymousClassBuilder(
-            language = scope.language,
-            "%N, %L, %L, %L%L",
-            dbProperty,
-            roomSQLiteQueryVar,
-            inTransaction,
-            true,
-            tableNamesList
-        ).apply {
-            superclass(typeName)
-            addConvertRowsMethod(scope)
-        }.build()
+        val spec =
+            XTypeSpec.anonymousClassBuilder(
+                    "%N, %L, %L, %L%L",
+                    dbProperty,
+                    sqlQueryVar,
+                    inTransaction,
+                    true,
+                    tableNamesList
+                )
+                .apply {
+                    superclass(typeName)
+                    addConvertRowsMethod(scope)
+                }
+                .build()
+        val rowAdapter = listAdapter?.rowAdapters?.first()
+        if (rowAdapter is DataClassRowAdapter && rowAdapter.relationCollectors.isNotEmpty()) {
+            // @Relation use found, initialize a connection.
+            val connectionVar = scope.getTmpVar("_connection")
+            scope.builder.applyTo { language ->
+                val assignExprFormat =
+                    when (language) {
+                        CodeLanguage.JAVA -> "%M(%L.getOpenHelper().getWritableDatabase())"
+                        CodeLanguage.KOTLIN -> "%M(%L.openHelper.writableDatabase)"
+                    }
+                addLocalVal(
+                    name = connectionVar,
+                    typeName = CONNECTION,
+                    assignExprFormat = assignExprFormat,
+                    DB_UTIL_SUPPORT_DB_TO_CONNECTION,
+                    dbProperty.name
+                )
+            }
+        }
         scope.builder.addStatement("return %L", spec)
     }
 
     private fun XTypeSpec.Builder.addConvertRowsMethod(scope: CodeGenScope) {
         addFunction(
             XFunSpec.builder(
-                language = language,
-                name = "convertRows",
-                visibility = VisibilityModifier.PROTECTED,
-                isOverride = true
-            ).apply {
-                returns(LIST.parametrizedBy(itemTypeName))
-                val cursorParamName = "cursor"
-                addParameter(
-                    CURSOR,
-                    cursorParamName
+                    name = "convertRows",
+                    visibility = VisibilityModifier.PROTECTED,
+                    isOverride = true
                 )
-                val resultVar = scope.getTmpVar("_res")
-                val rowsScope = scope.fork()
-                listAdapter?.convert(resultVar, cursorParamName, rowsScope)
-                addCode(rowsScope.generate())
-                addStatement("return %L", resultVar)
-            }.build()
+                .apply {
+                    returns(LIST.parametrizedBy(itemTypeName))
+                    val cursorParamName = "statement"
+                    addParameter(cursorParamName, SQLiteDriverTypeNames.STATEMENT)
+                    val resultVar = scope.getTmpVar("_res")
+                    val rowsScope = scope.fork()
+                    listAdapter?.convert(resultVar, cursorParamName, rowsScope)
+                    addCode(rowsScope.generate())
+                    addStatement("return %L", resultVar)
+                }
+                .build()
         )
     }
 }

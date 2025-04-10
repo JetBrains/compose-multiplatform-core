@@ -19,7 +19,7 @@ package androidx.credentials;
 import static androidx.credentials.CreateCredentialRequest.BUNDLE_KEY_PREFER_IMMEDIATELY_AVAILABLE_CREDENTIALS;
 import static androidx.credentials.CreatePublicKeyCredentialRequest.BUNDLE_KEY_IS_AUTO_SELECT_ALLOWED;
 import static androidx.credentials.CreatePublicKeyCredentialRequest.BUNDLE_KEY_REQUEST_JSON;
-import static androidx.credentials.internal.FrameworkImplHelper.getFinalCreateCredentialData;
+import static androidx.credentials.internal.ConversionUtilsKt.getFinalCreateCredentialData;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -154,7 +154,7 @@ public class CreatePublicKeyCredentialRequestJavaTest {
         assertThat(testJsonActual).isEqualTo(testJsonExpected);
     }
 
-    @SdkSuppress(minSdkVersion = 28)
+    @SdkSuppress(minSdkVersion = 34)
     @SuppressWarnings("deprecation") // bundle.get(key)
     @Test
     public void getter_frameworkProperties_success() {
@@ -210,7 +210,7 @@ public class CreatePublicKeyCredentialRequestJavaTest {
         ).isEqualTo(R.drawable.ic_passkey);
     }
 
-    @SdkSuppress(minSdkVersion = 28)
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     public void frameworkConversion_success() {
         byte[] clientDataHashExpected = "hash".getBytes();

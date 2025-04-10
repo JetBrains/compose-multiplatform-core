@@ -23,13 +23,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
-import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 
 /**
- * Contains the current scroll position represented by the first visible page  and the first
- * visible page scroll offset.
+ * Contains the current scroll position represented by the first visible page and the first visible
+ * page scroll offset.
  */
-@OptIn(ExperimentalFoundationApi::class)
 internal class PagerScrollPosition(
     currentPage: Int = 0,
     currentPageOffsetFraction: Float = 0.0f,
@@ -46,15 +45,14 @@ internal class PagerScrollPosition(
     /** The last know key of the page at [currentPage] position. */
     private var lastKnownCurrentPageKey: Any? = null
 
-    val nearestRangeState = LazyLayoutNearestRangeState(
-        currentPage,
-        NearestItemsSlidingWindowSize,
-        NearestItemsExtraItemCount
-    )
+    val nearestRangeState =
+        LazyLayoutNearestRangeState(
+            currentPage,
+            NearestItemsSlidingWindowSize,
+            NearestItemsExtraItemCount
+        )
 
-    /**
-     * Updates the current scroll position based on the results of the last measurement.
-     */
+    /** Updates the current scroll position based on the results of the last measurement. */
     fun updateFromMeasureResult(measureResult: PagerMeasureResult) {
         lastKnownCurrentPageKey = measureResult.currentPage?.key
         // we ignore the index and offset from measureResult until we get at least one
@@ -63,35 +61,29 @@ internal class PagerScrollPosition(
         if (hadFirstNotEmptyLayout || measureResult.visiblePagesInfo.isNotEmpty()) {
             hadFirstNotEmptyLayout = true
 
-            update(
-                measureResult.currentPage?.index ?: 0,
-                measureResult.currentPageOffsetFraction
-            )
+            update(measureResult.currentPage?.index ?: 0, measureResult.currentPageOffsetFraction)
         }
     }
 
     /**
      * Updates the scroll position - the passed values will be used as a start position for
-     * composing the pages during the next measure pass and will be updated by the real
-     * position calculated during the measurement. This means that there is no guarantee that
-     * exactly this index and offset will be applied as it is possible that:
-     * a) there will be no page at this index in reality
-     * b) page at this index will be smaller than the asked scrollOffset, which means we would
-     * switch to the next page
-     * c) there will be not enough pages to fill the viewport after the requested index, so we
-     * would have to compose few elements before the asked index, changing the first visible page.
+     * composing the pages during the next measure pass and will be updated by the real position
+     * calculated during the measurement. This means that there is no guarantee that exactly this
+     * index and offset will be applied as it is possible that: a) there will be no page at this
+     * index in reality b) page at this index will be smaller than the asked scrollOffset, which
+     * means we would switch to the next page c) there will be not enough pages to fill the viewport
+     * after the requested index, so we would have to compose few elements before the asked index,
+     * changing the first visible page.
      */
-    fun requestPosition(index: Int, offsetFraction: Float) {
+    fun requestPositionAndForgetLastKnownKey(index: Int, offsetFraction: Float) {
         update(index, offsetFraction)
         // clear the stored key as we have a direct request to scroll to [index] position and the
         // next [checkIfFirstVisibleItemWasMoved] shouldn't override this.
         lastKnownCurrentPageKey = null
     }
 
-    fun matchPageWithKey(
-        itemProvider: PagerLazyLayoutItemProvider,
-        index: Int
-    ): Int {
+    @OptIn(ExperimentalFoundationApi::class)
+    fun matchPageWithKey(itemProvider: PagerLazyLayoutItemProvider, index: Int): Int {
         val newIndex = itemProvider.findIndexByKey(lastKnownCurrentPageKey, index)
         if (index != newIndex) {
             currentPage = newIndex
@@ -110,18 +102,14 @@ internal class PagerScrollPosition(
         currentPageOffsetFraction = offsetFraction
     }
 
-    fun currentAbsoluteScrollOffset(): Int {
-        return ((currentPage +
-            currentPageOffsetFraction) * state.pageSizeWithSpacing).roundToInt()
-    }
-
     fun applyScrollDelta(delta: Int) {
         debugLog { "Applying Delta=$delta" }
-        val fractionUpdate = if (state.pageSizeWithSpacing == 0) {
-            0.0f
-        } else {
-            delta / state.pageSizeWithSpacing.toFloat()
-        }
+        val fractionUpdate =
+            if (state.pageSizeWithSpacing == 0) {
+                0.0f
+            } else {
+                delta / state.pageSizeWithSpacing.toFloat()
+            }
         currentPageOffsetFraction += fractionUpdate
     }
 }
@@ -132,13 +120,17 @@ internal class PagerScrollPosition(
  */
 internal const val NearestItemsSlidingWindowSize = 30
 
-/**
- * The minimum amount of items near the current first visible item we want to have mapping for.
- */
+/** The minimum amount of items near the current first visible item we want to have mapping for. */
 internal const val NearestItemsExtraItemCount = 100
 
 private inline fun debugLog(generateMsg: () -> String) {
     if (PagerDebugConfig.ScrollPosition) {
         println("PagerScrollPosition: ${generateMsg()}")
     }
+}
+
+internal fun PagerState.currentAbsoluteScrollOffset(): Long {
+    val currentPageOffset = currentPage.toLong() * pageSizeWithSpacing
+    val offsetFraction = (currentPageOffsetFraction * pageSizeWithSpacing).roundToLong()
+    return currentPageOffset + offsetFraction
 }

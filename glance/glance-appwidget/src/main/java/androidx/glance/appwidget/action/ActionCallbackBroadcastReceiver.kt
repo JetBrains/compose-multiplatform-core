@@ -20,41 +20,47 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
+import androidx.annotation.RestrictTo
 import androidx.core.os.bundleOf
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.mutableActionParametersOf
 import androidx.glance.appwidget.AppWidgetId
+import androidx.glance.appwidget.TranslationContext
 import androidx.glance.appwidget.goAsync
 import androidx.glance.appwidget.logException
 import kotlinx.coroutines.CancellationException
 
-/**
- * Responds to broadcasts from [RunCallbackAction] clicks by executing the associated action.
- */
-internal class ActionCallbackBroadcastReceiver : BroadcastReceiver() {
+/** Responds to broadcasts from [RunCallbackAction] clicks by executing the associated action. */
+open class ActionCallbackBroadcastReceiver : BroadcastReceiver() {
 
     @Suppress("DEPRECATION")
-    override fun onReceive(context: Context, intent: Intent) {
+    override fun onReceive(context: Context?, intent: Intent?) {
         goAsync {
             try {
-                val extras = requireNotNull(intent.extras) {
-                    "The intent must have action parameters extras."
-                }
-                val paramsBundle = requireNotNull(extras.getBundle(ExtraParameters)) {
-                    "The intent must contain a parameters bundle using extra: $ExtraParameters"
-                }
-                val parameters = mutableActionParametersOf().apply {
-                    paramsBundle.keySet().forEach { key ->
-                        set(ActionParameters.Key(key), paramsBundle[key])
+                requireNotNull(context) { "Context is null" }
+                requireNotNull(intent) { "Intent is null" }
+                val extras =
+                    requireNotNull(intent.extras) {
+                        "The intent must have action parameters extras."
                     }
-                    if (extras.containsKey(RemoteViews.EXTRA_CHECKED)) {
-                        set(ToggleableStateKey, extras.getBoolean(RemoteViews.EXTRA_CHECKED))
+                val paramsBundle =
+                    requireNotNull(extras.getBundle(ExtraParameters)) {
+                        "The intent must contain a parameters bundle using extra: $ExtraParameters"
                     }
-                }
-                val className = requireNotNull(extras.getString(ExtraCallbackClassName)) {
-                    "The intent must contain a work class name string using " +
-                        "extra: $ExtraCallbackClassName"
-                }
+                val parameters =
+                    mutableActionParametersOf().apply {
+                        paramsBundle.keySet().forEach { key ->
+                            set(ActionParameters.Key(key), paramsBundle[key])
+                        }
+                        if (extras.containsKey(RemoteViews.EXTRA_CHECKED)) {
+                            set(ToggleableStateKey, extras.getBoolean(RemoteViews.EXTRA_CHECKED))
+                        }
+                    }
+                val className =
+                    requireNotNull(extras.getString(ExtraCallbackClassName)) {
+                        "The intent must contain a work class name string using " +
+                            "extra: $ExtraCallbackClassName"
+                    }
                 require(intent.hasExtra(AppWidgetId)) {
                     "To update the widget, the intent must contain the AppWidgetId integer using" +
                         " extra: $AppWidgetId"
@@ -70,27 +76,26 @@ internal class ActionCallbackBroadcastReceiver : BroadcastReceiver() {
         }
     }
 
-    companion object {
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    internal companion object {
         private const val AppWidgetId = "ActionCallbackBroadcastReceiver:appWidgetId"
         private const val ExtraCallbackClassName = "ActionCallbackBroadcastReceiver:callbackClass"
         private const val ExtraParameters = "ActionCallbackBroadcastReceiver:parameters"
 
         internal fun createIntent(
-            context: Context,
+            translationContext: TranslationContext,
             callbackClass: Class<out ActionCallback>,
-            appWidgetId: Int,
             parameters: ActionParameters
         ) =
-            Intent(context, ActionCallbackBroadcastReceiver::class.java)
-                .setPackage(context.packageName)
+            Intent()
+                .setComponent(translationContext.glanceComponents.actionCallbackBroadcastReceiver)
                 .putExtra(ExtraCallbackClassName, callbackClass.canonicalName)
-                .putExtra(AppWidgetId, appWidgetId)
+                .putExtra(AppWidgetId, translationContext.appWidgetId)
                 .putParameterExtras(parameters)
 
         private fun Intent.putParameterExtras(parameters: ActionParameters): Intent {
-            val parametersPairs = parameters.asMap().map { (key, value) ->
-                key.name to value
-            }.toTypedArray()
+            val parametersPairs =
+                parameters.asMap().map { (key, value) -> key.name to value }.toTypedArray()
             putExtra(ExtraParameters, bundleOf(*parametersPairs))
             return this
         }

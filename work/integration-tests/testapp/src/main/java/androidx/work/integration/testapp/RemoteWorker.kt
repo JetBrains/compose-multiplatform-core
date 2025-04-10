@@ -16,7 +16,6 @@
 
 package androidx.work.integration.testapp
 
-import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -26,12 +25,12 @@ import android.os.Looper
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.concurrent.futures.CallbackToFutureAdapter
+import androidx.concurrent.futures.await
 import androidx.core.app.NotificationCompat
 import androidx.work.Data
 import androidx.work.ForegroundInfo
+import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
-import androidx.work.await
-import androidx.work.multiprocess.RemoteListenableWorker
 import androidx.work.workDataOf
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.CoroutineScope
@@ -41,7 +40,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class RemoteWorker(private val context: Context, private val parameters: WorkerParameters) :
-    RemoteListenableWorker(context, parameters) {
+    ListenableWorker(context, parameters) {
 
     private val notificationManager =
         context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -49,7 +48,7 @@ class RemoteWorker(private val context: Context, private val parameters: WorkerP
     private var job: Job? = null
     private var progress: Data = Data.EMPTY
 
-    override fun startRemoteWork(): ListenableFuture<Result> {
+    override fun startWork(): ListenableFuture<Result> {
         return CallbackToFutureAdapter.getFuture { completer ->
             Log.d(TAG, "Starting Remote Worker.")
             if (Looper.getMainLooper().thread != Thread.currentThread()) {
@@ -57,14 +56,15 @@ class RemoteWorker(private val context: Context, private val parameters: WorkerP
                 return@getFuture "startRemoteWork"
             }
             val scope = CoroutineScope(Dispatchers.Default)
-            job = scope.launch {
-                for (i in 1..10) {
-                    delay(10000)
-                    progress = workDataOf(Progress to i * 10)
-                    setForegroundAsync(getForegroundInfo(NotificationId))
-                    setProgressAsync(progress).await()
+            job =
+                scope.launch {
+                    for (i in 1..10) {
+                        delay(10000)
+                        progress = workDataOf(Progress to i * 10)
+                        setForegroundAsync(getForegroundInfo(NotificationId))
+                        setProgressAsync(progress).await()
+                    }
                 }
-            }
 
             job?.invokeOnCompletion {
                 Log.d(TAG, "Done.")
@@ -79,6 +79,14 @@ class RemoteWorker(private val context: Context, private val parameters: WorkerP
         job?.cancel()
     }
 
+    override fun getForegroundInfoAsync(): ListenableFuture<ForegroundInfo> {
+        return CallbackToFutureAdapter.getFuture { completer ->
+            val scope = CoroutineScope(Dispatchers.Default)
+            scope.launch { completer.set(getForegroundInfo(NotificationId)) }
+            return@getFuture "getForegroundInfoAsync"
+        }
+    }
+
     private fun getForegroundInfo(notificationId: Int): ForegroundInfo {
         val percent = progress.getInt(Progress, 0)
         val id = applicationContext.getString(R.string.channel_id)
@@ -88,19 +96,19 @@ class RemoteWorker(private val context: Context, private val parameters: WorkerP
             createChannel()
         }
 
-        val notification = NotificationCompat.Builder(applicationContext, id)
-            .setContentTitle(title)
-            .setTicker(title)
-            .setContentText(content)
-            .setSmallIcon(R.drawable.ic_work_notification)
-            .setOngoing(true)
-            .build()
+        val notification =
+            NotificationCompat.Builder(applicationContext, id)
+                .setContentTitle(title)
+                .setTicker(title)
+                .setContentText(content)
+                .setSmallIcon(R.drawable.ic_work_notification)
+                .setOngoing(true)
+                .build()
 
         return ForegroundInfo(notificationId, notification)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    @SuppressLint("ClassVerificationFailure")
     private fun createChannel() {
         val id = applicationContext.getString(R.string.channel_id)
         val name = applicationContext.getString(R.string.channel_name)

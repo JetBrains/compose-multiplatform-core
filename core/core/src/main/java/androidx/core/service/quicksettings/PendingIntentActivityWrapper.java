@@ -22,9 +22,10 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.service.quicksettings.TileService;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.app.PendingIntentCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A wrapper class for developers to use with
@@ -36,17 +37,14 @@ public class PendingIntentActivityWrapper {
 
     private final int mRequestCode;
 
-    @NonNull
-    private final Intent mIntent;
+    private final @NonNull Intent mIntent;
 
     @PendingIntentCompat.Flags
     private final int mFlags;
 
-    @Nullable
-    private final Bundle mOptions;
+    private final @Nullable Bundle mOptions;
 
-    @Nullable
-    private final PendingIntent mPendingIntent;
+    private final @Nullable PendingIntent mPendingIntent;
 
     private final boolean mIsMutable;
 

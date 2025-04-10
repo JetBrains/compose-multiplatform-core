@@ -20,11 +20,14 @@ import android.net.Network;
 import android.net.Uri;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.work.impl.utils.taskexecutor.TaskExecutor;
+
+import kotlin.coroutines.CoroutineContext;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -46,6 +49,7 @@ public final class WorkerParameters {
     private @NonNull RuntimeExtras mRuntimeExtras;
     private int mRunAttemptCount;
     private @NonNull Executor mBackgroundExecutor;
+    private @NonNull CoroutineContext mWorkerContext;
     private @NonNull TaskExecutor mWorkTaskExecutor;
     private @NonNull WorkerFactory mWorkerFactory;
     private @NonNull ProgressUpdater mProgressUpdater;
@@ -63,6 +67,7 @@ public final class WorkerParameters {
             @IntRange(from = 0) int runAttemptCount,
             @IntRange(from = 0) int generation,
             @NonNull Executor backgroundExecutor,
+            @NonNull CoroutineContext workerContext,
             @NonNull TaskExecutor workTaskExecutor,
             @NonNull WorkerFactory workerFactory,
             @NonNull ProgressUpdater progressUpdater,
@@ -74,6 +79,7 @@ public final class WorkerParameters {
         mRunAttemptCount = runAttemptCount;
         mGeneration = generation;
         mBackgroundExecutor = backgroundExecutor;
+        mWorkerContext = workerContext;
         mWorkTaskExecutor = workTaskExecutor;
         mWorkerFactory = workerFactory;
         mProgressUpdater = progressUpdater;
@@ -184,6 +190,13 @@ public final class WorkerParameters {
     /**
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public @NonNull CoroutineContext getWorkerContext() {
+        return mWorkerContext;
+    }
+
+    /**
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public @NonNull TaskExecutor getTaskExecutor() {
         return mWorkTaskExecutor;
     }
@@ -226,7 +239,6 @@ public final class WorkerParameters {
         public @NonNull List<Uri> triggeredContentUris = Collections.emptyList();
 
         @RequiresApi(28)
-        @Nullable
-        public Network network;
+        public @Nullable Network network;
     }
 }

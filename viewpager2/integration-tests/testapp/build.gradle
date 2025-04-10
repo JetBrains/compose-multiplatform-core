@@ -32,8 +32,8 @@ dependencies {
 
     // Align default and test configuration dependencies by forcing both to use
     // tip-of-tree core, thus avoiding a TaskDependencyResolveException.
-    implementation(project(":core:core"))
-    androidTestImplementation(project(":core:core"))
+    implementation("androidx.core:core:1.15.0")
+    androidTestImplementation("androidx.core:core:1.15.0")
 
     androidTestImplementation(project(":internal-testutils-espresso"))
     androidTestImplementation(libs.testRules)
@@ -42,5 +42,6 @@ dependencies {
 }
 
 android {
-    namespace "androidx.viewpager2.integration.testapp"
+    compileSdk = 35
+    namespace = "androidx.viewpager2.integration.testapp"
 }

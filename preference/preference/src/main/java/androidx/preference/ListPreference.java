@@ -25,9 +25,10 @@ import android.util.AttributeSet;
 import android.util.Log;
 
 import androidx.annotation.ArrayRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.content.res.TypedArrayUtils;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link Preference} that displays a list of entries as a dialog.
@@ -159,9 +160,8 @@ public class ListPreference extends DialogPreference {
     }
 
     @SuppressWarnings("unchecked")
-    @Nullable
     @Override
-    public CharSequence getSummary() {
+    public @Nullable CharSequence getSummary() {
         if (getSummaryProvider() != null) {
             return getSummaryProvider().provideSummary(this);
         }
@@ -212,8 +212,7 @@ public class ListPreference extends DialogPreference {
      *
      * @return The entry corresponding to the current value, or {@code null}
      */
-    @Nullable
-    public CharSequence getEntry() {
+    public @Nullable CharSequence getEntry() {
         int index = getValueIndex();
         return index >= 0 && mEntries != null ? mEntries[index] : null;
     }
@@ -260,9 +259,8 @@ public class ListPreference extends DialogPreference {
         setValue(getPersistedString((String) defaultValue));
     }
 
-    @Nullable
     @Override
-    protected Parcelable onSaveInstanceState() {
+    protected @Nullable Parcelable onSaveInstanceState() {
         final Parcelable superState = super.onSaveInstanceState();
         if (isPersistent()) {
             // No need to save instance state since it's persistent
@@ -337,17 +335,15 @@ public class ListPreference extends DialogPreference {
          * @return a singleton instance of this simple
          * {@link androidx.preference.Preference.SummaryProvider} implementation
          */
-        @NonNull
-        public static SimpleSummaryProvider getInstance() {
+        public static @NonNull SimpleSummaryProvider getInstance() {
             if (sSimpleSummaryProvider == null) {
                 sSimpleSummaryProvider = new SimpleSummaryProvider();
             }
             return sSimpleSummaryProvider;
         }
 
-        @Nullable
         @Override
-        public CharSequence provideSummary(@NonNull ListPreference preference) {
+        public @Nullable CharSequence provideSummary(@NonNull ListPreference preference) {
             if (TextUtils.isEmpty(preference.getEntry())) {
                 return preference.getContext().getString(R.string.not_set);
             } else {

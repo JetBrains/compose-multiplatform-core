@@ -20,10 +20,11 @@ import android.graphics.Color;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.paging.PagedListAdapter;
 import androidx.paging.integration.testapp.R;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Sample PagedList item Adapter, which uses a AsyncPagedListDiffer.
@@ -35,9 +36,9 @@ class PagedListItemAdapter extends PagedListAdapter<Item, RecyclerView.ViewHolde
         super(Item.DIFF_CALLBACK);
     }
 
-    @NonNull
     @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public RecyclerView.@NonNull ViewHolder onCreateViewHolder(@NonNull ViewGroup parent,
+            int viewType) {
         RecyclerView.ViewHolder holder = new RecyclerView.ViewHolder(
                 new TextView(parent.getContext())) {};
         holder.itemView.setMinimumHeight(400);
@@ -48,7 +49,7 @@ class PagedListItemAdapter extends PagedListAdapter<Item, RecyclerView.ViewHolde
     }
 
     @Override
-    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+    public void onBindViewHolder(RecyclerView.@NonNull ViewHolder holder, int position) {
         Item item = getItem(position);
         if (item != null) {
             ((TextView) holder.itemView).setText(item.text);

@@ -24,6 +24,7 @@ import androidx.camera.integration.uiwidgets.rotations.CameraActivity.Companion.
 import androidx.camera.integration.uiwidgets.rotations.CameraActivity.Companion.IMAGE_CAPTURE_MODE_OUTPUT_STREAM
 import androidx.camera.testing.impl.CoreAppTestUtil
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.After
 import org.junit.Before
@@ -44,46 +45,58 @@ class ImageCaptureUnlockedOrientationTest(
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "cameraXConfig={2}, {4}")
-        fun data() = mutableListOf<Array<Any?>>().apply {
-            lensFacingList.forEach { lens ->
-                captureModes.forEach { mode ->
-                    cameraXConfigList.forEach { cameraXConfig ->
-                        val lensName = if (lens == CameraSelector.LENS_FACING_BACK) {
-                            "Back lens"
-                        } else {
-                            "Front lens"
-                        }
+        fun data() =
+            mutableListOf<Array<Any?>>().apply {
+                lensFacingList.forEach { lens ->
+                    captureModes.forEach { mode ->
+                        cameraXConfigList.forEach { cameraXConfig ->
+                            val lensName =
+                                if (lens == CameraSelector.LENS_FACING_BACK) {
+                                    "Back lens"
+                                } else {
+                                    "Front lens"
+                                }
 
-                        val captureModeName = when (mode) {
-                            IMAGE_CAPTURE_MODE_IN_MEMORY -> "In memory"
-                            IMAGE_CAPTURE_MODE_FILE -> "File"
-                            IMAGE_CAPTURE_MODE_OUTPUT_STREAM -> "Output stream"
-                            IMAGE_CAPTURE_MODE_MEDIA_STORE -> "Media store"
-                            else -> "Invalid capture mode"
-                        }
+                            val captureModeName =
+                                when (mode) {
+                                    IMAGE_CAPTURE_MODE_IN_MEMORY -> "In memory"
+                                    IMAGE_CAPTURE_MODE_FILE -> "File"
+                                    IMAGE_CAPTURE_MODE_OUTPUT_STREAM -> "Output stream"
+                                    IMAGE_CAPTURE_MODE_MEDIA_STORE -> "Media store"
+                                    else -> "Invalid capture mode"
+                                }
 
-                        add(
-                            arrayOf(
-                                lens, mode, cameraXConfig, RotationUnlocked.Natural,
-                                "$lensName - $captureModeName - Natural"
+                            add(
+                                arrayOf(
+                                    lens,
+                                    mode,
+                                    cameraXConfig,
+                                    RotationUnlocked.Natural,
+                                    "$lensName - $captureModeName - Natural"
+                                )
                             )
-                        )
-                        add(
-                            arrayOf(
-                                lens, mode, cameraXConfig, RotationUnlocked.Left,
-                                "$lensName - $captureModeName - Left"
+                            add(
+                                arrayOf(
+                                    lens,
+                                    mode,
+                                    cameraXConfig,
+                                    RotationUnlocked.Left,
+                                    "$lensName - $captureModeName - Left"
+                                )
                             )
-                        )
-                        add(
-                            arrayOf(
-                                lens, mode, cameraXConfig, RotationUnlocked.Right,
-                                "$lensName - $captureModeName - Right"
+                            add(
+                                arrayOf(
+                                    lens,
+                                    mode,
+                                    cameraXConfig,
+                                    RotationUnlocked.Right,
+                                    "$lensName - $captureModeName - Right"
+                                )
                             )
-                        )
+                        }
                     }
                 }
             }
-        }
     }
 
     @Before
@@ -98,6 +111,7 @@ class ImageCaptureUnlockedOrientationTest(
     }
 
     @Test
+    @SdkSuppress(maxSdkVersion = 33) // b/360867144: Module crashes on API34
     fun verifyRotation() {
         verifyRotation<UnlockedOrientationActivity>(lensFacing, captureMode, cameraXConfig) {
             if (rotation.shouldRotate) {
@@ -107,21 +121,19 @@ class ImageCaptureUnlockedOrientationTest(
     }
 
     private fun rotateDeviceAndWait() {
-        val monitor = Instrumentation.ActivityMonitor(
-            UnlockedOrientationActivity::class.java.name,
-            null,
-            false
-        )
+        val monitor =
+            Instrumentation.ActivityMonitor(
+                UnlockedOrientationActivity::class.java.name,
+                null,
+                false
+            )
         InstrumentationRegistry.getInstrumentation().addMonitor(monitor)
 
         // Rotate
-        rotation.rotate(mDevice)
+        rotation.rotate(device)
 
         // Wait for the activity to be recreated after rotation
-        InstrumentationRegistry.getInstrumentation().waitForMonitorWithTimeout(
-            monitor,
-            2000L
-        )
+        InstrumentationRegistry.getInstrumentation().waitForMonitorWithTimeout(monitor, 2000L)
         InstrumentationRegistry.getInstrumentation().waitForIdleSync()
     }
 }

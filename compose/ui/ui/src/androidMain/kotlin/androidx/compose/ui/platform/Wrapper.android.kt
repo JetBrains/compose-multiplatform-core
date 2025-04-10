@@ -17,7 +17,7 @@ package androidx.compose.ui.platform
 
 import android.view.View
 import android.view.ViewGroup
-import androidx.annotation.MainThread
+import androidx.compose.runtime.AbstractApplier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionContext
@@ -26,7 +26,6 @@ import androidx.compose.runtime.CompositionServiceKey
 import androidx.compose.runtime.CompositionServices
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Recomposer
-import androidx.compose.runtime.ReusableComposition
 import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.tooling.CompositionData
 import androidx.compose.runtime.tooling.LocalInspectionTables
@@ -39,27 +38,18 @@ import androidx.lifecycle.LifecycleOwner
 import java.util.Collections
 import java.util.WeakHashMap
 
-// TODO(chuckj): This is a temporary work-around until subframes exist so that
-// nextFrame() inside recompose() doesn't really start a new frame, but a new subframe
-// instead.
-@MainThread
-internal actual fun createSubcomposition(
-    container: LayoutNode,
-    parent: CompositionContext
-): ReusableComposition = ReusableComposition(
-    UiApplier(container),
-    parent
-)
+internal actual fun createApplier(container: LayoutNode): AbstractApplier<LayoutNode> =
+    UiApplier(container)
 
 /**
  * Composes the given composable into the given view.
  *
- * The new composition can be logically "linked" to an existing one, by providing a
- * [parent]. This will ensure that invalidations and CompositionLocals will flow through
- * the two compositions as if they were not separate.
+ * The new composition can be logically "linked" to an existing one, by providing a [parent]. This
+ * will ensure that invalidations and CompositionLocals will flow through the two compositions as if
+ * they were not separate.
  *
- * Note that this [ViewGroup] should have an unique id for the saved instance state mechanism to
- * be able to save and restore the values used within the composition. See [View.setId].
+ * Note that this [ViewGroup] should have an unique id for the saved instance state mechanism to be
+ * able to save and restore the values used within the composition. See [View.setId].
  *
  * @param parent The [Recomposer] or parent composition reference.
  * @param content Composable that will be the content of the view.
@@ -73,10 +63,12 @@ internal fun AbstractComposeView.setContent(
         if (childCount > 0) {
             getChildAt(0) as? AndroidComposeView
         } else {
-            removeAllViews(); null
-        } ?: AndroidComposeView(context, parent.effectCoroutineContext).also {
-            addView(it.view, DefaultLayoutParams)
+            removeAllViews()
+            null
         }
+            ?: AndroidComposeView(context, parent.effectCoroutineContext).also {
+                addView(it.view, DefaultLayoutParams)
+            }
     return doSetContent(composeView, parent, content)
 }
 
@@ -91,20 +83,28 @@ private fun doSetContent(
             Collections.newSetFromMap(WeakHashMap<CompositionData, Boolean>())
         )
     }
-    val original = Composition(UiApplier(owner.root), parent)
-    val wrapped = owner.view.getTag(R.id.wrapped_composition_tag)
-        as? WrappedComposition
-        ?: WrappedComposition(owner, original).also {
-            owner.view.setTag(R.id.wrapped_composition_tag, it)
-        }
+
+    val wrapped =
+        owner.view.getTag(R.id.wrapped_composition_tag) as? WrappedComposition
+            ?: WrappedComposition(owner, Composition(UiApplier(owner.root), parent)).also {
+                owner.view.setTag(R.id.wrapped_composition_tag, it)
+            }
     wrapped.setContent(content)
+
+    // When the CoroutineContext between the owner and parent doesn't match, we need to reset it
+    // to this new parent's CoroutineContext, because the previous CoroutineContext was cancelled.
+    // This usually happens when the owner (AndroidComposeView) wasn't completely torn down during a
+    // config change. That expected scenario occurs when the manifest's configChanges includes
+    // 'screenLayout' and the user selects a pop-up view for the app.
+    if (owner.coroutineContext != parent.effectCoroutineContext) {
+        owner.coroutineContext = parent.effectCoroutineContext
+    }
+
     return wrapped
 }
 
-private class WrappedComposition(
-    val owner: AndroidComposeView,
-    val original: Composition
-) : Composition, LifecycleEventObserver, CompositionServices {
+private class WrappedComposition(val owner: AndroidComposeView, val original: Composition) :
+    Composition, LifecycleEventObserver, CompositionServices {
 
     private var disposed = false
     private var addedToLifecycle: Lifecycle? = null
@@ -121,11 +121,10 @@ private class WrappedComposition(
                     lifecycle.addObserver(this)
                 } else if (lifecycle.currentState.isAtLeast(Lifecycle.State.CREATED)) {
                     original.setContent {
-
                         @Suppress("UNCHECKED_CAST")
                         val inspectionTable =
-                            owner.getTag(R.id.inspection_slot_table_set) as?
-                                MutableSet<CompositionData>
+                            owner.getTag(R.id.inspection_slot_table_set)
+                                as? MutableSet<CompositionData>
                                 ?: (owner.parent as? View)?.getTag(R.id.inspection_slot_table_set)
                                     as? MutableSet<CompositionData>
                         if (inspectionTable != null) {
@@ -133,7 +132,9 @@ private class WrappedComposition(
                             currentComposer.collectParameterInformation()
                         }
 
-                        LaunchedEffect(owner) { owner.boundsUpdatesEventLoop() }
+                        // TODO(mnuzen): Combine the two boundsUpdatesLoop() into one LaunchedEffect
+                        LaunchedEffect(owner) { owner.boundsUpdatesAccessibilityEventLoop() }
+                        LaunchedEffect(owner) { owner.boundsUpdatesContentCaptureEventLoop() }
 
                         CompositionLocalProvider(LocalInspectionTables provides inspectionTable) {
                             ProvideAndroidCompositionLocals(owner, content)
@@ -153,8 +154,11 @@ private class WrappedComposition(
         original.dispose()
     }
 
-    override val hasInvalidations get() = original.hasInvalidations
-    override val isDisposed: Boolean get() = original.isDisposed
+    override val hasInvalidations
+        get() = original.hasInvalidations
+
+    override val isDisposed: Boolean
+        get() = original.isDisposed
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         if (event == Lifecycle.Event.ON_DESTROY) {
@@ -170,7 +174,5 @@ private class WrappedComposition(
         (original as? CompositionServices)?.getCompositionService(key)
 }
 
-private val DefaultLayoutParams = ViewGroup.LayoutParams(
-    ViewGroup.LayoutParams.WRAP_CONTENT,
-    ViewGroup.LayoutParams.WRAP_CONTENT
-)
+private val DefaultLayoutParams =
+    ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)

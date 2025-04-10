@@ -17,10 +17,16 @@
 package androidx.compose.foundation.text.selection
 
 import androidx.compose.foundation.PlatformMagnifierFactory
+import androidx.compose.foundation.contextmenu.ContextMenuScope
+import androidx.compose.foundation.contextmenu.ContextMenuState
 import androidx.compose.foundation.isPlatformMagnifierSupported
 import androidx.compose.foundation.magnifier
 import androidx.compose.foundation.text.KeyCommand
+import androidx.compose.foundation.text.TextContextMenuItems
+import androidx.compose.foundation.text.TextItem
+import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithResources
 import androidx.compose.foundation.text.platformDefaultKeyMapping
+import androidx.compose.foundation.text.textItem
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,22 +52,60 @@ internal actual fun Modifier.selectionMagnifier(manager: SelectionManager): Modi
         val density = LocalDensity.current
         var magnifierSize by remember { mutableStateOf(IntSize.Zero) }
         animatedSelectionMagnifier(
-            magnifierCenter = {
-                calculateSelectionMagnifierCenterAndroid(manager, magnifierSize)
-            },
+            magnifierCenter = { calculateSelectionMagnifierCenterAndroid(manager, magnifierSize) },
             platformMagnifier = { center ->
-                Modifier
-                    .magnifier(
-                        sourceCenter = { center() },
-                        onSizeChanged = { size ->
-                            magnifierSize = with(density) {
+                Modifier.magnifier(
+                    sourceCenter = { center() },
+                    onSizeChanged = { size ->
+                        magnifierSize =
+                            with(density) {
                                 IntSize(size.width.roundToPx(), size.height.roundToPx())
                             }
-                        },
-                        useTextDefault = true,
-                        platformMagnifierFactory = PlatformMagnifierFactory.getForCurrentPlatform()
-                    )
+                    },
+                    useTextDefault = true,
+                    platformMagnifierFactory = PlatformMagnifierFactory.getForCurrentPlatform()
+                )
             }
         )
     }
+}
+
+internal fun SelectionManager.contextMenuBuilder(
+    state: ContextMenuState,
+): ContextMenuScope.() -> Unit = {
+    listOf(
+        TextItem(
+            state = state,
+            label = TextContextMenuItems.Copy,
+            enabled = isNonEmptySelection(),
+        ) {
+            copy()
+        },
+        TextItem(
+            state = state,
+            label = TextContextMenuItems.SelectAll,
+            enabled = !isEntireContainerSelected(),
+        ) {
+            selectAll()
+        },
+    )
+}
+
+internal actual fun Modifier.addSelectionContainerTextContextMenuComponents(
+    selectionManager: SelectionManager,
+): Modifier = addTextContextMenuComponentsWithResources { resources ->
+    separator()
+    if (selectionManager.isNonEmptySelection()) {
+        textItem(resources, TextContextMenuItems.Copy) {
+            selectionManager.copy()
+            close()
+        }
+    }
+    if (!selectionManager.isEntireContainerSelected()) {
+        textItem(resources, TextContextMenuItems.SelectAll) {
+            selectionManager.selectAll()
+            if (!selectionManager.showToolbar || !selectionManager.isInTouchMode) close()
+        }
+    }
+    separator()
 }

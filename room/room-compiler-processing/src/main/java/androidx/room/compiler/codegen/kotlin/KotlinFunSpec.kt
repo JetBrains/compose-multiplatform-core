@@ -16,72 +16,73 @@
 
 package androidx.room.compiler.codegen.kotlin
 
+import androidx.room.compiler.codegen.KFunSpec
+import androidx.room.compiler.codegen.KFunSpecBuilder
 import androidx.room.compiler.codegen.VisibilityModifier
 import androidx.room.compiler.codegen.XAnnotationSpec
 import androidx.room.compiler.codegen.XCodeBlock
 import androidx.room.compiler.codegen.XFunSpec
+import androidx.room.compiler.codegen.XName
+import androidx.room.compiler.codegen.XParameterSpec
+import androidx.room.compiler.codegen.XSpec
 import androidx.room.compiler.codegen.XTypeName
-import com.squareup.kotlinpoet.FunSpec
+import androidx.room.compiler.codegen.impl.XAnnotationSpecImpl
+import androidx.room.compiler.codegen.impl.XCodeBlockImpl
+import androidx.room.compiler.codegen.impl.XParameterSpecImpl
 import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.ParameterSpec
+import com.squareup.kotlinpoet.javapoet.KTypeVariableName
 
-internal class KotlinFunSpec(
-    override val name: String,
-    internal val actual: FunSpec
-) : KotlinLang(), XFunSpec {
-    override fun toString() = actual.toString()
+internal class KotlinFunSpec(internal val actual: KFunSpec) : XSpec(), XFunSpec {
 
-    internal class Builder(
-        override val name: String,
-        internal val actual: FunSpec.Builder
-    ) : KotlinLang(), XFunSpec.Builder {
+    override val name: XName = XName.of(actual.name)
+
+    internal class Builder(internal val actual: KFunSpecBuilder) :
+        XSpec.Builder(), XFunSpec.Builder {
 
         override fun addAnnotation(annotation: XAnnotationSpec) = apply {
-            require(annotation is KotlinAnnotationSpec)
-            actual.addAnnotation(annotation.actual)
+            require(annotation is XAnnotationSpecImpl)
+            actual.addAnnotation(annotation.kotlin.actual)
         }
 
-        override fun addAbstractModifier() = apply {
-            actual.addModifiers(KModifier.ABSTRACT)
+        override fun addTypeVariable(typeVariable: XTypeName) = apply {
+            require(typeVariable.kotlin is KTypeVariableName)
+            actual.addTypeVariable(typeVariable.kotlin as KTypeVariableName)
         }
+
+        override fun addAbstractModifier() = apply { actual.addModifiers(KModifier.ABSTRACT) }
+
+        override fun addParameter(parameter: XParameterSpec) = apply {
+            require(parameter is XParameterSpecImpl)
+            actual.addParameter(parameter.kotlin.actual)
+        }
+
+        override fun addParameter(name: String, typeName: XTypeName) =
+            addParameter(XParameterSpec.builder(name, typeName).build())
 
         override fun addCode(code: XCodeBlock) = apply {
-            require(code is KotlinCodeBlock)
-            actual.addCode(code.actual)
-        }
-
-        override fun addParameter(
-            typeName: XTypeName,
-            name: String,
-            annotations: List<XAnnotationSpec>
-        ) = apply {
-            actual.addParameter(
-                ParameterSpec.builder(name, typeName.kotlin).apply {
-                    // TODO(b/247247439): Add other annotations
-                }.build()
-            )
+            require(code is XCodeBlockImpl)
+            actual.addCode(code.kotlin.actual)
         }
 
         override fun callSuperConstructor(vararg args: XCodeBlock) = apply {
             actual.callSuperConstructor(
                 args.map {
-                    check(it is KotlinCodeBlock)
-                    it.actual
+                    require(it is XCodeBlockImpl)
+                    it.kotlin.actual
                 }
             )
         }
 
-        override fun returns(typeName: XTypeName) = apply {
-            actual.returns(typeName.kotlin)
-        }
+        override fun returns(typeName: XTypeName) = apply { actual.returns(typeName.kotlin) }
 
-        override fun build() = KotlinFunSpec(name, actual.build())
+        override fun build() = KotlinFunSpec(actual.build())
     }
 }
 
-internal fun VisibilityModifier.toKotlinVisibilityModifier() = when (this) {
-    VisibilityModifier.PUBLIC -> KModifier.PUBLIC
-    VisibilityModifier.PROTECTED -> KModifier.PROTECTED
-    VisibilityModifier.INTERNAL -> KModifier.INTERNAL
-    VisibilityModifier.PRIVATE -> KModifier.PRIVATE
-}
+internal fun VisibilityModifier.toKotlinVisibilityModifier() =
+    when (this) {
+        VisibilityModifier.PUBLIC -> KModifier.PUBLIC
+        VisibilityModifier.PROTECTED -> KModifier.PROTECTED
+        VisibilityModifier.INTERNAL -> KModifier.INTERNAL
+        VisibilityModifier.PRIVATE -> KModifier.PRIVATE
+    }

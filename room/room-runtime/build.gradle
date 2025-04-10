@@ -14,19 +14,38 @@
  * limitations under the License.
  */
 
-import androidx.build.KmpPlatformsKt
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+
+
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import androidx.build.Publish
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("androidx.stableaidl")
+    id("com.google.devtools.ksp")
 }
 
-def nativeEnabled = KmpPlatformsKt.enableNative(project)
+
+configurations {
+    // Configuration for resolving shared archive file of androidx's SQLite compilation
+    sqliteSharedArchive {
+        canBeConsumed = false
+        canBeResolved = true
+        attributes {
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.NATIVE_LINK))
+        }
+    }
+}
 
 android {
     sourceSets {
@@ -35,53 +54,97 @@ android {
             root = 'src/androidMain'
         }
     }
-    defaultConfig {
-        multiDexEnabled true
-    }
     buildFeatures {
         aidl = true
     }
-    buildTypes.all {
-        consumerProguardFiles "proguard-rules.pro"
+    buildTypes.configureEach {
+        consumerProguardFiles("src/androidMain/proguard-rules.pro")
         stableAidl {
-            version 1
+            version = 1
         }
     }
-    namespace "androidx.room"
+    namespace = "androidx.room"
+    // TODO(b/345531033)
+    experimentalProperties["android.lint.useK2Uast"] = false
 }
 
 androidXMultiplatform {
-    mac()
+    androidTarget()
+    ios() {
+        // Link to sqlite3 available in iOS
+        binaries.configureEach {
+            linkerOpts += ["-lsqlite3"]
+        }
+    }
+    jvm()
     linux()
-    ios()
-    android()
+    mac()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
+    // Source set structure:
+    //                            ┌──────────────────┐
+    //                            │    commonMain    │
+    //                            └──────────────────┘
+    //                                      │
+    //                       ┌──────────────┴─────────────┐
+    //                       │                            │
+    //                       ▼                            ▼
+    //             ┌──────────────────┐         ┌──────────────────┐
+    //             │  jvmAndroidMain  │         │  jvmNativeMain   │
+    //             └──────────────────┘         └──────────────────┘
+    //                       │                            │
+    //           ┌───────────┴──────────────┬─────────────┴───────────┐
+    //           │                          │                         │
+    //           ▼                          ▼                         ▼
+    // ┌──────────────────┐       ┌──────────────────┐      ┌──────────────────┐
+    // │   androidMain    │       │     jvmMain      │      │    nativeMain    │
+    // └──────────────────┘       └──────────────────┘      └──────────────────┘
     sourceSets {
         commonMain {
             dependencies {
                 api(libs.kotlinStdlib)
                 api(project(":room:room-common"))
                 api(project(":sqlite:sqlite"))
-                api(projectOrArtifact(":annotation:annotation"))
-                implementation("androidx.annotation:annotation-experimental:1.1.0-rc01")
+                api("androidx.collection:collection:1.4.2")
+                api("androidx.annotation:annotation:1.8.1")
+                api(libs.kotlinCoroutinesCore)
             }
         }
         commonTest {
             dependencies {
                 implementation(libs.kotlinTest)
+                implementation(libs.kotlinCoroutinesTest)
                 implementation(project(":kruth:kruth"))
             }
         }
-        androidMain {
+        jvmAndroidMain {
             dependsOn(commonMain)
+        }
+        jvmNativeMain {
+            dependsOn(commonMain)
+        }
+        jvmMain {
+            dependsOn(jvmAndroidMain)
+            dependsOn(jvmNativeMain)
+        }
+        jvmTest {
+            dependsOn(commonTest)
             dependencies {
+                implementation(project(":sqlite:sqlite-bundled"))
+                implementation(libs.kotlinTestJunit)
+            }
+        }
+        androidMain {
+            dependsOn(jvmAndroidMain)
+            dependencies {
+                api(libs.jspecify)
                 api(project(":sqlite:sqlite-framework"))
+                api(libs.kotlinCoroutinesAndroid)
                 implementation("androidx.arch.core:core-runtime:2.2.0")
-                compileOnly("androidx.collection:collection:1.2.0")
                 compileOnly("androidx.lifecycle:lifecycle-livedata-core:2.0.0")
                 compileOnly("androidx.paging:paging-common:2.0.0")
+                implementation("androidx.annotation:annotation-experimental:1.4.1")
             }
         }
         androidUnitTest {
@@ -99,6 +162,7 @@ androidXMultiplatform {
         androidInstrumentedTest {
             dependsOn(commonTest)
             dependencies {
+                implementation(project(":sqlite:sqlite-bundled"))
                 implementation(libs.junit)
                 implementation(libs.testExtJunit)
                 implementation(libs.testCore)
@@ -111,18 +175,38 @@ androidXMultiplatform {
                 implementation("androidx.arch.core:core-testing:2.2.0")
             }
         }
-        if (nativeEnabled) {
-            nativeMain {
-                dependsOn(commonMain)
-                dependencies {
-                    api(project(":sqlite:sqlite-framework"))
-                }
+        nativeMain {
+            dependsOn(jvmNativeMain)
+            dependencies {
+                api(project(":sqlite:sqlite-framework"))
+                implementation(libs.atomicFu)
             }
         }
-        targets.all { target ->
+        nativeTest {
+            dependsOn(commonTest)
+            dependencies {
+                implementation(project(":sqlite:sqlite-bundled"))
+                implementation(libs.okio)
+            }
+        }
+        targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet {
                     dependsOn(nativeMain)
+                }
+                def test = target.compilations["test"]
+                test.defaultSourceSet {
+                    dependsOn(nativeTest)
+                }
+                if (target.konanTarget.family == Family.LINUX) {
+                    // For tests in Linux host, statically include androidx's compiled SQLite
+                    // via a generated C interop definition
+                    createCinteropFromArchiveConfiguration(test, configurations["sqliteSharedArchive"])
+                } else if (target.konanTarget.family == Family.OSX) {
+                    // For tests in Mac host, link to shared SQLite library included in MacOS
+                    test.kotlinOptions.freeCompilerArgs += [
+                            "-linker-options", "-lsqlite3"
+                    ]
                 }
             }
         }
@@ -131,13 +215,16 @@ androidXMultiplatform {
 
 dependencies {
     lintChecks(project(":room:room-runtime-lint"))
+    sqliteSharedArchive(project(":sqlite:sqlite-bundled"))
+    add("kspAndroidAndroidTest", project(":room:room-compiler"))
 }
 
 androidx {
     name = "Room-Runtime"
-    type = LibraryType.PUBLISHED_LIBRARY
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Room-Runtime"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
+    metalavaK2UastEnabled = false
 }
+

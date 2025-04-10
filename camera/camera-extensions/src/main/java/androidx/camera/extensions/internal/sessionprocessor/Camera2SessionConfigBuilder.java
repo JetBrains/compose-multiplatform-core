@@ -20,10 +20,10 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.SessionConfiguration;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.extensions.impl.advanced.Camera2SessionConfigImpl;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,7 +33,6 @@ import java.util.Map;
 /**
  * A builder implementation to build the {@link Camera2SessionConfig} instance.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 class Camera2SessionConfigBuilder {
     private int mSessionTemplateId = CameraDevice.TEMPLATE_PREVIEW;
     private int mSessionType = SessionConfiguration.SESSION_REGULAR;
@@ -46,8 +45,7 @@ class Camera2SessionConfigBuilder {
     /**
      * Adds a output config.
      */
-    @NonNull
-    Camera2SessionConfigBuilder addOutputConfig(
+    @NonNull Camera2SessionConfigBuilder addOutputConfig(
             @NonNull Camera2OutputConfig outputConfig) {
         mCamera2OutputConfigs.add(outputConfig);
         return this;
@@ -56,9 +54,8 @@ class Camera2SessionConfigBuilder {
     /**
      * Sets session parameters.
      */
-    @NonNull
-    Camera2SessionConfigBuilder addSessionParameter(
-            @NonNull CaptureRequest.Key key, @Nullable Object value) {
+    @NonNull Camera2SessionConfigBuilder addSessionParameter(
+            CaptureRequest.@NonNull Key key, @Nullable Object value) {
         mSessionParameters.put(key, value);
         return this;
     }
@@ -66,8 +63,7 @@ class Camera2SessionConfigBuilder {
     /**
      * Sets the template id for session parameters request.
      */
-    @NonNull
-    Camera2SessionConfigBuilder setSessionTemplateId(int templateId) {
+    @NonNull Camera2SessionConfigBuilder setSessionTemplateId(int templateId) {
         mSessionTemplateId = templateId;
         return this;
     }
@@ -75,8 +71,7 @@ class Camera2SessionConfigBuilder {
     /**
      * Sets the session type for the session.
      */
-    @NonNull
-    Camera2SessionConfigBuilder setSessionType(int sessionType) {
+    @NonNull Camera2SessionConfigBuilder setSessionType(int sessionType) {
         mSessionType = sessionType;
         return this;
     }
@@ -91,24 +86,21 @@ class Camera2SessionConfigBuilder {
     /**
      * Gets the session parameters.
      */
-    @NonNull
-    Map<CaptureRequest.Key<?>, Object> getSessionParameters() {
+    @NonNull Map<CaptureRequest.Key<?>, Object> getSessionParameters() {
         return mSessionParameters;
     }
 
     /**
      * Gets all the output configs.
      */
-    @NonNull
-    List<Camera2OutputConfig> getCamera2OutputConfigs() {
+    @NonNull List<Camera2OutputConfig> getCamera2OutputConfigs() {
         return mCamera2OutputConfigs;
     }
 
     /**
      * Builds a {@link Camera2SessionConfigImpl} instance.
      */
-    @NonNull
-    Camera2SessionConfig build() {
+    @NonNull Camera2SessionConfig build() {
         return new SessionConfigImpl(
                 mSessionTemplateId, mSessionType, mSessionParameters, mCamera2OutputConfigs);
     }
@@ -130,14 +122,12 @@ class Camera2SessionConfigBuilder {
         }
 
         @Override
-        @NonNull
-        public List<Camera2OutputConfig> getOutputConfigs() {
+        public @NonNull List<Camera2OutputConfig> getOutputConfigs() {
             return mCamera2OutputConfigs;
         }
 
         @Override
-        @NonNull
-        public Map<CaptureRequest.Key<?>, Object> getSessionParameters() {
+        public @NonNull Map<CaptureRequest.Key<?>, Object> getSessionParameters() {
             return mSessionParameters;
         }
 

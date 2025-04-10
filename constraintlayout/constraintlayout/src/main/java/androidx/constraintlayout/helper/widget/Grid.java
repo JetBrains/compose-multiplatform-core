@@ -21,15 +21,15 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.constraintlayout.widget.R;
 import androidx.constraintlayout.widget.VirtualLayout;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -715,9 +715,7 @@ public class Grid extends VirtualLayout {
      */
     private View makeNewView() {
         View v = new View(getContext());
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            v.setId(View.generateViewId());
-        }
+        v.setId(View.generateViewId());
         v.setVisibility(INVISIBLE);
         if (DEBUG_BOXES) {
             v.setVisibility(VISIBLE);

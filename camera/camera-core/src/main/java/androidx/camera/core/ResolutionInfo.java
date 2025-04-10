@@ -19,12 +19,12 @@ package androidx.camera.core;
 import android.graphics.Rect;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.ImageOutputConfig;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link ResolutionInfo} allows the application to know the resolution information of a
@@ -35,7 +35,6 @@ import com.google.auto.value.AutoValue;
  * {@link ImageAnalysis} before an {@link ImageProxy} is received from
  * {@link ImageAnalysis.Analyzer}.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class ResolutionInfo {
 
     private final ResolutionInfoInternal mResolutionInfoInternal;
@@ -72,8 +71,7 @@ public class ResolutionInfo {
      * dimensions need to be flipped by the rotation degrees obtained via
      * {@link #getRotationDegrees()} to match the target rotation setting.
      */
-    @NonNull
-    public Size getResolution() {
+    public @NonNull Size getResolution() {
         return mResolutionInfoInternal.getResolution();
     }
 
@@ -89,8 +87,7 @@ public class ResolutionInfo {
      * on the configuration of {@link ViewPort}; if not, it returns the full rect of the buffer
      * which the dimensions will be the same as the value obtained from {@link #getResolution}.
      */
-    @NonNull
-    public Rect getCropRect() {
+    public @NonNull Rect getCropRect() {
         return mResolutionInfoInternal.getCropRect();
     }
 
@@ -119,37 +116,30 @@ public class ResolutionInfo {
         return mResolutionInfoInternal.equals(obj);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return mResolutionInfoInternal.toString();
     }
 
     @AutoValue
     abstract static class ResolutionInfoInternal {
-        @NonNull
-        abstract Size getResolution();
+        abstract @NonNull Size getResolution();
 
-        @NonNull
-        abstract Rect getCropRect();
+        abstract @NonNull Rect getCropRect();
 
         @ImageOutputConfig.RotationDegreesValue
         abstract int getRotationDegrees();
 
         @AutoValue.Builder
         abstract static class Builder {
-            @NonNull
-            abstract Builder setResolution(@NonNull Size resolution);
+            abstract @NonNull Builder setResolution(@NonNull Size resolution);
 
-            @NonNull
-            abstract Builder setCropRect(@NonNull Rect cropRect);
+            abstract @NonNull Builder setCropRect(@NonNull Rect cropRect);
 
-            @NonNull
-            abstract Builder setRotationDegrees(
+            abstract @NonNull Builder setRotationDegrees(
                     @ImageOutputConfig.RotationDegreesValue int rotationDegrees);
 
-            @NonNull
-            abstract ResolutionInfoInternal build();
+            abstract @NonNull ResolutionInfoInternal build();
         }
     }
 }

@@ -19,14 +19,13 @@ package androidx.camera.camera2.internal.compat.workaround;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import android.hardware.camera2.CameraCharacteristics;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.impl.SurfaceCombination;
 import androidx.camera.core.impl.SurfaceConfig;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.ParameterizedRobolectricTestRunner;
@@ -50,61 +49,61 @@ public class ExtraSupportedSurfaceCombinationsContainerTest {
     public static Collection<Object[]> data() {
         final List<Object[]> data = new ArrayList<>();
         // Tests for Samsung S7 case
-        data.add(new Object[]{new Config(null, "heroqltevzw", null, "0",
-                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL)});
+        data.add(new Object[]{new Config(null, "heroqltevzw", null, "0")});
         data.add(new Object[]{new Config(null, "heroqltevzw", null, "1",
-                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
                 createFullLevelYPYSupportedCombinations())});
-        data.add(new Object[]{new Config(null, "heroqltetmo", null, "0",
-                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL)});
+        data.add(new Object[]{new Config(null, "heroqltetmo", null, "0")});
         data.add(new Object[]{new Config(null, "heroqltetmo", null, "1",
-                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
                 createFullLevelYPYSupportedCombinations())});
-
-        // Tests for Samsung limited device case
-        data.add(new Object[]{new Config("samsung", null, "sm-g9860", "0",
-                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL)});
-        data.add(new Object[]{new Config("samsung", null, "sm-g9860", "1",
-                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
-                createFullLevelYPYAndYYYSupportedCombinations())});
 
         // Tests for FULL Pixel devices
         data.add(new Object[]{new Config("Google", null, "Pixel 6", "0",
-                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-                createLevel3PrivPrivYuvRawConfiguration())});
+                createLevel3PrivPrivYuvSubsetConfiguration())});
         data.add(new Object[]{new Config("Google", null, "Pixel 6", "1",
-                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-                createLevel3PrivPrivYuvRawConfiguration())});
+                createLevel3PrivPrivYuvSubsetConfiguration())});
         data.add(new Object[]{new Config("Google", null, "Pixel 6 Pro", "0",
-                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-                createLevel3PrivPrivYuvRawConfiguration())});
+                createLevel3PrivPrivYuvSubsetConfiguration())});
         data.add(new Object[]{new Config("Google", null, "Pixel 6 Pro", "1",
-                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-                createLevel3PrivPrivYuvRawConfiguration())});
+                createLevel3PrivPrivYuvSubsetConfiguration())});
         data.add(new Object[]{new Config("Google", null, "Pixel 7", "0",
-                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-                createLevel3PrivPrivYuvRawConfiguration())});
+                createLevel3PrivPrivYuvSubsetConfiguration())});
         data.add(new Object[]{new Config("Google", null, "Pixel 7", "1",
-                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-                createLevel3PrivPrivYuvRawConfiguration())});
+                createLevel3PrivPrivYuvSubsetConfiguration())});
         data.add(new Object[]{new Config("Google", null, "Pixel 7 Pro", "0",
-                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-                createLevel3PrivPrivYuvRawConfiguration())});
+                createLevel3PrivPrivYuvSubsetConfiguration())});
         data.add(new Object[]{new Config("Google", null, "Pixel 7 Pro", "1",
-                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-                createLevel3PrivPrivYuvRawConfiguration())});
+                createLevel3PrivPrivYuvSubsetConfiguration())});
+        data.add(new Object[]{new Config("Google", null, "Pixel 8", "0",
+                createLevel3PrivPrivYuvSubsetConfiguration())});
+        data.add(new Object[]{new Config("Google", null, "Pixel 8", "1",
+                createLevel3PrivPrivYuvSubsetConfiguration())});
+        data.add(new Object[]{new Config("Google", null, "Pixel 8 Pro", "0",
+                createLevel3PrivPrivYuvSubsetConfiguration())});
+        data.add(new Object[]{new Config("Google", null, "Pixel 8 Pro", "1",
+                createLevel3PrivPrivYuvSubsetConfiguration())});
 
+        // Tests for FULL Samsung devices
+        data.add(new Object[]{new Config("Samsung", null, "SCG25", "0",
+                createLevel3PrivPrivYuvSubsetConfiguration())});
+        data.add(new Object[]{new Config("Samsung", null, "SM-S9210", "1",
+                createLevel3PrivPrivYuvSubsetConfiguration())});
+        data.add(new Object[]{new Config("Samsung", null, "SM-S926B", "0",
+                createLevel3PrivPrivYuvSubsetConfiguration())});
+        data.add(new Object[]{new Config("Samsung", null, "SM-S926U", "1",
+                createLevel3PrivPrivYuvSubsetConfiguration())});
+        data.add(new Object[]{new Config("Samsung", null, "SM-S928U1", "0",
+                createLevel3PrivPrivYuvSubsetConfiguration())});
+        data.add(new Object[]{new Config("Samsung", null, "SM-S928B", "1",
+                createLevel3PrivPrivYuvSubsetConfiguration())});
 
         // Other cases
-        data.add(new Object[]{new Config(null, null, null, "0",
-                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED)});
+        data.add(new Object[]{new Config(null, null, null, "0")});
         return data;
     }
 
-    @NonNull
-    private final Config mConfig;
+    private final @NonNull Config mConfig;
 
-    public ExtraSupportedSurfaceCombinationsContainerTest(@NonNull final Config config) {
+    public ExtraSupportedSurfaceCombinationsContainerTest(final @NonNull Config config) {
         mConfig = config;
 
     }
@@ -133,8 +132,7 @@ public class ExtraSupportedSurfaceCombinationsContainerTest {
 
         // Gets the extra supported surface combinations on the device
         List<SurfaceCombination> extraSurfaceCombinations =
-                extraSupportedSurfaceCombinationsContainer.get(mConfig.mCameraId,
-                        mConfig.mHardwareLevel);
+                extraSupportedSurfaceCombinationsContainer.get(mConfig.mCameraId);
 
         for (SurfaceCombination expectedSupportedSurfaceCombination :
                 mConfig.mExpectedSupportedSurfaceCombinations) {
@@ -166,29 +164,8 @@ public class ExtraSupportedSurfaceCombinationsContainerTest {
         return new SurfaceCombination[]{surfaceCombination};
     }
 
-    private static SurfaceCombination[] createFullLevelYPYAndYYYSupportedCombinations() {
-        // (YUV, ANALYSIS) + (PRIV, PREVIEW) + (YUV, MAXIMUM)
-        SurfaceCombination surfaceCombination1 = new SurfaceCombination();
-        surfaceCombination1.addSurfaceConfig(SurfaceConfig.create(SurfaceConfig.ConfigType.YUV,
-                SurfaceConfig.ConfigSize.VGA));
-        surfaceCombination1.addSurfaceConfig(SurfaceConfig.create(SurfaceConfig.ConfigType.PRIV,
-                SurfaceConfig.ConfigSize.PREVIEW));
-        surfaceCombination1.addSurfaceConfig(SurfaceConfig.create(SurfaceConfig.ConfigType.YUV,
-                SurfaceConfig.ConfigSize.MAXIMUM));
-
-        // (YUV, ANALYSIS) + (YUV, PREVIEW) + (YUV, MAXIMUM)
-        SurfaceCombination surfaceCombination2 = new SurfaceCombination();
-        surfaceCombination2.addSurfaceConfig(SurfaceConfig.create(SurfaceConfig.ConfigType.YUV,
-                SurfaceConfig.ConfigSize.VGA));
-        surfaceCombination2.addSurfaceConfig(SurfaceConfig.create(SurfaceConfig.ConfigType.YUV,
-                SurfaceConfig.ConfigSize.PREVIEW));
-        surfaceCombination2.addSurfaceConfig(SurfaceConfig.create(SurfaceConfig.ConfigType.YUV,
-                SurfaceConfig.ConfigSize.MAXIMUM));
-        return new SurfaceCombination[]{surfaceCombination1, surfaceCombination2};
-    }
-
-    private static SurfaceCombination[] createLevel3PrivPrivYuvRawConfiguration() {
-        // (PRIV, PREVIEW) + (PRIV, ANALYSIS) + (YUV, MAXIMUM) + (RAW, MAXIMUM)
+    private static SurfaceCombination[] createLevel3PrivPrivYuvSubsetConfiguration() {
+        // (PRIV, PREVIEW) + (PRIV, ANALYSIS) + (YUV, MAXIMUM)
         SurfaceCombination surfaceCombination = new SurfaceCombination();
         surfaceCombination.addSurfaceConfig(SurfaceConfig.create(SurfaceConfig.ConfigType.PRIV,
                 SurfaceConfig.ConfigSize.PREVIEW));
@@ -196,33 +173,24 @@ public class ExtraSupportedSurfaceCombinationsContainerTest {
                 SurfaceConfig.ConfigSize.VGA));
         surfaceCombination.addSurfaceConfig(SurfaceConfig.create(SurfaceConfig.ConfigType.YUV,
                 SurfaceConfig.ConfigSize.MAXIMUM));
-        surfaceCombination.addSurfaceConfig(SurfaceConfig.create(SurfaceConfig.ConfigType.RAW,
-                SurfaceConfig.ConfigSize.MAXIMUM));
 
         return new SurfaceCombination[]{surfaceCombination};
     }
 
     static class Config {
-        @Nullable
-        final String mBrand;
-        @Nullable
-        final String mDevice;
-        @Nullable
-        final String mModel;
-        @NonNull
-        final String mCameraId;
-        final int mHardwareLevel;
-        @NonNull
-        final SurfaceCombination[] mExpectedSupportedSurfaceCombinations;
+        final @Nullable String mBrand;
+        final @Nullable String mDevice;
+        final @Nullable String mModel;
+        final @NonNull String mCameraId;
+        final SurfaceCombination @NonNull [] mExpectedSupportedSurfaceCombinations;
 
         Config(@Nullable String brand, @Nullable String device, @Nullable String model,
-                @NonNull String cameraId, int hardwareLevel,
-                @NonNull SurfaceCombination... expectedSupportedSurfaceCombinations) {
+                @NonNull String cameraId,
+                SurfaceCombination @NonNull ... expectedSupportedSurfaceCombinations) {
             mBrand = brand;
             mDevice = device;
             mModel = model;
             mCameraId = cameraId;
-            mHardwareLevel = hardwareLevel;
             mExpectedSupportedSurfaceCombinations = expectedSupportedSurfaceCombinations;
         }
     }

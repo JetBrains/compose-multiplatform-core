@@ -31,11 +31,11 @@ import java.time.ZoneOffset
 public class CervicalMucusRecord(
     override val time: Instant,
     override val zoneOffset: ZoneOffset?,
+    override val metadata: Metadata,
     /** The consistency of the user's cervical mucus. */
     @property:Appearances public val appearance: Int = APPEARANCE_UNKNOWN,
     /** The feel of the user's cervical mucus. */
     @property:Sensations public val sensation: Int = SENSATION_UNKNOWN,
-    override val metadata: Metadata = Metadata.EMPTY,
 ) : InstantaneousRecord {
 
     companion object {
@@ -94,9 +94,7 @@ public class CervicalMucusRecord(
         const val HEAVY = "heavy"
     }
 
-    /**
-     * List of supported Cervical Mucus Sensation types on Health Platform.
-     */
+    /** List of supported Cervical Mucus Sensation types on Health Platform. */
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(value = [SENSATION_UNKNOWN, SENSATION_LIGHT, SENSATION_MEDIUM, SENSATION_HEAVY])
     @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -112,9 +110,7 @@ public class CervicalMucusRecord(
         const val UNUSUAL = "unusual"
     }
 
-    /**
-     * The consistency or appearance of the user's cervical mucus.
-     */
+    /** The consistency or appearance of the user's cervical mucus. */
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(
         value =
@@ -153,5 +149,9 @@ public class CervicalMucusRecord(
         result = 31 * result + sensation
         result = 31 * result + metadata.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "CervicalMucusRecord(time=$time, zoneOffset=$zoneOffset, appearance=$appearance, sensation=$sensation, metadata=$metadata)"
     }
 }

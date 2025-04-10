@@ -18,16 +18,14 @@ package androidx.test.uiautomator;
 
 import android.graphics.Point;
 import android.graphics.Rect;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.MotionEvent.PointerCoords;
 import android.view.accessibility.AccessibilityNodeInfo;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A UiObject is a representation of a view. It is not in any way directly bound to a
@@ -85,8 +83,7 @@ public class UiObject {
      *
      * @return {@link UiSelector}
      */
-    @NonNull
-    public final UiSelector getSelector() {
+    public final @NonNull UiSelector getSelector() {
         if (mUiSelector == null) {
             throw new IllegalStateException("UiSelector not set");
         }
@@ -123,8 +120,8 @@ public class UiObject {
      * @param selector for child view to match
      * @return a new UiObject representing the child view
      */
-    @NonNull
-    public UiObject getChild(@NonNull UiSelector selector) throws UiObjectNotFoundException {
+    public @NonNull UiObject getChild(@NonNull UiSelector selector)
+            throws UiObjectNotFoundException {
         return new UiObject(getSelector().childSelector(selector));
     }
 
@@ -136,8 +133,8 @@ public class UiObject {
      * @return a new UiObject representing the matched view
      * @throws UiObjectNotFoundException
      */
-    @NonNull
-    public UiObject getFromParent(@NonNull UiSelector selector) throws UiObjectNotFoundException {
+    public @NonNull UiObject getFromParent(@NonNull UiSelector selector)
+            throws UiObjectNotFoundException {
         return new UiObject(getSelector().fromParent(selector));
     }
 
@@ -162,8 +159,7 @@ public class UiObject {
      * @param timeout in milliseconds
      * @return AccessibilityNodeInfo if found else null
      */
-    @Nullable
-    protected AccessibilityNodeInfo findAccessibilityNodeInfo(long timeout) {
+    protected @Nullable AccessibilityNodeInfo findAccessibilityNodeInfo(long timeout) {
         AccessibilityNodeInfo node = null;
         long startMills = SystemClock.uptimeMillis();
         long currentMills = 0;
@@ -515,8 +511,8 @@ public class UiObject {
      * @return text value of the current node represented by this UiObject
      * @throws UiObjectNotFoundException if no match could be found
      */
-    @NonNull
-    public String getText() throws UiObjectNotFoundException {
+    @SuppressWarnings("GetterSetterNullability")
+    public @NonNull String getText() throws UiObjectNotFoundException {
         AccessibilityNodeInfo node = findAccessibilityNodeInfo(mConfig.getWaitForSelectorTimeout());
         if(node == null) {
             throw new UiObjectNotFoundException(mUiSelector.toString());
@@ -530,8 +526,7 @@ public class UiObject {
      * @return class name of the current node represented by this UiObject
      * @throws UiObjectNotFoundException if no match was found
      */
-    @NonNull
-    public String getClassName() throws UiObjectNotFoundException {
+    public @NonNull String getClassName() throws UiObjectNotFoundException {
         AccessibilityNodeInfo node = findAccessibilityNodeInfo(mConfig.getWaitForSelectorTimeout());
         if(node == null) {
             throw new UiObjectNotFoundException(mUiSelector.toString());
@@ -545,8 +540,7 @@ public class UiObject {
      * @return value of node attribute "content_desc"
      * @throws UiObjectNotFoundException
      */
-    @NonNull
-    public String getContentDescription() throws UiObjectNotFoundException {
+    public @NonNull String getContentDescription() throws UiObjectNotFoundException {
         AccessibilityNodeInfo node = findAccessibilityNodeInfo(mConfig.getWaitForSelectorTimeout());
         if(node == null) {
             throw new UiObjectNotFoundException(mUiSelector.toString());
@@ -581,22 +575,14 @@ public class UiObject {
         if (text == null) {
             text = "";
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            // ACTION_SET_TEXT is added in API 21.
-            AccessibilityNodeInfo node = findAccessibilityNodeInfo(
-                    mConfig.getWaitForSelectorTimeout());
-            if (node == null) {
-                throw new UiObjectNotFoundException(getSelector().toString());
-            }
-            Log.d(TAG, String.format("Setting text to '%s'.", text));
-            Bundle args = new Bundle();
-            args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text);
-            return node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args);
-        } else {
-            clearTextField();
-            Log.d(TAG, String.format("Setting text to '%s'.", text));
-            return getInteractionController().sendText(text);
+        AccessibilityNodeInfo node = findAccessibilityNodeInfo(mConfig.getWaitForSelectorTimeout());
+        if (node == null) {
+            throw new UiObjectNotFoundException(getSelector().toString());
         }
+        Log.d(TAG, String.format("Setting text to '%s'.", text));
+        Bundle args = new Bundle();
+        args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text);
+        return node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args);
     }
 
     /**
@@ -618,26 +604,7 @@ public class UiObject {
         CharSequence text = node.getText();
         // do nothing if already empty
         if (text != null && text.length() > 0) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                setText("");
-            } else {
-                Log.d(TAG, "Setting text to ''.");
-                Bundle selectionArgs = new Bundle();
-                // select all of the existing text
-                selectionArgs.putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT, 0);
-                selectionArgs.putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT,
-                        text.length());
-                boolean ret = node.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
-                if (!ret) {
-                    Log.w(TAG, "ACTION_FOCUS on text field failed.");
-                }
-                ret = node.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, selectionArgs);
-                if (!ret) {
-                    Log.w(TAG, "ACTION_SET_SELECTION on text field failed.");
-                }
-                // now delete all
-                getInteractionController().sendKey(KeyEvent.KEYCODE_DEL, 0);
-            }
+            setText("");
         }
     }
 
@@ -772,8 +739,7 @@ public class UiObject {
      * @return true if it is else false
      * @throws UiObjectNotFoundException
      */
-    @NonNull
-    public String getPackageName() throws UiObjectNotFoundException {
+    public @NonNull String getPackageName() throws UiObjectNotFoundException {
         AccessibilityNodeInfo node = findAccessibilityNodeInfo(mConfig.getWaitForSelectorTimeout());
         if(node == null) {
             throw new UiObjectNotFoundException(mUiSelector.toString());
@@ -791,8 +757,7 @@ public class UiObject {
      * @throws UiObjectNotFoundException
      * @see #getBounds()
      */
-    @NonNull
-    public Rect getVisibleBounds() throws UiObjectNotFoundException {
+    public @NonNull Rect getVisibleBounds() throws UiObjectNotFoundException {
         AccessibilityNodeInfo node = findAccessibilityNodeInfo(mConfig.getWaitForSelectorTimeout());
         if(node == null) {
             throw new UiObjectNotFoundException(mUiSelector.toString());
@@ -806,8 +771,7 @@ public class UiObject {
      * @return Rect
      * @throws UiObjectNotFoundException
      */
-    @NonNull
-    public Rect getBounds() throws UiObjectNotFoundException {
+    public @NonNull Rect getBounds() throws UiObjectNotFoundException {
         AccessibilityNodeInfo node = findAccessibilityNodeInfo(mConfig.getWaitForSelectorTimeout());
         if(node == null) {
             throw new UiObjectNotFoundException(mUiSelector.toString());
@@ -1054,12 +1018,12 @@ public class UiObject {
      * @return <code>true</code> if all touch events for this gesture are injected successfully,
      *         <code>false</code> otherwise
      */
-    public boolean performMultiPointerGesture(@NonNull PointerCoords[]... touches) {
+    public boolean performMultiPointerGesture(PointerCoords @NonNull []... touches) {
         Log.d(TAG, String.format("Performing multi-point gesture %s.", touchesToString(touches)));
         return getInteractionController().performMultiPointerGesture(touches);
     }
 
-    private static String touchesToString(@NonNull PointerCoords[]... touches) {
+    private static String touchesToString(PointerCoords @NonNull []... touches) {
         StringBuilder result = new StringBuilder();
         result.append("[");
         for (int i = 0; i < touches.length; i++) {

@@ -23,11 +23,11 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import androidx.annotation.BinderThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.health.platform.client.impl.permission.foregroundstate.ForegroundStateChecker;
 import androidx.health.platform.client.impl.permission.token.PermissionTokenManager;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -46,7 +46,6 @@ final class HealthDataSdkServiceStubImpl extends IHealthDataSdkService.Stub {
     }
 
     @Override
-    @SuppressWarnings("RestrictedApi") // setCurrentToken safe to use within implementation
     public void setPermissionToken(
             @NonNull String healthDataPackageName,
             @NonNull String permissionToken,
@@ -67,7 +66,6 @@ final class HealthDataSdkServiceStubImpl extends IHealthDataSdkService.Stub {
                 });
     }
 
-    @SuppressWarnings("RestrictedApi") // setCurrentToken safe to use within implementation
     @Override
     public void getPermissionToken(
             @NonNull String healthDataPackageName, @NonNull IGetPermissionTokenCallback callback) {
@@ -87,7 +85,6 @@ final class HealthDataSdkServiceStubImpl extends IHealthDataSdkService.Stub {
                 });
     }
 
-    @SuppressWarnings("RestrictedApi") // isInForeground safe to use within SDK implementation
     @Override
     public void getIsInForeground(
             @NonNull String healthDataPackageName, @NonNull IGetIsInForegroundCallback callback) {
@@ -108,7 +105,6 @@ final class HealthDataSdkServiceStubImpl extends IHealthDataSdkService.Stub {
 
     @BinderThread
     private void verifyPackageName(@NonNull String packageName) {
-        @Nullable
         String[] callingApp =
                 mContext.getPackageManager().getPackagesForUid(Binder.getCallingUid());
         if (packageName == null

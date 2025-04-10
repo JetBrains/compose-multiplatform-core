@@ -1,20 +1,28 @@
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.2.0")
+    api(libs.jspecify)
+    api("androidx.annotation:annotation:1.8.1")
     api("androidx.swiperefreshlayout:swiperefreshlayout:1.0.0")
     api("androidx.fragment:fragment:1.2.4")
     api("androidx.recyclerview:recyclerview:1.1.0")
     api("androidx.core:core:1.6.0")
     api("androidx.versionedparcelable:versionedparcelable:1.1.1")
-    api('androidx.dynamicanimation:dynamicanimation:1.0.0')
-    api('androidx.lifecycle:lifecycle-runtime:2.5.1')
+    api("androidx.dynamicanimation:dynamicanimation:1.0.0")
+    api("androidx.lifecycle:lifecycle-runtime:2.5.1")
 
     androidTestImplementation(project(":test:screenshot:screenshot"))
     androidTestImplementation(libs.kotlinStdlib)
@@ -22,9 +30,9 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.espressoCore, excludes.espresso)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy) // DexMaker has it"s own MockMaker
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy) // DexMaker has it"s own MockMaker
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(libs.truth)
 
     testImplementation(libs.kotlinStdlib)
@@ -40,33 +48,30 @@ dependencies {
     annotationProcessor(project(":versionedparcelable:versionedparcelable-compiler"))
 
     compileOnly(fileTree(dir: "../wear_stubs", include: ["com.google.android.wearable-stubs.jar"]))
+    compileOnly(fileTree(dir: "../wear_sdk", include: ["wear-sdk.jar"]))
+
 }
 
 android {
     defaultConfig {
-        minSdkVersion 23
+        minSdk = 23
     }
-
-    sourceSets {
-        main.res.srcDirs += "src/main/res-public"
-        androidTest.assets.srcDirs += project.rootDir.absolutePath + "/../../golden/wear/wear"
-    }
-
-    buildTypes.all {
+    buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
 
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.wear"
+    namespace = "androidx.wear"
 }
 
 androidx {
     name = "Android Wear"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.WEAR
     inceptionYear = "2016"
     description = "Android Wear Support UI"
     failOnDeprecationWarnings = false
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
+    addGoldenImageAssets()
 }

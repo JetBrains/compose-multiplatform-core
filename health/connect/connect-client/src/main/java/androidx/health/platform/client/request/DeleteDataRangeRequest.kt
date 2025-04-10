@@ -16,13 +16,12 @@
 package androidx.health.platform.client.request
 
 import android.os.Parcelable
+import androidx.annotation.RestrictTo
 import androidx.health.platform.client.impl.data.ProtoParcelable
 import androidx.health.platform.client.proto.RequestProto
 
-/**
- * Internal parcelable for IPC calls.
- * @suppress
- */
+/** Internal parcelable for IPC calls. */
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 class DeleteDataRangeRequest(override val proto: RequestProto.DeleteDataRangeRequest) :
     ProtoParcelable<RequestProto.DeleteDataRangeRequest>() {
 

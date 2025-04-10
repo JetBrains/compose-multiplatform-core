@@ -16,9 +16,7 @@
 
 package androidx.compose.ui.test.injectionscope.key
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.KeyInjectionScope
 import androidx.compose.ui.test.injectionscope.key.Common.assertTyped
 import androidx.compose.ui.test.injectionscope.key.Common.performKeyInput
@@ -41,24 +39,19 @@ import org.junit.Test
  * Tests if the lock key methods in [KeyInjectionScope] like [KeyInjectionScope.isCapsLockOn] work.
  */
 @MediumTest
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
 class LockKeysTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Before
     fun setUp() {
         // Set content to a simple text field.
-        rule.setContent {
-            TestTextField()
-        }
+        rule.setContent { TestTextField() }
         // Bring text field into focus by clicking on it.
         rule.onNodeWithTag(Tag).performClick()
     }
 
-    @Test
-    fun lockKeys_startOff() = rule.performKeyInput { assertAllLockKeysOff() }
+    @Test fun lockKeys_startOff() = rule.performKeyInput { assertAllLockKeysOff() }
 
     @Test
     fun lockKeys_areOn_afterToggle() {
@@ -76,9 +69,7 @@ class LockKeysTest {
     @Test
     fun allLockKeysOn_withKeysToggled() {
         rule.performKeyInput {
-            withKeysToggled(
-                listOf(Key.CapsLock, Key.NumLock, Key.ScrollLock)
-            ) {
+            withKeysToggled(listOf(Key.CapsLock, Key.NumLock, Key.ScrollLock)) {
                 assertTrue(isCapsLockOn)
                 assertTrue(isNumLockOn)
                 assertTrue(isScrollLockOn)
@@ -111,7 +102,8 @@ class LockKeysTest {
                 pressKey(Key.B)
             }
             pressKey(Key.A)
-            pressKey(Key.B) }
+            pressKey(Key.B)
+        }
 
         rule.assertTyped("ABabAB")
     }
@@ -136,9 +128,7 @@ class LockKeysTest {
             pressKey(Key.NumLock)
             pressKey(Key.NumPad0)
             pressKey(Key.NumPad1)
-            withKeyToggled(Key.NumLock) {
-                pressKey(Key.NumPad0)
-            }
+            withKeyToggled(Key.NumLock) { pressKey(Key.NumPad0) }
         }
 
         rule.assertTyped("01")
@@ -150,6 +140,35 @@ class LockKeysTest {
             assertFalse(isScrollLockOn)
             withKeyToggled(Key.ScrollLock) { assertTrue(isScrollLockOn) }
             assertFalse(isScrollLockOn)
+        }
+    }
+
+    @Test
+    fun withKeyToggled_keyIsOff_afterThrow() {
+        rule.performKeyInput {
+            try {
+                // When an exception is thrown during withKeyToggled
+                withKeyToggled(Key.CapsLock) { error("") }
+            } catch (e: Exception) {
+                /* ignore */
+            }
+            // The key was restored to turned off
+            assertFalse(isCapsLockOn)
+        }
+    }
+
+    @Test
+    fun withKeysToggled_keysAreOff_afterThrow() {
+        rule.performKeyInput {
+            try {
+                // When an exception is thrown during withKeyToggled
+                withKeysToggled(listOf(Key.CapsLock, Key.NumLock)) { error("") }
+            } catch (e: Exception) {
+                /* ignore */
+            }
+            // The keys were restored to turned off
+            assertFalse(isCapsLockOn)
+            assertFalse(isNumLockOn)
         }
     }
 

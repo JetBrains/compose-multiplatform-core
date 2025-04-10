@@ -16,36 +16,37 @@
 
 package androidx.work.testing;
 
+import static androidx.concurrent.futures.CallbackToFutureAdapter.getFuture;
+
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.Data;
 import androidx.work.Logger;
 import androidx.work.ProgressUpdater;
-import androidx.work.impl.utils.futures.SettableFuture;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
 
 /**
  * A {@link ProgressUpdater} which does nothing. Useful in the context of testing.
- *
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class TestProgressUpdater implements ProgressUpdater {
     private static final String TAG = Logger.tagWithPrefix("TestProgressUpdater");
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> updateProgress(
+    public @NonNull ListenableFuture<Void> updateProgress(
             @NonNull Context context,
             @NonNull UUID id,
             @NonNull Data data) {
-        Logger.get().info(TAG, "Updating progress for " + id + " (" + data + ")");
-        SettableFuture<Void> future = SettableFuture.create();
-        future.set(null);
-        return future;
+        return getFuture((completer) -> {
+            Logger.get().info(TAG, "Updating progress for " + id + " (" + data + ")");
+            completer.set(null);
+            return "test updateProgress future";
+        });
     }
 }

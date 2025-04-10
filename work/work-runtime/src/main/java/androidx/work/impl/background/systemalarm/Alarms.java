@@ -26,7 +26,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.Logger;
 import androidx.work.impl.WorkDatabase;
@@ -35,6 +34,8 @@ import androidx.work.impl.model.SystemIdInfoDao;
 import androidx.work.impl.model.WorkGenerationalId;
 import androidx.work.impl.model.WorkSpec;
 import androidx.work.impl.utils.IdGenerator;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A common class for managing Alarms.

@@ -27,8 +27,7 @@ import android.os.CancellationSignal;
 import android.os.Handler;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.collection.LruCache;
@@ -37,14 +36,30 @@ import androidx.core.content.res.FontResourcesParserCompat.FamilyResourceEntry;
 import androidx.core.content.res.FontResourcesParserCompat.FontFamilyFilesResourceEntry;
 import androidx.core.content.res.FontResourcesParserCompat.ProviderResourceEntry;
 import androidx.core.content.res.ResourcesCompat;
+import androidx.core.provider.FontRequest;
 import androidx.core.provider.FontsContractCompat;
 import androidx.core.provider.FontsContractCompat.FontInfo;
 import androidx.core.util.Preconditions;
+import androidx.tracing.Trace;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
+import java.util.List;
 
 /**
  * Helper for accessing features in {@link Typeface}.
  */
 public class TypefaceCompat {
+    @RestrictTo(LIBRARY)
+    public static final boolean DOWNLOADABLE_FALLBACK_DEBUG = false;
+
+    @RestrictTo(LIBRARY)
+    public static final boolean DOWNLOADABLE_FONT_TRACING = true;
+
+    static {
+        Trace.beginSection("TypefaceCompat static init");
+    }
     private static final TypefaceCompatBaseImpl sTypefaceCompatImpl;
     static {
         if (Build.VERSION.SDK_INT >= 29) {
@@ -64,7 +79,8 @@ public class TypefaceCompat {
     }
 
     /**
-     * Cache for Typeface objects dynamically loaded from assets.
+     * Cache for Typeface objects dynamically loaded from assets,
+     * keyed by {@link #createResourceUid(Resources, int, String, int, int)}
      */
     private static final LruCache<String, Typeface> sTypefaceCache = new LruCache<>(16);
 
@@ -75,9 +91,8 @@ public class TypefaceCompat {
      *
      * @return null if not found.
      */
-    @Nullable
     @RestrictTo(LIBRARY)
-    public static Typeface findFromCache(@NonNull Resources resources, int id,
+    public static @Nullable Typeface findFromCache(@NonNull Resources resources, int id,
             @Nullable String path, int cookie, int style) {
         return sTypefaceCache.get(createResourceUid(resources, id, path, cookie, style));
     }
@@ -88,10 +103,10 @@ public class TypefaceCompat {
      * @return null if not found.
      * @deprecated Use {@link #findFromCache(Resources, int, String, int, int)} method
      */
-    @Nullable
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @Deprecated
-    public static Typeface findFromCache(@NonNull Resources resources, int id, int style) {
+    public static @Nullable Typeface findFromCache(@NonNull Resources resources, int id,
+            int style) {
         return findFromCache(resources, id, null, 0, style);
     }
 
@@ -135,13 +150,12 @@ public class TypefaceCompat {
      *
      * @return null if failed to create.
      */
-    @Nullable
     @RestrictTo(LIBRARY)
-    public static Typeface createFromResourcesFamilyXml(
+    public static @Nullable Typeface createFromResourcesFamilyXml(
             @NonNull Context context, @NonNull FamilyResourceEntry entry,
             @NonNull Resources resources, int id, @Nullable String path,
             int cookie, int style,
-            @Nullable ResourcesCompat.FontCallback fontCallback, @Nullable Handler handler,
+            ResourcesCompat.@Nullable FontCallback fontCallback, @Nullable Handler handler,
             boolean isRequestFromLayoutInflator) {
         Typeface typeface;
         if (entry instanceof ProviderResourceEntry) {
@@ -165,7 +179,14 @@ public class TypefaceCompat {
 
             Handler newHandler = ResourcesCompat.FontCallback.getHandler(handler);
             ResourcesCallbackAdapter newCallback = new ResourcesCallbackAdapter(fontCallback);
-            typeface = FontsContractCompat.requestFont(context, providerEntry.getRequest(),
+            List<FontRequest> requests;
+            if (providerEntry.getFallbackRequest() != null) {
+                requests = List.of(providerEntry.getRequest(),
+                        providerEntry.getFallbackRequest());
+            } else {
+                requests = List.of(providerEntry.getRequest());
+            }
+            typeface = FontsContractCompat.requestFont(context, requests,
                     style, isBlocking, timeout, newHandler, newCallback);
         } else {
             typeface = sTypefaceCompatImpl.createFromFontFamilyFilesResourceEntry(
@@ -193,13 +214,12 @@ public class TypefaceCompat {
      * @deprecated Use {@link #createFromResourcesFamilyXml(Context, FamilyResourceEntry,
      * Resources, int, String, int, int, ResourcesCompat.FontCallback, Handler, boolean)} method
      */
-    @Nullable
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @Deprecated
-    public static Typeface createFromResourcesFamilyXml(
+    public static @Nullable Typeface createFromResourcesFamilyXml(
             @NonNull Context context, @NonNull FamilyResourceEntry entry,
             @NonNull Resources resources, int id, int style,
-            @Nullable ResourcesCompat.FontCallback fontCallback, @Nullable Handler handler,
+            ResourcesCompat.@Nullable FontCallback fontCallback, @Nullable Handler handler,
             boolean isRequestFromLayoutInflator) {
         return createFromResourcesFamilyXml(context, entry, resources, id, null, 0, style,
                 fontCallback, handler, isRequestFromLayoutInflator);
@@ -208,9 +228,8 @@ public class TypefaceCompat {
     /**
      * Used by Resources to load a font resource of type font file.
      */
-    @Nullable
     @RestrictTo(LIBRARY)
-    public static Typeface createFromResourcesFontFile(
+    public static @Nullable Typeface createFromResourcesFontFile(
             @NonNull Context context, @NonNull Resources resources, int id, String path, int cookie,
             int style) {
         Typeface typeface = sTypefaceCompatImpl.createFromResourcesFontFile(
@@ -227,10 +246,9 @@ public class TypefaceCompat {
      * @deprecated Use {@link #createFromResourcesFontFile(Context, Resources, int, String,
      * int, int)} method
      */
-    @Nullable
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @Deprecated
-    public static Typeface createFromResourcesFontFile(
+    public static @Nullable Typeface createFromResourcesFontFile(
             @NonNull Context context, @NonNull Resources resources, int id, String path,
             int style) {
         return createFromResourcesFontFile(context, resources, id, path, 0, style);
@@ -239,19 +257,52 @@ public class TypefaceCompat {
     /**
      * Create a Typeface from a given FontInfo list and a map that matches them to ByteBuffers.
      */
-    @Nullable
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    public static Typeface createFromFontInfo(@NonNull Context context,
-            @Nullable CancellationSignal cancellationSignal, @NonNull FontInfo[] fonts, int style) {
-        return sTypefaceCompatImpl.createFromFontInfo(context, cancellationSignal, fonts, style);
+    public static @Nullable Typeface createFromFontInfo(@NonNull Context context,
+            @Nullable CancellationSignal cancellationSignal, FontInfo @NonNull [] fonts,
+            int style) {
+        if (TypefaceCompat.DOWNLOADABLE_FONT_TRACING) {
+            Trace.beginSection("TypefaceCompat.createFromFontInfo");
+        }
+        try {
+            return sTypefaceCompatImpl.createFromFontInfo(context, cancellationSignal, fonts,
+                    style);
+        } finally {
+            if (TypefaceCompat.DOWNLOADABLE_FONT_TRACING) {
+                Trace.endSection();
+            }
+        }
+    }
+
+    /**
+     * Create a Typeface from a given list of FontInfo lists.
+     * <p>
+     * This currently throws an exception if used below API 29.
+     */
+    @RestrictTo(LIBRARY)
+    @RequiresApi(29)
+    public static @Nullable Typeface createFromFontInfoWithFallback(@NonNull Context context,
+            @Nullable CancellationSignal cancellationSignal, @NonNull List<FontInfo[]> fonts,
+            int style) {
+        if (TypefaceCompat.DOWNLOADABLE_FONT_TRACING) {
+            Trace.beginSection("TypefaceCompat.createFromFontInfoWithFallback");
+        }
+        try {
+            return sTypefaceCompatImpl.createFromFontInfoWithFallback(
+                    context, cancellationSignal, fonts,
+                    style);
+        } finally {
+            if (TypefaceCompat.DOWNLOADABLE_FONT_TRACING) {
+                Trace.endSection();
+            }
+        }
     }
 
     /**
      * Retrieves the best matching font from the family specified by the {@link Typeface} object
      */
-    @Nullable
-    private static Typeface getBestFontFromFamily(final Context context, final Typeface typeface,
-            final int style) {
+    private static @Nullable Typeface getBestFontFromFamily(final Context context,
+            final Typeface typeface, final int style) {
         final FontFamilyFilesResourceEntry families = sTypefaceCompatImpl.getFontFamily(typeface);
         if (families == null) {
             return null;
@@ -270,9 +321,8 @@ public class TypefaceCompat {
      * @param context The context used to retrieve the font.
      * @return The best matching typeface.
      */
-    @NonNull
-    public static Typeface create(@NonNull final Context context, @Nullable final Typeface family,
-            final int style) {
+    public static @NonNull Typeface create(final @NonNull Context context,
+            final @Nullable Typeface family, final int style) {
         if (context == null) {
             throw new IllegalArgumentException("Context cannot be null");
         }
@@ -324,8 +374,7 @@ public class TypefaceCompat {
      * @see Typeface#getWeight()
      * @see Typeface#isItalic()
      */
-    @NonNull
-    public static Typeface create(@NonNull Context context, @Nullable Typeface family,
+    public static @NonNull Typeface create(@NonNull Context context, @Nullable Typeface family,
             @IntRange(from = 1, to = 1000) int weight, boolean italic) {
         if (context == null) {
             throw new IllegalArgumentException("Context cannot be null");
@@ -355,10 +404,9 @@ public class TypefaceCompat {
      */
     @RestrictTo(LIBRARY)
     public static class ResourcesCallbackAdapter extends FontsContractCompat.FontRequestCallback {
-        @Nullable
-        private ResourcesCompat.FontCallback mFontCallback;
+        private ResourcesCompat.@Nullable FontCallback mFontCallback;
 
-        public ResourcesCallbackAdapter(@Nullable ResourcesCompat.FontCallback fontCallback) {
+        public ResourcesCallbackAdapter(ResourcesCompat.@Nullable FontCallback fontCallback) {
             mFontCallback = fontCallback;
         }
 
@@ -375,5 +423,9 @@ public class TypefaceCompat {
                 mFontCallback.onFontRetrievalFailed(reason);
             }
         }
+    }
+
+    static {
+        Trace.endSection();
     }
 }

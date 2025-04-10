@@ -32,7 +32,7 @@ class StepsCadenceRecord(
     override val endTime: Instant,
     override val endZoneOffset: ZoneOffset?,
     override val samples: List<Sample>,
-    override val metadata: Metadata = Metadata.EMPTY,
+    override val metadata: Metadata,
 ) : SeriesRecord<StepsCadenceRecord.Sample> {
 
     init {
@@ -67,6 +67,10 @@ class StepsCadenceRecord(
         result = 31 * result + samples.hashCode()
         result = 31 * result + metadata.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "StepsCadenceRecord(startTime=$startTime, startZoneOffset=$startZoneOffset, endTime=$endTime, endZoneOffset=$endZoneOffset, samples=$samples, metadata=$metadata)"
     }
 
     companion object {
@@ -128,6 +132,10 @@ class StepsCadenceRecord(
             var result = time.hashCode()
             result = 31 * result + rate.hashCode()
             return result
+        }
+
+        override fun toString(): String {
+            return "Sample(time=$time, rate=$rate)"
         }
     }
 }

@@ -16,14 +16,16 @@
 
 package androidx.compose.foundation.demos.text2
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.demos.text.TagLine
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text2.BasicTextField2
-import androidx.compose.foundation.text2.input.TextFieldLineLimits
-import androidx.compose.foundation.text2.input.rememberTextFieldState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.Slider
 import androidx.compose.material.Text
@@ -39,7 +41,7 @@ import kotlin.math.roundToInt
 
 @Composable
 fun TextFieldLineLimitsDemos() {
-    Column(Modifier.padding(16.dp)) {
+    Column(Modifier.imePadding().verticalScroll(rememberScrollState()).padding(16.dp)) {
         TagLine(tag = "Default")
         DefaultLineLimits()
 
@@ -51,12 +53,11 @@ fun TextFieldLineLimitsDemos() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DefaultLineLimits() {
     Text("Default")
 
-    BasicTextField2(
+    BasicTextField(
         state = rememberTextFieldState(),
         lineLimits = TextFieldLineLimits.Default,
         textStyle = LocalTextStyle.current,
@@ -64,12 +65,11 @@ fun DefaultLineLimits() {
     )
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SingleLineLimits() {
     Text("Single Line")
 
-    BasicTextField2(
+    BasicTextField(
         state = rememberTextFieldState(),
         lineLimits = TextFieldLineLimits.SingleLine,
         textStyle = LocalTextStyle.current,
@@ -77,7 +77,6 @@ fun SingleLineLimits() {
     )
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MultiLineLimits() {
     Text("Multi Line")
@@ -89,9 +88,7 @@ fun MultiLineLimits() {
         Text("Min: $minLines")
         Slider(
             value = minLines.toFloat(),
-            onValueChange = {
-                minLines = it.roundToInt()
-            },
+            onValueChange = { minLines = it.roundToInt() },
             valueRange = 1f..10f,
             steps = 9
         )
@@ -101,9 +98,7 @@ fun MultiLineLimits() {
         Text("Max: $maxLines")
         Slider(
             value = maxLines.toFloat(),
-            onValueChange = {
-                maxLines = it.roundToInt()
-            },
+            onValueChange = { maxLines = it.roundToInt() },
             valueRange = 1f..10f,
             steps = 9
         )
@@ -111,12 +106,10 @@ fun MultiLineLimits() {
 
     maxLines = maxLines.coerceAtLeast(minLines)
 
-    BasicTextField2(
+    BasicTextField(
         state = rememberTextFieldState(),
-        lineLimits = TextFieldLineLimits.MultiLine(
-            minHeightInLines = minLines,
-            maxHeightInLines = maxLines
-        ),
+        lineLimits =
+            TextFieldLineLimits.MultiLine(minHeightInLines = minLines, maxHeightInLines = maxLines),
         textStyle = LocalTextStyle.current,
         modifier = demoTextFieldModifiers
     )

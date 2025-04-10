@@ -20,14 +20,16 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
+
+import org.jspecify.annotations.NonNull;
 
 @SuppressLint("BanParcelableUsage")
 final class FragmentState implements Parcelable {
     final String mClassName;
     final String mWho;
     final boolean mFromLayout;
+    final boolean mInDynamicContainer;
     final int mFragmentId;
     final int mContainerId;
     final String mTag;
@@ -44,6 +46,7 @@ final class FragmentState implements Parcelable {
         mClassName = frag.getClass().getName();
         mWho = frag.mWho;
         mFromLayout = frag.mFromLayout;
+        mInDynamicContainer = frag.mInDynamicContainer;
         mFragmentId = frag.mFragmentId;
         mContainerId = frag.mContainerId;
         mTag = frag.mTag;
@@ -61,6 +64,7 @@ final class FragmentState implements Parcelable {
         mClassName = in.readString();
         mWho = in.readString();
         mFromLayout = in.readInt() != 0;
+        mInDynamicContainer = in.readInt() != 0;
         mFragmentId = in.readInt();
         mContainerId = in.readInt();
         mTag = in.readString();
@@ -77,13 +81,13 @@ final class FragmentState implements Parcelable {
     /**
      * Instantiates the Fragment from this state.
      */
-    @NonNull
     @SuppressWarnings("deprecation")
-    Fragment instantiate(@NonNull FragmentFactory fragmentFactory,
+    @NonNull Fragment instantiate(@NonNull FragmentFactory fragmentFactory,
             @NonNull ClassLoader classLoader) {
         Fragment fragment = fragmentFactory.instantiate(classLoader, mClassName);
         fragment.mWho = mWho;
         fragment.mFromLayout = mFromLayout;
+        fragment.mInDynamicContainer = mInDynamicContainer;
         fragment.mRestored = true;
         fragment.mFragmentId = mFragmentId;
         fragment.mContainerId = mContainerId;
@@ -99,9 +103,8 @@ final class FragmentState implements Parcelable {
         return fragment;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         StringBuilder sb = new StringBuilder(128);
         sb.append("FragmentState{");
         sb.append(mClassName);
@@ -110,6 +113,9 @@ final class FragmentState implements Parcelable {
         sb.append(")}:");
         if (mFromLayout) {
             sb.append(" fromLayout");
+        }
+        if (mInDynamicContainer) {
+            sb.append(" dynamicContainer");
         }
         if (mContainerId != 0) {
             sb.append(" id=0x");
@@ -153,6 +159,7 @@ final class FragmentState implements Parcelable {
         dest.writeString(mClassName);
         dest.writeString(mWho);
         dest.writeInt(mFromLayout ? 1 : 0);
+        dest.writeInt(mInDynamicContainer ? 1 : 0);
         dest.writeInt(mFragmentId);
         dest.writeInt(mContainerId);
         dest.writeString(mTag);

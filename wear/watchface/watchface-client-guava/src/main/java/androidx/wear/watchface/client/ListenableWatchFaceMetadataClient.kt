@@ -24,7 +24,15 @@ import androidx.wear.watchface.client.WatchFaceMetadataClient.ServiceStartFailur
 import androidx.wear.watchface.control.WatchFaceControlService
 import com.google.common.util.concurrent.ListenableFuture
 
-/** [ListenableFuture]-based compatibility wrapper around [WatchFaceMetadataClient.create]. */
+/**
+ * [ListenableFuture]-based compatibility wrapper around [WatchFaceMetadataClient.create].
+ *
+ * @deprecated use Watch Face Format instead
+ */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public class ListenableWatchFaceMetadataClient private constructor() {
     public companion object {
         /**
@@ -55,7 +63,7 @@ public class ListenableWatchFaceMetadataClient private constructor() {
 
         /**
          * Constructs a [WatchFaceMetadataClient] for fetching metadata for the specified resource
-         * only watch face runtime.  A resource only watch face runtime, is a special kind of watch
+         * only watch face runtime. A resource only watch face runtime, is a special kind of watch
          * face that is the runtime for a watch face defined by another package that contains only
          * resources and no executable code.
          *

@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -29,11 +36,11 @@ dependencies {
 
 androidx {
     name = "Compose Lifecycle ViewModel Demos"
-    publish = Publish.NONE
+    type = SoftwareType.TEST_APPLICATION
     inceptionYear = "2021"
     description = "This is a project for Lifecycle ViewModel demos."
 }
 
 android {
-    namespace "androidx.lifecycle.viewmodel.compose.demos"
+    namespace = "androidx.lifecycle.viewmodel.compose.demos"
 }

@@ -14,58 +14,36 @@
  * limitations under the License.
  */
 
-@file:SuppressLint("ClassVerificationFailure") // Entire file is RequiresApi(19)
-
 package androidx.core.transition
 
-import android.annotation.SuppressLint
 import android.transition.Transition
-import androidx.annotation.RequiresApi
 
-/**
- * Add an action which will be invoked when this transition has ended.
- */
-@RequiresApi(19)
+/** Add an action which will be invoked when this transition has ended. */
 public inline fun Transition.doOnEnd(
     crossinline action: (transition: Transition) -> Unit
 ): Transition.TransitionListener = addListener(onEnd = action)
 
-/**
- * Add an action which will be invoked when this transition has started.
- */
-@RequiresApi(19)
+/** Add an action which will be invoked when this transition has started. */
 public inline fun Transition.doOnStart(
     crossinline action: (transition: Transition) -> Unit
 ): Transition.TransitionListener = addListener(onStart = action)
 
-/**
- * Add an action which will be invoked when this transition has been cancelled.
- */
-@RequiresApi(19)
+/** Add an action which will be invoked when this transition has been cancelled. */
 public inline fun Transition.doOnCancel(
     crossinline action: (transition: Transition) -> Unit
 ): Transition.TransitionListener = addListener(onCancel = action)
 
-/**
- * Add an action which will be invoked when this transition has resumed after a pause.
- */
-@RequiresApi(19)
+/** Add an action which will be invoked when this transition has resumed after a pause. */
 public inline fun Transition.doOnResume(
     crossinline action: (transition: Transition) -> Unit
 ): Transition.TransitionListener = addListener(onResume = action)
 
-/**
- * Add an action which will be invoked when this transition has been paused.
- */
-@RequiresApi(19)
+/** Add an action which will be invoked when this transition has been paused. */
 public inline fun Transition.doOnPause(
     crossinline action: (transition: Transition) -> Unit
 ): Transition.TransitionListener = addListener(onPause = action)
 
-/**
- * Add a listener to this Transition using the provided actions.
- */
-@RequiresApi(19)
+/** Add a listener to this Transition using the provided actions. */
 public inline fun Transition.addListener(
     crossinline onEnd: (transition: Transition) -> Unit = {},
     crossinline onStart: (transition: Transition) -> Unit = {},
@@ -73,13 +51,18 @@ public inline fun Transition.addListener(
     crossinline onResume: (transition: Transition) -> Unit = {},
     crossinline onPause: (transition: Transition) -> Unit = {}
 ): Transition.TransitionListener {
-    val listener = object : Transition.TransitionListener {
-        override fun onTransitionEnd(transition: Transition) = onEnd(transition)
-        override fun onTransitionResume(transition: Transition) = onResume(transition)
-        override fun onTransitionPause(transition: Transition) = onPause(transition)
-        override fun onTransitionCancel(transition: Transition) = onCancel(transition)
-        override fun onTransitionStart(transition: Transition) = onStart(transition)
-    }
+    val listener =
+        object : Transition.TransitionListener {
+            override fun onTransitionEnd(transition: Transition) = onEnd(transition)
+
+            override fun onTransitionResume(transition: Transition) = onResume(transition)
+
+            override fun onTransitionPause(transition: Transition) = onPause(transition)
+
+            override fun onTransitionCancel(transition: Transition) = onCancel(transition)
+
+            override fun onTransitionStart(transition: Transition) = onStart(transition)
+        }
     addListener(listener)
     return listener
 }

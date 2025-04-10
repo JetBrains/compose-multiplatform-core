@@ -16,9 +16,9 @@
 // @exportToFramework:skipFile()
 package androidx.appsearch.app;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appsearch.exceptions.AppSearchException;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Map;
@@ -35,34 +35,38 @@ public interface DocumentClassFactory<T> {
      *
      * <p>This is the name used in queries for type restricts.
      */
-    @NonNull
-    String getSchemaName();
+    @NonNull String getSchemaName();
 
     /** Returns the schema for this document class. */
-    @NonNull
-    AppSearchSchema getSchema() throws AppSearchException;
+    @NonNull AppSearchSchema getSchema() throws AppSearchException;
 
     /**
      * Returns document classes that this document class depends on. This is useful so clients
      * are not required to explicitly set all dependencies.
      */
-    @NonNull
-    List<Class<?>> getDependencyDocumentClasses() throws AppSearchException;
+    @NonNull List<Class<?>> getDependencyDocumentClasses() throws AppSearchException;
 
     /**
      * Converts an instance of the class annotated with
      * \@{@link androidx.appsearch.annotation.Document} into a
      * {@link androidx.appsearch.app.GenericDocument}.
      */
-    @NonNull
-    GenericDocument toGenericDocument(@NonNull T document) throws AppSearchException;
+    @NonNull GenericDocument toGenericDocument(@NonNull T document) throws AppSearchException;
 
     /**
      * Converts a {@link androidx.appsearch.app.GenericDocument} into an instance of the document
-     * class. For nested document properties, this method should pass {@code documentClassMap} down
-     * to the nested calls of {@link GenericDocument#toDocumentClass(Class, Map)}.
+     * class. For nested document properties, this method should pass
+     * {@code documentClassMappingContext} down to the nested calls of
+     * {@link GenericDocument#toDocumentClass(Class, DocumentClassMappingContext)}.
+     *
+     * @param genericDoc                  The document to convert.
+     * @param documentClassMappingContext The context object that holds mapping information for
+     *                                    document classes and their parent types. This context
+     *                                    typically comes from
+     *                                    {@link SearchResult#getDocument(Class, Map)}.
      */
-    @NonNull
-    T fromGenericDocument(@NonNull GenericDocument genericDoc,
-            @Nullable Map<String, List<String>> documentClassMap) throws AppSearchException;
+    @ExperimentalAppSearchApi
+    @NonNull T fromGenericDocument(@NonNull GenericDocument genericDoc,
+            @NonNull DocumentClassMappingContext documentClassMappingContext)
+            throws AppSearchException;
 }

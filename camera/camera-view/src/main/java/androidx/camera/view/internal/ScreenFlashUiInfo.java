@@ -16,22 +16,23 @@
 
 package androidx.camera.view.internal;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.view.CameraController;
 import androidx.camera.view.PreviewView;
 import androidx.camera.view.ScreenFlashView;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.Objects;
 
 /**
- * Internal data class that encapsulates an {@link ImageCapture.ScreenFlashUiControl} and its
+ * Internal data class that encapsulates an {@link ImageCapture.ScreenFlash} and its
  * provider.
  */
 public class ScreenFlashUiInfo {
     /**
-     * Since {@link ImageCapture.ScreenFlashUiControl} can be created from either the
+     * Since {@link ImageCapture.ScreenFlash} can be created from either the
      * {@link ScreenFlashView} set by user or the one internally used in {@link PreviewView},
      * {@link CameraController} needs to know where exactly the control is from so that it can
      * prioritize the user-set one when both are available.
@@ -41,26 +42,22 @@ public class ScreenFlashUiInfo {
         SCREEN_FLASH_VIEW
     }
 
-    @NonNull
-    private final ProviderType mProviderType;
+    private final @NonNull ProviderType mProviderType;
 
-    @Nullable
-    private final ImageCapture.ScreenFlashUiControl mScreenFlashUiControl;
+    private final ImageCapture.@Nullable ScreenFlash mScreenFlash;
 
     public ScreenFlashUiInfo(@NonNull ProviderType providerType,
-            @Nullable ImageCapture.ScreenFlashUiControl screenFlashUiControl) {
+            ImageCapture.@Nullable ScreenFlash screenFlash) {
         mProviderType = providerType;
-        mScreenFlashUiControl = screenFlashUiControl;
+        mScreenFlash = screenFlash;
     }
 
-    @NonNull
-    public ProviderType getProviderType() {
+    public @NonNull ProviderType getProviderType() {
         return mProviderType;
     }
 
-    @Nullable
-    public ImageCapture.ScreenFlashUiControl getScreenFlashUiControl() {
-        return mScreenFlashUiControl;
+    public ImageCapture.@Nullable ScreenFlash getScreenFlash() {
+        return mScreenFlash;
     }
 
     @Override
@@ -68,12 +65,12 @@ public class ScreenFlashUiInfo {
         if (this == o) return true;
         if (!(o instanceof ScreenFlashUiInfo)) return false;
         ScreenFlashUiInfo that = (ScreenFlashUiInfo) o;
-        return mProviderType == that.mProviderType && Objects.equals(mScreenFlashUiControl,
-                that.mScreenFlashUiControl);
+        return mProviderType == that.mProviderType && Objects.equals(mScreenFlash,
+                that.mScreenFlash);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mProviderType, mScreenFlashUiControl);
+        return Objects.hash(mProviderType, mScreenFlash);
     }
 }

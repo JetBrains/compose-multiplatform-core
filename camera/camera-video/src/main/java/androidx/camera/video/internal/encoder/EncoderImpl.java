@@ -16,6 +16,8 @@
 
 package androidx.camera.video.internal.encoder;
 
+import static androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED;
+import static androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor;
 import static androidx.camera.video.internal.encoder.EncoderImpl.InternalState.CONFIGURED;
 import static androidx.camera.video.internal.encoder.EncoderImpl.InternalState.ERROR;
 import static androidx.camera.video.internal.encoder.EncoderImpl.InternalState.PAUSED;
@@ -25,6 +27,7 @@ import static androidx.camera.video.internal.encoder.EncoderImpl.InternalState.P
 import static androidx.camera.video.internal.encoder.EncoderImpl.InternalState.RELEASED;
 import static androidx.camera.video.internal.encoder.EncoderImpl.InternalState.STARTED;
 import static androidx.camera.video.internal.encoder.EncoderImpl.InternalState.STOPPING;
+import static androidx.camera.video.internal.utils.CodecUtil.createCodec;
 import static androidx.core.util.Preconditions.checkState;
 
 import static java.util.Objects.requireNonNull;
@@ -37,13 +40,13 @@ import android.media.MediaFormat;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Range;
+import android.util.Rational;
 import android.view.Surface;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.annotation.VisibleForTesting;
+import androidx.arch.core.util.Function;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.Timebase;
 import androidx.camera.core.impl.annotation.ExecutedBy;
@@ -56,15 +59,20 @@ import androidx.camera.video.internal.compat.quirk.CameraUseInconsistentTimebase
 import androidx.camera.video.internal.compat.quirk.CodecStuckOnFlushQuirk;
 import androidx.camera.video.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.video.internal.compat.quirk.EncoderNotUsePersistentInputSurfaceQuirk;
+import androidx.camera.video.internal.compat.quirk.PrematureEndOfStreamVideoQuirk;
+import androidx.camera.video.internal.compat.quirk.PreviewFreezeAfterHighSpeedRecordingQuirk;
+import androidx.camera.video.internal.compat.quirk.SignalEosOutputBufferNotComeQuirk;
 import androidx.camera.video.internal.compat.quirk.StopCodecAfterSurfaceRemovalCrashMediaServerQuirk;
 import androidx.camera.video.internal.compat.quirk.VideoEncoderSuspendDoesNotIncludeSuspendTimeQuirk;
-import androidx.camera.video.internal.workaround.EncoderFinder;
 import androidx.camera.video.internal.workaround.VideoTimebaseConverter;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.concurrent.futures.CallbackToFutureAdapter.Completer;
 import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -88,7 +96,6 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * <p>An encoder could be either a video encoder or an audio encoder.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class EncoderImpl implements Encoder {
 
     enum InternalState {
@@ -150,6 +157,9 @@ public class EncoderImpl implements Encoder {
     private static final long NO_LIMIT_LONG = Long.MAX_VALUE;
     private static final Range<Long> NO_RANGE = Range.create(NO_LIMIT_LONG, NO_LIMIT_LONG);
     private static final long STOP_TIMEOUT_MS = 1000L;
+    private static final long SIGNAL_EOS_TIMEOUT_MS = 1000L;
+    static final String PARAMETER_KEY_TIMELAPSE_ENABLED = "time-lapse-enable";
+    static final String PARAMETER_KEY_TIMELAPSE_FPS = "time-lapse-fps";
 
     @SuppressWarnings("WeakerAccess") // synthetic accessor
     final String mTag;
@@ -157,7 +167,8 @@ public class EncoderImpl implements Encoder {
     final Object mLock = new Object();
     @SuppressWarnings("WeakerAccess") // synthetic accessor
     final boolean mIsVideoEncoder;
-    private final MediaFormat mMediaFormat;
+    @VisibleForTesting
+    final MediaFormat mMediaFormat;
     @SuppressWarnings("WeakerAccess") // synthetic accessor
     final MediaCodec mMediaCodec;
     @SuppressWarnings("WeakerAccess") // synthetic accessor
@@ -182,7 +193,15 @@ public class EncoderImpl implements Encoder {
     @SuppressWarnings("WeakerAccess") // synthetic accessor
     final Deque<Range<Long>> mActivePauseResumeTimeRanges = new ArrayDeque<>();
     final Timebase mInputTimebase;
-    final TimeProvider mTimeProvider = new SystemTimeProvider();
+    final TimeProvider mTimeProvider;
+    /*
+     * When the rational value is not 1, it means the capture frame rate is different from the
+     * encoding frame rate, and the frame timestamp needs to be adjusted to achieve the speed
+     * change effect.
+     */
+    @NonNull
+    private final Rational mCaptureToEncodeFrameRateRatio;
+    private final boolean mCodecStopAsFlushWorkaroundEnabled;
 
     @SuppressWarnings("WeakerAccess") // synthetic accessor
     @GuardedBy("mLock")
@@ -209,47 +228,55 @@ public class EncoderImpl implements Encoder {
     private boolean mIsFlushedAfterEndOfStream = false;
     private boolean mSourceStoppedSignalled = false;
     boolean mMediaCodecEosSignalled = false;
-
-    final EncoderFinder mEncoderFinder = new EncoderFinder();
+    private @Nullable Future<?> mSignalEosTimeoutFuture;
 
     /**
      * Creates the encoder with a {@link EncoderConfig}
      *
      * @param executor      the executor suitable for background task
      * @param encoderConfig the encoder config
+     * @param sessionType   the session type
      * @throws InvalidConfigException when the encoder cannot be configured.
      */
-    public EncoderImpl(@NonNull Executor executor, @NonNull EncoderConfig encoderConfig)
+    public EncoderImpl(@NonNull Executor executor, @NonNull EncoderConfig encoderConfig,
+            int sessionType)
             throws InvalidConfigException {
         Preconditions.checkNotNull(executor);
         Preconditions.checkNotNull(encoderConfig);
 
+        mMediaCodec = createCodec(encoderConfig);
+        MediaCodecInfo mediaCodecInfo = mMediaCodec.getCodecInfo();
         mEncoderExecutor = CameraXExecutors.newSequentialExecutor(executor);
-
+        mMediaFormat = encoderConfig.toMediaFormat();
+        mInputTimebase = encoderConfig.getInputTimebase();
+        mTimeProvider = transformTimeProvider(new SystemTimeProvider(),
+                this::toPresentationTimeUsByCaptureEncodeRatio);
         if (encoderConfig instanceof AudioEncoderConfig) {
+            AudioEncoderConfig audioEncoderConfig = (AudioEncoderConfig) encoderConfig;
             mTag = "AudioEncoder";
             mIsVideoEncoder = false;
             mEncoderInput = new ByteBufferInput();
+            mEncoderInfo = new AudioEncoderInfoImpl(mediaCodecInfo, encoderConfig.getMimeType());
+            mCaptureToEncodeFrameRateRatio = new Rational(audioEncoderConfig.getCaptureSampleRate(),
+                    audioEncoderConfig.getEncodeSampleRate());
         } else if (encoderConfig instanceof VideoEncoderConfig) {
+            VideoEncoderConfig videoEncoderConfig = (VideoEncoderConfig) encoderConfig;
             mTag = "VideoEncoder";
             mIsVideoEncoder = true;
             mEncoderInput = new SurfaceInput();
+            VideoEncoderInfo videoEncoderInfo = new VideoEncoderInfoImpl(mediaCodecInfo,
+                    encoderConfig.getMimeType());
+            clampVideoBitrateIfNotSupported(videoEncoderInfo, mMediaFormat);
+            mEncoderInfo = videoEncoderInfo;
+            mCaptureToEncodeFrameRateRatio = new Rational(videoEncoderConfig.getCaptureFrameRate(),
+                    videoEncoderConfig.getEncodeFrameRate());
         } else {
             throw new InvalidConfigException("Unknown encoder config type");
         }
 
-        mInputTimebase = encoderConfig.getInputTimebase();
         Logger.d(mTag, "mInputTimebase = " + mInputTimebase);
-        mMediaFormat = encoderConfig.toMediaFormat();
         Logger.d(mTag, "mMediaFormat = " + mMediaFormat);
-        mMediaCodec = mEncoderFinder.findEncoder(mMediaFormat);
-        Logger.i(mTag, "Selected encoder: " + mMediaCodec.getName());
-        mEncoderInfo = createEncoderInfo(mIsVideoEncoder, mMediaCodec.getCodecInfo(),
-                encoderConfig.getMimeType());
-        if (mIsVideoEncoder) {
-            VideoEncoderInfo videoEncoderInfo = (VideoEncoderInfo) mEncoderInfo;
-            clampVideoBitrateIfNotSupported(videoEncoderInfo, mMediaFormat);
-        }
+        Logger.d(mTag, "mCaptureToEncodeFrameRateRatio = " + mCaptureToEncodeFrameRateRatio);
 
         try {
             reset();
@@ -264,6 +291,10 @@ public class EncoderImpl implements Encoder {
                     return "mReleasedFuture";
                 }));
         mReleasedCompleter = Preconditions.checkNotNull(releaseFutureRef.get());
+
+        mCodecStopAsFlushWorkaroundEnabled = mIsVideoEncoder
+                && sessionType == SESSION_TYPE_HIGH_SPEED
+                && DeviceQuirks.get(PreviewFreezeAfterHighSpeedRecordingQuirk.class) != null;
 
         setState(CONFIGURED);
     }
@@ -310,6 +341,10 @@ public class EncoderImpl implements Encoder {
             mStopTimeoutFuture.cancel(true);
             mStopTimeoutFuture = null;
         }
+        if (mSignalEosTimeoutFuture != null) {
+            mSignalEosTimeoutFuture.cancel(false);
+            mSignalEosTimeoutFuture = null;
+        }
         if (mMediaCodecCallback != null) {
             mMediaCodecCallback.stop();
         }
@@ -325,14 +360,12 @@ public class EncoderImpl implements Encoder {
 
     /** Gets the {@link EncoderInput} of the encoder */
     @Override
-    @NonNull
-    public EncoderInput getInput() {
+    public @NonNull EncoderInput getInput() {
         return mEncoderInput;
     }
 
-    @NonNull
     @Override
-    public EncoderInfo getEncoderInfo() {
+    public @NonNull EncoderInfo getEncoderInfo() {
         return mEncoderInfo;
     }
 
@@ -504,7 +537,7 @@ public class EncoderImpl implements Encoder {
                         // times out, stop the codec so that the Encoder can at least be stopped.
                         // Set mDataStopTimeStamp to be null in order to catch this issue in test.
                         mStopTimeoutFuture =
-                                CameraXExecutors.mainThreadExecutor().schedule(
+                                mainThreadExecutor().schedule(
                                         () -> mEncoderExecutor.execute(() -> {
                                             if (mPendingCodecStop) {
                                                 Logger.w(mTag,
@@ -534,6 +567,7 @@ public class EncoderImpl implements Encoder {
     @SuppressWarnings("WeakerAccess") // synthetic accessor
     @ExecutedBy("mEncoderExecutor")
     void signalCodecStop() {
+        Logger.d(mTag, "signalCodecStop");
         if (mEncoderInput instanceof ByteBufferInput) {
             ((ByteBufferInput) mEncoderInput).setActive(false);
             // Wait for all issued input buffer done to avoid input loss.
@@ -545,6 +579,7 @@ public class EncoderImpl implements Encoder {
                     mEncoderExecutor);
         } else if (mEncoderInput instanceof SurfaceInput) {
             try {
+                addSignalEosTimeoutIfNeeded();
                 mMediaCodec.signalEndOfInputStream();
                 mMediaCodecEosSignalled = true;
             } catch (MediaCodec.CodecException e) {
@@ -624,9 +659,8 @@ public class EncoderImpl implements Encoder {
     }
 
     /** {@inheritDoc} */
-    @NonNull
     @Override
-    public ListenableFuture<Void> getReleasedFuture() {
+    public @NonNull ListenableFuture<Void> getReleasedFuture() {
         return mReleasedFuture;
     }
 
@@ -642,7 +676,10 @@ public class EncoderImpl implements Encoder {
         mEncoderExecutor.execute(() -> {
             mSourceStoppedSignalled = true;
             if (mIsFlushedAfterEndOfStream) {
-                mMediaCodec.stop();
+                // stop() should have been called before if workaround is enabled.
+                if (!mCodecStopAsFlushWorkaroundEnabled) {
+                    mMediaCodec.stop();
+                }
                 reset();
             }
         });
@@ -651,7 +688,10 @@ public class EncoderImpl implements Encoder {
     @ExecutedBy("mEncoderExecutor")
     private void releaseInternal() {
         if (mIsFlushedAfterEndOfStream) {
-            mMediaCodec.stop();
+            // stop() should have been called before if workaround is enabled.
+            if (!mCodecStopAsFlushWorkaroundEnabled) {
+                mMediaCodec.stop();
+            }
             mIsFlushedAfterEndOfStream = false;
         }
 
@@ -731,6 +771,20 @@ public class EncoderImpl implements Encoder {
     }
 
     @ExecutedBy("mEncoderExecutor")
+    private void addSignalEosTimeoutIfNeeded() {
+        if (DeviceQuirks.get(SignalEosOutputBufferNotComeQuirk.class) != null) {
+            MediaCodecCallback codecCallback = mMediaCodecCallback;
+            Executor executor = mEncoderExecutor;
+            if (mSignalEosTimeoutFuture != null) {
+                mSignalEosTimeoutFuture.cancel(false);
+            }
+            mSignalEosTimeoutFuture = mainThreadExecutor().schedule(
+                    () -> executor.execute(codecCallback::reachEndData),
+                    SIGNAL_EOS_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    @ExecutedBy("mEncoderExecutor")
     private void signalEndOfInputStream() {
         Futures.addCallback(acquireInputBuffer(),
                 new FutureCallback<InputBuffer>() {
@@ -772,7 +826,7 @@ public class EncoderImpl implements Encoder {
 
     @SuppressWarnings("WeakerAccess") // synthetic accessor
     @ExecutedBy("mEncoderExecutor")
-    void handleEncodeError(@NonNull MediaCodec.CodecException e) {
+    void handleEncodeError(MediaCodec.@NonNull CodecException e) {
         handleEncodeError(EncodeException.ERROR_CODEC, e.getMessage(), e);
     }
 
@@ -826,6 +880,7 @@ public class EncoderImpl implements Encoder {
     @SuppressWarnings("WeakerAccess") // synthetic accessor
     @ExecutedBy("mEncoderExecutor")
     void stopMediaCodec(@Nullable Runnable afterStop) {
+        Logger.d(mTag, "stopMediaCodec");
         /*
          * MediaCodec#stop will free all its input/output ByteBuffers. Therefore, before calling
          * MediaCodec#stop, it must ensure all dispatched EncodedData(output ByteBuffers) and
@@ -863,7 +918,11 @@ public class EncoderImpl implements Encoder {
                     // end-of-stream signal on an output buffer at this point, so those buffers
                     // are not needed anyways. We will defer resetting the codec until just
                     // before starting the codec again.
-                    mMediaCodec.flush();
+                    if (mCodecStopAsFlushWorkaroundEnabled) {
+                        mMediaCodec.stop();
+                    } else {
+                        mMediaCodec.flush();
+                    }
                     mIsFlushedAfterEndOfStream = true;
                 } else {
                     // Non-SurfaceInputs give us more control over input buffers. We can directly
@@ -950,8 +1009,7 @@ public class EncoderImpl implements Encoder {
 
     @SuppressWarnings("WeakerAccess") // synthetic accessor
     @ExecutedBy("mEncoderExecutor")
-    @NonNull
-    ListenableFuture<InputBuffer> acquireInputBuffer() {
+    @NonNull ListenableFuture<InputBuffer> acquireInputBuffer() {
         switch (mState) {
             case CONFIGURED:
                 return Futures.immediateFailedFuture(new IllegalStateException(
@@ -994,7 +1052,17 @@ public class EncoderImpl implements Encoder {
 
             InputBufferImpl inputBuffer;
             try {
-                inputBuffer = new InputBufferImpl(mMediaCodec, bufferIndex);
+                inputBuffer = new InputBufferImpl(mMediaCodec, bufferIndex) {
+                    @Override
+                    public void setPresentationTimeUs(long presentationTimeUs) {
+                        // For slow-motion effect, audio timestamps are adjusted here. Video uses
+                        // SurfaceInput and the timestamps are adjusted by MediaCodec by setting
+                        // different KEY_CAPTURE_RATE and KEY_FRAME_RATE. BufferInput for video
+                        // is currently unverified.
+                        super.setPresentationTimeUs(mIsVideoEncoder ? presentationTimeUs
+                                : toPresentationTimeUsByCaptureEncodeRatio(presentationTimeUs));
+                    }
+                };
             } catch (MediaCodec.CodecException e) {
                 handleEncodeError(e);
                 return;
@@ -1007,13 +1075,6 @@ public class EncoderImpl implements Encoder {
                 inputBuffer.cancel();
             }
         }
-    }
-
-    @NonNull
-    private static EncoderInfo createEncoderInfo(boolean isVideoEncoder,
-            @NonNull MediaCodecInfo codecInfo, @NonNull String mime) throws InvalidConfigException {
-        return isVideoEncoder ? new VideoEncoderInfoImpl(codecInfo, mime)
-                : new AudioEncoderInfoImpl(codecInfo, mime);
     }
 
     @SuppressWarnings("WeakerAccess") // synthetic accessor
@@ -1035,11 +1096,37 @@ public class EncoderImpl implements Encoder {
         return DeviceQuirks.get(StopCodecAfterSurfaceRemovalCrashMediaServerQuirk.class) != null;
     }
 
+    private long toPresentationTimeUsByCaptureEncodeRatio(long systemTimeUs) {
+        // Multiplying systemTimeUs by the capture-to-encode frame rate ratio is safe from overflow.
+        // Even with extreme slowdowns (e.g., 1920fps to 30fps, a 64x ratio), the resulting
+        // microsecond timestamp remains significantly below Long.MAX_VALUE.
+        return isRationalOne(mCaptureToEncodeFrameRateRatio) ? systemTimeUs
+                : Math.round(systemTimeUs * mCaptureToEncodeFrameRateRatio.doubleValue());
+    }
+
+    @NonNull
+    private static TimeProvider transformTimeProvider(@NonNull TimeProvider baseTimeProvider,
+            @NonNull Function<Long, Long> transform) {
+        return new TimeProvider() {
+            @Override
+            public long uptimeUs() {
+                return transform.apply(baseTimeProvider.uptimeUs());
+            }
+
+            @Override
+            public long realtimeUs() {
+                return transform.apply(baseTimeProvider.realtimeUs());
+            }
+        };
+    }
+
+    private boolean isRationalOne(@Nullable Rational rational) {
+        return rational != null && rational.getDenominator() == rational.getNumerator();
+    }
+
     @SuppressWarnings("WeakerAccess") // synthetic accessor
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     class MediaCodecCallback extends MediaCodec.Callback {
-        @Nullable
-        private final VideoTimebaseConverter mVideoTimestampConverter;
+        private final @Nullable VideoTimebaseConverter mVideoTimestampConverter;
         // See b/255209101. On some devices, MediaCodec#signalEndOfInputStream() doesn't trigger
         // an end-of-stream buffer. This flag is used for a general workaround to take an output
         // buffer which reaches stop timestamp as an end-of-stream buffer. It should be true by
@@ -1059,17 +1146,12 @@ public class EncoderImpl implements Encoder {
         private boolean mIsOutputBufferInPauseState = false;
         private boolean mIsKeyFrameRequired = false;
         private boolean mStopped = false;
+        private boolean mIsFirstVideoOutput = mIsVideoEncoder;
 
         MediaCodecCallback() {
             if (mIsVideoEncoder) {
-                Timebase inputTimebase;
-                if (DeviceQuirks.get(CameraUseInconsistentTimebaseQuirk.class) != null) {
-                    Logger.w(mTag, "CameraUseInconsistentTimebaseQuirk is enabled");
-                    inputTimebase = null;
-                } else {
-                    inputTimebase = mInputTimebase;
-                }
-                mVideoTimestampConverter = new VideoTimebaseConverter(mTimeProvider, inputTimebase);
+                mVideoTimestampConverter = new VideoTimebaseConverter(mTimeProvider,
+                        mInputTimebase, DeviceQuirks.get(CameraUseInconsistentTimebaseQuirk.class));
             } else {
                 mVideoTimestampConverter = null;
             }
@@ -1180,18 +1262,12 @@ public class EncoderImpl implements Encoder {
 
                         // Handle end of stream
                         if (!mHasEndData && isEndOfStream(bufferInfo)) {
-                            mHasEndData = true;
-                            stopMediaCodec(() -> {
-                                if (mState == ERROR) {
-                                    // Error occur during stopping.
-                                    return;
-                                }
-                                try {
-                                    executor.execute(encoderCallback::onEncodeStop);
-                                } catch (RejectedExecutionException e) {
-                                    Logger.e(mTag, "Unable to post to the supplied executor.", e);
-                                }
-                            });
+                            reachEndData();
+                        }
+
+                        // Clear fist video output flag.
+                        if (mIsFirstVideoOutput) {
+                            mIsFirstVideoOutput = false;
                         }
                         break;
                     case CONFIGURED:
@@ -1206,8 +1282,36 @@ public class EncoderImpl implements Encoder {
         }
 
         @ExecutedBy("mEncoderExecutor")
-        @NonNull
-        private BufferInfo resolveOutputBufferInfo(@NonNull BufferInfo bufferInfo) {
+        void reachEndData() {
+            if (mHasEndData) {
+                return;
+            }
+            mHasEndData = true;
+            if (mSignalEosTimeoutFuture != null) {
+                mSignalEosTimeoutFuture.cancel(false);
+                mSignalEosTimeoutFuture = null;
+            }
+            EncoderCallback encoderCallback;
+            Executor executor;
+            synchronized (mLock) {
+                encoderCallback = mEncoderCallback;
+                executor = mEncoderCallbackExecutor;
+            }
+            stopMediaCodec(() -> {
+                if (mState == ERROR) {
+                    // Error occur during stopping.
+                    return;
+                }
+                try {
+                    executor.execute(encoderCallback::onEncodeStop);
+                } catch (RejectedExecutionException e) {
+                    Logger.e(mTag, "Unable to post to the supplied executor.", e);
+                }
+            });
+        }
+
+        @ExecutedBy("mEncoderExecutor")
+        private @NonNull BufferInfo resolveOutputBufferInfo(@NonNull BufferInfo bufferInfo) {
             long adjustedTimeUs = getAdjustedTimeUs(bufferInfo);
             if (bufferInfo.presentationTimeUs == adjustedTimeUs) {
                 return bufferInfo;
@@ -1343,8 +1447,16 @@ public class EncoderImpl implements Encoder {
 
         @ExecutedBy("mEncoderExecutor")
         private boolean isEndOfStream(@NonNull BufferInfo bufferInfo) {
-            return hasEndOfStreamFlag(bufferInfo)
+            return (hasEndOfStreamFlag(bufferInfo) && !shouldSkipPrematureEos())
                     || (mReachStopTimeAsEos && isEosSignalledAndStopTimeReached(bufferInfo));
+        }
+
+        @ExecutedBy("mEncoderExecutor")
+        private boolean shouldSkipPrematureEos() {
+            // This check handles a quirk where some devices incorrectly send an EOS signal
+            // at the beginning of the second recording session.
+            return mIsFirstVideoOutput
+                    && DeviceQuirks.get(PrematureEndOfStreamVideoQuirk.class) != null;
         }
 
         @ExecutedBy("mEncoderExecutor")
@@ -1416,7 +1528,7 @@ public class EncoderImpl implements Encoder {
         }
 
         @Override
-        public void onError(@NonNull MediaCodec mediaCodec, @NonNull MediaCodec.CodecException e) {
+        public void onError(@NonNull MediaCodec mediaCodec, MediaCodec.@NonNull CodecException e) {
             mEncoderExecutor.execute(() -> {
                 switch (mState) {
                     case STARTED:
@@ -1441,6 +1553,7 @@ public class EncoderImpl implements Encoder {
         @Override
         public void onOutputFormatChanged(@NonNull MediaCodec mediaCodec,
                 @NonNull MediaFormat mediaFormat) {
+            Logger.d(mTag, "onOutputFormatChanged = " + mediaFormat);
             mEncoderExecutor.execute(() -> {
                 if (mStopped) {
                     Logger.w(mTag, "Receives onOutputFormatChanged after codec is reset.");
@@ -1453,6 +1566,13 @@ public class EncoderImpl implements Encoder {
                     case PENDING_START:
                     case PENDING_START_PAUSED:
                     case PENDING_RELEASE:
+                        if (mIsVideoEncoder && !isRationalOne(mCaptureToEncodeFrameRateRatio)) {
+                            // MediaMuxer will write these values to the video metadata so Photos
+                            // can recognize that this is a slow-motion video.
+                            mediaFormat.setInteger(PARAMETER_KEY_TIMELAPSE_ENABLED, 1);
+                            mediaFormat.setInteger(PARAMETER_KEY_TIMELAPSE_FPS,
+                                    mMediaFormat.getInteger(MediaFormat.KEY_CAPTURE_RATE));
+                        }
                         EncoderCallback encoderCallback;
                         Executor executor;
                         synchronized (mLock) {
@@ -1485,7 +1605,6 @@ public class EncoderImpl implements Encoder {
     }
 
     @SuppressWarnings("WeakerAccess") // synthetic accessor
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     class SurfaceInput implements Encoder.SurfaceInput {
 
         private final Object mLock = new Object();
@@ -1591,9 +1710,8 @@ public class EncoderImpl implements Encoder {
         private final List<ListenableFuture<InputBuffer>> mAcquisitionList = new ArrayList<>();
 
         /** {@inheritDoc} */
-        @NonNull
         @Override
-        public ListenableFuture<State> fetchData() {
+        public @NonNull ListenableFuture<State> fetchData() {
             return CallbackToFutureAdapter.getFuture(completer -> {
                 mEncoderExecutor.execute(() -> completer.set(mBufferProviderState));
                 return "fetchData";
@@ -1601,9 +1719,8 @@ public class EncoderImpl implements Encoder {
         }
 
         /** {@inheritDoc} */
-        @NonNull
         @Override
-        public ListenableFuture<InputBuffer> acquireBuffer() {
+        public @NonNull ListenableFuture<InputBuffer> acquireBuffer() {
             return CallbackToFutureAdapter.getFuture(completer -> {
                 mEncoderExecutor.execute(() -> {
                     if (mBufferProviderState == State.ACTIVE) {
@@ -1696,13 +1813,10 @@ public class EncoderImpl implements Encoder {
         private Api23Impl() {
         }
 
-        @DoNotInline
-        @NonNull
-        static Surface createPersistentInputSurface() {
+        static @NonNull Surface createPersistentInputSurface() {
             return MediaCodec.createPersistentInputSurface();
         }
 
-        @DoNotInline
         static void setInputSurface(@NonNull MediaCodec mediaCodec, @NonNull Surface surface) {
             mediaCodec.setInputSurface(surface);
         }

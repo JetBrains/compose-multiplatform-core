@@ -19,6 +19,7 @@ package androidx.compose.foundation.text.selection.gestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagFlipperRunner
 import androidx.compose.foundation.text.selection.fetchTextLayoutResult
 import androidx.compose.foundation.text.selection.gestures.util.MultiSelectionSubject
 import androidx.compose.foundation.text.selection.gestures.util.TextSelectionAsserter
@@ -35,24 +36,28 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.util.fastForEach
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth
 import org.junit.Before
 import org.junit.runner.RunWith
 
 @MediumTest
-@RunWith(AndroidJUnit4::class)
+@RunWith(ContextMenuFlagFlipperRunner::class)
 internal class MultiTextSelectionGesturesBidiTest : TextSelectionGesturesBidiTest() {
 
     override val pointerAreaTag = "selectionContainer"
     private val ltrWord = "hello"
-    private val rtlWord = "בבבבב"
-    override val textContent = mutableStateOf("""
+    private val rtlWord = RtlChar.repeat(5)
+    override val textContent =
+        mutableStateOf(
+            """
         $ltrWord $rtlWord $ltrWord
         $rtlWord $ltrWord $rtlWord
         $ltrWord $rtlWord $ltrWord
-    """.trimIndent().trim())
+    """
+                .trimIndent()
+                .trim()
+        )
 
     override lateinit var asserter: TextSelectionAsserter
 
@@ -61,32 +66,32 @@ internal class MultiTextSelectionGesturesBidiTest : TextSelectionGesturesBidiTes
 
     @Before
     fun setupAsserter() {
-        asserter = object : TextSelectionAsserter(
-            textContent = textContent.value,
-            rule = rule,
-            textToolbar = textToolbar,
-            hapticFeedback = hapticFeedback,
-            getActual = { selection.value }
-        ) {
-            override fun subAssert() {
-                Truth.assertAbout(MultiSelectionSubject.withContent(texts.value))
-                    .that(getActual())
-                    .hasSelection(
-                        expected = selection,
-                        startTextDirection = startLayoutDirection,
-                        endTextDirection = endLayoutDirection,
-                    )
+        asserter =
+            object :
+                TextSelectionAsserter(
+                    textContent = textContent.value,
+                    rule = rule,
+                    textToolbar = textToolbar,
+                    spyTextActionModeCallback = spyTextActionModeCallback,
+                    hapticFeedback = hapticFeedback,
+                    getActual = { selection.value }
+                ) {
+                override fun subAssert() {
+                    Truth.assertAbout(MultiSelectionSubject.withContent(texts.value))
+                        .that(getActual())
+                        .hasSelection(
+                            expected = selection,
+                            startTextDirection = startLayoutDirection,
+                            endTextDirection = endLayoutDirection,
+                        )
+                }
             }
-        }
     }
 
     @Composable
     override fun TextContent() {
         texts = derivedStateOf {
-            textContent.value
-                .split("\n")
-                .withIndex()
-                .map { (index, str) -> str to "testTag$index" }
+            textContent.value.split("\n").withIndex().map { (index, str) -> str to "testTag$index" }
         }
 
         textContentIndices = derivedStateOf { texts.value.textContentIndices() }
@@ -95,13 +100,12 @@ internal class MultiTextSelectionGesturesBidiTest : TextSelectionGesturesBidiTes
             texts.value.fastForEach { (str, tag) ->
                 BasicText(
                     text = str,
-                    style = TextStyle(
-                        fontFamily = fontFamily,
-                        fontSize = fontSize,
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag(tag),
+                    style =
+                        TextStyle(
+                            fontFamily = fontFamily,
+                            fontSize = fontSize,
+                        ),
+                    modifier = Modifier.fillMaxWidth().testTag(tag),
                 )
             }
         }
@@ -115,8 +119,10 @@ internal class MultiTextSelectionGesturesBidiTest : TextSelectionGesturesBidiTes
             rule.onNodeWithTag(pointerAreaTag).fetchSemanticsNode().positionInRoot
         val nodePosition = rule.onNodeWithTag(tag).fetchSemanticsNode().positionInRoot
         val textLayoutResult = rule.onNodeWithTag(tag).fetchTextLayoutResult()
-        val boundingBox = textLayoutResult.getBoundingBox(localOffset)
-            .translate(nodePosition - pointerAreaPosition)
+        val boundingBox =
+            textLayoutResult
+                .getBoundingBox(localOffset)
+                .translate(nodePosition - pointerAreaPosition)
         return if (isRtl) boundingBox.centerRight - Offset(2f, 0f)
         else boundingBox.centerLeft + Offset(2f, 0f)
     }

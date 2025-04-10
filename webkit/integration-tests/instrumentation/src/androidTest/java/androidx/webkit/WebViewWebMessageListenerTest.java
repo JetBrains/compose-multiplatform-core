@@ -16,14 +16,11 @@
 
 package androidx.webkit;
 
-import android.net.Uri;
-import android.os.Build;
-import android.webkit.WebView;
-
-import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.filters.SdkSuppress;
+import androidx.webkit.test.common.TestWebMessageListener;
+import androidx.webkit.test.common.WebViewOnUiThread;
+import androidx.webkit.test.common.WebkitUtils;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -35,8 +32,6 @@ import org.junit.runner.RunWith;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Test {@link WebViewCompat#addWebMessageListener} and {@link
@@ -46,7 +41,6 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
 public class WebViewWebMessageListenerTest {
     private static final String BASE_URI = "http://www.example.com";
     private static final String JS_OBJECT_NAME = "myWebMessageListener";
@@ -62,7 +56,7 @@ public class WebViewWebMessageListenerTest {
             + "    </script>"
             + "</body></html>";
 
-    private static final String REPLY_PROXY = "<!DOCTYPE html><html><body>"
+    private static final String REPLY_PROXY_STORE_GLOBAL = "<!DOCTYPE html><html><body>"
             + "    <script>"
             + "        myWebMessageListener.onmessage = function(event) {"
             + "             window.replyReceived = event.data;"
@@ -71,7 +65,7 @@ public class WebViewWebMessageListenerTest {
             + "    </script>"
             + "</body></html>";
 
-    private static final String REPLY_PROXY_ARRAY_BUFFER = "<!DOCTYPE html><html><body>"
+    private static final String REPLY_PROXY_POST_BACK = "<!DOCTYPE html><html><body>"
             + "    <script>"
             + "        myWebMessageListener.onmessage = function(event) {"
             + "             myWebMessageListener.postMessage(event.data);"
@@ -83,40 +77,6 @@ public class WebViewWebMessageListenerTest {
 
     private WebViewOnUiThread mWebViewOnUiThread;
     private final TestWebMessageListener mListener = new TestWebMessageListener();
-
-    private static class TestWebMessageListener implements WebViewCompat.WebMessageListener {
-        private final BlockingQueue<Data> mQueue = new LinkedBlockingQueue<>();
-
-        static class Data {
-            WebMessageCompat mMessage;
-            Uri mSourceOrigin;
-            boolean mIsMainFrame;
-            JavaScriptReplyProxy mReplyProxy;
-
-            Data(WebMessageCompat message, Uri sourceOrigin, boolean isMainFrame,
-                    JavaScriptReplyProxy replyProxy) {
-                mMessage = message;
-                mSourceOrigin = sourceOrigin;
-                mIsMainFrame = isMainFrame;
-                mReplyProxy = replyProxy;
-            }
-        }
-
-        @Override
-        public void onPostMessage(@NonNull WebView webView, @NonNull WebMessageCompat message,
-                @NonNull Uri sourceOrigin,
-                boolean isMainFrame, @NonNull JavaScriptReplyProxy replyProxy) {
-            mQueue.add(new Data(message, sourceOrigin, isMainFrame, replyProxy));
-        }
-
-        public Data waitForOnPostMessage() throws Exception {
-            return WebkitUtils.waitForNextQueueElement(mQueue);
-        }
-
-        public boolean hasNoMoreOnPostMessage() {
-            return mQueue.isEmpty();
-        }
-    }
 
     @Before
     public void setUp() {
@@ -154,7 +114,7 @@ public class WebViewWebMessageListenerTest {
         // in JavaScript.
         loadHtmlSync(BASIC_ARRAY_BUFFER_USAGE);
         TestWebMessageListener.Data data = mListener.waitForOnPostMessage();
-        Assert.assertArrayEquals(new byte[] {1, 2, 3}, data.mMessage.getArrayBuffer());
+        Assert.assertArrayEquals(new byte[]{1, 2, 3}, data.mMessage.getArrayBuffer());
 
         Assert.assertTrue(
                 "Should have no more message at this point.", mListener.hasNoMoreOnPostMessage());
@@ -245,14 +205,42 @@ public class WebViewWebMessageListenerTest {
 
         // REPLY_PROXY html page will set myWebMessageListener.onmessage to save the message to
         // window.replyReceived and call myWebMessageListener.postMessage('hello'); in JavaScript.
-        loadHtmlSync(REPLY_PROXY);
+        loadHtmlSync(REPLY_PROXY_STORE_GLOBAL);
+        TestWebMessageListener.Data data = mListener.waitForOnPostMessage();
+        Assert.assertEquals("hello", data.mMessage.getData());
+
+        final String message = "reply from Java";
+        WebkitUtils.onMainThreadSync(() -> {
+            // Whilst postMessage _can_ be called from any thread, calling from other threads will
+            // just post to the Chromium-internal browser thread task runner, which could get
+            // re-ordered with tasks posted directly to the main looper (as is done below by
+            // mWebViewOnUiThread.evaluateJavascriptSync).
+            //
+            // Calling directly from the UI thread will instead execute the task immediately
+            // (without posting) and thus be observable by any subsequent evaluation. (Both
+            // postMessage and evaluateJavascript use the same IPC channel and should execute in
+            // order.)
+            data.mReplyProxy.postMessage(message);
+        });
+        Assert.assertEquals("\"" + message + "\"",
+                mWebViewOnUiThread.evaluateJavascriptSync("window.replyReceived"));
+    }
+
+    @Test
+    public void testJavaScriptReplyProxyPostStringFromNonUiThread() throws Exception {
+        mWebViewOnUiThread.addWebMessageListener(JS_OBJECT_NAME, MATCH_EXAMPLE_COM, mListener);
+
+        loadHtmlSync(REPLY_PROXY_POST_BACK);
         TestWebMessageListener.Data data = mListener.waitForOnPostMessage();
         Assert.assertEquals("hello", data.mMessage.getData());
 
         final String message = "reply from Java";
         data.mReplyProxy.postMessage(message);
-        Assert.assertEquals("\"" + message + "\"",
-                mWebViewOnUiThread.evaluateJavascriptSync("window.replyReceived"));
+        // evaluateJavascript cannot be used reliably when doing postMessage from outside the UI
+        // thread, as it may get reordered, so we check the message flow via the message listener
+        // instead.
+        Assert.assertEquals(message,
+                mListener.waitForOnPostMessage().mMessage.getData());
     }
 
     private void verifyJavaScriptReplyProxyArrayBuffer(byte[] arrayBuffer) throws Exception {
@@ -260,7 +248,7 @@ public class WebViewWebMessageListenerTest {
 
         // REPLY_PROXY_ARRAY_BUFFER html page will echo back message with
         // myWebMessageListener.postMessage(); in JavaScript.
-        loadHtmlSync(REPLY_PROXY_ARRAY_BUFFER);
+        loadHtmlSync(REPLY_PROXY_POST_BACK);
         TestWebMessageListener.Data data = mListener.waitForOnPostMessage();
         Assert.assertEquals("hello", data.mMessage.getData());
 
@@ -272,7 +260,7 @@ public class WebViewWebMessageListenerTest {
     @Test
     public void testJavaScriptReplyProxyBasicUsage_ArrayBuffer() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.WEB_MESSAGE_ARRAY_BUFFER);
-        verifyJavaScriptReplyProxyArrayBuffer(new byte[] {1, 2, 3, 4, 5});
+        verifyJavaScriptReplyProxyArrayBuffer(new byte[]{1, 2, 3, 4, 5});
     }
 
     @Test

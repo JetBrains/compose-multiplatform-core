@@ -19,15 +19,16 @@ package androidx.camera.core.impl;
 import static androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_CONCURRENT;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.WorkerThread;
 import androidx.camera.core.Camera;
 import androidx.camera.core.Logger;
 import androidx.camera.core.concurrent.CameraCoordinator;
 import androidx.camera.core.concurrent.CameraCoordinator.CameraOperatingMode;
 import androidx.core.util.Preconditions;
+import androidx.tracing.Trace;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -42,7 +43,6 @@ import java.util.concurrent.RejectedExecutionException;
  * Cameras that are in a {@link CameraInternal.State#PENDING_OPEN} state can be notified when
  * there is a slot available to open a camera.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class CameraStateRegistry implements CameraCoordinator.ConcurrentCameraModeListener {
     private static final String TAG = "CameraStateRegistry";
 
@@ -145,6 +145,7 @@ public final class CameraStateRegistry implements CameraCoordinator.ConcurrentCa
             if (mAvailableCameras > 0 || isOpen(registration.getState())) {
                 // Set state directly to OPENING.
                 registration.setState(CameraInternal.State.OPENING);
+                traceState(camera, CameraInternal.State.OPENING);
                 success = true;
             }
 
@@ -179,11 +180,12 @@ public final class CameraStateRegistry implements CameraCoordinator.ConcurrentCa
             if (mCameraCoordinator.getCameraOperatingMode() != CAMERA_OPERATING_MODE_CONCURRENT) {
                 return true;
             }
-            CameraInternal.State selfState = getCameraRegistration(cameraId) != null
-                    ? getCameraRegistration(cameraId).getState() : null;
+            CameraRegistration registration = getCameraRegistration(cameraId);
+            CameraInternal.State selfState = registration != null ? registration.getState() : null;
+            CameraRegistration pairedRegistration =
+                    pairedCameraId != null ? getCameraRegistration(pairedCameraId) : null;
             CameraInternal.State pairedState =
-                    (pairedCameraId != null && getCameraRegistration(pairedCameraId) != null)
-                            ? getCameraRegistration(pairedCameraId).getState() : null;
+                    (pairedRegistration != null) ? pairedRegistration.getState() : null;
             boolean isSelfAvailable = CameraInternal.State.OPEN.equals(selfState)
                     || CameraInternal.State.CONFIGURED.equals(selfState);
             boolean isPairAvailable = CameraInternal.State.OPEN.equals(pairedState)
@@ -203,7 +205,7 @@ public final class CameraStateRegistry implements CameraCoordinator.ConcurrentCa
      */
     public void markCameraState(
             @NonNull Camera camera,
-            @NonNull CameraInternal.State state) {
+            CameraInternal.@NonNull State state) {
         markCameraState(camera, state, true);
     }
 
@@ -225,12 +227,12 @@ public final class CameraStateRegistry implements CameraCoordinator.ConcurrentCa
      *                          immediately if a new slot for opening is available, {@code false}
      *                          otherwise.
      */
-    public void markCameraState(@NonNull Camera camera, @NonNull CameraInternal.State state,
+    public void markCameraState(@NonNull Camera camera, CameraInternal.@NonNull State state,
             boolean notifyImmediately) {
         Map<Camera, CameraRegistration> camerasToNotifyOpen = null;
         CameraRegistration cameraToNotifyConfigure = null;
         synchronized (mLock) {
-            CameraInternal.State previousState = null;
+            CameraInternal.State previousState;
             int previousAvailableCameras = mAvailableCameras;
             if (state == CameraInternal.State.RELEASED) {
                 previousState = unregisterCamera(camera);
@@ -310,8 +312,7 @@ public final class CameraStateRegistry implements CameraCoordinator.ConcurrentCa
 
     // Unregisters the given camera and returns the state before being unregistered
     @GuardedBy("mLock")
-    @Nullable
-    private CameraInternal.State unregisterCamera(@NonNull Camera camera) {
+    private CameraInternal.@Nullable State unregisterCamera(@NonNull Camera camera) {
         CameraRegistration registration = mCameraStates.remove(camera);
         if (registration != null) {
             recalculateAvailableCameras();
@@ -323,9 +324,8 @@ public final class CameraStateRegistry implements CameraCoordinator.ConcurrentCa
 
     // Updates the state of the given camera and returns the previous state.
     @GuardedBy("mLock")
-    @Nullable
-    private CameraInternal.State updateAndVerifyState(@NonNull Camera camera,
-            @NonNull CameraInternal.State state) {
+    private CameraInternal.@Nullable State updateAndVerifyState(@NonNull Camera camera,
+            CameraInternal.@NonNull State state) {
         CameraInternal.State previousState = Preconditions.checkNotNull(mCameraStates.get(camera),
                 "Cannot update state of camera which has not yet been registered. Register with "
                         + "CameraStateRegistry.registerCamera()").setState(state);
@@ -340,13 +340,14 @@ public final class CameraStateRegistry implements CameraCoordinator.ConcurrentCa
 
         // Only update the available camera count if the camera state has changed.
         if (previousState != state) {
+            traceState(camera, state);
             recalculateAvailableCameras();
         }
 
         return previousState;
     }
 
-    private static boolean isOpen(@Nullable CameraInternal.State state) {
+    private static boolean isOpen(CameraInternal.@Nullable State state) {
         return state != null && state.holdsCameraSlot();
     }
 
@@ -403,9 +404,8 @@ public final class CameraStateRegistry implements CameraCoordinator.ConcurrentCa
         }
     }
 
-    @Nullable
     @GuardedBy("mLock")
-    private CameraRegistration getCameraRegistration(@NonNull String targetCameraId) {
+    private @Nullable CameraRegistration getCameraRegistration(@NonNull String targetCameraId) {
         for (Camera camera : mCameraStates.keySet()) {
             String cameraId = ((CameraInfoInternal) camera.getCameraInfo()).getCameraId();
             if (targetCameraId.equals(cameraId)) {
@@ -449,7 +449,7 @@ public final class CameraStateRegistry implements CameraCoordinator.ConcurrentCa
         private final OnOpenAvailableListener mOnOpenAvailableListener;
 
         CameraRegistration(
-                @Nullable CameraInternal.State initialState,
+                CameraInternal.@Nullable State initialState,
                 @NonNull Executor notifyExecutor,
                 @NonNull OnConfigureAvailableListener onConfigureAvailableListener,
                 @NonNull OnOpenAvailableListener onOpenAvailableListener) {
@@ -459,7 +459,7 @@ public final class CameraStateRegistry implements CameraCoordinator.ConcurrentCa
             mOnOpenAvailableListener = onOpenAvailableListener;
         }
 
-        CameraInternal.State setState(@Nullable CameraInternal.State state) {
+        CameraInternal.State setState(CameraInternal.@Nullable State state) {
             CameraInternal.State previousState = mState;
             mState = state;
             return previousState;
@@ -483,6 +483,13 @@ public final class CameraStateRegistry implements CameraCoordinator.ConcurrentCa
             } catch (RejectedExecutionException e) {
                 Logger.e(TAG, "Unable to notify camera to open.", e);
             }
+        }
+    }
+
+    private static void traceState(Camera camera, CameraInternal.State state) {
+        if (Trace.isEnabled()) {
+            String counterName = "CX:State[" + camera + "]";
+            Trace.setCounter(counterName, state.ordinal());
         }
     }
 }

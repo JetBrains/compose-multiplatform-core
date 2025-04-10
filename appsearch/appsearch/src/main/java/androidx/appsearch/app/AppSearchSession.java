@@ -18,9 +18,13 @@ package androidx.appsearch.app;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.RequiresFeature;
+import androidx.appsearch.flags.FlaggedApi;
+import androidx.appsearch.flags.Flags;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.Closeable;
 import java.util.List;
@@ -54,8 +58,7 @@ public interface AppSearchSession extends Closeable {
      * @param  request the schema to set or update the AppSearch database to.
      * @return a {@link ListenableFuture} which resolves to a {@link SetSchemaResponse} object.
      */
-    @NonNull
-    ListenableFuture<SetSchemaResponse> setSchemaAsync(@NonNull SetSchemaRequest request);
+    @NonNull ListenableFuture<SetSchemaResponse> setSchemaAsync(@NonNull SetSchemaRequest request);
 
     /**
      * Retrieves the schema most recently successfully provided to {@link #setSchemaAsync}.
@@ -64,15 +67,13 @@ public interface AppSearchSession extends Closeable {
      */
     // This call hits disk; async API prevents us from treating these calls as properties.
     @SuppressLint("KotlinPropertyAccess")
-    @NonNull
-    ListenableFuture<GetSchemaResponse> getSchemaAsync();
+    @NonNull ListenableFuture<GetSchemaResponse> getSchemaAsync();
 
     /**
      * Retrieves the set of all namespaces in the current database with at least one document.
      *
      * @return The pending result of performing this operation. */
-    @NonNull
-    ListenableFuture<Set<String>> getNamespacesAsync();
+    @NonNull ListenableFuture<Set<String>> getNamespacesAsync();
 
     /**
      * Indexes documents into the {@link AppSearchSession} database.
@@ -87,8 +88,7 @@ public interface AppSearchSession extends Closeable {
      * The values are either {@code null} if the corresponding document was successfully indexed,
      * or a failed {@link AppSearchResult} otherwise.
      */
-    @NonNull
-    ListenableFuture<AppSearchBatchResult<String, Void>> putAsync(
+    @NonNull ListenableFuture<AppSearchBatchResult<String, Void>> putAsync(
             @NonNull PutDocumentsRequest request);
 
     /**
@@ -104,9 +104,189 @@ public interface AppSearchSession extends Closeable {
      * to an {@link AppSearchResult} object with result code:
      * {@link AppSearchResult#RESULT_NOT_FOUND}.
      */
-    @NonNull
-    ListenableFuture<AppSearchBatchResult<String, GenericDocument>> getByDocumentIdAsync(
+    @NonNull ListenableFuture<AppSearchBatchResult<String, GenericDocument>> getByDocumentIdAsync(
             @NonNull GetByDocumentIdRequest request);
+
+    /**
+     * Opens a batch of AppSearch Blobs for writing.
+     *
+     * <p>A "blob" is a large binary object. It is used to store a significant amount of data that
+     * is not searchable, such as images, videos, audio files, or other binary data. Unlike other
+     * fields in AppSearch, blobs are stored as blob files on disk rather than in memory, and use
+     * {@link android.os.ParcelFileDescriptor} to read and write. This allows for efficient handling
+     * of large, non-searchable content.
+     *
+     * <p> Once done writing, call {@link #commitBlobAsync} to commit blob files.
+     *
+     * <p> This call will create a empty blob file for each given {@link AppSearchBlobHandle}, and
+     * a {@link android.os.ParcelFileDescriptor} of that blob file will be returned in the
+     * {@link OpenBlobForWriteResponse}.
+     *
+     * <p> If the blob file is already stored in AppSearch and committed. A failed
+     * {@link AppSearchResult} with error code {@link AppSearchResult#RESULT_ALREADY_EXISTS} will be
+     * associated with the {@link AppSearchBlobHandle}.
+     *
+     * <p> If the blob file is already stored in AppSearch but not committed. A
+     * {@link android.os.ParcelFileDescriptor} of that blob file will be returned for continue
+     * writing.
+     *
+     * <p> For given duplicate {@link AppSearchBlobHandle}, the same
+     * {@link android.os.ParcelFileDescriptor} pointing to the same blob file will be returned.
+     *
+     * <p> Pending blob files won't be lost or auto-commit if {@link AppSearchSession} closed.
+     * Pending blob files will be stored in disk rather than memory. You can re-open
+     * {@link AppSearchSession} and re-write the pending blob files.
+     *
+     * <p> A committed blob file will be considered as an orphan if no {@link GenericDocument}
+     * references it. Uncommitted pending blob files and orphan blobs files will be cleaned up if
+     * they has been created for an extended period (default is 1 week).
+     *
+     * <p> Both pending blob files and committed blob files can be manually removed via
+     * {@link #removeBlobAsync}.
+     *
+     * <p class="caution">
+     * The returned {@link OpenBlobForWriteResponse} must be closed after use to avoid
+     * resource leaks. Failing to close it will result in system file descriptor exhaustion.
+     * </p>
+     *
+     * @param handles The {@link AppSearchBlobHandle}s that identifies the blobs.
+     * @return a response containing the writeable file descriptors.
+     *
+     * @see GenericDocument.Builder#setPropertyBlobHandle
+     */
+    @RequiresFeature(
+            enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
+            name = Features.BLOB_STORAGE)
+    @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
+    @ExperimentalAppSearchApi
+    default @NonNull ListenableFuture<OpenBlobForWriteResponse> openBlobForWriteAsync(
+            @NonNull Set<AppSearchBlobHandle> handles) {
+        throw new UnsupportedOperationException(Features.BLOB_STORAGE
+                + " is not available on this AppSearch implementation.");
+    }
+
+    /**
+     * Removes the blob data from AppSearch.
+     *
+     * <p> After this call, the blob data is removed immediately and cannot be recovered. It will
+     * not accessible via {@link #openBlobForReadAsync}. {@link #openBlobForWriteAsync} could reopen
+     * and rewrite it.
+     *
+     * <p> This API can be used to remove pending blob data and committed blob data.
+     *
+     * <p class="caution">
+     * Removing a committed blob data that is still referenced by documents will leave those
+     * documents with no readable blob content. It is highly recommended to let AppSearch control
+     * the blob data's life cycle. AppSearch automatically recycles orphaned and pending blob data.
+     * The default time to recycle pending and orphan blob file is 1 week. A blob file will be
+     * considered as an orphan if no {@link GenericDocument} references it. If you want to remove a
+     * committed blob data, you should remove the reference documents first.
+     * </p>
+     *
+     * @param handles The {@link AppSearchBlobHandle}s that identifies the blob data.
+     * @return a response containing the remove results.
+     */
+    @RequiresFeature(
+            enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
+            name = Features.BLOB_STORAGE)
+    @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
+    @ExperimentalAppSearchApi
+    default @NonNull ListenableFuture<RemoveBlobResponse> removeBlobAsync(
+            @NonNull Set<AppSearchBlobHandle> handles) {
+        throw new UnsupportedOperationException(Features.BLOB_STORAGE
+                + " is not available on this AppSearch implementation.");
+    }
+
+    /**
+     * Commits the blobs to make it retrievable and immutable.
+     *
+     * <p>After this call, the blob is readable via {@link #openBlobForReadAsync}. Any change to
+     * the content or rewrite via {@link #openBlobForWriteAsync} of this blob won't be allowed.
+     *
+     * <p> If the blob is already stored in AppSearch and committed. A failed
+     * {@link AppSearchResult} with error code {@link AppSearchResult#RESULT_ALREADY_EXISTS} will be
+     * associated with the {@link AppSearchBlobHandle}.
+     *
+     * <p>If the blob content doesn't match the digest in {@link AppSearchBlobHandle}, a failed
+     * {@link AppSearchResult} with error code {@link AppSearchResult#RESULT_INVALID_ARGUMENT} will
+     * be associated with the {@link AppSearchBlobHandle}. The pending Blob file will be removed
+     * from AppSearch.
+     *
+     * <p> Pending blobs won't be lost or auto-commit if {@link AppSearchSession} closed.
+     * Pending blobs will store in disk rather than memory. You can re-open {@link AppSearchSession}
+     * and re-write the pending blobs.
+     *
+     * <p> The default time to recycle pending and orphan blobs is 1 week. A blob will be considered
+     * as an orphan if no {@link GenericDocument} references it.
+     *
+     * <p> Both pending blob files and committed blob files can be manually removed via
+     * {@link #removeBlobAsync}.
+     *
+     * @param handles The {@link AppSearchBlobHandle}s that identifies the blobs.
+     * @return a response containing the commit results.
+     *
+     * @see GenericDocument.Builder#setPropertyBlobHandle
+     */
+    @RequiresFeature(
+            enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
+            name = Features.BLOB_STORAGE)
+    @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
+    @ExperimentalAppSearchApi
+    default @NonNull ListenableFuture<CommitBlobResponse> commitBlobAsync(
+            @NonNull Set<AppSearchBlobHandle> handles) {
+        throw new UnsupportedOperationException(Features.BLOB_STORAGE
+                + " is not available on this AppSearch implementation.");
+    }
+
+    /**
+     * Opens a batch of AppSearch Blobs for reading.
+     *
+     * <p> Only blobs committed via {@link #commitBlobAsync} are available for reading.
+     *
+     * <p class="caution">
+     * The returned {@link OpenBlobForReadResponse} must be closed after use to avoid
+     * resource leaks. Failing to close it will result in system file descriptor exhaustion.
+     * </p>
+     *
+     * @param handles The {@link AppSearchBlobHandle}s that identifies the blobs.
+     * @return a response containing the readable file descriptors.
+     *
+     * @see GenericDocument.Builder#setPropertyBlobHandle
+     */
+    @RequiresFeature(
+            enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
+            name = Features.BLOB_STORAGE)
+    @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
+    @ExperimentalAppSearchApi
+    default @NonNull ListenableFuture<OpenBlobForReadResponse> openBlobForReadAsync(
+            @NonNull Set<AppSearchBlobHandle> handles) {
+        throw new UnsupportedOperationException(Features.BLOB_STORAGE
+                + " is not available on this AppSearch implementation.");
+    }
+
+    /**
+     * Sets the visibility configuration for all blob namespaces within an appsearch database.
+     *
+     * <p> Blobs under the same namespace will share same visibility settings.
+     *
+     * <p> The default setting is blobs will be only visible to the owner package and System. To
+     * configure other kinds of sharing, set {@link SchemaVisibilityConfig} via
+     * {@link SetBlobVisibilityRequest}.
+     *
+     * @param request The request holds visibility settings for all blob namespaces
+     * @return The pending result of performing this operation which resolves to {@code null} on
+     *     success.
+     */
+    @RequiresFeature(
+            enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
+            name = Features.BLOB_STORAGE)
+    @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
+    @ExperimentalAppSearchApi
+    default @NonNull ListenableFuture<Void> setBlobVisibilityAsync(
+            @NonNull SetBlobVisibilityRequest request) {
+        throw new UnsupportedOperationException(Features.BLOB_STORAGE
+                + " is not available on this AppSearch implementation.");
+    }
 
     /**
      * Retrieves documents from the open {@link AppSearchSession} that match a given query string
@@ -176,7 +356,7 @@ public interface AppSearchSession extends Closeable {
      * <p>The newly added custom functions covered by this feature are:
      * <ul>
      *     <li>createList(String...)</li>
-     *     <li>search(String, List<String>)</li>
+     *     <li>search(String, {@code List<String>})</li>
      *     <li>propertyDefined(String)</li>
      * </ul>
      *
@@ -187,13 +367,14 @@ public interface AppSearchSession extends Closeable {
      * query language and an optional list of strings that specify the properties to be
      * restricted to. This exists as a convenience for multiple property restricts. So,
      * for example, the query `(subject:foo OR body:foo) (subject:bar OR body:bar)`
-     * could be rewritten as `search("foo bar", createList("subject", "bar"))`.
+     * could be rewritten as `search("foo bar", createList("subject", "body"))`.
      *
      * <p>propertyDefined takes a string specifying the property of interest and matches all
      * documents of any type that defines the specified property
      * (ex. `propertyDefined("sender.name")`). Note that propertyDefined will match so long as
-     * the document's type defines the specified property. It does NOT require that the document
-     * actually hold any values for this property.
+     * the document's type defines the specified property. Unlike the "hasProperty" function
+     * below, this function does NOT require that the document actually hold any values for this
+     * property.
      *
      * <p>{@link Features#NUMERIC_SEARCH}: This feature covers numeric search expressions. In the
      * query language, the values of properties that have
@@ -209,6 +390,85 @@ public interface AppSearchSession extends Closeable {
      *
      * <p>Ex. `"foo/bar" OR baz` will ensure that 'foo/bar' is treated as a single 'verbatim' token.
      *
+     * <p>{@link Features#LIST_FILTER_HAS_PROPERTY_FUNCTION}: This feature covers the
+     * "hasProperty" function in query expressions, which takes a string specifying the property
+     * of interest and matches all documents that hold values for this property. Not to be
+     * confused with the "propertyDefined" function, which checks whether a document's schema
+     * has defined the property, instead of whether a document itself has this property.
+     *
+     * <p>Ex. `foo hasProperty("sender.name")` will return all documents that have the term "foo"
+     * AND have values in the property "sender.name". Consider two documents, documentA and
+     * documentB, of the same schema with an optional property "sender.name". If documentA sets
+     * "foo" in this property but documentB does not, then `hasProperty("sender.name")` will only
+     * match documentA. However, `propertyDefined("sender.name")` will match both documentA and
+     * documentB, regardless of whether a value is actually set.
+     *
+     * <p>{@link Features#LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION}: This feature covers the
+     * "matchScoreExpression" function in query expressions.
+     *
+     * <p>Usage: matchScoreExpression({score_expression}, {low}, {high})
+     * <ul>
+     *     <li>matchScoreExpression matches all documents with scores falling within the
+     *     specified range. These scores are calculated using the provided score expression,
+     *     which adheres to the syntax defined in
+     *     {@link SearchSpec.Builder#setRankingStrategy(String)}.</li>
+     *     <li>"score_expression" is a string value that specifies the score expression.</li>
+     *     <li>"low" and "high" are floating point numbers that specify the score range. The
+     *     "high" parameter is optional; if not provided, it defaults to positive infinity.</li>
+     * </ul>
+     *
+     * <p>Ex. `matchScoreExpression("this.documentScore()", 3, 4)` will return all documents that
+     * have document scores from 3 to 4.
+     *
+     * <p>{@link Features#SCHEMA_EMBEDDING_PROPERTY_CONFIG}: This feature covers the
+     * "semanticSearch" and "getEmbeddingParameter" functions in query expressions, which are
+     * used for semantic search.
+     *
+     * <p>Usage: semanticSearch(getEmbeddingParameter({embedding_index}), {low}, {high}, {metric})
+     * <ul>
+     *     <li>semanticSearch matches all documents that have at least one embedding vector with
+     *     a matching model signature (see {@link EmbeddingVector#getModelSignature()}) and a
+     *     similarity score within the range specified based on the provided metric.</li>
+     *     <li>getEmbeddingParameter({embedding_index}) retrieves the embedding search passed in
+     *     {@link SearchSpec.Builder#addEmbeddingParameters} based on the index specified, which
+     *     starts from 0.</li>
+     *     <li>"low" and "high" are floating point numbers that specify the similarity score
+     *     range. If omitted, they default to negative and positive infinity, respectively.</li>
+     *     <li>"metric" is a string value that specifies how embedding similarities should be
+     *     calculated. If omitted, it defaults to the metric specified in
+     *     {@link SearchSpec.Builder#setDefaultEmbeddingSearchMetricType(int)}. Possible
+     *     values:</li>
+     *     <ul>
+     *         <li>"COSINE"</li>
+     *         <li>"DOT_PRODUCT"</li>
+     *         <li>"EUCLIDEAN"</li>
+     *     </ul>
+     * </ul>
+     *
+     * <p>Examples:
+     * <ul>
+     *     <li>Basic: semanticSearch(getEmbeddingParameter(0), 0.5, 1, "COSINE")</li>
+     *     <li>With a property restriction:
+     *     property1:semanticSearch(getEmbeddingParameter(0), 0.5, 1)</li>
+     *     <li>Hybrid: foo OR semanticSearch(getEmbeddingParameter(0), 0.5, 1)</li>
+     *     <li>Complex: (foo OR semanticSearch(getEmbeddingParameter(0), 0.5, 1)) AND bar</li>
+     * </ul>
+     *
+     * <p>{@link Features#SEARCH_SPEC_SEARCH_STRING_PARAMETERS}: This feature covers the
+     * "getSearchStringParameter" function in query expressions, which substitutes the string
+     * provided at the same index in {@link SearchSpec.Builder#addSearchStringParameters} into the
+     * query as plain text. This string is then segmented, normalized and stripped of
+     * punctuation-only segments. The remaining tokens are then AND'd together. This function is
+     * useful for callers who wish to provide user input, but want to ensure that that user input
+     * does not invoke any query operators.
+     *
+     * <p>Usage: getSearchStringParameter({search_parameter_strings_index})
+     *
+     * <p>Ex. `foo OR getSearchStringParameter(0)` with {@link SearchSpec#getSearchStringParameters}
+     * returning {"bar OR baz."}. The string "bar OR baz." will be segmented into "bar", "OR",
+     * "baz", ".". Punctuation is removed and the segments are normalized to "bar", "or", "baz".
+     * This query will be equivalent to `foo OR (bar AND or AND baz)`.
+     *
      * <p>The availability of each of these features can be checked by calling
      * {@link Features#isFeatureSupported} with the desired feature.
      *
@@ -223,8 +483,9 @@ public interface AppSearchSession extends Closeable {
      *                        match type, etc.
      * @return a {@link SearchResults} object for retrieved matched documents.
      */
-    @NonNull
-    SearchResults search(@NonNull String queryExpression, @NonNull SearchSpec searchSpec);
+    // TODO(b/326656531): Refine the javadoc to provide guidance on the best practice of
+    //  embedding searches and how to select an appropriate metric.
+    @NonNull SearchResults search(@NonNull String queryExpression, @NonNull SearchSpec searchSpec);
 
     /**
      * Retrieves suggested Strings that could be used as {@code queryExpression} in
@@ -285,8 +546,7 @@ public interface AppSearchSession extends Closeable {
      *
      * @see #search(String, SearchSpec)
      */
-    @NonNull
-    ListenableFuture<List<SearchSuggestionResult>> searchSuggestionAsync(
+    @NonNull ListenableFuture<List<SearchSuggestionResult>> searchSuggestionAsync(
             @NonNull String suggestionQueryExpression,
             @NonNull SearchSuggestionSpec searchSuggestionSpec);
 
@@ -306,8 +566,7 @@ public interface AppSearchSession extends Closeable {
      * @return The pending result of performing this operation which resolves to {@code null} on
      *     success.
      */
-    @NonNull
-    ListenableFuture<Void> reportUsageAsync(@NonNull ReportUsageRequest request);
+    @NonNull ListenableFuture<Void> reportUsageAsync(@NonNull ReportUsageRequest request);
 
     /**
      * Removes {@link GenericDocument} objects by document IDs in a namespace from the
@@ -328,8 +587,7 @@ public interface AppSearchSession extends Closeable {
      * or a failed {@link AppSearchResult} otherwise. IDs that are not found will return a failed
      * {@link AppSearchResult} with a result code of {@link AppSearchResult#RESULT_NOT_FOUND}.
      */
-    @NonNull
-    ListenableFuture<AppSearchBatchResult<String, Void>> removeAsync(
+    @NonNull ListenableFuture<AppSearchBatchResult<String, Void>> removeAsync(
             @NonNull RemoveByDocumentIdRequest request);
 
     /**
@@ -352,8 +610,7 @@ public interface AppSearchSession extends Closeable {
      * {@link JoinSpec} lets you join docs that are not owned by the caller, so the semantics of
      * failures from this method would be complex.
      */
-    @NonNull
-    ListenableFuture<Void> removeAsync(@NonNull String queryExpression,
+    @NonNull ListenableFuture<Void> removeAsync(@NonNull String queryExpression,
             @NonNull SearchSpec searchSpec);
 
     /**
@@ -364,8 +621,7 @@ public interface AppSearchSession extends Closeable {
      *
      * @return a {@link ListenableFuture} which resolves to a {@link StorageInfo} object.
      */
-    @NonNull
-    ListenableFuture<StorageInfo> getStorageInfoAsync();
+    @NonNull ListenableFuture<StorageInfo> getStorageInfoAsync();
 
     /**
      * Flush all schema and document updates, additions, and deletes to disk if possible.
@@ -378,15 +634,13 @@ public interface AppSearchSession extends Closeable {
      * {@link AppSearchResult#RESULT_INTERNAL_ERROR} will be set to the future if we hit error when
      * save to disk.
      */
-    @NonNull
-    ListenableFuture<Void> requestFlushAsync();
+    @NonNull ListenableFuture<Void> requestFlushAsync();
 
     /**
      * Returns the {@link Features} to check for the availability of certain features
      * for this session.
      */
-    @NonNull
-    Features getFeatures();
+    @NonNull Features getFeatures();
 
     /**
      * Closes the {@link AppSearchSession} to persist all schema and document updates, additions,

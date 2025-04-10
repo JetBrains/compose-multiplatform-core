@@ -17,15 +17,13 @@ package androidx.privacysandbox.sdkruntime.core
 
 import android.app.sdksandbox.LoadSdkException
 import android.os.Bundle
-import androidx.annotation.DoNotInline
 import androidx.annotation.IntDef
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
 
 /**
- * Compat alternative for [LoadSdkException].
- * Thrown from [SandboxedSdkProviderCompat.onLoadSdk].
+ * Compat alternative for [LoadSdkException]. Thrown from [SandboxedSdkProviderCompat.onLoadSdk].
  *
  * @see [LoadSdkException]
  */
@@ -36,9 +34,7 @@ class LoadSdkCompatException : Exception {
      *
      * @see [LoadSdkException.getLoadSdkErrorCode]
      */
-    @field:LoadSdkErrorCode
-    @get:LoadSdkErrorCode
-    val loadSdkErrorCode: Int
+    @field:LoadSdkErrorCode @get:LoadSdkErrorCode val loadSdkErrorCode: Int
 
     /**
      * Extra error information this exception was constructed with.
@@ -54,8 +50,9 @@ class LoadSdkCompatException : Exception {
      * @param loadSdkErrorCode The result code.
      * @param message The detailed message.
      * @param cause The cause of the exception. A null value is permitted, and indicates that the
-     *  cause is nonexistent or unknown.
-     * @param extraInformation Extra error information. This is empty if there is no such information.
+     *   cause is nonexistent or unknown.
+     * @param extraInformation Extra error information. This is empty if there is no such
+     *   information.
      */
     @RestrictTo(LIBRARY_GROUP)
     @JvmOverloads
@@ -105,9 +102,9 @@ class LoadSdkCompatException : Exception {
     annotation class LoadSdkErrorCode
 
     /**
-     *  Create platform [LoadSdkException] from compat exception.
+     * Create platform [LoadSdkException] from compat exception.
      *
-     *  @return Platform exception.
+     * @return Platform exception.
      */
     @RequiresApi(34)
     @RestrictTo(LIBRARY_GROUP)
@@ -118,15 +115,10 @@ class LoadSdkCompatException : Exception {
     @RequiresApi(34)
     private object Api34Impl {
 
-        @DoNotInline
         fun toLoadSdkException(ex: LoadSdkCompatException): LoadSdkException {
-            return LoadSdkException(
-                ex.cause!!,
-                ex.extraInformation
-            )
+            return LoadSdkException(ex.cause!!, ex.extraInformation)
         }
 
-        @DoNotInline
         fun toLoadCompatSdkException(ex: LoadSdkException): LoadSdkCompatException {
             return LoadSdkCompatException(
                 toLoadSdkErrorCodeCompat(ex.loadSdkErrorCode),
@@ -137,9 +129,7 @@ class LoadSdkCompatException : Exception {
         }
 
         @LoadSdkErrorCode
-        private fun toLoadSdkErrorCodeCompat(
-            value: Int
-        ): Int {
+        private fun toLoadSdkErrorCodeCompat(value: Int): Int {
             return value // TODO(b/249982002): Validate and convert
         }
     }
@@ -198,18 +188,18 @@ class LoadSdkCompatException : Exception {
         /**
          * Internal error while loading SDK.
          *
-         * This indicates a generic internal error happened while applying the call from
-         * client application.
+         * This indicates a generic internal error happened while applying the call from client
+         * application.
          *
          * @see [android.app.sdksandbox.SdkSandboxManager.LOAD_SDK_INTERNAL_ERROR]
          */
         const val LOAD_SDK_INTERNAL_ERROR = 500
 
         /**
-         *  Create compat exception from platform [LoadSdkException].
+         * Create compat exception from platform [LoadSdkException].
          *
-         *  @param ex Platform exception
-         *  @return Compat exception.
+         * @param ex Platform exception
+         * @return Compat exception.
          */
         @RequiresApi(34)
         @RestrictTo(LIBRARY_GROUP)

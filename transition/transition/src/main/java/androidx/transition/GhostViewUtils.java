@@ -21,13 +21,12 @@ import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 class GhostViewUtils {
 
-    @Nullable
-    static GhostView addGhost(@NonNull View view, @NonNull ViewGroup viewGroup,
+    static @Nullable GhostView addGhost(@NonNull View view, @NonNull ViewGroup viewGroup,
             @Nullable Matrix matrix) {
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.P) {
             // Use the platform implementation on P as we can't backport the shadows drawing.

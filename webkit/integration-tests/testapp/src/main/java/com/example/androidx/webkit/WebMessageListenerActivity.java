@@ -36,9 +36,6 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.JavaScriptReplyProxy;
 import androidx.webkit.WebMessageCompat;
@@ -46,6 +43,9 @@ import androidx.webkit.WebMessagePortCompat;
 import androidx.webkit.WebViewAssetLoader;
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -73,10 +73,9 @@ public class WebMessageListenerActivity extends AppCompatActivity {
         }
 
         @Override
-        @RequiresApi(21)
         public WebResourceResponse shouldInterceptRequest(WebView view,
                 WebResourceRequest request) {
-            return mAssetLoader.shouldInterceptRequest(Api21Impl.getUrl(request));
+            return mAssetLoader.shouldInterceptRequest(request.getUrl());
         }
 
         @Override

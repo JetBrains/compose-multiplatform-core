@@ -14,8 +14,15 @@
  * limitations under the License.
  */
 
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
 import androidx.build.BundleInsideHelper
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -25,23 +32,27 @@ plugins {
 BundleInsideHelper.forInsideLintJar(project)
 
 dependencies {
-    compileOnly(libs.androidLintMinComposeApi)
+    compileOnly(libs.androidLintApiStableAnalysis)
     compileOnly(libs.kotlinStdlib)
-    bundleInside(projectOrArtifact(":compose:lint:common"))
+    compileOnly(libs.intellijCore)
+    compileOnly(libs.uast)
+    bundleInside(project(":compose:lint:common"))
+    bundleInside(project(":navigation:lint:common"))
 
-    testImplementation(projectOrArtifact(":compose:lint:common-test"))
+    testRuntimeOnly(libs.kotlinReflect)
+
+    testImplementation(project(":compose:lint:common-test"))
+    testImplementation(project(":navigation:lint:common-test"))
     testImplementation(libs.kotlinStdlib)
-    testImplementation(libs.kotlinReflect)
     testImplementation(libs.kotlinStdlibJdk8)
-    testImplementation(libs.androidLint)
-    testImplementation(libs.androidLintTests)
+    testImplementation(libs.androidLintApiStableAnalysis)
+    testImplementation(libs.androidLintTestsStableAnalysis)
     testImplementation(libs.junit)
-    testImplementation(libs.truth)
 }
 
 androidx {
     name = "Navigation Compose Lint"
-    type = LibraryType.LINT
+    type = SoftwareType.LINT
     inceptionYear = "2021"
     description = "Lint checks for Navigation Compose"
 }

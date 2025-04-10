@@ -18,12 +18,14 @@ package androidx.compose.ui.platform.coreshims;
 
 import static android.os.Build.VERSION.SDK_INT;
 
+import android.os.Bundle;
 import android.view.ViewStructure;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing features in {@link ViewStructure}.
@@ -47,8 +49,7 @@ public class ViewStructureCompat {
      * @return wrapped class
      */
     @RequiresApi(23)
-    @NonNull
-    public static ViewStructureCompat toViewStructureCompat(
+    public static @NonNull ViewStructureCompat toViewStructureCompat(
             @NonNull ViewStructure contentCaptureSession) {
         return new ViewStructureCompat(contentCaptureSession);
     }
@@ -63,13 +64,33 @@ public class ViewStructureCompat {
      * @see ViewStructureCompat#toViewStructureCompat(ViewStructure)
      */
     @RequiresApi(23)
-    @NonNull
-    public ViewStructure toViewStructure() {
+    public @NonNull ViewStructure toViewStructure() {
         return (ViewStructure) mWrappedObj;
     }
 
     private ViewStructureCompat(@NonNull ViewStructure viewStructure) {
         this.mWrappedObj = viewStructure;
+    }
+
+    /**
+     * Set the identifier for this view.
+     *
+     * @param id The view's identifier, as per {@link android.view.View#getId View.getId()}.
+     * @param packageName The package name of the view's identifier, or null if there is none.
+     * @param typeName The type name of the view's identifier, or null if there is none.
+     * @param entryName The entry name of the view's identifier, or null if there is none.
+     *
+     * Compatibility behavior:
+     * <ul>
+     * <li>SDK 23 and above, this method matches platform behavior.
+     * <li>SDK 22 and below, this method does nothing.
+     * </ul>
+     */
+    public void setId(int id, @Nullable String packageName, @Nullable String typeName,
+            @Nullable String entryName) {
+        if (SDK_INT >= 23) {
+            Api23Impl.setId((ViewStructure) mWrappedObj, id, packageName, typeName, entryName);
+        }
     }
 
     /**
@@ -167,37 +188,59 @@ public class ViewStructureCompat {
         }
     }
 
+    /**
+     * Get extra data associated with this view structure; the returned Bundle is mutable,
+     * allowing you to view and modify its contents.  Keys placed in the Bundle should use
+     * an appropriate namespace prefix (such as com.google.MY_KEY) to avoid conflicts.
+     *
+     * Compatibility behavior:
+     * <ul>
+     * <li>SDK 23 and above, this method matches platform behavior.
+     * <li>SDK 22 and below, this method returns null.
+     * </ul>
+     */
+    public @Nullable Bundle getExtras() {
+        if (SDK_INT >= 23) {
+            return Api23Impl.getExtras((ViewStructure) mWrappedObj);
+        }
+        return null;
+    }
+
     @RequiresApi(23)
     private static class Api23Impl {
         private Api23Impl() {
             // This class is not instantiable.
         }
 
-        @DoNotInline
+        static void setId(ViewStructure viewStructure, int id, String packageName, String typeName,
+                String entryName) {
+            viewStructure.setId(id, packageName, typeName, entryName);
+        }
+
         static void setDimens(ViewStructure viewStructure, int left, int top, int scrollX,
                 int scrollY, int width, int height) {
             viewStructure.setDimens(left, top, scrollX, scrollY, width, height);
         }
 
-        @DoNotInline
         static void setText(ViewStructure viewStructure, CharSequence charSequence) {
             viewStructure.setText(charSequence);
         }
 
-        @DoNotInline
         static void setClassName(ViewStructure viewStructure, String string) {
             viewStructure.setClassName(string);
         }
 
-        @DoNotInline
         static void setContentDescription(ViewStructure viewStructure, CharSequence charSequence) {
             viewStructure.setContentDescription(charSequence);
         }
 
-        @DoNotInline
         static void setTextStyle(
                 ViewStructure viewStructure, float size, int fgColor, int bgColor, int style) {
             viewStructure.setTextStyle(size, fgColor, bgColor, style);
+        }
+
+        static Bundle getExtras(ViewStructure viewStructure) {
+            return viewStructure.getExtras();
         }
     }
 }

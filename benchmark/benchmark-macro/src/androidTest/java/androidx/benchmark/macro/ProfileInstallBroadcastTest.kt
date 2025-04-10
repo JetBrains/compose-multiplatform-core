@@ -17,27 +17,31 @@
 package androidx.benchmark.macro
 
 import android.os.Build
-import androidx.benchmark.junit4.PerfettoTraceRule
-import androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import kotlin.test.assertContains
+import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import org.junit.Rule
+import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class ProfileInstallBroadcastTest {
-    @OptIn(ExperimentalPerfettoCaptureApi::class)
-    @get:Rule
-    val perfettoTraceRule = PerfettoTraceRule()
-
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
     @Test
     fun installProfile() {
         assertNull(ProfileInstallBroadcast.installProfile(Packages.TARGET))
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
+    @Test
+    fun installProfile_missing() {
+        val errorString = ProfileInstallBroadcast.installProfile(Packages.MISSING)
+        assertNotNull(errorString)
+        assertContains(errorString!!, "The baseline profile install broadcast was not received")
     }
 
     @Test
@@ -46,14 +50,89 @@ class ProfileInstallBroadcastTest {
         assertNull(ProfileInstallBroadcast.skipFileOperation(Packages.TARGET, "DELETE_SKIP_FILE"))
     }
 
+    @Test
+    fun skipFileOperation_missing() {
+        ProfileInstallBroadcast.skipFileOperation(Packages.MISSING, "WRITE_SKIP_FILE").apply {
+            assertNotNull(this)
+            assertContains(this!!, "The baseline profile skip file broadcast was not received")
+        }
+        ProfileInstallBroadcast.skipFileOperation(Packages.MISSING, "DELETE_SKIP_FILE").apply {
+            assertNotNull(this)
+            assertContains(this!!, "The baseline profile skip file broadcast was not received")
+        }
+    }
+
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
     @Test
     fun saveProfile() {
         assertNull(ProfileInstallBroadcast.saveProfile(Packages.TARGET))
     }
 
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
+    @Test
+    fun saveProfile_missing() {
+        val errorString = ProfileInstallBroadcast.saveProfile(Packages.MISSING)
+        assertNotNull(errorString)
+        assertContains(errorString!!, "The save profile broadcast was not received")
+    }
+
     @Test
     fun dropShaderCache() {
         assertNull(ProfileInstallBroadcast.dropShaderCache(Packages.TARGET))
+    }
+
+    @Test
+    fun dropShaderCache_missing() {
+        val errorString = ProfileInstallBroadcast.dropShaderCache(Packages.MISSING)
+        assertNotNull(errorString)
+        assertContains(errorString!!, "The DROP_SHADER_CACHE broadcast was not received")
+
+        // validate extra instructions
+        assertContains(
+            errorString,
+            "verify: 1) androidx.profileinstaller.ProfileInstallReceiver appears unobfuscated"
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
+    @Test
+    fun saveProfilesForAllProcesses_target() {
+        // first command just used to wake target - otherwise we'd get 0
+        ProfileInstallBroadcast.dropShaderCache(Packages.TARGET)
+
+        assertEquals(
+            ProfileInstallBroadcast.SaveProfileResult(1, null),
+            ProfileInstallBroadcast.saveProfilesForAllProcesses(Packages.TARGET)
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
+    @Test
+    fun saveProfilesForAllProcesses_self() {
+        val result = ProfileInstallBroadcast.saveProfilesForAllProcesses(Packages.TEST)
+        // only one process, but we don't care if succeeds
+        // (since this test may not depend on profileinstaller)
+        assertEquals(1, result.processCount)
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
+    @Test
+    fun saveProfilesForAllProcesses_missing() {
+        assertEquals(
+            ProfileInstallBroadcast.SaveProfileResult(0, null),
+            ProfileInstallBroadcast.saveProfilesForAllProcesses(Packages.MISSING)
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
+    @Test
+    fun saveProfilesForAllProcesses_this() {
+        // we remove the receiver in the test to enable testing against a running app without it,
+        // but this doesn't test the BENCHMARK_OPERATION code path since the test is the
+        // main process, so uses the legacy broadcast for compatibility
+        val result = ProfileInstallBroadcast.saveProfilesForAllProcesses(Packages.TEST)
+        assertEquals(1, result.processCount)
+        assertNotNull(result.error)
+        assertContains(result.error!!, "The save profile broadcast was not received.")
     }
 }

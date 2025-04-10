@@ -16,29 +16,24 @@
 
 package androidx.camera.camera2.pipe.media
 
-import android.os.Build
-import androidx.annotation.RequiresApi
-
 /**
  * Interface for objects that know how to finalize arbitrary objects.
  *
  * This is primarily used by classes that may need to intercept and do something with an
  * intermediate object before it is fully closed.
  */
-
-interface Finalizer<in T> {
-    fun finalize(value: T?)
+public interface Finalizer<in T> {
+    public fun finalize(value: T?)
 }
 
 /** Simple [Finalizer] that can be used with [AutoCloseable] objects to close and release them. */
-@RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-object ClosingFinalizer : Finalizer<AutoCloseable> {
+public object ClosingFinalizer : Finalizer<AutoCloseable> {
     override fun finalize(value: AutoCloseable?) {
         value?.close()
     }
 }
 
 /** Simple [Finalizer] that does nothing. Often used for objects that do not need to be closed. */
-object NoOpFinalizer : Finalizer<Any?> {
+public object NoOpFinalizer : Finalizer<Any?> {
     override fun finalize(value: Any?) {}
 }

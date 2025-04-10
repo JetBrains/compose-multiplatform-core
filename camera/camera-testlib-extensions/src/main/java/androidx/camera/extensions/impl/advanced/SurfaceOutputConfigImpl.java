@@ -18,7 +18,7 @@ package androidx.camera.extensions.impl.advanced;
 
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Use Surface directly to create the OutputConfiguration.
@@ -29,6 +29,5 @@ public interface SurfaceOutputConfigImpl extends Camera2OutputConfigImpl {
     /**
      * Get the {@link Surface}. It'll return valid surface only when type is TYPE_SURFACE.
      */
-    @NonNull
-    Surface getSurface();
+    @NonNull Surface getSurface();
 }

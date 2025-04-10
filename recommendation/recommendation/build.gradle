@@ -1,4 +1,11 @@
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -6,21 +13,18 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api(libs.jspecify)
+    api("androidx.annotation:annotation:1.8.1")
 }
 
 android {
-    defaultConfig {
-        minSdkVersion 21
-    }
-    namespace "androidx.recommendation"
+    namespace = "androidx.recommendation"
 }
 
 androidx {
     name = "Recommendation"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2015"
     description = "Android Support Recommendation"
     failOnDeprecationWarnings = false
-    metalavaK2UastEnabled = true
 }

@@ -16,9 +16,9 @@
 
 package androidx.camera.core.impl.utils.executor;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.CameraXThreads;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -28,7 +28,6 @@ import java.util.concurrent.ThreadFactory;
 /**
  * A singleton executor used for non-blocking tasks.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 final class HighPriorityExecutor implements Executor {
     private static volatile Executor sExecutor;
 

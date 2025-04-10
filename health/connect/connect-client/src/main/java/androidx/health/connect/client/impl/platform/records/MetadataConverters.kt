@@ -38,7 +38,11 @@ internal fun PlatformMetadata.toSdkMetadata(): Metadata {
     )
 }
 
-internal fun PlatformDevice.toSdkDevice(): Device {
+internal fun PlatformDevice.toSdkDevice(): Device? {
+    // Convert Platform default to null (Jetpack default). See b/368338084
+    if (this == PlatformDeviceBuilder().build()) {
+        return null
+    }
     @Suppress("WrongConstant") // Platform intdef and jetpack intdef match in value.
     return Device(manufacturer = manufacturer, model = model, type = type)
 }

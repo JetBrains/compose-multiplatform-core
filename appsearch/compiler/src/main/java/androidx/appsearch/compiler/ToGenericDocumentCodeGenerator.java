@@ -20,7 +20,6 @@ import static androidx.appsearch.compiler.CodegenUtils.createNewArrayExpr;
 import static androidx.appsearch.compiler.IntrospectionHelper.APPSEARCH_EXCEPTION_CLASS;
 import static androidx.appsearch.compiler.IntrospectionHelper.GENERIC_DOCUMENT_CLASS;
 
-import androidx.annotation.NonNull;
 import androidx.appsearch.compiler.AnnotatedGetterOrField.ElementTypeCategory;
 import androidx.appsearch.compiler.annotationwrapper.DataPropertyAnnotation;
 import androidx.appsearch.compiler.annotationwrapper.DocumentPropertyAnnotation;
@@ -36,6 +35,8 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.WildcardTypeName;
+
+import org.jspecify.annotations.NonNull;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
@@ -62,7 +63,7 @@ class ToGenericDocumentCodeGenerator {
     public static void generate(
             @NonNull ProcessingEnvironment env,
             @NonNull DocumentModel model,
-            @NonNull TypeSpec.Builder classBuilder) {
+            TypeSpec.@NonNull Builder classBuilder) {
         new ToGenericDocumentCodeGenerator(env, model).generate(classBuilder);
     }
 
@@ -165,10 +166,10 @@ class ToGenericDocumentCodeGenerator {
         //       care of unboxing and widening where necessary.
         //
         //   1b: CollectionCallToArray
-        //       Collection contains String or GenericDocument.
-        //       We have to convert this into an array of String[] or GenericDocument[], but no
-        //       conversion of the collection elements is needed. We can use Collection#toArray for
-        //       this.
+        //       Collection contains String, GenericDocument, EmbeddingVector or
+        //       AppSearchBlobHandle. We have to convert this into an array of String[],
+        //       GenericDocument[], EmbeddingVector[] or AppSearchBlobHandle[], but no conversion of
+        //       the collection elements is needed. We can use Collection#toArray for this.
         //
         //   1c: CollectionForLoopCallToGenericDocument
         //       Collection contains a class which is annotated with @Document.
@@ -188,8 +189,8 @@ class ToGenericDocumentCodeGenerator {
         //       unboxing and widening where necessary.
         //
         //   2b: ArrayUseDirectly
-        //       Array is of type String[], long[], double[], boolean[], byte[][] or
-        //       GenericDocument[].
+        //       Array is of type String[], long[], double[], boolean[], byte[][],
+        //       GenericDocument[], EmbeddingVector[] or AppSearchBlobHandle[].
         //       We can directly use this field with no conversion.
         //
         //   2c: ArrayForLoopCallToGenericDocument
@@ -207,7 +208,8 @@ class ToGenericDocumentCodeGenerator {
 
         // Scenario 3: Single valued fields
         //   3a: FieldUseDirectlyWithNullCheck
-        //       Field is of type String, Long, Integer, Double, Float, Boolean.
+        //       Field is of type String, Long, Integer, Double, Float, Boolean, EmbeddingVector or
+        //       AppSearchBlobHandle.
         //       We can use this field directly, after testing for null. The java compiler will box
         //       or unbox as needed.
         //
@@ -279,7 +281,7 @@ class ToGenericDocumentCodeGenerator {
                             return collectionForLoopAssign(
                                     annotation,
                                     getterOrField,
-                                    /* targetArrayComponentType= */mHelper.mLongPrimitiveType);
+                                    /* targetArrayComponentType= */mHelper.longPrimitiveType);
                         }
                     case ARRAY:
                         if (longSerializer != null) { // CustomType[]: 2d
@@ -291,7 +293,7 @@ class ToGenericDocumentCodeGenerator {
                             return arrayForLoopAssign(
                                     annotation,
                                     getterOrField,
-                                    /* targetArrayComponentType= */mHelper.mLongPrimitiveType);
+                                    /* targetArrayComponentType= */mHelper.longPrimitiveType);
                         }
                     case SINGLE:
                         if (longSerializer != null) { // CustomType: 3d
@@ -311,7 +313,7 @@ class ToGenericDocumentCodeGenerator {
                         return collectionForLoopAssign(
                                 annotation,
                                 getterOrField,
-                                /* targetArrayComponentType= */mHelper.mDoublePrimitiveType);
+                                /* targetArrayComponentType= */mHelper.doublePrimitiveType);
                     case ARRAY:
                         if (mHelper.isPrimitiveDoubleArray(getterOrField.getJvmType())) {
                             return arrayUseDirectly(annotation, getterOrField); // double[]: 2b
@@ -320,7 +322,7 @@ class ToGenericDocumentCodeGenerator {
                             return arrayForLoopAssign(
                                     annotation,
                                     getterOrField,
-                                    /* targetArrayComponentType= */mHelper.mDoublePrimitiveType);
+                                    /* targetArrayComponentType= */mHelper.doublePrimitiveType);
                         }
                     case SINGLE:
                         if (getterOrField.getJvmType() instanceof PrimitiveType) {
@@ -339,7 +341,7 @@ class ToGenericDocumentCodeGenerator {
                         return collectionForLoopAssign(
                                 annotation,
                                 getterOrField,
-                                /* targetArrayComponentType= */mHelper.mBooleanPrimitiveType);
+                                /* targetArrayComponentType= */mHelper.booleanPrimitiveType);
                     case ARRAY:
                         if (mHelper.isPrimitiveBooleanArray(getterOrField.getJvmType())) {
                             return arrayUseDirectly(annotation, getterOrField); // boolean[]: 2b
@@ -348,7 +350,7 @@ class ToGenericDocumentCodeGenerator {
                             return arrayForLoopAssign(
                                     annotation,
                                     getterOrField,
-                                    /* targetArrayComponentType= */mHelper.mBooleanPrimitiveType);
+                                    /* targetArrayComponentType= */mHelper.booleanPrimitiveType);
                         }
                     case SINGLE:
                         if (getterOrField.getJvmType() instanceof PrimitiveType) {
@@ -367,10 +369,35 @@ class ToGenericDocumentCodeGenerator {
                         return collectionForLoopAssign(
                                 annotation,
                                 getterOrField,
-                                /* targetArrayComponentType= */mHelper.mBytePrimitiveArrayType);
+                                /* targetArrayComponentType= */mHelper.bytePrimitiveArrayType);
                     case ARRAY: // byte[][]: 2b
                         return arrayUseDirectly(annotation, getterOrField);
                     case SINGLE: // byte[]: 2e
+                        return fieldUseDirectlyWithNullCheck(annotation, getterOrField);
+                    default:
+                        throw new IllegalStateException("Unhandled type-category: " + typeCategory);
+                }
+            case EMBEDDING_PROPERTY:
+                switch (typeCategory) {
+                    case COLLECTION:
+                        // List<EmbeddingVector>: 1b
+                        return collectionCallToArray(annotation, getterOrField);
+                    case ARRAY:
+                        // EmbeddingVector[]: 2b
+                        return arrayUseDirectly(annotation, getterOrField);
+                    case SINGLE:
+                        // EmbeddingVector: 3a
+                        return fieldUseDirectlyWithNullCheck(annotation, getterOrField);
+                    default:
+                        throw new IllegalStateException("Unhandled type-category: " + typeCategory);
+                }
+            case BLOB_HANDLE_PROPERTY:
+                switch (typeCategory) {
+                    case COLLECTION: // List<AppSearchBlobHandle[]>: 1b
+                        return collectionCallToArray(annotation, getterOrField);
+                    case ARRAY: // AppSearchBlobHandle[]: 2b
+                        return arrayUseDirectly(annotation, getterOrField);
+                    case SINGLE: // AppSearchBlobHandle: 3a
                         return fieldUseDirectlyWithNullCheck(annotation, getterOrField);
                     default:
                         throw new IllegalStateException("Unhandled type-category: " + typeCategory);
@@ -385,8 +412,7 @@ class ToGenericDocumentCodeGenerator {
     //     We have to pack it into a primitive array of type long[], double[], boolean[] or
     //     byte[][] by reading each element one-by-one and assigning it. The compiler takes
     //     care of unboxing and widening where necessary.
-    @NonNull
-    private CodeBlock collectionForLoopAssign(
+    private @NonNull CodeBlock collectionForLoopAssign(
             @NonNull DataPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField,
             @NonNull TypeMirror targetArrayComponentType) {
@@ -417,12 +443,11 @@ class ToGenericDocumentCodeGenerator {
     }
 
     // 1b: CollectionCallToArray
-    //     Collection contains String or GenericDocument.
-    //     We have to convert this into an array of String[] or GenericDocument[], but no
-    //     conversion of the collection elements is needed. We can use Collection#toArray for
-    //     this.
-    @NonNull
-    private CodeBlock collectionCallToArray(
+    //     Collection contains String, GenericDocument or EmbeddingVector.
+    //     We have to convert this into an array of String[], GenericDocument[]
+    //     EmbeddingVector[] or AppSearchBlobHandle[], but no conversion of the
+    //     collection elements is needed. We can use Collection#toArray for this.
+    private @NonNull CodeBlock collectionCallToArray(
             @NonNull DataPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField) {
         TypeMirror collectionType = getterOrField.getJvmType(); // e.g. List<String>
@@ -446,8 +471,7 @@ class ToGenericDocumentCodeGenerator {
     //     Collection contains a class which is annotated with @Document.
     //     We have to convert this into an array of GenericDocument[], by reading each element
     //     one-by-one and converting it through the standard conversion machinery.
-    @NonNull
-    private CodeBlock collectionForLoopCallToGenericDocument(
+    private @NonNull CodeBlock collectionForLoopCallToGenericDocument(
             @NonNull DocumentPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField) {
         TypeMirror collectionType = getterOrField.getJvmType(); // e.g. List<Person>
@@ -474,8 +498,7 @@ class ToGenericDocumentCodeGenerator {
     //     Collection contains a custom type for which we have a serializer.
     //     We have to convert this into an array of String[]|long[], by reading each element
     //     one-by-one and passing it to serializerClass.serialize(customType).
-    @NonNull
-    private CodeBlock collectionForLoopCallSerialize(
+    private @NonNull CodeBlock collectionForLoopCallSerialize(
             @NonNull DataPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField,
             @NonNull SerializerClass serializerClass) {
@@ -506,8 +529,7 @@ class ToGenericDocumentCodeGenerator {
     //     We have to pack it into a primitive array of type long[], double[], boolean[]
     //     by reading each element one-by-one and assigning it. The compiler takes care of
     //     unboxing and widening where necessary.
-    @NonNull
-    private CodeBlock arrayForLoopAssign(
+    private @NonNull CodeBlock arrayForLoopAssign(
             @NonNull DataPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField,
             @NonNull TypeMirror targetArrayComponentType) {
@@ -536,11 +558,10 @@ class ToGenericDocumentCodeGenerator {
     }
 
     // 2b: ArrayUseDirectly
-    //     Array is of type String[], long[], double[], boolean[], byte[][] or
-    //     GenericDocument[].
+    //     Array is of type String[], long[], double[], boolean[], byte[][],
+    //     GenericDocument[], EmbeddingVector[] or AppSearchBlobHandle[].
     //     We can directly use this field with no conversion.
-    @NonNull
-    private CodeBlock arrayUseDirectly(
+    private @NonNull CodeBlock arrayUseDirectly(
             @NonNull DataPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField) {
         TypeMirror jvmType = getterOrField.getJvmType(); // e.g. String[]
@@ -561,8 +582,7 @@ class ToGenericDocumentCodeGenerator {
     //     Array is of a class which is annotated with @Document.
     //     We have to convert this into an array of GenericDocument[], by reading each element
     //     one-by-one and converting it through the standard conversion machinery.
-    @NonNull
-    private CodeBlock arrayForLoopCallToGenericDocument(
+    private @NonNull CodeBlock arrayForLoopCallToGenericDocument(
             @NonNull DocumentPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField) {
         TypeMirror jvmType = getterOrField.getJvmType(); // e.g. Person[]
@@ -587,8 +607,7 @@ class ToGenericDocumentCodeGenerator {
     //     Array is of a custom type for which we have a serializer.
     //     We have to convert this into an array of String[]|long[], by reading each element
     //     one-by-one and passing it to serializerClass.serialize(customType).
-    @NonNull
-    private CodeBlock arrayForLoopCallToSerialize(
+    private @NonNull CodeBlock arrayForLoopCallToSerialize(
             @NonNull DataPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField,
             @NonNull SerializerClass serializerClass) {
@@ -613,11 +632,11 @@ class ToGenericDocumentCodeGenerator {
     }
 
     // 3a: FieldUseDirectlyWithNullCheck
-    //     Field is of type String, Long, Integer, Double, Float, Boolean.
+    //     Field is of type String, Long, Integer, Double, Float, Boolean,
+    //     EmbeddingVector or AppSearchBlobHandle.
     //     We can use this field directly, after testing for null. The java compiler will box
     //     or unbox as needed.
-    @NonNull
-    private CodeBlock fieldUseDirectlyWithNullCheck(
+    private @NonNull CodeBlock fieldUseDirectlyWithNullCheck(
             @NonNull PropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField) {
         TypeMirror jvmType = getterOrField.getJvmType();
@@ -649,8 +668,7 @@ class ToGenericDocumentCodeGenerator {
     // 3b: FieldUseDirectlyWithoutNullCheck
     //     Field is of type long, int, double, float, or boolean.
     //     We can use this field directly without testing for null.
-    @NonNull
-    private CodeBlock fieldUseDirectlyWithoutNullCheck(
+    private @NonNull CodeBlock fieldUseDirectlyWithoutNullCheck(
             @NonNull DataPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField) {
         return CodeBlock.builder()
@@ -665,8 +683,7 @@ class ToGenericDocumentCodeGenerator {
     //     Field is of a class which is annotated with @Document.
     //     We have to convert this into a GenericDocument through the standard conversion
     //     machinery.
-    @NonNull
-    private CodeBlock fieldCallToGenericDocument(
+    private @NonNull CodeBlock fieldCallToGenericDocument(
             @NonNull DocumentPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField) {
         TypeMirror documentClass = getterOrField.getJvmType(); // Person
@@ -687,8 +704,7 @@ class ToGenericDocumentCodeGenerator {
     //     Field is of a some custom type for which we have a serializer.
     //     We have to convert this into a String|long by calling
     //     serializeClass.serialize(customType).
-    @NonNull
-    private CodeBlock fieldCallSerialize(
+    private @NonNull CodeBlock fieldCallSerialize(
             @NonNull DataPropertyAnnotation annotation,
             @NonNull AnnotatedGetterOrField getterOrField,
             @NonNull SerializerClass serializerClass) {

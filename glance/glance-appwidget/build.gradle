@@ -14,8 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.BundleInsideHelper
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 import androidx.glance.appwidget.layoutgenerator.gradle.LayoutGeneratorTask
 
 plugins {
@@ -26,30 +32,21 @@ plugins {
     id("com.google.protobuf")
 }
 
-BundleInsideHelper.forInsideAar(
-        project,
-        /* from = */ "com.google.protobuf",
-        /* to =   */ "androidx.glance.appwidget.protobuf",
-        // proto-lite dependency includes .proto files, which are not used and would clash if
-        // users also use proto library directly
-        /* dropResourcesWithSuffix = */ ".proto"
-)
-
 dependencies {
-    bundleInside(project(":glance:glance-appwidget-proto"))
-
     api(project(":glance:glance"))
-    api("androidx.annotation:annotation:1.1.0")
-    api("androidx.compose.runtime:runtime:1.1.1")
+    api("androidx.annotation:annotation:1.8.1")
+    api("androidx.compose.runtime:runtime:1.7.8")
     api("androidx.compose.ui:ui-graphics:1.1.1")
     api("androidx.compose.ui:ui-unit:1.1.1")
+    api("androidx.collection:collection-ktx:1.4.3")
 
-    implementation('androidx.core:core-ktx:1.7.0')
+    implementation("androidx.core:core-ktx:1.7.0")
     implementation("androidx.datastore:datastore:1.0.0")
     implementation("androidx.datastore:datastore-core:1.0.0")
     implementation("androidx.datastore:datastore-preferences-core:1.0.0")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
-    implementation(project(':core:core-remoteviews'))
+    implementation(project(":core:core-remoteviews"))
+    implementation(project(":glance:glance-appwidget-proto"))
     implementation(libs.kotlinStdlib)
 
     testImplementation(libs.junit)
@@ -63,7 +60,7 @@ dependencies {
     testImplementation(libs.testRunner)
     testImplementation(libs.truth)
     testImplementation(libs.kotlinReflect)
-    testImplementation('androidx.core:core-ktx:1.7.0')
+    testImplementation("androidx.core:core-ktx:1.7.0")
     testImplementation("androidx.datastore:datastore-core:1.0.0")
     testImplementation("androidx.datastore:datastore-preferences-core:1.0.0")
     testImplementation("androidx.datastore:datastore-preferences:1.0.0")
@@ -72,7 +69,7 @@ dependencies {
     androidTestImplementation(project(":glance:glance-material3"))
     androidTestImplementation("androidx.test.uiautomator:uiautomator:2.2.0")
     androidTestImplementation("androidx.room:room-runtime:2.4.3")
-    androidTestImplementation('androidx.core:core-ktx:1.7.0')
+    androidTestImplementation("androidx.core:core-ktx:1.7.0")
     androidTestImplementation("androidx.work:work-testing:2.7.1")
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.espressoIdlingResource)
@@ -85,38 +82,37 @@ dependencies {
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.kotlinReflect)
-
-    samples(projectOrArtifact(":glance:glance-appwidget:glance-appwidget-samples"))
 }
 
 android {
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
     resourcePrefix "glance_"
-
-    sourceSets {
-        androidTest.assets.srcDirs += project.rootDir.absolutePath + "/../../golden/glance/glance-appwidget"
-    }
-
     buildTypes {
         debug {
-            pseudoLocalesEnabled true
+            pseudoLocalesEnabled = true
         }
     }
-    namespace "androidx.glance.appwidget"
+    namespace = "androidx.glance.appwidget"
 
-    buildTypes.all {
-        consumerProguardFiles "proguard-rules.pro"
+    buildTypes.configureEach {
+        consumerProguardFiles("proguard-rules.pro")
     }
+    // TODO(b/313699418): need to update compose.runtime version to 1.6.0+
+    experimentalProperties["android.lint.useK2Uast"] = false
+
+    compileSdk = 35
 }
 
 androidx {
     name = "Glance For App Widgets"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2021"
     description = "Glance-appwidgets allows developers to build layouts for Android AppWidgets " +
             "using a Jetpack Compose-style API."
-    targetsJavaConsumers = false
+    legacyDisableKotlinStrictApiMode = true
+    samples(project(":glance:glance-appwidget:glance-appwidget-samples"))
+    addGoldenImageAssets()
 }
 
 LayoutGeneratorTask.registerLayoutGenerator(

@@ -21,22 +21,20 @@ import android.graphics.SurfaceTexture
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Size
-import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
-import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.extensions.ExtensionsManager
+import androidx.camera.integration.extensions.CameraExtensionsActivity.CAMERA_PIPE_IMPLEMENTATION_OPTION
 import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil
-import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.VERIFICATION_TARGET_IMAGE_ANALYSIS
+import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.CameraXExtensionTestParams
 import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.VERIFICATION_TARGET_IMAGE_CAPTURE
 import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.VERIFICATION_TARGET_PREVIEW
-import androidx.camera.integration.extensions.utils.CameraIdExtensionModePair
 import androidx.camera.integration.extensions.utils.CameraSelectorUtil
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.GLUtil
@@ -68,13 +66,16 @@ private var texId = INVALID_TEX_ID
 @LargeTest
 @RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = 21)
-class BindUnbindUseCasesStressTest(private val config: CameraIdExtensionModePair) {
+class BindUnbindUseCasesStressTest(private val config: CameraXExtensionTestParams) {
     @get:Rule
-    val useCamera = CameraUtil.grantCameraPermissionAndPreTest(
-        PreTestCameraIdList(Camera2Config.defaultConfig())
-    )
+    val cameraPipeConfigTestRule =
+        CameraPipeConfigTestRule(active = config.implName == CAMERA_PIPE_IMPLEMENTATION_OPTION)
 
-    private val context = ApplicationProvider.getApplicationContext<Context>()
+    @get:Rule
+    val useCamera =
+        CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
+            PreTestCameraIdList(config.cameraXConfig)
+        )
 
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var extensionsManager: ExtensionsManager
@@ -88,26 +89,25 @@ class BindUnbindUseCasesStressTest(private val config: CameraIdExtensionModePair
     @Before
     fun setUp(): Unit = runBlocking {
         assumeTrue(CameraXExtensionsTestUtil.isTargetDeviceAvailableForExtensions())
+        val (_, cameraXConfig, cameraId, extensionMode) = config
+        ProcessCameraProvider.configureInstance(cameraXConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
-        extensionsManager = ExtensionsManager.getInstanceAsync(
-            context,
-            cameraProvider
-        )[10000, TimeUnit.MILLISECONDS]
+        extensionsManager =
+            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
+                    10000, TimeUnit.MILLISECONDS]
 
-        val (cameraId, extensionMode) = config
         baseCameraSelector = CameraSelectorUtil.createCameraSelectorById(cameraId)
         assumeTrue(extensionsManager.isExtensionAvailable(baseCameraSelector, extensionMode))
 
-        extensionCameraSelector = extensionsManager.getExtensionEnabledCameraSelector(
-            baseCameraSelector,
-            extensionMode
-        )
+        extensionCameraSelector =
+            extensionsManager.getExtensionEnabledCameraSelector(baseCameraSelector, extensionMode)
 
-        camera = withContext(Dispatchers.Main) {
-            lifecycleOwner = FakeLifecycleOwner()
-            lifecycleOwner.startAndResume()
-            cameraProvider.bindToLifecycle(lifecycleOwner, extensionCameraSelector)
-        }
+        camera =
+            withContext(Dispatchers.Main) {
+                lifecycleOwner = FakeLifecycleOwner()
+                lifecycleOwner.startAndResume()
+                cameraProvider.bindToLifecycle(lifecycleOwner, extensionCameraSelector)
+            }
 
         preview = Preview.Builder().build()
         imageCapture = ImageCapture.Builder().build()
@@ -127,12 +127,12 @@ class BindUnbindUseCasesStressTest(private val config: CameraIdExtensionModePair
     }
 
     companion object {
-        @ClassRule
-        @JvmField val stressTest = StressTestRule()
+        @ClassRule @JvmField val stressTest = StressTestRule()
 
+        val context = ApplicationProvider.getApplicationContext<Context>()
         @JvmStatic
         @get:Parameterized.Parameters(name = "config = {0}")
-        val parameters: Collection<CameraIdExtensionModePair>
+        val parameters: Collection<CameraXExtensionTestParams>
             get() = CameraXExtensionsTestUtil.getAllCameraIdExtensionModeCombinations()
     }
 
@@ -155,62 +155,13 @@ class BindUnbindUseCasesStressTest(private val config: CameraIdExtensionModePair
             )
         }
 
-    @Test
-    fun bindUnbindUseCases_checkPreviewInEachTime_withPreviewImageCaptureImageAnalysis():
-        Unit = runBlocking {
-        assumeTrue(extensionsManager.isImageAnalysisSupported(
-            baseCameraSelector, config.extensionMode))
-        val imageAnalysis = createImageAnalysis()
-        assumeTrue(camera.isUseCasesCombinationSupported(preview, imageCapture, imageAnalysis))
-        bindUseCases_checkOutput_thenUnbindAll_repeatedly(
-            preview,
-            imageCapture,
-            imageAnalysis,
-            verificationTarget = VERIFICATION_TARGET_PREVIEW
-        )
-    }
-
-    @Test
-    fun bindUnbindUseCases_checkImageCaptureInEachTime_withPreviewImageCaptureImageAnalysis():
-        Unit = runBlocking {
-        assumeTrue(extensionsManager.isImageAnalysisSupported(
-            baseCameraSelector, config.extensionMode))
-        val imageAnalysis = createImageAnalysis()
-        assumeTrue(camera.isUseCasesCombinationSupported(preview, imageCapture, imageAnalysis))
-        bindUseCases_checkOutput_thenUnbindAll_repeatedly(
-            preview,
-            imageCapture,
-            imageAnalysis,
-            verificationTarget = VERIFICATION_TARGET_IMAGE_CAPTURE
-        )
-    }
-
-    @Test
-    fun bindUnbindUseCases_checkImageAnalysisInEachTime_withPreviewImageCaptureImageAnalysis():
-        Unit = runBlocking {
-        assumeTrue(extensionsManager.isImageAnalysisSupported(
-            baseCameraSelector, config.extensionMode))
-        val imageAnalysis = createImageAnalysis()
-        assumeTrue(camera.isUseCasesCombinationSupported(preview, imageCapture, imageAnalysis))
-        bindUseCases_checkOutput_thenUnbindAll_repeatedly(
-            preview,
-            imageCapture,
-            imageAnalysis,
-            verificationTarget = VERIFICATION_TARGET_IMAGE_ANALYSIS
-        )
-    }
-
     /**
      * Repeatedly binds use cases, checks the input use cases' capture functions can work well, and
      * unbind all use cases.
-     *
-     * <p>This function checks the nullability of the input ImageAnalysis to determine whether it
-     * will be bound together to run the test.
      */
     private fun bindUseCases_checkOutput_thenUnbindAll_repeatedly(
         preview: Preview,
         imageCapture: ImageCapture,
-        imageAnalysis: ImageAnalysis? = null,
         verificationTarget: Int,
         repeatCount: Int = CameraXExtensionsTestUtil.getStressTestRepeatingCount()
     ): Unit = runBlocking {
@@ -230,7 +181,7 @@ class BindUnbindUseCasesStressTest(private val config: CameraIdExtensionModePair
                 cameraProvider.bindToLifecycle(
                     lifecycleOwner,
                     extensionCameraSelector,
-                    *listOfNotNull(preview, imageCapture, imageAnalysis).toTypedArray()
+                    *listOfNotNull(preview, imageCapture).toTypedArray()
                 )
             }
 
@@ -251,21 +202,8 @@ class BindUnbindUseCasesStressTest(private val config: CameraIdExtensionModePair
                 imageCaptureCaptureSuccessMonitor.awaitCaptureSuccessAndAssert()
             }
 
-            // Assert: checks that images can be received by the ImageAnalysis.Analyzer
-            if (verificationTarget.and(VERIFICATION_TARGET_IMAGE_ANALYSIS) != 0) {
-                imageAnalysis!!.let {
-                    val analyzerFrameAvailableMonitor = ImageAnalysisImageAvailableMonitor()
-                    it.setAnalyzer(
-                        Executors.newSingleThreadExecutor(),
-                        analyzerFrameAvailableMonitor.createAnalyzer()
-                    )
-                }
-            }
-
             // Clean it up.
-            withContext(Dispatchers.Main) {
-                cameraProvider.unbindAll()
-            }
+            withContext(Dispatchers.Main) { cameraProvider.unbindAll() }
         }
     }
 
@@ -289,62 +227,13 @@ class BindUnbindUseCasesStressTest(private val config: CameraIdExtensionModePair
             )
         }
 
-    @Test
-    fun checkPreview_afterBindUnbindUseCasesRepeatedly_withPreviewImageCaptureImageAnalysis():
-        Unit = runBlocking {
-        assumeTrue(extensionsManager.isImageAnalysisSupported(
-            baseCameraSelector, config.extensionMode))
-        val imageAnalysis = createImageAnalysis()
-        assumeTrue(camera.isUseCasesCombinationSupported(preview, imageCapture, imageAnalysis))
-        bindUseCases_unbindAll_repeatedly_thenCheckOutput(
-            preview,
-            imageCapture,
-            imageAnalysis,
-            verificationTarget = VERIFICATION_TARGET_PREVIEW
-        )
-    }
-
-    @Test
-    fun checkImageCapture_afterBindUnbindUseCasesRepeatedly_withPreviewImageCaptureImageAnalysis():
-        Unit = runBlocking {
-        assumeTrue(extensionsManager.isImageAnalysisSupported(
-            baseCameraSelector, config.extensionMode))
-        val imageAnalysis = createImageAnalysis()
-        assumeTrue(camera.isUseCasesCombinationSupported(preview, imageCapture, imageAnalysis))
-        bindUseCases_unbindAll_repeatedly_thenCheckOutput(
-            preview,
-            imageCapture,
-            imageAnalysis,
-            verificationTarget = VERIFICATION_TARGET_IMAGE_CAPTURE
-        )
-    }
-
-    @Test
-    fun checkImageAnalysis_afterBindUnbindUseCasesRepeatedly_withPreviewImageCaptureImageAnalysis():
-        Unit = runBlocking {
-        assumeTrue(extensionsManager.isImageAnalysisSupported(
-            baseCameraSelector, config.extensionMode))
-        val imageAnalysis = createImageAnalysis()
-        assumeTrue(camera.isUseCasesCombinationSupported(preview, imageCapture, imageAnalysis))
-        bindUseCases_unbindAll_repeatedly_thenCheckOutput(
-            preview,
-            imageCapture,
-            imageAnalysis,
-            verificationTarget = VERIFICATION_TARGET_IMAGE_ANALYSIS
-        )
-    }
-
     /**
-     * Repeatedly binds use cases and unbind all, then checks the input use cases' capture
-     * functions can work well.
-     *
-     * <p>This function checks the nullability of the input ImageAnalysis to determine whether it
-     * will be bound together to run the test.
+     * Repeatedly binds use cases and unbind all, then checks the input use cases' capture functions
+     * can work well.
      */
     private fun bindUseCases_unbindAll_repeatedly_thenCheckOutput(
         preview: Preview,
         imageCapture: ImageCapture,
-        imageAnalysis: ImageAnalysis? = null,
         verificationTarget: Int,
         repeatCount: Int = CameraXExtensionsTestUtil.getStressTestRepeatingCount()
     ): Unit = runBlocking {
@@ -366,7 +255,7 @@ class BindUnbindUseCasesStressTest(private val config: CameraIdExtensionModePair
                 cameraProvider.bindToLifecycle(
                     lifecycleOwner,
                     extensionCameraSelector,
-                    *listOfNotNull(preview, imageCapture, imageAnalysis).toTypedArray()
+                    *listOfNotNull(preview, imageCapture).toTypedArray()
                 )
 
                 // Clean it up: do not unbind at the last time
@@ -392,25 +281,7 @@ class BindUnbindUseCasesStressTest(private val config: CameraIdExtensionModePair
             // Assert: checks that the captured image of ImageCapture can be received
             imageCaptureCaptureSuccessMonitor.awaitCaptureSuccessAndAssert()
         }
-
-        if (verificationTarget.and(VERIFICATION_TARGET_IMAGE_ANALYSIS) != 0) {
-            imageAnalysis!!.let {
-                val analyzerFrameAvailableMonitor = ImageAnalysisImageAvailableMonitor()
-                it.setAnalyzer(
-                    Executors.newSingleThreadExecutor(),
-                    analyzerFrameAvailableMonitor.createAnalyzer()
-                )
-
-                // Assert: checks that images can be received by the ImageAnalysis.Analyzer
-                analyzerFrameAvailableMonitor.awaitAvailableFramesAndAssert()
-            }
-        }
     }
-
-    private fun createImageAnalysis() =
-        ImageAnalysis.Builder().build().also {
-            it.setAnalyzer(CameraXExecutors.directExecutor()) { image -> image.close() }
-        }
 
     private class PreviewFrameAvailableMonitor {
         private var isSurfaceTextureReleased = false
@@ -419,38 +290,40 @@ class BindUnbindUseCasesStressTest(private val config: CameraIdExtensionModePair
         private var surfaceTextureLatch = CountDownLatch(1)
         private var previewFrameCountDownLatch: CountDownLatch? = null
 
-        private val onFrameAvailableListener = object : SurfaceTexture.OnFrameAvailableListener {
-            private var complete = false
+        private val onFrameAvailableListener =
+            object : SurfaceTexture.OnFrameAvailableListener {
+                private var complete = false
 
-            override fun onFrameAvailable(surfaceTexture: SurfaceTexture): Unit = runBlocking {
-                if (complete) {
-                    return@runBlocking
-                }
+                override fun onFrameAvailable(surfaceTexture: SurfaceTexture): Unit = runBlocking {
+                    if (complete) {
+                        return@runBlocking
+                    }
 
-                withContext(Dispatchers.Main) {
-                    synchronized(isSurfaceTextureReleasedLock) {
-                        if (!isSurfaceTextureReleased) {
-                            surfaceTexture.updateTexImage()
+                    withContext(Dispatchers.Main) {
+                        synchronized(isSurfaceTextureReleasedLock) {
+                            if (!isSurfaceTextureReleased) {
+                                surfaceTexture.updateTexImage()
+                            }
                         }
                     }
-                }
 
-                previewFrameCountDownLatch?.let {
-                    if (!complete) {
-                        it.countDown()
-                        if (it.count == 0L) {
-                            complete = true
+                    previewFrameCountDownLatch?.let {
+                        if (!complete) {
+                            it.countDown()
+                            if (it.count == 0L) {
+                                complete = true
+                            }
                         }
                     }
                 }
             }
-        }
 
         private val frameAvailableHandler: Handler
-        private val frameAvailableHandlerThread = HandlerThread("FrameAvailable").also {
-            it.start()
-            frameAvailableHandler = Handler(it.looper)
-        }
+        private val frameAvailableHandlerThread =
+            HandlerThread("FrameAvailable").also {
+                it.start()
+                frameAvailableHandler = Handler(it.looper)
+            }
 
         fun createSurfaceTextureCallback(): SurfaceTextureProvider.SurfaceTextureCallback =
             object : SurfaceTextureProvider.SurfaceTextureCallback {
@@ -485,51 +358,25 @@ class BindUnbindUseCasesStressTest(private val config: CameraIdExtensionModePair
 
         fun awaitAvailableFramesAndAssert(count: Int = 10, timeoutDurationMs: Long = 3000) {
             previewFrameCountDownLatch = CountDownLatch(count)
-            assertThat(
-                previewFrameCountDownLatch!!.await(
-                    timeoutDurationMs,
-                    TimeUnit.MILLISECONDS
-                )
-            ).isTrue()
+            assertThat(previewFrameCountDownLatch!!.await(timeoutDurationMs, TimeUnit.MILLISECONDS))
+                .isTrue()
         }
     }
 
     private class ImageCaptureCaptureSuccessMonitor {
         private val captureSuccessCountDownLatch = CountDownLatch(1)
 
-        fun createCaptureCallback() = object : ImageCapture.OnImageCapturedCallback() {
-            override fun onCaptureSuccess(image: ImageProxy) {
-                image.close()
-                captureSuccessCountDownLatch.countDown()
+        fun createCaptureCallback() =
+            object : ImageCapture.OnImageCapturedCallback() {
+                override fun onCaptureSuccess(image: ImageProxy) {
+                    image.close()
+                    captureSuccessCountDownLatch.countDown()
+                }
             }
-        }
 
         fun awaitCaptureSuccessAndAssert(timeoutDurationMs: Long = 10000) {
-            assertThat(
-                captureSuccessCountDownLatch.await(
-                    timeoutDurationMs,
-                    TimeUnit.MILLISECONDS
-                )
-            ).isTrue()
-        }
-    }
-
-    private class ImageAnalysisImageAvailableMonitor {
-        private var analyzerFrameCountDownLatch: CountDownLatch? = null
-
-        fun createAnalyzer() = ImageAnalysis.Analyzer { image ->
-            image.close()
-            analyzerFrameCountDownLatch?.countDown()
-        }
-
-        fun awaitAvailableFramesAndAssert(count: Int = 10, timeoutDurationMs: Long = 3000) {
-            analyzerFrameCountDownLatch = CountDownLatch(count)
-            assertThat(
-                analyzerFrameCountDownLatch!!.await(
-                    timeoutDurationMs,
-                    TimeUnit.MILLISECONDS
-                )
-            ).isTrue()
+            assertThat(captureSuccessCountDownLatch.await(timeoutDurationMs, TimeUnit.MILLISECONDS))
+                .isTrue()
         }
     }
 }

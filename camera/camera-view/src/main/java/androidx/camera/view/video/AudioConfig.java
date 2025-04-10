@@ -18,21 +18,19 @@ package androidx.camera.view.video;
 
 import android.Manifest;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A class providing configuration for audio settings in the video recording.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class AudioConfig {
 
     /**
      * The audio configuration with audio disabled.
      */
-    @NonNull
-    public static final AudioConfig AUDIO_DISABLED = new AudioConfig(false);
+    public static final @NonNull AudioConfig AUDIO_DISABLED = new AudioConfig(false);
 
     private final boolean mIsAudioEnabled;
 
@@ -48,8 +46,7 @@ public class AudioConfig {
      * use {@link AudioConfig#AUDIO_DISABLED} instead, which has no permission requirements.
      */
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
-    @NonNull
-    public static AudioConfig create(boolean enableAudio) {
+    public static @NonNull AudioConfig create(boolean enableAudio) {
         return new AudioConfig(enableAudio);
     }
 

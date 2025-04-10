@@ -17,7 +17,6 @@ package androidx.car.app.hardware.info;
 
 import static androidx.annotation.RestrictTo.Scope.LIBRARY;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.car.app.annotations.ExperimentalCarApi;
@@ -25,6 +24,8 @@ import androidx.car.app.hardware.ICarHardwareResultTypes;
 import androidx.car.app.hardware.common.CarHardwareHostDispatcher;
 import androidx.car.app.hardware.common.CarResultStub;
 import androidx.car.app.hardware.common.OnCarDataAvailableListener;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -77,6 +78,15 @@ public class ProjectedCarInfo implements CarInfo {
     public void fetchEnergyProfile(@NonNull Executor executor,
             @NonNull OnCarDataAvailableListener<EnergyProfile> listener) {
         mEnergyProfileCarResultStub.addListener(executor, listener);
+    }
+
+    // Exterior dimensions are not available in AAP without an update to the GAL protocol. As such
+    // this method returns a default ExteriorDimensions that returns UNKNOWN (effectively null).
+    @Override
+    public void fetchExteriorDimensions(@NonNull Executor executor,
+            @NonNull OnCarDataAvailableListener<ExteriorDimensions> listener) {
+        // TODO - b/325540913 Implement fetching exterior dimensions in AAP, including updating GAL
+        executor.execute(() -> listener.onCarDataAvailable(new ExteriorDimensions()));
     }
 
     @Override

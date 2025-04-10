@@ -15,6 +15,7 @@
  */
 package androidx.health.connect.client.aggregate
 
+import androidx.annotation.RestrictTo
 import java.time.Duration
 
 /**
@@ -42,6 +43,7 @@ internal constructor(
     /** Converts a raw type [T] to a resulting type [R]. Internal for SDK use only. */
     internal sealed interface Converter<in T : Any, out R : Any> : (T) -> R {
         fun interface FromLong<out R : Any> : Converter<Long, R>
+
         fun interface FromDouble<out R : Any> : Converter<Double, R>
     }
 
@@ -122,19 +124,6 @@ internal constructor(
                 aggregationField = fieldName,
             )
 
-        internal fun <R : Any> longMetric(
-            dataTypeName: String,
-            aggregationType: AggregationType,
-            fieldName: String,
-            mapper: (Long) -> R,
-        ): AggregateMetric<R> =
-            AggregateMetric(
-                converter = Converter.FromLong(mapper),
-                dataTypeName = dataTypeName,
-                aggregationType = aggregationType,
-                aggregationField = fieldName,
-            )
-
         /**
          * Creates a [AggregateMetric] returning sample or record counts. Internal for SDK use only.
          */
@@ -147,7 +136,8 @@ internal constructor(
             )
     }
 
-    internal val metricKey: String
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    val metricKey: String
         get() {
             val aggregationTypeString = aggregationType.aggregationTypeString
             return if (aggregationField == null) {

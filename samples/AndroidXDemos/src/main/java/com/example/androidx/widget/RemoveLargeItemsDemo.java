@@ -25,15 +25,14 @@ import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.collection.ArrayMap;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.androidx.R;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -165,9 +164,8 @@ public class RemoveLargeItemsDemo extends Activity {
             mData = data;
         }
 
-        @NotNull
         @Override
-        public MyViewHolder onCreateViewHolder(@NotNull ViewGroup parent, int viewType) {
+        public @NonNull MyViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             MyViewHolder h =
                     new MyViewHolder(getLayoutInflater().inflate(
                             R.layout.remove_large_items_demo_item,
@@ -180,7 +178,7 @@ public class RemoveLargeItemsDemo extends Activity {
 
         @SuppressLint("SetTextI18n")
         @Override
-        public void onBindViewHolder(@NotNull MyViewHolder myViewHolder, int position) {
+        public void onBindViewHolder(@NonNull MyViewHolder myViewHolder, int position) {
             Item item = mData.get(position);
             myViewHolder.boundItem = item;
             myViewHolder.textView.setText(item.mString);
@@ -230,8 +228,7 @@ public class RemoveLargeItemsDemo extends Activity {
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return super.toString() + " \"" + textView.getText() + "\"";
         }
     }

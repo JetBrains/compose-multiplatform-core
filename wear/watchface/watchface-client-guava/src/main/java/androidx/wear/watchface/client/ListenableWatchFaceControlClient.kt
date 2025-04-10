@@ -39,7 +39,13 @@ import kotlinx.coroutines.launch
 /**
  * [ListenableFuture]-based compatibility wrapper around [WatchFaceControlClient]'s suspending
  * methods. This class is open to allow mocking.
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public open class ListenableWatchFaceControlClient(
     private val watchFaceControlClient: WatchFaceControlClient
 ) : WatchFaceControlClient {
@@ -140,11 +146,11 @@ public open class ListenableWatchFaceControlClient(
          *   control service to bind to.
          * @param resourceOnlyWatchFacePackageName The name of the package from which to load the
          *   resource only watch face. This is exposed to the runtime via the
-         *  `resourceOnlyWatchFacePackageName` parameter passed to
-         *  [WatchFaceRuntimeService.createUserStyleSchema],
-         *  [WatchFaceRuntimeService.createComplicationSlotsManager],
-         *  [WatchFaceRuntimeService.createUserStyleFlavors] and
-         *  [WatchFaceRuntimeService.createWatchFace]).
+         *   `resourceOnlyWatchFacePackageName` parameter passed to
+         *   [WatchFaceRuntimeService.createUserStyleSchema],
+         *   [WatchFaceRuntimeService.createComplicationSlotsManager],
+         *   [WatchFaceRuntimeService.createUserStyleFlavors] and
+         *   [WatchFaceRuntimeService.createWatchFace]).
          * @return [ListenableFuture]<[ListenableWatchFaceControlClient]> which on success resolves
          *   to a [ListenableWatchFaceControlClient] or throws a [ServiceNotBoundException] if the
          *   watch face control service can not be bound.
@@ -336,6 +342,9 @@ public open class ListenableWatchFaceControlClient(
             previewImageUpdateRequestedExecutor,
             previewImageUpdateRequestedListener
         )
+
+    override fun hasComplicationDataCache(): Boolean =
+        watchFaceControlClient.hasComplicationDataCache()
 
     override fun getEditorServiceClient(): EditorServiceClient =
         watchFaceControlClient.getEditorServiceClient()

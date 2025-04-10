@@ -16,15 +16,17 @@
 
 package androidx.appsearch.localstorage.converter;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.app.AppSearchBlobHandle;
 import androidx.appsearch.app.AppSearchSchema;
+import androidx.appsearch.app.EmbeddingVector;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.exceptions.AppSearchException;
+import androidx.appsearch.flags.Flags;
 import androidx.appsearch.localstorage.AppSearchConfig;
-import androidx.appsearch.localstorage.util.PrefixUtil;
-import androidx.collection.ArrayMap;
-import androidx.collection.ArraySet;
+import androidx.appsearch.localstorage.SchemaCache;
 import androidx.core.util.Preconditions;
 
 import com.google.android.icing.proto.DocumentProto;
@@ -33,13 +35,12 @@ import com.google.android.icing.proto.PropertyProto;
 import com.google.android.icing.proto.SchemaTypeConfigProto;
 import com.google.android.icing.protobuf.ByteString;
 
-import java.util.ArrayDeque;
+import org.jspecify.annotations.NonNull;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
 
 /**
  * Translates a {@link GenericDocument} into a {@link DocumentProto}.
@@ -54,6 +55,8 @@ public final class GenericDocumentToProtoConverter {
     private static final boolean[] EMPTY_BOOLEAN_ARRAY = new boolean[0];
     private static final byte[][] EMPTY_BYTES_ARRAY = new byte[0][0];
     private static final GenericDocument[] EMPTY_DOCUMENT_ARRAY = new GenericDocument[0];
+    private static final EmbeddingVector[] EMPTY_EMBEDDING_ARRAY =
+            new EmbeddingVector[0];
 
     private GenericDocumentToProtoConverter() {
     }
@@ -61,9 +64,9 @@ public final class GenericDocumentToProtoConverter {
     /**
      * Converts a {@link GenericDocument} into a {@link DocumentProto}.
      */
-    @NonNull
     @SuppressWarnings("unchecked")
-    public static DocumentProto toDocumentProto(@NonNull GenericDocument document) {
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
+    public static @NonNull DocumentProto toDocumentProto(@NonNull GenericDocument document) {
         Preconditions.checkNotNull(document);
         DocumentProto.Builder mProtoBuilder = DocumentProto.newBuilder();
         mProtoBuilder.setUri(document.getId())
@@ -109,6 +112,18 @@ public final class GenericDocumentToProtoConverter {
                     DocumentProto proto = toDocumentProto(documentValues[j]);
                     propertyProto.addDocumentValues(proto);
                 }
+            } else if (property instanceof EmbeddingVector[]) {
+                EmbeddingVector[] embeddingValues = (EmbeddingVector[]) property;
+                for (int j = 0; j < embeddingValues.length; j++) {
+                    propertyProto.addVectorValues(
+                            embeddingVectorToVectorProto(embeddingValues[j]));
+                }
+            } else if (property instanceof AppSearchBlobHandle[]) {
+                AppSearchBlobHandle[] blobHandleValues = (AppSearchBlobHandle[]) property;
+                for (int j = 0; j < blobHandleValues.length; j++) {
+                    propertyProto.addBlobHandleValues(
+                            BlobHandleToProtoConverter.toBlobHandleProto(blobHandleValues[j]));
+                }
             } else if (property == null) {
                 throw new IllegalStateException(
                         String.format("Property \"%s\" doesn't have any value!", name));
@@ -134,16 +149,21 @@ public final class GenericDocumentToProtoConverter {
      *                      document proto should have its package + database prefix stripped
      *                      from its fields.
      * @param prefix        the package + database prefix used searching the {@code schemaTypeMap}.
-     * @param schemaTypeMap map of prefixed schema type to {@link SchemaTypeConfigProto}, used
-     *                      for looking up the default empty value to set for a document property
-     *                      that has all empty values.
+     * @param schemaCache   The SchemaCache instance held in AppSearch.
      */
-    @NonNull
-    public static GenericDocument toGenericDocument(@NonNull DocumentProtoOrBuilder proto,
+    @SuppressWarnings("deprecation")
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
+    public static @NonNull GenericDocument toGenericDocument(@NonNull DocumentProtoOrBuilder proto,
             @NonNull String prefix,
-            @NonNull Map<String, SchemaTypeConfigProto> schemaTypeMap,
+            @NonNull SchemaCache schemaCache,
             @NonNull AppSearchConfig config) throws AppSearchException {
         Preconditions.checkNotNull(proto);
+        Preconditions.checkNotNull(prefix);
+        Preconditions.checkNotNull(schemaCache);
+        Preconditions.checkNotNull(config);
+        Map<String, SchemaTypeConfigProto> schemaTypeMap =
+                schemaCache.getSchemaMapForPrefix(prefix);
+
         GenericDocument.Builder<?> documentBuilder =
                 new GenericDocument.Builder<>(proto.getNamespace(), proto.getUri(),
                         proto.getSchema())
@@ -151,9 +171,10 @@ public final class GenericDocumentToProtoConverter {
                         .setTtlMillis(proto.getTtlMs())
                         .setCreationTimestampMillis(proto.getCreationTimestampMs());
         String prefixedSchemaType = prefix + proto.getSchema();
-        if (config.shouldRetrieveParentInfo()) {
+        if (config.shouldRetrieveParentInfo() && !Flags.enableSearchResultParentTypes()) {
             List<String> parentSchemaTypes =
-                    getUnprefixedParentSchemaTypes(prefixedSchemaType, schemaTypeMap);
+                    schemaCache.getTransitiveUnprefixedParentSchemaTypes(
+                            prefix, prefixedSchemaType);
             if (!parentSchemaTypes.isEmpty()) {
                 if (config.shouldStoreParentInfoAsSyntheticProperty()) {
                     documentBuilder.setPropertyString(
@@ -202,9 +223,24 @@ public final class GenericDocumentToProtoConverter {
                 GenericDocument[] values = new GenericDocument[property.getDocumentValuesCount()];
                 for (int j = 0; j < values.length; j++) {
                     values[j] = toGenericDocument(property.getDocumentValues(j), prefix,
-                            schemaTypeMap, config);
+                            schemaCache, config);
                 }
                 documentBuilder.setPropertyDocument(name, values);
+            } else if (property.getVectorValuesCount() > 0) {
+                EmbeddingVector[] values =
+                        new EmbeddingVector[property.getVectorValuesCount()];
+                for (int j = 0; j < values.length; j++) {
+                    values[j] = vectorProtoToEmbeddingVector(property.getVectorValues(j));
+                }
+                documentBuilder.setPropertyEmbedding(name, values);
+            } else if (property.getBlobHandleValuesCount() > 0) {
+                AppSearchBlobHandle[] values =
+                        new AppSearchBlobHandle[property.getBlobHandleValuesCount()];
+                for (int j = 0; j < values.length; j++) {
+                    values[j] = BlobHandleToProtoConverter.toAppSearchBlobHandle(
+                            property.getBlobHandleValues(j));
+                }
+                documentBuilder.setPropertyBlobHandle(name, values);
             } else {
                 // TODO(b/184966497): Optimize by caching PropertyConfigProto
                 SchemaTypeConfigProto schema =
@@ -216,67 +252,36 @@ public final class GenericDocumentToProtoConverter {
     }
 
     /**
-     * Get the list of unprefixed parent type names of {@code prefixedSchemaType}.
-     *
-     * <p>It's guaranteed that child types always appear before parent types in the list.
+     * Converts a {@link PropertyProto.VectorProto} into an {@link EmbeddingVector}.
      */
-    // TODO(b/290389974): Consider caching the result based prefixedSchemaType, and reset the
-    //  cache whenever a new setSchema is called.
-    @NonNull
-    private static List<String> getUnprefixedParentSchemaTypes(
-            @NonNull String prefixedSchemaType,
-            @NonNull Map<String, SchemaTypeConfigProto> schemaTypeMap) throws AppSearchException {
-        // Please note that neither DFS nor BFS order is guaranteed to always put child types
-        // before parent types (due to the diamond problem), so a topological sorting algorithm
-        // is required.
-        Map<String, Integer> inDegreeMap = new ArrayMap<>();
-        collectParentTypeInDegrees(prefixedSchemaType, schemaTypeMap,
-                /* visited= */new ArraySet<>(), inDegreeMap);
+    public static @NonNull EmbeddingVector vectorProtoToEmbeddingVector(
+            PropertyProto.@NonNull VectorProto vectorProto) {
+        Preconditions.checkNotNull(vectorProto);
 
-        List<String> result = new ArrayList<>();
-        Queue<String> queue = new ArrayDeque<>();
-        // prefixedSchemaType is the only type that has zero in-degree at this point.
-        queue.add(prefixedSchemaType);
-        while (!queue.isEmpty()) {
-            SchemaTypeConfigProto currentSchema = Preconditions.checkNotNull(
-                    schemaTypeMap.get(queue.poll()));
-            for (int i = 0; i < currentSchema.getParentTypesCount(); ++i) {
-                String prefixedParentType = currentSchema.getParentTypes(i);
-                int parentInDegree =
-                        Preconditions.checkNotNull(inDegreeMap.get(prefixedParentType)) - 1;
-                inDegreeMap.put(prefixedParentType, parentInDegree);
-                if (parentInDegree == 0) {
-                    result.add(PrefixUtil.removePrefix(prefixedParentType));
-                    queue.add(prefixedParentType);
-                }
-            }
+        float[] values = new float[vectorProto.getValuesCount()];
+        for (int i = 0; i < vectorProto.getValuesCount(); i++) {
+            values[i] = vectorProto.getValues(i);
         }
-        return result;
+        return new EmbeddingVector(values, vectorProto.getModelSignature());
     }
 
-    private static void collectParentTypeInDegrees(
-            @NonNull String prefixedSchemaType,
-            @NonNull Map<String, SchemaTypeConfigProto> schemaTypeMap,
-            @NonNull Set<String> visited, @NonNull Map<String, Integer> inDegreeMap) {
-        if (visited.contains(prefixedSchemaType)) {
-            return;
+    /**
+     * Converts an {@link EmbeddingVector} into a {@link PropertyProto.VectorProto}.
+     */
+    public static PropertyProto.@NonNull VectorProto embeddingVectorToVectorProto(
+            @NonNull EmbeddingVector embedding) {
+        Preconditions.checkNotNull(embedding);
+
+        PropertyProto.VectorProto.Builder builder = PropertyProto.VectorProto.newBuilder();
+        for (int i = 0; i < embedding.getValues().length; i++) {
+            builder.addValues(embedding.getValues()[i]);
         }
-        visited.add(prefixedSchemaType);
-        SchemaTypeConfigProto schema =
-                Preconditions.checkNotNull(schemaTypeMap.get(prefixedSchemaType));
-        for (int i = 0; i < schema.getParentTypesCount(); ++i) {
-            String prefixedParentType = schema.getParentTypes(i);
-            Integer parentInDegree = inDegreeMap.get(prefixedParentType);
-            if (parentInDegree == null) {
-                parentInDegree = 0;
-            }
-            inDegreeMap.put(prefixedParentType, parentInDegree + 1);
-            collectParentTypeInDegrees(prefixedParentType, schemaTypeMap, visited, inDegreeMap);
-        }
+        builder.setModelSignature(embedding.getModelSignature());
+        return builder.build();
     }
 
     private static void setEmptyProperty(@NonNull String propertyName,
-            @NonNull GenericDocument.Builder<?> documentBuilder,
+            GenericDocument.@NonNull Builder<?> documentBuilder,
             @NonNull SchemaTypeConfigProto schema) {
         @AppSearchSchema.PropertyConfig.DataType int dataType = 0;
         for (int i = 0; i < schema.getPropertiesCount(); ++i) {
@@ -304,6 +309,9 @@ public final class GenericDocumentToProtoConverter {
                 break;
             case AppSearchSchema.PropertyConfig.DATA_TYPE_DOCUMENT:
                 documentBuilder.setPropertyDocument(propertyName, EMPTY_DOCUMENT_ARRAY);
+                break;
+            case AppSearchSchema.PropertyConfig.DATA_TYPE_EMBEDDING:
+                documentBuilder.setPropertyEmbedding(propertyName, EMPTY_EMBEDDING_ARRAY);
                 break;
             default:
                 throw new IllegalStateException("Unknown type of value: " + propertyName);

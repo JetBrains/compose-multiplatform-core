@@ -18,7 +18,7 @@ package androidx.privacysandbox.ui.core
 
 import android.content.Context
 import android.content.res.Configuration
-import android.os.IBinder
+import android.os.Bundle
 import android.view.View
 import java.lang.AutoCloseable
 import java.util.concurrent.Executor
@@ -26,7 +26,6 @@ import java.util.concurrent.Executor
 /**
  * An Adapter that provides content from a SandboxedSdk to be displayed as part of a host app's UI.
  */
-
 interface SandboxedUiAdapter {
 
     /**
@@ -38,7 +37,7 @@ interface SandboxedUiAdapter {
      */
     fun openSession(
         context: Context,
-        windowInputToken: IBinder,
+        sessionData: SessionData,
         initialWidth: Int,
         initialHeight: Int,
         isZOrderOnTop: Boolean,
@@ -46,9 +45,7 @@ interface SandboxedUiAdapter {
         client: SessionClient
     )
 
-    /**
-     * A single session with the provider of remote content.
-     */
+    /** A single session with the provider of remote content. */
     interface Session : AutoCloseable {
 
         /**
@@ -57,6 +54,16 @@ interface SandboxedUiAdapter {
          * [IllegalStateException].
          */
         val view: View
+
+        /**
+         * The set of options that will be used to determine what information is calculated and sent
+         * to [SessionObserver]s attached to this session.
+         *
+         * This value should not be directly set by UI providers. Instead, the registration of any
+         * [SessionObserverFactory] will indicate that information should be calculated for this
+         * session.
+         */
+        val signalOptions: Set<String>
 
         /**
          * Notify the provider that the size of the host presentation area has changed to a size of
@@ -70,22 +77,45 @@ interface SandboxedUiAdapter {
          */
         fun notifyZOrderChanged(isZOrderOnTop: Boolean)
 
-        /**
-         * Notify the session that the host configuration has changed to [configuration].
-         */
+        /** Notify the session that the host configuration has changed to [configuration]. */
         fun notifyConfigurationChanged(configuration: Configuration)
 
         /**
-         * Close this session, indicating that the remote provider of content should
-         * dispose of associated resources and that the [SessionClient] should not
-         * receive further callback events.
+         * Notify the session when the presentation state of its UI container has changed.
+         *
+         * [uiContainerInfo] contains a Bundle that represents the state of the container. The exact
+         * details of this Bundle depend on the container this Bundle is describing. This
+         * notification is not in real time and is throttled, so it should not be used to react to
+         * UI changes on the client side.
+         *
+         * UI providers should add [SessionObserverFactory]s to observe UI changes rather than using
+         * this method directly.
+         */
+        fun notifyUiChanged(uiContainerInfo: Bundle)
+
+        /**
+         * Notifies that the session has been rendered inside the container hosting this session.
+         *
+         * [supportedSignalOptions] specifies the signal options which are supported by the host
+         * container.
+         *
+         * UI providers should add [SessionObserverFactory]s to receive this value rather than using
+         * this method directly. This API is used to notify the [SessionObserver]s associated with
+         * this session about the supported signal options for this session.
+         *
+         * @see [SandboxedUiAdapterSignalOptions]
+         */
+        fun notifySessionRendered(supportedSignalOptions: Set<String>)
+
+        /**
+         * Close this session, indicating that the remote provider of content should dispose of
+         * associated resources and that the [SessionClient] should not receive further callback
+         * events.
          */
         override fun close()
     }
 
-    /**
-     * The client of a single session that will receive callback events from an active session.
-     */
+    /** The client of a single session that will receive callback events from an active session. */
     interface SessionClient {
         /**
          * Called to report that the session was opened successfully, delivering the [Session]
@@ -94,9 +124,9 @@ interface SandboxedUiAdapter {
         fun onSessionOpened(session: Session)
 
         /**
-         * Called to report a terminal error in the session. No further events will be reported
-         * to this [SessionClient] and any further or currently pending calls to the [Session]
-         * that may have been in flight may be ignored.
+         * Called to report a terminal error in the session. No further events will be reported to
+         * this [SessionClient] and any further or currently pending calls to the [Session] that may
+         * have been in flight may be ignored.
          */
         fun onSessionError(throwable: Throwable)
 

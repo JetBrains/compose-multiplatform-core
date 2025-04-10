@@ -16,17 +16,25 @@
 
 package androidx.biometric;
 
+import android.annotation.SuppressLint;
 import android.content.DialogInterface;
+import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
-import androidx.fragment.app.FragmentActivity;
+import androidx.biometric.utils.AuthenticationCallbackProvider;
+import androidx.biometric.utils.AuthenticatorUtils;
+import androidx.biometric.utils.BiometricErrorData;
+import androidx.biometric.utils.CancellationSignalProvider;
+import androidx.biometric.utils.CryptoObjectUtils;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.Executor;
@@ -62,7 +70,7 @@ public class BiometricViewModel extends ViewModel {
      * {@link #getAuthenticationCallbackProvider()} is called.
      */
     private static final class CallbackListener extends AuthenticationCallbackProvider.Listener {
-        @NonNull private final WeakReference<BiometricViewModel> mViewModelRef;
+        private final @NonNull WeakReference<BiometricViewModel> mViewModelRef;
 
         /**
          * Creates a callback listener with a weak reference to the given view model.
@@ -75,7 +83,7 @@ public class BiometricViewModel extends ViewModel {
         }
 
         @Override
-        void onSuccess(@NonNull BiometricPrompt.AuthenticationResult result) {
+        public void onSuccess(BiometricPrompt.@NonNull AuthenticationResult result) {
             if (mViewModelRef.get() != null && mViewModelRef.get().isAwaitingResult()) {
                 // Try to infer the authentication type if unknown.
                 if (result.getAuthenticationType()
@@ -90,7 +98,7 @@ public class BiometricViewModel extends ViewModel {
         }
 
         @Override
-        void onError(int errorCode, @Nullable CharSequence errorMessage) {
+        public  void onError(int errorCode, @Nullable CharSequence errorMessage) {
             if (mViewModelRef.get() != null
                     && !mViewModelRef.get().isConfirmingDeviceCredential()
                     && mViewModelRef.get().isAwaitingResult()) {
@@ -100,14 +108,14 @@ public class BiometricViewModel extends ViewModel {
         }
 
         @Override
-        void onHelp(@Nullable CharSequence helpMessage) {
+        public  void onHelp(@Nullable CharSequence helpMessage) {
             if (mViewModelRef.get() != null) {
                 mViewModelRef.get().setAuthenticationHelpMessage(helpMessage);
             }
         }
 
         @Override
-        void onFailure() {
+        public  void onFailure() {
             if (mViewModelRef.get() != null && mViewModelRef.get().isAwaitingResult()) {
                 mViewModelRef.get().setAuthenticationFailurePending(true);
             }
@@ -118,7 +126,7 @@ public class BiometricViewModel extends ViewModel {
      * The dialog listener that is returned by {@link #getNegativeButtonListener()}.
      */
     private static class NegativeButtonListener implements DialogInterface.OnClickListener {
-        @NonNull private final WeakReference<BiometricViewModel> mViewModelRef;
+        private final @NonNull WeakReference<BiometricViewModel> mViewModelRef;
 
         /**
          * Creates a negative button listener with a weak reference to the given view model.
@@ -139,46 +147,64 @@ public class BiometricViewModel extends ViewModel {
     }
 
     /**
+     * The dialog listener that is returned by {@link #getMoreOptionsButtonListener()} ()}.
+     */
+    private static class MoreOptionsButtonListener implements DialogInterface.OnClickListener {
+        private final @NonNull WeakReference<BiometricViewModel> mViewModelRef;
+
+        /**
+         * Creates a more options button listener with a weak reference to the given view model.
+         *
+         * @param viewModel The view model instance to hold a weak reference to.
+         */
+        MoreOptionsButtonListener(@Nullable BiometricViewModel viewModel) {
+            mViewModelRef = new WeakReference<>(viewModel);
+        }
+
+        @Override
+        public void onClick(DialogInterface dialogInterface, int which) {
+            if (mViewModelRef.get() != null) {
+                mViewModelRef.get().setMoreOptionsButtonPressPending(true);
+            }
+        }
+    }
+
+    /**
      * The executor that will run authentication callback methods.
      *
      * <p>If unset, callbacks are invoked on the main thread with {@link Looper#getMainLooper()}.
      */
-    @Nullable private Executor mClientExecutor;
-
-    /**
-     * The callback object that will receive authentication events.
-     */
-    @Nullable private BiometricPrompt.AuthenticationCallback mClientCallback;
-
-    /**
-     * Reference to latest {@link androidx.fragment.app.FragmentActivity} hosting BiometricPrompt
-     */
-    @Nullable private WeakReference<FragmentActivity> mClientActivity;
+    private @Nullable Executor mClientExecutor;
 
     /**
      * Info about the appearance and behavior of the prompt provided by the client application.
      */
-    @Nullable private BiometricPrompt.PromptInfo mPromptInfo;
+    private BiometricPrompt.@Nullable PromptInfo mPromptInfo;
 
     /**
      * The crypto object associated with the current authentication session.
      */
-    @Nullable private BiometricPrompt.CryptoObject mCryptoObject;
+    private BiometricPrompt.@Nullable CryptoObject mCryptoObject;
 
     /**
      * A provider for cross-platform compatible authentication callbacks.
      */
-    @Nullable private AuthenticationCallbackProvider mAuthenticationCallbackProvider;
+    private @Nullable AuthenticationCallbackProvider mAuthenticationCallbackProvider;
 
     /**
      * A provider for cross-platform compatible cancellation signal objects.
      */
-    @Nullable private CancellationSignalProvider mCancellationSignalProvider;
+    private @Nullable CancellationSignalProvider mCancellationSignalProvider;
 
     /**
      * A dialog listener for the negative button shown on the prompt.
      */
-    @Nullable private DialogInterface.OnClickListener mNegativeButtonListener;
+    private DialogInterface.@Nullable OnClickListener mNegativeButtonListener;
+
+    /**
+     * A dialog listener for the more options button shown on the prompt content.
+     */
+    private DialogInterface.@Nullable OnClickListener mMoreOptionsButtonListener;
 
     /**
      * A label for the negative button shown on the prompt.
@@ -186,7 +212,7 @@ public class BiometricViewModel extends ViewModel {
      * <p>If set, this value overrides the one returned by
      * {@link BiometricPrompt.PromptInfo#getNegativeButtonText()}.
      */
-    @Nullable private CharSequence mNegativeButtonTextOverride;
+    private @Nullable CharSequence mNegativeButtonTextOverride;
 
     /**
      * An integer indicating where the dialog was last canceled from.
@@ -226,29 +252,51 @@ public class BiometricViewModel extends ViewModel {
     private boolean mIsUsingKeyguardManagerForBiometricAndCredential;
 
     /**
+     * Whether Identity check is available in the current API level.
+     */
+    private boolean mIsIdentityCheckAvailable;
+
+    /**
+     * The type(s) of authenticators that may be invoked by the biometric prompt.
+     *
+     * <p>If a non-null {@link BiometricPrompt.PromptInfo} has been set by
+     * {@link #setPromptInfo(BiometricPrompt.PromptInfo)}, this is the single consolidated set of
+     * authenticators allowed by the prompt, taking into account the values of
+     * {@link BiometricPrompt.PromptInfo#getAllowedAuthenticators()},
+     * {@link BiometricPrompt.PromptInfo#isDeviceCredentialAllowed()},
+     * {@link #getCryptoObject()} and {@link #mIsIdentityCheckAvailable}.
+     */
+    private int mAllowedAuthenticators;
+
+    /**
      * Information associated with a successful authentication attempt.
      */
-    @Nullable private MutableLiveData<BiometricPrompt.AuthenticationResult> mAuthenticationResult;
+    private @Nullable MutableLiveData<BiometricPrompt.AuthenticationResult> mAuthenticationResult;
 
     /**
      * Information associated with an unrecoverable authentication error.
      */
-    @Nullable private MutableLiveData<BiometricErrorData> mAuthenticationError;
+    private @Nullable MutableLiveData<BiometricErrorData> mAuthenticationError;
 
     /**
      * A human-readable message describing a recoverable authentication error or event.
      */
-    @Nullable private MutableLiveData<CharSequence> mAuthenticationHelpMessage;
+    private @Nullable MutableLiveData<CharSequence> mAuthenticationHelpMessage;
 
     /**
      * Whether an unrecognized biometric has been presented.
      */
-    @Nullable private MutableLiveData<Boolean> mIsAuthenticationFailurePending;
+    private @Nullable MutableLiveData<Boolean> mIsAuthenticationFailurePending;
 
     /**
      * Whether the user has pressed the negative button on the prompt.
      */
-    @Nullable private MutableLiveData<Boolean> mIsNegativeButtonPressPending;
+    private @Nullable MutableLiveData<Boolean> mIsNegativeButtonPressPending;
+
+    /**
+     * Whether the user has pressed the more options button on the prompt content.
+     */
+    private @Nullable MutableLiveData<Boolean> mIsMoreOptionsButtonPressPending;
 
     /**
      * Whether the fingerprint dialog should always be dismissed instantly.
@@ -258,7 +306,7 @@ public class BiometricViewModel extends ViewModel {
     /**
      * Whether the user has manually canceled out of the fingerprint dialog.
      */
-    @Nullable private MutableLiveData<Boolean> mIsFingerprintDialogCancelPending;
+    private @Nullable MutableLiveData<Boolean> mIsFingerprintDialogCancelPending;
 
     /**
      * The previous state of the fingerprint dialog UI.
@@ -269,15 +317,14 @@ public class BiometricViewModel extends ViewModel {
     /**
      * The current state of the fingerprint dialog UI.
      */
-    @Nullable private MutableLiveData<Integer> mFingerprintDialogState;
+    private @Nullable MutableLiveData<Integer> mFingerprintDialogState;
 
     /**
      * A human-readable message to be displayed below the icon on the fingerprint dialog.
      */
-    @Nullable private MutableLiveData<CharSequence> mFingerprintDialogHelpMessage;
+    private @Nullable MutableLiveData<CharSequence> mFingerprintDialogHelpMessage;
 
-    @NonNull
-    Executor getClientExecutor() {
+    @NonNull Executor getClientExecutor() {
         return mClientExecutor != null ? mClientExecutor : new DefaultExecutor();
     }
 
@@ -285,45 +332,48 @@ public class BiometricViewModel extends ViewModel {
         mClientExecutor = clientExecutor;
     }
 
-    @NonNull
-    BiometricPrompt.AuthenticationCallback getClientCallback() {
-        if (mClientCallback == null) {
-            mClientCallback = new BiometricPrompt.AuthenticationCallback() {};
-        }
-        return mClientCallback;
-    }
-
-    void setClientCallback(@NonNull BiometricPrompt.AuthenticationCallback clientCallback) {
-        mClientCallback = clientCallback;
-    }
-
-    /**
-     * Clears the client callback reference held by this view model.
-     */
-    void resetClientCallback() {
-        mClientCallback = null;
-    }
-
-    /**
-     * Returns reference to latest activity hosting BiometricPrompt or null if activity has
-     * already been destroyed
-     * @return Reference to latest activity hosting BiometricPrompt
-     */
-    @Nullable
-    public FragmentActivity getClientActivity() {
-        return mClientActivity != null ? mClientActivity.get() : null;
-    }
-
-    /**
-     * Updates reference to latest activity hosting BiometricPrompt
-     * @param clientActivity Reference to latest activity hosting BiometricPrompt
-     */
-    void setClientActivity(@NonNull FragmentActivity clientActivity) {
-        mClientActivity = new WeakReference<>(clientActivity);
-    }
-
-    void setPromptInfo(@Nullable BiometricPrompt.PromptInfo promptInfo) {
+    void setPromptInfo(BiometricPrompt.@Nullable PromptInfo promptInfo) {
         mPromptInfo = promptInfo;
+        updateConsolidatedAuthenticators();
+    }
+
+    /**
+     * Gets the logo res to be shown on the biometric prompt.
+     *
+     * <p>This method relies on the {@link BiometricPrompt.PromptInfo} set by
+     * {@link #setPromptInfo(BiometricPrompt.PromptInfo)}.
+     *
+     * @return The logo res for the prompt, or -1 if not set.
+     */
+    @SuppressLint("MissingPermission")
+    int getLogoRes() {
+        return mPromptInfo != null ? mPromptInfo.getLogoRes() : -1;
+    }
+
+    /**
+     * Gets the logo bitmap to be shown on the biometric prompt.
+     *
+     * <p>This method relies on the {@link BiometricPrompt.PromptInfo} set by
+     * {@link #setPromptInfo(BiometricPrompt.PromptInfo)}.
+     *
+     * @return The logo bitmap for the prompt, or null if not set.
+     */
+    @SuppressLint("MissingPermission")
+    @Nullable Bitmap getLogoBitmap() {
+        return mPromptInfo != null ? mPromptInfo.getLogoBitmap() : null;
+    }
+
+    /**
+     * Gets the logo description to be shown on the biometric prompt.
+     *
+     * <p>This method relies on the {@link BiometricPrompt.PromptInfo} set by
+     * {@link #setPromptInfo(BiometricPrompt.PromptInfo)}.
+     *
+     * @return The logo description for the prompt, or null if not set.
+     */
+    @SuppressLint("MissingPermission")
+    @Nullable String getLogoDescription() {
+        return mPromptInfo != null ? mPromptInfo.getLogoDescription() : null;
     }
 
     /**
@@ -334,8 +384,7 @@ public class BiometricViewModel extends ViewModel {
      *
      * @return The title for the prompt, or {@code null} if not set.
      */
-    @Nullable
-    CharSequence getTitle() {
+    @Nullable CharSequence getTitle() {
         return mPromptInfo != null ? mPromptInfo.getTitle() : null;
     }
 
@@ -347,8 +396,7 @@ public class BiometricViewModel extends ViewModel {
      *
      * @return The subtitle for the prompt, or {@code null} if not set.
      */
-    @Nullable
-    CharSequence getSubtitle() {
+    @Nullable CharSequence getSubtitle() {
         return mPromptInfo != null ? mPromptInfo.getSubtitle() : null;
     }
 
@@ -360,9 +408,20 @@ public class BiometricViewModel extends ViewModel {
      *
      * @return The description for the prompt, or {@code null} if not set.
      */
-    @Nullable
-    CharSequence getDescription() {
+    @Nullable CharSequence getDescription() {
         return mPromptInfo != null ? mPromptInfo.getDescription() : null;
+    }
+
+    /**
+     * Gets the prompt content view to be shown on the biometric prompt.
+     *
+     * <p>This method relies on the {@link BiometricPrompt.PromptInfo} set by
+     * {@link #setPromptInfo(BiometricPrompt.PromptInfo)}.
+     *
+     * @return The prompt content view for the prompt, or {@code null} if not set.
+     */
+    @Nullable PromptContentView getContentView() {
+        return mPromptInfo != null ? mPromptInfo.getContentView() : null;
     }
 
     /**
@@ -376,8 +435,7 @@ public class BiometricViewModel extends ViewModel {
      *
      * @return The negative button text for the prompt, or {@code null} if not set.
      */
-    @Nullable
-    CharSequence getNegativeButtonText() {
+    @Nullable CharSequence getNegativeButtonText() {
         if (mNegativeButtonTextOverride != null) {
             return mNegativeButtonTextOverride;
         } else if (mPromptInfo != null) {
@@ -406,8 +464,8 @@ public class BiometricViewModel extends ViewModel {
      * {@link #setPromptInfo(BiometricPrompt.PromptInfo)}, this is the single consolidated set of
      * authenticators allowed by the prompt, taking into account the values of
      * {@link BiometricPrompt.PromptInfo#getAllowedAuthenticators()},
-     * {@link BiometricPrompt.PromptInfo#isDeviceCredentialAllowed()}, and
-     * {@link #getCryptoObject()}.
+     * {@link BiometricPrompt.PromptInfo#isDeviceCredentialAllowed()},
+     * {@link #getCryptoObject()} and {@link #mIsIdentityCheckAvailable}.
      *
      * @return A bit field representing all valid authenticator types that may be invoked by
      * the prompt, or 0 if not set.
@@ -415,22 +473,29 @@ public class BiometricViewModel extends ViewModel {
     @SuppressWarnings("deprecation")
     @BiometricManager.AuthenticatorTypes
     int getAllowedAuthenticators() {
-        return mPromptInfo != null
-                ? AuthenticatorUtils.getConsolidatedAuthenticators(mPromptInfo, mCryptoObject)
-                : 0;
+        return mAllowedAuthenticators;
     }
 
-    @Nullable
-    BiometricPrompt.CryptoObject getCryptoObject() {
+    BiometricPrompt.@Nullable CryptoObject getCryptoObject() {
         return mCryptoObject;
     }
 
-    void setCryptoObject(@Nullable BiometricPrompt.CryptoObject cryptoObject) {
+    void setCryptoObject(BiometricPrompt.@Nullable CryptoObject cryptoObject) {
         mCryptoObject = cryptoObject;
+
+        // Use a fake crypto object to force Strong biometric auth prior to Android 11 (API 30).
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                && Build.VERSION.SDK_INT < Build.VERSION_CODES.R
+                && AuthenticatorUtils.isAtLeastStrength(mPromptInfo.getAllowedAuthenticators(),
+                BiometricManager.Authenticators.BIOMETRIC_STRONG)
+                && cryptoObject == null) {
+            mCryptoObject = CryptoObjectUtils.createFakeCryptoObject();
+        }
+
+        updateConsolidatedAuthenticators();
     }
 
-    @NonNull
-    AuthenticationCallbackProvider getAuthenticationCallbackProvider() {
+    @NonNull AuthenticationCallbackProvider getAuthenticationCallbackProvider() {
         if (mAuthenticationCallbackProvider == null) {
             mAuthenticationCallbackProvider =
                     new AuthenticationCallbackProvider(new CallbackListener(this));
@@ -438,20 +503,25 @@ public class BiometricViewModel extends ViewModel {
         return mAuthenticationCallbackProvider;
     }
 
-    @NonNull
-    CancellationSignalProvider getCancellationSignalProvider() {
+    @NonNull CancellationSignalProvider getCancellationSignalProvider() {
         if (mCancellationSignalProvider == null) {
             mCancellationSignalProvider = new CancellationSignalProvider();
         }
         return mCancellationSignalProvider;
     }
 
-    @NonNull
-    DialogInterface.OnClickListener getNegativeButtonListener() {
+    DialogInterface.@NonNull OnClickListener getNegativeButtonListener() {
         if (mNegativeButtonListener == null) {
             mNegativeButtonListener = new NegativeButtonListener(this);
         }
         return mNegativeButtonListener;
+    }
+
+    DialogInterface.@NonNull OnClickListener getMoreOptionsButtonListener() {
+        if (mMoreOptionsButtonListener == null) {
+            mMoreOptionsButtonListener = new MoreOptionsButtonListener(this);
+        }
+        return mMoreOptionsButtonListener;
     }
 
     void setNegativeButtonTextOverride(@Nullable CharSequence negativeButtonTextOverride) {
@@ -516,8 +586,12 @@ public class BiometricViewModel extends ViewModel {
                 usingKeyguardManagerForBiometricAndCredential;
     }
 
-    @NonNull
-    LiveData<BiometricPrompt.AuthenticationResult> getAuthenticationResult() {
+    void setIsIdentityCheckAvailable(boolean isIdentityCheckAvailable) {
+        mIsIdentityCheckAvailable = isIdentityCheckAvailable;
+        updateConsolidatedAuthenticators();
+    }
+
+    @NonNull LiveData<BiometricPrompt.AuthenticationResult> getAuthenticationResult() {
         if (mAuthenticationResult == null) {
             mAuthenticationResult = new MutableLiveData<>();
         }
@@ -525,15 +599,14 @@ public class BiometricViewModel extends ViewModel {
     }
 
     void setAuthenticationResult(
-            @Nullable BiometricPrompt.AuthenticationResult authenticationResult) {
+            BiometricPrompt.@Nullable AuthenticationResult authenticationResult) {
         if (mAuthenticationResult == null) {
             mAuthenticationResult = new MutableLiveData<>();
         }
         updateValue(mAuthenticationResult, authenticationResult);
     }
 
-    @NonNull
-    MutableLiveData<BiometricErrorData> getAuthenticationError() {
+    @NonNull MutableLiveData<BiometricErrorData> getAuthenticationError() {
         if (mAuthenticationError == null) {
             mAuthenticationError = new MutableLiveData<>();
         }
@@ -547,8 +620,7 @@ public class BiometricViewModel extends ViewModel {
         updateValue(mAuthenticationError, authenticationError);
     }
 
-    @NonNull
-    LiveData<CharSequence> getAuthenticationHelpMessage() {
+    @NonNull LiveData<CharSequence> getAuthenticationHelpMessage() {
         if (mAuthenticationHelpMessage == null) {
             mAuthenticationHelpMessage = new MutableLiveData<>();
         }
@@ -563,8 +635,7 @@ public class BiometricViewModel extends ViewModel {
         updateValue(mAuthenticationHelpMessage, authenticationHelpMessage);
     }
 
-    @NonNull
-    LiveData<Boolean> isAuthenticationFailurePending() {
+    @NonNull LiveData<Boolean> isAuthenticationFailurePending() {
         if (mIsAuthenticationFailurePending == null) {
             mIsAuthenticationFailurePending = new MutableLiveData<>();
         }
@@ -578,8 +649,7 @@ public class BiometricViewModel extends ViewModel {
         updateValue(mIsAuthenticationFailurePending, authenticationFailurePending);
     }
 
-    @NonNull
-    LiveData<Boolean> isNegativeButtonPressPending() {
+    @NonNull LiveData<Boolean> isNegativeButtonPressPending() {
         if (mIsNegativeButtonPressPending == null) {
             mIsNegativeButtonPressPending = new MutableLiveData<>();
         }
@@ -593,6 +663,21 @@ public class BiometricViewModel extends ViewModel {
         updateValue(mIsNegativeButtonPressPending, negativeButtonPressPending);
     }
 
+    @NonNull LiveData<Boolean> isMoreOptionsButtonPressPending() {
+        if (mIsMoreOptionsButtonPressPending == null) {
+            mIsMoreOptionsButtonPressPending = new MutableLiveData<>();
+        }
+        return mIsMoreOptionsButtonPressPending;
+    }
+
+    void setMoreOptionsButtonPressPending(boolean moreOptionsButtonPressPending) {
+        if (mIsMoreOptionsButtonPressPending == null) {
+            mIsMoreOptionsButtonPressPending = new MutableLiveData<>();
+        }
+        updateValue(mIsMoreOptionsButtonPressPending, moreOptionsButtonPressPending);
+    }
+
+
     boolean isFingerprintDialogDismissedInstantly() {
         return mIsFingerprintDialogDismissedInstantly;
     }
@@ -602,8 +687,7 @@ public class BiometricViewModel extends ViewModel {
         mIsFingerprintDialogDismissedInstantly = fingerprintDialogDismissedInstantly;
     }
 
-    @NonNull
-    LiveData<Boolean> isFingerprintDialogCancelPending() {
+    @NonNull LiveData<Boolean> isFingerprintDialogCancelPending() {
         if (mIsFingerprintDialogCancelPending == null) {
             mIsFingerprintDialogCancelPending = new MutableLiveData<>();
         }
@@ -627,8 +711,7 @@ public class BiometricViewModel extends ViewModel {
         mFingerprintDialogPreviousState = fingerprintDialogPreviousState;
     }
 
-    @NonNull
-    LiveData<Integer> getFingerprintDialogState() {
+    @NonNull LiveData<Integer> getFingerprintDialogState() {
         if (mFingerprintDialogState == null) {
             mFingerprintDialogState = new MutableLiveData<>();
         }
@@ -643,8 +726,7 @@ public class BiometricViewModel extends ViewModel {
         updateValue(mFingerprintDialogState, fingerprintDialogState);
     }
 
-    @NonNull
-    LiveData<CharSequence> getFingerprintDialogHelpMessage() {
+    @NonNull LiveData<CharSequence> getFingerprintDialogHelpMessage() {
         if (mFingerprintDialogHelpMessage == null) {
             mFingerprintDialogHelpMessage = new MutableLiveData<>();
         }
@@ -674,6 +756,12 @@ public class BiometricViewModel extends ViewModel {
             return BiometricPrompt.AUTHENTICATION_RESULT_TYPE_BIOMETRIC;
         }
         return BiometricPrompt.AUTHENTICATION_RESULT_TYPE_UNKNOWN;
+    }
+
+    private void updateConsolidatedAuthenticators() {
+        mAllowedAuthenticators = AuthenticatorUtils.getConsolidatedAuthenticators(mPromptInfo,
+                mCryptoObject,
+                mIsIdentityCheckAvailable);
     }
 
     /**

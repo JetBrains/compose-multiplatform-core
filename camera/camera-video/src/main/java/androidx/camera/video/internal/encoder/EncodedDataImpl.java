@@ -18,20 +18,19 @@ package androidx.camera.video.internal.encoder;
 
 import android.media.MediaCodec;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /** {@inheritDoc} */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class EncodedDataImpl implements EncodedData {
     private final MediaCodec mMediaCodec;
     private final MediaCodec.BufferInfo mBufferInfo;
@@ -43,7 +42,7 @@ public class EncodedDataImpl implements EncodedData {
     private final AtomicBoolean mClosed = new AtomicBoolean(false);
 
     EncodedDataImpl(@NonNull MediaCodec mediaCodec, int bufferIndex,
-            @NonNull MediaCodec.BufferInfo bufferInfo) throws MediaCodec.CodecException {
+            MediaCodec.@NonNull BufferInfo bufferInfo) throws MediaCodec.CodecException {
         mMediaCodec = Preconditions.checkNotNull(mediaCodec);
         mBufferIndex = bufferIndex;
         mByteBuffer = mediaCodec.getOutputBuffer(bufferIndex);
@@ -59,8 +58,7 @@ public class EncodedDataImpl implements EncodedData {
 
     /** {@inheritDoc} */
     @Override
-    @NonNull
-    public ByteBuffer getByteBuffer() {
+    public @NonNull ByteBuffer getByteBuffer() {
         throwIfClosed();
         mByteBuffer.position(mBufferInfo.offset);
         mByteBuffer.limit(mBufferInfo.offset + mBufferInfo.size);
@@ -69,8 +67,7 @@ public class EncodedDataImpl implements EncodedData {
 
     /** {@inheritDoc} */
     @Override
-    @NonNull
-    public MediaCodec.BufferInfo getBufferInfo() {
+    public MediaCodec.@NonNull BufferInfo getBufferInfo() {
         return mBufferInfo;
     }
 
@@ -109,8 +106,7 @@ public class EncodedDataImpl implements EncodedData {
 
     /** {@inheritDoc} */
     @Override
-    @NonNull
-    public ListenableFuture<Void> getClosedFuture() {
+    public @NonNull ListenableFuture<Void> getClosedFuture() {
         return Futures.nonCancellationPropagating(mClosedFuture);
     }
 

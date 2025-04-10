@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -24,12 +31,17 @@ plugins {
 dependencies {
     compileOnly(libs.androidLintMinApi)
     compileOnly(libs.kotlinStdlib)
+    compileOnly(libs.androidLayoutlibApi)
     compileOnly(libs.androidLintChecksMin)
+    compileOnly(libs.androidToolsCommon)
+    compileOnly(libs.intellijCore)
+    compileOnly(libs.uast)
+    compileOnly(libs.intellijKotlinCompiler)
 
     testImplementation(libs.kotlinStdlib)
-    testImplementation(libs.kotlinReflect)
+    testRuntimeOnly(libs.kotlinReflect)
     testImplementation(libs.kotlinStdlibJdk8)
-    testImplementation(libs.androidLint)
+    testImplementation(libs.androidLintApi)
     testImplementation(libs.androidLintTests)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
@@ -37,7 +49,7 @@ dependencies {
 
 androidx {
     name = "Fragment Lint Checks"
-    type = LibraryType.LINT
+    type = SoftwareType.LINT
     inceptionYear = "2019"
     description = "Android Fragment Lint Checks"
 }

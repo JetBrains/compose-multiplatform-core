@@ -14,8 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -23,15 +29,15 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.5.0")
+    api(libs.jspecify)
+    api("androidx.annotation:annotation:1.8.1")
     testImplementation(libs.junit)
 }
 
 androidx {
     name = "ConstraintLayout Core"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.CONSTRAINTLAYOUT_CORE
     inceptionYear = "2022"
     description = "This library contains engines and algorithms for constraint based layout and complex animations (it is used by the ConstraintLayout library)"
-    metalavaK2UastEnabled = true
 }

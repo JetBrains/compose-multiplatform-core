@@ -19,9 +19,10 @@ package androidx.wear.watchface;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Px;
 import androidx.wear.watchface.complications.data.ComplicationData;
+
+import org.jspecify.annotations.NonNull;
 
 import java.time.ZonedDateTime;
 
@@ -60,9 +61,8 @@ public class JavaCompatTest {
                 @NonNull ZonedDateTime zonedDateTime,
                 int color) {}
 
-        @NonNull
         @Override
-        public ComplicationData getData() {
+        public @NonNull ComplicationData getData() {
             return null;
         }
 

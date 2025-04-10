@@ -18,9 +18,10 @@ package androidx.compose.ui.platform.coreshims;
 
 import android.view.autofill.AutofillId;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper for accessing features in {@link AutofillId}.
@@ -45,8 +46,7 @@ public class AutofillIdCompat {
      * @return wrapped class
      */
     @RequiresApi(26)
-    @NonNull
-    public static AutofillIdCompat toAutofillIdCompat(@NonNull AutofillId autofillId) {
+    public static @NonNull AutofillIdCompat toAutofillIdCompat(@NonNull AutofillId autofillId) {
         return new AutofillIdCompat(autofillId);
     }
 
@@ -60,8 +60,7 @@ public class AutofillIdCompat {
      * @see AutofillIdCompat#toAutofillIdCompat(AutofillId)
      */
     @RequiresApi(26)
-    @NonNull
-    public AutofillId toAutofillId() {
+    public @NonNull AutofillId toAutofillId() {
         return (AutofillId) mWrappedObj;
     }
 }

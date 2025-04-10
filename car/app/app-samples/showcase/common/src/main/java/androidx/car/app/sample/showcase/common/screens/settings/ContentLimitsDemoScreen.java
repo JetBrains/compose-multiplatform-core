@@ -16,17 +16,17 @@
 
 package androidx.car.app.sample.showcase.common.screens.settings;
 
-import static androidx.car.app.model.Action.BACK;
 import static androidx.car.app.sample.showcase.common.screens.settings.LoadingScreen.loadingScreenTemplate;
 
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
 import androidx.car.app.CarContext;
 import androidx.car.app.Screen;
 import androidx.car.app.constraints.ConstraintManager;
+import androidx.car.app.model.Action;
+import androidx.car.app.model.Header;
 import androidx.car.app.model.ItemList;
 import androidx.car.app.model.ListTemplate;
 import androidx.car.app.model.Row;
@@ -35,6 +35,8 @@ import androidx.car.app.sample.showcase.common.R;
 import androidx.car.app.sample.showcase.common.ShowcaseService;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A {@link Screen} that shows examples on how to query for various content limits via the
@@ -71,9 +73,8 @@ public class ContentLimitsDemoScreen extends Screen implements DefaultLifecycleO
         }
     }
 
-    @NonNull
     @Override
-    public Template onGetTemplate() {
+    public @NonNull Template onGetTemplate() {
 
         if (!mIsFinishedLoading && mShouldLoadScreens) {
             return loadingScreenTemplate(getCarContext());
@@ -98,8 +99,10 @@ public class ContentLimitsDemoScreen extends Screen implements DefaultLifecycleO
 
         return new ListTemplate.Builder()
                 .setSingleList(listBuilder.build())
-                .setTitle(getCarContext().getString(R.string.content_limits))
-                .setHeaderAction(BACK)
+                .setHeader(new Header.Builder()
+                        .setTitle(getCarContext().getString(R.string.content_limits))
+                        .setStartHeaderAction(Action.BACK)
+                        .build())
                 .build();
     }
 

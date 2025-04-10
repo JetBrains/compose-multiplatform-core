@@ -14,20 +14,27 @@
  * limitations under the License.
  */
 
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
 
-import androidx.build.Publish
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     id("com.google.protobuf")
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api(libs.jspecify)
+    api("androidx.annotation:annotation:1.8.1")
     api(libs.guavaListenableFuture)
 
     implementation "androidx.concurrent:concurrent-futures:1.1.0"
@@ -50,14 +57,6 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.protobuf)
 
-    // I'm not 100% sure why, but androidTestImplementation doesn't appear to use the standard
-    // results of a project build. This leads to it not using the shadow configuration from
-    // tiles-proto, and thus failing to find the protobuf classes at runtime.
-    //
-    // This line forces the androidTest to use the properly shaded proto library on the runtime
-    // classpath.
-    androidTestRuntimeOnly(project(path: ":wear:tiles:tiles-proto", configuration: "shadow"))
-
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testExtTruth)
     testImplementation(libs.testCore)
@@ -72,30 +71,28 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
 
-    buildTypes.all {
+    buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
 
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
 
-    sourceSets {
-        androidTest.assets.srcDirs += project.rootDir.absolutePath + "/../../golden/wear/wear-tiles-renderer"
-    }
-    namespace "androidx.wear.tiles.renderer"
+    namespace = "androidx.wear.tiles.renderer"
 }
 
 protobuf {
-    protoc {
-        artifact = libs.protobufCompiler.get()
-    }
     generateProtoTasks {
-        all().each { task ->
+        all().configureEach { task ->
             task.builtins {
-                java {}
+                java {
+                    // AndroidXPlugin defaults to lite as most projects should use that library,
+                    // however TileRendererGoldenTest relies on full proto library.
+                    options.remove("lite")
+                }
             }
         }
     }
@@ -103,11 +100,11 @@ protobuf {
 
 androidx {
     name = "Android Wear Tiles Renderer"
-    type = LibraryType.PUBLISHED_LIBRARY
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2021"
     description = "Android Wear Tiles Renderer components. These components can be used to parse " +
             "and render an already constructed Wear Tile."
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
+    addGoldenImageAssets()
 }
 

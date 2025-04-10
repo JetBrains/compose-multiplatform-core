@@ -49,7 +49,6 @@ import androidx.compose.ui.test.swipe
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.FlakyTest
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
@@ -65,8 +64,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class PositionInWindowTest {
 
-    @get:Rule
-    val rule = createAndroidComposeRule<TestActivity>()
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     lateinit var activity: ComponentActivity
 
@@ -123,12 +121,10 @@ class PositionInWindowTest {
         rule.setContent {
             with(LocalDensity.current) {
                 Box(
-                    Modifier
-                        .requiredSize(10.toDp())
-                        .onGloballyPositioned {
-                            coordinates = it
-                            latch.countDown()
-                        }
+                    Modifier.requiredSize(10.toDp()).onGloballyPositioned {
+                        coordinates = it
+                        latch.countDown()
+                    }
                 )
             }
         }
@@ -154,7 +150,6 @@ class PositionInWindowTest {
     }
 
     // Make sure that the position in the window changes when the decor view's scroll changes.
-    @FlakyTest(bugId = 283784222)
     @SdkSuppress(maxSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun positionInWindowOnScrollWindow() {
@@ -179,9 +174,8 @@ class PositionInWindowTest {
             }
         }
 
-        var position = Offset.Zero
         rule.runOnIdle {
-            position = coordinates!!.positionInWindow()
+            val position = coordinates!!.positionInWindow()
 
             // Can't easily scroll the window as if the window insets have changed, so
             // just directly modify the properties of ViewRootImpl
@@ -193,9 +187,8 @@ class PositionInWindowTest {
             val curScrollYField = viewRootImplClass.getDeclaredField("mCurScrollY")
             curScrollYField.isAccessible = true
             curScrollYField.set(viewRootImpl, -10)
-        }
 
-        rule.runOnIdle {
+            @Suppress("BanThreadSleep") Thread.sleep(1) // advance clock so cached value isn't used
             val newPosition = coordinates!!.positionInWindow()
             assertThat(newPosition.y).isEqualTo(position.y + 10)
         }
@@ -218,9 +211,7 @@ class PositionInWindowTest {
         }
 
         var position = Offset.Zero
-        rule.runOnIdle {
-            position = coordinates!!.positionInWindow()
-        }
+        rule.runOnIdle { position = coordinates!!.positionInWindow() }
 
         rule.runOnIdle {
             val decorView = activity.window.decorView as ViewGroup
@@ -263,13 +254,10 @@ class PositionInWindowTest {
             }
         }
 
-        rule.onNodeWithTag(smallBoxTag)
-            .performTouchInput {
-                swipe(Offset.Zero, Offset(endOffsetPx, endOffsetPx))
-            }
-
-        rule.runOnIdle {
-            assertThat(offset).isEqualTo(Offset(endOffsetPx, endOffsetPx))
+        rule.onNodeWithTag(smallBoxTag).performTouchInput {
+            swipe(Offset.Zero, Offset(endOffsetPx, endOffsetPx))
         }
+
+        rule.runOnIdle { assertThat(offset).isEqualTo(Offset(endOffsetPx, endOffsetPx)) }
     }
 }

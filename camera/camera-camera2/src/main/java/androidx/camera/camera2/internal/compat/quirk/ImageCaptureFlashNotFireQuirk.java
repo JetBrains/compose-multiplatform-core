@@ -21,9 +21,9 @@ import static android.hardware.camera2.CameraMetadata.LENS_FACING_FRONT;
 import android.hardware.camera2.CameraCharacteristics;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.List;
@@ -37,7 +37,6 @@ import java.util.Locale;
  *     Description: The flash doesn't fire while taking picture with flash ON/AUTO mode.
  *     Device(s): Itel w6004, Samsung Galaxy J7 (sm-j700f, sm-j710f) front camera
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class ImageCaptureFlashNotFireQuirk implements UseTorchAsFlashQuirk {
 
     // List of devices with the issue. See b/228800360.

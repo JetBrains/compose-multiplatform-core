@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.lazy
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.lazy.layout.IntervalList
 import androidx.compose.foundation.lazy.layout.MutableIntervalList
 import com.google.common.truth.Truth.assertThat
@@ -25,7 +24,6 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
-@OptIn(ExperimentalFoundationApi::class)
 class MutableIntervalListTest {
 
     private val intervalList = MutableIntervalList<Int>()
@@ -45,12 +43,13 @@ class MutableIntervalListTest {
     fun addOneItem_searchIndexOutOfBounds() {
         intervalList.addInterval(1, 10)
 
-        val wasException: Boolean = try {
-            intervalList[2]
-            false
-        } catch (e: IndexOutOfBoundsException) {
-            true
-        }
+        val wasException: Boolean =
+            try {
+                intervalList[2]
+                false
+            } catch (e: IndexOutOfBoundsException) {
+                true
+            }
 
         assertThat(wasException).isTrue()
     }
@@ -136,12 +135,13 @@ class MutableIntervalListTest {
     fun addVariableItems_searchIndexOutOfBounds() {
         addFiveVariableIntervals()
 
-        val wasException: Boolean = try {
-            intervalList[23]
-            false
-        } catch (e: IndexOutOfBoundsException) {
-            true
-        }
+        val wasException: Boolean =
+            try {
+                intervalList[23]
+                false
+            } catch (e: IndexOutOfBoundsException) {
+                true
+            }
 
         assertThat(wasException).isTrue()
     }
@@ -150,12 +150,13 @@ class MutableIntervalListTest {
     fun addOneItem_searchIndexOutOfBoundsWithNegativeValue() {
         intervalList.addInterval(1, 10)
 
-        val wasException: Boolean = try {
-            intervalList[-1]
-            false
-        } catch (e: IndexOutOfBoundsException) {
-            true
-        }
+        val wasException: Boolean =
+            try {
+                intervalList[-1]
+                false
+            } catch (e: IndexOutOfBoundsException) {
+                true
+            }
 
         assertThat(wasException).isTrue()
     }
@@ -165,9 +166,7 @@ class MutableIntervalListTest {
         addFiveSingleIntervals()
         val intervals = mutableListOf<IntervalList.Interval<Int>>()
 
-        intervalList.forEach {
-            intervals.add(it)
-        }
+        intervalList.forEach { intervals.add(it) }
 
         assertThat(intervals.map { it.startIndex }).isEqualTo(listOf(0, 1, 2, 3, 4))
         assertThat(intervals.map { it.size }).isEqualTo(listOf(1, 1, 1, 1, 1))
@@ -179,9 +178,7 @@ class MutableIntervalListTest {
         addFiveSingleIntervals()
         val intervals = mutableListOf<IntervalList.Interval<Int>>()
 
-        intervalList.forEach(fromIndex = 2) {
-            intervals.add(it)
-        }
+        intervalList.forEach(fromIndex = 2) { intervals.add(it) }
 
         assertThat(intervals.map { it.startIndex }).isEqualTo(listOf(2, 3, 4))
     }
@@ -191,9 +188,7 @@ class MutableIntervalListTest {
         addFiveSingleIntervals()
         val intervals = mutableListOf<IntervalList.Interval<Int>>()
 
-        intervalList.forEach(fromIndex = 2, toIndex = 3) {
-            intervals.add(it)
-        }
+        intervalList.forEach(fromIndex = 2, toIndex = 3) { intervals.add(it) }
 
         assertThat(intervals.map { it.startIndex }).isEqualTo(listOf(2, 3))
     }
@@ -203,9 +198,7 @@ class MutableIntervalListTest {
         addFiveSingleIntervals()
         val intervals = mutableListOf<IntervalList.Interval<Int>>()
 
-        intervalList.forEach(fromIndex = 2, toIndex = 2) {
-            intervals.add(it)
-        }
+        intervalList.forEach(fromIndex = 2, toIndex = 2) { intervals.add(it) }
 
         assertThat(intervals.map { it.startIndex }).isEqualTo(listOf(2))
     }
@@ -217,9 +210,7 @@ class MutableIntervalListTest {
         intervalList.addInterval(1, 2) // startIndex = 11
         val intervals = mutableListOf<IntervalList.Interval<Int>>()
 
-        intervalList.forEach(fromIndex = 5, toIndex = 10) {
-            intervals.add(it)
-        }
+        intervalList.forEach(fromIndex = 5, toIndex = 10) { intervals.add(it) }
 
         assertThat(intervals.map { it.startIndex }).isEqualTo(listOf(0, 10))
     }
@@ -228,12 +219,13 @@ class MutableIntervalListTest {
     fun forEach_startLargerThanEndThrows() {
         addFiveSingleIntervals()
 
-        val wasException: Boolean = try {
-            intervalList.forEach(fromIndex = 3, toIndex = 2) {}
-            false
-        } catch (e: IllegalArgumentException) {
-            true
-        }
+        val wasException: Boolean =
+            try {
+                intervalList.forEach(fromIndex = 3, toIndex = 2) {}
+                false
+            } catch (e: IllegalArgumentException) {
+                true
+            }
 
         assertThat(wasException).isTrue()
     }
@@ -242,36 +234,40 @@ class MutableIntervalListTest {
     fun forEach_outOfBounds() {
         addFiveSingleIntervals()
 
-        val wasException1: Boolean = try {
-            intervalList.forEach(fromIndex = -1) {}
-            false
-        } catch (e: IndexOutOfBoundsException) {
-            true
-        }
+        val wasException1: Boolean =
+            try {
+                intervalList.forEach(fromIndex = -1) {}
+                false
+            } catch (e: IndexOutOfBoundsException) {
+                true
+            }
         assertThat(wasException1).isTrue()
 
-        val wasException2: Boolean = try {
-            intervalList.forEach(toIndex = -1) {}
-            false
-        } catch (e: IndexOutOfBoundsException) {
-            true
-        }
+        val wasException2: Boolean =
+            try {
+                intervalList.forEach(toIndex = -1) {}
+                false
+            } catch (e: IndexOutOfBoundsException) {
+                true
+            }
         assertThat(wasException2).isTrue()
 
-        val wasException3: Boolean = try {
-            intervalList.forEach(fromIndex = 6) {}
-            false
-        } catch (e: IndexOutOfBoundsException) {
-            true
-        }
+        val wasException3: Boolean =
+            try {
+                intervalList.forEach(fromIndex = 6) {}
+                false
+            } catch (e: IndexOutOfBoundsException) {
+                true
+            }
         assertThat(wasException3).isTrue()
 
-        val wasException4: Boolean = try {
-            intervalList.forEach(toIndex = 6) {}
-            false
-        } catch (e: IndexOutOfBoundsException) {
-            true
-        }
+        val wasException4: Boolean =
+            try {
+                intervalList.forEach(toIndex = 6) {}
+                false
+            } catch (e: IndexOutOfBoundsException) {
+                true
+            }
         assertThat(wasException4).isTrue()
     }
 

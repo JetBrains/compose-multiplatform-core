@@ -14,19 +14,25 @@
  * limitations under the License.
  */
 
-
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
     // Classes and types that are needed at compile & runtime
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
 
     // Classes and types that are only needed at runtime
     implementation(libs.atomicFu)
@@ -44,12 +50,14 @@ dependencies {
 }
 
 android {
-    lintOptions {
-        enable 'CameraXQuirksClassDetector'
+    compileSdk = 35
+
+    lint {
+        enable.add("CameraXQuirksClassDetector")
     }
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.camera.camera2.pipe.testing"
+    namespace = "androidx.camera.camera2.pipe.testing"
 }
 
 // Allow usage of Kotlin's @OptIn.
@@ -61,11 +69,11 @@ tasks.withType(KotlinCompile).configureEach {
 
 androidx {
     name = "Camera2 Pipe Testing"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.CAMERA_PIPE
     inceptionYear = "2020"
     description = "Testing components for the Camera2 Pipe Library, a library providing a " +
             "consistent and reliable camera foundation that enables great camera driven " +
             "experiences across all of Android."
-    metalavaK2UastEnabled = true
+    doNotDocumentReason = "Not shipped externally"
 }

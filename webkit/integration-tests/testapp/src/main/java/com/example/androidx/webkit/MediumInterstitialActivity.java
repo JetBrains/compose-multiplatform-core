@@ -22,12 +22,13 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewFeature;
 
 import com.google.common.collect.ImmutableMap;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
@@ -97,6 +98,7 @@ public class MediumInterstitialActivity extends AppCompatActivity {
         // A medium interstitial may have links on it in the future; allow this WebView to handle
         // opening those by setting a WebViewClient.
         webView.setWebViewClient(new WebViewClient());
+        webView.getSettings().setJavaScriptEnabled(true); // in case site needs JS to render
         if (WebViewFeature.isFeatureSupported(WebViewFeature.SAFE_BROWSING_ENABLE)) {
             WebSettingsCompat.setSafeBrowsingEnabled(webView.getSettings(), true);
         }

@@ -31,14 +31,15 @@ import android.view.inputmethod.InputMethod;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.graphics.Insets;
 import androidx.core.util.ObjectsCompat;
 import androidx.core.util.Preconditions;
 import androidx.core.view.WindowInsetsCompat.Type.InsetsType;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -71,11 +72,12 @@ public class WindowInsetsCompat {
      *
      * @see #isConsumed()
      */
-    @NonNull
-    public static final WindowInsetsCompat CONSUMED;
+    public static final @NonNull WindowInsetsCompat CONSUMED;
 
     static {
-        if (SDK_INT >= 30) {
+        if (SDK_INT >= 34) {
+            CONSUMED = Impl34.CONSUMED;
+        } else if (SDK_INT >= 30) {
             CONSUMED = Impl30.CONSUMED;
         } else {
             CONSUMED = Impl.CONSUMED;
@@ -86,7 +88,9 @@ public class WindowInsetsCompat {
 
     @RequiresApi(20)
     private WindowInsetsCompat(@NonNull WindowInsets insets) {
-        if (SDK_INT >= 30) {
+        if (SDK_INT >= 34) {
+            mImpl = new Impl34(this, insets);
+        } else if (SDK_INT >= 30) {
             mImpl = new Impl30(this, insets);
         } else if (SDK_INT >= 29) {
             mImpl = new Impl29(this, insets);
@@ -106,11 +110,13 @@ public class WindowInsetsCompat {
      *
      * @param src source from which values are copied
      */
-    public WindowInsetsCompat(@Nullable final WindowInsetsCompat src) {
+    public WindowInsetsCompat(final @Nullable WindowInsetsCompat src) {
         if (src != null) {
             // We'll copy over from the 'src' instance's impl
             final Impl srcImpl = src.mImpl;
-            if (SDK_INT >= 30 && srcImpl instanceof Impl30) {
+            if (SDK_INT >= 34 && srcImpl instanceof Impl34) {
+                mImpl = new Impl34(this, (Impl34) srcImpl);
+            } else if (SDK_INT >= 30 && srcImpl instanceof Impl30) {
                 mImpl = new Impl30(this, (Impl30) srcImpl);
             } else if (SDK_INT >= 29 && srcImpl instanceof Impl29) {
                 mImpl = new Impl29(this, (Impl29) srcImpl);
@@ -142,9 +148,8 @@ public class WindowInsetsCompat {
      * @param insets source insets to wrap
      * @return the wrapped instance
      */
-    @NonNull
     @RequiresApi(20)
-    public static WindowInsetsCompat toWindowInsetsCompat(@NonNull WindowInsets insets) {
+    public static @NonNull WindowInsetsCompat toWindowInsetsCompat(@NonNull WindowInsets insets) {
         return toWindowInsetsCompat(insets, null);
     }
 
@@ -161,16 +166,17 @@ public class WindowInsetsCompat {
      *             view needs be attached to the window, otherwise it will be ignored.
      * @return the wrapped instance
      */
-    @NonNull
     @RequiresApi(20)
-    public static WindowInsetsCompat toWindowInsetsCompat(@NonNull WindowInsets insets,
+    public static @NonNull WindowInsetsCompat toWindowInsetsCompat(@NonNull WindowInsets insets,
             @Nullable View view) {
         WindowInsetsCompat wic = new WindowInsetsCompat(Preconditions.checkNotNull(insets));
-        if (view != null && ViewCompat.isAttachedToWindow(view)) {
+        if (view != null && view.isAttachedToWindow()) {
             // Pass the root window insets, which is useful if the Activity is adjustResize
             wic.setRootWindowInsets(ViewCompat.getRootWindowInsets(view));
             // Pass in the root view which allows the WIC to make of a copy of it's visible bounds
             wic.copyRootViewBounds(view.getRootView());
+            // Take System UI visibility into account while computing system bar insets
+            wic.setSystemUiVisibility(view.getWindowSystemUiVisibility());
         }
         return wic;
     }
@@ -313,8 +319,7 @@ public class WindowInsetsCompat {
      * {@link #CONSUMED} instead to stop dispatching insets.
      */
     @Deprecated
-    @NonNull
-    public WindowInsetsCompat consumeSystemWindowInsets() {
+    public @NonNull WindowInsetsCompat consumeSystemWindowInsets() {
         return mImpl.consumeSystemWindowInsets();
     }
 
@@ -334,8 +339,8 @@ public class WindowInsetsCompat {
      */
     @SuppressWarnings("deprecation") // Builder.setSystemWindowInsets
     @Deprecated
-    @NonNull
-    public WindowInsetsCompat replaceSystemWindowInsets(int left, int top, int right, int bottom) {
+    public @NonNull WindowInsetsCompat replaceSystemWindowInsets(int left, int top, int right,
+            int bottom) {
         return new Builder(this)
                 .setSystemWindowInsets(Insets.of(left, top, right, bottom))
                 .build();
@@ -355,8 +360,7 @@ public class WindowInsetsCompat {
      */
     @SuppressWarnings("deprecation")
     @Deprecated
-    @NonNull
-    public WindowInsetsCompat replaceSystemWindowInsets(@NonNull Rect systemWindowInsets) {
+    public @NonNull WindowInsetsCompat replaceSystemWindowInsets(@NonNull Rect systemWindowInsets) {
         return new Builder(this)
                 .setSystemWindowInsets(Insets.of(systemWindowInsets))
                 .build();
@@ -472,8 +476,7 @@ public class WindowInsetsCompat {
      * {@link #CONSUMED} instead to stop dispatching insets.
      */
     @Deprecated
-    @NonNull
-    public WindowInsetsCompat consumeStableInsets() {
+    public @NonNull WindowInsetsCompat consumeStableInsets() {
         return mImpl.consumeStableInsets();
     }
 
@@ -485,8 +488,7 @@ public class WindowInsetsCompat {
      * @return the display cutout or null if there is none
      * @see DisplayCutoutCompat
      */
-    @Nullable
-    public DisplayCutoutCompat getDisplayCutout() {
+    public @Nullable DisplayCutoutCompat getDisplayCutout() {
         return mImpl.getDisplayCutout();
     }
 
@@ -501,8 +503,7 @@ public class WindowInsetsCompat {
      * {@link #CONSUMED} instead to stop dispatching insets.
      */
     @Deprecated
-    @NonNull
-    public WindowInsetsCompat consumeDisplayCutout() {
+    public @NonNull WindowInsetsCompat consumeDisplayCutout() {
         return mImpl.consumeDisplayCutout();
     }
 
@@ -521,8 +522,7 @@ public class WindowInsetsCompat {
      * @deprecated Use {@link #getInsets(int)} with {@link Type#systemBars()} instead.
      */
     @Deprecated
-    @NonNull
-    public Insets getSystemWindowInsets() {
+    public @NonNull Insets getSystemWindowInsets() {
         return mImpl.getSystemWindowInsets();
     }
 
@@ -544,8 +544,7 @@ public class WindowInsetsCompat {
      * instead.
      */
     @Deprecated
-    @NonNull
-    public Insets getStableInsets() {
+    public @NonNull Insets getStableInsets() {
         return mImpl.getStableInsets();
     }
 
@@ -561,8 +560,7 @@ public class WindowInsetsCompat {
      * instead.
      */
     @Deprecated
-    @NonNull
-    public Insets getMandatorySystemGestureInsets() {
+    public @NonNull Insets getMandatorySystemGestureInsets() {
         return mImpl.getMandatorySystemGestureInsets();
     }
 
@@ -580,8 +578,7 @@ public class WindowInsetsCompat {
      * instead.
      */
     @Deprecated
-    @NonNull
-    public Insets getTappableElementInsets() {
+    public @NonNull Insets getTappableElementInsets() {
         return mImpl.getTappableElementInsets();
     }
 
@@ -601,8 +598,7 @@ public class WindowInsetsCompat {
      * instead.
      */
     @Deprecated
-    @NonNull
-    public Insets getSystemGestureInsets() {
+    public @NonNull Insets getSystemGestureInsets() {
         return mImpl.getSystemGestureInsets();
     }
 
@@ -621,8 +617,7 @@ public class WindowInsetsCompat {
      *
      * @see #inset(int, int, int, int)
      */
-    @NonNull
-    public WindowInsetsCompat inset(@NonNull Insets insets) {
+    public @NonNull WindowInsetsCompat inset(@NonNull Insets insets) {
         return inset(insets.left, insets.top, insets.right, insets.bottom);
     }
 
@@ -645,9 +640,9 @@ public class WindowInsetsCompat {
      *
      * @return the inset insets
      */
-    @NonNull
-    public WindowInsetsCompat inset(@IntRange(from = 0) int left, @IntRange(from = 0) int top,
-            @IntRange(from = 0) int right, @IntRange(from = 0) int bottom) {
+    public @NonNull WindowInsetsCompat inset(@IntRange(from = 0) int left,
+            @IntRange(from = 0) int top, @IntRange(from = 0) int right,
+            @IntRange(from = 0) int bottom) {
         return mImpl.inset(left, top, right, bottom);
     }
 
@@ -663,8 +658,7 @@ public class WindowInsetsCompat {
      * @param typeMask Bit mask of {@link Type}s to query the insets for.
      * @return The insets.
      */
-    @NonNull
-    public Insets getInsets(@InsetsType int typeMask) {
+    public @NonNull Insets getInsets(@InsetsType int typeMask) {
         return mImpl.getInsets(typeMask);
     }
 
@@ -691,8 +685,7 @@ public class WindowInsetsCompat {
      *                                  IME is dynamic depending on the {@link EditorInfo} of the
      *                                  currently focused view, as well as the UI state of the IME.
      */
-    @NonNull
-    public Insets getInsetsIgnoringVisibility(@InsetsType int typeMask) {
+    public @NonNull Insets getInsetsIgnoringVisibility(@InsetsType int typeMask) {
         return mImpl.getInsetsIgnoringVisibility(typeMask);
     }
 
@@ -735,16 +728,14 @@ public class WindowInsetsCompat {
      *
      * @return the wrapped WindowInsets instance
      */
-    @Nullable
     @RequiresApi(20)
-    public WindowInsets toWindowInsets() {
+    public @Nullable WindowInsets toWindowInsets() {
         return mImpl instanceof Impl20 ? ((Impl20) mImpl).mPlatformInsets : null;
     }
 
     private static class Impl {
         @SuppressWarnings("deprecation")
-        @NonNull
-        static final WindowInsetsCompat CONSUMED = new WindowInsetsCompat.Builder()
+        static final @NonNull WindowInsetsCompat CONSUMED = new WindowInsetsCompat.Builder()
                 .build()
                 .consumeDisplayCutout()
                 .consumeStableInsets()
@@ -764,66 +755,54 @@ public class WindowInsetsCompat {
             return false;
         }
 
-        @NonNull
-        WindowInsetsCompat consumeSystemWindowInsets() {
+        @NonNull WindowInsetsCompat consumeSystemWindowInsets() {
             return mHost;
         }
 
-        @NonNull
-        WindowInsetsCompat consumeStableInsets() {
+        @NonNull WindowInsetsCompat consumeStableInsets() {
             return mHost;
         }
 
-        @Nullable
-        DisplayCutoutCompat getDisplayCutout() {
+        @Nullable DisplayCutoutCompat getDisplayCutout() {
             return null;
         }
 
-        @NonNull
-        WindowInsetsCompat consumeDisplayCutout() {
+        @NonNull WindowInsetsCompat consumeDisplayCutout() {
             return mHost;
         }
 
-        @NonNull
-        Insets getSystemWindowInsets() {
+        @NonNull Insets getSystemWindowInsets() {
             return Insets.NONE;
         }
 
-        @NonNull
-        Insets getStableInsets() {
+        @NonNull Insets getStableInsets() {
             return Insets.NONE;
         }
 
-        @NonNull
-        Insets getSystemGestureInsets() {
+        @NonNull Insets getSystemGestureInsets() {
             // Pre-Q return the system window insets
             return getSystemWindowInsets();
         }
 
-        @NonNull
-        Insets getMandatorySystemGestureInsets() {
+        @NonNull Insets getMandatorySystemGestureInsets() {
             // Pre-Q return the system window insets
             return getSystemWindowInsets();
         }
 
-        @NonNull
-        Insets getTappableElementInsets() {
+        @NonNull Insets getTappableElementInsets() {
             // Pre-Q return the system window insets
             return getSystemWindowInsets();
         }
 
-        @NonNull
-        WindowInsetsCompat inset(int left, int top, int right, int bottom) {
+        @NonNull WindowInsetsCompat inset(int left, int top, int right, int bottom) {
             return CONSUMED;
         }
 
-        @NonNull
-        Insets getInsets(@InsetsType int typeMask) {
+        @NonNull Insets getInsets(@InsetsType int typeMask) {
             return Insets.NONE;
         }
 
-        @NonNull
-        Insets getInsetsIgnoringVisibility(@InsetsType int typeMask) {
+        @NonNull Insets getInsetsIgnoringVisibility(@InsetsType int typeMask) {
             if ((typeMask & Type.IME) != 0) {
                 throw new IllegalArgumentException("Unable to query the maximum insets for IME");
             }
@@ -863,6 +842,9 @@ public class WindowInsetsCompat {
         void copyRootViewBounds(@NonNull View rootView) {
         }
 
+        void setSystemUiVisibility(int systemUiVisibility) {
+        }
+
         void copyWindowDataInto(@NonNull WindowInsetsCompat other) {
         }
 
@@ -876,14 +858,15 @@ public class WindowInsetsCompat {
     @RequiresApi(20)
     private static class Impl20 extends Impl {
 
+        private static final int SYSTEM_BAR_VISIBILITY_MASK =
+                View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
         private static boolean sVisibleRectReflectionFetched = false;
         private static Method sGetViewRootImplMethod;
         private static Class<?> sAttachInfoClass;
         private static Field sVisibleInsetsField;
         private static Field sAttachInfoField;
 
-        @NonNull
-        final WindowInsets mPlatformInsets;
+        final @NonNull WindowInsets mPlatformInsets;
 
         // TODO(175859616) save all insets in the array
         private Insets[] mOverriddenInsets;
@@ -893,6 +876,8 @@ public class WindowInsetsCompat {
 
         private WindowInsetsCompat mRootWindowInsets;
         Insets mRootViewVisibleInsets;
+
+        int mSystemUiVisibility;
 
         Impl20(@NonNull WindowInsetsCompat host, @NonNull WindowInsets insets) {
             super(host);
@@ -908,15 +893,13 @@ public class WindowInsetsCompat {
             return mPlatformInsets.isRound();
         }
 
-        @NonNull
         @Override
-        public Insets getInsets(int typeMask) {
+        public @NonNull Insets getInsets(int typeMask) {
             return getInsets(typeMask, false);
         }
 
-        @NonNull
         @Override
-        public Insets getInsetsIgnoringVisibility(int typeMask) {
+        public @NonNull Insets getInsetsIgnoringVisibility(int typeMask) {
             return getInsets(typeMask, true);
         }
 
@@ -935,8 +918,7 @@ public class WindowInsetsCompat {
         }
 
         @SuppressLint("WrongConstant")
-        @NonNull
-        private Insets getInsets(final int typeMask, final boolean ignoreVisibility) {
+        private @NonNull Insets getInsets(final int typeMask, final boolean ignoreVisibility) {
             Insets result = Insets.NONE;
             for (int i = Type.FIRST; i <= Type.LAST; i = i << 1) {
                 if ((typeMask & i) == 0) {
@@ -948,14 +930,15 @@ public class WindowInsetsCompat {
         }
 
         @SuppressWarnings("deprecation")
-        @NonNull
-        protected Insets getInsetsForType(@InsetsType int type, boolean ignoreVisibility) {
+        protected @NonNull Insets getInsetsForType(@InsetsType int type, boolean ignoreVisibility) {
             switch (type) {
                 case Type.STATUS_BARS: {
                     if (ignoreVisibility) {
                         final Insets rootStable = getRootStableInsets();
                         return Insets.of(0,
                                 Math.max(rootStable.top, getSystemWindowInsets().top), 0, 0);
+                    } else if ((mSystemUiVisibility & View.SYSTEM_UI_FLAG_FULLSCREEN) != 0) {
+                        return Insets.NONE;
                     } else {
                         return Insets.of(0, getSystemWindowInsets().top, 0, 0);
                     }
@@ -970,6 +953,8 @@ public class WindowInsetsCompat {
                                 Math.max(rootStable.right, stable.right),
                                 Math.max(rootStable.bottom, stable.bottom)
                         );
+                    } else if ((mSystemUiVisibility & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) != 0) {
+                        return Insets.NONE;
                     } else {
                         final Insets systemWindow = getSystemWindowInsets();
                         final Insets rootStable = mRootWindowInsets != null
@@ -1059,8 +1044,7 @@ public class WindowInsetsCompat {
         }
 
         @Override
-        @NonNull
-        final Insets getSystemWindowInsets() {
+        final @NonNull Insets getSystemWindowInsets() {
             if (mSystemWindowInsets == null) {
                 mSystemWindowInsets = Insets.of(
                         mPlatformInsets.getSystemWindowInsetLeft(),
@@ -1071,10 +1055,9 @@ public class WindowInsetsCompat {
             return mSystemWindowInsets;
         }
 
-        @NonNull
         @Override
         @SuppressWarnings("deprecation")
-        WindowInsetsCompat inset(int left, int top, int right, int bottom) {
+        @NonNull WindowInsetsCompat inset(int left, int top, int right, int bottom) {
             Builder b = new Builder(toWindowInsetsCompat(mPlatformInsets));
             b.setSystemWindowInsets(insetInsets(getSystemWindowInsets(), left, top, right, bottom));
             b.setStableInsets(insetInsets(getStableInsets(), left, top, right, bottom));
@@ -1085,6 +1068,7 @@ public class WindowInsetsCompat {
         void copyWindowDataInto(@NonNull WindowInsetsCompat other) {
             other.setRootWindowInsets(mRootWindowInsets);
             other.setRootViewData(mRootViewVisibleInsets);
+            other.setSystemUiVisibility(mSystemUiVisibility);
         }
 
         @Override
@@ -1115,14 +1099,17 @@ public class WindowInsetsCompat {
             setRootViewData(visibleInsets);
         }
 
+        @Override
+        void setSystemUiVisibility(int systemUiVisibility) {
+            mSystemUiVisibility = systemUiVisibility;
+        }
 
         /**
          * Attempt to get a copy of the visible rect from this rootView's AttachInfo.
          *
          * @return a copy of the provided view's AttachInfo.mVisibleRect or null if anything fails
          */
-        @Nullable
-        private Insets getVisibleInsets(@NonNull View rootView) {
+        private @Nullable Insets getVisibleInsets(@NonNull View rootView) {
             if (SDK_INT >= 30) {
                 throw new UnsupportedOperationException("getVisibleInsets() should not be called "
                         + "on API >= 30. Use WindowInsets.isVisible() instead.");
@@ -1186,7 +1173,12 @@ public class WindowInsetsCompat {
         public boolean equals(Object o) {
             if (!super.equals(o)) return false;
             Impl20 impl20 = (Impl20) o;
-            return Objects.equals(mRootViewVisibleInsets, impl20.mRootViewVisibleInsets);
+            return Objects.equals(mRootViewVisibleInsets, impl20.mRootViewVisibleInsets)
+                    && systemBarVisibilityEquals(mSystemUiVisibility, impl20.mSystemUiVisibility);
+        }
+
+        static boolean systemBarVisibilityEquals(int vis1, int vis2) {
+            return (SYSTEM_BAR_VISIBILITY_MASK & vis1) == (SYSTEM_BAR_VISIBILITY_MASK & vis2);
         }
     }
 
@@ -1208,21 +1200,18 @@ public class WindowInsetsCompat {
             return mPlatformInsets.isConsumed();
         }
 
-        @NonNull
         @Override
-        WindowInsetsCompat consumeStableInsets() {
+        @NonNull WindowInsetsCompat consumeStableInsets() {
             return toWindowInsetsCompat(mPlatformInsets.consumeStableInsets());
         }
 
-        @NonNull
         @Override
-        WindowInsetsCompat consumeSystemWindowInsets() {
+        @NonNull WindowInsetsCompat consumeSystemWindowInsets() {
             return toWindowInsetsCompat(mPlatformInsets.consumeSystemWindowInsets());
         }
 
         @Override
-        @NonNull
-        final Insets getStableInsets() {
+        final @NonNull Insets getStableInsets() {
             if (mStableInsets == null) {
                 mStableInsets = Insets.of(
                         mPlatformInsets.getStableInsetLeft(),
@@ -1250,15 +1239,13 @@ public class WindowInsetsCompat {
             super(host, other);
         }
 
-        @Nullable
         @Override
-        DisplayCutoutCompat getDisplayCutout() {
+        @Nullable DisplayCutoutCompat getDisplayCutout() {
             return DisplayCutoutCompat.wrap(mPlatformInsets.getDisplayCutout());
         }
 
-        @NonNull
         @Override
-        WindowInsetsCompat consumeDisplayCutout() {
+        @NonNull WindowInsetsCompat consumeDisplayCutout() {
             return toWindowInsetsCompat(mPlatformInsets.consumeDisplayCutout());
         }
 
@@ -1269,7 +1256,9 @@ public class WindowInsetsCompat {
             Impl28 otherImpl28 = (Impl28) o;
             // On API 28+ we can rely on WindowInsets.equals()
             return Objects.equals(mPlatformInsets, otherImpl28.mPlatformInsets)
-                    && Objects.equals(mRootViewVisibleInsets, otherImpl28.mRootViewVisibleInsets);
+                    && Objects.equals(mRootViewVisibleInsets, otherImpl28.mRootViewVisibleInsets)
+                    && systemBarVisibilityEquals(
+                            mSystemUiVisibility, otherImpl28.mSystemUiVisibility);
         }
 
         @Override
@@ -1293,18 +1282,16 @@ public class WindowInsetsCompat {
             super(host, other);
         }
 
-        @NonNull
         @Override
-        Insets getSystemGestureInsets() {
+        @NonNull Insets getSystemGestureInsets() {
             if (mSystemGestureInsets == null) {
                 mSystemGestureInsets = toCompatInsets(mPlatformInsets.getSystemGestureInsets());
             }
             return mSystemGestureInsets;
         }
 
-        @NonNull
         @Override
-        Insets getMandatorySystemGestureInsets() {
+        @NonNull Insets getMandatorySystemGestureInsets() {
             if (mMandatorySystemGestureInsets == null) {
                 mMandatorySystemGestureInsets =
                         toCompatInsets(mPlatformInsets.getMandatorySystemGestureInsets());
@@ -1312,18 +1299,16 @@ public class WindowInsetsCompat {
             return mMandatorySystemGestureInsets;
         }
 
-        @NonNull
         @Override
-        Insets getTappableElementInsets() {
+        @NonNull Insets getTappableElementInsets() {
             if (mTappableElementInsets == null) {
                 mTappableElementInsets = toCompatInsets(mPlatformInsets.getTappableElementInsets());
             }
             return mTappableElementInsets;
         }
 
-        @NonNull
         @Override
-        WindowInsetsCompat inset(int left, int top, int right, int bottom) {
+        @NonNull WindowInsetsCompat inset(int left, int top, int right, int bottom) {
             return toWindowInsetsCompat(mPlatformInsets.inset(left, top, right, bottom));
         }
 
@@ -1346,8 +1331,8 @@ public class WindowInsetsCompat {
 
     @RequiresApi(30)
     private static class Impl30 extends Impl29 {
-        @NonNull
-        static final WindowInsetsCompat CONSUMED = toWindowInsetsCompat(WindowInsets.CONSUMED);
+        static final @NonNull WindowInsetsCompat CONSUMED =
+                toWindowInsetsCompat(WindowInsets.CONSUMED);
 
         Impl30(@NonNull WindowInsetsCompat host, @NonNull WindowInsets insets) {
             super(host, insets);
@@ -1357,17 +1342,15 @@ public class WindowInsetsCompat {
             super(host, other);
         }
 
-        @NonNull
         @Override
-        public Insets getInsets(int typeMask) {
+        public @NonNull Insets getInsets(int typeMask) {
             return toCompatInsets(
                     mPlatformInsets.getInsets(TypeImpl30.toPlatformType(typeMask))
             );
         }
 
-        @NonNull
         @Override
-        public Insets getInsetsIgnoringVisibility(int typeMask) {
+        public @NonNull Insets getInsetsIgnoringVisibility(int typeMask) {
             return toCompatInsets(
                     mPlatformInsets.getInsetsIgnoringVisibility(TypeImpl30.toPlatformType(typeMask))
             );
@@ -1387,6 +1370,39 @@ public class WindowInsetsCompat {
         }
     }
 
+    @RequiresApi(34)
+    private static class Impl34 extends Impl30 {
+        static final @NonNull WindowInsetsCompat CONSUMED =
+                toWindowInsetsCompat(WindowInsets.CONSUMED);
+
+        Impl34(@NonNull WindowInsetsCompat host, @NonNull WindowInsets insets) {
+            super(host, insets);
+        }
+
+        Impl34(@NonNull WindowInsetsCompat host, @NonNull Impl34 other) {
+            super(host, other);
+        }
+
+        @Override
+        public @NonNull Insets getInsets(int typeMask) {
+            return toCompatInsets(
+                    mPlatformInsets.getInsets(TypeImpl34.toPlatformType(typeMask))
+            );
+        }
+
+        @Override
+        public @NonNull Insets getInsetsIgnoringVisibility(int typeMask) {
+            return toCompatInsets(
+                    mPlatformInsets.getInsetsIgnoringVisibility(TypeImpl34.toPlatformType(typeMask))
+            );
+        }
+
+        @Override
+        public boolean isVisible(int typeMask) {
+            return mPlatformInsets.isVisible(TypeImpl34.toPlatformType(typeMask));
+        }
+    }
+
     /**
      * Builder for {@link WindowInsetsCompat}.
      */
@@ -1397,7 +1413,9 @@ public class WindowInsetsCompat {
          * Creates a builder where all insets are initially consumed.
          */
         public Builder() {
-            if (SDK_INT >= 30) {
+            if (SDK_INT >= 34) {
+                mImpl = new BuilderImpl34();
+            } else if (SDK_INT >= 30) {
                 mImpl = new BuilderImpl30();
             } else if (SDK_INT >= 29) {
                 mImpl = new BuilderImpl29();
@@ -1414,7 +1432,9 @@ public class WindowInsetsCompat {
          * @param insets the instance to initialize from.
          */
         public Builder(@NonNull WindowInsetsCompat insets) {
-            if (SDK_INT >= 30) {
+            if (SDK_INT >= 34) {
+                mImpl = new BuilderImpl34(insets);
+            } else if (SDK_INT >= 30) {
                 mImpl = new BuilderImpl30(insets);
             } else if (SDK_INT >= 29) {
                 mImpl = new BuilderImpl29(insets);
@@ -1437,8 +1457,7 @@ public class WindowInsetsCompat {
          * @deprecated Use {@link #setInsets(int, Insets)} with {@link Type#systemBars()}.
          */
         @Deprecated
-        @NonNull
-        public Builder setSystemWindowInsets(@NonNull Insets insets) {
+        public @NonNull Builder setSystemWindowInsets(@NonNull Insets insets) {
             mImpl.setSystemWindowInsets(insets);
             return this;
         }
@@ -1457,8 +1476,7 @@ public class WindowInsetsCompat {
          * @deprecated Use {@link #setInsets(int, Insets)} with {@link Type#systemGestures()}.
          */
         @Deprecated
-        @NonNull
-        public Builder setSystemGestureInsets(@NonNull Insets insets) {
+        public @NonNull Builder setSystemGestureInsets(@NonNull Insets insets) {
             mImpl.setSystemGestureInsets(insets);
             return this;
         }
@@ -1482,8 +1500,7 @@ public class WindowInsetsCompat {
          * {@link Type#mandatorySystemGestures()}.
          */
         @Deprecated
-        @NonNull
-        public Builder setMandatorySystemGestureInsets(@NonNull Insets insets) {
+        public @NonNull Builder setMandatorySystemGestureInsets(@NonNull Insets insets) {
             mImpl.setMandatorySystemGestureInsets(insets);
             return this;
         }
@@ -1501,8 +1518,7 @@ public class WindowInsetsCompat {
          * @deprecated Use {@link #setInsets(int, Insets)} with {@link Type#tappableElement()}.
          */
         @Deprecated
-        @NonNull
-        public Builder setTappableElementInsets(@NonNull Insets insets) {
+        public @NonNull Builder setTappableElementInsets(@NonNull Insets insets) {
             mImpl.setTappableElementInsets(insets);
             return this;
         }
@@ -1519,8 +1535,7 @@ public class WindowInsetsCompat {
          * @return itself
          * @see #getInsets(int)
          */
-        @NonNull
-        public Builder setInsets(@InsetsType int typeMask, @NonNull Insets insets) {
+        public @NonNull Builder setInsets(@InsetsType int typeMask, @NonNull Insets insets) {
             mImpl.setInsets(typeMask, insets);
             return this;
         }
@@ -1544,8 +1559,7 @@ public class WindowInsetsCompat {
          *                                  state of the IME.
          * @see #getInsetsIgnoringVisibility(int)
          */
-        @NonNull
-        public Builder setInsetsIgnoringVisibility(@InsetsType int typeMask,
+        public @NonNull Builder setInsetsIgnoringVisibility(@InsetsType int typeMask,
                 @NonNull Insets insets) {
             mImpl.setInsetsIgnoringVisibility(typeMask, insets);
             return this;
@@ -1559,8 +1573,7 @@ public class WindowInsetsCompat {
          * @return itself
          * @see #isVisible(int)
          */
-        @NonNull
-        public Builder setVisible(@InsetsType int typeMask, boolean visible) {
+        public @NonNull Builder setVisible(@InsetsType int typeMask, boolean visible) {
             mImpl.setVisible(typeMask, visible);
             return this;
         }
@@ -1582,8 +1595,7 @@ public class WindowInsetsCompat {
          * {@link Type#systemBars()}.
          */
         @Deprecated
-        @NonNull
-        public Builder setStableInsets(@NonNull Insets insets) {
+        public @NonNull Builder setStableInsets(@NonNull Insets insets) {
             mImpl.setStableInsets(insets);
             return this;
         }
@@ -1597,8 +1609,7 @@ public class WindowInsetsCompat {
          * @return itself
          * @see #getDisplayCutout()
          */
-        @NonNull
-        public Builder setDisplayCutout(@Nullable DisplayCutoutCompat displayCutout) {
+        public @NonNull Builder setDisplayCutout(@Nullable DisplayCutoutCompat displayCutout) {
             mImpl.setDisplayCutout(displayCutout);
             return this;
         }
@@ -1608,8 +1619,7 @@ public class WindowInsetsCompat {
          *
          * @return the {@link WindowInsetsCompat} instance.
          */
-        @NonNull
-        public WindowInsetsCompat build() {
+        public @NonNull WindowInsetsCompat build() {
             return mImpl.build();
         }
     }
@@ -1695,8 +1705,7 @@ public class WindowInsetsCompat {
             }
         }
 
-        @NonNull
-        WindowInsetsCompat build() {
+        @NonNull WindowInsetsCompat build() {
             applyInsetTypes();
             return mInsets;
         }
@@ -1740,8 +1749,7 @@ public class WindowInsetsCompat {
         }
 
         @Override
-        @NonNull
-        WindowInsetsCompat build() {
+        @NonNull WindowInsetsCompat build() {
             applyInsetTypes();
             WindowInsetsCompat windowInsetsCompat = WindowInsetsCompat.toWindowInsetsCompat(
                     mPlatformInsets);
@@ -1750,9 +1758,8 @@ public class WindowInsetsCompat {
             return windowInsetsCompat;
         }
 
-        @Nullable
         @SuppressWarnings("JavaReflectionMemberAccess")
-        private static WindowInsets createWindowInsetsInstance() {
+        private static @Nullable WindowInsets createWindowInsetsInstance() {
             // On API 20-28, there is no public way to create an WindowInsets instance, so we
             // need to use reflection.
 
@@ -1852,8 +1859,7 @@ public class WindowInsetsCompat {
         }
 
         @Override
-        @NonNull
-        WindowInsetsCompat build() {
+        @NonNull WindowInsetsCompat build() {
             applyInsetTypes();
             WindowInsetsCompat windowInsetsCompat = WindowInsetsCompat.toWindowInsetsCompat(
                     mPlatBuilder.build());
@@ -1894,6 +1900,38 @@ public class WindowInsetsCompat {
         }
     }
 
+    @RequiresApi(34)
+    private static class BuilderImpl34 extends BuilderImpl30 {
+        BuilderImpl34() {
+            super();
+        }
+
+        BuilderImpl34(@NonNull WindowInsetsCompat insets) {
+            super(insets);
+        }
+
+        @Override
+        void setInsets(int typeMask, @NonNull Insets insets) {
+            mPlatBuilder.setInsets(
+                    TypeImpl34.toPlatformType(typeMask),
+                    insets.toPlatformInsets()
+            );
+        }
+
+        @Override
+        void setInsetsIgnoringVisibility(int typeMask, @NonNull Insets insets) {
+            mPlatBuilder.setInsetsIgnoringVisibility(
+                    TypeImpl34.toPlatformType(typeMask),
+                    insets.toPlatformInsets()
+            );
+        }
+
+        @Override
+        void setVisible(int typeMask, boolean visible) {
+            mPlatBuilder.setVisible(TypeImpl34.toPlatformType(typeMask), visible);
+        }
+    }
+
     /**
      * Class that defines different types of sources causing window insets.
      */
@@ -1911,9 +1949,10 @@ public class WindowInsetsCompat {
 
         static final int DISPLAY_CUTOUT = 1 << 7;
 
-        static final int LAST = 1 << 8;
-        static final int SIZE = 9;
-        static final int WINDOW_DECOR = LAST;
+        static final int WINDOW_DECOR = 1 << 8;
+        static final int SYSTEM_OVERLAYS = 1 << 9;
+        static final int LAST = SYSTEM_OVERLAYS;
+        static final int SIZE = 10;
 
         private Type() {}
 
@@ -2003,12 +2042,29 @@ public class WindowInsetsCompat {
         }
 
         /**
+         * System overlays represent the insets caused by the system visible elements. Unlike
+         * {@link #navigationBars()} or {@link #statusBars()}, system overlays might not be
+         * hidden by the client.
+         *
+         * For compatibility reasons, this type is included in {@link #systemBars()}. In this
+         * way, views which fit {@link #systemBars()} fit {@link #systemOverlays()}.
+         *
+         * Examples include climate controls, multi-tasking affordances, etc.
+         *
+         * @return An insets type representing the system overlays.
+         */
+        @InsetsType
+        public static int systemOverlays() {
+            return SYSTEM_OVERLAYS;
+        }
+
+        /**
          * @return All system bars. Includes {@link #statusBars()}, {@link #captionBar()} as well as
-         * {@link #navigationBars()}, but not {@link #ime()}.
+         * {@link #navigationBars()}, {@link #systemOverlays()} but not {@link #ime()}.
          */
         @InsetsType
         public static int systemBars() {
-            return STATUS_BARS | NAVIGATION_BARS | CAPTION_BAR;
+            return STATUS_BARS | NAVIGATION_BARS | CAPTION_BAR | SYSTEM_OVERLAYS;
         }
 
         /**
@@ -2041,6 +2097,8 @@ public class WindowInsetsCompat {
                     return 7;
                 case WINDOW_DECOR:
                     return 8;
+                case SYSTEM_OVERLAYS:
+                    return 9;
                 default:
                     throw new IllegalArgumentException("type needs to be >= FIRST and <= LAST,"
                             + " type=" + type);
@@ -2050,8 +2108,35 @@ public class WindowInsetsCompat {
         @RestrictTo(LIBRARY_GROUP)
         @Retention(RetentionPolicy.SOURCE)
         @IntDef(flag = true, value = {STATUS_BARS, NAVIGATION_BARS, CAPTION_BAR, IME, WINDOW_DECOR,
-                SYSTEM_GESTURES, MANDATORY_SYSTEM_GESTURES, TAPPABLE_ELEMENT, DISPLAY_CUTOUT})
+                SYSTEM_GESTURES, MANDATORY_SYSTEM_GESTURES, TAPPABLE_ELEMENT, DISPLAY_CUTOUT,
+                SYSTEM_OVERLAYS})
         public @interface InsetsType {
+        }
+    }
+
+    /**
+     * Class that defines different sides for insets.
+     */
+    public static final class Side {
+        public static final int LEFT = 1 << 0;
+        public static final int TOP = 1 << 1;
+        public static final int RIGHT = 1 << 2;
+        public static final int BOTTOM = 1 << 3;
+
+        private Side() {
+        }
+
+        @RestrictTo(LIBRARY_GROUP)
+        @Retention(RetentionPolicy.SOURCE)
+        @IntDef(flag = true, value = {LEFT, TOP, RIGHT, BOTTOM})
+        public @interface InsetsSide {
+        }
+
+        /**
+         * @return all four sides.
+         */
+        public static @InsetsSide int all() {
+            return LEFT | TOP | RIGHT | BOTTOM;
         }
     }
 
@@ -2100,6 +2185,54 @@ public class WindowInsetsCompat {
         }
     }
 
+    @RequiresApi(34)
+    private static final class TypeImpl34 {
+        private TypeImpl34() {}
+
+        /**
+         * Maps from our internal type mask constants to the platform's. Ideally we will keep the
+         * constant values in sync, but this allows the platform to return different constants in
+         * the future without breaking the logic in this class.
+         */
+        static int toPlatformType(@InsetsType final int typeMask) {
+            int result = 0;
+            for (int i = Type.FIRST; i <= Type.LAST; i = i << 1) {
+                if ((typeMask & i) != 0) {
+                    switch (i) {
+                        case Type.STATUS_BARS:
+                            result |= WindowInsets.Type.statusBars();
+                            break;
+                        case Type.NAVIGATION_BARS:
+                            result |= WindowInsets.Type.navigationBars();
+                            break;
+                        case Type.CAPTION_BAR:
+                            result |= WindowInsets.Type.captionBar();
+                            break;
+                        case Type.IME:
+                            result |= WindowInsets.Type.ime();
+                            break;
+                        case Type.SYSTEM_GESTURES:
+                            result |= WindowInsets.Type.systemGestures();
+                            break;
+                        case Type.MANDATORY_SYSTEM_GESTURES:
+                            result |= WindowInsets.Type.mandatorySystemGestures();
+                            break;
+                        case Type.TAPPABLE_ELEMENT:
+                            result |= WindowInsets.Type.tappableElement();
+                            break;
+                        case Type.DISPLAY_CUTOUT:
+                            result |= WindowInsets.Type.displayCutout();
+                            break;
+                        case Type.SYSTEM_OVERLAYS:
+                            result |= WindowInsets.Type.systemOverlays();
+                            break;
+                    }
+                }
+            }
+            return result;
+        }
+    }
+
     void setRootWindowInsets(@Nullable WindowInsetsCompat rootWindowInsets) {
         mImpl.setRootWindowInsets(rootWindowInsets);
     }
@@ -2110,6 +2243,10 @@ public class WindowInsetsCompat {
 
     void copyRootViewBounds(@NonNull View rootView) {
         mImpl.copyRootViewBounds(rootView);
+    }
+
+    void setSystemUiVisibility(int systemUiVisibility) {
+        mImpl.setSystemUiVisibility(systemUiVisibility);
     }
 
     @SuppressWarnings("JavaReflectionMemberAccess") // Reflection on private field
@@ -2143,8 +2280,7 @@ public class WindowInsetsCompat {
 
         // Only called on SDK 21 and 22
         @SuppressWarnings("deprecation")
-        @Nullable
-        public static WindowInsetsCompat getRootWindowInsets(@NonNull View v) {
+        public static @Nullable WindowInsetsCompat getRootWindowInsets(@NonNull View v) {
             if (!sReflectionSucceeded || !v.isAttachedToWindow()) {
                 return null;
             }

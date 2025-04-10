@@ -23,8 +23,7 @@ from enum import Enum
 from textwrap import dedent
 from shutil import rmtree
 from shutil import copyfile
-from distutils.dir_util import copy_tree
-from distutils.dir_util import DistutilsFileError
+from shutil import copytree
 import re
 
 try:
@@ -82,8 +81,8 @@ def cp(src_path_dir, dst_path_dir):
         print_e('cp error: Source path %s does not exist.' % src_path_dir)
         return None
     try:
-        copy_tree(src_path_dir, dst_path_dir)
-    except DistutilsFileError as err:
+        copytree(src_path_dir, dst_path_dir, dirs_exist_ok=True)
+    except Error as err:
         print_e('FAIL: Unable to copy %s to destination %s' % (src_path_dir, dst_path_dir))
         return None
     return dst_path_dir
@@ -266,7 +265,7 @@ def run_update_api(group_id, artifact_id):
     return True
 
 def get_library_type(artifact_id):
-    """Returns the appropriate androidx.build.LibraryType for the project.
+    """Returns the appropriate androidx.build.SoftwareType for the project.
     """
     if "sample" in artifact_id:
         library_type = "SAMPLES"
@@ -514,8 +513,7 @@ def get_new_docs_tip_of_tree_build_grade_line(group_id, artifact_id):
     For a library androidx.foo.bar:bar-qux, the new line will be of the form:
     docs(project(":foo:bar:bar-qux"))
 
-    If it is a sample project, then the new line will be of the form:
-    samples(project(":foo:bar:bar-qux-sample"))
+    If it is a sample project, then it will return None. samples(project(":foo:bar:bar-qux-sample")) needs to be added to the androidx block of the library build.gradle file.
 
     Args:
         group_id: group_id of the new library
@@ -525,7 +523,8 @@ def get_new_docs_tip_of_tree_build_grade_line(group_id, artifact_id):
     gradle_cmd = get_gradle_project_coordinates(group_id, artifact_id)
     prefix = "docs"
     if "sample" in gradle_cmd:
-        prefix = "samples"
+        print("Auto-detected sample project. Please add the sample dependency to androidx block of the library build.gradle file. See compose/ui/ui/build.gradle for an example.")
+        return None
     return "    %s(project(\"%s\"))\n" % (prefix, gradle_cmd)
 
 def update_docs_tip_of_tree_build_grade(group_id, artifact_id):
@@ -549,10 +548,15 @@ def update_docs_tip_of_tree_build_grade(group_id, artifact_id):
     # Open file for reading and get all lines
     with open(DOCS_TOT_BUILD_GRADLE_FP, 'r') as f:
         docs_tot_bg_lines = f.readlines()
+    index_of_real_dependencies_block = next(
+        idx for idx, line in enumerate(docs_tot_bg_lines) if line.startswith("dependencies {")
+    )
+    if (index_of_real_dependencies_block == None):
+        raise RuntimeError("Couldn't find dependencies block")
     num_lines = len(docs_tot_bg_lines)
 
     new_docs_tot_bq_line = get_new_docs_tip_of_tree_build_grade_line(group_id, artifact_id)
-    for i in range(num_lines):
+    for i in range(index_of_real_dependencies_block, num_lines):
         cur_line = docs_tot_bg_lines[i]
         if "project" not in cur_line:
             continue
@@ -581,7 +585,7 @@ def insert_new_group_id_into_library_versions_toml(group_id):
     new_group_id_variable_name = group_id.replace("androidx.","").replace(".","_").upper()
 
     # Open toml file
-    library_versions = toml.load(LIBRARY_VERSIONS_FP)
+    library_versions = toml.load(LIBRARY_VERSIONS_FP, decoder=toml.TomlPreserveCommentDecoder())
     if not new_group_id_variable_name in library_versions["versions"]:
         library_versions["versions"][new_group_id_variable_name] = "1.0.0-alpha01"
     if not new_group_id_variable_name in library_versions["groups"]:
@@ -597,8 +601,11 @@ def insert_new_group_id_into_library_versions_toml(group_id):
 
     # Open file for writing and update toml
     with open(LIBRARY_VERSIONS_FP, 'w') as f:
-        versions_toml_file_string = toml.dumps(library_versions, encoder=toml.TomlPreserveInlineDictEncoder())
+        # Encoder arg enables preservation of inline dicts.
+        versions_toml_file_string = toml.dumps(library_versions,
+                                               encoder=toml.TomlPreserveCommentEncoder(preserve=True))
         versions_toml_file_string_new = re.sub(",]", " ]", versions_toml_file_string)
+        versions_toml_file_string_new
         f.write(versions_toml_file_string_new)
 
 

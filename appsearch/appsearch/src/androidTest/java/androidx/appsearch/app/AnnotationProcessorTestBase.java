@@ -21,9 +21,11 @@ import static androidx.appsearch.app.AppSearchSchema.StringPropertyConfig.INDEXI
 import static androidx.appsearch.app.AppSearchSchema.StringPropertyConfig.INDEXING_TYPE_PREFIXES;
 import static androidx.appsearch.app.AppSearchSchema.StringPropertyConfig.JOINABLE_VALUE_TYPE_QUALIFIED_ID;
 import static androidx.appsearch.app.AppSearchSchema.StringPropertyConfig.TOKENIZER_TYPE_PLAIN;
+import static androidx.appsearch.testutil.AppSearchTestUtils.calculateDigest;
 import static androidx.appsearch.testutil.AppSearchTestUtils.checkIsBatchResultSuccess;
 import static androidx.appsearch.testutil.AppSearchTestUtils.convertSearchResultsToDocuments;
 import static androidx.appsearch.testutil.AppSearchTestUtils.doGet;
+import static androidx.appsearch.testutil.AppSearchTestUtils.retrieveAllSearchResults;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -31,25 +33,30 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appsearch.annotation.Document;
 import androidx.appsearch.builtintypes.PotentialAction;
 import androidx.appsearch.builtintypes.Thing;
 import androidx.appsearch.exceptions.AppSearchException;
+import androidx.appsearch.flags.Flags;
 import androidx.appsearch.testutil.AppSearchEmail;
+import androidx.appsearch.testutil.flags.RequiresFlagsEnabled;
 import androidx.appsearch.util.DocumentIdUtil;
 import androidx.test.core.app.ApplicationProvider;
 
 import com.google.auto.value.AutoValue;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1702,6 +1709,7 @@ public abstract class AnnotationProcessorTestBase {
     @Test
     public void testPolymorphismForInterface() throws Exception {
         assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SCHEMA_ADD_PARENT_TYPE));
+        assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SEARCH_RESULT_PARENT_TYPES));
 
         mSession.setSchemaAsync(new SetSchemaRequest.Builder()
                 // Adding BusinessImpl should be enough to add all the dependency classes.
@@ -1719,9 +1727,7 @@ public abstract class AnnotationProcessorTestBase {
         assertThat(rootGeneric.getSchemaType()).isEqualTo("InterfaceRoot");
 
         Place place = Place.createPlace("id1", "namespace", 2000, "place_loc");
-        GenericDocument placeGeneric =
-                new GenericDocument.Builder<>(GenericDocument.fromDocumentClass(place))
-                        .setParentTypes(Collections.singletonList("InterfaceRoot")).build();
+        GenericDocument placeGeneric = GenericDocument.fromDocumentClass(place);
         assertThat(placeGeneric.getId()).isEqualTo("id1");
         assertThat(placeGeneric.getNamespace()).isEqualTo("namespace");
         assertThat(placeGeneric.getCreationTimestampMillis()).isEqualTo(2000);
@@ -1734,9 +1740,7 @@ public abstract class AnnotationProcessorTestBase {
                 .setCreationTimestamp(3000)
                 .setOrganizationDescription("organization_dec")
                 .build();
-        GenericDocument organizationGeneric =
-                new GenericDocument.Builder<>(GenericDocument.fromDocumentClass(organization))
-                        .setParentTypes(Collections.singletonList("InterfaceRoot")).build();
+        GenericDocument organizationGeneric = GenericDocument.fromDocumentClass(organization);
         assertThat(organizationGeneric.getId()).isEqualTo("id2");
         assertThat(organizationGeneric.getNamespace()).isEqualTo("namespace");
         assertThat(organizationGeneric.getCreationTimestampMillis()).isEqualTo(3000);
@@ -1748,9 +1752,7 @@ public abstract class AnnotationProcessorTestBase {
                 "business_dec", "business_name");
         // At runtime, business is type of BusinessImpl. As a result, the list of parent types
         // for it should contain Business.
-        GenericDocument businessGeneric = new GenericDocument.Builder<>(
-                GenericDocument.fromDocumentClass(business)).setParentTypes(new ArrayList<>(
-                Arrays.asList("Business", "Place", "Organization", "InterfaceRoot"))).build();
+        GenericDocument businessGeneric = GenericDocument.fromDocumentClass(business);
         assertThat(businessGeneric.getId()).isEqualTo("id3");
         assertThat(businessGeneric.getNamespace()).isEqualTo("namespace");
         assertThat(businessGeneric.getCreationTimestampMillis()).isEqualTo(4000);
@@ -2399,7 +2401,8 @@ public abstract class AnnotationProcessorTestBase {
         // Test that even when deserializing genericDocument to InterfaceRoot, we will get a
         // Person instance, instead of just an InterfaceRoot.
         InterfaceRoot interfaceRoot = genericDocument.toDocumentClass(InterfaceRoot.class,
-                AppSearchDocumentClassMap.getGlobalMap());
+                new DocumentClassMappingContext(
+                        AppSearchDocumentClassMap.getGlobalMap(), /* parentTypeMap= */null));
         assertThat(interfaceRoot).isInstanceOf(Person.class);
         Person newPerson = (Person) interfaceRoot;
         assertThat(newPerson.getId()).isEqualTo("id");
@@ -2431,7 +2434,8 @@ public abstract class AnnotationProcessorTestBase {
         // Without parent information, toDocumentClass() will try to deserialize unknown type to
         // the type that is specified in the parameter.
         InterfaceRoot interfaceRoot = genericDocument.toDocumentClass(InterfaceRoot.class,
-                AppSearchDocumentClassMap.getGlobalMap());
+                new DocumentClassMappingContext(
+                        AppSearchDocumentClassMap.getGlobalMap(), /* parentTypeMap= */null));
         assertThat(interfaceRoot).isNotInstanceOf(Person.class);
         assertThat(interfaceRoot).isInstanceOf(InterfaceRoot.class);
         assertThat(interfaceRoot.getId()).isEqualTo("id");
@@ -2440,11 +2444,10 @@ public abstract class AnnotationProcessorTestBase {
 
         // With parent information, toDocumentClass() will try to deserialize unknown type to the
         // nearest known parent type.
-        genericDocument = new GenericDocument.Builder<>(genericDocument)
-                .setParentTypes(new ArrayList<>(Arrays.asList("Person", "InterfaceRoot")))
-                .build();
         interfaceRoot = genericDocument.toDocumentClass(InterfaceRoot.class,
-                AppSearchDocumentClassMap.getGlobalMap());
+                new DocumentClassMappingContext(AppSearchDocumentClassMap.getGlobalMap(),
+                        ImmutableMap.of("UnknownType",
+                                ImmutableList.of("Person", "InterfaceRoot"))));
         assertThat(interfaceRoot).isInstanceOf(Person.class);
         Person newPerson = (Person) interfaceRoot;
         assertThat(newPerson.getId()).isEqualTo("id");
@@ -2455,7 +2458,7 @@ public abstract class AnnotationProcessorTestBase {
     }
 
     @Test
-    public void testPolymorphicDeserialization_nestedType() throws Exception {
+    public void testPolymorphicDeserialization_NestedType() throws Exception {
         // Create a Person document
         Person.Builder personBuilder = new Person.Builder("id_person", "namespace")
                 .setCreationTimestamp(3000)
@@ -2477,7 +2480,9 @@ public abstract class AnnotationProcessorTestBase {
         // Test that when deserializing genericDocument, we will get nested Person and Place
         // instances, instead of just nested InterfaceRoot instances.
         DocumentCollection newDocumentCollection = genericDocument.toDocumentClass(
-                DocumentCollection.class, AppSearchDocumentClassMap.getGlobalMap());
+                DocumentCollection.class,
+                new DocumentClassMappingContext(
+                        AppSearchDocumentClassMap.getGlobalMap(), /* parentTypeMap= */null));
         assertThat(newDocumentCollection.mId).isEqualTo("id_collection");
         assertThat(newDocumentCollection.mNamespace).isEqualTo("namespace");
         assertThat(newDocumentCollection.mCollection).hasLength(2);
@@ -2518,10 +2523,12 @@ public abstract class AnnotationProcessorTestBase {
     }
 
     @Test
-    public void testPolymorphicDeserialization_Integration() throws Exception {
+    @SuppressWarnings("deprecation")
+    public void testPolymorphicDeserialization_Integration()
+            throws Exception {
         assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SCHEMA_ADD_PARENT_TYPE));
 
-        // Add an unknown business type this is a subtype of Business.
+        // Add an unknown business type that is a subtype of Business.
         mSession.setSchemaAsync(new SetSchemaRequest.Builder()
                 .addDocumentClasses(Business.class)
                 .addSchemas(new AppSearchSchema.Builder("UnknownBusiness")
@@ -2555,20 +2562,29 @@ public abstract class AnnotationProcessorTestBase {
                         .build();
         checkIsBatchResultSuccess(mSession.putAsync(
                 new PutDocumentsRequest.Builder().addGenericDocuments(genericDoc).build()));
+        GenericDocument expectedGenericDoc;
+        if (mSession.getFeatures().isFeatureSupported(Features.SEARCH_RESULT_PARENT_TYPES)) {
+            // When SearchResult wraps parent information, GenericDocument should not do.
+            expectedGenericDoc = genericDoc;
+        } else {
+            // When SearchResult does not wrap parent information, GenericDocument should do.
+            expectedGenericDoc = new GenericDocument.Builder<>(genericDoc)
+                    .setParentTypes(
+                            new ArrayList<>(Arrays.asList("Business", "Place", "Organization",
+                                    "InterfaceRoot")))
+                    .build();
+        }
 
         // Query to get the document back, with parent information added.
-        SearchResults searchResults = mSession.search("", new SearchSpec.Builder().build());
-        List<GenericDocument> documents = convertSearchResultsToDocuments(searchResults);
-        assertThat(documents).hasSize(1);
-        GenericDocument actualGenericDoc = documents.get(0);
-        GenericDocument expectedGenericDoc = new GenericDocument.Builder<>(genericDoc)
-                .setParentTypes(new ArrayList<>(Arrays.asList("Business", "Place", "Organization",
-                        "InterfaceRoot")))
-                .build();
-        assertThat(actualGenericDoc).isEqualTo(expectedGenericDoc);
+        List<SearchResult> searchResults = retrieveAllSearchResults(
+                mSession.search("", new SearchSpec.Builder().build())
+        );
+        assertThat(searchResults).hasSize(1);
+        SearchResult result = searchResults.get(0);
+        assertThat(result.getGenericDocument()).isEqualTo(expectedGenericDoc);
 
         // Deserializing it to InterfaceRoot will get a Business instance back.
-        InterfaceRoot interfaceRoot = actualGenericDoc.toDocumentClass(InterfaceRoot.class,
+        InterfaceRoot interfaceRoot = result.getDocument(InterfaceRoot.class,
                 AppSearchDocumentClassMap.getGlobalMap());
         assertThat(interfaceRoot).isInstanceOf(Business.class);
         Business business = (Business) interfaceRoot;
@@ -2580,6 +2596,95 @@ public abstract class AnnotationProcessorTestBase {
         assertThat(business.getBusinessName()).isEqualTo("business_name");
     }
 
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testPolymorphicDeserialization_NestedType_Integration() throws Exception {
+        assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SCHEMA_ADD_PARENT_TYPE));
+
+        // Add an unknown business type that is a subtype of Business, and a DocumentCollection
+        // type that can hold any nested InterfaceRoot document.
+        mSession.setSchemaAsync(new SetSchemaRequest.Builder()
+                .addDocumentClasses(Business.class)
+                .addSchemas(new AppSearchSchema.Builder("UnknownBusiness")
+                        .addParentType("Business")
+                        .addProperty(new AppSearchSchema.StringPropertyConfig.Builder(
+                                "organizationDescription")
+                                .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                                .build())
+                        .addProperty(new AppSearchSchema.StringPropertyConfig.Builder("location")
+                                .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                                .build())
+                        .addProperty(new AppSearchSchema.StringPropertyConfig.Builder(
+                                "businessName")
+                                .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                                .build())
+                        .addProperty(new AppSearchSchema.StringPropertyConfig.Builder(
+                                "unknownProperty")
+                                .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                                .build())
+                        .build())
+                .addDocumentClasses(DocumentCollection.class)
+                .build()).get();
+        // Create and put a DocumentCollection that includes an UnknownBusiness document.
+        GenericDocument unknownBusinessGenericDoc =
+                new GenericDocument.Builder<>("namespace", "id1", "UnknownBusiness")
+                        .setCreationTimestampMillis(3000)
+                        .setPropertyString("location", "business_loc")
+                        .setPropertyString("organizationDescription", "business_dec")
+                        .setPropertyString("businessName", "business_name")
+                        .setPropertyString("unknownProperty", "foo")
+                        .build();
+        GenericDocument documentCollectionGenericDoc = new GenericDocument.Builder<>(
+                "namespace", "id2", "DocumentCollection")
+                .setCreationTimestampMillis(3000)
+                .setPropertyDocument("collection", unknownBusinessGenericDoc)
+                .build();
+        checkIsBatchResultSuccess(mSession.putAsync(
+                new PutDocumentsRequest.Builder().addGenericDocuments(
+                        documentCollectionGenericDoc).build()));
+        GenericDocument expectedDocumentCollectionGenericDoc;
+        if (mSession.getFeatures().isFeatureSupported(Features.SEARCH_RESULT_PARENT_TYPES)) {
+            // When SearchResult wraps parent information, GenericDocument should not do.
+            expectedDocumentCollectionGenericDoc = documentCollectionGenericDoc;
+        } else {
+            // When SearchResult does not wrap parent information, GenericDocument should do.
+            GenericDocument expectedUnknownBusinessGenericDoc = new GenericDocument.Builder<>(
+                    unknownBusinessGenericDoc)
+                    .setParentTypes(
+                            new ArrayList<>(Arrays.asList("Business", "Place", "Organization",
+                                    "InterfaceRoot")))
+                    .build();
+            expectedDocumentCollectionGenericDoc = new GenericDocument.Builder<>(
+                    "namespace", "id2", "DocumentCollection")
+                    .setCreationTimestampMillis(3000)
+                    .setPropertyDocument("collection", expectedUnknownBusinessGenericDoc)
+                    .build();
+        }
+
+        // Query to get the document back, with parent information added.
+        List<SearchResult> searchResults = retrieveAllSearchResults(
+                mSession.search("", new SearchSpec.Builder().build())
+        );
+        assertThat(searchResults).hasSize(1);
+        SearchResult result = searchResults.get(0);
+        assertThat(result.getGenericDocument()).isEqualTo(expectedDocumentCollectionGenericDoc);
+
+        // Deserialize documentCollectionGenericDoc and check that it includes a Business
+        // instance, instead of an InterfaceRoot instance.
+        DocumentCollection documentCollection = result.getDocument(DocumentCollection.class,
+                AppSearchDocumentClassMap.getGlobalMap());
+        assertThat(documentCollection.mCollection).asList().hasSize(1);
+        assertThat(documentCollection.mCollection[0]).isInstanceOf(Business.class);
+        Business business = (Business) documentCollection.mCollection[0];
+        assertThat(business.getId()).isEqualTo("id1");
+        assertThat(business.getNamespace()).isEqualTo("namespace");
+        assertThat(business.getCreationTimestamp()).isEqualTo(3000);
+        assertThat(business.getLocation()).isEqualTo("business_loc");
+        assertThat(business.getOrganizationDescription()).isEqualTo("business_dec");
+        assertThat(business.getBusinessName()).isEqualTo("business_name");
+    }
+
+
     // InterfaceRoot
     //   |    \
     //   |    Person
@@ -2588,6 +2693,7 @@ public abstract class AnnotationProcessorTestBase {
     @Test
     public void testPolymorphicDeserialization_IntegrationDiamondThreeTypes() throws Exception {
         assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SCHEMA_ADD_PARENT_TYPE));
+        assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SEARCH_RESULT_PARENT_TYPES));
 
         mSession.setSchemaAsync(new SetSchemaRequest.Builder()
                 .addSchemas(new AppSearchSchema.Builder("UnknownA")
@@ -2616,17 +2722,15 @@ public abstract class AnnotationProcessorTestBase {
                 new PutDocumentsRequest.Builder().addGenericDocuments(genericDoc).build()));
 
         // Query to get the document back, with parent information added.
-        SearchResults searchResults = mSession.search("", new SearchSpec.Builder().build());
-        List<GenericDocument> documents = convertSearchResultsToDocuments(searchResults);
-        assertThat(documents).hasSize(1);
-        GenericDocument actualGenericDoc = documents.get(0);
-        GenericDocument expectedGenericDoc = new GenericDocument.Builder<>(genericDoc)
-                .setParentTypes(new ArrayList<>(Arrays.asList("Person", "InterfaceRoot")))
-                .build();
-        assertThat(actualGenericDoc).isEqualTo(expectedGenericDoc);
+        List<SearchResult> searchResults = retrieveAllSearchResults(
+                mSession.search("", new SearchSpec.Builder().build())
+        );
+        assertThat(searchResults).hasSize(1);
+        SearchResult result = searchResults.get(0);
+        assertThat(result.getGenericDocument()).isEqualTo(genericDoc);
 
         // Deserializing it to InterfaceRoot will get a Person instance back.
-        InterfaceRoot interfaceRoot = actualGenericDoc.toDocumentClass(InterfaceRoot.class,
+        InterfaceRoot interfaceRoot = result.getDocument(InterfaceRoot.class,
                 AppSearchDocumentClassMap.getGlobalMap());
         assertThat(interfaceRoot).isInstanceOf(Person.class);
         Person person = (Person) interfaceRoot;
@@ -2645,6 +2749,7 @@ public abstract class AnnotationProcessorTestBase {
     @Test
     public void testPolymorphicDeserialization_IntegrationDiamondTwoUnknown() throws Exception {
         assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SCHEMA_ADD_PARENT_TYPE));
+        assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SEARCH_RESULT_PARENT_TYPES));
 
         mSession.setSchemaAsync(new SetSchemaRequest.Builder()
                 .addSchemas(new AppSearchSchema.Builder("UnknownA")
@@ -2676,18 +2781,15 @@ public abstract class AnnotationProcessorTestBase {
                 new PutDocumentsRequest.Builder().addGenericDocuments(genericDoc).build()));
 
         // Query to get the document back, with parent information added.
-        SearchResults searchResults = mSession.search("", new SearchSpec.Builder().build());
-        List<GenericDocument> documents = convertSearchResultsToDocuments(searchResults);
-        assertThat(documents).hasSize(1);
-        GenericDocument actualGenericDoc = documents.get(0);
-        GenericDocument expectedGenericDoc = new GenericDocument.Builder<>(genericDoc)
-                .setParentTypes(new ArrayList<>(
-                        Arrays.asList("UnknownA", "Person", "InterfaceRoot")))
-                .build();
-        assertThat(actualGenericDoc).isEqualTo(expectedGenericDoc);
+        List<SearchResult> searchResults = retrieveAllSearchResults(
+                mSession.search("", new SearchSpec.Builder().build())
+        );
+        assertThat(searchResults).hasSize(1);
+        SearchResult result = searchResults.get(0);
+        assertThat(result.getGenericDocument()).isEqualTo(genericDoc);
 
         // Deserializing it to InterfaceRoot will get a Person instance back.
-        InterfaceRoot interfaceRoot = actualGenericDoc.toDocumentClass(InterfaceRoot.class,
+        InterfaceRoot interfaceRoot = result.getDocument(InterfaceRoot.class,
                 AppSearchDocumentClassMap.getGlobalMap());
         assertThat(interfaceRoot).isInstanceOf(Person.class);
         Person person = (Person) interfaceRoot;
@@ -2706,6 +2808,7 @@ public abstract class AnnotationProcessorTestBase {
     @Test
     public void testPolymorphicDeserialization_IntegrationDiamondOneUnknown() throws Exception {
         assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SCHEMA_ADD_PARENT_TYPE));
+        assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SEARCH_RESULT_PARENT_TYPES));
 
         mSession.setSchemaAsync(new SetSchemaRequest.Builder()
                 .addDocumentClasses(Person.class)
@@ -2741,19 +2844,16 @@ public abstract class AnnotationProcessorTestBase {
                 new PutDocumentsRequest.Builder().addGenericDocuments(genericDoc).build()));
 
         // Query to get the document back, with parent information added.
-        SearchResults searchResults = mSession.search("", new SearchSpec.Builder().build());
-        List<GenericDocument> documents = convertSearchResultsToDocuments(searchResults);
-        assertThat(documents).hasSize(1);
-        GenericDocument actualGenericDoc = documents.get(0);
-        GenericDocument expectedGenericDoc = new GenericDocument.Builder<>(genericDoc)
-                .setParentTypes(new ArrayList<>(
-                        Arrays.asList("Person", "Organization", "InterfaceRoot")))
-                .build();
-        assertThat(actualGenericDoc).isEqualTo(expectedGenericDoc);
+        List<SearchResult> searchResults = retrieveAllSearchResults(
+                mSession.search("", new SearchSpec.Builder().build())
+        );
+        assertThat(searchResults).hasSize(1);
+        SearchResult result = searchResults.get(0);
+        assertThat(result.getGenericDocument()).isEqualTo(genericDoc);
 
         // Deserializing it to InterfaceRoot will get a Person instance back, which is the first
         // known type, instead of an Organization.
-        InterfaceRoot interfaceRoot = actualGenericDoc.toDocumentClass(InterfaceRoot.class,
+        InterfaceRoot interfaceRoot = result.getDocument(InterfaceRoot.class,
                 AppSearchDocumentClassMap.getGlobalMap());
         assertThat(interfaceRoot).isInstanceOf(Person.class);
         assertThat(interfaceRoot).isNotInstanceOf(Organization.class);
@@ -2763,5 +2863,360 @@ public abstract class AnnotationProcessorTestBase {
         assertThat(person.getCreationTimestamp()).isEqualTo(3000);
         assertThat(person.getFirstName()).isEqualTo("first");
         assertThat(person.getLastName()).isEqualTo("last");
+    }
+
+    @Document
+    static class EmailWithEmbedding {
+        @Document.Namespace
+        String mNamespace;
+
+        @Document.Id
+        String mId;
+
+        @Document.CreationTimestampMillis
+        long mCreationTimestampMillis;
+
+        @Document.StringProperty
+        String mSender;
+
+        // Default non-indexable embedding
+        @Document.EmbeddingProperty
+        EmbeddingVector mSenderEmbedding;
+
+        @Document.EmbeddingProperty(indexingType = 1)
+        EmbeddingVector mTitleEmbedding;
+
+        @Document.EmbeddingProperty(indexingType = 1)
+        Collection<EmbeddingVector> mReceiverEmbeddings;
+
+        @Document.EmbeddingProperty(indexingType = 1)
+        EmbeddingVector[] mBodyEmbeddings;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            EmailWithEmbedding email = (EmailWithEmbedding) o;
+            return Objects.equals(mNamespace, email.mNamespace)
+                    && Objects.equals(mId, email.mId)
+                    && Objects.equals(mCreationTimestampMillis, email.mCreationTimestampMillis)
+                    && Objects.equals(mSender, email.mSender)
+                    && Objects.equals(mSenderEmbedding, email.mSenderEmbedding)
+                    && Objects.equals(mTitleEmbedding, email.mTitleEmbedding)
+                    && Objects.equals(mReceiverEmbeddings, email.mReceiverEmbeddings)
+                    && Arrays.equals(mBodyEmbeddings, email.mBodyEmbeddings);
+        }
+
+        public static EmailWithEmbedding createSampleDoc() {
+            EmbeddingVector embedding1 =
+                    new EmbeddingVector(new float[]{1, 2, 3}, "model1");
+            EmbeddingVector embedding2 =
+                    new EmbeddingVector(new float[]{-1, -2, -3}, "model2");
+            EmbeddingVector embedding3 =
+                    new EmbeddingVector(new float[]{0.1f, 0.2f, 0.3f, 0.4f}, "model3");
+            EmbeddingVector embedding4 =
+                    new EmbeddingVector(new float[]{-0.1f, -0.2f, -0.3f, -0.4f}, "model3");
+            EmailWithEmbedding email = new EmailWithEmbedding();
+            email.mNamespace = "namespace";
+            email.mId = "id";
+            email.mCreationTimestampMillis = 1000;
+            email.mSender = "sender";
+            email.mSenderEmbedding = embedding1;
+            email.mTitleEmbedding = embedding2;
+            email.mReceiverEmbeddings = Collections.singletonList(embedding3);
+            email.mBodyEmbeddings = new EmbeddingVector[]{embedding3, embedding4};
+            return email;
+        }
+    }
+
+    @Document
+    static class EmailWithQuantizedEmbedding extends EmailWithEmbedding {
+        @Document.EmbeddingProperty(indexingType = 1, quantizationType = 1)
+        EmbeddingVector mTitleQuantizedEmbedding;
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+            EmailWithQuantizedEmbedding email = (EmailWithQuantizedEmbedding) o;
+            return Objects.equals(mTitleQuantizedEmbedding, email.mTitleQuantizedEmbedding);
+        }
+
+        public static EmailWithQuantizedEmbedding createSampleDoc() {
+            EmbeddingVector embedding1 =
+                    new EmbeddingVector(new float[]{1, 2, 3}, "model1");
+            EmbeddingVector embedding2 =
+                    new EmbeddingVector(new float[]{-1, -2, -3}, "model2");
+            EmbeddingVector embedding3 =
+                    new EmbeddingVector(new float[]{0.1f, 0.2f, 0.3f, 0.4f}, "model3");
+            EmbeddingVector embedding4 =
+                    new EmbeddingVector(new float[]{-0.1f, -0.2f, -0.3f, -0.4f}, "model3");
+            EmbeddingVector embedding5 =
+                    new EmbeddingVector(new float[]{1, 2}, "model4");
+            EmailWithQuantizedEmbedding email = new EmailWithQuantizedEmbedding();
+            email.mNamespace = "namespace";
+            email.mId = "id";
+            email.mCreationTimestampMillis = 1000;
+            email.mSender = "sender";
+            email.mSenderEmbedding = embedding1;
+            email.mTitleEmbedding = embedding2;
+            email.mReceiverEmbeddings = Collections.singletonList(embedding3);
+            email.mBodyEmbeddings = new EmbeddingVector[]{embedding3, embedding4};
+            email.mTitleQuantizedEmbedding = embedding5;
+            return email;
+        }
+    }
+
+    @Test
+    public void testEmbeddingGenericDocumentConversion() throws Exception {
+        EmailWithEmbedding inEmail = EmailWithEmbedding.createSampleDoc();
+        GenericDocument genericDocument1 = GenericDocument.fromDocumentClass(inEmail);
+        GenericDocument genericDocument2 = GenericDocument.fromDocumentClass(inEmail);
+        EmailWithEmbedding outEmail = genericDocument2.toDocumentClass(EmailWithEmbedding.class);
+
+        assertThat(inEmail).isNotSameInstanceAs(outEmail);
+        assertThat(inEmail).isEqualTo(outEmail);
+        assertThat(genericDocument1).isNotSameInstanceAs(genericDocument2);
+        assertThat(genericDocument1).isEqualTo(genericDocument2);
+    }
+
+    @Test
+    public void testEmbeddingSearch() throws Exception {
+        assumeTrue(mSession.getFeatures().isFeatureSupported(
+                Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG));
+
+        mSession.setSchemaAsync(new SetSchemaRequest.Builder()
+                .addDocumentClasses(EmailWithEmbedding.class)
+                .build()).get();
+
+        // Create and add a document
+        EmailWithEmbedding email = EmailWithEmbedding.createSampleDoc();
+        checkIsBatchResultSuccess(mSession.putAsync(
+                new PutDocumentsRequest.Builder()
+                        .addDocuments(email)
+                        .build()));
+
+        // An empty query should retrieve this document.
+        SearchResults searchResults = mSession.search("",
+                new SearchSpec.Builder().build());
+        List<SearchResult> results = retrieveAllSearchResults(searchResults);
+        assertThat(results).hasSize(1);
+        // Convert GenericDocument to EmailWithEmbedding and check values.
+        EmailWithEmbedding outputDocument = results.get(0).getDocument(EmailWithEmbedding.class);
+        assertThat(outputDocument).isEqualTo(email);
+
+        // senderEmbedding is non-indexable, so querying for it will return nothing.
+        searchResults = mSession.search("semanticSearch(getEmbeddingParameter(0), 0.9, 1)",
+                new SearchSpec.Builder()
+                        .setDefaultEmbeddingSearchMetricType(
+                                SearchSpec.EMBEDDING_SEARCH_METRIC_TYPE_COSINE)
+                        .addEmbeddingParameters(email.mSenderEmbedding)
+                        .setRankingStrategy(
+                                "sum(this.matchedSemanticScores(getEmbeddingParameter(0)))")
+                        .setListFilterQueryLanguageEnabled(true)
+                        .build());
+        results = retrieveAllSearchResults(searchResults);
+        assertThat(results).isEmpty();
+
+        // titleEmbedding is indexable, and querying for it using itself will return a cosine
+        // similarity score of 1.
+        searchResults = mSession.search("semanticSearch(getEmbeddingParameter(0), 0.9, 1)",
+                new SearchSpec.Builder()
+                        .setDefaultEmbeddingSearchMetricType(
+                                SearchSpec.EMBEDDING_SEARCH_METRIC_TYPE_COSINE)
+                        .addEmbeddingParameters(email.mTitleEmbedding)
+                        .setRankingStrategy(
+                                "sum(this.matchedSemanticScores(getEmbeddingParameter(0)))")
+                        .setListFilterQueryLanguageEnabled(true)
+                        .build());
+        results = retrieveAllSearchResults(searchResults);
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).getRankingSignal()).isWithin(0.00001).of(1);
+        // Convert GenericDocument to EmailWithEmbedding and check values.
+        outputDocument = results.get(0).getDocument(EmailWithEmbedding.class);
+        assertThat(outputDocument).isEqualTo(email);
+
+        // Both receiverEmbeddings and bodyEmbeddings are indexable, and in this specific
+        // document, they together hold three embedding vectors with the same signature.
+        searchResults = mSession.search("semanticSearch(getEmbeddingParameter(0), -1, 1)",
+                new SearchSpec.Builder()
+                        .setDefaultEmbeddingSearchMetricType(
+                                SearchSpec.EMBEDDING_SEARCH_METRIC_TYPE_COSINE)
+                        // Using one of the three vectors to query
+                        .addEmbeddingParameters(email.mBodyEmbeddings[0])
+                        .setRankingStrategy(
+                                // We should get a score of 3 for "len", since there are three
+                                // embedding vectors matched.
+                                "len(this.matchedSemanticScores(getEmbeddingParameter(0)))")
+                        .setListFilterQueryLanguageEnabled(true)
+                        .build());
+        results = retrieveAllSearchResults(searchResults);
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).getRankingSignal()).isEqualTo(3);
+        // Convert GenericDocument to EmailWithEmbedding and check values.
+        outputDocument = results.get(0).getDocument(EmailWithEmbedding.class);
+        assertThat(outputDocument).isEqualTo(email);
+    }
+
+    @Test
+    public void testEmbeddingQuantization() throws Exception {
+        assumeTrue(mSession.getFeatures().isFeatureSupported(
+                Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG));
+        assumeTrue(mSession.getFeatures().isFeatureSupported(
+                Features.SCHEMA_EMBEDDING_QUANTIZATION));
+
+        mSession.setSchemaAsync(new SetSchemaRequest.Builder()
+                .addDocumentClasses(EmailWithQuantizedEmbedding.class)
+                .build()).get();
+
+        // Create and add a document
+        EmailWithQuantizedEmbedding email = new EmailWithQuantizedEmbedding();
+        email.mNamespace = "namespace";
+        email.mId = "id";
+        email.mCreationTimestampMillis = 1000;
+        EmbeddingVector embedding = new EmbeddingVector(new float[]{0, 1.45f, 255}, "my_model");
+        email.mTitleEmbedding = embedding;
+        email.mTitleQuantizedEmbedding = embedding;
+        checkIsBatchResultSuccess(mSession.putAsync(
+                new PutDocumentsRequest.Builder()
+                        .addDocuments(email)
+                        .build()));
+
+        EmbeddingVector queryEmbedding = new EmbeddingVector(new float[]{1, 1, 1}, "my_model");
+        // titleEmbedding is unquantized, so it should have an embedding score
+        // 0 + 1.45 + 255 = 256.45.
+        SearchResults searchResults = mSession.search(
+                "titleEmbedding:semanticSearch(getEmbeddingParameter(0), -1000, 1000)",
+                new SearchSpec.Builder()
+                        .setDefaultEmbeddingSearchMetricType(
+                                SearchSpec.EMBEDDING_SEARCH_METRIC_TYPE_DOT_PRODUCT)
+                        .addEmbeddingParameters(queryEmbedding)
+                        .setRankingStrategy(
+                                "sum(this.matchedSemanticScores(getEmbeddingParameter(0)))")
+                        .setListFilterQueryLanguageEnabled(true)
+                        .build());
+        List<SearchResult> results = retrieveAllSearchResults(searchResults);
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).getRankingSignal()).isWithin(0.0001).of(256.45);
+        // Convert GenericDocument to EmailWithQuantizedEmbedding and check values.
+        EmailWithQuantizedEmbedding outputDocument = results.get(0).getDocument(
+                EmailWithQuantizedEmbedding.class);
+        assertThat(outputDocument).isEqualTo(email);
+
+        // titleQuantizedEmbedding is quantized, so it should have an embedding score
+        // 0 + 1 + 255 = 256.
+        searchResults = mSession.search(
+                "titleQuantizedEmbedding:semanticSearch(getEmbeddingParameter(0), -1000, 1000)",
+                new SearchSpec.Builder()
+                        .setDefaultEmbeddingSearchMetricType(
+                                SearchSpec.EMBEDDING_SEARCH_METRIC_TYPE_DOT_PRODUCT)
+                        .addEmbeddingParameters(queryEmbedding)
+                        .setRankingStrategy(
+                                "sum(this.matchedSemanticScores(getEmbeddingParameter(0)))")
+                        .setListFilterQueryLanguageEnabled(true)
+                        .build());
+        results = retrieveAllSearchResults(searchResults);
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).getRankingSignal()).isWithin(0.0001).of(256);
+        // Convert GenericDocument to EmailWithQuantizedEmbedding and check values.
+        outputDocument = results.get(0).getDocument(EmailWithQuantizedEmbedding.class);
+        assertThat(outputDocument).isEqualTo(email);
+    }
+
+    @Document
+    static class EmailWithBlobHandle {
+        @Document.Namespace
+        String mNamespace;
+
+        @Document.Id
+        String mId;
+
+        @Document.CreationTimestampMillis
+        long mCreationTimestampMillis;
+
+        @Document.StringProperty
+        String mSender;
+
+        // Default non-indexable embedding
+        @Document.BlobHandleProperty
+        AppSearchBlobHandle mBlobHandle;
+
+        @Document.BlobHandleProperty
+        Collection<AppSearchBlobHandle> mBlobHandleCollection;
+
+        @Document.BlobHandleProperty
+        AppSearchBlobHandle[] mBlobHandleArr;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            EmailWithBlobHandle email = (EmailWithBlobHandle) o;
+            return Objects.equals(mNamespace, email.mNamespace)
+                    && Objects.equals(mId, email.mId)
+                    && Objects.equals(mSender, email.mSender)
+                    && Objects.equals(mCreationTimestampMillis, email.mCreationTimestampMillis)
+                    && Objects.equals(mBlobHandle, email.mBlobHandle)
+                    && Objects.equals(mBlobHandleCollection, email.mBlobHandleCollection)
+                    && Arrays.equals(mBlobHandleArr, email.mBlobHandleArr);
+        }
+
+        public static EmailWithBlobHandle createSampleDoc() throws NoSuchAlgorithmException {
+            byte[] digest = calculateDigest(new byte[] {(byte) 1});
+            AppSearchBlobHandle blobHandle1 = AppSearchBlobHandle.createWithSha256(
+                    digest, TEST_PACKAGE_NAME, DB_NAME_1, "namespace1");
+            AppSearchBlobHandle blobHandle2 = AppSearchBlobHandle.createWithSha256(
+                    digest, TEST_PACKAGE_NAME, DB_NAME_1, "namespace2");
+            AppSearchBlobHandle blobHandle3 = AppSearchBlobHandle.createWithSha256(
+                    digest, TEST_PACKAGE_NAME, DB_NAME_1, "namespace3");
+            EmailWithBlobHandle email = new EmailWithBlobHandle();
+            email.mNamespace = "namespace";
+            email.mId = "id";
+            email.mCreationTimestampMillis = 1000;
+            email.mSender = "sender";
+            email.mBlobHandle = blobHandle1;
+            email.mBlobHandleCollection = Collections.singletonList(blobHandle1);
+            email.mBlobHandleArr = new AppSearchBlobHandle[]{blobHandle1, blobHandle2, blobHandle3};
+            return email;
+        }
+    }
+
+    @Test
+    public void testBlobHandleGenericDocumentConversion() throws Exception {
+        EmailWithBlobHandle inEmail = EmailWithBlobHandle.createSampleDoc();
+        GenericDocument genericDocument1 = GenericDocument.fromDocumentClass(inEmail);
+        GenericDocument genericDocument2 = GenericDocument.fromDocumentClass(inEmail);
+        EmailWithBlobHandle outEmail = genericDocument2.toDocumentClass(EmailWithBlobHandle.class);
+
+        assertThat(inEmail).isNotSameInstanceAs(outEmail);
+        assertThat(inEmail).isEqualTo(outEmail);
+        assertThat(genericDocument1).isNotSameInstanceAs(genericDocument2);
+        assertThat(genericDocument1).isEqualTo(genericDocument2);
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_BLOB_STORE)
+    public void testBlobHandleSearch() throws Exception {
+        assumeTrue(mSession.getFeatures().isFeatureSupported(Features.BLOB_STORAGE));
+
+        mSession.setSchemaAsync(new SetSchemaRequest.Builder()
+                .addDocumentClasses(EmailWithBlobHandle.class)
+                .build()).get();
+
+        // Create and add a document
+        EmailWithBlobHandle email = EmailWithBlobHandle.createSampleDoc();
+        checkIsBatchResultSuccess(mSession.putAsync(
+                new PutDocumentsRequest.Builder()
+                        .addDocuments(email)
+                        .build()));
+
+        // An empty query should retrieve this document.
+        SearchResults searchResults = mSession.search("",
+                new SearchSpec.Builder().build());
+        List<SearchResult> results = retrieveAllSearchResults(searchResults);
+        assertThat(results).hasSize(1);
+        // Convert GenericDocument to EmailWithBlobHandle and check values.
+        EmailWithBlobHandle outputDocument = results.get(0).getDocument(EmailWithBlobHandle.class);
+        assertThat(outputDocument).isEqualTo(email);
     }
 }

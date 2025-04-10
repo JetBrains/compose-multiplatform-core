@@ -30,7 +30,7 @@ public class BodyFatRecord(
     override val zoneOffset: ZoneOffset?,
     /** Percentage. Required field. Valid range: 0-100. */
     public val percentage: Percentage,
-    override val metadata: Metadata = Metadata.EMPTY,
+    override val metadata: Metadata,
 ) : InstantaneousRecord {
 
     init {
@@ -62,6 +62,10 @@ public class BodyFatRecord(
         result = 31 * result + (zoneOffset?.hashCode() ?: 0)
         result = 31 * result + metadata.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "BodyFatRecord(time=$time, zoneOffset=$zoneOffset, percentage=$percentage, metadata=$metadata)"
     }
 
     private companion object {

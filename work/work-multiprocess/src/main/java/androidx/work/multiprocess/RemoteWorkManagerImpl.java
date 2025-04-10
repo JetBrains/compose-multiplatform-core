@@ -22,7 +22,6 @@ import static androidx.work.multiprocess.ListenableCallback.ListenableCallbackRu
 import android.content.Context;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.Operation;
 import androidx.work.WorkInfo;
@@ -44,6 +43,8 @@ import androidx.work.multiprocess.parcelable.ParcelableWorkRequest;
 import androidx.work.multiprocess.parcelable.ParcelableWorkRequests;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.UUID;
@@ -69,7 +70,7 @@ public class RemoteWorkManagerImpl extends IWorkManagerImpl.Stub {
     @Override
     @MainThread
     public void enqueueWorkRequests(
-            final @NonNull byte[] request,
+            final byte @NonNull [] request,
             final @NonNull IWorkManagerImplCallback callback) {
         try {
             ParcelableWorkRequests parcelledRequests =
@@ -80,9 +81,9 @@ public class RemoteWorkManagerImpl extends IWorkManagerImpl.Stub {
             final ListenableCallback<Operation.State.SUCCESS> listenableCallback =
                     new ListenableCallback<Operation.State.SUCCESS>(executor, callback,
                             operation.getResult()) {
-                        @NonNull
                         @Override
-                        public byte[] toByteArray(@NonNull Operation.State.SUCCESS result) {
+                        public byte @NonNull [] toByteArray(
+                                Operation.State.@NonNull SUCCESS result) {
                             return sEMPTY;
                         }
                     };
@@ -94,7 +95,7 @@ public class RemoteWorkManagerImpl extends IWorkManagerImpl.Stub {
 
     @Override
     public void enqueueContinuation(
-            final @NonNull byte[] request,
+            final byte @NonNull [] request,
             final @NonNull IWorkManagerImplCallback callback) {
         try {
             ParcelableWorkContinuationImpl parcelledRequest =
@@ -106,9 +107,9 @@ public class RemoteWorkManagerImpl extends IWorkManagerImpl.Stub {
             final ListenableCallback<Operation.State.SUCCESS> listenableCallback =
                     new ListenableCallback<Operation.State.SUCCESS>(executor, callback,
                             operation.getResult()) {
-                        @NonNull
                         @Override
-                        public byte[] toByteArray(@NonNull Operation.State.SUCCESS result) {
+                        public byte @NonNull [] toByteArray(
+                                Operation.State.@NonNull SUCCESS result) {
                             return sEMPTY;
                         }
                     };
@@ -126,9 +127,9 @@ public class RemoteWorkManagerImpl extends IWorkManagerImpl.Stub {
             final ListenableCallback<Operation.State.SUCCESS> listenableCallback =
                     new ListenableCallback<Operation.State.SUCCESS>(executor, callback,
                             operation.getResult()) {
-                        @NonNull
                         @Override
-                        public byte[] toByteArray(@NonNull Operation.State.SUCCESS result) {
+                        public byte @NonNull [] toByteArray(
+                                Operation.State.@NonNull SUCCESS result) {
                             return sEMPTY;
                         }
                     };
@@ -148,9 +149,9 @@ public class RemoteWorkManagerImpl extends IWorkManagerImpl.Stub {
             final ListenableCallback<Operation.State.SUCCESS> listenableCallback =
                     new ListenableCallback<Operation.State.SUCCESS>(executor, callback,
                             operation.getResult()) {
-                        @NonNull
                         @Override
-                        public byte[] toByteArray(@NonNull Operation.State.SUCCESS result) {
+                        public byte @NonNull [] toByteArray(
+                                Operation.State.@NonNull SUCCESS result) {
                             return sEMPTY;
                         }
                     };
@@ -170,9 +171,9 @@ public class RemoteWorkManagerImpl extends IWorkManagerImpl.Stub {
             final ListenableCallback<Operation.State.SUCCESS> listenableCallback =
                     new ListenableCallback<Operation.State.SUCCESS>(executor, callback,
                             operation.getResult()) {
-                        @NonNull
                         @Override
-                        public byte[] toByteArray(@NonNull Operation.State.SUCCESS result) {
+                        public byte @NonNull [] toByteArray(
+                                Operation.State.@NonNull SUCCESS result) {
                             return sEMPTY;
                         }
                     };
@@ -190,9 +191,9 @@ public class RemoteWorkManagerImpl extends IWorkManagerImpl.Stub {
             final ListenableCallback<Operation.State.SUCCESS> listenableCallback =
                     new ListenableCallback<Operation.State.SUCCESS>(executor, callback,
                             operation.getResult()) {
-                        @NonNull
                         @Override
-                        public byte[] toByteArray(@NonNull Operation.State.SUCCESS result) {
+                        public byte @NonNull [] toByteArray(
+                                Operation.State.@NonNull SUCCESS result) {
                             return sEMPTY;
                         }
                     };
@@ -203,7 +204,8 @@ public class RemoteWorkManagerImpl extends IWorkManagerImpl.Stub {
     }
 
     @Override
-    public void queryWorkInfo(@NonNull byte[] request, @NonNull IWorkManagerImplCallback callback) {
+    public void queryWorkInfo(byte @NonNull [] request,
+            @NonNull IWorkManagerImplCallback callback) {
         try {
             ParcelableWorkQuery parcelled =
                     ParcelConverters.unmarshall(request, ParcelableWorkQuery.CREATOR);
@@ -212,9 +214,8 @@ public class RemoteWorkManagerImpl extends IWorkManagerImpl.Stub {
                     mWorkManager.getWorkInfos(parcelled.getWorkQuery());
             final ListenableCallback<List<WorkInfo>> listenableCallback =
                     new ListenableCallback<List<WorkInfo>>(executor, callback, future) {
-                        @NonNull
                         @Override
-                        public byte[] toByteArray(@NonNull List<WorkInfo> result) {
+                        public byte @NonNull [] toByteArray(@NonNull List<WorkInfo> result) {
                             ParcelableWorkInfos parcelables = new ParcelableWorkInfos(result);
                             return ParcelConverters.marshall(parcelables);
                         }
@@ -226,7 +227,7 @@ public class RemoteWorkManagerImpl extends IWorkManagerImpl.Stub {
     }
 
     @Override
-    public void setProgress(@NonNull byte[] request, @NonNull IWorkManagerImplCallback callback) {
+    public void setProgress(byte @NonNull [] request, @NonNull IWorkManagerImplCallback callback) {
         try {
             ParcelableUpdateRequest parcelled =
                     ParcelConverters.unmarshall(request, ParcelableUpdateRequest.CREATOR);
@@ -243,9 +244,8 @@ public class RemoteWorkManagerImpl extends IWorkManagerImpl.Stub {
             );
             final ListenableCallback<Void> listenableCallback =
                     new ListenableCallback<Void>(executor, callback, future) {
-                        @NonNull
                         @Override
-                        public byte[] toByteArray(@NonNull Void result) {
+                        public byte @NonNull [] toByteArray(@NonNull Void result) {
                             return sEMPTY;
                         }
                     };
@@ -257,7 +257,7 @@ public class RemoteWorkManagerImpl extends IWorkManagerImpl.Stub {
 
     @Override
     public void setForegroundAsync(
-            @NonNull byte[] request,
+            byte @NonNull [] request,
             @NonNull IWorkManagerImplCallback callback) {
         try {
             ParcelableForegroundRequestInfo parcelled =
@@ -276,9 +276,8 @@ public class RemoteWorkManagerImpl extends IWorkManagerImpl.Stub {
             );
             final ListenableCallback<Void> listenableCallback =
                     new ListenableCallback<Void>(executor, callback, future) {
-                        @NonNull
                         @Override
-                        public byte[] toByteArray(@NonNull Void result) {
+                        public byte @NonNull [] toByteArray(@NonNull Void result) {
                             return sEMPTY;
                         }
                     };
@@ -289,7 +288,7 @@ public class RemoteWorkManagerImpl extends IWorkManagerImpl.Stub {
     }
 
     @Override
-    public void updateUniquePeriodicWorkRequest(@NonNull String name, @NonNull byte[] request,
+    public void updateUniquePeriodicWorkRequest(@NonNull String name, byte @NonNull [] request,
             @NonNull IWorkManagerImplCallback callback) {
         try {
             ParcelableWorkRequest parcelableWorkRequest = ParcelConverters.unmarshall(request,
@@ -301,9 +300,9 @@ public class RemoteWorkManagerImpl extends IWorkManagerImpl.Stub {
             final ListenableCallback<Operation.State.SUCCESS> listenableCallback =
                     new ListenableCallback<Operation.State.SUCCESS>(executor, callback,
                             operation.getResult()) {
-                        @NonNull
                         @Override
-                        public byte[] toByteArray(@NonNull Operation.State.SUCCESS result) {
+                        public byte @NonNull [] toByteArray(
+                                Operation.State.@NonNull SUCCESS result) {
                             return sEMPTY;
                         }
                     };

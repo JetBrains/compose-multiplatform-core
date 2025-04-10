@@ -22,8 +22,9 @@ import android.content.res.ColorStateList;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * Interface which allows a {@link android.widget.CheckedTextView} to receive tinting
@@ -56,8 +57,7 @@ public interface TintableCheckedTextView {
      *
      * @see #setSupportCheckMarkTintList(ColorStateList)
      */
-    @Nullable
-    ColorStateList getSupportCheckMarkTintList();
+    @Nullable ColorStateList getSupportCheckMarkTintList();
 
     /**
      * Specifies the blending mode which should be used to apply the tint specified by
@@ -71,13 +71,12 @@ public interface TintableCheckedTextView {
      * @see androidx.core.graphics.drawable.DrawableCompat#setTintMode(Drawable,
      * PorterDuff.Mode)
      */
-    void setSupportCheckMarkTintMode(@Nullable PorterDuff.Mode tintMode);
+    void setSupportCheckMarkTintMode(PorterDuff.@Nullable Mode tintMode);
 
     /**
      * Returns the blending mode used to apply the tint to the check mark drawable
      *
      * @see #setSupportCheckMarkTintMode(PorterDuff.Mode)
      */
-    @Nullable
-    PorterDuff.Mode getSupportCheckMarkTintMode();
+    PorterDuff.@Nullable Mode getSupportCheckMarkTintMode();
 }

@@ -23,9 +23,9 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.leanback.R;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * Subclass of {@link PlaybackFragment} that is responsible for providing a {@link SurfaceView}
@@ -45,8 +45,8 @@ public class VideoFragment extends PlaybackFragment {
     int mState = SURFACE_NOT_CREATED;
 
     @Override
-    @Nullable
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
+    public @Nullable View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
+            Bundle savedInstanceState) {
         ViewGroup root = (ViewGroup) super.onCreateView(inflater, container, savedInstanceState);
         mVideoSurface = (SurfaceView) LayoutInflater.from(FragmentUtil.getContext(VideoFragment.this)).inflate(
                 R.layout.lb_video_surface, root, false);

@@ -16,6 +16,8 @@
 
 package androidx.wear.protolayout.expression;
 
+import static androidx.wear.protolayout.expression.DynamicBuilders.dynamicStringFromProto;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
@@ -23,6 +25,7 @@ import static org.junit.Assert.assertThrows;
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool;
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicString;
 import androidx.wear.protolayout.expression.proto.DynamicProto;
+import androidx.wear.protolayout.proto.FingerprintProto.NodeFingerprint;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -77,7 +80,7 @@ public final class DynamicStringTest {
         assertThat(DynamicString.constant("a").concat(DynamicString.constant("b")).toString())
                 .isEqualTo(
                         "ConcatStringOp{inputLhs=FixedString{value=a},"
-                            + " inputRhs=FixedString{value=b}}");
+                                + " inputRhs=FixedString{value=b}}");
     }
 
     @Test
@@ -186,5 +189,28 @@ public final class DynamicStringTest {
 
         assertThat(from.toDynamicStringByteArray(new byte[100]))
                 .isEqualTo(from.toDynamicStringByteArray().length);
+    }
+
+    @Test
+    public void serializing_deserializing_withFingerprint() {
+        DynamicString from = DynamicString.constant(CONSTANT_VALUE);
+        NodeFingerprint fingerprint = from.getFingerprint().toProto();
+
+        DynamicProto.DynamicString to = from.toDynamicStringProto(true);
+        assertThat(to.getFingerprint()).isEqualTo(fingerprint);
+
+        DynamicString back = dynamicStringFromProto(to);
+        assertThat(back.getFingerprint().toProto()).isEqualTo(fingerprint);
+    }
+
+    @Test
+    public void toByteArray_fromByteArray_withFingerprint() {
+        DynamicString from = DynamicString.constant(CONSTANT_VALUE);
+        byte[] buffer = from.toDynamicStringByteArray();
+        DynamicProto.DynamicString toProto =
+                DynamicString.fromByteArray(buffer).toDynamicStringProto(true);
+
+        assertThat(toProto.getFixed().getValue()).isEqualTo(CONSTANT_VALUE);
+        assertThat(toProto.getFingerprint()).isEqualTo(from.getFingerprint().toProto());
     }
 }

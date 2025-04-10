@@ -18,7 +18,6 @@
 package com.example.android.supportv4.widget;
 
 import android.app.ActionBar;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -32,12 +31,13 @@ import android.widget.TextView;
 
 import androidx.activity.ComponentActivity;
 import androidx.activity.OnBackPressedCallback;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.slidingpanelayout.widget.SlidingPaneLayout;
 
 import com.example.android.supportv4.LoremIpsum;
 import com.example.android.supportv4.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This example illustrates a common usage of SlidingPaneLayout in the Android support library.
@@ -199,11 +199,7 @@ public class SlidingPaneLayoutActivity extends ComponentActivity {
         @Override
         public void onGlobalLayout() {
             mActionBar.onFirstLayout();
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                mSlidingLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-            } else {
-                mSlidingLayout.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-            }
+            mSlidingLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
         }
     }
 

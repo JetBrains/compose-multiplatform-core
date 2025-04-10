@@ -19,30 +19,22 @@ package androidx.stableaidl.api
 import java.io.File
 import org.gradle.api.Incubating
 import org.gradle.api.Task
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.tasks.TaskProvider
 
-/**
- * Extension that allows access to the StableAidl plugin's public APIs.
- */
+/** Extension that allows access to the StableAidl plugin's public APIs. */
 interface StableAidlExtension {
     /**
      * An action representing the task that checks the current Stable AIDL API surface for
      * compatibility against the previously-frozen API surface.
      */
-    @get:Incubating
-    val checkAction: Action
+    @get:Incubating val checkAction: Action
 
-    /**
-     * An action representing the task that updates the frozen Stable AIDL API surface.
-     */
-    @get:Incubating
-    val updateAction: Action
+    /** An action representing the task that updates the frozen Stable AIDL API surface. */
+    @get:Incubating val updateAction: Action
 
-    /**
-     * The task group to use for Stable AIDL tasks, or `null` to hide them.
-     */
-    @get:Incubating
-    var taskGroup: String?
+    /** The task group to use for Stable AIDL tasks, or `null` to hide them. */
+    @get:Incubating var taskGroup: String?
 
     /**
      * Adds static import directories to be passed to Stable AIDL.
@@ -50,11 +42,11 @@ interface StableAidlExtension {
      * Static imports may be used in `import` statements, but are not exported to dependencies.
      */
     fun addStaticImportDirs(vararg dirs: File)
+
+    val shadowFrameworkDir: DirectoryProperty
 }
 
 interface Action {
-    /**
-     * Runs the action before the specified [task].
-     */
+    /** Runs the action before the specified [task]. */
     fun <T : Task> before(task: TaskProvider<T>)
 }

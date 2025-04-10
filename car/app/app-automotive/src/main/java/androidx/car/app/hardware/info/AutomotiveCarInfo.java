@@ -43,8 +43,6 @@ import static java.util.Objects.requireNonNull;
 import android.os.Build;
 import android.util.Log;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
@@ -63,6 +61,8 @@ import androidx.car.app.utils.LogTags;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -74,7 +74,6 @@ import java.util.stream.Collectors;
 
 /**
  * Manages access to vehicle specific info, for example, energy info, model info.
- *
  */
 @RestrictTo(LIBRARY)
 public class AutomotiveCarInfo implements CarInfo {
@@ -96,6 +95,10 @@ public class AutomotiveCarInfo implements CarInfo {
 
     // VEHICLE_SPEED_DISPLAY_UNIT in VehiclePropertyIds. The property is added after Android Q.
     public static final int SPEED_DISPLAY_UNIT_ID = 289408516;
+
+    // INFO_EXTERIOR_DIMENSIONS in VehiclePropertyIds added in API 30
+    // https://developer.android.com/reference/android/car/VehiclePropertyIds#INFO_EXTERIOR_DIMENSIONS
+    public static final int INFO_EXTERIOR_DIMENSIONS_ID = 289472779;
 
     static final ImmutableMap<Integer, List<CarZone>> ENERGY_LEVEL_REQUEST = ImmutableMap.<Integer,
                     List<CarZone>>builder()
@@ -169,6 +172,24 @@ public class AutomotiveCarInfo implements CarInfo {
         ListenableFuture<List<CarPropertyResponse<?>>> future =
                 mPropertyManager.submitGetPropertyRequest(request, executor);
         populateEnergyProfileData(executor, listener, future);
+    }
+
+    @Override
+    public void fetchExteriorDimensions(@NonNull Executor executor,
+            @NonNull OnCarDataAvailableListener<ExteriorDimensions> listener) {
+        // Exterior dimensions were only introduced in API 30 and above
+        if (Build.VERSION.SDK_INT < 30) {
+            executor.execute(() -> listener.onCarDataAvailable(new ExteriorDimensions()));
+            return;
+        }
+
+        List<GetPropertyRequest> request = new ArrayList<>();
+        request.add(GetPropertyRequest.create(INFO_EXTERIOR_DIMENSIONS_ID));
+
+        ListenableFuture<List<CarPropertyResponse<?>>> future =
+                mPropertyManager.submitGetPropertyRequest(request, executor);
+
+        Api30Impl.populateExteriorDimensionsData(executor, listener, future);
     }
 
     @Override
@@ -390,7 +411,6 @@ public class AutomotiveCarInfo implements CarInfo {
 
     @RequiresApi(31)
     private static class Api31Impl {
-        @DoNotInline
         static void addTollListener(Executor executor,
                 OnCarDataAvailableListener<TollCard> listener, PropertyManager propertyManager,
                 Map<OnCarDataAvailableListener<?>, OnCarPropertyResponseListener> listenerMap) {
@@ -400,10 +420,54 @@ public class AutomotiveCarInfo implements CarInfo {
             listenerMap.put(listener, tollListener);
         }
 
-        @DoNotInline
         static void removeTollListener(OnCarPropertyResponseListener listener,
                 PropertyManager propertyManager) {
             propertyManager.submitUnregisterListenerRequest(listener);
+        }
+    }
+
+    @RequiresApi(30)
+    private static class Api30Impl {
+        static void populateExteriorDimensionsData(
+                @NonNull Executor executor,
+                OnCarDataAvailableListener<ExteriorDimensions> listener,
+                ListenableFuture<List<CarPropertyResponse<?>>> future) {
+            future.addListener(() -> {
+                List<CarPropertyResponse<?>> responses;
+                try {
+                    responses = future.get();
+                } catch (ExecutionException e) {
+                    Log.e(LogTags.TAG_CAR_HARDWARE,
+                            "ExecutionException when fetching exterior dimensions", e);
+                    listener.onCarDataAvailable(new ExteriorDimensions());
+                    return;
+                } catch (InterruptedException e) {
+                    Log.e(LogTags.TAG_CAR_HARDWARE,
+                            "InterruptedException when fetching exterior dimensions", e);
+                    listener.onCarDataAvailable(new ExteriorDimensions());
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+
+                if (responses.isEmpty()) {
+                    Log.e(LogTags.TAG_CAR_HARDWARE,
+                            "Response empty when fetching exterior dimensions");
+                    listener.onCarDataAvailable(new ExteriorDimensions());
+                    return;
+                }
+
+                CarPropertyResponse<?> response = responses.get(0);
+                if (response.getPropertyId() != INFO_EXTERIOR_DIMENSIONS_ID) {
+                    Log.e(LogTags.TAG_CAR_HARDWARE, "Invalid response callback in exterior "
+                            + "dimensions listener. Expected " + INFO_EXTERIOR_DIMENSIONS_ID + ","
+                            + " but got " + response.getPropertyId());
+
+                    listener.onCarDataAvailable(new ExteriorDimensions());
+                    return;
+                }
+
+                listener.onCarDataAvailable(new ExteriorDimensions(getCarValue(response)));
+            }, executor);
         }
     }
 
@@ -456,10 +520,10 @@ public class AutomotiveCarInfo implements CarInfo {
                             speedBuilder.setDisplaySpeedMetersPerSecond(getCarValue(response));
                             break;
                         case SPEED_DISPLAY_UNIT_ID:
-                            if (response.getValue() != null) {
+                            Integer speedUnitResponse = (Integer) response.getValue();
+                            if (speedUnitResponse != null && speedUnitResponse != 0) {
                                 speedBuilder.setSpeedDisplayUnit(getCarValue(response,
-                                        PropertyUtils.convertSpeedUnit(
-                                                (Integer) response.getValue())));
+                                        PropertyUtils.convertSpeedUnit(speedUnitResponse)));
                             } else {
                                 speedBuilder.setSpeedDisplayUnit(getCarValue(response));
                             }

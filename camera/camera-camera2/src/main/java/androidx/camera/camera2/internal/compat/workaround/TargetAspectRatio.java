@@ -17,14 +17,14 @@
 package androidx.camera.camera2.internal.compat.workaround;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.camera2.internal.compat.quirk.AspectRatioLegacyApi21Quirk;
 import androidx.camera.camera2.internal.compat.quirk.CameraQuirks;
 import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.camera2.internal.compat.quirk.Nexus4AndroidLTargetAspectRatioQuirk;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -35,7 +35,6 @@ import java.lang.annotation.RetentionPolicy;
  * @see Nexus4AndroidLTargetAspectRatioQuirk
  * @see AspectRatioLegacyApi21Quirk
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class TargetAspectRatio {
     /** 4:3 standard aspect ratio. */
     public static final int RATIO_4_3 = 0;

@@ -16,10 +16,6 @@
 
 package androidx.camera.core.streamsharing;
 
-import android.os.Build;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.ImageOutputConfig;
 import androidx.camera.core.impl.MutableConfig;
@@ -27,6 +23,8 @@ import androidx.camera.core.impl.OptionsBundle;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.core.internal.ThreadConfig;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -37,7 +35,6 @@ import java.util.List;
  * getters and setters to this class, one should modify the config using
  * {@link MutableConfig#insertOption} and {@link MutableConfig#retrieveOption} directly.
  */
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class StreamSharingConfig implements UseCaseConfig<StreamSharing>,
         ImageOutputConfig,
         ThreadConfig {
@@ -52,14 +49,12 @@ public class StreamSharingConfig implements UseCaseConfig<StreamSharing>,
         mConfig = config;
     }
 
-    @NonNull
     @Override
-    public Config getConfig() {
+    public @NonNull Config getConfig() {
         return mConfig;
     }
 
-    @NonNull
-    public List<UseCaseConfigFactory.CaptureType> getCaptureTypes() {
+    public @NonNull List<UseCaseConfigFactory.CaptureType> getCaptureTypes() {
         return retrieveOption(OPTION_CAPTURE_TYPES);
     }
 }

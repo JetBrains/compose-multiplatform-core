@@ -28,9 +28,9 @@ import java.time.ZoneOffset
 public class MenstruationFlowRecord(
     override val time: Instant,
     override val zoneOffset: ZoneOffset?,
+    override val metadata: Metadata,
     /** How heavy the user's menstrual flow was. Optional field. */
     @property:Flows public val flow: Int = FLOW_UNKNOWN,
-    override val metadata: Metadata = Metadata.EMPTY,
 ) : InstantaneousRecord {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -52,6 +52,10 @@ public class MenstruationFlowRecord(
         return result
     }
 
+    override fun toString(): String {
+        return "MenstruationFlowRecord(time=$time, zoneOffset=$zoneOffset, flow=$flow, metadata=$metadata)"
+    }
+
     companion object {
         const val FLOW_UNKNOWN = 0
         const val FLOW_LIGHT = 1
@@ -68,9 +72,8 @@ public class MenstruationFlowRecord(
         val FLOW_TYPE_INT_TO_STRING_MAP: Map<Int, String> =
             FLOW_TYPE_STRING_TO_INT_MAP.entries.associateBy({ it.value }, { it.key })
     }
-    /**
-     * How heavy the user's menstruation flow was.
-     */
+
+    /** How heavy the user's menstruation flow was. */
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(value = [FLOW_UNKNOWN, FLOW_LIGHT, FLOW_MEDIUM, FLOW_HEAVY])
     @RestrictTo(RestrictTo.Scope.LIBRARY)

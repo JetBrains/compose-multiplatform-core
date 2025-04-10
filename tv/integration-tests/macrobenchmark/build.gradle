@@ -17,14 +17,14 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.test")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
-    namespace "androidx.tv.integration.macrobenchmark"
+    namespace = "androidx.tv.integration.macrobenchmark"
 
     defaultConfig {
-        minSdkVersion 24
+        minSdk = 24
     }
 
     buildTypes {
@@ -38,8 +38,8 @@ android {
 }
 
 dependencies {
-    implementation(project(":benchmark:benchmark-junit4"))
-    implementation(project(":benchmark:benchmark-macro-junit4"))
+    implementation("androidx.benchmark:benchmark-junit4:1.2.4")
+    implementation("androidx.benchmark:benchmark-macro-junit4:1.2.4")
     implementation(project(":internal-testutils-macrobenchmark"))
     implementation(libs.testRules)
     implementation(libs.testExtJunit)

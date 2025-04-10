@@ -14,27 +14,44 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+
+import androidx.build.BundleInsideHelper
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("kotlin")
 }
 
+BundleInsideHelper.forInsideLintJar(project)
+
 dependencies {
-    compileOnly(libs.androidLintMinApi)
+    compileOnly(libs.androidLintApiStableAnalysis)
     compileOnly(libs.kotlinStdlib)
+    compileOnly(libs.androidToolsCommon)
+    compileOnly(libs.intellijCore)
+    compileOnly(libs.uast)
+    bundleInside(project(":navigation:lint:common"))
 
     testImplementation(libs.kotlinStdlib)
-    testImplementation(libs.androidLint)
-    testImplementation(libs.androidLintTests)
+    testImplementation(libs.androidLintApiStableAnalysis)
+    testImplementation(libs.androidLintTestsStableAnalysis)
+    testImplementation(libs.intellijCore)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
+    testImplementation(project(":navigation:lint:common-test"))
 }
 
 androidx {
     name = "Navigation Runtime Lint"
-    type = LibraryType.LINT
+    type = SoftwareType.LINT
     inceptionYear = "2022"
     description = "Lint checks for Navigation Runtime"
 }

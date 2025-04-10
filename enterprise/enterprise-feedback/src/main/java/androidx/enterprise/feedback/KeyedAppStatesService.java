@@ -30,7 +30,7 @@ import android.os.Message;
 import android.os.Messenger;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -183,8 +183,7 @@ public abstract class KeyedAppStatesService extends Service {
     }
 
     @Override
-    @NonNull
-    public IBinder onBind(@NonNull Intent intent) {
+    public @NonNull IBinder onBind(@NonNull Intent intent) {
         Messenger messenger = new Messenger(new IncomingHandler(this));
         return messenger.getBinder();
     }

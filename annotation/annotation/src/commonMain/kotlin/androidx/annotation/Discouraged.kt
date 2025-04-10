@@ -28,7 +28,7 @@ package androidx.annotation
  * }
  * ```
  */
-@Retention(AnnotationRetention.SOURCE)
+@Retention(AnnotationRetention.BINARY)
 @Target(
     AnnotationTarget.CONSTRUCTOR,
     AnnotationTarget.FIELD,

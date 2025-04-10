@@ -16,6 +16,8 @@
 
 package androidx.compose.foundation.benchmark
 
+import androidx.compose.foundation.benchmark.lazy.doFramesUntilIdle
+import androidx.compose.testutils.ComposeExecutionControl
 import androidx.compose.testutils.benchmark.ComposeBenchmarkRule
 import androidx.compose.testutils.benchmark.benchmarkDrawPerf
 import androidx.compose.testutils.benchmark.benchmarkFirstCompose
@@ -23,9 +25,11 @@ import androidx.compose.testutils.benchmark.benchmarkFirstDraw
 import androidx.compose.testutils.benchmark.benchmarkFirstLayout
 import androidx.compose.testutils.benchmark.benchmarkFirstMeasure
 import androidx.compose.testutils.benchmark.benchmarkLayoutPerf
+import androidx.compose.testutils.benchmark.benchmarkReuseFor
 import androidx.compose.testutils.benchmark.toggleStateBenchmarkDraw
 import androidx.compose.testutils.benchmark.toggleStateBenchmarkLayout
 import androidx.compose.testutils.benchmark.toggleStateBenchmarkMeasure
+import androidx.compose.ui.platform.ViewRootForTest
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import org.junit.Rule
@@ -35,8 +39,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class ScrollerBenchmark {
-    @get:Rule
-    val benchmarkRule = ComposeBenchmarkRule()
+    @get:Rule val benchmarkRule = ComposeBenchmarkRule()
 
     private val scrollerCaseFactory = { ScrollerTestCase() }
 
@@ -61,6 +64,11 @@ class ScrollerBenchmark {
     }
 
     @Test
+    fun reuse() {
+        benchmarkRule.benchmarkReuseFor { ScrollerTestCase().MeasuredContent() }
+    }
+
+    @Test
     fun changeScroll_measure() {
         benchmarkRule.toggleStateBenchmarkMeasure(
             scrollerCaseFactory,
@@ -70,18 +78,51 @@ class ScrollerBenchmark {
 
     @Test
     fun changeScroll_layout() {
-        benchmarkRule.toggleStateBenchmarkLayout(
-            scrollerCaseFactory,
-            toggleCausesRecompose = false
-        )
+        benchmarkRule.toggleStateBenchmarkLayout(scrollerCaseFactory, toggleCausesRecompose = false)
     }
 
     @Test
     fun changeScroll_draw() {
-        benchmarkRule.toggleStateBenchmarkDraw(
-            scrollerCaseFactory,
-            toggleCausesRecompose = false
-        )
+        benchmarkRule.toggleStateBenchmarkDraw(scrollerCaseFactory, toggleCausesRecompose = false)
+    }
+
+    @Test
+    fun mouseWheelScroll_initialScroll() {
+        with(benchmarkRule) {
+            runBenchmarkFor({ MouseWheelScrollerTestCase() }) {
+                measureRepeatedOnUiThread {
+                    runWithMeasurementDisabled {
+                        doFrame()
+                        assertNoPendingRecompositionMeasureOrLayout()
+                    }
+
+                    performToggle(getTestCase())
+
+                    runWithMeasurementDisabled {
+                        // This benchmark only cares about initial cost of adding the scroll node
+                        disposeContent()
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun mouseWheelScroll_successiveScrolls() {
+        with(benchmarkRule) {
+            runBenchmarkFor({ MouseWheelScrollerTestCase() }) {
+                runOnUiThread {
+                    doFrame()
+                    performToggle(getTestCase())
+                    doFrame()
+                }
+
+                measureRepeatedOnUiThread {
+                    performToggle(getTestCase())
+                    runWithMeasurementDisabled { doFramesUntilIdle() }
+                }
+            }
+        }
     }
 
     @Test
@@ -94,3 +135,23 @@ class ScrollerBenchmark {
         benchmarkRule.benchmarkDrawPerf(scrollerCaseFactory)
     }
 }
+
+// Below are forked from LazyBenchmarkCommon
+private fun ComposeExecutionControl.performToggle(testCase: MouseWheelScrollerTestCase) {
+    testCase.toggleState()
+    if (hasPendingChanges()) {
+        recompose()
+    }
+    if (hasPendingMeasureOrLayout()) {
+        getViewRoot().measureAndLayoutForTest()
+    }
+}
+
+private fun ComposeExecutionControl.assertNoPendingRecompositionMeasureOrLayout() {
+    if (hasPendingChanges() || hasPendingMeasureOrLayout()) {
+        throw AssertionError("Expected no pending changes but there were some.")
+    }
+}
+
+private fun ComposeExecutionControl.getViewRoot(): ViewRootForTest =
+    getHostView() as ViewRootForTest

@@ -28,6 +28,7 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.psi.PsiMethod
+import java.util.EnumSet
 import org.jetbrains.uast.UCallExpression
 
 class BanThreadSleep : Detector(), SourceCodeScanner {
@@ -35,24 +36,31 @@ class BanThreadSleep : Detector(), SourceCodeScanner {
 
     override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
         if (context.evaluator.isMemberInClass(method, "java.lang.Thread")) {
-            val incident = Incident(context)
-                .issue(ISSUE)
-                .location(context.getNameLocation(node))
-                .message("Uses Thread.sleep()")
-                .scope(node)
+            val incident =
+                Incident(context)
+                    .issue(ISSUE)
+                    .location(context.getNameLocation(node))
+                    .message("Uses Thread.sleep()")
+                    .scope(node)
             context.report(incident)
         }
     }
 
     companion object {
-        val ISSUE = Issue.create(
-            "BanThreadSleep",
-            "Uses Thread.sleep() method",
-            "Use of Thread.sleep() is not allowed, please use a callback " +
-                "or another way to make more reliable code. See more details at " +
-                "go/androidx/testability#calling-threadsleep-as-a-synchronization-barrier",
-            Category.CORRECTNESS, 5, Severity.ERROR,
-            Implementation(BanThreadSleep::class.java, Scope.JAVA_FILE_SCOPE)
-        )
+        val ISSUE =
+            Issue.create(
+                "BanThreadSleep",
+                "Uses Thread.sleep() method",
+                "Use of Thread.sleep() is not allowed, please use a callback " +
+                    "or another way to make more reliable code. See more details at " +
+                    "go/androidx/testability#calling-threadsleep-as-a-synchronization-barrier",
+                Category.CORRECTNESS,
+                5,
+                Severity.ERROR,
+                Implementation(
+                    BanThreadSleep::class.java,
+                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
+                )
+            )
     }
 }

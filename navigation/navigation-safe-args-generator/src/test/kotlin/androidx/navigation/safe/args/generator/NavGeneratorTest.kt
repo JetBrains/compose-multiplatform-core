@@ -19,9 +19,11 @@ package androidx.navigation.safe.args.generator
 import androidx.navigation.safe.args.generator.java.JavaCodeFile
 import androidx.navigation.safe.args.generator.kotlin.KotlinCodeFile
 import com.google.common.truth.Truth
+import com.google.testing.compile.JavaFileObjects
 import com.google.testing.compile.JavaSourcesSubject
 import java.io.File
 import java.lang.IllegalStateException
+import java.nio.charset.Charset
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Rule
@@ -33,9 +35,7 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class NavGeneratorTest(private val generateKotlin: Boolean) {
 
-    @Suppress("MemberVisibilityCanBePrivate")
-    @get:Rule
-    val workingDir = TemporaryFolder()
+    @Suppress("MemberVisibilityCanBePrivate") @get:Rule val workingDir = TemporaryFolder()
 
     val fileNameExt = if (generateKotlin) "kt" else "java"
 
@@ -44,30 +44,50 @@ class NavGeneratorTest(private val generateKotlin: Boolean) {
         applicationId: String,
         navigationXml: File,
         outputDir: File
-    ) = SafeArgsGenerator(
-        rFilePackage = rFilePackage,
-        applicationId = applicationId,
-        navigationXml = navigationXml,
-        outputDir = outputDir,
-        useAndroidX = true,
-        generateKotlin = generateKotlin
-    ).generate()
+    ) =
+        SafeArgsGenerator(
+                rFilePackage = rFilePackage,
+                applicationId = applicationId,
+                navigationXml = navigationXml,
+                outputDir = outputDir,
+                useAndroidX = true,
+                generateKotlin = generateKotlin
+            )
+            .generate()
 
     private fun CodeFile.assertParsesAs(fullClassName: String, folder: String) {
+        val goldenFile =
+            when (this) {
+                is JavaCodeFile ->
+                    loadSourceFile(
+                        fullClassName,
+                        "expected/nav_generator_test/java/$folder",
+                        "java"
+                    )
+                is KotlinCodeFile ->
+                    loadSourceFile(
+                        fullClassName,
+                        "expected/nav_generator_test/kotlin/$folder",
+                        "kt"
+                    )
+                else -> throw IllegalStateException("Unknown CodeFile type.")
+            }
+        val updateGoldenFiles = System.getProperty("update_golden_files")?.toBoolean() == true
         when (this) {
             is JavaCodeFile -> {
+                if (updateGoldenFiles) goldenFile.writer().use { it.write(this.wrapped.toString()) }
                 JavaSourcesSubject.assertThat(this.toJavaFileObject())
-                    .parsesAs(fullClassName, "expected/nav_generator_test/java/$folder")
-            }
-            is KotlinCodeFile -> {
-                Truth.assertThat(this.wrapped.toString())
-                    .isEqualTo(
-                        loadSourceString(
+                    .parsesAs(
+                        JavaFileObjects.forSourceString(
                             fullClassName,
-                            "expected/nav_generator_test/kotlin/$folder",
-                            "kt"
+                            goldenFile.readText(Charset.defaultCharset())
                         )
                     )
+            }
+            is KotlinCodeFile -> {
+                if (updateGoldenFiles) goldenFile.writer().use { it.write(this.wrapped.toString()) }
+                Truth.assertThat(this.wrapped.toString())
+                    .isEqualTo(goldenFile.readText(Charset.defaultCharset()))
             }
             else -> throw IllegalStateException("Unknown CodeFile type.")
         }
@@ -75,17 +95,18 @@ class NavGeneratorTest(private val generateKotlin: Boolean) {
 
     @Test
     fun naive_test() {
-        val output = generateSafeArgs(
-            "foo", "foo.flavor",
-            testData("naive_test.xml"), workingDir.root
-        )
+        val output =
+            generateSafeArgs("foo", "foo.flavor", testData("naive_test.xml"), workingDir.root)
         val fileNames = output.fileNames
-        val expectedSet = setOf(
-            "androidx.navigation.testapp.MainFragmentDirections",
-            "foo.flavor.NextFragmentDirections",
-            "androidx.navigation.testapp.MainFragmentArgs",
-            "foo.flavor.NextFragmentArgs"
-        )
+        val expectedSet =
+            setOf(
+                "androidx.navigation.testapp.MainFragmentDirections",
+                "foo.flavor.NextFragmentDirections",
+                "androidx.navigation.testapp.MainFragmentArgs",
+                "foo.flavor.NextFragmentArgs",
+                "com.example.HomeScreenKt_HomeScreenDirections",
+                "com.example.HomeScreenKt_HomeScreenArgs"
+            )
         assertThat(output.errors.isEmpty(), `is`(true))
         assertThat(fileNames.toSet(), `is`(expectedSet))
         fileNames.forEach { name ->
@@ -97,17 +118,21 @@ class NavGeneratorTest(private val generateKotlin: Boolean) {
 
     @Test
     fun nested_test() {
-        val output = generateSafeArgs(
-            "foo", "foo.flavor",
-            testData("nested_login_test.xml"), workingDir.root
-        )
+        val output =
+            generateSafeArgs(
+                "foo",
+                "foo.flavor",
+                testData("nested_login_test.xml"),
+                workingDir.root
+            )
         val fileNames = output.fileNames
-        val expectedSet = setOf(
-            "foo.flavor.MainFragmentDirections",
-            "foo.LoginDirections",
-            "foo.flavor.account.LoginFragmentDirections",
-            "foo.flavor.account.RegisterFragmentDirections"
-        )
+        val expectedSet =
+            setOf(
+                "foo.flavor.MainFragmentDirections",
+                "foo.LoginDirections",
+                "foo.flavor.account.LoginFragmentDirections",
+                "foo.flavor.account.RegisterFragmentDirections"
+            )
         assertThat(output.errors.isEmpty(), `is`(true))
         assertThat(fileNames.toSet(), `is`(expectedSet))
         fileNames.forEach { name ->
@@ -116,26 +141,27 @@ class NavGeneratorTest(private val generateKotlin: Boolean) {
             assertThat(file.exists(), `is`(true))
         }
 
-        val codeFiles = fileNames
-            .mapIndexed { index, name -> name to (output.files[index]) }
-            .associate { it }
-        codeFiles.forEach { (name, file) ->
-            file.assertParsesAs(name, "nested")
-        }
+        val codeFiles =
+            fileNames.mapIndexed { index, name -> name to (output.files[index]) }.associate { it }
+        codeFiles.forEach { (name, file) -> file.assertParsesAs(name, "nested") }
     }
 
     @Test
     fun nested_same_action_test() {
-        val output = generateSafeArgs(
-            "foo", "foo.flavor",
-            testData("nested_same_action_test.xml"), workingDir.root
-        )
+        val output =
+            generateSafeArgs(
+                "foo",
+                "foo.flavor",
+                testData("nested_same_action_test.xml"),
+                workingDir.root
+            )
         val fileNames = output.fileNames
-        val expectedSet = setOf(
-            "foo.flavor.MainFragmentDirections",
-            "foo.SettingsDirections",
-            "foo.flavor.SettingsFragmentDirections"
-        )
+        val expectedSet =
+            setOf(
+                "foo.flavor.MainFragmentDirections",
+                "foo.SettingsDirections",
+                "foo.flavor.SettingsFragmentDirections"
+            )
         assertThat(output.errors.isEmpty(), `is`(true))
         assertThat(fileNames.toSet(), `is`(expectedSet))
         fileNames.forEach { name ->
@@ -144,28 +170,29 @@ class NavGeneratorTest(private val generateKotlin: Boolean) {
             assertThat(file.exists(), `is`(true))
         }
 
-        val codeFiles = fileNames
-            .mapIndexed { index, name -> name to (output.files[index]) }
-            .associate { it }
-        codeFiles.forEach { (name, file) ->
-            file.assertParsesAs(name, "nested_same_action")
-        }
+        val codeFiles =
+            fileNames.mapIndexed { index, name -> name to (output.files[index]) }.associate { it }
+        codeFiles.forEach { (name, file) -> file.assertParsesAs(name, "nested_same_action") }
     }
 
     @Test
     fun nested_overridden_action_test() {
-        val output = generateSafeArgs(
-            "foo", "foo.flavor",
-            testData("nested_overridden_action_test.xml"), workingDir.root
-        )
+        val output =
+            generateSafeArgs(
+                "foo",
+                "foo.flavor",
+                testData("nested_overridden_action_test.xml"),
+                workingDir.root
+            )
         val fileNames = output.fileNames
-        val expectedSet = setOf(
-            "foo.flavor.MainFragmentDirections",
-            "foo.SettingsDirections",
-            "foo.flavor.SettingsFragmentDirections",
-            "foo.InnerSettingsDirections",
-            "foo.flavor.InnerSettingsFragmentDirections"
-        )
+        val expectedSet =
+            setOf(
+                "foo.flavor.MainFragmentDirections",
+                "foo.SettingsDirections",
+                "foo.flavor.SettingsFragmentDirections",
+                "foo.InnerSettingsDirections",
+                "foo.flavor.InnerSettingsFragmentDirections"
+            )
         assertThat(output.errors.isEmpty(), `is`(true))
         assertThat(fileNames.toSet(), `is`(expectedSet))
         fileNames.forEach { name ->
@@ -174,12 +201,9 @@ class NavGeneratorTest(private val generateKotlin: Boolean) {
             assertThat(file.exists(), `is`(true))
         }
 
-        val codeFiles = fileNames
-            .mapIndexed { index, name -> name to (output.files[index]) }
-            .associate { it }
-        codeFiles.forEach { (name, file) ->
-            file.assertParsesAs(name, "nested_overridden_action")
-        }
+        val codeFiles =
+            fileNames.mapIndexed { index, name -> name to (output.files[index]) }.associate { it }
+        codeFiles.forEach { (name, file) -> file.assertParsesAs(name, "nested_overridden_action") }
     }
 
     companion object {

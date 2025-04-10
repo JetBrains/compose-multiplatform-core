@@ -16,28 +16,23 @@
 
 package androidx.camera.core.streamsharing;
 
-import android.os.Build;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.CameraCaptureMetaData;
 import androidx.camera.core.impl.CameraCaptureResult;
 import androidx.camera.core.impl.TagBundle;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A virtual {@link CameraCaptureResult} which based on a real instance with some fields
  * overridden.
  */
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class VirtualCameraCaptureResult implements CameraCaptureResult {
 
     private static final long INVALID_TIMESTAMP = -1;
 
-    @Nullable
-    private final CameraCaptureResult mBaseCameraCaptureResult;
-    @NonNull
-    private final TagBundle mTagBundle;
+    private final @Nullable CameraCaptureResult mBaseCameraCaptureResult;
+    private final @NonNull TagBundle mTagBundle;
     private final long mTimestamp;
 
     /**
@@ -73,58 +68,50 @@ public class VirtualCameraCaptureResult implements CameraCaptureResult {
         mTimestamp = timestamp;
     }
 
-    @NonNull
     @Override
-    public TagBundle getTagBundle() {
+    public @NonNull TagBundle getTagBundle() {
         // Returns the overridden value.
         return mTagBundle;
     }
 
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AfMode getAfMode() {
+    public CameraCaptureMetaData.@NonNull AfMode getAfMode() {
         return mBaseCameraCaptureResult != null ? mBaseCameraCaptureResult.getAfMode() :
                 CameraCaptureMetaData.AfMode.UNKNOWN;
     }
 
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AfState getAfState() {
+    public CameraCaptureMetaData.@NonNull AfState getAfState() {
         return mBaseCameraCaptureResult != null ? mBaseCameraCaptureResult.getAfState() :
                 CameraCaptureMetaData.AfState.UNKNOWN;
     }
 
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AeState getAeState() {
+    public CameraCaptureMetaData.@NonNull AeState getAeState() {
         return mBaseCameraCaptureResult != null ? mBaseCameraCaptureResult.getAeState() :
                 CameraCaptureMetaData.AeState.UNKNOWN;
     }
 
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AwbState getAwbState() {
+    public CameraCaptureMetaData.@NonNull AwbState getAwbState() {
         return mBaseCameraCaptureResult != null ? mBaseCameraCaptureResult.getAwbState() :
                 CameraCaptureMetaData.AwbState.UNKNOWN;
     }
 
-    @NonNull
     @Override
-    public CameraCaptureMetaData.FlashState getFlashState() {
+    public CameraCaptureMetaData.@NonNull FlashState getFlashState() {
         return mBaseCameraCaptureResult != null ? mBaseCameraCaptureResult.getFlashState() :
                 CameraCaptureMetaData.FlashState.UNKNOWN;
     }
 
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AeMode getAeMode() {
+    public CameraCaptureMetaData.@NonNull AeMode getAeMode() {
         return mBaseCameraCaptureResult != null ? mBaseCameraCaptureResult.getAeMode() :
                 CameraCaptureMetaData.AeMode.UNKNOWN;
     }
 
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AwbMode getAwbMode() {
+    public CameraCaptureMetaData.@NonNull AwbMode getAwbMode() {
         return mBaseCameraCaptureResult != null ? mBaseCameraCaptureResult.getAwbMode() :
                 CameraCaptureMetaData.AwbMode.UNKNOWN;
     }

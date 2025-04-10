@@ -17,10 +17,11 @@
 package androidx.camera.core;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
+import androidx.annotation.RestrictTo;
 import androidx.camera.core.impl.CameraFactory;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Locale;
 import java.util.concurrent.Executor;
@@ -33,16 +34,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * A camera executor class that executes camera operations.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-class CameraExecutor implements Executor {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class CameraExecutor implements Executor {
     private static final String TAG = "CameraExecutor";
     private static final int DEFAULT_CORE_THREADS = 1;
     private static final int DEFAULT_MAX_THREADS = DEFAULT_CORE_THREADS;
 
     private final Object mExecutorLock = new Object();
     @GuardedBy("mExecutorLock")
-    @NonNull
-    private ThreadPoolExecutor mThreadPoolExecutor = createExecutor();
+    private @NonNull ThreadPoolExecutor mThreadPoolExecutor = createExecutor();
 
     private static final ThreadFactory THREAD_FACTORY = new ThreadFactory() {
         private static final String THREAD_NAME_STEM =

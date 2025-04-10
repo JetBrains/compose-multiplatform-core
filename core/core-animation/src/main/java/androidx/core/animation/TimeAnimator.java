@@ -18,8 +18,8 @@ package androidx.core.animation;
 
 import android.view.animation.AnimationUtils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This class provides a simple callback mechanism to listeners that is synchronized with all

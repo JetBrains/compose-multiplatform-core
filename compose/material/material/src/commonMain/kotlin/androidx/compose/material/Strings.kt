@@ -30,8 +30,8 @@ internal value class Strings private constructor(@Suppress("unused") private val
         val ExposedDropdownMenu = Strings(4)
         val SliderRangeStart = Strings(5)
         val SliderRangeEnd = Strings(6)
+        val SnackbarPaneTitle = Strings(7)
     }
 }
 
-@Composable
-internal expect fun getString(string: Strings): String
+@Composable internal expect fun getString(string: Strings): String

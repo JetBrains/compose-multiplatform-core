@@ -18,6 +18,7 @@ package androidx.room.compiler.processing
 
 import androidx.kruth.assertThat
 import androidx.room.compiler.codegen.JArrayTypeName
+import androidx.room.compiler.processing.util.KOTLINC_LANGUAGE_1_9_ARGS
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
 import androidx.room.compiler.processing.util.asJClassName
@@ -62,48 +63,44 @@ class XAnnotationValueTest(
     private fun runTest(
         javaSource: Source.JavaSource,
         kotlinSource: Source.KotlinSource,
+        kotlincArgs: List<String> = emptyList(),
         handler: (XTestInvocation) -> Unit
     ) {
-        val sources = when (sourceKind) {
-            SourceKind.JAVA -> listOf(javaSource)
-            SourceKind.KOTLIN -> listOf(kotlinSource)
-        }
+        val sources =
+            when (sourceKind) {
+                SourceKind.JAVA -> listOf(javaSource)
+                SourceKind.KOTLIN -> listOf(kotlinSource)
+            }
         if (isPreCompiled) {
-            val compiled = compileFiles(sources)
-            val hasKotlinSources = sources.any {
-                it is Source.KotlinSource
-            }
-            val kotlinSources = if (hasKotlinSources) {
-                listOf(
-                    Source.kotlin("placeholder.kt", "class PlaceholderKotlin")
-                )
-            } else {
-                emptyList()
-            }
-            val newSources = kotlinSources + Source.java(
-                "PlaceholderJava",
-                "public class " +
-                    "PlaceholderJava {}"
-            )
+            val compiled = compileFiles(sources, kotlincArguments = kotlincArgs)
+            val hasKotlinSources = sources.any { it is Source.KotlinSource }
+            val kotlinSources =
+                if (hasKotlinSources) {
+                    listOf(Source.kotlin("placeholder.kt", "class PlaceholderKotlin"))
+                } else {
+                    emptyList()
+                }
+            val newSources =
+                kotlinSources +
+                    Source.java("PlaceholderJava", "public class " + "PlaceholderJava {}")
             runProcessorTest(
                 sources = newSources,
                 handler = handler,
-                classpath = compiled
+                classpath = compiled,
+                kotlincArguments = kotlincArgs
             )
         } else {
-            runProcessorTest(
-                sources = sources,
-                handler = handler
-            )
+            runProcessorTest(sources = sources, handler = handler, kotlincArguments = kotlincArgs)
         }
     }
 
     @Test
     fun testBooleanValue() {
         runTest(
-            javaSource = Source.java(
-                "test.MyClass",
-                """
+            javaSource =
+                Source.java(
+                    "test.MyClass",
+                    """
                 package test;
                 import java.lang.annotation.ElementType;
                 import java.lang.annotation.Target;
@@ -126,11 +123,13 @@ class XAnnotationValueTest(
                     booleanVarArgsParam = {false, true, false}
                 )
                 MyInterface {}
-                """.trimIndent()
-            ) as Source.JavaSource,
-            kotlinSource = Source.kotlin(
-                "test.MyClass.kt",
                 """
+                        .trimIndent()
+                ) as Source.JavaSource,
+            kotlinSource =
+                Source.kotlin(
+                    "test.MyClass.kt",
+                    """
                 package test
                 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE)
                 annotation class MyAnnotation(
@@ -151,8 +150,9 @@ class XAnnotationValueTest(
                     booleanVarArgsParam = [false, true, false],
                 )
                 MyInterface
-                """.trimIndent()
-            ) as Source.KotlinSource
+                """
+                        .trimIndent()
+                ) as Source.KotlinSource
         ) { invocation ->
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: Boolean) {
                 assertThat(annotationValue.valueType.asTypeName().java).isEqualTo(JTypeName.BOOLEAN)
@@ -183,13 +183,16 @@ class XAnnotationValueTest(
             val annotation = getAnnotation(invocation)
             // Compare the AnnotationSpec string ignoring whitespace
             assertThat(annotation.toAnnotationSpec().toString().removeWhiteSpace())
-                .isEqualTo("""
+                .isEqualTo(
+                    """
                     @test.MyAnnotation(
                         booleanParam = true,
                         booleanArrayParam = {true, false, true},
                         booleanVarArgsParam = {false, true, false}
                     )
-                    """.removeWhiteSpace())
+                    """
+                        .removeWhiteSpace()
+                )
 
             val booleanParam = annotation.getAnnotationValue("booleanParam")
             checkSingleValue(booleanParam, true)
@@ -205,9 +208,10 @@ class XAnnotationValueTest(
     @Test
     fun testIntValue() {
         runTest(
-            javaSource = Source.java(
-                "test.MyClass",
-                """
+            javaSource =
+                Source.java(
+                    "test.MyClass",
+                    """
                 package test;
                 import java.lang.annotation.ElementType;
                 import java.lang.annotation.Target;
@@ -230,11 +234,13 @@ class XAnnotationValueTest(
                     intVarArgsParam = {(byte) 9, (short) 11, 13}
                 )
                 MyInterface {}
-                """.trimIndent()
-            ) as Source.JavaSource,
-            kotlinSource = Source.kotlin(
-                "test.MyClass.kt",
                 """
+                        .trimIndent()
+                ) as Source.JavaSource,
+            kotlinSource =
+                Source.kotlin(
+                    "test.MyClass.kt",
+                    """
                 package test
                 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE)
                 annotation class MyAnnotation(
@@ -255,8 +261,9 @@ class XAnnotationValueTest(
                     intVarArgsParam = [9, 11, 13],
                 )
                 MyInterface
-                """.trimIndent()
-            ) as Source.KotlinSource
+                """
+                        .trimIndent()
+                ) as Source.KotlinSource
         ) { invocation ->
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: Int) {
                 assertThat(annotationValue.valueType.asTypeName().java).isEqualTo(JTypeName.INT)
@@ -271,8 +278,7 @@ class XAnnotationValueTest(
                 assertThat(annotationValue.valueType.asTypeName().java)
                     .isEqualTo(JArrayTypeName.of(JTypeName.INT))
                 if (invocation.isKsp) {
-                    assertThat(annotationValue.valueType.asTypeName().kotlin)
-                        .isEqualTo(INT_ARRAY)
+                    assertThat(annotationValue.valueType.asTypeName().kotlin).isEqualTo(INT_ARRAY)
                 }
                 assertThat(annotationValue.hasIntListValue()).isTrue()
                 // Check the list of values
@@ -288,13 +294,16 @@ class XAnnotationValueTest(
             val annotation = getAnnotation(invocation)
             // Compare the AnnotationSpec string ignoring whitespace
             assertThat(annotation.toAnnotationSpec().toString().removeWhiteSpace())
-                .isEqualTo("""
+                .isEqualTo(
+                    """
                     @test.MyAnnotation(
                         intParam = 1,
                         intArrayParam = {3, 5, 7},
                         intVarArgsParam = {9, 11, 13}
                     )
-                    """.removeWhiteSpace())
+                    """
+                        .removeWhiteSpace()
+                )
 
             val intParam = annotation.getAnnotationValue("intParam")
             checkSingleValue(intParam, 1)
@@ -310,9 +319,10 @@ class XAnnotationValueTest(
     @Test
     fun testShortValue() {
         runTest(
-            javaSource = Source.java(
-                "test.MyClass",
-                """
+            javaSource =
+                Source.java(
+                    "test.MyClass",
+                    """
                 package test;
                 import java.lang.annotation.ElementType;
                 import java.lang.annotation.Target;
@@ -335,11 +345,13 @@ class XAnnotationValueTest(
                     shortVarArgsParam = {(byte) 9, (short) 11, 13}
                 )
                 MyInterface {}
-                """.trimIndent()
-            ) as Source.JavaSource,
-            kotlinSource = Source.kotlin(
-                "test.MyClass.kt",
                 """
+                        .trimIndent()
+                ) as Source.JavaSource,
+            kotlinSource =
+                Source.kotlin(
+                    "test.MyClass.kt",
+                    """
                 package test
                 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE)
                 annotation class MyAnnotation(
@@ -360,8 +372,9 @@ class XAnnotationValueTest(
                     shortVarArgsParam = [9, 11, 13],
                 )
                 MyInterface
-                """.trimIndent()
-            ) as Source.KotlinSource
+                """
+                        .trimIndent()
+                ) as Source.KotlinSource
         ) { invocation ->
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: Short) {
                 assertThat(annotationValue.valueType.asTypeName().java).isEqualTo(JTypeName.SHORT)
@@ -376,8 +389,7 @@ class XAnnotationValueTest(
                 assertThat(annotationValue.valueType.asTypeName().java)
                     .isEqualTo(JArrayTypeName.of(JTypeName.SHORT))
                 if (invocation.isKsp) {
-                    assertThat(annotationValue.valueType.asTypeName().kotlin)
-                        .isEqualTo(SHORT_ARRAY)
+                    assertThat(annotationValue.valueType.asTypeName().kotlin).isEqualTo(SHORT_ARRAY)
                 }
                 assertThat(annotationValue.hasShortListValue()).isTrue()
                 // Check the list of values
@@ -393,13 +405,16 @@ class XAnnotationValueTest(
             val annotation = getAnnotation(invocation)
             // Compare the AnnotationSpec string ignoring whitespace
             assertThat(annotation.toAnnotationSpec().toString().removeWhiteSpace())
-                .isEqualTo("""
+                .isEqualTo(
+                    """
                     @test.MyAnnotation(
                         shortParam = 1,
                         shortArrayParam = {3, 5, 7},
                         shortVarArgsParam = {9, 11, 13}
                     )
-                    """.removeWhiteSpace())
+                    """
+                        .removeWhiteSpace()
+                )
 
             val shortParam = annotation.getAnnotationValue("shortParam")
             checkSingleValue(shortParam, 1)
@@ -415,9 +430,10 @@ class XAnnotationValueTest(
     @Test
     fun testLongValue() {
         runTest(
-            javaSource = Source.java(
-                "test.MyClass",
-                """
+            javaSource =
+                Source.java(
+                    "test.MyClass",
+                    """
                 package test;
                 import java.lang.annotation.ElementType;
                 import java.lang.annotation.Target;
@@ -440,11 +456,13 @@ class XAnnotationValueTest(
                     longVarArgsParam = {(short) 9, (int) 11, 13L}
                 )
                 MyInterface {}
-                """.trimIndent()
-            ) as Source.JavaSource,
-            kotlinSource = Source.kotlin(
-                "test.MyClass.kt",
                 """
+                        .trimIndent()
+                ) as Source.JavaSource,
+            kotlinSource =
+                Source.kotlin(
+                    "test.MyClass.kt",
+                    """
                 package test
                 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE)
                 annotation class MyAnnotation(
@@ -465,8 +483,9 @@ class XAnnotationValueTest(
                     longVarArgsParam = [9L, 11L, 13L],
                 )
                 MyInterface
-                """.trimIndent()
-            ) as Source.KotlinSource
+                """
+                        .trimIndent()
+                ) as Source.KotlinSource
         ) { invocation ->
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: Long) {
                 assertThat(annotationValue.valueType.asTypeName().java).isEqualTo(JTypeName.LONG)
@@ -481,8 +500,7 @@ class XAnnotationValueTest(
                 assertThat(annotationValue.valueType.asTypeName().java)
                     .isEqualTo(JArrayTypeName.of(JTypeName.LONG))
                 if (invocation.isKsp) {
-                    assertThat(annotationValue.valueType.asTypeName().kotlin)
-                        .isEqualTo(LONG_ARRAY)
+                    assertThat(annotationValue.valueType.asTypeName().kotlin).isEqualTo(LONG_ARRAY)
                 }
                 assertThat(annotationValue.hasLongListValue()).isTrue()
                 // Check the list of values
@@ -498,13 +516,16 @@ class XAnnotationValueTest(
             val annotation = getAnnotation(invocation)
             // Compare the AnnotationSpec string ignoring whitespace
             assertThat(annotation.toAnnotationSpec().toString().removeWhiteSpace())
-                .isEqualTo("""
+                .isEqualTo(
+                    """
                     @test.MyAnnotation(
                         longParam = 1,
                         longArrayParam = {3, 5, 7},
                         longVarArgsParam = {9, 11, 13}
                     )
-                    """.removeWhiteSpace())
+                    """
+                        .removeWhiteSpace()
+                )
 
             val longParam = annotation.getAnnotationValue("longParam")
             checkSingleValue(longParam, 1L)
@@ -520,9 +541,10 @@ class XAnnotationValueTest(
     @Test
     fun testFloatValue() {
         runTest(
-            javaSource = Source.java(
-                "test.MyClass",
-                """
+            javaSource =
+                Source.java(
+                    "test.MyClass",
+                    """
                 package test;
                 import java.lang.annotation.ElementType;
                 import java.lang.annotation.Target;
@@ -545,11 +567,13 @@ class XAnnotationValueTest(
                     floatVarArgsParam = {9, 11.1F, 13.1F}
                 )
                 MyInterface {}
-                """.trimIndent()
-            ) as Source.JavaSource,
-            kotlinSource = Source.kotlin(
-                "test.MyClass.kt",
                 """
+                        .trimIndent()
+                ) as Source.JavaSource,
+            kotlinSource =
+                Source.kotlin(
+                    "test.MyClass.kt",
+                    """
                 package test
                 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE)
                 annotation class MyAnnotation(
@@ -570,8 +594,9 @@ class XAnnotationValueTest(
                     floatVarArgsParam = [9F, 11.1F, 13.1F],
                 )
                 MyInterface
-                """.trimIndent()
-            ) as Source.KotlinSource
+                """
+                        .trimIndent()
+                ) as Source.KotlinSource
         ) { invocation ->
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: Float) {
                 assertThat(annotationValue.valueType.asTypeName().java).isEqualTo(JTypeName.FLOAT)
@@ -586,8 +611,7 @@ class XAnnotationValueTest(
                 assertThat(annotationValue.valueType.asTypeName().java)
                     .isEqualTo(JArrayTypeName.of(JTypeName.FLOAT))
                 if (invocation.isKsp) {
-                    assertThat(annotationValue.valueType.asTypeName().kotlin)
-                        .isEqualTo(FLOAT_ARRAY)
+                    assertThat(annotationValue.valueType.asTypeName().kotlin).isEqualTo(FLOAT_ARRAY)
                 }
                 assertThat(annotationValue.hasFloatListValue()).isTrue()
                 // Check the list of values
@@ -603,13 +627,16 @@ class XAnnotationValueTest(
             val annotation = getAnnotation(invocation)
             // Compare the AnnotationSpec string ignoring whitespace
             assertThat(annotation.toAnnotationSpec().toString().removeWhiteSpace())
-                .isEqualTo("""
+                .isEqualTo(
+                    """
                     @test.MyAnnotation(
                         floatParam = 1.0f,
                         floatArrayParam = {3.0f, 5.1f, 7.1f},
                         floatVarArgsParam = {9.0f, 11.1f, 13.1f}
                     )
-                    """.removeWhiteSpace())
+                    """
+                        .removeWhiteSpace()
+                )
 
             val floatParam = annotation.getAnnotationValue("floatParam")
             checkSingleValue(floatParam, 1.0F)
@@ -625,9 +652,10 @@ class XAnnotationValueTest(
     @Test
     fun testDoubleValue() {
         runTest(
-            javaSource = Source.java(
-                "test.MyClass",
-                """
+            javaSource =
+                Source.java(
+                    "test.MyClass",
+                    """
                 package test;
                 import java.lang.annotation.ElementType;
                 import java.lang.annotation.Target;
@@ -650,11 +678,13 @@ class XAnnotationValueTest(
                     doubleVarArgsParam = {9, 11.1F, 13.1}
                 )
                 MyInterface {}
-                """.trimIndent()
-            ) as Source.JavaSource,
-            kotlinSource = Source.kotlin(
-                "test.MyClass.kt",
                 """
+                        .trimIndent()
+                ) as Source.JavaSource,
+            kotlinSource =
+                Source.kotlin(
+                    "test.MyClass.kt",
+                    """
                 package test
                 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE)
                 annotation class MyAnnotation(
@@ -675,8 +705,9 @@ class XAnnotationValueTest(
                     doubleVarArgsParam = [9.0, 11.1, 13.1],
                 )
                 MyInterface
-                """.trimIndent()
-            ) as Source.KotlinSource
+                """
+                        .trimIndent()
+                ) as Source.KotlinSource
         ) { invocation ->
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: Double) {
                 assertThat(annotationValue.valueType.asTypeName().java).isEqualTo(JTypeName.DOUBLE)
@@ -724,7 +755,8 @@ class XAnnotationValueTest(
                             doubleArrayParam = {3.0, 5.099999904632568, 7.1},
                             doubleVarArgsParam = {9.0, 11.100000381469727, 13.1}
                         )
-                        """.removeWhiteSpace()
+                        """
+                            .removeWhiteSpace()
                     )
 
                 val doubleParam = annotation.getAnnotationValue("doubleParam")
@@ -745,7 +777,8 @@ class XAnnotationValueTest(
                             doubleArrayParam = {3.0, 5.1, 7.1},
                             doubleVarArgsParam = {9.0, 11.1, 13.1}
                         )
-                        """.removeWhiteSpace()
+                        """
+                            .removeWhiteSpace()
                     )
 
                 val doubleParam = annotation.getAnnotationValue("doubleParam")
@@ -763,9 +796,10 @@ class XAnnotationValueTest(
     @Test
     fun testByteValue() {
         runTest(
-            javaSource = Source.java(
-                "test.MyClass",
-                """
+            javaSource =
+                Source.java(
+                    "test.MyClass",
+                    """
                 package test;
                 import java.lang.annotation.ElementType;
                 import java.lang.annotation.Target;
@@ -788,11 +822,13 @@ class XAnnotationValueTest(
                     byteVarArgsParam = {(byte) 9, (byte) 11, (byte) 13}
                 )
                 MyInterface {}
-                """.trimIndent()
-            ) as Source.JavaSource,
-            kotlinSource = Source.kotlin(
-                "test.MyClass.kt",
                 """
+                        .trimIndent()
+                ) as Source.JavaSource,
+            kotlinSource =
+                Source.kotlin(
+                    "test.MyClass.kt",
+                    """
                 package test
                 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE)
                 annotation class MyAnnotation(
@@ -813,8 +849,9 @@ class XAnnotationValueTest(
                     byteVarArgsParam = [9, 11, 13],
                 )
                 MyInterface
-                """.trimIndent()
-            ) as Source.KotlinSource
+                """
+                        .trimIndent()
+                ) as Source.KotlinSource
         ) { invocation ->
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: Byte) {
                 assertThat(annotationValue.valueType.asTypeName().java).isEqualTo(JTypeName.BYTE)
@@ -829,8 +866,7 @@ class XAnnotationValueTest(
                 assertThat(annotationValue.valueType.asTypeName().java)
                     .isEqualTo(JArrayTypeName.of(JTypeName.BYTE))
                 if (invocation.isKsp) {
-                    assertThat(annotationValue.valueType.asTypeName().kotlin)
-                        .isEqualTo(BYTE_ARRAY)
+                    assertThat(annotationValue.valueType.asTypeName().kotlin).isEqualTo(BYTE_ARRAY)
                 }
                 assertThat(annotationValue.hasByteListValue()).isTrue()
                 // Check the list of values
@@ -846,13 +882,16 @@ class XAnnotationValueTest(
             val annotation = getAnnotation(invocation)
             // Compare the AnnotationSpec string ignoring whitespace
             assertThat(annotation.toAnnotationSpec().toString().removeWhiteSpace())
-                .isEqualTo("""
+                .isEqualTo(
+                    """
                     @test.MyAnnotation(
                         byteParam = 1,
                         byteArrayParam = {3, 5, 7},
                         byteVarArgsParam = {9, 11, 13}
                     )
-                    """.removeWhiteSpace())
+                    """
+                        .removeWhiteSpace()
+                )
 
             val byteParam = annotation.getAnnotationValue("byteParam")
             checkSingleValue(byteParam, 1)
@@ -868,9 +907,10 @@ class XAnnotationValueTest(
     @Test
     fun testCharValue() {
         runTest(
-            javaSource = Source.java(
-                "test.MyClass",
-                """
+            javaSource =
+                Source.java(
+                    "test.MyClass",
+                    """
                 package test;
                 import java.lang.annotation.ElementType;
                 import java.lang.annotation.Target;
@@ -893,11 +933,13 @@ class XAnnotationValueTest(
                     charVarArgsParam = {'5', '6', '7'}
                 )
                 MyInterface {}
-                """.trimIndent()
-            ) as Source.JavaSource,
-            kotlinSource = Source.kotlin(
-                "test.MyClass.kt",
                 """
+                        .trimIndent()
+                ) as Source.JavaSource,
+            kotlinSource =
+                Source.kotlin(
+                    "test.MyClass.kt",
+                    """
                 package test
                 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE)
                 annotation class MyAnnotation(
@@ -918,8 +960,9 @@ class XAnnotationValueTest(
                     charVarArgsParam = ['5', '6', '7'],
                 )
                 MyInterface
-                """.trimIndent()
-            ) as Source.KotlinSource
+                """
+                        .trimIndent()
+                ) as Source.KotlinSource
         ) { invocation ->
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: Char) {
                 assertThat(annotationValue.valueType.asTypeName().java).isEqualTo(JTypeName.CHAR)
@@ -934,8 +977,7 @@ class XAnnotationValueTest(
                 assertThat(annotationValue.valueType.asTypeName().java)
                     .isEqualTo(JArrayTypeName.of(JTypeName.CHAR))
                 if (invocation.isKsp) {
-                    assertThat(annotationValue.valueType.asTypeName().kotlin)
-                        .isEqualTo(CHAR_ARRAY)
+                    assertThat(annotationValue.valueType.asTypeName().kotlin).isEqualTo(CHAR_ARRAY)
                 }
                 assertThat(annotationValue.hasCharListValue()).isTrue()
                 // Check the list of values
@@ -951,13 +993,16 @@ class XAnnotationValueTest(
             val annotation = getAnnotation(invocation)
             // Compare the AnnotationSpec string ignoring whitespace
             assertThat(annotation.toAnnotationSpec().toString().removeWhiteSpace())
-                .isEqualTo("""
+                .isEqualTo(
+                    """
                     @test.MyAnnotation(
                         charParam = '1',
                         charArrayParam = {'2', '3', '4'},
                         charVarArgsParam = {'5', '6', '7'}
                     )
-                    """.removeWhiteSpace())
+                    """
+                        .removeWhiteSpace()
+                )
 
             val charParam = annotation.getAnnotationValue("charParam")
             checkSingleValue(charParam, '1')
@@ -973,9 +1018,10 @@ class XAnnotationValueTest(
     @Test
     fun testStringValue() {
         runTest(
-            javaSource = Source.java(
-                "test.MyClass",
-                """
+            javaSource =
+                Source.java(
+                    "test.MyClass",
+                    """
                 package test;
                 import java.lang.annotation.ElementType;
                 import java.lang.annotation.Target;
@@ -999,11 +1045,13 @@ class XAnnotationValueTest(
                     stringVarArgsParam = {"9", "11", "13"}
                 )
                 MyInterface {}
-                """.trimIndent()
-            ) as Source.JavaSource,
-            kotlinSource = Source.kotlin(
-                "test.MyClass.kt",
                 """
+                        .trimIndent()
+                ) as Source.JavaSource,
+            kotlinSource =
+                Source.kotlin(
+                    "test.MyClass.kt",
+                    """
                 package test
                 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE)
                 annotation class MyAnnotation(
@@ -1025,8 +1073,9 @@ class XAnnotationValueTest(
                     stringVarArgsParam = ["9", "11", "13"],
                 )
                 MyInterface
-                """.trimIndent()
-            ) as Source.KotlinSource
+                """
+                        .trimIndent()
+                ) as Source.KotlinSource
         ) { invocation ->
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: String) {
                 assertThat(annotationValue.valueType.asTypeName().java)
@@ -1043,12 +1092,15 @@ class XAnnotationValueTest(
                 assertThat(annotationValue.valueType.asTypeName().java)
                     .isEqualTo(JArrayTypeName.of(String::class.asJClassName()))
                 if (invocation.isKsp) {
-                    if (sourceKind == SourceKind.KOTLIN &&
-                        annotationValue.name.contains("VarArgs")) {
+                    if (
+                        sourceKind == SourceKind.KOTLIN && annotationValue.name.contains("VarArgs")
+                    ) {
                         // Kotlin vararg are producers
                         assertThat(annotationValue.valueType.asTypeName().kotlin)
-                            .isEqualTo(ARRAY.parameterizedBy(
-                                KWildcardTypeName.producerOf(String::class.asKClassName()))
+                            .isEqualTo(
+                                ARRAY.parameterizedBy(
+                                    KWildcardTypeName.producerOf(String::class.asKClassName())
+                                )
                             )
                     } else {
                         assertThat(annotationValue.valueType.asTypeName().kotlin)
@@ -1069,14 +1121,17 @@ class XAnnotationValueTest(
             val annotation = getAnnotation(invocation)
             // Compare the AnnotationSpec string ignoring whitespace
             assertThat(annotation.toAnnotationSpec().toString().removeWhiteSpace())
-              .isEqualTo("""
+                .isEqualTo(
+                    """
                   @test.MyAnnotation(
                       stringParam = "1",
                       stringParam2 = "2",
                       stringArrayParam = {"3", "5", "7"},
                       stringVarArgsParam = {"9", "11", "13"}
                   )
-                  """.removeWhiteSpace())
+                  """
+                        .removeWhiteSpace()
+                )
             val stringParam2 = annotation.getAnnotationValue("stringParam2")
             checkSingleValue(stringParam2, "2")
 
@@ -1094,9 +1149,10 @@ class XAnnotationValueTest(
     @Test
     fun testEnumValue() {
         runTest(
-            javaSource = Source.java(
-                "test.MyClass",
-                """
+            javaSource =
+                Source.java(
+                    "test.MyClass",
+                    """
                 package test;
                 import java.lang.annotation.ElementType;
                 import java.lang.annotation.Target;
@@ -1120,11 +1176,13 @@ class XAnnotationValueTest(
                     enumVarArgsParam = {MyEnum.V3, MyEnum.V2, MyEnum.V1}
                 )
                 MyInterface {}
-                """.trimIndent()
-            ) as Source.JavaSource,
-            kotlinSource = Source.kotlin(
-                "test.MyClass.kt",
                 """
+                        .trimIndent()
+                ) as Source.JavaSource,
+            kotlinSource =
+                Source.kotlin(
+                    "test.MyClass.kt",
+                    """
                 package test
                 enum class MyEnum {V1, V2, V3}
                 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE)
@@ -1146,15 +1204,15 @@ class XAnnotationValueTest(
                     enumVarArgsParam = [MyEnum.V3, MyEnum.V2, MyEnum.V1],
                 )
                 MyInterface
-                """.trimIndent()
-            ) as Source.KotlinSource
+                """
+                        .trimIndent()
+                ) as Source.KotlinSource
         ) { invocation ->
             val myEnumJTypeName = JClassName.get("test", "MyEnum")
             val myEnumKTypeName = KClassName("test", "MyEnum")
 
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: String) {
-                assertThat(annotationValue.valueType.asTypeName().java)
-                    .isEqualTo(myEnumJTypeName)
+                assertThat(annotationValue.valueType.asTypeName().java).isEqualTo(myEnumJTypeName)
                 if (invocation.isKsp) {
                     assertThat(annotationValue.valueType.asTypeName().kotlin)
                         .isEqualTo(myEnumKTypeName)
@@ -1167,12 +1225,13 @@ class XAnnotationValueTest(
                 assertThat(annotationValue.valueType.asTypeName().java)
                     .isEqualTo(JArrayTypeName.of(myEnumJTypeName))
                 if (invocation.isKsp) {
-                    if (sourceKind == SourceKind.KOTLIN &&
-                        annotationValue.name.contains("VarArgs")) {
+                    if (
+                        sourceKind == SourceKind.KOTLIN && annotationValue.name.contains("VarArgs")
+                    ) {
                         // Kotlin vararg are producers
                         assertThat(annotationValue.valueType.asTypeName().kotlin)
-                            .isEqualTo(ARRAY.parameterizedBy(
-                                KWildcardTypeName.producerOf(myEnumKTypeName))
+                            .isEqualTo(
+                                ARRAY.parameterizedBy(KWildcardTypeName.producerOf(myEnumKTypeName))
                             )
                     } else {
                         assertThat(annotationValue.valueType.asTypeName().kotlin)
@@ -1192,13 +1251,16 @@ class XAnnotationValueTest(
 
             val annotation = getAnnotation(invocation)
             assertThat(annotation.toAnnotationSpec().toString().removeWhiteSpace())
-                .isEqualTo("""
+                .isEqualTo(
+                    """
                     @test.MyAnnotation(
                         enumParam = test.MyEnum.V1,
                         enumArrayParam = {test.MyEnum.V1, test.MyEnum.V2, test.MyEnum.V3},
                         enumVarArgsParam = {test.MyEnum.V3, test.MyEnum.V2, test.MyEnum.V1}
                     )
-                    """.removeWhiteSpace())
+                    """
+                        .removeWhiteSpace()
+                )
 
             val enumParam = annotation.getAnnotationValue("enumParam")
             checkSingleValue(enumParam, "V1")
@@ -1214,9 +1276,10 @@ class XAnnotationValueTest(
     @Test
     fun testTypeValue() {
         runTest(
-            javaSource = Source.java(
-                "test.MyClass",
-                """
+            javaSource =
+                Source.java(
+                    "test.MyClass",
+                    """
                 package test;
                 import java.lang.annotation.ElementType;
                 import java.lang.annotation.Target;
@@ -1242,11 +1305,13 @@ class XAnnotationValueTest(
                     typeVarArgsParam = {C3.class, C2.class, C1.class}
                 )
                 MyInterface {}
-                """.trimIndent()
-            ) as Source.JavaSource,
-            kotlinSource = Source.kotlin(
-                "test.MyClass.kt",
                 """
+                        .trimIndent()
+                ) as Source.JavaSource,
+            kotlinSource =
+                Source.kotlin(
+                    "test.MyClass.kt",
+                    """
                 package test
                 class C1
                 class C2
@@ -1270,52 +1335,54 @@ class XAnnotationValueTest(
                     typeVarArgsParam = [C3::class, C2::class, C1::class],
                 )
                 MyInterface
-                """.trimIndent()
-            ) as Source.KotlinSource
+                """
+                        .trimIndent()
+                ) as Source.KotlinSource
         ) { invocation ->
-            val classJTypeName = JParameterizedTypeName.get(
-                JClassName.get(Class::class.java),
-                JWildcardTypeName.subtypeOf(JTypeName.OBJECT)
-            )
-            val kClassJTypeName = JParameterizedTypeName.get(
-                JClassName.get(kotlin.reflect.KClass::class.java),
-                JWildcardTypeName.subtypeOf(JTypeName.OBJECT)
-            )
+            val classJTypeName =
+                JParameterizedTypeName.get(
+                    JClassName.get(Class::class.java),
+                    JWildcardTypeName.subtypeOf(JTypeName.OBJECT)
+                )
+            val kClassJTypeName =
+                JParameterizedTypeName.get(
+                    JClassName.get(kotlin.reflect.KClass::class.java),
+                    JWildcardTypeName.subtypeOf(JTypeName.OBJECT)
+                )
             val kClassKTypeName = kotlin.reflect.KClass::class.asKClassName().parameterizedBy(STAR)
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: String) {
-                // TODO(bcorso): Consider making the value types match in this case.
-                if (!invocation.isKsp || (sourceKind == SourceKind.JAVA && !isPreCompiled)) {
-                    assertThat(annotationValue.valueType.asTypeName().java)
-                        .isEqualTo(classJTypeName)
-                } else {
+                if (invocation.isKsp) {
                     assertThat(annotationValue.valueType.asTypeName().java)
                         .isEqualTo(kClassJTypeName)
                     assertThat(annotationValue.valueType.asTypeName().kotlin)
                         .isEqualTo(kClassKTypeName)
+                } else {
+                    assertThat(annotationValue.valueType.asTypeName().java)
+                        .isEqualTo(classJTypeName)
                 }
                 assertThat(annotationValue.hasTypeValue()).isTrue()
                 assertThat(annotationValue.asType().typeElement?.name).isEqualTo(expectedValue)
             }
 
             fun checkListValues(annotationValue: XAnnotationValue, vararg expectedValues: String) {
-                // TODO(bcorso): Consider making the value types match in this case.
-                if (!invocation.isKsp || (sourceKind == SourceKind.JAVA && !isPreCompiled)) {
-                    assertThat(annotationValue.valueType.asTypeName().java)
-                        .isEqualTo(JArrayTypeName.of(classJTypeName))
-                } else {
+                if (invocation.isKsp) {
                     assertThat(annotationValue.valueType.asTypeName().java)
                         .isEqualTo(JArrayTypeName.of(kClassJTypeName))
-                    if (sourceKind == SourceKind.KOTLIN &&
-                        annotationValue.name.contains("VarArgs")) {
+                    if (
+                        sourceKind == SourceKind.KOTLIN && annotationValue.name.contains("VarArgs")
+                    ) {
                         // Kotlin vararg are producers
                         assertThat(annotationValue.valueType.asTypeName().kotlin)
-                            .isEqualTo(ARRAY.parameterizedBy(
-                                KWildcardTypeName.producerOf(kClassKTypeName))
+                            .isEqualTo(
+                                ARRAY.parameterizedBy(KWildcardTypeName.producerOf(kClassKTypeName))
                             )
                     } else {
                         assertThat(annotationValue.valueType.asTypeName().kotlin)
                             .isEqualTo(ARRAY.parameterizedBy(kClassKTypeName))
                     }
+                } else {
+                    assertThat(annotationValue.valueType.asTypeName().java)
+                        .isEqualTo(JArrayTypeName.of(classJTypeName))
                 }
                 assertThat(annotationValue.hasTypeListValue()).isTrue()
                 // Check the list of values
@@ -1331,13 +1398,16 @@ class XAnnotationValueTest(
             val annotation = getAnnotation(invocation)
             // Compare the AnnotationSpec string ignoring whitespace
             assertThat(annotation.toAnnotationSpec().toString().removeWhiteSpace())
-                .isEqualTo("""
+                .isEqualTo(
+                    """
                     @test.MyAnnotation(
                         typeParam = test.C1.class,
                         typeArrayParam = {test.C1.class, test.C2.class, test.C3.class},
                         typeVarArgsParam = {test.C3.class, test.C2.class, test.C1.class}
                     )
-                    """.removeWhiteSpace())
+                    """
+                        .removeWhiteSpace()
+                )
 
             val typeParam = annotation.getAnnotationValue("typeParam")
             checkSingleValue(typeParam, "C1")
@@ -1353,9 +1423,10 @@ class XAnnotationValueTest(
     @Test
     fun testDefaultValues() {
         runTest(
-            javaSource = Source.java(
-                "test.MyClass",
-                """
+            javaSource =
+                Source.java(
+                    "test.MyClass",
+                    """
                 package test;
                 import java.lang.annotation.ElementType;
                 import java.lang.annotation.Target;
@@ -1368,11 +1439,13 @@ class XAnnotationValueTest(
                 interface MyInterface {}
                 @MyAnnotation(stringParam = "2") class MyClass implements
                         @MyAnnotation(stringParam = "2") MyInterface {}
-                """.trimIndent()
-            ) as Source.JavaSource,
-            kotlinSource = Source.kotlin(
-                "test.MyClass.kt",
                 """
+                        .trimIndent()
+                ) as Source.JavaSource,
+            kotlinSource =
+                Source.kotlin(
+                    "test.MyClass.kt",
+                    """
                 package test
                 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE)
                 annotation class MyAnnotation(
@@ -1383,43 +1456,57 @@ class XAnnotationValueTest(
                 interface MyInterface
                 @MyAnnotation(stringParam = "2") class MyClass :
                         @MyAnnotation(stringParam = "2") MyInterface
-                """.trimIndent()
-            ) as Source.KotlinSource
+                """
+                        .trimIndent()
+                ) as Source.KotlinSource,
+            kotlincArgs = KOTLINC_LANGUAGE_1_9_ARGS,
         ) { invocation ->
             val annotation = getAnnotation(invocation)
-                // Compare the AnnotationSpec string ignoring whitespace
-                assertThat(annotation.toAnnotationSpec().toString().removeWhiteSpace())
-                    .isEqualTo("""
-                        @test.MyAnnotation(
-                            stringParam="2",
-                            stringParam2="1",
-                            stringArrayParam={"3","5","7"}
-                        )
-                        """.removeWhiteSpace())
+            // Compare the AnnotationSpec string ignoring whitespace
+            assertThat(annotation.toAnnotationSpec().toString().removeWhiteSpace())
+                .isEqualTo(
+                    """
+                    @test.MyAnnotation(
+                        stringParam="2",
+                        stringParam2="1",
+                        stringArrayParam={"3","5","7"}
+                    )
+                    """
+                        .removeWhiteSpace()
+                )
 
-                assertThat(
-                    annotation.toAnnotationSpec(
-                        includeDefaultValues = false).toString().removeWhiteSpace())
-                    .isEqualTo("""
+            assertThat(
+                    annotation
+                        .toAnnotationSpec(includeDefaultValues = false)
+                        .toString()
+                        .removeWhiteSpace()
+                )
+                .isEqualTo(
+                    """
                         @test.MyAnnotation(stringParam="2")
-                        """.removeWhiteSpace())
-                assertThat(annotation.getAnnotationValue("stringParam").value)
-                    .isEqualTo("2")
-                assertThat(annotation.getAnnotationValue("stringParam2").value)
-                    .isEqualTo("1")
-                assertThat(
-                    annotation.getAnnotationValue("stringArrayParam")
-                        .asAnnotationValueList().firstOrNull()?.value)
-                    .isEqualTo("3")
+                        """
+                        .removeWhiteSpace()
+                )
+            assertThat(annotation.getAnnotationValue("stringParam").value).isEqualTo("2")
+            assertThat(annotation.getAnnotationValue("stringParam2").value).isEqualTo("1")
+            assertThat(
+                    annotation
+                        .getAnnotationValue("stringArrayParam")
+                        .asAnnotationValueList()
+                        .firstOrNull()
+                        ?.value
+                )
+                .isEqualTo("3")
         }
     }
 
     @Test
     fun testAnnotationValue() {
         runTest(
-            javaSource = Source.java(
-                "test.MyClass",
-                """
+            javaSource =
+                Source.java(
+                    "test.MyClass",
+                    """
                 package test;
                 import java.lang.annotation.ElementType;
                 import java.lang.annotation.Target;
@@ -1445,11 +1532,13 @@ class XAnnotationValueTest(
                     annotationVarArgsParam = {@A("9"), @A("11"), @A("13")}
                 )
                 MyInterface {}
-                """.trimIndent()
-            ) as Source.JavaSource,
-            kotlinSource = Source.kotlin(
-                "test.MyClass.kt",
                 """
+                        .trimIndent()
+                ) as Source.JavaSource,
+            kotlinSource =
+                Source.kotlin(
+                    "test.MyClass.kt",
+                    """
                 package test
                 annotation class A(val value: String)
                 @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE)
@@ -1471,18 +1560,17 @@ class XAnnotationValueTest(
                     annotationVarArgsParam = [A("9"), A("11"), A("13")],
                 )
                 MyInterface
-                """.trimIndent()
-            ) as Source.KotlinSource
+                """
+                        .trimIndent()
+                ) as Source.KotlinSource
         ) { invocation ->
             val aJTypeName = JClassName.get("test", "A")
             val aKTypeName = KClassName("test", "A")
 
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: String) {
-                assertThat(annotationValue.valueType.asTypeName().java)
-                    .isEqualTo(aJTypeName)
+                assertThat(annotationValue.valueType.asTypeName().java).isEqualTo(aJTypeName)
                 if (invocation.isKsp) {
-                    assertThat(annotationValue.valueType.asTypeName().kotlin)
-                        .isEqualTo(aKTypeName)
+                    assertThat(annotationValue.valueType.asTypeName().kotlin).isEqualTo(aKTypeName)
                 }
                 assertThat(annotationValue.hasAnnotationValue()).isTrue()
                 assertThat(annotationValue.asAnnotation().getAsString("value"))
@@ -1493,12 +1581,13 @@ class XAnnotationValueTest(
                 assertThat(annotationValue.valueType.asTypeName().java)
                     .isEqualTo(JArrayTypeName.of(aJTypeName))
                 if (invocation.isKsp) {
-                    if (sourceKind == SourceKind.KOTLIN &&
-                        annotationValue.name.contains("VarArgs")) {
+                    if (
+                        sourceKind == SourceKind.KOTLIN && annotationValue.name.contains("VarArgs")
+                    ) {
                         // Kotlin vararg are producers
                         assertThat(annotationValue.valueType.asTypeName().kotlin)
-                            .isEqualTo(ARRAY.parameterizedBy(
-                                KWildcardTypeName.producerOf(aKTypeName))
+                            .isEqualTo(
+                                ARRAY.parameterizedBy(KWildcardTypeName.producerOf(aKTypeName))
                             )
                     } else {
                         assertThat(annotationValue.valueType.asTypeName().kotlin)
@@ -1519,13 +1608,16 @@ class XAnnotationValueTest(
             val annotation = getAnnotation(invocation)
             // Compare the AnnotationSpec string ignoring whitespace
             assertThat(annotation.toAnnotationSpec().toString().removeWhiteSpace())
-                .isEqualTo("""
+                .isEqualTo(
+                    """
                     @test.MyAnnotation(
                         annotationParam = @test.A("1"),
                         annotationArrayParam = {@test.A("3"), @test.A("5"), @test.A("7")},
                         annotationVarArgsParam = {@test.A("9"),@test.A("11"),@test.A("13")}
                     )
-                    """.removeWhiteSpace())
+                    """
+                        .removeWhiteSpace()
+                )
 
             val annotationParam = annotation.getAnnotationValue("annotationParam")
             checkSingleValue(annotationParam, "1")
@@ -1545,14 +1637,18 @@ class XAnnotationValueTest(
     private fun getAnnotation(invocation: XTestInvocation): XAnnotation {
         val typeElement = invocation.processingEnv.requireTypeElement("test.MyClass")
         return if (isTypeAnnotation) {
-            typeElement.superInterfaces.first().getAllAnnotations()
-                .single { it.qualifiedName == "test.MyAnnotation" }
+            typeElement.superInterfaces.first().getAllAnnotations().single {
+                it.qualifiedName == "test.MyAnnotation"
+            }
         } else {
             typeElement.getAllAnnotations().single { it.qualifiedName == "test.MyAnnotation" }
         }
     }
 
-    enum class SourceKind { JAVA, KOTLIN }
+    enum class SourceKind {
+        JAVA,
+        KOTLIN
+    }
 
     companion object {
         @JvmStatic

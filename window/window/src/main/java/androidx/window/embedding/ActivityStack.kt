@@ -17,19 +17,21 @@ package androidx.window.embedding
 
 import android.app.Activity
 import androidx.annotation.RestrictTo
-import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
+import androidx.window.RequiresWindowSdkExtension
+import androidx.window.WindowSdkExtensions
+import androidx.window.extensions.embedding.ActivityStack.Token
 
 /**
  * A container that holds a stack of activities, overlapping and bound to the same rectangle on the
  * screen.
  */
-class ActivityStack @RestrictTo(LIBRARY_GROUP) constructor(
+class ActivityStack
+internal constructor(
     /**
      * The [Activity] list in this application's process that belongs to this [ActivityStack].
      *
-     * Note that Activities that are running in other processes will not be contained in this
-     * list. They can be in any position in terms of ordering relative to the activities in the
-     * list.
+     * Note that Activities that are running in other processes will not be contained in this list.
+     * They can be in any position in terms of ordering relative to the activities in the list.
      */
     internal val activitiesInProcess: List<Activity>,
     /**
@@ -41,11 +43,30 @@ class ActivityStack @RestrictTo(LIBRARY_GROUP) constructor(
      * `false`.
      */
     val isEmpty: Boolean,
+    /** A token uniquely identifying this `ActivityStack`. */
+    private val token: Token?,
 ) {
 
     /**
-     * Whether this [ActivityStack] contains the [activity].
+     * Creates ActivityStack ONLY for testing.
+     *
+     * @param activitiesInProcess the [Activity] list in this application's process that belongs to
+     *   this [ActivityStack].
+     * @param isEmpty whether there is no [Activity] running in this [ActivityStack].
      */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    constructor(
+        activitiesInProcess: List<Activity>,
+        isEmpty: Boolean
+    ) : this(activitiesInProcess, isEmpty, token = null)
+
+    @RequiresWindowSdkExtension(5)
+    internal fun getToken(): Token = let {
+        WindowSdkExtensions.getInstance().requireExtensionVersion(5)
+        token!!
+    }
+
+    /** Whether this [ActivityStack] contains the [activity]. */
     operator fun contains(activity: Activity): Boolean {
         return activitiesInProcess.contains(activity)
     }
@@ -56,6 +77,7 @@ class ActivityStack @RestrictTo(LIBRARY_GROUP) constructor(
 
         if (activitiesInProcess != other.activitiesInProcess) return false
         if (isEmpty != other.isEmpty) return false
+        if (token != other.token) return false
 
         return true
     }
@@ -63,6 +85,7 @@ class ActivityStack @RestrictTo(LIBRARY_GROUP) constructor(
     override fun hashCode(): Int {
         var result = activitiesInProcess.hashCode()
         result = 31 * result + isEmpty.hashCode()
+        result = 31 * result + token.hashCode()
         return result
     }
 
@@ -70,5 +93,6 @@ class ActivityStack @RestrictTo(LIBRARY_GROUP) constructor(
         "ActivityStack{" +
             "activitiesInProcess=$activitiesInProcess" +
             ", isEmpty=$isEmpty" +
+            ", token=$token" +
             "}"
 }

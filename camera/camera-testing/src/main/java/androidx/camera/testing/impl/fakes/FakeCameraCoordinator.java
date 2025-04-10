@@ -16,13 +16,13 @@
 
 package androidx.camera.testing.impl.fakes;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.concurrent.CameraCoordinator;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,15 +34,14 @@ import java.util.Map;
  * information.
  *
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FakeCameraCoordinator implements CameraCoordinator {
 
-    @NonNull private Map<String, String> mConcurrentCameraIdMap;
-    @NonNull private List<List<String>> mConcurrentCameraIds;
-    @NonNull private List<List<CameraSelector>> mConcurrentCameraSelectors;
-    @NonNull private List<CameraInfo> mActiveConcurrentCameraInfos;
-    @NonNull private final List<ConcurrentCameraModeListener> mConcurrentCameraModeListeners;
+    private @NonNull Map<String, String> mConcurrentCameraIdMap;
+    private @NonNull List<List<String>> mConcurrentCameraIds;
+    private @NonNull List<List<CameraSelector>> mConcurrentCameraSelectors;
+    private @NonNull List<CameraInfo> mActiveConcurrentCameraInfos;
+    private final @NonNull List<ConcurrentCameraModeListener> mConcurrentCameraModeListeners;
 
     @CameraOperatingMode private int mCameraOperatingMode;
 
@@ -71,15 +70,13 @@ public class FakeCameraCoordinator implements CameraCoordinator {
         }
     }
 
-    @NonNull
     @Override
-    public List<List<CameraSelector>> getConcurrentCameraSelectors() {
+    public @NonNull List<List<CameraSelector>> getConcurrentCameraSelectors() {
         return mConcurrentCameraSelectors;
     }
 
-    @NonNull
     @Override
-    public List<CameraInfo> getActiveConcurrentCameraInfos() {
+    public @NonNull List<CameraInfo> getActiveConcurrentCameraInfos() {
         return mActiveConcurrentCameraInfos;
     }
 
@@ -88,9 +85,8 @@ public class FakeCameraCoordinator implements CameraCoordinator {
         mActiveConcurrentCameraInfos = cameraInfos;
     }
 
-    @Nullable
     @Override
-    public String getPairedConcurrentCameraId(@NonNull String cameraId) {
+    public @Nullable String getPairedConcurrentCameraId(@NonNull String cameraId) {
         if (mConcurrentCameraIdMap.containsKey(cameraId)) {
             return mConcurrentCameraIdMap.get(cameraId);
         }

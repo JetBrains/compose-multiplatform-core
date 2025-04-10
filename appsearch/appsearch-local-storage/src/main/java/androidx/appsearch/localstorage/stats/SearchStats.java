@@ -16,14 +16,16 @@
 package androidx.appsearch.localstorage.stats;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
 import androidx.appsearch.app.AppSearchResult;
 import androidx.appsearch.app.AppSearchSchema.StringPropertyConfig.JoinableValueType;
 import androidx.appsearch.app.SearchSpec;
+import androidx.appsearch.stats.BaseStats;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -35,7 +37,8 @@ import java.lang.annotation.RetentionPolicy;
  * @exportToFramework:hide
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public final class SearchStats {
+public final class SearchStats extends BaseStats {
+    /** Types of Visibility scopes available for search. */
     @IntDef(value = {
             // Searches apps' own documents.
             VISIBILITY_SCOPE_LOCAL,
@@ -59,10 +62,8 @@ public final class SearchStats {
     // TODO(b/173532925): Add a field searchType to indicate where the search is used(normal
     //  query vs in removeByQuery vs during migration)
 
-    @NonNull
-    private final String mPackageName;
-    @Nullable
-    private final String mDatabase;
+    private final @NonNull String mPackageName;
+    private final @Nullable String mDatabase;
     /**
      * The status code returned by {@link AppSearchResult#getResultCode()} for the call or
      * internal state.
@@ -137,9 +138,10 @@ public final class SearchStats {
     private final int mNativeNumJoinedResultsCurrentPage;
     /** Time taken to join documents together. */
     private final int mNativeJoinLatencyMillis;
+    private final @Nullable String mSearchSourceLogTag;
 
     SearchStats(@NonNull Builder builder) {
-        Preconditions.checkNotNull(builder);
+        super(builder);
         mPackageName = builder.mPackageName;
         mDatabase = builder.mDatabase;
         mStatusCode = builder.mStatusCode;
@@ -170,11 +172,11 @@ public final class SearchStats {
         mJoinType = builder.mJoinType;
         mNativeNumJoinedResultsCurrentPage = builder.mNativeNumJoinedResultsCurrentPage;
         mNativeJoinLatencyMillis = builder.mNativeJoinLatencyMillis;
+        mSearchSourceLogTag = builder.mSearchSourceLogTag;
     }
 
     /** Returns the package name of the session. */
-    @NonNull
-    public String getPackageName() {
+    public @NonNull String getPackageName() {
         return mPackageName;
     }
 
@@ -184,8 +186,7 @@ public final class SearchStats {
      * @return database name used by the session. {@code null} if and only if it is a
      * global search(visibilityScope is {@link SearchStats#VISIBILITY_SCOPE_GLOBAL}).
      */
-    @Nullable
-    public String getDatabase() {
+    public @Nullable String getDatabase() {
         return mDatabase;
     }
 
@@ -342,12 +343,15 @@ public final class SearchStats {
         return mNativeJoinLatencyMillis;
     }
 
+    /**  Returns a tag to indicate the source of this search, or {code null} if never set. */
+    public @Nullable String getSearchSourceLogTag() {
+        return mSearchSourceLogTag;
+    }
+
     /** Builder for {@link SearchStats} */
-    public static class Builder {
-        @NonNull
-        final String mPackageName;
-        @Nullable
-        String mDatabase;
+    public static class Builder extends BaseStats.Builder<SearchStats.Builder> {
+        final @NonNull String mPackageName;
+        @Nullable String mDatabase;
         @AppSearchResult.ResultCode
         int mStatusCode;
         int mTotalLatencyMillis;
@@ -377,6 +381,7 @@ public final class SearchStats {
         @JoinableValueType int mJoinType;
         int mNativeNumJoinedResultsCurrentPage;
         int mNativeJoinLatencyMillis;
+        @Nullable String mSearchSourceLogTag;
 
         /**
          * Constructor
@@ -391,48 +396,45 @@ public final class SearchStats {
 
         /** Sets the database used by the session. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setDatabase(@Nullable String database) {
+        public @NonNull Builder setDatabase(@Nullable String database) {
             mDatabase = database;
             return this;
         }
 
         /** Sets the status of the search. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setStatusCode(@AppSearchResult.ResultCode int statusCode) {
+        public @NonNull Builder setStatusCode(@AppSearchResult.ResultCode int statusCode) {
             mStatusCode = statusCode;
             return this;
         }
 
         /** Sets total latency for the search. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setTotalLatencyMillis(int totalLatencyMillis) {
+        public @NonNull Builder setTotalLatencyMillis(int totalLatencyMillis) {
             mTotalLatencyMillis = totalLatencyMillis;
             return this;
         }
 
         /** Sets time used to rewrite the search spec. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setRewriteSearchSpecLatencyMillis(int rewriteSearchSpecLatencyMillis) {
+        public @NonNull Builder setRewriteSearchSpecLatencyMillis(
+                int rewriteSearchSpecLatencyMillis) {
             mRewriteSearchSpecLatencyMillis = rewriteSearchSpecLatencyMillis;
             return this;
         }
 
         /** Sets time used to rewrite the search results. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setRewriteSearchResultLatencyMillis(int rewriteSearchResultLatencyMillis) {
+        public @NonNull Builder setRewriteSearchResultLatencyMillis(
+                int rewriteSearchResultLatencyMillis) {
             mRewriteSearchResultLatencyMillis = rewriteSearchResultLatencyMillis;
             return this;
         }
 
         /** Sets time passed while waiting to acquire the lock during Java function calls. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setJavaLockAcquisitionLatencyMillis(int javaLockAcquisitionLatencyMillis) {
+        public @NonNull Builder setJavaLockAcquisitionLatencyMillis(
+                int javaLockAcquisitionLatencyMillis) {
             mJavaLockAcquisitionLatencyMillis = javaLockAcquisitionLatencyMillis;
             return this;
         }
@@ -442,64 +444,56 @@ public final class SearchStats {
          * package permissions and Android permission access.
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setAclCheckLatencyMillis(int aclCheckLatencyMillis) {
+        public @NonNull Builder setAclCheckLatencyMillis(int aclCheckLatencyMillis) {
             mAclCheckLatencyMillis = aclCheckLatencyMillis;
             return this;
         }
 
         /** Sets overall time used for the native function calls. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setNativeLatencyMillis(int nativeLatencyMillis) {
+        public @NonNull Builder setNativeLatencyMillis(int nativeLatencyMillis) {
             mNativeLatencyMillis = nativeLatencyMillis;
             return this;
         }
 
         /** Sets number of terms in the search string. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setTermCount(int termCount) {
+        public @NonNull Builder setTermCount(int termCount) {
             mNativeNumTerms = termCount;
             return this;
         }
 
         /** Sets length of the search string. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setQueryLength(int queryLength) {
+        public @NonNull Builder setQueryLength(int queryLength) {
             mNativeQueryLength = queryLength;
             return this;
         }
 
         /** Sets number of namespaces filtered. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setFilteredNamespaceCount(int filteredNamespaceCount) {
+        public @NonNull Builder setFilteredNamespaceCount(int filteredNamespaceCount) {
             mNativeNumNamespacesFiltered = filteredNamespaceCount;
             return this;
         }
 
         /** Sets number of schema types filtered. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setFilteredSchemaTypeCount(int filteredSchemaTypeCount) {
+        public @NonNull Builder setFilteredSchemaTypeCount(int filteredSchemaTypeCount) {
             mNativeNumSchemaTypesFiltered = filteredSchemaTypeCount;
             return this;
         }
 
         /** Sets the requested number of results in one page. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setRequestedPageSize(int requestedPageSize) {
+        public @NonNull Builder setRequestedPageSize(int requestedPageSize) {
             mNativeRequestedPageSize = requestedPageSize;
             return this;
         }
 
         /** Sets the actual number of results returned in the current page. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setCurrentPageReturnedResultCount(
+        public @NonNull Builder setCurrentPageReturnedResultCount(
                 int currentPageReturnedResultCount) {
             mNativeNumResultsReturnedCurrentPage = currentPageReturnedResultCount;
             return this;
@@ -511,8 +505,7 @@ public final class SearchStats {
          * may be skipped.
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setIsFirstPage(boolean nativeIsFirstPage) {
+        public @NonNull Builder setIsFirstPage(boolean nativeIsFirstPage) {
             mNativeIsFirstPage = nativeIsFirstPage;
             return this;
         }
@@ -522,16 +515,14 @@ public final class SearchStats {
          * transforming tokens into an iterator tree.
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setParseQueryLatencyMillis(int parseQueryLatencyMillis) {
+        public @NonNull Builder setParseQueryLatencyMillis(int parseQueryLatencyMillis) {
             mNativeParseQueryLatencyMillis = parseQueryLatencyMillis;
             return this;
         }
 
         /** Sets strategy of scoring and ranking. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setRankingStrategy(
+        public @NonNull Builder setRankingStrategy(
                 @SearchSpec.RankingStrategy int rankingStrategy) {
             mNativeRankingStrategy = rankingStrategy;
             return this;
@@ -539,32 +530,28 @@ public final class SearchStats {
 
         /** Sets number of documents scored. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setScoredDocumentCount(int scoredDocumentCount) {
+        public @NonNull Builder setScoredDocumentCount(int scoredDocumentCount) {
             mNativeNumDocumentsScored = scoredDocumentCount;
             return this;
         }
 
         /** Sets time used to score the raw results. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setScoringLatencyMillis(int scoringLatencyMillis) {
+        public @NonNull Builder setScoringLatencyMillis(int scoringLatencyMillis) {
             mNativeScoringLatencyMillis = scoringLatencyMillis;
             return this;
         }
 
         /** Sets time used to rank the scored results. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setRankingLatencyMillis(int rankingLatencyMillis) {
+        public @NonNull Builder setRankingLatencyMillis(int rankingLatencyMillis) {
             mNativeRankingLatencyMillis = rankingLatencyMillis;
             return this;
         }
 
         /** Sets time used to fetch the document protos. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setDocumentRetrievingLatencyMillis(
+        public @NonNull Builder setDocumentRetrievingLatencyMillis(
                 int documentRetrievingLatencyMillis) {
             mNativeDocumentRetrievingLatencyMillis = documentRetrievingLatencyMillis;
             return this;
@@ -572,16 +559,14 @@ public final class SearchStats {
 
         /** Sets how many snippets are calculated. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setResultWithSnippetsCount(int resultWithSnippetsCount) {
+        public @NonNull Builder setResultWithSnippetsCount(int resultWithSnippetsCount) {
             mNativeNumResultsWithSnippets = resultWithSnippetsCount;
             return this;
         }
 
         /** Sets time passed while waiting to acquire the lock during native function calls. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setNativeLockAcquisitionLatencyMillis(
+        public @NonNull Builder setNativeLockAcquisitionLatencyMillis(
                 int nativeLockAcquisitionLatencyMillis) {
             mNativeLockAcquisitionLatencyMillis = nativeLockAcquisitionLatencyMillis;
             return this;
@@ -589,38 +574,44 @@ public final class SearchStats {
 
         /** Sets time used to send data across the JNI boundary from java to native side. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setJavaToNativeJniLatencyMillis(int javaToNativeJniLatencyMillis) {
+        public @NonNull Builder setJavaToNativeJniLatencyMillis(int javaToNativeJniLatencyMillis) {
             mJavaToNativeJniLatencyMillis = javaToNativeJniLatencyMillis;
             return this;
         }
 
         /** Sets time used to send data across the JNI boundary from native to java side. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setNativeToJavaJniLatencyMillis(int nativeToJavaJniLatencyMillis) {
+        public @NonNull Builder setNativeToJavaJniLatencyMillis(int nativeToJavaJniLatencyMillis) {
             mNativeToJavaJniLatencyMillis = nativeToJavaJniLatencyMillis;
             return this;
         }
 
         /** Sets whether or not this is a join query */
-        @NonNull
-        public Builder setJoinType(@JoinableValueType int joinType) {
+        @CanIgnoreReturnValue
+        public @NonNull Builder setJoinType(@JoinableValueType int joinType) {
             mJoinType = joinType;
             return this;
         }
 
         /** Set the total number of joined documents in a page. */
-        @NonNull
-        public Builder setNativeNumJoinedResultsCurrentPage(int nativeNumJoinedResultsCurrentPage) {
+        @CanIgnoreReturnValue
+        public @NonNull Builder setNativeNumJoinedResultsCurrentPage(
+                int nativeNumJoinedResultsCurrentPage) {
             mNativeNumJoinedResultsCurrentPage = nativeNumJoinedResultsCurrentPage;
             return this;
         }
 
         /** Sets time it takes to join documents together in icing. */
-        @NonNull
-        public Builder setNativeJoinLatencyMillis(int nativeJoinLatencyMillis) {
+        @CanIgnoreReturnValue
+        public @NonNull Builder setNativeJoinLatencyMillis(int nativeJoinLatencyMillis) {
             mNativeJoinLatencyMillis = nativeJoinLatencyMillis;
+            return this;
+        }
+
+        /** Sets a tag to indicate the source of this search. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setSearchSourceLogTag(@Nullable String searchSourceLogTag) {
+            mSearchSourceLogTag = searchSourceLogTag;
             return this;
         }
 
@@ -628,8 +619,8 @@ public final class SearchStats {
          * Constructs a new {@link SearchStats} from the contents of this
          * {@link SearchStats.Builder}.
          */
-        @NonNull
-        public SearchStats build() {
+        @Override
+        public @NonNull SearchStats build() {
             if (mDatabase == null) {
                 Preconditions.checkState(mVisibilityScope != SearchStats.VISIBILITY_SCOPE_LOCAL,
                         "database can not be null if visibilityScope is local.");

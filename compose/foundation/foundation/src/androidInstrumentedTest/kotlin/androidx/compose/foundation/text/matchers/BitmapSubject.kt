@@ -21,17 +21,16 @@ import com.google.common.truth.FailureMetadata
 import com.google.common.truth.Subject
 import com.google.common.truth.Subject.Factory
 
-/**
- * Truth extension for Bitmap.
- */
-internal class BitmapSubject private constructor(
-    failureMetadata: FailureMetadata?,
-    private val subject: Bitmap?
-) : Subject(failureMetadata, subject) {
+/** Truth extension for Bitmap. */
+internal class BitmapSubject
+private constructor(failureMetadata: FailureMetadata?, private val subject: Bitmap?) :
+    Subject(failureMetadata, subject) {
 
     companion object {
         internal val SUBJECT_FACTORY: Factory<BitmapSubject?, Bitmap?> =
-            Factory { failureMetadata, subject -> BitmapSubject(failureMetadata, subject) }
+            Factory { failureMetadata, subject ->
+                BitmapSubject(failureMetadata, subject)
+            }
     }
 
     /**
@@ -57,7 +56,7 @@ internal class BitmapSubject private constructor(
 
     override fun actualCustomStringRepresentation(): String {
         return if (subject != null) {
-            "($subject ${subject.width}x${subject.height} ${subject.config.name})"
+            "($subject ${subject.width}x${subject.height} ${subject.config!!.name})"
         } else {
             super.actualCustomStringRepresentation()
         }

@@ -33,16 +33,16 @@ import android.view.ViewGroup;
 
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.Px;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
 import androidx.wear.R;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-
 
 /**
  * Container which will lay its elements out on an arc. Elements will be relative to a given
@@ -194,7 +194,7 @@ public class ArcLayout extends ViewGroup {
         }
 
         /** Copy constructor */
-        public LayoutParams(@NonNull ViewGroup.LayoutParams source) {
+        public LayoutParams(ViewGroup.@NonNull LayoutParams source) {
             super(source);
         }
 
@@ -778,25 +778,23 @@ public class ArcLayout extends ViewGroup {
     }
 
     @Override
-    protected boolean checkLayoutParams(@NonNull ViewGroup.LayoutParams p) {
+    protected boolean checkLayoutParams(ViewGroup.@NonNull LayoutParams p) {
         return p instanceof LayoutParams;
     }
 
     @Override
-    @NonNull
-    protected ViewGroup.LayoutParams generateLayoutParams(@NonNull ViewGroup.LayoutParams p) {
+    protected ViewGroup.@NonNull LayoutParams generateLayoutParams(
+            ViewGroup.@NonNull LayoutParams p) {
         return new LayoutParams(p);
     }
 
     @Override
-    @NonNull
-    public ViewGroup.LayoutParams generateLayoutParams(@NonNull AttributeSet attrs) {
+    public ViewGroup.@NonNull LayoutParams generateLayoutParams(@NonNull AttributeSet attrs) {
         return new LayoutParams(getContext(), attrs);
     }
 
     @Override
-    @NonNull
-    protected ViewGroup.LayoutParams generateDefaultLayoutParams() {
+    protected ViewGroup.@NonNull LayoutParams generateDefaultLayoutParams() {
         return new LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
     }

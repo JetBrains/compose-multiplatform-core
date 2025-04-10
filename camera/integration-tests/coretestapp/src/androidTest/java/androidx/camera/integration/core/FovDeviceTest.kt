@@ -18,7 +18,6 @@ package androidx.camera.integration.core
 
 import android.content.Context
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraInfo
@@ -54,14 +53,16 @@ class FovDeviceTest(
     private val cameraXConfig: CameraXConfig
 ) {
     @get:Rule
-    val cameraPipeConfigTestRule = CameraPipeConfigTestRule(
-        active = implName == CameraPipeConfig::class.simpleName,
-    )
+    val cameraPipeConfigTestRule =
+        CameraPipeConfigTestRule(
+            active = implName == CameraPipeConfig::class.simpleName,
+        )
 
     @get:Rule
-    val cameraRule = CameraUtil.grantCameraPermissionAndPreTest(
-        CameraUtil.PreTestCameraIdList(cameraXConfig)
-    )
+    val cameraRule =
+        CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
+            CameraUtil.PreTestCameraIdList(cameraXConfig)
+        )
 
     companion object {
         @JvmStatic
@@ -93,22 +94,21 @@ class FovDeviceTest(
 
     @Before
     fun setUp() {
-        CameraXUtil.initialize(
-            context,
-            cameraXConfig
-        ).get()
+        CameraXUtil.initialize(context, cameraXConfig).get()
 
-        val cameraSelector = CameraSelector.Builder().addCameraFilter { cameraInfoList ->
-            val filteredList = ArrayList<CameraInfo>()
-            cameraInfoList.forEach { cameraInfo ->
-                if ((cameraInfo as CameraInfoInternal).cameraId == cameraId) {
-                    filteredList.add(cameraInfo)
+        val cameraSelector =
+            CameraSelector.Builder()
+                .addCameraFilter { cameraInfoList ->
+                    val filteredList = ArrayList<CameraInfo>()
+                    cameraInfoList.forEach { cameraInfo ->
+                        if ((cameraInfo as CameraInfoInternal).cameraId == cameraId) {
+                            filteredList.add(cameraInfo)
+                        }
+                    }
+                    filteredList
                 }
-            }
-            filteredList
-        }.build()
-        cameraUseCaseAdapter =
-            CameraUtil.createCameraUseCaseAdapter(context, cameraSelector)
+                .build()
+        cameraUseCaseAdapter = CameraUtil.createCameraUseCaseAdapter(context, cameraSelector)
     }
 
     @After
@@ -116,7 +116,7 @@ class FovDeviceTest(
         CameraXUtil.shutdown()[10000, TimeUnit.MILLISECONDS]
     }
 
-    @RequiresApi(Build.VERSION_CODES.R)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
     @Test
     fun intrinsicZoomRatio_greaterThanZero() {
         Truth.assertThat(cameraUseCaseAdapter.cameraInfo.intrinsicZoomRatio).isGreaterThan(0)

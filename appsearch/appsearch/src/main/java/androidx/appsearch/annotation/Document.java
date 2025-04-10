@@ -16,10 +16,13 @@
 // @exportToFramework:skipFile()
 package androidx.appsearch.annotation;
 
-import androidx.annotation.NonNull;
 import androidx.appsearch.app.AppSearchSchema;
+import androidx.appsearch.app.EmbeddingVector;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.LongSerializer;
 import androidx.appsearch.app.StringSerializer;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -167,7 +170,9 @@ public @interface Document {
      * <p>The document will be automatically deleted {@link TtlMillis} milliseconds after
      * {@link CreationTimestampMillis}.
      *
-     * <p>This field is not required. If not present or not set, the document will never expire.
+     * <p>This field is not required. If not present, not set, or set to {@code 0}, the document
+     * will never expire or be auto-deleted until the app is uninstalled or
+     * {@link androidx.appsearch.app.AppSearchSession#removeAsync} is called.
      *
      * <p>If present, the field must be of type {@code long} or {@link Long}.
      *
@@ -228,7 +233,6 @@ public @interface Document {
          * <p>If not specified, defaults to {@link
          * AppSearchSchema.StringPropertyConfig#INDEXING_TYPE_NONE} (the field will not be indexed
          * and cannot be queried).
-         * TODO(b/171857731) renamed to TermMatchType when using String-specific indexing config.
          */
         @AppSearchSchema.StringPropertyConfig.IndexingType int indexingType()
                 default AppSearchSchema.StringPropertyConfig.INDEXING_TYPE_NONE;
@@ -302,14 +306,12 @@ public @interface Document {
 
         final class DefaultSerializer implements StringSerializer<String> {
             @Override
-            @NonNull
-            public String serialize(@NonNull String instance) {
+            public @NonNull String serialize(@NonNull String instance) {
                 return instance;
             }
 
             @Override
-            @NonNull
-            public String deserialize(@NonNull String string) {
+            public @NonNull String deserialize(@NonNull String string) {
                 return string;
             }
         }
@@ -451,14 +453,13 @@ public @interface Document {
 
         final class DefaultSerializer implements LongSerializer<Long> {
             @Override
-            public long serialize(@NonNull @SuppressWarnings("AutoBoxing") Long value) {
+            public long serialize(@SuppressWarnings("AutoBoxing") @NonNull Long value) {
                 return value;
             }
 
             @Override
-            @NonNull
             @SuppressWarnings("AutoBoxing")
-            public Long deserialize(long value) {
+            public @NonNull Long deserialize(long value) {
                 return value;
             }
         }
@@ -535,6 +536,81 @@ public @interface Document {
          * <p>Please make sure you understand the consequences of required fields on
          * {@link androidx.appsearch.app.AppSearchSession#setSchemaAsync schema migration} before setting
          * this attribute to {@code true}.
+         */
+        boolean required() default false;
+    }
+
+    /**
+     * Configures an {@link EmbeddingVector} field of a class as a property known to AppSearch.
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target({ElementType.FIELD, ElementType.METHOD})
+    @interface EmbeddingProperty {
+        /**
+         * The name of this property. This string is used to query against this property.
+         *
+         * <p>If not specified, the name of the field in the code will be used instead.
+         */
+        String name() default "";
+
+        /**
+         * Configures how a property should be indexed so that it can be retrieved by queries.
+         *
+         * <p>If not specified, defaults to
+         * {@link AppSearchSchema.EmbeddingPropertyConfig#INDEXING_TYPE_NONE} (the field will not be
+         * indexed and cannot be queried).
+         */
+        @AppSearchSchema.EmbeddingPropertyConfig.IndexingType int indexingType()
+                default AppSearchSchema.EmbeddingPropertyConfig.INDEXING_TYPE_NONE;
+
+        /**
+         * Configures whether the embedding vectors in this property should be quantized.
+         *
+         * <p>If not specified, defaults to
+         * {@link AppSearchSchema.EmbeddingPropertyConfig#QUANTIZATION_TYPE_NONE} (contents in
+         * this property will not be quantized.).
+         */
+        @ExperimentalAppSearchApi
+        @AppSearchSchema.EmbeddingPropertyConfig.QuantizationType int quantizationType()
+                default AppSearchSchema.EmbeddingPropertyConfig.QUANTIZATION_TYPE_NONE;
+
+        /**
+         * Configures whether this property must be specified for the document to be valid.
+         *
+         * <p>This attribute does not apply to properties of a repeated type (e.g. a list).
+         *
+         * <p>Please make sure you understand the consequences of required fields on
+         * {@link androidx.appsearch.app.AppSearchSession#setSchemaAsync schema migration} before
+         * setting this attribute to {@code true}.
+         */
+        boolean required() default false;
+    }
+
+    /**
+     * Configures an {@link androidx.appsearch.app.AppSearchBlobHandle} field of a class as a
+     * property known to AppSearch.
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target({ElementType.FIELD, ElementType.METHOD})
+    @ExperimentalAppSearchApi
+    @interface BlobHandleProperty {
+        /**
+         * The name of this property. This string is used to query against this property.
+         *
+         * <p>If not specified, the name of the field in the code will be used instead.
+         */
+        String name() default "";
+
+        /**
+         * Configures whether this property must be specified for the document to be valid.
+         *
+         * <p>This attribute does not apply to properties of a repeated type (e.g. a list).
+         *
+         * <p>Please make sure you understand the consequences of required fields on
+         * {@link androidx.appsearch.app.AppSearchSession#setSchemaAsync schema migration} before
+         * setting this attribute to {@code true}.
          */
         boolean required() default false;
     }

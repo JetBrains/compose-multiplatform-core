@@ -16,8 +16,6 @@
 
 package androidx.camera.camera2;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.camera.camera2.internal.Camera2CameraFactory;
 import androidx.camera.camera2.internal.Camera2DeviceSurfaceManager;
@@ -29,10 +27,11 @@ import androidx.camera.core.impl.CameraDeviceSurfaceManager;
 import androidx.camera.core.impl.CameraFactory;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 
+import org.jspecify.annotations.NonNull;
+
 /**
  * Convenience class for generating a pre-populated Camera2 {@link CameraXConfig}.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class Camera2Config {
 
     private Camera2Config() {
@@ -41,8 +40,7 @@ public final class Camera2Config {
     /**
      * Creates a {@link CameraXConfig} containing the default Camera2 implementation for CameraX.
      */
-    @NonNull
-    public static CameraXConfig defaultConfig() {
+    public static @NonNull CameraXConfig defaultConfig() {
 
         // Create the camera factory for creating Camera2 camera objects
         CameraFactory.Provider cameraFactoryProvider = Camera2CameraFactory::new;
@@ -66,7 +64,8 @@ public final class Camera2Config {
                 new CameraXConfig.Builder()
                         .setCameraFactoryProvider(cameraFactoryProvider)
                         .setDeviceSurfaceManagerProvider(surfaceManagerProvider)
-                        .setUseCaseConfigFactoryProvider(configFactoryProvider);
+                        .setUseCaseConfigFactoryProvider(configFactoryProvider)
+                        .setConfigImplType(CameraXConfig.CAMERAX_CONFIG_IMPL_TYPE_CAMERA_CAMERA2);
 
         return appConfigBuilder.build();
     }
@@ -74,9 +73,8 @@ public final class Camera2Config {
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     public static final class DefaultProvider implements CameraXConfig.Provider {
 
-        @NonNull
         @Override
-        public CameraXConfig getCameraXConfig() {
+        public @NonNull CameraXConfig getCameraXConfig() {
             return defaultConfig();
         }
     }

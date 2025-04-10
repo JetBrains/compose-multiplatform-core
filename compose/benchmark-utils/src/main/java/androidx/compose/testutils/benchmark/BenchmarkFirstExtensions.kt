@@ -29,13 +29,13 @@ import androidx.compose.testutils.doFramesUntilNoChangesPending
 import org.junit.Assert.assertTrue
 
 /**
- * Measures the time to draw the first pixel right after the given test case is added to an
- * already existing hierarchy. This benchmarks the full compose -> measure -> layout -> draw cycle.
+ * Measures the time to draw the first pixel right after the given test case is added to an already
+ * existing hierarchy. This benchmarks the full compose -> measure -> layout -> draw cycle.
  */
 fun ComposeBenchmarkRule.benchmarkToFirstPixel(caseFactory: () -> LayeredComposeTestCase) {
     runBenchmarkFor(LayeredCaseAdapter.of(caseFactory)) {
         measureRepeatedOnUiThread {
-            runWithTimingDisabled {
+            runWithMeasurementDisabled {
                 doFramesUntilNoChangesPending()
                 // Add the content to benchmark
                 getTestCase().addMeasuredContent()
@@ -48,7 +48,7 @@ fun ComposeBenchmarkRule.benchmarkToFirstPixel(caseFactory: () -> LayeredCompose
             drawPrepare()
             draw()
 
-            runWithTimingDisabled {
+            runWithMeasurementDisabled {
                 drawFinish()
                 assertNoPendingChanges()
                 disposeContent()
@@ -58,13 +58,13 @@ fun ComposeBenchmarkRule.benchmarkToFirstPixel(caseFactory: () -> LayeredCompose
 }
 
 /**
- * Measures the time of the first composition right after the given test case is added to an
- * already existing hierarchy.
+ * Measures the time of the first composition right after the given test case is added to an already
+ * existing hierarchy.
  */
 fun ComposeBenchmarkRule.benchmarkFirstCompose(caseFactory: () -> LayeredComposeTestCase) {
     runBenchmarkFor(LayeredCaseAdapter.of(caseFactory)) {
         measureRepeatedOnUiThread {
-            runWithTimingDisabled {
+            runWithMeasurementDisabled {
                 doFramesUntilNoChangesPending()
                 // Add the content to benchmark
                 getTestCase().addMeasuredContent()
@@ -72,9 +72,7 @@ fun ComposeBenchmarkRule.benchmarkFirstCompose(caseFactory: () -> LayeredCompose
 
             recomposeUntilNoChangesPending()
 
-            runWithTimingDisabled {
-                disposeContent()
-            }
+            runWithMeasurementDisabled { disposeContent() }
         }
     }
 }
@@ -86,7 +84,7 @@ fun ComposeBenchmarkRule.benchmarkFirstCompose(caseFactory: () -> LayeredCompose
 fun ComposeBenchmarkRule.benchmarkFirstMeasure(caseFactory: () -> LayeredComposeTestCase) {
     runBenchmarkFor(LayeredCaseAdapter.of(caseFactory)) {
         measureRepeatedOnUiThread {
-            runWithTimingDisabled {
+            runWithMeasurementDisabled {
                 doFramesUntilNoChangesPending()
                 // Add the content to benchmark
                 getTestCase().addMeasuredContent()
@@ -96,7 +94,7 @@ fun ComposeBenchmarkRule.benchmarkFirstMeasure(caseFactory: () -> LayeredCompose
 
             measure()
 
-            runWithTimingDisabled {
+            runWithMeasurementDisabled {
                 assertNoPendingChanges()
                 disposeContent()
             }
@@ -111,7 +109,7 @@ fun ComposeBenchmarkRule.benchmarkFirstMeasure(caseFactory: () -> LayeredCompose
 fun ComposeBenchmarkRule.benchmarkFirstLayout(caseFactory: () -> LayeredComposeTestCase) {
     runBenchmarkFor(LayeredCaseAdapter.of(caseFactory)) {
         measureRepeatedOnUiThread {
-            runWithTimingDisabled {
+            runWithMeasurementDisabled {
                 doFramesUntilNoChangesPending()
                 // Add the content to benchmark
                 getTestCase().addMeasuredContent()
@@ -122,7 +120,7 @@ fun ComposeBenchmarkRule.benchmarkFirstLayout(caseFactory: () -> LayeredComposeT
 
             layout()
 
-            runWithTimingDisabled {
+            runWithMeasurementDisabled {
                 assertNoPendingChanges()
                 disposeContent()
             }
@@ -137,7 +135,7 @@ fun ComposeBenchmarkRule.benchmarkFirstLayout(caseFactory: () -> LayeredComposeT
 fun ComposeBenchmarkRule.benchmarkFirstDraw(caseFactory: () -> LayeredComposeTestCase) {
     runBenchmarkFor(LayeredCaseAdapter.of(caseFactory)) {
         measureRepeatedOnUiThread {
-            runWithTimingDisabled {
+            runWithMeasurementDisabled {
                 doFramesUntilNoChangesPending()
                 // Add the content to benchmark
                 getTestCase().addMeasuredContent()
@@ -150,7 +148,7 @@ fun ComposeBenchmarkRule.benchmarkFirstDraw(caseFactory: () -> LayeredComposeTes
 
             draw()
 
-            runWithTimingDisabled {
+            runWithMeasurementDisabled {
                 drawFinish()
                 assertNoPendingChanges()
                 disposeContent()
@@ -159,47 +157,37 @@ fun ComposeBenchmarkRule.benchmarkFirstDraw(caseFactory: () -> LayeredComposeTes
     }
 }
 
-/**
- * Measures the time of the first set content of the given Android test case.
- */
+/** Measures the time of the first set content of the given Android test case. */
 fun AndroidBenchmarkRule.benchmarkFirstSetContent(caseFactory: () -> AndroidTestCase) {
     runBenchmarkFor(caseFactory) {
         measureRepeatedOnUiThread {
             setupContent()
-            runWithTimingDisabled {
-                disposeContent()
-            }
+            runWithMeasurementDisabled { disposeContent() }
         }
     }
 }
 
-/**
- * Measures the time of the first measure of the given test case.
- */
+/** Measures the time of the first measure of the given test case. */
 fun AndroidBenchmarkRule.benchmarkFirstMeasure(caseFactory: () -> AndroidTestCase) {
     runBenchmarkFor(caseFactory) {
         measureRepeatedOnUiThread {
-            runWithTimingDisabled {
+            runWithMeasurementDisabled {
                 setupContent()
                 requestLayout()
             }
 
             measure()
 
-            runWithTimingDisabled {
-                disposeContent()
-            }
+            runWithMeasurementDisabled { disposeContent() }
         }
     }
 }
 
-/**
- * Measures the time of the first layout of the given test case.
- */
+/** Measures the time of the first layout of the given test case. */
 fun AndroidBenchmarkRule.benchmarkFirstLayout(caseFactory: () -> AndroidTestCase) {
     runBenchmarkFor(caseFactory) {
         measureRepeatedOnUiThread {
-            runWithTimingDisabled {
+            runWithMeasurementDisabled {
                 setupContent()
                 requestLayout()
                 measure()
@@ -207,20 +195,16 @@ fun AndroidBenchmarkRule.benchmarkFirstLayout(caseFactory: () -> AndroidTestCase
 
             layout()
 
-            runWithTimingDisabled {
-                disposeContent()
-            }
+            runWithMeasurementDisabled { disposeContent() }
         }
     }
 }
 
-/**
- * Measures the time of the first draw of the given test case.
- */
+/** Measures the time of the first draw of the given test case. */
 fun AndroidBenchmarkRule.benchmarkFirstDraw(caseFactory: () -> AndroidTestCase) {
     runBenchmarkFor(caseFactory) {
         measureRepeatedOnUiThread {
-            runWithTimingDisabled {
+            runWithMeasurementDisabled {
                 setupContent()
                 requestLayout()
                 measure()
@@ -230,7 +214,7 @@ fun AndroidBenchmarkRule.benchmarkFirstDraw(caseFactory: () -> AndroidTestCase) 
 
             draw()
 
-            runWithTimingDisabled {
+            runWithMeasurementDisabled {
                 drawFinish()
                 disposeContent()
             }
@@ -242,7 +226,7 @@ fun AndroidBenchmarkRule.benchmarkFirstDraw(caseFactory: () -> AndroidTestCase) 
  * Runs recompositions until there are no changes pending.
  *
  * @param maxAmountOfStep Max amount of recomposition to perform before giving up and throwing
- * exception.
+ *   exception.
  * @throws AssertionError if there are still pending changes after [maxAmountOfStep] executed.
  */
 fun ComposeExecutionControl.recomposeUntilNoChangesPending(maxAmountOfStep: Int = 10): Int {
@@ -257,10 +241,7 @@ fun ComposeExecutionControl.recomposeUntilNoChangesPending(maxAmountOfStep: Int 
     }
 
     // Still not stable
-    throw AssertionError(
-        "Changes are still pending after '$maxAmountOfStep' " +
-            "frames."
-    )
+    throw AssertionError("Changes are still pending after '$maxAmountOfStep' " + "frames.")
 }
 
 private class LayeredCaseAdapter(private val innerCase: LayeredComposeTestCase) : ComposeTestCase {

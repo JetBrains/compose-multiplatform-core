@@ -14,25 +14,32 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("com.google.protobuf")
     id("org.jetbrains.kotlin.android")
     id("androidx.stableaidl")
 }
 
 dependencies {
+    api(libs.jspecify)
     api(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesCore)
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
     implementation(libs.guavaListenableFuture)
     implementation(libs.guavaAndroid)
     implementation("androidx.core:core-ktx:1.7.0")
     implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
-    implementation(libs.protobufLite)
+    implementation(project(":health:health-services-client-proto"))
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinReflect)
@@ -46,38 +53,26 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 30
+        minSdk = 30
     }
     buildFeatures {
         aidl = true
     }
-    buildTypes.all {
-        stableAidl {
-            version 1
-        }
-    }
-    namespace "androidx.health.services.client"
-}
+    buildTypes.configureEach {
+        consumerProguardFiles("proguard-rules.pro")
 
-protobuf {
-    protoc {
-        artifact = libs.protobufCompiler.get()
-    }
-    generateProtoTasks {
-        all().each { task ->
-                task.builtins {
-                    java {
-                        option 'lite'
-                    }
-                }
+        stableAidl {
+            version = 1
         }
     }
+    namespace = "androidx.health.services.client"
 }
 
 androidx {
     name = "Health Services Client"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.HEALTH_SERVICES_CLIENT
     inceptionYear = "2021"
     description = "This library helps developers create performant health applications in a platform agnostic way"
+    legacyDisableKotlinStrictApiMode = true
 }

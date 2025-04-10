@@ -33,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -43,6 +42,7 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -50,13 +50,10 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-@OptIn(ExperimentalTestApi::class)
 class NavigationRailScreenshotTest {
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
-    @get:Rule
-    val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL)
+    @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_MATERIAL)
 
     @Test
     fun lightTheme_defaultColors() {
@@ -80,6 +77,7 @@ class NavigationRailScreenshotTest {
     }
 
     @Test
+    @Ignore("b/355413615")
     fun lightTheme_defaultColors_pressed() {
         val interactionSource = MutableInteractionSource()
 
@@ -122,6 +120,7 @@ class NavigationRailScreenshotTest {
     }
 
     @Test
+    @Ignore("b/355413615")
     fun darkTheme_defaultColors_pressed() {
         val interactionSource = MutableInteractionSource()
 
@@ -164,6 +163,7 @@ class NavigationRailScreenshotTest {
     }
 
     @Test
+    @Ignore("b/355413615")
     fun lightTheme_defaultColors_withHeaderFab_pressed() {
         val interactionSource = MutableInteractionSource()
 
@@ -188,8 +188,7 @@ class NavigationRailScreenshotTest {
      * Asserts that the NavigationRail matches the screenshot with identifier [goldenIdentifier].
      *
      * @param scope [CoroutineScope] used to interact with [MutableInteractionSource]
-     * @param interactionSource the [MutableInteractionSource] used for the first
-     * NavigationRailItem
+     * @param interactionSource the [MutableInteractionSource] used for the first NavigationRailItem
      * @param interaction the [Interaction] to assert for, or `null` if no [Interaction].
      * @param goldenIdentifier the identifier for the corresponding screenshot
      */
@@ -202,9 +201,7 @@ class NavigationRailScreenshotTest {
         if (interaction != null) {
             composeTestRule.runOnIdle {
                 // Start ripple
-                scope.launch {
-                    interactionSource.emit(interaction)
-                }
+                scope.launch { interactionSource.emit(interaction) }
             }
 
             composeTestRule.waitForIdle()
@@ -215,7 +212,8 @@ class NavigationRailScreenshotTest {
         }
 
         // Capture and compare screenshots
-        composeTestRule.onNodeWithTag(Tag)
+        composeTestRule
+            .onNodeWithTag(Tag)
             .captureToImage()
             .assertAgainstGolden(screenshotRule, goldenIdentifier)
     }
@@ -226,7 +224,7 @@ class NavigationRailScreenshotTest {
  * [NavigationRailItem] is selected, and the rest are not.
  *
  * @param interactionSource the [MutableInteractionSource] for the first [NavigationRailItem], to
- * control its visual state.
+ *   control its visual state.
  * @param withHeaderFab when true, shows a [FloatingActionButton] as the [NavigationRail] header.
  */
 @Composable
@@ -236,11 +234,12 @@ private fun DefaultNavigationRail(
 ) {
     Box(Modifier.semantics(mergeDescendants = true) {}.testTag(Tag)) {
         NavigationRail(
-            header = if (withHeaderFab) {
-                { HeaderFab() }
-            } else {
-                null
-            }
+            header =
+                if (withHeaderFab) {
+                    { HeaderFab() }
+                } else {
+                    null
+                }
         ) {
             NavigationRailItem(
                 icon = { Icon(Icons.Filled.Favorite, null) },
@@ -272,7 +271,7 @@ private fun DefaultNavigationRail(
 @Composable
 private fun HeaderFab() {
     FloatingActionButton(
-        onClick = { },
+        onClick = {},
     ) {
         Icon(Icons.Filled.Edit, contentDescription = "Edit")
     }

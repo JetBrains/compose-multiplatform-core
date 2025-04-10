@@ -36,29 +36,28 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 
 /**
- * A Material Design icon component that draws [imageVector] using [tint], with a default value
- * of [LocalContentColor]. If [imageVector] has no intrinsic size, this component will use the
+ * A Material Design icon component that draws [imageVector] using [tint], with a default value of
+ * [LocalContentColor]. If [imageVector] has no intrinsic size, this component will use the
  * recommended default size. Icon is an opinionated component designed to be used with single-color
  * icons so that they can be tinted correctly for the component they are placed in. For multicolored
  * icons and icons that should not be tinted, use [Color.Unspecified] for [tint]. For generic images
  * that should not be tinted, and do not follow the recommended icon size, use the generic
  * [androidx.compose.foundation.Image] instead.
  *
- * To learn more about icons, see [Material Design icons](https://m3.material.io/styles/icons/overview)
+ * To learn more about icons, see
+ * [Material Design icons](https://m3.material.io/styles/icons/overview)
  *
  * @param imageVector [ImageVector] to draw inside this icon
  * @param contentDescription text used by accessibility services to describe what this icon
- * represents. This should always be gprovided unless this icon is used for decorative purposes, and
- * does not represent a meaningful action that a user can take. This text should be localized, such
- * as by using [androidx.compose.ui.res.stringResource] or similar
+ *   represents. This should always be gprovided unless this icon is used for decorative purposes,
+ *   and does not represent a meaningful action that a user can take. This text should be localized,
+ *   such as by using [androidx.compose.ui.res.stringResource] or similar
  * @param modifier the [Modifier] to be applied to this icon
  * @param tint tint to be applied to [imageVector]. If [Color.Unspecified] is provided, then no tint
- * is applied.
+ *   is applied.
  */
-@ExperimentalTvMaterial3Api
 @Composable
 fun Icon(
     imageVector: ImageVector,
@@ -75,26 +74,26 @@ fun Icon(
 }
 
 /**
- * A Material Design icon component that draws [bitmap] using [tint], with a default value
- * of [LocalContentColor]. If [bitmap] has no intrinsic size, this component will use the
- * recommended default size. Icon is an opinionated component designed to be used with single-color
- * icons so that they can be tinted correctly for the component they are placed in. For multicolored
- * icons and icons that should not be tinted, use [Color.Unspecified] for [tint]. For generic images
- * that should not be tinted, and do not follow the recommended icon size, use the generic
+ * A Material Design icon component that draws [bitmap] using [tint], with a default value of
+ * [LocalContentColor]. If [bitmap] has no intrinsic size, this component will use the recommended
+ * default size. Icon is an opinionated component designed to be used with single-color icons so
+ * that they can be tinted correctly for the component they are placed in. For multicolored icons
+ * and icons that should not be tinted, use [Color.Unspecified] for [tint]. For generic images that
+ * should not be tinted, and do not follow the recommended icon size, use the generic
  * [androidx.compose.foundation.Image] instead.
  *
- * To learn more about icons, see [Material Design icons](https://m3.material.io/styles/icons/overview)
+ * To learn more about icons, see
+ * [Material Design icons](https://m3.material.io/styles/icons/overview)
  *
  * @param bitmap [ImageBitmap] to draw inside this icon
  * @param contentDescription text used by accessibility services to describe what this icon
- * represents. This should always be provided unless this icon is used for decorative purposes, and
- * does not represent a meaningful action that a user can take. This text should be localized, such
- * as by using [androidx.compose.ui.res.stringResource] or similar
+ *   represents. This should always be provided unless this icon is used for decorative purposes,
+ *   and does not represent a meaningful action that a user can take. This text should be localized,
+ *   such as by using [androidx.compose.ui.res.stringResource] or similar
  * @param modifier the [Modifier] to be applied to this icon
  * @param tint tint to be applied to [bitmap]. If [Color.Unspecified] is provided, then no tint is
- * applied.
+ *   applied.
  */
-@ExperimentalTvMaterial3Api
 @Composable
 fun Icon(
     bitmap: ImageBitmap,
@@ -112,26 +111,26 @@ fun Icon(
 }
 
 /**
- * A Material Design icon component that draws [painter] using [tint], with a default value
- * of [LocalContentColor]. If [painter] has no intrinsic size, this component will use the
- * recommended default size. Icon is an opinionated component designed to be used with single-color
- * icons so that they can be tinted correctly for the component they are placed in. For multicolored
- * icons and icons that should not be tinted, use [Color.Unspecified] for [tint]. For generic images
- * that should not be tinted, and do not follow the recommended icon size, use the generic
+ * A Material Design icon component that draws [painter] using [tint], with a default value of
+ * [LocalContentColor]. If [painter] has no intrinsic size, this component will use the recommended
+ * default size. Icon is an opinionated component designed to be used with single-color icons so
+ * that they can be tinted correctly for the component they are placed in. For multicolored icons
+ * and icons that should not be tinted, use [Color.Unspecified] for [tint]. For generic images that
+ * should not be tinted, and do not follow the recommended icon size, use the generic
  * [androidx.compose.foundation.Image] instead.
  *
- * To learn more about icons, see [Material Design icons](https://m3.material.io/styles/icons/overview)
+ * To learn more about icons, see
+ * [Material Design icons](https://m3.material.io/styles/icons/overview)
  *
  * @param painter [Painter] to draw inside this icon
  * @param contentDescription text used by accessibility services to describe what this icon
- * represents. This should always be provided unless this icon is used for decorative purposes, and
- * does not represent a meaningful action that a user can take. This text should be localized, such
- * as by using [androidx.compose.ui.res.stringResource] or similar
+ *   represents. This should always be provided unless this icon is used for decorative purposes,
+ *   and does not represent a meaningful action that a user can take. This text should be localized,
+ *   such as by using [androidx.compose.ui.res.stringResource] or similar
  * @param modifier the [Modifier] to be applied to this icon
  * @param tint tint to be applied to [painter]. If [Color.Unspecified] is provided, then no tint is
- * applied.
+ *   applied.
  */
-@ExperimentalTvMaterial3Api
 @Composable
 fun Icon(
     painter: Painter,
@@ -139,9 +138,8 @@ fun Icon(
     modifier: Modifier = Modifier,
     tint: Color = LocalContentColor.current
 ) {
-    val colorFilter = remember(tint) {
-        if (tint == Color.Unspecified) null else ColorFilter.tint(tint)
-    }
+    val colorFilter =
+        remember(tint) { if (tint == Color.Unspecified) null else ColorFilter.tint(tint) }
     val semantics =
         if (contentDescription != null) {
             Modifier.semantics {
@@ -172,5 +170,4 @@ private fun Modifier.defaultSizeFor(painter: Painter) =
 private fun Size.isInfinite() = width.isInfinite() && height.isInfinite()
 
 // Default icon size, for icons with no intrinsic size information
-// TODO(rvighnesh): change this to IconButtonTokens.IconSize when we introduce IconButton
-private val DefaultIconSizeModifier = Modifier.size(24.dp)
+private val DefaultIconSizeModifier = Modifier.size(IconButtonDefaults.MediumIconSize)

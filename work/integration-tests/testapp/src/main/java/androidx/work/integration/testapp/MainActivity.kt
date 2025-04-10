@@ -15,7 +15,6 @@
  */
 package androidx.work.integration.testapp
 
-import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.app.job.JobInfo
 import android.app.job.JobScheduler
@@ -57,27 +56,26 @@ import androidx.work.integration.testapp.RemoteService.Companion.queryWorkInfoIn
 import androidx.work.integration.testapp.RemoteService.Companion.updateUniquePeriodicIntent
 import androidx.work.integration.testapp.imageprocessing.ImageProcessingActivity
 import androidx.work.integration.testapp.sherlockholmes.AnalyzeSherlockHolmesActivity
+import androidx.work.multiprocess.RemoteListenableWorker.ARGUMENT_CLASS_NAME
 import androidx.work.multiprocess.RemoteListenableWorker.ARGUMENT_PACKAGE_NAME
 import androidx.work.multiprocess.RemoteWorkerService
 import androidx.work.workDataOf
 import java.util.concurrent.TimeUnit
 
-/**
- * Main Activity
- */
+/** Main Activity */
 class MainActivity : AppCompatActivity() {
     private var lastForegroundWorkRequest: WorkRequest? = null
     private var lastNotificationId = 10
     private val workManager: WorkManager by lazy { WorkManager.getInstance(this) }
 
-    @SuppressLint("ClassVerificationFailure")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         findViewById<View>(R.id.enqueue_infinite_work_charging).setOnClickListener {
             workManager.enqueue(
                 OneTimeWorkRequest.Builder(InfiniteWorker::class.java)
-                    .setConstraints(Constraints(requiresCharging = true)).build()
+                    .setConstraints(Constraints(requiresCharging = true))
+                    .build()
             )
         }
         findViewById<View>(R.id.enqueue_infinite_work_network).setOnClickListener {
@@ -90,39 +88,45 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.enqueue_battery_not_low).setOnClickListener {
             workManager.enqueue(
                 OneTimeWorkRequest.Builder(TestWorker::class.java)
-                    .setConstraints(Constraints(requiresBatteryNotLow = true)).build()
+                    .setConstraints(Constraints(requiresBatteryNotLow = true))
+                    .build()
             )
         }
         findViewById<View>(R.id.sherlock_holmes).setOnClickListener {
-            startActivity(
-                Intent(this@MainActivity, AnalyzeSherlockHolmesActivity::class.java)
-            )
+            startActivity(Intent(this@MainActivity, AnalyzeSherlockHolmesActivity::class.java))
         }
         findViewById<View>(R.id.image_processing).setOnClickListener {
-            startActivity(
-                Intent(this@MainActivity, ImageProcessingActivity::class.java)
-            )
+            startActivity(Intent(this@MainActivity, ImageProcessingActivity::class.java))
         }
-        findViewById<View>(R.id.image_uri).setOnClickListener(View.OnClickListener {
-            if (Build.VERSION.SDK_INT < 24) {
-                return@OnClickListener
-            }
-            val constraints = Constraints(
-                contentUriTriggers = setOf(
-                    ContentUriTrigger(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true)
-                )
+        findViewById<View>(R.id.image_uri)
+            .setOnClickListener(
+                View.OnClickListener {
+                    if (Build.VERSION.SDK_INT < 24) {
+                        return@OnClickListener
+                    }
+                    val constraints =
+                        Constraints(
+                            contentUriTriggers =
+                                setOf(
+                                    ContentUriTrigger(
+                                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                        true
+                                    )
+                                )
+                        )
+                    workManager.enqueue(
+                        ToastWorker.create("Image URI Updated!").setConstraints(constraints).build()
+                    )
+                }
             )
-            workManager.enqueue(
-                ToastWorker.create("Image URI Updated!").setConstraints(constraints).build()
-            )
-        })
         val delayInMs = findViewById<EditText>(R.id.delay_in_ms)
         findViewById<View>(R.id.schedule_delay).setOnClickListener {
             val delayString = delayInMs.text.toString()
             val delay = delayString.toLong()
             Log.d(TAG, "Enqueuing job with delay of $delay ms")
             workManager.enqueue(
-                ToastWorker.create("Delayed Job Ran!").setInitialDelay(delay, TimeUnit.MILLISECONDS)
+                ToastWorker.create("Delayed Job Ran!")
+                    .setInitialDelay(delay, TimeUnit.MILLISECONDS)
                     .build()
             )
         }
@@ -132,8 +136,10 @@ class MainActivity : AppCompatActivity() {
             Log.d(TAG, "Enqueuing job with delay of $delay ms")
             val inputData = workDataOf("sleep_time" to delay)
             workManager.enqueue(
-                OneTimeWorkRequest.Builder(CoroutineSleepWorker::class.java).setInputData(inputData)
-                    .addTag("coroutine_sleep").build()
+                OneTimeWorkRequest.Builder(CoroutineSleepWorker::class.java)
+                    .setInputData(inputData)
+                    .addTag("coroutine_sleep")
+                    .build()
             )
         }
         findViewById<View>(R.id.coroutine_cancel).setOnClickListener {
@@ -141,30 +147,41 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<View>(R.id.enqueue_periodic_work).setOnClickListener {
             val input = workDataOf(ToastWorker.ARG_MESSAGE to "Periodic work")
-            val request = PeriodicWorkRequest.Builder(
-                ToastWorker::class.java, 15, TimeUnit.MINUTES
-            ).setInputData(input).build()
+            val request =
+                PeriodicWorkRequest.Builder(ToastWorker::class.java, 15, TimeUnit.MINUTES)
+                    .setInputData(input)
+                    .build()
             workManager.enqueue(request)
         }
         findViewById<View>(R.id.enqueue_periodic_work_flex).setOnClickListener {
             val input = workDataOf(ToastWorker.ARG_MESSAGE to "Periodic work with Flex")
-            val request = PeriodicWorkRequest.Builder(
-                ToastWorker::class.java, 15, TimeUnit.MINUTES, 10, TimeUnit.MINUTES
-            ).setInputData(input).build()
+            val request =
+                PeriodicWorkRequest.Builder(
+                        ToastWorker::class.java,
+                        15,
+                        TimeUnit.MINUTES,
+                        10,
+                        TimeUnit.MINUTES
+                    )
+                    .setInputData(input)
+                    .build()
             workManager.enqueue(request)
         }
         findViewById<View>(R.id.enqueue_periodic_initial_delay).setOnClickListener {
             val input = workDataOf(ToastWorker.ARG_MESSAGE to "Periodic work")
-            val request = PeriodicWorkRequest.Builder(
-                ToastWorker::class.java, 15, TimeUnit.MINUTES
-            ).setInitialDelay(1, TimeUnit.MINUTES).setInputData(input).build()
+            val request =
+                PeriodicWorkRequest.Builder(ToastWorker::class.java, 15, TimeUnit.MINUTES)
+                    .setInitialDelay(1, TimeUnit.MINUTES)
+                    .setInputData(input)
+                    .build()
             workManager.enqueue(request)
         }
         findViewById<View>(R.id.begin_unique_work_loop).setOnClickListener {
             val keep = findViewById<CheckBox>(R.id.keep)
             val policy = if (keep.isChecked) ExistingWorkPolicy.KEEP else ExistingWorkPolicy.REPLACE
             repeat(50) {
-                workManager.beginUniqueWork(UNIQUE_WORK_NAME, policy, from(SleepWorker::class.java))
+                workManager
+                    .beginUniqueWork(UNIQUE_WORK_NAME, policy, from(SleepWorker::class.java))
                     .enqueue()
             }
         }
@@ -191,54 +208,77 @@ class MainActivity : AppCompatActivity() {
             WorkContinuation.combine(leaves).then(from(TestWorker::class.java)).enqueue()
         }
         findViewById<View>(R.id.replace_completed_work).setOnClickListener {
-            workManager.getWorkInfosForUniqueWorkLiveData(REPLACE_COMPLETED_WORK)
-                .observe(this, object : Observer<List<WorkInfo>> {
-                    private var count = 0
-                    override fun onChanged(value: List<WorkInfo>) {
-                        if (value.isNotEmpty()) {
-                            val status = value[0]
-                            if (status.state.isFinished && count < NUM_WORKERS) {
-                                // Enqueue another worker.
-                                workManager.beginUniqueWork(
-                                    REPLACE_COMPLETED_WORK,
-                                    ExistingWorkPolicy.REPLACE,
-                                    from(TestWorker::class.java)
-                                ).enqueue()
-                                count += 1
+            workManager
+                .getWorkInfosForUniqueWorkLiveData(REPLACE_COMPLETED_WORK)
+                .observe(
+                    this,
+                    object : Observer<List<WorkInfo>> {
+                        private var count = 0
+
+                        override fun onChanged(value: List<WorkInfo>) {
+                            if (value.isNotEmpty()) {
+                                val status = value[0]
+                                if (status.state.isFinished && count < NUM_WORKERS) {
+                                    // Enqueue another worker.
+                                    workManager
+                                        .beginUniqueWork(
+                                            REPLACE_COMPLETED_WORK,
+                                            ExistingWorkPolicy.REPLACE,
+                                            from(TestWorker::class.java)
+                                        )
+                                        .enqueue()
+                                    count += 1
+                                }
                             }
                         }
                     }
-                })
-            workManager.beginUniqueWork(
-                REPLACE_COMPLETED_WORK, ExistingWorkPolicy.REPLACE, from(TestWorker::class.java)
-            ).enqueue()
+                )
+            workManager
+                .beginUniqueWork(
+                    REPLACE_COMPLETED_WORK,
+                    ExistingWorkPolicy.REPLACE,
+                    from(TestWorker::class.java)
+                )
+                .enqueue()
         }
         findViewById<View>(R.id.run_retry_worker).setOnClickListener {
             val request = from(RetryWorker::class.java)
             workManager.enqueueUniqueWork(RetryWorker.TAG, ExistingWorkPolicy.REPLACE, request)
-            workManager.getWorkInfoByIdLiveData(request.id)
-                .observe(this, Observer<WorkInfo?> { value ->
-                    if (value == null) return@Observer
+            workManager
+                .getWorkInfoByIdLiveData(request.id)
+                .observe(
+                    this,
+                    Observer<WorkInfo?> { value ->
+                        if (value == null) return@Observer
 
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Run attempt count #${value.runAttemptCount}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                })
+                        Toast.makeText(
+                                this@MainActivity,
+                                "Run attempt count #${value.runAttemptCount}",
+                                Toast.LENGTH_SHORT
+                            )
+                            .show()
+                    }
+                )
         }
         findViewById<View>(R.id.run_recursive_worker).setOnClickListener {
             val request =
-                OneTimeWorkRequest.Builder(RecursiveWorker::class.java).addTag(RecursiveWorker.TAG)
+                OneTimeWorkRequest.Builder(RecursiveWorker::class.java)
+                    .addTag(RecursiveWorker.TAG)
                     .build()
             workManager.enqueue(request)
         }
         findViewById<View>(R.id.run_constraint_tracking_worker).setOnClickListener {
-            val inputData = workDataOf(ARGUMENT_CLASS_NAME to ForegroundWorker::class.java.name)
+            val inputData =
+                workDataOf(
+                    CONSTRAINT_WORKER_ARGUMENT_CLASS_NAME to ForegroundWorker::class.java.name
+                )
 
-            val request = OneTimeWorkRequest.Builder(ConstraintTrackingWorker::class.java)
-                .setConstraints(Constraints(requiredNetworkType = NetworkType.CONNECTED))
-                .setInputData(inputData).addTag(CONSTRAINT_TRACKING_TAG).build()
+            val request =
+                OneTimeWorkRequest.Builder(ConstraintTrackingWorker::class.java)
+                    .setConstraints(Constraints(requiredNetworkType = NetworkType.CONNECTED))
+                    .setInputData(inputData)
+                    .addTag(CONSTRAINT_TRACKING_TAG)
+                    .build()
             workManager.enqueue(request)
         }
         findViewById<View>(R.id.cancel_constraint_tracking_worker).setOnClickListener {
@@ -249,9 +289,23 @@ class MainActivity : AppCompatActivity() {
             val inputData = workDataOf(ForegroundWorker.InputNotificationId to lastNotificationId)
 
             val request =
-                OneTimeWorkRequest.Builder(ForegroundWorker::class.java).setInputData(inputData)
+                OneTimeWorkRequest.Builder(ForegroundWorker::class.java)
+                    .setInputData(inputData)
                     .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                     .setConstraints(Constraints(requiredNetworkType = NetworkType.CONNECTED))
+                    .build()
+            lastForegroundWorkRequest = request
+            workManager.enqueue(request)
+        }
+        findViewById<View>(R.id.run_foreground_worker_location).setOnClickListener {
+            lastNotificationId += 1
+            val inputData =
+                workDataOf(ForegroundLocationWorker.InputNotificationId to lastNotificationId)
+
+            val request =
+                OneTimeWorkRequest.Builder(ForegroundLocationWorker::class.java)
+                    .setInputData(inputData)
+                    .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                     .build()
             lastForegroundWorkRequest = request
             workManager.enqueue(request)
@@ -259,16 +313,19 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.run_foreground_worker_network_request).setOnClickListener {
             lastNotificationId += 1
             val inputData = workDataOf(ForegroundWorker.InputNotificationId to lastNotificationId)
-            val networkRequest = NetworkRequest.Builder()
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-                .build()
-            val constraints = Constraints.Builder().setRequiredNetworkRequest(
-                networkRequest, NetworkType.CONNECTED
-            ).build()
+            val networkRequest =
+                NetworkRequest.Builder()
+                    .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                    .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                    .build()
+            val constraints =
+                Constraints.Builder()
+                    .setRequiredNetworkRequest(networkRequest, NetworkType.CONNECTED)
+                    .build()
 
             val request =
-                OneTimeWorkRequest.Builder(ForegroundWorker::class.java).setInputData(inputData)
+                OneTimeWorkRequest.Builder(ForegroundWorker::class.java)
+                    .setInputData(inputData)
                     .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                     .setConstraints(constraints)
                     .build()
@@ -336,9 +393,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.crash_app).setOnClickListener {
             throw RuntimeException("Crashed app")
         }
-        findViewById<View>(R.id.enqueue_infinite_work_charging).setOnClickListener {
-            queueLotsOfWorkers(workManager)
-        }
+        findViewById<View>(R.id.stress_test).setOnClickListener { queueLotsOfWorkers(workManager) }
         findViewById<View>(R.id.enqueue_network_request).setOnClickListener {
             enqueueWithNetworkRequest(workManager)
         }
@@ -352,14 +407,18 @@ class MainActivity : AppCompatActivity() {
                 repeat(101) { i ->
                     jobScheduler.schedule(
                         JobInfo.Builder(
-                            100000 + i, ComponentName(this, SystemJobService::class.java)
-                        ).setMinimumLatency((10 * 60 * 1000).toLong()).build()
+                                100000 + i,
+                                ComponentName(this, SystemJobService::class.java)
+                            )
+                            .setMinimumLatency((10 * 60 * 1000).toLong())
+                            .build()
                     )
                 }
                 repeat(100) {
                     workManager.enqueue(
                         OneTimeWorkRequest.Builder(TestWorker::class.java)
-                            .setInitialDelay(10L, TimeUnit.MINUTES).build()
+                            .setInitialDelay(10L, TimeUnit.MINUTES)
+                            .build()
                     )
                 }
             }
@@ -369,31 +428,35 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun oneTimeWorkRemoteWorkRequest(componentName: ComponentName): OneTimeWorkRequest {
-        val data = workDataOf(
-            ARGUMENT_PACKAGE_NAME to componentName.packageName,
-            ARGUMENT_CLASS_NAME to componentName.className,
-        )
-        return OneTimeWorkRequest.Builder(RemoteWorker::class.java).setInputData(data)
-            .setConstraints(Constraints(requiredNetworkType = NetworkType.CONNECTED)).build()
+        val data =
+            workDataOf(
+                ARGUMENT_PACKAGE_NAME to componentName.packageName,
+                ARGUMENT_CLASS_NAME to componentName.className,
+            )
+        return OneTimeWorkRequest.Builder(RemoteWorker::class.java)
+            .setInputData(data)
+            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+            .setConstraints(Constraints(requiredNetworkType = NetworkType.CONNECTED))
+            .build()
     }
 }
 
-@SuppressLint("ClassVerificationFailure")
 private fun enqueueWithNetworkRequest(workManager: WorkManager) {
     if (Build.VERSION.SDK_INT < 21) {
         Log.w(TAG, "Ignoring enqueueWithNetworkRequest on old API levels")
         return
     }
-    val networkRequest = NetworkRequest.Builder()
-        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-        .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-        .build()
-    val constraints = Constraints.Builder().setRequiredNetworkRequest(
-        networkRequest, NetworkType.UNMETERED
-    ).build()
-    val request = OneTimeWorkRequest.Builder(TestWorker::class.java)
-        .setConstraints(constraints)
-        .build()
+    val networkRequest =
+        NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+            .build()
+    val constraints =
+        Constraints.Builder()
+            .setRequiredNetworkRequest(networkRequest, NetworkType.UNMETERED)
+            .build()
+    val request =
+        OneTimeWorkRequest.Builder(TestWorker::class.java).setConstraints(constraints).build()
     workManager.enqueue(request)
 }
 
@@ -403,5 +466,5 @@ private const val CONSTRAINT_TRACKING_TAG = "ConstraintTrackingWorker"
 private const val UNIQUE_WORK_NAME = "importantUniqueWork"
 private const val REPLACE_COMPLETED_WORK = "replaceCompletedWork"
 private const val NUM_WORKERS = 150
-private const val ARGUMENT_CLASS_NAME =
+private const val CONSTRAINT_WORKER_ARGUMENT_CLASS_NAME =
     "androidx.work.impl.workers.ConstraintTrackingWorker.ARGUMENT_CLASS_NAME"

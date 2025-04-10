@@ -16,10 +16,11 @@
 
 package androidx.work.impl;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.Worker;
 import androidx.work.impl.model.WorkGenerationalId;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Listener that reports the result of a {@link Worker}'s execution.

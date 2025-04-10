@@ -16,23 +16,26 @@
 
 package androidx.camera.integration.extensions
 
+import android.Manifest
 import android.content.Context
-import androidx.camera.camera2.Camera2Config
 import androidx.camera.extensions.ExtensionsManager
+import androidx.camera.integration.extensions.CameraExtensionsActivity.CAMERA_PIPE_IMPLEMENTATION_OPTION
 import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil
+import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.CameraXExtensionTestParams
 import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.assumeExtensionModeSupported
 import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.launchCameraExtensionsActivity
 import androidx.camera.integration.extensions.util.HOME_TIMEOUT_MS
 import androidx.camera.integration.extensions.util.waitForPreviewViewStreaming
-import androidx.camera.integration.extensions.utils.CameraIdExtensionModePair
 import androidx.camera.integration.extensions.utils.CameraSelectorUtil
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.CoreAppTestUtil
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import androidx.testutils.withActivity
 import java.util.concurrent.TimeUnit
@@ -44,23 +47,34 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-/**
- * The tests to verify that Preview can work well when extension modes are enabled.
- */
+/** The tests to verify that Preview can work well when extension modes are enabled. */
 @LargeTest
 @RunWith(Parameterized::class)
-class PreviewTest(private val config: CameraIdExtensionModePair) {
+class PreviewTest(private val config: CameraXExtensionTestParams) {
     private val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
     @get:Rule
-    val useCamera = CameraUtil.grantCameraPermissionAndPreTest(
-        PreTestCameraIdList(Camera2Config.defaultConfig())
-    )
+    val cameraPipeConfigTestRule =
+        CameraPipeConfigTestRule(active = config.implName == CAMERA_PIPE_IMPLEMENTATION_OPTION)
 
-    private val context = ApplicationProvider.getApplicationContext<Context>()
+    @get:Rule
+    val useCamera =
+        CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
+            PreTestCameraIdList(config.cameraXConfig)
+        )
+
+    @get:Rule
+    val permissionRule =
+        GrantPermissionRule.grant(
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.RECORD_AUDIO,
+        )
+
     private lateinit var extensionsManager: ExtensionsManager
 
     companion object {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
         @Parameterized.Parameters(name = "config = {0}")
         @JvmStatic
         fun parameters() = CameraXExtensionsTestUtil.getAllCameraIdExtensionModeCombinations()
@@ -79,13 +93,13 @@ class PreviewTest(private val config: CameraIdExtensionModePair) {
         // explicitly initiated from within the test.
         device.setOrientationNatural()
 
+        ProcessCameraProvider.configureInstance(config.cameraXConfig)
         val cameraProvider =
             ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
 
-        extensionsManager = ExtensionsManager.getInstanceAsync(
-            context,
-            cameraProvider
-        )[10000, TimeUnit.MILLISECONDS]
+        extensionsManager =
+            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
+                    10000, TimeUnit.MILLISECONDS]
 
         assumeExtensionModeSupported(extensionsManager, config.cameraId, config.extensionMode)
     }
@@ -96,10 +110,9 @@ class PreviewTest(private val config: CameraIdExtensionModePair) {
             ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
         cameraProvider.shutdownAsync()
 
-        val extensionsManager = ExtensionsManager.getInstanceAsync(
-            context,
-            cameraProvider
-        )[10000, TimeUnit.MILLISECONDS]
+        val extensionsManager =
+            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
+                    10000, TimeUnit.MILLISECONDS]
         extensionsManager.shutdown()
 
         // Unfreeze rotation so the device can choose the orientation via its own policy. Be nice
@@ -117,24 +130,23 @@ class PreviewTest(private val config: CameraIdExtensionModePair) {
     fun previewWithExtensionModeCanEnterStreamingState() {
         val activityScenario = launchCameraExtensionsActivity(config.cameraId, config.extensionMode)
 
-        with(activityScenario) {
-            use {
-                waitForPreviewViewStreaming()
-            }
-        }
+        with(activityScenario) { use { waitForPreviewViewStreaming() } }
     }
 
     private fun assumeNextCameraIdExtensionModeSupported(cameraId: String, extensionsMode: Int) {
-        val nextCameraId = CameraSelectorUtil.findNextSupportedCameraId(
-            ApplicationProvider.getApplicationContext(),
-            extensionsManager,
-            cameraId,
-            config.extensionMode
-        )
+        val nextCameraId =
+            CameraSelectorUtil.findNextSupportedCameraId(
+                ApplicationProvider.getApplicationContext(),
+                extensionsManager,
+                cameraId,
+                config.extensionMode
+            )
         assumeTrue(
             "Cannot find next camera id that supports extensions mode($extensionsMode)",
-            nextCameraId != null)
+            nextCameraId != null
+        )
     }
+
     /**
      * Checks that Preview can successfully enter the STREAMING state to show the preview when an
      * extension mode is enabled and after switching cameras.

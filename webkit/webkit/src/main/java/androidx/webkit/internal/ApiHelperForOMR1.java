@@ -23,10 +23,10 @@ import android.webkit.SafeBrowsingResponse;
 import android.webkit.ValueCallback;
 import android.webkit.WebView;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -44,7 +44,6 @@ public class ApiHelperForOMR1 {
     /**
      * @see SafeBrowsingResponse#showInterstitial(boolean)
      */
-    @DoNotInline
     public static void showInterstitial(@NonNull SafeBrowsingResponse safeBrowsingResponse,
             boolean showInterstitial) {
         safeBrowsingResponse.showInterstitial(showInterstitial);
@@ -53,7 +52,6 @@ public class ApiHelperForOMR1 {
     /**
      * @see SafeBrowsingResponse#proceed(boolean)
      */
-    @DoNotInline
     public static void proceed(@NonNull SafeBrowsingResponse frameworksImpl, boolean proceed) {
         frameworksImpl.proceed(proceed);
     }
@@ -61,7 +59,6 @@ public class ApiHelperForOMR1 {
     /**
      * @see SafeBrowsingResponse#backToSafety(boolean)
      */
-    @DoNotInline
     public static void backToSafety(@NonNull SafeBrowsingResponse safeBrowsingResponse,
             boolean backToSafety) {
         safeBrowsingResponse.backToSafety(backToSafety);
@@ -70,7 +67,6 @@ public class ApiHelperForOMR1 {
     /**
      * @see WebView#startSafeBrowsing(Context, ValueCallback)
      */
-    @DoNotInline
     public static void startSafeBrowsing(@NonNull Context context,
             @Nullable ValueCallback<Boolean> callback) {
         WebView.startSafeBrowsing(context, callback);
@@ -79,7 +75,6 @@ public class ApiHelperForOMR1 {
     /**
      * @see WebView#setSafeBrowsingWhitelist(List, ValueCallback)
      */
-    @DoNotInline
     public static void setSafeBrowsingWhitelist(@NonNull List<String> hosts,
             @Nullable ValueCallback<Boolean> callback) {
         WebView.setSafeBrowsingWhitelist(hosts, callback);
@@ -88,9 +83,7 @@ public class ApiHelperForOMR1 {
     /**
      * @see WebView#getSafeBrowsingPrivacyPolicyUrl()
      */
-    @DoNotInline
-    @NonNull
-    public static Uri getSafeBrowsingPrivacyPolicyUrl() {
+    public static @NonNull Uri getSafeBrowsingPrivacyPolicyUrl() {
         return WebView.getSafeBrowsingPrivacyPolicyUrl();
     }
 }

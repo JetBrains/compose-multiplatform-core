@@ -16,20 +16,19 @@
 
 package androidx.compose.ui.input.nestedscroll
 
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.modifier.ModifierLocalModifierNode
-import androidx.compose.ui.modifier.modifierLocalMapOf
-import androidx.compose.ui.modifier.modifierLocalOf
 import androidx.compose.ui.node.DelegatableNode
+import androidx.compose.ui.node.TraversableNode
+import androidx.compose.ui.node.findNearestAncestor
+import androidx.compose.ui.node.traverseAncestors
 import androidx.compose.ui.unit.Velocity
 import kotlinx.coroutines.CoroutineScope
 
-internal val ModifierLocalNestedScroll = modifierLocalOf<NestedScrollNode?> { null }
-
 /**
- * This creates a Nested Scroll Modifier node that can be delegated to. In most case you should
- * use [Modifier.nestedScroll] since that implementation also uses this. Use this factory to create
+ * This creates a Nested Scroll Modifier node that can be delegated to. In most case you should use
+ * [Modifier.nestedScroll] since that implementation also uses this. Use this factory to create
  * nodes that can be delegated to.
  */
 fun nestedScrollModifierNode(
@@ -39,13 +38,11 @@ fun nestedScrollModifierNode(
     return NestedScrollNode(connection, dispatcher)
 }
 
-/**
- * NestedScroll using ModifierLocal as implementation.
- */
+/** NestedScroll using ModifierLocal as implementation. */
 internal class NestedScrollNode(
     var connection: NestedScrollConnection,
     dispatcher: NestedScrollDispatcher?
-) : ModifierLocalModifierNode, NestedScrollConnection, DelegatableNode, Modifier.Node() {
+) : TraversableNode, NestedScrollConnection, Modifier.Node() {
 
     // Resolved dispatcher for re-use in case of null dispatcher is passed.
     private var resolvedDispatcher: NestedScrollDispatcher
@@ -54,27 +51,26 @@ internal class NestedScrollNode(
         resolvedDispatcher = dispatcher ?: NestedScrollDispatcher() // Resolve null dispatcher
     }
 
-    private val parentModifierLocal: NestedScrollNode?
-        get() = if (isAttached) ModifierLocalNestedScroll.current else null
+    internal var lastKnownParentNode: NestedScrollNode? = null
+
+    internal val parentNestedScrollNode: NestedScrollNode?
+        get() = if (isAttached) findNearestAncestor() else null
 
     private val parentConnection: NestedScrollConnection?
-        get() = if (isAttached) ModifierLocalNestedScroll.current else null
+        get() = if (isAttached) parentNestedScrollNode else null
 
-    // Avoid get() to prevent constant allocations for static map.
-    override val providedValues = modifierLocalMapOf(entry = ModifierLocalNestedScroll to this)
+    override val traverseKey: Any = "androidx.compose.ui.input.nestedscroll.NestedScrollNode"
 
     private val nestedCoroutineScope: CoroutineScope
-        get() = parentModifierLocal?.nestedCoroutineScope
-            ?: resolvedDispatcher.scope
-            ?: throw IllegalStateException(
-                "in order to access nested coroutine scope you need to attach dispatcher to the " +
-                    "`Modifier.nestedScroll` first."
-            )
+        get() =
+            parentNestedScrollNode?.nestedCoroutineScope
+                ?: resolvedDispatcher.scope
+                ?: throw IllegalStateException(
+                    "in order to access nested coroutine scope you need to attach dispatcher to the " +
+                        "`Modifier.nestedScroll` first."
+                )
 
-    override fun onPreScroll(
-        available: Offset,
-        source: NestedScrollSource
-    ): Offset {
+    override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
         val parentPreConsumed = parentConnection?.onPreScroll(available, source) ?: Offset.Zero
         val selfPreConsumed = connection.onPreScroll(available - parentPreConsumed, source)
         return parentPreConsumed + selfPreConsumed
@@ -86,11 +82,12 @@ internal class NestedScrollNode(
         source: NestedScrollSource
     ): Offset {
         val selfConsumed = connection.onPostScroll(consumed, available, source)
-        val parentConsumed = parentConnection?.onPostScroll(
-            consumed + selfConsumed,
-            available - selfConsumed,
-            source
-        ) ?: Offset.Zero
+        val parentConsumed =
+            parentConnection?.onPostScroll(
+                consumed + selfConsumed,
+                available - selfConsumed,
+                source
+            ) ?: Offset.Zero
         return selfConsumed + parentConsumed
     }
 
@@ -100,13 +97,14 @@ internal class NestedScrollNode(
         return parentPreConsumed + selfPreConsumed
     }
 
+    @OptIn(ExperimentalComposeUiApi::class)
     override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
-
         val selfConsumed = connection.onPostFling(consumed, available)
-        val parentConsumed = parentConnection?.onPostFling(
-            consumed + selfConsumed,
-            available - selfConsumed
-        ) ?: Velocity.Zero
+        // if we receive an onPostFling after detaching this node, use the last known parent
+        // if this parent is also detached it will send the signal through the detached parents
+        val parent = if (isAttached) parentConnection else lastKnownParentNode
+        val parentConsumed =
+            parent?.onPostFling(consumed + selfConsumed, available - selfConsumed) ?: Velocity.Zero
         return selfConsumed + parentConsumed
     }
 
@@ -135,16 +133,24 @@ internal class NestedScrollNode(
         updateDispatcherFields()
     }
 
+    @OptIn(ExperimentalComposeUiApi::class)
     override fun onDetach() {
+        // cache parent for detached clean up access in the dispatcher and in this node.
+        lastKnownParentNode = findNearestAttachedAncestor()
+        resolvedDispatcher.lastKnownParentNode = lastKnownParentNode
         resetDispatcherFields()
     }
 
     /**
-     * If the node changes (onAttach) or if the dispatcher changes (node.update). We'll need
-     * to reset the dispatcher properties accordingly.
+     * If the node changes (onAttach) or if the dispatcher changes (node.update). We'll need to
+     * reset the dispatcher properties accordingly.
      */
+    @OptIn(ExperimentalComposeUiApi::class)
     private fun updateDispatcherFields() {
-        resolvedDispatcher.modifierLocalNode = this
+        resolvedDispatcher.nestedScrollNode = this
+        // reset lastKnownParentNodes
+        resolvedDispatcher.lastKnownParentNode = null
+        lastKnownParentNode = null
         resolvedDispatcher.calculateNestedScrollScope = { nestedCoroutineScope }
         resolvedDispatcher.scope = coroutineScope
     }
@@ -152,8 +158,7 @@ internal class NestedScrollNode(
     private fun resetDispatcherFields() {
         // only null this out if the modifier local node is what we set it to, since it is possible
         // it has already been reused in a different node
-        if (resolvedDispatcher.modifierLocalNode === this)
-            resolvedDispatcher.modifierLocalNode = null
+        if (resolvedDispatcher.nestedScrollNode === this) resolvedDispatcher.nestedScrollNode = null
     }
 
     internal fun updateNode(
@@ -163,4 +168,17 @@ internal class NestedScrollNode(
         this.connection = connection
         updateDispatcher(dispatcher)
     }
+}
+
+private fun <T : TraversableNode> T.findNearestAttachedAncestor(): T? {
+    var node: T? = null
+    traverseAncestors {
+        if (it.node.isAttached) {
+            node = it
+            false
+        } else {
+            true
+        }
+    }
+    return node
 }

@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe.integration.adapter
 
 import android.hardware.camera2.CameraDevice
 import android.media.MediaCodec
-import androidx.annotation.RequiresApi
+import android.util.Range
 import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.pipe.OutputStream
 import androidx.camera.camera2.pipe.core.Log
@@ -34,8 +32,10 @@ import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
 import androidx.camera.core.impl.DeferrableSurface
 import androidx.camera.core.impl.SessionConfig
+import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.streamsharing.StreamSharing
+import java.util.Collections
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -44,29 +44,30 @@ import kotlinx.coroutines.launch
  * Aggregate the SessionConfig from a List of [UseCase]s, and provide a validated SessionConfig for
  * operation.
  */
-class SessionConfigAdapter(
+public class SessionConfigAdapter(
     private val useCases: Collection<UseCase>,
     private val sessionProcessorConfig: SessionConfig? = null,
+    private val isPrimary: Boolean = true,
 ) {
-    val isSessionProcessorEnabled = sessionProcessorConfig != null
-    val surfaceToStreamUseCaseMap: Map<DeferrableSurface, Long> by lazy {
+    public val isSessionProcessorEnabled: Boolean = sessionProcessorConfig != null
+    public val surfaceToStreamUseCaseMap: Map<DeferrableSurface, Long> by lazy {
         val sessionConfigs = mutableListOf<SessionConfig>()
         val useCaseConfigs = mutableListOf<UseCaseConfig<*>>()
         for (useCase in useCases) {
-            sessionConfigs.add(useCase.sessionConfig)
+            sessionConfigs.add(useCase.getSessionConfig(isPrimary))
             useCaseConfigs.add(useCase.currentConfig)
         }
         getSurfaceToStreamUseCaseMapping(sessionConfigs, useCaseConfigs)
     }
-    val surfaceToStreamUseHintMap: Map<DeferrableSurface, Long> by lazy {
-        val sessionConfigs = useCases.map { it.sessionConfig }
+    public val surfaceToStreamUseHintMap: Map<DeferrableSurface, Long> by lazy {
+        val sessionConfigs = useCases.map { it.getSessionConfig(isPrimary) }
         getSurfaceToStreamUseHintMapping(sessionConfigs)
     }
     private val validatingBuilder: SessionConfig.ValidatingBuilder by lazy {
         val validatingBuilder = SessionConfig.ValidatingBuilder()
 
         for (useCase in useCases) {
-            validatingBuilder.add(useCase.sessionConfig)
+            validatingBuilder.add(useCase.getSessionConfig(isPrimary))
         }
 
         if (sessionProcessorConfig != null) {
@@ -83,39 +84,56 @@ class SessionConfigAdapter(
         validatingBuilder.build()
     }
 
-    val deferrableSurfaces: List<DeferrableSurface> by lazy {
+    public val deferrableSurfaces: List<DeferrableSurface> by lazy {
         check(validatingBuilder.isValid)
 
-        sessionConfig.surfaces
+        sessionConfig.postviewOutputConfig?.let {
+            Collections.unmodifiableList(
+                mutableListOf<DeferrableSurface>().apply {
+                    addAll(sessionConfig.surfaces)
+                    add(it.surface)
+                }
+            )
+        } ?: sessionConfig.surfaces
     }
 
-    fun getValidSessionConfigOrNull(): SessionConfig? {
+    public fun getValidSessionConfigOrNull(): SessionConfig? {
         return if (isSessionConfigValid()) sessionConfig else null
     }
 
-    fun isSessionConfigValid(): Boolean {
+    public fun isSessionConfigValid(): Boolean {
         return validatingBuilder.isValid
     }
 
-    fun reportSurfaceInvalid(deferrableSurface: DeferrableSurface) {
+    public fun reportSurfaceInvalid(deferrableSurface: DeferrableSurface) {
         debug { "Unavailable $deferrableSurface, notify SessionConfig invalid" }
 
         // Only report error to one SessionConfig, CameraInternal#onUseCaseReset()
         // will handle the other failed Surfaces if there are any.
-        val sessionConfig = useCases.firstOrNull { useCase ->
-            useCase.sessionConfig.surfaces.contains(deferrableSurface)
-        }?.sessionConfig
+        val sessionConfig =
+            useCases
+                .firstOrNull { useCase ->
+                    val sessionConfig = useCase.getSessionConfig(isPrimary)
+                    sessionConfig.surfaces.contains(deferrableSurface)
+                }
+                ?.sessionConfig
 
         CoroutineScope(Dispatchers.Main.immediate).launch {
             // The error listener is used to notify the UseCase to recreate the pipeline,
             // and the create pipeline task would be executed on the main thread.
-            sessionConfig?.errorListeners?.forEach {
-                it.onError(
-                    sessionConfig,
-                    SessionConfig.SessionError.SESSION_ERROR_SURFACE_NEEDS_RESET
-                )
+            sessionConfig?.errorListener?.apply {
+                onError(sessionConfig, SessionConfig.SessionError.SESSION_ERROR_SURFACE_NEEDS_RESET)
             }
         }
+    }
+
+    public fun getExpectedFrameRateRange(): Range<Int>? {
+        return if (
+            isSessionConfigValid() &&
+                sessionConfig.expectedFrameRateRange != StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
+        )
+            sessionConfig.expectedFrameRateRange
+        else null
     }
 
     /**
@@ -126,7 +144,7 @@ class SessionConfigAdapter(
      * @return the mapping between surfaces and Stream Use Case flag
      */
     @VisibleForTesting
-    fun getSurfaceToStreamUseCaseMapping(
+    public fun getSurfaceToStreamUseCaseMapping(
         sessionConfigs: Collection<SessionConfig>,
         useCaseConfigs: Collection<UseCaseConfig<*>>,
     ): Map<DeferrableSurface, Long> {
@@ -154,19 +172,20 @@ class SessionConfigAdapter(
      * @return the mapping between surfaces and Stream Use Hint flag
      */
     @VisibleForTesting
-    fun getSurfaceToStreamUseHintMapping(
+    public fun getSurfaceToStreamUseHintMapping(
         sessionConfigs: Collection<SessionConfig>
     ): Map<DeferrableSurface, Long> {
         val mapping = mutableMapOf<DeferrableSurface, Long>()
         for (sessionConfig in sessionConfigs) {
             for (surface in sessionConfig.surfaces) {
-                if (sessionConfig.implementationOptions.containsOption(STREAM_USE_HINT_OPTION) &&
-                    sessionConfig.implementationOptions.retrieveOption(STREAM_USE_HINT_OPTION)
-                    != null
+                if (
+                    sessionConfig.implementationOptions.containsOption(STREAM_USE_HINT_OPTION) &&
+                        sessionConfig.implementationOptions.retrieveOption(
+                            STREAM_USE_HINT_OPTION
+                        ) != null
                 ) {
                     mapping[surface] =
-                        sessionConfig.implementationOptions
-                            .retrieveOption(STREAM_USE_HINT_OPTION)!!
+                        sessionConfig.implementationOptions.retrieveOption(STREAM_USE_HINT_OPTION)!!
                     continue
                 }
             }
@@ -193,9 +212,13 @@ class SessionConfigAdapter(
         }
     }
 
-    companion object {
-        fun SessionConfig.toCamera2ImplConfig(): Camera2ImplConfig {
+    public companion object {
+        public fun SessionConfig.toCamera2ImplConfig(): Camera2ImplConfig {
             return Camera2ImplConfig(implementationOptions)
+        }
+
+        public fun UseCase.getSessionConfig(isPrimary: Boolean): SessionConfig {
+            return if (isPrimary) sessionConfig else secondarySessionConfig
         }
     }
 }

@@ -17,9 +17,13 @@
 package androidx.compose.material3
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.tokens.NavigationBarTokens
@@ -29,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertIsEqualTo
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
@@ -69,12 +74,9 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-/**
- * Test for [NavigationBar] and [NavigationBarItem].
- */
+/** Test for [NavigationBar] and [NavigationBarItem]. */
 class NavigationBarTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun defaultSemantics() {
@@ -82,25 +84,23 @@ class NavigationBarTest {
             NavigationBar {
                 NavigationBarItem(
                     modifier = Modifier.testTag("item"),
-                    icon = {
-                        Icon(Icons.Filled.Favorite, null)
-                    },
-                    label = {
-                        Text("ItemText")
-                    },
+                    icon = { Icon(Icons.Filled.Favorite, null) },
+                    label = { Text("ItemText") },
                     selected = true,
                     onClick = {}
                 )
             }
         }
 
-        rule.onNodeWithTag("item")
+        rule
+            .onNodeWithTag("item")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab))
             .assertIsSelected()
             .assertIsEnabled()
             .assertHasClickAction()
 
-        rule.onNodeWithTag("item")
+        rule
+            .onNodeWithTag("item")
             .onParent()
             .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.SelectableGroup))
     }
@@ -112,19 +112,16 @@ class NavigationBarTest {
                 NavigationBarItem(
                     enabled = false,
                     modifier = Modifier.testTag("item"),
-                    icon = {
-                        Icon(Icons.Filled.Favorite, null)
-                    },
-                    label = {
-                        Text("ItemText")
-                    },
+                    icon = { Icon(Icons.Filled.Favorite, null) },
+                    label = { Text("ItemText") },
                     selected = true,
                     onClick = {}
                 )
             }
         }
 
-        rule.onNodeWithTag("item")
+        rule
+            .onNodeWithTag("item")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab))
             .assertIsSelected()
             .assertIsNotEnabled()
@@ -137,33 +134,23 @@ class NavigationBarTest {
             NavigationBar {
                 NavigationBarItem(
                     modifier = Modifier.testTag("item1"),
-                    icon = {
-                        Icon(Icons.Filled.Favorite, "Favorite")
-                    },
-                    label = {
-                        Text("Favorite")
-                    },
+                    icon = { Icon(Icons.Filled.Favorite, "Favorite") },
+                    label = { Text("Favorite") },
                     selected = true,
                     alwaysShowLabel = false,
                     onClick = {}
                 )
                 NavigationBarItem(
                     modifier = Modifier.testTag("item2"),
-                    icon = {
-                        Icon(Icons.Filled.Favorite, "Favorite")
-                    },
-                    label = {
-                        Text("Favorite")
-                    },
+                    icon = { Icon(Icons.Filled.Favorite, "Favorite") },
+                    label = { Text("Favorite") },
                     selected = false,
                     alwaysShowLabel = false,
                     onClick = {}
                 )
                 NavigationBarItem(
                     modifier = Modifier.testTag("item3"),
-                    icon = {
-                        Icon(Icons.Filled.Favorite, "Favorite")
-                    },
+                    icon = { Icon(Icons.Filled.Favorite, "Favorite") },
                     selected = false,
                     onClick = {}
                 )
@@ -183,20 +170,21 @@ class NavigationBarTest {
 
     @Test
     fun navigationBar_size() {
-        val height = NavigationBarTokens.ContainerHeight
-        rule.setMaterialContentForSizeAssertions {
-            val items = listOf("Songs", "Artists", "Playlists")
-            NavigationBar {
-                items.forEachIndexed { index, item ->
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Filled.Favorite, contentDescription = null) },
-                        label = { Text(item) },
-                        selected = index == 0,
-                        onClick = { /* do something */ }
-                    )
+        val height = NavigationBarTokens.TallContainerHeight
+        rule
+            .setMaterialContentForSizeAssertions {
+                val items = listOf("Songs", "Artists", "Playlists")
+                NavigationBar {
+                    items.forEachIndexed { index, item ->
+                        NavigationBarItem(
+                            icon = { Icon(Icons.Filled.Favorite, contentDescription = null) },
+                            label = { Text(item) },
+                            selected = index == 0,
+                            onClick = { /* do something */ }
+                        )
+                    }
                 }
             }
-        }
             .assertWidthIsEqualTo(rule.rootWidth())
             .assertHeightIsEqualTo(height)
     }
@@ -205,14 +193,11 @@ class NavigationBarTest {
     fun navigationBar_respectContentPadding() {
         rule.setMaterialContentForSizeAssertions {
             NavigationBar(windowInsets = WindowInsets(17.dp, 17.dp, 17.dp, 17.dp)) {
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .testTag("content")
-                )
+                Box(Modifier.fillMaxSize().testTag("content"))
             }
         }
-        rule.onNodeWithTag("content")
+        rule
+            .onNodeWithTag("content")
             .assertLeftPositionInRootIsEqualTo(17.dp)
             .assertTopPositionInRootIsEqualTo(17.dp)
     }
@@ -223,9 +208,7 @@ class NavigationBarTest {
         val itemCoords = mutableMapOf<Int, LayoutCoordinates>()
         rule.setMaterialContent(
             lightColorScheme(),
-            Modifier.onGloballyPositioned { coords: LayoutCoordinates ->
-                parentCoords = coords
-            }
+            Modifier.onGloballyPositioned { coords: LayoutCoordinates -> parentCoords = coords }
         ) {
             Box {
                 NavigationBar {
@@ -235,9 +218,10 @@ class NavigationBarTest {
                             label = { Text("Item $index") },
                             selected = index == 0,
                             onClick = {},
-                            modifier = Modifier.onGloballyPositioned { coords ->
-                                itemCoords[index] = coords
-                            }
+                            modifier =
+                                Modifier.onGloballyPositioned { coords ->
+                                    itemCoords[index] = coords
+                                }
                         )
                     }
                 }
@@ -250,7 +234,7 @@ class NavigationBarTest {
                 totalWidth.toFloat() - (NavigationBarItemHorizontalPadding.toPx() * 3)
 
             val expectedItemWidth = (availableWidth / 4)
-            val expectedItemHeight = NavigationBarTokens.ContainerHeight.toPx()
+            val expectedItemHeight = NavigationBarTokens.TallContainerHeight.toPx()
 
             assertThat(itemCoords.size).isEqualTo(4)
 
@@ -258,15 +242,82 @@ class NavigationBarTest {
                 // Rounding differences for width can occur on smaller screens
                 assertThat(coord.size.width.toFloat()).isWithin(1f).of(expectedItemWidth)
                 assertThat(coord.size.height.toFloat()).isWithin(1f).of(expectedItemHeight)
-                assertThat(coord.positionInWindow().x).isWithin(1f)
+                assertThat(coord.positionInWindow().x)
+                    .isWithin(1f)
                     .of((expectedItemWidth + NavigationBarItemHorizontalPadding.toPx()) * index)
             }
         }
     }
 
     @Test
+    fun navigationBarItem_defaultColors() {
+        rule.setMaterialContent(lightColorScheme()) {
+            NavigationBar {
+                NavigationBarItem(
+                    icon = {
+                        assertThat(LocalContentColor.current)
+                            .isEqualTo(NavigationBarTokens.ItemActiveIconColor.value)
+                    },
+                    label = {
+                        assertThat(LocalContentColor.current)
+                            .isEqualTo(NavigationBarTokens.ItemActiveLabelTextColor.value)
+                    },
+                    selected = true,
+                    onClick = {}
+                )
+                NavigationBarItem(
+                    icon = {
+                        assertThat(LocalContentColor.current)
+                            .isEqualTo(NavigationBarTokens.ItemInactiveIconColor.value)
+                    },
+                    label = {
+                        assertThat(LocalContentColor.current)
+                            .isEqualTo(NavigationBarTokens.ItemInactiveLabelTextColor.value)
+                    },
+                    selected = false,
+                    onClick = {}
+                )
+            }
+        }
+    }
+
+    @Test
+    fun navigationBarItem_customColors() {
+        rule.setMaterialContent(lightColorScheme()) {
+            val customNavigationBarItemColors =
+                NavigationBarItemDefaults.colors(
+                    selectedIconColor = Color.Red,
+                    unselectedTextColor = Color.Green,
+                )
+
+            NavigationBar {
+                NavigationBarItem(
+                    colors = customNavigationBarItemColors,
+                    icon = { assertThat(LocalContentColor.current).isEqualTo(Color.Red) },
+                    label = {
+                        assertThat(LocalContentColor.current)
+                            .isEqualTo(NavigationBarTokens.ItemActiveLabelTextColor.value)
+                    },
+                    selected = true,
+                    onClick = {}
+                )
+                NavigationBarItem(
+                    colors = customNavigationBarItemColors,
+                    icon = {
+                        assertThat(LocalContentColor.current)
+                            .isEqualTo(NavigationBarTokens.ItemInactiveIconColor.value)
+                    },
+                    label = { assertThat(LocalContentColor.current).isEqualTo(Color.Green) },
+                    selected = false,
+                    onClick = {}
+                )
+            }
+        }
+    }
+
+    @Test
     fun navigationBarItem_withLongLabel_automaticallyResizesHeight() {
-        val defaultHeight = NavigationBarTokens.ContainerHeight
+        val defaultHeight = NavigationBarTokens.TallContainerHeight
 
         rule.setMaterialContent(lightColorScheme()) {
             NavigationBar(modifier = Modifier.testTag("TAG")) {
@@ -291,12 +342,8 @@ class NavigationBarTest {
             NavigationBar {
                 NavigationBarItem(
                     modifier = Modifier.testTag("item"),
-                    icon = {
-                        Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon"))
-                    },
-                    label = {
-                        Text("ItemText")
-                    },
+                    icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
+                    label = { Text("ItemText") },
                     selected = true,
                     onClick = {}
                 )
@@ -304,13 +351,14 @@ class NavigationBarTest {
         }
 
         val itemBounds = rule.onNodeWithTag("item").getUnclippedBoundsInRoot()
-        val iconBounds = rule.onNodeWithTag("icon", useUnmergedTree = true)
-            .getUnclippedBoundsInRoot()
+        val iconBounds =
+            rule.onNodeWithTag("icon", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
         // Distance from the top of the item to the top of the icon for the default height
         val verticalPadding = 16.dp
 
-        rule.onNodeWithTag("icon", useUnmergedTree = true)
+        rule
+            .onNodeWithTag("icon", useUnmergedTree = true)
             // The icon should be horizontally centered in the item
             .assertLeftPositionInRootIsEqualTo((itemBounds.width - iconBounds.width) / 2)
             // The top of the icon is `verticalPadding` below the top of the item
@@ -319,7 +367,8 @@ class NavigationBarTest {
         val iconBottom = iconBounds.top + iconBounds.height
         // Text should be `IndicatorVerticalPadding + NavigationBarIndicatorToLabelPadding` from the
         // bottom of the icon
-        rule.onNodeWithText("ItemText", useUnmergedTree = true)
+        rule
+            .onNodeWithText("ItemText", useUnmergedTree = true)
             .getUnclippedBoundsInRoot()
             .top
             .assertIsEqualTo(
@@ -334,12 +383,8 @@ class NavigationBarTest {
                 NavigationBar {
                     NavigationBarItem(
                         modifier = Modifier.testTag("item"),
-                        icon = {
-                            Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon"))
-                        },
-                        label = {
-                            Text("ItemText")
-                        },
+                        icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
+                        label = { Text("ItemText") },
                         selected = false,
                         onClick = {},
                         alwaysShowLabel = false
@@ -353,10 +398,11 @@ class NavigationBarTest {
         rule.onNodeWithText("ItemText", useUnmergedTree = true).assertIsNotDisplayed()
 
         val itemBounds = rule.onNodeWithTag("item").getUnclippedBoundsInRoot()
-        val iconBounds = rule.onNodeWithTag("icon", useUnmergedTree = true)
-            .getUnclippedBoundsInRoot()
+        val iconBounds =
+            rule.onNodeWithTag("icon", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
-        rule.onNodeWithTag("icon", useUnmergedTree = true)
+        rule
+            .onNodeWithTag("icon", useUnmergedTree = true)
             .assertLeftPositionInRootIsEqualTo((itemBounds.width - iconBounds.width) / 2)
             .assertTopPositionInRootIsEqualTo((itemBounds.height - iconBounds.height) / 2)
     }
@@ -368,9 +414,7 @@ class NavigationBarTest {
                 NavigationBar {
                     NavigationBarItem(
                         modifier = Modifier.testTag("item"),
-                        icon = {
-                            Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon"))
-                        },
+                        icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
                         label = null,
                         selected = false,
                         onClick = {}
@@ -380,27 +424,26 @@ class NavigationBarTest {
         }
 
         val itemBounds = rule.onNodeWithTag("item").getUnclippedBoundsInRoot()
-        val iconBounds = rule.onNodeWithTag("icon", useUnmergedTree = true)
-            .getUnclippedBoundsInRoot()
+        val iconBounds =
+            rule.onNodeWithTag("icon", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
         // The icon should be centered in the item, as there is no text placeable provided
-        rule.onNodeWithTag("icon", useUnmergedTree = true)
+        rule
+            .onNodeWithTag("icon", useUnmergedTree = true)
             .assertLeftPositionInRootIsEqualTo((itemBounds.width - iconBounds.width) / 2)
             .assertTopPositionInRootIsEqualTo((itemBounds.height - iconBounds.height) / 2)
     }
 
     @Test
     fun navigationBarItemContent_customHeight_withLabel_sizeAndPosition() {
-        val defaultHeight = NavigationBarTokens.ContainerHeight
+        val defaultHeight = NavigationBarTokens.TallContainerHeight
         val customHeight = 64.dp
 
         rule.setMaterialContent(lightColorScheme()) {
             NavigationBar(Modifier.height(customHeight)) {
                 NavigationBarItem(
                     modifier = Modifier.testTag("item"),
-                    icon = {
-                        Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon"))
-                    },
+                    icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
                     label = { Text("Label") },
                     selected = true,
                     onClick = {}
@@ -412,10 +455,11 @@ class NavigationBarTest {
         val verticalPadding = 16.dp - (defaultHeight - customHeight) / 2
 
         val itemBounds = rule.onNodeWithTag("item").getUnclippedBoundsInRoot()
-        val iconBounds = rule.onNodeWithTag("icon", useUnmergedTree = true)
-            .getUnclippedBoundsInRoot()
+        val iconBounds =
+            rule.onNodeWithTag("icon", useUnmergedTree = true).getUnclippedBoundsInRoot()
 
-        rule.onNodeWithTag("icon", useUnmergedTree = true)
+        rule
+            .onNodeWithTag("icon", useUnmergedTree = true)
             // The icon should be horizontally centered in the item
             .assertLeftPositionInRootIsEqualTo((itemBounds.width - iconBounds.width) / 2)
             // The top of the icon is `verticalPadding` below the top of the item
@@ -424,7 +468,8 @@ class NavigationBarTest {
         val iconBottom = iconBounds.top + iconBounds.height
         // Text should be `IndicatorVerticalPadding + NavigationBarIndicatorToLabelPadding` from the
         // bottom of the item
-        rule.onNodeWithText("Label", useUnmergedTree = true)
+        rule
+            .onNodeWithText("Label", useUnmergedTree = true)
             .getUnclippedBoundsInRoot()
             .top
             .assertIsEqualTo(
@@ -451,7 +496,8 @@ class NavigationBarTest {
         }
 
         // Find all items and ensure there are 3
-        rule.onAllNodes(isSelectable())
+        rule
+            .onAllNodes(isSelectable())
             .assertCountEquals(3)
             // Ensure semantics match for selected state of the items
             .apply {
@@ -460,9 +506,7 @@ class NavigationBarTest {
                 get(2).assertIsNotSelected()
             }
             // Click the last item
-            .apply {
-                get(2).performClick()
-            }
+            .apply { get(2).performClick() }
             .apply {
                 get(0).assertIsNotSelected()
                 get(1).assertIsNotSelected()
@@ -478,23 +522,36 @@ class NavigationBarTest {
                 NavigationBarItem(
                     enabled = false,
                     modifier = Modifier.testTag("item"),
-                    icon = {
-                        Icon(Icons.Filled.Favorite, null)
-                    },
-                    label = {
-                        Text("ItemText")
-                    },
+                    icon = { Icon(Icons.Filled.Favorite, null) },
+                    label = { Text("ItemText") },
                     selected = true,
                     onClick = { clicks++ }
                 )
             }
         }
 
-        rule.onNodeWithTag("item")
-            .performClick()
+        rule.onNodeWithTag("item").performClick()
 
-        rule.runOnIdle {
-            Truth.assertThat(clicks).isEqualTo(0)
+        rule.runOnIdle { Truth.assertThat(clicks).isEqualTo(0) }
+    }
+
+    @Test
+    fun navigationBarItem_respectsMinIntrinsicSize() {
+        val iconSize = 24.dp
+        rule.setMaterialContent(lightColorScheme()) {
+            Row(modifier = Modifier.testTag("ROW_TAG").width(IntrinsicSize.Min)) {
+                NavigationBarItem(
+                    icon = {
+                        Icon(Icons.Filled.Favorite, null, modifier = Modifier.size(iconSize))
+                    },
+                    onClick = {},
+                    selected = true,
+                )
+            }
         }
+
+        val expectedWidth = iconSize + NavigationBarItemToIconMinimumPadding * 2
+
+        assertThat(rule.onNodeWithTag("ROW_TAG").assertWidthIsEqualTo(expectedWidth))
     }
 }

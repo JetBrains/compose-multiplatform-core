@@ -16,8 +16,7 @@
 
 package androidx.camera.core.internal;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
+import org.jspecify.annotations.NonNull;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -27,7 +26,6 @@ import java.nio.ByteBuffer;
 /**
  * A {@link OutputStream} that wraps around a {@link ByteBuffer}.
  */
-@RequiresApi(21)
 public final class ByteBufferOutputStream extends OutputStream {
 
     private final ByteBuffer mByteBuffer;

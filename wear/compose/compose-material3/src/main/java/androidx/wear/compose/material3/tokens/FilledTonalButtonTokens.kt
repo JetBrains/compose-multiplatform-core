@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// VERSION: v0_11
+// VERSION: v0_103
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 package androidx.wear.compose.material3.tokens
@@ -22,7 +22,7 @@ package androidx.wear.compose.material3.tokens
 import androidx.compose.ui.unit.dp
 
 internal object FilledTonalButtonTokens {
-    val ContainerColor = ColorSchemeKeyTokens.Surface
+    val ContainerColor = ColorSchemeKeyTokens.SurfaceContainer
     val ContainerHeight = 52.0.dp
     val ContainerShape = ShapeKeyTokens.CornerLarge
     val DisabledContainerColor = ColorSchemeKeyTokens.OnSurface

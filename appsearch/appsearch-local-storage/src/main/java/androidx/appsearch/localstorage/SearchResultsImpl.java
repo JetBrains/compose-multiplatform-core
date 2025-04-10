@@ -16,8 +16,6 @@
 // @exportToFramework:skipFile()
 package androidx.appsearch.localstorage;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.SearchResult;
 import androidx.appsearch.app.SearchResultPage;
@@ -29,6 +27,9 @@ import androidx.appsearch.localstorage.visibilitystore.CallerAccess;
 import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -45,8 +46,7 @@ class SearchResultsImpl implements SearchResults {
     private final CallerAccess mSelfCallerAccess;
 
     /* The database name to search over. If null, this will search over all database names. */
-    @Nullable
-    private final String mDatabaseName;
+    private final @Nullable String mDatabaseName;
 
     private final String mQueryExpression;
 
@@ -58,8 +58,7 @@ class SearchResultsImpl implements SearchResults {
 
     private boolean mIsClosed = false;
 
-    @Nullable
-    private final AppSearchLogger mLogger;
+    private final @Nullable AppSearchLogger mLogger;
 
     // Visibility Scope(local vs global) for 1st query, so it can be used for the visibility
     // scope for getNextPage().
@@ -85,8 +84,7 @@ class SearchResultsImpl implements SearchResults {
     }
 
     @Override
-    @NonNull
-    public ListenableFuture<List<SearchResult>> getNextPageAsync() {
+    public @NonNull ListenableFuture<List<SearchResult>> getNextPageAsync() {
         Preconditions.checkState(!mIsClosed, "SearchResults has already been closed");
         return FutureUtil.execute(mExecutor, () -> {
             SearchResultPage searchResultPage;

@@ -29,13 +29,14 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class NullableInputConnectionWrapperTest {
 
-    private val delegate = mock<InputConnection>()
+    private var delegate = mock<InputConnection>()
 
     @Test
     fun delegatesToDelegate() {
@@ -56,10 +57,8 @@ class NullableInputConnectionWrapperTest {
     @Test
     fun delegatesCommitContentToDelegate() {
         val ic = NullableInputConnectionWrapper(delegate, onConnectionClosed = {})
-        val contentInfo = InputContentInfo(
-            Uri.parse("content://example.com"),
-            ClipDescription("", emptyArray())
-        )
+        val contentInfo =
+            InputContentInfo(Uri.parse("content://example.com"), ClipDescription("", emptyArray()))
         ic.commitContent(contentInfo, 42, null)
         verify(delegate).commitContent(contentInfo, 42, null)
     }
@@ -68,10 +67,7 @@ class NullableInputConnectionWrapperTest {
     @Test
     fun closeConnectionInvokesCallback() {
         var closeCalls = 0
-        val ic = NullableInputConnectionWrapper(
-            delegate,
-            onConnectionClosed = { closeCalls++ }
-        )
+        val ic = NullableInputConnectionWrapper(delegate, onConnectionClosed = { closeCalls++ })
         assertThat(closeCalls).isEqualTo(0)
 
         ic.closeConnection()
@@ -82,25 +78,17 @@ class NullableInputConnectionWrapperTest {
     @Test
     fun multipleCloseConnectionsInvokesCallbackOnlyOnce() {
         var closeCalls = 0
-        val ic = NullableInputConnectionWrapper(
-            delegate,
-            onConnectionClosed = { closeCalls++ }
-        )
+        val ic = NullableInputConnectionWrapper(delegate, onConnectionClosed = { closeCalls++ })
         assertThat(closeCalls).isEqualTo(0)
 
-        repeat(5) {
-            ic.closeConnection()
-        }
+        repeat(5) { ic.closeConnection() }
         assertThat(closeCalls).isEqualTo(1)
     }
 
     @Test
     fun disposeDelegateDoesNotInvokeCallback() {
         var closeCalls = 0
-        val ic = NullableInputConnectionWrapper(
-            delegate,
-            onConnectionClosed = { closeCalls++ }
-        )
+        val ic = NullableInputConnectionWrapper(delegate, onConnectionClosed = { closeCalls++ })
         assertThat(closeCalls).isEqualTo(0)
 
         ic.disposeDelegate()
@@ -115,5 +103,26 @@ class NullableInputConnectionWrapperTest {
         ic.setSelection(4, 2)
 
         verify(delegate, never()).setSelection(any(), any())
+    }
+
+    @Test
+    fun getSelectedTextReturnsNull_whenDelegateIsDisposed() {
+        val ic = NullableInputConnectionWrapper(delegate, onConnectionClosed = {})
+
+        ic.disposeDelegate()
+        val result = ic.getSelectedText(0)
+
+        verify(delegate, never()).getSelectedText(any())
+        assertThat(result).isNull()
+    }
+
+    @Test
+    fun getSelectedTextReturnsNull_whenDelegateReturnsNull() {
+        val ic = NullableInputConnectionWrapper(delegate, onConnectionClosed = {})
+
+        val result = ic.getSelectedText(0)
+
+        verify(delegate, times(1)).getSelectedText(any())
+        assertThat(result).isNull()
     }
 }

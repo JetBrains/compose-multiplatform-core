@@ -18,15 +18,15 @@ package androidx.appsearch.app;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.appsearch.localstorage.LocalStorage;
 import androidx.test.core.app.ApplicationProvider;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.concurrent.ExecutorService;
 
-// TODO(b/227356108): move this test to cts test once we un-hide search suggestion API.
 public class AppSearchSessionLocalInternalTest extends AppSearchSessionInternalTestBase {
     @Override
     protected ListenableFuture<AppSearchSession> createSearchSessionAsync(@NonNull String dbName) {

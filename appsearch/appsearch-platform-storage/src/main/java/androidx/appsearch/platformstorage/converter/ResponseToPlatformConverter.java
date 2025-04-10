@@ -18,11 +18,12 @@ package androidx.appsearch.platformstorage.converter;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.StorageInfo;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Translates between Platform and Jetpack versions of responses.
@@ -37,9 +38,8 @@ public final class ResponseToPlatformConverter {
      * Translates a platform {@link android.app.appsearch.StorageInfo} into a jetpack
      * {@link StorageInfo}.
      */
-    @NonNull
-    public static StorageInfo toJetpackStorageInfo(
-            @NonNull android.app.appsearch.StorageInfo platformStorageInfo) {
+    public static @NonNull StorageInfo toJetpackStorageInfo(
+            android.app.appsearch.@NonNull StorageInfo platformStorageInfo) {
         Preconditions.checkNotNull(platformStorageInfo);
         return new StorageInfo.Builder()
                 .setAliveNamespacesCount(platformStorageInfo.getAliveNamespacesCount())

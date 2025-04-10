@@ -17,11 +17,12 @@
 package androidx.appsearch.localstorage.stats;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
 import androidx.appsearch.app.AppSearchResult;
-import androidx.core.util.Preconditions;
+import androidx.appsearch.stats.BaseStats;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -32,7 +33,7 @@ import java.lang.annotation.RetentionPolicy;
  * @exportToFramework:hide
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public final class InitializeStats {
+public final class InitializeStats extends BaseStats {
     /**
      * The cause of IcingSearchEngine recovering from a previous bad state during initialization.
      */
@@ -240,7 +241,7 @@ public final class InitializeStats {
     }
 
     InitializeStats(@NonNull Builder builder) {
-        Preconditions.checkNotNull(builder);
+        super(builder);
         mStatusCode = builder.mStatusCode;
         mTotalLatencyMillis = builder.mTotalLatencyMillis;
         mHasDeSync = builder.mHasDeSync;
@@ -262,7 +263,7 @@ public final class InitializeStats {
     }
 
     /** Builder for {@link InitializeStats}. */
-    public static class Builder {
+    public static class Builder extends BaseStats.Builder<InitializeStats.Builder> {
         @AppSearchResult.ResultCode
         int mStatusCode;
 
@@ -290,16 +291,14 @@ public final class InitializeStats {
 
         /** Sets the status of the initialization. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setStatusCode(@AppSearchResult.ResultCode int statusCode) {
+        public @NonNull Builder setStatusCode(@AppSearchResult.ResultCode int statusCode) {
             mStatusCode = statusCode;
             return this;
         }
 
         /** Sets the total latency of the initialization in milliseconds. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setTotalLatencyMillis(int totalLatencyMillis) {
+        public @NonNull Builder setTotalLatencyMillis(int totalLatencyMillis) {
             mTotalLatencyMillis = totalLatencyMillis;
             return this;
         }
@@ -311,16 +310,14 @@ public final class InitializeStats {
          * view of what data should exist.
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setHasDeSync(boolean hasDeSync) {
+        public @NonNull Builder setHasDeSync(boolean hasDeSync) {
             mHasDeSync = hasDeSync;
             return this;
         }
 
         /** Sets time used to read and process the schema and namespaces. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setPrepareSchemaAndNamespacesLatencyMillis(
+        public @NonNull Builder setPrepareSchemaAndNamespacesLatencyMillis(
                 int prepareSchemaAndNamespacesLatencyMillis) {
             mPrepareSchemaAndNamespacesLatencyMillis = prepareSchemaAndNamespacesLatencyMillis;
             return this;
@@ -328,8 +325,7 @@ public final class InitializeStats {
 
         /** Sets time used to read and process the visibility file. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setPrepareVisibilityStoreLatencyMillis(
+        public @NonNull Builder setPrepareVisibilityStoreLatencyMillis(
                 int prepareVisibilityStoreLatencyMillis) {
             mPrepareVisibilityStoreLatencyMillis = prepareVisibilityStoreLatencyMillis;
             return this;
@@ -337,8 +333,7 @@ public final class InitializeStats {
 
         /** Sets overall time used for the native function call. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setNativeLatencyMillis(int nativeLatencyMillis) {
+        public @NonNull Builder setNativeLatencyMillis(int nativeLatencyMillis) {
             mNativeLatencyMillis = nativeLatencyMillis;
             return this;
         }
@@ -352,8 +347,7 @@ public final class InitializeStats {
          * <li> {@link InitializeStats#RECOVERY_CAUSE_IO_ERROR}
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setDocumentStoreRecoveryCause(
+        public @NonNull Builder setDocumentStoreRecoveryCause(
                 @RecoveryCause int documentStoreRecoveryCause) {
             mNativeDocumentStoreRecoveryCause = documentStoreRecoveryCause;
             return this;
@@ -367,8 +361,7 @@ public final class InitializeStats {
          *      <li> {@link InitializeStats#RECOVERY_CAUSE_IO_ERROR}
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setIndexRestorationCause(
+        public @NonNull Builder setIndexRestorationCause(
                 @RecoveryCause int indexRestorationCause) {
             mNativeIndexRestorationCause = indexRestorationCause;
             return this;
@@ -380,8 +373,7 @@ public final class InitializeStats {
          *      <li> {@link InitializeStats#RECOVERY_CAUSE_IO_ERROR}
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setSchemaStoreRecoveryCause(
+        public @NonNull Builder setSchemaStoreRecoveryCause(
                 @RecoveryCause int schemaStoreRecoveryCause) {
             mNativeSchemaStoreRecoveryCause = schemaStoreRecoveryCause;
             return this;
@@ -389,8 +381,7 @@ public final class InitializeStats {
 
         /** Sets time used to recover the document store. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setDocumentStoreRecoveryLatencyMillis(
+        public @NonNull Builder setDocumentStoreRecoveryLatencyMillis(
                 int documentStoreRecoveryLatencyMillis) {
             mNativeDocumentStoreRecoveryLatencyMillis = documentStoreRecoveryLatencyMillis;
             return this;
@@ -398,8 +389,7 @@ public final class InitializeStats {
 
         /** Sets time used to restore the index. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setIndexRestorationLatencyMillis(
+        public @NonNull Builder setIndexRestorationLatencyMillis(
                 int indexRestorationLatencyMillis) {
             mNativeIndexRestorationLatencyMillis = indexRestorationLatencyMillis;
             return this;
@@ -407,8 +397,7 @@ public final class InitializeStats {
 
         /** Sets time used to recover the schema store. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setSchemaStoreRecoveryLatencyMillis(
+        public @NonNull Builder setSchemaStoreRecoveryLatencyMillis(
                 int schemaStoreRecoveryLatencyMillis) {
             mNativeSchemaStoreRecoveryLatencyMillis = schemaStoreRecoveryLatencyMillis;
             return this;
@@ -419,8 +408,7 @@ public final class InitializeStats {
          * status is defined in external/icing/proto/icing/proto/logging.proto
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setDocumentStoreDataStatus(
+        public @NonNull Builder setDocumentStoreDataStatus(
                 @DocumentStoreDataStatus int documentStoreDataStatus) {
             mNativeDocumentStoreDataStatus = documentStoreDataStatus;
             return this;
@@ -431,32 +419,29 @@ public final class InitializeStats {
          * and expired documents.
          */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setDocumentCount(int numDocuments) {
+        public @NonNull Builder setDocumentCount(int numDocuments) {
             mNativeNumDocuments = numDocuments;
             return this;
         }
 
         /** Sets number of schema types currently in the schema store. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setSchemaTypeCount(int numSchemaTypes) {
+        public @NonNull Builder setSchemaTypeCount(int numSchemaTypes) {
             mNativeNumSchemaTypes = numSchemaTypes;
             return this;
         }
 
         /** Sets whether we had to reset the index, losing all data, as part of initialization. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setHasReset(boolean hasReset) {
+        public @NonNull Builder setHasReset(boolean hasReset) {
             mHasReset = hasReset;
             return this;
         }
 
         /** Sets the status of the reset, if one was performed according to {@link #setHasReset}. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder setResetStatusCode(@AppSearchResult.ResultCode int resetStatusCode) {
+        public @NonNull Builder setResetStatusCode(
+                @AppSearchResult.ResultCode int resetStatusCode) {
             mResetStatusCode = resetStatusCode;
             return this;
         }
@@ -465,8 +450,8 @@ public final class InitializeStats {
          * Constructs a new {@link InitializeStats} from the contents of this
          * {@link InitializeStats.Builder}
          */
-        @NonNull
-        public InitializeStats build() {
+        @Override
+        public @NonNull InitializeStats build() {
             return new InitializeStats(/* builder= */ this);
         }
     }

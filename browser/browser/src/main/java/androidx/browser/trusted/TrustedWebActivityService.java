@@ -36,8 +36,6 @@ import android.support.customtabs.trusted.ITrustedWebActivityService;
 import androidx.annotation.BinderThread;
 import androidx.annotation.CallSuper;
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresPermission;
 import androidx.annotation.RestrictTo;
 import androidx.browser.trusted.TrustedWebActivityServiceConnection.ActiveNotificationsArgs;
@@ -46,6 +44,9 @@ import androidx.browser.trusted.TrustedWebActivityServiceConnection.Notification
 import androidx.browser.trusted.TrustedWebActivityServiceConnection.NotifyNotificationArgs;
 import androidx.browser.trusted.TrustedWebActivityServiceConnection.ResultArgs;
 import androidx.core.app.NotificationManagerCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 
@@ -304,10 +305,9 @@ public abstract class TrustedWebActivityService extends Service {
      * @return An array of StatusBarNotifications as Parcelables.
      *
      */
-    @NonNull
     @BinderThread
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public Parcelable[] onGetActiveNotifications() {
+    public Parcelable @NonNull [] onGetActiveNotifications() {
         ensureOnCreateCalled();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             return NotificationApiHelperForM.getActiveNotifications(mNotificationManager);
@@ -359,9 +359,8 @@ public abstract class TrustedWebActivityService extends Service {
     }
 
     @Override
-    @Nullable
     @MainThread
-    public final IBinder onBind(@Nullable Intent intent) {
+    public final @Nullable IBinder onBind(@Nullable Intent intent) {
         return mBinder;
     }
 
@@ -379,8 +378,7 @@ public abstract class TrustedWebActivityService extends Service {
      * @return An {@link TokenStore} containing the verified provider.
      */
     @BinderThread
-    @NonNull
-    public abstract TokenStore getTokenStore();
+    public abstract @NonNull TokenStore getTokenStore();
 
     /**
      * Contains a free form command from the browser. The client and browser will need to agree on
@@ -413,8 +411,7 @@ public abstract class TrustedWebActivityService extends Service {
      * @return The result {@link Bundle} or {@code null}.
      */
     @BinderThread
-    @Nullable
-    public Bundle onExtraCommand(@NonNull String commandName, @NonNull Bundle args,
+    public @Nullable Bundle onExtraCommand(@NonNull String commandName, @NonNull Bundle args,
             @Nullable TrustedWebActivityCallbackRemote callbackRemote) {
         return null;
     }

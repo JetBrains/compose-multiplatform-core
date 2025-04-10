@@ -20,9 +20,9 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.internal.JvmDefaultWithCompatibility
+import androidx.compose.ui.node.LayoutAwareModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
-import androidx.compose.ui.platform.InspectorValueInfo
-import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.unit.IntSize
 
 /**
@@ -39,26 +39,50 @@ import androidx.compose.ui.unit.IntSize
  * enable the size of one component to affect the size of another.
  *
  * Example usage:
+ *
  * @sample androidx.compose.ui.samples.OnSizeChangedSample
  */
 @Stable
-fun Modifier.onSizeChanged(
-    onSizeChanged: (IntSize) -> Unit
-) = this.then(
-    OnSizeChangedModifier(
-        onSizeChanged = onSizeChanged,
-        inspectorInfo = debugInspectorInfo {
-            name = "onSizeChanged"
-            properties["onSizeChanged"] = onSizeChanged
-        }
-    )
-)
+fun Modifier.onSizeChanged(onSizeChanged: (IntSize) -> Unit) =
+    this.then(OnSizeChangedModifier(onSizeChanged = onSizeChanged))
 
-private class OnSizeChangedModifier(
-    val onSizeChanged: (IntSize) -> Unit,
-    inspectorInfo: InspectorInfo.() -> Unit
-) : OnRemeasuredModifier, InspectorValueInfo(inspectorInfo) {
+private class OnSizeChangedModifier(private val onSizeChanged: (IntSize) -> Unit) :
+    ModifierNodeElement<OnSizeChangedNode>() {
+    override fun create(): OnSizeChangedNode = OnSizeChangedNode(onSizeChanged)
+
+    override fun update(node: OnSizeChangedNode) {
+        node.update(onSizeChanged)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is OnSizeChangedModifier) return false
+
+        return onSizeChanged === other.onSizeChanged
+    }
+
+    override fun hashCode(): Int {
+        return onSizeChanged.hashCode()
+    }
+
+    override fun InspectorInfo.inspectableProperties() {
+        name = "onSizeChanged"
+        properties["onSizeChanged"] = onSizeChanged
+    }
+}
+
+private class OnSizeChangedNode(private var onSizeChanged: (IntSize) -> Unit) :
+    Modifier.Node(), LayoutAwareModifierNode {
+    // When onSizeChanged changes, we want to invalidate so onRemeasured is called again
+    override val shouldAutoInvalidate: Boolean = true
     private var previousSize = IntSize(Int.MIN_VALUE, Int.MIN_VALUE)
+
+    fun update(onSizeChanged: (IntSize) -> Unit) {
+        this.onSizeChanged = onSizeChanged
+        // Reset the previous size, so when onSizeChanged changes the new lambda gets invoked,
+        // matching previous behavior
+        previousSize = IntSize(Int.MIN_VALUE, Int.MIN_VALUE)
+    }
 
     override fun onRemeasured(size: IntSize) {
         if (previousSize != size) {
@@ -66,30 +90,18 @@ private class OnSizeChangedModifier(
             previousSize = size
         }
     }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is OnSizeChangedModifier) return false
-
-        return onSizeChanged == other.onSizeChanged
-    }
-
-    override fun hashCode(): Int {
-        return onSizeChanged.hashCode()
-    }
 }
 
 /**
- * A modifier whose [onRemeasured] is called when the layout content is remeasured. The
- * most common usage is [onSizeChanged].
+ * A modifier whose [onRemeasured] is called when the layout content is remeasured. The most common
+ * usage is [onSizeChanged].
  *
  * Example usage:
+ *
  * @sample androidx.compose.ui.samples.OnSizeChangedSample
  */
 @JvmDefaultWithCompatibility
 interface OnRemeasuredModifier : Modifier.Element {
-    /**
-     * Called after a layout's contents have been remeasured.
-     */
+    /** Called after a layout's contents have been remeasured. */
     fun onRemeasured(size: IntSize)
 }

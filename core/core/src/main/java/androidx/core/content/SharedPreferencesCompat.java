@@ -18,7 +18,7 @@ package androidx.core.content;
 
 import android.content.SharedPreferences;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * @deprecated This compatibility class is no longer required. Use {@link SharedPreferences}
@@ -40,7 +40,7 @@ public final class SharedPreferencesCompat {
             Helper() {
             }
 
-            public void apply(@NonNull SharedPreferences.Editor editor) {
+            public void apply(SharedPreferences.@NonNull Editor editor) {
                 try {
                     editor.apply();
                 } catch (AbstractMethodError unused) {
@@ -73,7 +73,7 @@ public final class SharedPreferencesCompat {
          * {@link SharedPreferences.Editor#apply()} directly.
          */
         @Deprecated
-        public void apply(@NonNull SharedPreferences.Editor editor) {
+        public void apply(SharedPreferences.@NonNull Editor editor) {
             // Note that this redirection is needed to not break the public API chain
             // of getInstance().apply() calls. Otherwise this method could (and should)
             // be static.

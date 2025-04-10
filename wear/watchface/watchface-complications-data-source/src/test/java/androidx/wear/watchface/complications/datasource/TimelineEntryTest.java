@@ -87,6 +87,7 @@ public class TimelineEntryTest {
                                 + "validTimeRange=TimeRange("
                                 + "startDateTimeMillis=-1000000000-01-01T00:00:00Z,"
                                 + " endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z),"
-                                + " persistencePolicy=0, displayPolicy=0))");
+                                + " persistencePolicy=0, displayPolicy=0, "
+                                + "extras=PersistableBundle[{}]))");
     }
 }

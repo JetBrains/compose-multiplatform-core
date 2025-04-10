@@ -23,11 +23,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.assertShape
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -42,31 +46,29 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.material3.TextButtonDefaults.DefaultButtonSize
 import androidx.wear.compose.material3.TextButtonDefaults.LargeButtonSize
 import androidx.wear.compose.material3.TextButtonDefaults.SmallButtonSize
+import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
 class TextButtonTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun supports_testtag() {
         rule.setContentWithTheme {
-            TextButton(
-                modifier = Modifier.testTag(TEST_TAG),
-                onClick = {}
-            ) {
-                Text("Test")
-            }
+            TextButton(modifier = Modifier.testTag(TEST_TAG), onClick = {}) { Text("Test") }
         }
 
         rule.onNodeWithTag(TEST_TAG).assertExists()
@@ -103,11 +105,7 @@ class TextButtonTest {
     @Test
     fun has_click_action_when_enabled() {
         rule.setContentWithTheme {
-            TextButton(
-                onClick = {},
-                enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
-            ) {
+            TextButton(onClick = {}, enabled = true, modifier = Modifier.testTag(TEST_TAG)) {
                 Text("Test")
             }
         }
@@ -118,11 +116,7 @@ class TextButtonTest {
     @Test
     fun has_click_action_when_disabled() {
         rule.setContentWithTheme {
-            TextButton(
-                onClick = {},
-                enabled = false,
-                modifier = Modifier.testTag(TEST_TAG)
-            ) {
+            TextButton(onClick = {}, enabled = false, modifier = Modifier.testTag(TEST_TAG)) {
                 Text("Test")
             }
         }
@@ -133,11 +127,7 @@ class TextButtonTest {
     @Test
     fun is_correctly_enabled() {
         rule.setContentWithTheme {
-            TextButton(
-                onClick = {},
-                enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
-            ) {
+            TextButton(onClick = {}, enabled = true, modifier = Modifier.testTag(TEST_TAG)) {
                 Text("Test")
             }
         }
@@ -148,11 +138,7 @@ class TextButtonTest {
     @Test
     fun is_correctly_disabled() {
         rule.setContentWithTheme {
-            TextButton(
-                onClick = {},
-                enabled = false,
-                modifier = Modifier.testTag(TEST_TAG)
-            ) {
+            TextButton(onClick = {}, enabled = false, modifier = Modifier.testTag(TEST_TAG)) {
                 Text("Test")
             }
         }
@@ -176,9 +162,68 @@ class TextButtonTest {
 
         rule.onNodeWithTag(TEST_TAG).performClick()
 
-        rule.runOnIdle {
-            assertEquals(true, clicked)
+        rule.runOnIdle { assertEquals(true, clicked) }
+    }
+
+    @Test
+    fun responds_to_long_click_when_enabled() {
+        var longClicked = false
+
+        rule.setContentWithTheme {
+            TextButton(
+                onClick = { /* Do nothing */ },
+                onLongClick = { longClicked = true },
+                enabled = true,
+                modifier = Modifier.testTag(TEST_TAG)
+            ) {
+                Text("Test")
+            }
         }
+
+        rule.onNodeWithTag(TEST_TAG).performTouchInput { longClick() }
+
+        rule.runOnIdle { assertEquals(true, longClicked) }
+    }
+
+    @Test
+    fun triggers_haptic_when_long_clicked() {
+        val results = mutableMapOf<HapticFeedbackType, Int>()
+        val haptics = hapticFeedback(collectResultsFromHapticFeedback(results))
+
+        rule.setContentWithTheme {
+            CompositionLocalProvider(LocalHapticFeedback provides haptics) {
+                TextButton(
+                    onClick = { /* Do nothing */ },
+                    onLongClick = {},
+                    enabled = true,
+                    modifier = Modifier.testTag(TEST_TAG)
+                ) {}
+            }
+        }
+
+        rule.onNodeWithTag(TEST_TAG).performTouchInput { longClick() }
+
+        assertThat(results).hasSize(1)
+        assertThat(results).containsKey(HapticFeedbackType.LongPress)
+        assertThat(results[HapticFeedbackType.LongPress]).isEqualTo(1)
+    }
+
+    @Test
+    fun onLongClickLabel_includedInSemantics() {
+        val testLabel = "Long click action"
+
+        rule.setContentWithTheme {
+            TextButton(
+                modifier = Modifier.testTag(TEST_TAG),
+                onClick = {},
+                onLongClick = {},
+                onLongClickLabel = testLabel
+            ) {
+                Text("Button")
+            }
+        }
+
+        rule.onNodeWithTag(TEST_TAG).assertOnLongClickLabelMatches(testLabel)
     }
 
     @Test
@@ -197,29 +242,38 @@ class TextButtonTest {
 
         rule.onNodeWithTag(TEST_TAG).performClick()
 
-        rule.runOnIdle {
-            assertEquals(false, clicked)
-        }
+        rule.runOnIdle { assertEquals(false, clicked) }
     }
 
     @Test
-    fun has_role_button() {
+    fun does_not_respond_to_long_click_when_disabled() {
+        var longClicked = false
+
         rule.setContentWithTheme {
             TextButton(
-                onClick = {},
+                onClick = { /* Do nothing */ },
+                onLongClick = { longClicked = true },
+                enabled = false,
                 modifier = Modifier.testTag(TEST_TAG)
             ) {
                 Text("Test")
             }
         }
 
-        rule.onNodeWithTag(TEST_TAG)
-            .assert(
-                SemanticsMatcher.expectValue(
-                    SemanticsProperties.Role,
-                    Role.Button
-                )
-            )
+        rule.onNodeWithTag(TEST_TAG).performTouchInput { longClick() }
+
+        rule.runOnIdle { assertEquals(false, longClicked) }
+    }
+
+    @Test
+    fun has_role_button() {
+        rule.setContentWithTheme {
+            TextButton(onClick = {}, modifier = Modifier.testTag(TEST_TAG)) { Text("Test") }
+        }
+
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
     }
 
     @Test
@@ -235,12 +289,9 @@ class TextButtonTest {
             }
         }
 
-        rule.onNodeWithTag(TEST_TAG).assert(
-            SemanticsMatcher.expectValue(
-                SemanticsProperties.Role,
-                overrideRole
-            )
-        )
+        rule
+            .onNodeWithTag(TEST_TAG)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, overrideRole))
     }
 
     @Test
@@ -263,10 +314,7 @@ class TextButtonTest {
     @Test
     fun gives_default_button_correct_tap_size() {
         rule.verifyTapSize(DefaultButtonSize) { modifier ->
-            TextButton(
-                onClick = {},
-                modifier = modifier.touchTargetAwareSize(DefaultButtonSize)
-            ) {
+            TextButton(onClick = {}, modifier = modifier.touchTargetAwareSize(DefaultButtonSize)) {
                 Text("ABC")
             }
         }
@@ -275,10 +323,7 @@ class TextButtonTest {
     @Test
     fun gives_large_button_correct_tap_size() {
         rule.verifyTapSize(LargeButtonSize) { modifier ->
-            TextButton(
-                onClick = {},
-                modifier = modifier.touchTargetAwareSize(LargeButtonSize)
-            ) {
+            TextButton(onClick = {}, modifier = modifier.touchTargetAwareSize(LargeButtonSize)) {
                 Text("Large")
             }
         }
@@ -287,75 +332,67 @@ class TextButtonTest {
     @Test
     fun gives_small_button_correct_tap_size() {
         rule.verifyTapSize(SmallButtonSize) { modifier ->
-            TextButton(
-                onClick = {},
-                modifier = modifier.touchTargetAwareSize(SmallButtonSize)
-            ) {
+            TextButton(onClick = {}, modifier = modifier.touchTargetAwareSize(SmallButtonSize)) {
                 Text("abc")
             }
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun default_shape_is_circular() {
         rule.isShape(
             expectedShape = CircleShape,
             colors = { TextButtonDefaults.textButtonColors() }
         ) { modifier ->
-            TextButton(
-                onClick = {},
-                modifier = modifier
-            ) {
+            TextButton(onClick = {}, modifier = modifier) {
                 // omit content to allow us to validate the shape by pixel checking.
             }
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun allows_custom_shape_override() {
         val shape = CutCornerShape(4.dp)
 
-        rule.isShape(
-            expectedShape = shape,
-            colors = { TextButtonDefaults.textButtonColors() }
-        ) { modifier ->
+        rule.isShape(expectedShape = shape, colors = { TextButtonDefaults.textButtonColors() }) {
+            modifier ->
             TextButton(
                 onClick = {},
                 modifier = modifier,
-                shape = shape
+                shapes = TextButtonDefaults.shapes(shape)
             ) {
                 // omit content to allow us to validate the shape by pixel checking.
             }
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_text_button_colors() {
         rule.verifyTextButtonColors(
             status = Status.Enabled,
             colors = { TextButtonDefaults.textButtonColors() },
             expectedContainerColor = { Color.Transparent },
-            expectedContentColor = { MaterialTheme.colorScheme.onBackground }
+            expectedContentColor = { MaterialTheme.colorScheme.onSurface }
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_text_button_colors() {
         rule.verifyTextButtonColors(
             status = Status.Disabled,
             colors = { TextButtonDefaults.textButtonColors() },
             expectedContainerColor = { Color.Transparent },
-            expectedContentColor = { MaterialTheme.colorScheme.onSurface.copy(
-                alpha = DisabledContentAlpha
-            ) }
+            expectedContentColor = {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
+            }
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_filled_text_button_colors() {
         rule.verifyTextButtonColors(
@@ -366,72 +403,98 @@ class TextButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_filled_text_button_colors() {
         rule.verifyTextButtonColors(
             status = Status.Disabled,
             colors = { TextButtonDefaults.filledTextButtonColors() },
-            expectedContainerColor = { MaterialTheme.colorScheme.onSurface.copy(
-                alpha = DisabledContainerAlpha
-            ) },
-            expectedContentColor = { MaterialTheme.colorScheme.onSurface.copy(
-                alpha = DisabledContentAlpha
-            ) }
+            expectedContainerColor = {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContainerAlpha)
+            },
+            expectedContentColor = {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
+            }
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun gives_enabled_filled_variant_text_button_colors() {
+        rule.verifyTextButtonColors(
+            status = Status.Enabled,
+            colors = { TextButtonDefaults.filledVariantTextButtonColors() },
+            expectedContainerColor = { MaterialTheme.colorScheme.primaryContainer },
+            expectedContentColor = { MaterialTheme.colorScheme.onPrimaryContainer }
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun gives_disabled_filled_variant_text_button_colors() {
+        rule.verifyTextButtonColors(
+            status = Status.Disabled,
+            colors = { TextButtonDefaults.filledVariantTextButtonColors() },
+            expectedContainerColor = {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContainerAlpha)
+            },
+            expectedContentColor = {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
+            }
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_filled_tonal_text_button_colors() {
         rule.verifyTextButtonColors(
             status = Status.Enabled,
             colors = { TextButtonDefaults.filledTonalTextButtonColors() },
-            expectedContainerColor = { MaterialTheme.colorScheme.surface },
+            expectedContainerColor = { MaterialTheme.colorScheme.surfaceContainer },
             expectedContentColor = { MaterialTheme.colorScheme.onSurface }
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_filled_tonal_text_button_colors() {
         rule.verifyTextButtonColors(
             status = Status.Disabled,
             colors = { TextButtonDefaults.filledTonalTextButtonColors() },
-            expectedContainerColor = { MaterialTheme.colorScheme.onSurface.copy(
-                alpha = DisabledContainerAlpha
-            ) },
-            expectedContentColor = { MaterialTheme.colorScheme.onSurface.copy(
-                alpha = DisabledContentAlpha
-            ) }
+            expectedContainerColor = {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContainerAlpha)
+            },
+            expectedContentColor = {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
+            }
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_outlined_text_button_colors() {
         rule.verifyTextButtonColors(
             status = Status.Enabled,
             colors = { TextButtonDefaults.outlinedTextButtonColors() },
             expectedContainerColor = { Color.Transparent },
-            expectedContentColor = { MaterialTheme.colorScheme.onBackground }
+            expectedContentColor = { MaterialTheme.colorScheme.onSurface }
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_outlined_text_button_colors() {
         rule.verifyTextButtonColors(
             status = Status.Disabled,
             colors = { TextButtonDefaults.outlinedTextButtonColors() },
             expectedContainerColor = { Color.Transparent },
-            expectedContentColor = { MaterialTheme.colorScheme.onSurface.copy(
-                alpha = DisabledContentAlpha
-            ) }
+            expectedContentColor = {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
+            }
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_enabled_outlined_text_button_correct_border_colors() {
         val status = Status.Enabled
@@ -449,7 +512,7 @@ class TextButtonTest {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_disabled_outlined_text_button_correct_border_colors() {
         val status = Status.Disabled
@@ -464,13 +527,12 @@ class TextButtonTest {
                     enabled = status.enabled(),
                     colors = TextButtonDefaults.outlinedTextButtonColors(),
                     border = ButtonDefaults.outlinedButtonBorder(enabled = status.enabled())
-
                 ) {}
             }
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun overrides_outlined_text_button_border_color() {
         val status = Status.Enabled
@@ -481,14 +543,37 @@ class TextButtonTest {
                     onClick = {},
                     modifier = modifier,
                     enabled = status.enabled(),
-                    border = ButtonDefaults.outlinedButtonBorder(
-                        enabled = status.enabled(),
-                        borderColor = Color.Green,
-                        disabledBorderColor = Color.Red
-                    )
+                    border =
+                        ButtonDefaults.outlinedButtonBorder(
+                            enabled = status.enabled(),
+                            borderColor = Color.Green,
+                            disabledBorderColor = Color.Red
+                        )
                 ) {}
             }
         )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun animates_corners_to_75_percent_on_click() {
+        val baseShape = RoundedCornerShape(20.dp)
+        val pressedShape = RoundedCornerShape(0.dp)
+
+        rule.verifyRoundedButtonTapAnimationEnd(
+            baseShape,
+            pressedShape,
+            0.75f,
+            8,
+            color = { TextButtonDefaults.filledTextButtonColors().containerColor }
+        ) { modifier ->
+            TextButton(
+                onClick = {},
+                shapes = TextButtonShapes(baseShape, pressedShape),
+                modifier = modifier,
+                colors = TextButtonDefaults.filledTextButtonColors()
+            ) {}
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -530,17 +615,13 @@ private fun ComposeContentTestRule.isShape(
     val padding = 0.dp
 
     setContentWithTheme {
-        background = MaterialTheme.colorScheme.surface
+        background = MaterialTheme.colorScheme.surfaceContainer
         Box(Modifier.background(background)) {
-            buttonColor = colors().containerColor(true).value
+            buttonColor = colors().containerColor(true)
             if (buttonColor == Color.Transparent) {
                 buttonColor = background
             }
-            content(
-                Modifier
-                    .testTag(TEST_TAG)
-                    .padding(padding)
-            )
+            content(Modifier.testTag(TEST_TAG).padding(padding))
         }
     }
 
@@ -552,7 +633,7 @@ private fun ComposeContentTestRule.isShape(
             verticalPadding = 0.dp,
             shapeColor = buttonColor,
             backgroundColor = background,
-            shapeOverlapPixelCount = 2.0f,
+            antiAliasingGap = 2.0f,
             shape = expectedShape,
         )
 }

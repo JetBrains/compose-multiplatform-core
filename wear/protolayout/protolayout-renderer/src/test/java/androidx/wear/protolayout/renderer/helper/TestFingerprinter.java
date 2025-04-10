@@ -16,13 +16,16 @@
 
 package androidx.wear.protolayout.renderer.helper;
 
-import androidx.annotation.Nullable;
+import static androidx.wear.protolayout.proto.LayoutElementProto.ArcLayoutElement.InnerCase.ADAPTER;
+
 import androidx.wear.protolayout.proto.FingerprintProto.NodeFingerprint;
 import androidx.wear.protolayout.proto.FingerprintProto.TreeFingerprint;
 import androidx.wear.protolayout.proto.LayoutElementProto;
 import androidx.wear.protolayout.proto.LayoutElementProto.Layout;
 import androidx.wear.protolayout.proto.LayoutElementProto.LayoutElement;
 import androidx.wear.protolayout.proto.LayoutElementProto.LayoutElement.InnerCase;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -85,7 +88,7 @@ public class TestFingerprinter {
 
     private NodeFingerprint addNodeToParent(
             LayoutElementProto.LayoutElement element,
-            @Nullable NodeFingerprint.Builder parentFingerprintBuilder) {
+            NodeFingerprint.@Nullable Builder parentFingerprintBuilder) {
         NodeFingerprint.Builder currentFingerprintBuilder =
                 NodeFingerprint.newBuilder()
                         .setSelfTypeValue(getSelfTypeFingerprint(element))
@@ -96,6 +99,7 @@ public class TestFingerprinter {
         for (LayoutElementProto.ArcLayoutElement child : getArcChildren(element)) {
             addNodeToParent(child, currentFingerprintBuilder);
         }
+
         NodeFingerprint currentFingerprint = currentFingerprintBuilder.build();
         if (parentFingerprintBuilder != null) {
             addNodeToParent(currentFingerprint, parentFingerprintBuilder);
@@ -106,12 +110,14 @@ public class TestFingerprinter {
     private void addNodeToParent(
             LayoutElementProto.ArcLayoutElement element,
             NodeFingerprint.Builder parentFingerprintBuilder) {
-        addNodeToParent(
+        NodeFingerprint.Builder currentFingerprint =
                 NodeFingerprint.newBuilder()
                         .setSelfTypeValue(getSelfTypeFingerprint(element))
-                        .setSelfPropsValue(getSelfPropsFingerprint(element))
-                        .build(),
-                parentFingerprintBuilder);
+                        .setSelfPropsValue(getSelfPropsFingerprint(element));
+        if (element.getInnerCase() == ADAPTER) {
+            addNodeToParent(element.getAdapter().getContent(), currentFingerprint);
+        }
+        addNodeToParent(currentFingerprint.build(), parentFingerprintBuilder);
     }
 
     private void addNodeToParent(

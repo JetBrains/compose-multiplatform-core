@@ -30,9 +30,6 @@ import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.Logger;
@@ -46,6 +43,9 @@ import androidx.camera.video.internal.encoder.InputBuffer;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
@@ -70,7 +70,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * @see BufferProvider
  * @see AudioRecord
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class AudioSource {
     private static final String TAG = "AudioSource";
 
@@ -110,42 +109,36 @@ public final class AudioSource {
     private final long mStartRetryIntervalNs;
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    @NonNull
-    InternalState mState = CONFIGURED;
+    @NonNull InternalState mState = CONFIGURED;
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    @NonNull
-    BufferProvider.State mBufferProviderState = BufferProvider.State.INACTIVE;
+    BufferProvider.@NonNull State mBufferProviderState = BufferProvider.State.INACTIVE;
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     boolean mIsSendingAudio;
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    @Nullable
-    Executor mCallbackExecutor;
+    @Nullable Executor mCallbackExecutor;
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    @Nullable
-    AudioSourceCallback mAudioSourceCallback;
+    @Nullable AudioSourceCallback mAudioSourceCallback;
 
     // The following should only be accessed by mExecutor
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    @Nullable
-    BufferProvider<? extends InputBuffer> mBufferProvider;
-    @Nullable
-    private FutureCallback<InputBuffer> mAcquireBufferCallback;
-    @Nullable
-    private Observable.Observer<BufferProvider.State> mStateObserver;
+    @Nullable BufferProvider<? extends InputBuffer> mBufferProvider;
+    private @Nullable FutureCallback<InputBuffer> mAcquireBufferCallback;
+    private Observable.@Nullable Observer<BufferProvider.State> mStateObserver;
     boolean mInSilentStartState;
     private long mLatestFailedStartTimeNs;
     boolean mAudioStreamSilenced;
     boolean mMuted;
-    @Nullable
-    private byte[] mZeroBytes;
+    private byte @Nullable [] mZeroBytes;
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-            double mAudioAmplitude;
+    double mAudioAmplitude;
     long mAmplitudeTimestamp = 0;
     private final int mAudioFormat;
+    @VisibleForTesting
+    public final int mAudioSource;
 
     /**
      * Creates an AudioSource for the given settings.
@@ -194,6 +187,7 @@ public final class AudioSource {
         mAudioStream.setCallback(new AudioStreamCallback(), mExecutor);
         mSilentAudioStream = new SilentAudioStream(settings);
         mAudioFormat = settings.getAudioFormat();
+        mAudioSource = settings.getAudioSource();
     }
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
@@ -323,8 +317,7 @@ public final class AudioSource {
      *
      * <p>Once the AudioSource is released, it can not be used any more.
      */
-    @NonNull
-    public ListenableFuture<Void> release() {
+    public @NonNull ListenableFuture<Void> release() {
         return CallbackToFutureAdapter.getFuture(completer -> {
             mExecutor.execute(() -> {
                 try {
@@ -414,7 +407,7 @@ public final class AudioSource {
             mStateObserver = new Observable.Observer<BufferProvider.State>() {
                 @ExecutedBy("mExecutor")
                 @Override
-                public void onNewData(@Nullable BufferProvider.State state) {
+                public void onNewData(BufferProvider.@Nullable State state) {
                     requireNonNull(state);
                     if (mBufferProvider == bufferProvider) {
                         Logger.d(TAG, "Receive BufferProvider state change: "
@@ -502,8 +495,7 @@ public final class AudioSource {
     }
 
     @ExecutedBy("mExecutor")
-    @NonNull
-    AudioStream getCurrentAudioStream() {
+    @NonNull AudioStream getCurrentAudioStream() {
         return mInSilentStartState ? mSilentAudioStream : mAudioStream;
     }
 
@@ -658,8 +650,7 @@ public final class AudioSource {
     }
 
 
-    @Nullable
-    private static BufferProvider.State fetchBufferProviderState(
+    private static BufferProvider.@Nullable State fetchBufferProviderState(
             @NonNull BufferProvider<? extends InputBuffer> bufferProvider) {
         try {
             ListenableFuture<BufferProvider.State> state = bufferProvider.fetchData();

@@ -23,11 +23,12 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.webkit.ProcessGlobalConfig;
 import androidx.webkit.WebViewFeature;
+
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 

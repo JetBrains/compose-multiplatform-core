@@ -17,25 +17,24 @@
 package android.support.wearable.watchface.accessibility;
 
 import android.app.PendingIntent;
-import android.content.Context;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.support.wearable.complications.ComplicationData;
-import android.support.wearable.complications.ComplicationDataKt;
-import android.support.wearable.complications.ComplicationText;
-import android.support.wearable.complications.ComplicationTextTemplate;
 import android.support.wearable.complications.TimeDependentText;
 import android.support.wearable.watchface.Constants;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
-/** Holds labels for screen regions which should respond to accessibility events. */
+/** Holds labels for screen regions which should respond to accessibility events.
+ * @deprecated use Watch Face Format instead
+ */
+@Deprecated
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @SuppressWarnings("BanParcelableUsage")
 public final class ContentDescriptionLabel implements Parcelable {
@@ -43,15 +42,13 @@ public final class ContentDescriptionLabel implements Parcelable {
     @SuppressWarnings("unused")
     public static final Parcelable.Creator<ContentDescriptionLabel> CREATOR =
             new Parcelable.Creator<ContentDescriptionLabel>() {
-                @NonNull
                 @Override
-                public ContentDescriptionLabel createFromParcel(@NonNull Parcel in) {
+                public @NonNull ContentDescriptionLabel createFromParcel(@NonNull Parcel in) {
                     return new ContentDescriptionLabel(in);
                 }
 
-                @NonNull
                 @Override
-                public ContentDescriptionLabel[] newArray(int size) {
+                public ContentDescriptionLabel @NonNull [] newArray(int size) {
                     return new ContentDescriptionLabel[size];
                 }
             };
@@ -95,20 +92,17 @@ public final class ContentDescriptionLabel implements Parcelable {
     }
 
     /** Returns the absolute coordinates of where this label should appear on the screen. */
-    @NonNull
-    public Rect getBounds() {
+    public @NonNull Rect getBounds() {
         return mBounds;
     }
 
     /** Returns the {@link TimeDependentText} describing this label. */
-    @NonNull
-    public TimeDependentText getText() {
+    public @NonNull TimeDependentText getText() {
         return mText;
     }
 
     /** Returns the optional {@link PendingIntent} to launch when this label is tapped. */
-    @Nullable
-    public PendingIntent getTapAction() {
+    public @Nullable PendingIntent getTapAction() {
         return mTapAction;
     }
 
@@ -146,9 +140,8 @@ public final class ContentDescriptionLabel implements Parcelable {
         dest.writeBundle(bundle);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "ContentDescriptionLabel{text="
                 + mText
                 + ", bounds="

@@ -14,25 +14,33 @@
  * limitations under the License.
  */
 
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
 
-import androidx.build.Publish
+import androidx.build.KotlinTarget
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
-    id("kotlin-kapt")
+    id("org.jetbrains.kotlin.android")
+    id("com.google.devtools.ksp")
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.2.0")
+    api("androidx.annotation:annotation:1.8.1")
     api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
 
     implementation(libs.atomicFu)
     implementation(libs.dagger)
 
-    kapt(libs.daggerCompiler)
+    ksp(libs.daggerCompiler)
 
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
@@ -46,7 +54,7 @@ dependencies {
     testImplementation(project(":camera:camera-camera2-pipe-testing"))
     testImplementation(project(":internal-testutils-truth"))
 
-    kaptTest(libs.daggerCompiler)
+    kspTest(libs.daggerCompiler)
 
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
@@ -54,26 +62,28 @@ dependencies {
 }
 
 android {
-    lintOptions {
-        enable 'CameraXQuirksClassDetector'
+    compileSdk = 35
+
+    lint {
+        enable.add("CameraXQuirksClassDetector")
     }
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.camera.camera2.pipe"
+    namespace = "androidx.camera.camera2.pipe"
 }
 
-kapt {
-    javacOptions {
-        option("-Adagger.fastInit=enabled")
-        option("-Adagger.fullBindingGraphValidation=ERROR")
-    }
+ksp {
+    arg("dagger.fastInit", "enabled")
+    arg("dagger.fullBindingGraphValidation", "ERROR")
 }
 
 androidx {
     name = "Camera2 Pipe"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
+    //TODO(b/407634709): Task :camera:camera-camera2-pipe:kspReleaseUnitTestKotlin fails when targeting Kotlin 2
+    kotlinTarget = KotlinTarget.KOTLIN_1_9
     inceptionYear = "2020"
     description = "A set of opinionated camera interfaces and implementations on top of Camera2 " +
             "that will form a flexible shim layer to power Frameserver and CameraX."
-    metalavaK2UastEnabled = true
+    doNotDocumentReason = "Not shipped externally"
 }

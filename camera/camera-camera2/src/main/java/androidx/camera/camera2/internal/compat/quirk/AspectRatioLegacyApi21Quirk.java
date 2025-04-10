@@ -19,11 +19,11 @@ package androidx.camera.camera2.internal.compat.quirk;
 import android.hardware.camera2.CameraCharacteristics;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.camera2.internal.compat.workaround.TargetAspectRatio;
 import androidx.camera.core.impl.Quirk;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * <p>QuirkSummary
@@ -37,10 +37,9 @@ import androidx.camera.core.impl.Quirk;
  *     Device(s): All the legacy API 21 devices
  *     @see androidx.camera.camera2.internal.compat.workaround.TargetAspectRatio
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class AspectRatioLegacyApi21Quirk implements Quirk {
 
-    static boolean load(@NonNull final CameraCharacteristicsCompat cameraCharacteristicsCompat) {
+    static boolean load(final @NonNull CameraCharacteristicsCompat cameraCharacteristicsCompat) {
         final Integer level = cameraCharacteristicsCompat.get(
                 CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
         return level != null && level == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY

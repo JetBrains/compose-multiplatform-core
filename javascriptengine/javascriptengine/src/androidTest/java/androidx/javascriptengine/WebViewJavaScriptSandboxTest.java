@@ -54,7 +54,11 @@ public class WebViewJavaScriptSandboxTest {
     // larger in future. However, we don't want it too large as that will make the tests slower and
     // require more memory. Although this is a long, it must not be greater than Integer.MAX_VALUE
     // and should be much smaller (for the purposes of testing).
-    private static final long REASONABLE_HEAP_SIZE = 100 * 1024 * 1024;
+    //
+    // We should not make it too high as well since the way we simulate OOM might result in other v8
+    // internal limits being hit causing NearHeapLimitCallback to not be triggered
+    // (See b/401528686).
+    private static final long REASONABLE_HEAP_SIZE = 50 * 1024 * 1024;
 
     private static ParcelFileDescriptor writeToTestFile(String fileContent) throws IOException {
         Context context = ApplicationProvider.getApplicationContext();

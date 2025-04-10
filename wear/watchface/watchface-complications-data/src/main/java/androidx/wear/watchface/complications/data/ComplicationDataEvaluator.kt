@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("MISSING_DEPENDENCY_CLASS_IN_EXPRESSION_TYPE")
+
 package androidx.wear.watchface.complications.data
 
 import android.icu.util.ULocale

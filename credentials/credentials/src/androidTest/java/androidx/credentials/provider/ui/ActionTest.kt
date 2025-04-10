@@ -35,8 +35,8 @@ import org.junit.runner.RunWith
 class ActionTest {
     private val mContext = ApplicationProvider.getApplicationContext<Context>()
     private val mIntent = Intent()
-    private val mPendingIntent = PendingIntent.getActivity(mContext, 0, mIntent,
-        PendingIntent.FLAG_IMMUTABLE)
+    private val mPendingIntent =
+        PendingIntent.getActivity(mContext, 0, mIntent, PendingIntent.FLAG_IMMUTABLE)
 
     @Test
     fun constructor_success() {
@@ -53,7 +53,9 @@ class ActionTest {
         Assert.assertThrows(
             "Expected empty title to throw IllegalArgumentException",
             IllegalArgumentException::class.java
-        ) { Action("", mPendingIntent, SUBTITLE) }
+        ) {
+            Action("", mPendingIntent, SUBTITLE)
+        }
     }
 
     @Test
@@ -69,6 +71,23 @@ class ActionTest {
             assertThat(fromSlice.title).isEqualTo(TITLE)
             assertThat(fromSlice.subtitle).isEqualTo(SUBTITLE)
             assertThat(fromSlice.pendingIntent).isEqualTo(mPendingIntent)
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 34)
+    fun fromAction_success() {
+        val originalAction = Action(TITLE, mPendingIntent, SUBTITLE)
+        val slice = Action.toSlice(originalAction)
+        val frmAction = android.service.credentials.Action(slice)
+
+        val action = Action.fromAction(frmAction)
+
+        assertNotNull(action)
+        action?.let {
+            assertThat(action.title).isEqualTo(TITLE)
+            assertThat(action.subtitle).isEqualTo(SUBTITLE)
+            assertThat(action.pendingIntent).isEqualTo(mPendingIntent)
         }
     }
 

@@ -14,7 +14,15 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 
 plugins {
@@ -24,19 +32,21 @@ plugins {
 }
 
 androidXMultiplatform {
-    android()
-    desktop()
+    androidTarget()
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlibCommon)
-
+                implementation(libs.kotlinStdlib)
                 api(project(":compose:ui:ui"))
                 implementation(project(":compose:runtime:runtime"))
                 implementation(project(":compose:ui:ui-util"))
+                implementation(project(":collection:collection"))
+                implementation(project(":compose:ui:ui-unit"))
             }
         }
 
@@ -51,38 +61,36 @@ androidXMultiplatform {
             }
         }
 
-
         androidMain {
             dependsOn(jvmMain)
             dependencies {
-                api("androidx.annotation:annotation:1.1.0")
+                api("androidx.annotation:annotation:1.8.1")
+                api("androidx.annotation:annotation-experimental:1.4.1")
                 implementation("androidx.core:core:1.7.0")
                 implementation("androidx.compose.animation:animation-core:1.2.1")
             }
         }
 
-        desktopMain {
-            dependsOn(jvmMain)
-            dependencies {
-                implementation(libs.kotlinStdlib)
-
-                implementation(project(":compose:runtime:runtime"))
-                implementation(project(":compose:ui:ui-util"))
-            }
+        commonStubsMain {
+            dependsOn(commonMain)
         }
 
-        jvmTest {
-            dependencies {
-            }
+        jvmStubsMain {
+            dependsOn(commonStubsMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
         }
 
         androidInstrumentedTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:foundation:foundation"))
                 implementation("androidx.compose.ui:ui-test-junit4:1.2.1")
                 implementation(project(":compose:test-utils"))
                 implementation("androidx.activity:activity-compose:1.3.1")
+                implementation("androidx.activity:activity:1.9.1")
 
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
@@ -92,7 +100,7 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
@@ -100,21 +108,23 @@ androidXMultiplatform {
                 implementation(libs.truth)
             }
         }
-
-        desktopTest {
-            dependsOn(jvmTest)
-        }
     }
 }
 
 androidx {
     name = "Compose Layouts"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2019"
     description = "Compose layout implementations"
     legacyDisableKotlinStrictApiMode = true
+    metalavaK2UastEnabled = false
+    samples(project(":compose:foundation:foundation-layout:foundation-layout-samples"))
 }
 
 android {
-    namespace "androidx.compose.foundation.layout"
+    compileSdk = 35
+    namespace = "androidx.compose.foundation.layout"
+    buildTypes.configureEach {
+        consumerProguardFiles("proguard-rules.pro")
+    }
 }

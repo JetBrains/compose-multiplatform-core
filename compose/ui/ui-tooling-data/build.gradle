@@ -14,18 +14,38 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    android()
-    desktop()
+    androidLibrary {
+        namespace = "androidx.compose.ui.tooling.data"
+        withAndroidTestOnDeviceBuilder {
+            it.compilationName = "instrumentedTest"
+            it.defaultSourceSetName = "androidInstrumentedTest"
+            it.sourceSetTreeName = "test"
+        }
+        withAndroidTestOnJvmBuilder {
+            it.defaultSourceSetName = "androidUnitTest"
+        }
+
+        compileSdk = 35
+        aarMetadata.minCompileSdk = 35
+    }
+    jvmStubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -41,47 +61,32 @@ androidXMultiplatform {
 
         commonTest {
             dependencies {
-                implementation(kotlin("test-junit"))
+                implementation(libs.kotlinTest)
             }
         }
 
         jvmMain {
             dependsOn(commonMain)
             dependencies {
-                implementation(libs.kotlinStdlib)
-            }
-        }
-
-        skikoMain {
-            dependsOn(commonMain)
-            dependencies {
-
             }
         }
 
         androidMain {
             dependsOn(jvmMain)
             dependencies {
-                api("androidx.annotation:annotation:1.1.0")
+                api("androidx.annotation:annotation:1.8.1")
+                api("androidx.annotation:annotation-experimental:1.4.1")
             }
         }
 
-        desktopMain {
-            dependsOn(skikoMain)
+        jvmStubsMain {
             dependsOn(jvmMain)
-            dependencies {
-
-            }
-        }
-
-        jvmTest {
-            dependsOn(commonTest)
             dependencies {
             }
         }
 
         androidInstrumentedTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:ui:ui-test-junit4"))
 
@@ -99,16 +104,9 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.truth)
-            }
-        }
-
-        desktopTest {
-            dependsOn(jvmTest)
-            dependencies {
-
             }
         }
     }
@@ -116,13 +114,10 @@ androidXMultiplatform {
 
 androidx {
     name = "Compose Tooling Data"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2021"
     description = "Compose tooling library data. This library provides data about compose" +
             " for different tooling purposes."
     legacyDisableKotlinStrictApiMode = true
 }
 
-android {
-    namespace "androidx.compose.ui.tooling.data"
-}

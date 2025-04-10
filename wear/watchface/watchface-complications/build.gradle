@@ -14,9 +14,15 @@
  * limitations under the License.
  */
 
-import androidx.build.RunApiTasks
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
 
-import androidx.build.Publish
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -25,11 +31,10 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
     api(libs.kotlinStdlib)
     api(project(":wear:watchface:watchface-complications-data"))
     implementation("androidx.core:core:1.1.0")
-    implementation("androidx.annotation:annotation:1.2.0")
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.testRules)
@@ -51,17 +56,17 @@ android {
         aidl = true
     }
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
     // Use Robolectric 4.+
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.wear.watchface.complications"
+    namespace = "androidx.wear.watchface.complications"
 }
 
 androidx {
     name = "Android Wear Complications"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2021"
     description = "Android Wear Complications"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }

@@ -16,6 +16,7 @@
 
 package androidx.compose.runtime.saveable
 
+import androidx.collection.mutableScatterMapOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -23,8 +24,8 @@ import androidx.compose.runtime.ReusableContent
 import androidx.compose.runtime.remember
 
 /**
- * Allows to save the state defined with [rememberSaveable] for the subtree before disposing it
- * to make it possible to compose it back next time with the restored state. It allows different
+ * Allows to save the state defined with [rememberSaveable] for the subtree before disposing it to
+ * make it possible to compose it back next time with the restored state. It allows different
  * navigation patterns to keep the ui state like scroll position for the currently not composed
  * screens from the backstack.
  *
@@ -36,106 +37,88 @@ import androidx.compose.runtime.remember
  */
 interface SaveableStateHolder {
     /**
-     * Put your content associated with a [key] inside the [content]. This will automatically
-     * save all the states defined with [rememberSaveable] before disposing the content and will
-     * restore the states when you compose with this key again.
+     * Put your content associated with a [key] inside the [content]. This will automatically save
+     * all the states defined with [rememberSaveable] before disposing the content and will restore
+     * the states when you compose with this key again.
      *
      * @param key to be used for saving and restoring the states for the subtree. Note that on
-     * Android you can only use types which can be stored inside the Bundle.
+     *   Android you can only use types which can be stored inside the Bundle.
+     * @param content the content for which [key] is associated.
      */
-    @Composable
-    fun SaveableStateProvider(key: Any, content: @Composable () -> Unit)
+    @Composable fun SaveableStateProvider(key: Any, content: @Composable () -> Unit)
 
-    /**
-     * Removes the saved state associated with the passed [key].
-     */
+    /** Removes the saved state associated with the passed [key]. */
     fun removeState(key: Any)
 }
 
-/**
- * Creates and remembers the instance of [SaveableStateHolder].
- */
+/** Creates and remembers the instance of [SaveableStateHolder]. */
 @Composable
 fun rememberSaveableStateHolder(): SaveableStateHolder =
-    rememberSaveable(
-        saver = SaveableStateHolderImpl.Saver
-    ) {
-        SaveableStateHolderImpl()
-    }.apply {
-        parentSaveableStateRegistry = LocalSaveableStateRegistry.current
-    }
+    rememberSaveable(saver = SaveableStateHolderImpl.Saver) { SaveableStateHolderImpl() }
+        .apply { parentSaveableStateRegistry = LocalSaveableStateRegistry.current }
 
 private class SaveableStateHolderImpl(
     private val savedStates: MutableMap<Any, Map<String, List<Any?>>> = mutableMapOf()
 ) : SaveableStateHolder {
-    private val registryHolders = mutableMapOf<Any, RegistryHolder>()
+    private val registries = mutableScatterMapOf<Any, SaveableStateRegistry>()
     var parentSaveableStateRegistry: SaveableStateRegistry? = null
+    private val canBeSaved: (Any) -> Boolean = {
+        parentSaveableStateRegistry?.canBeSaved(it) ?: true
+    }
 
     @Composable
     override fun SaveableStateProvider(key: Any, content: @Composable () -> Unit) {
         ReusableContent(key) {
-            val registryHolder = remember {
-                require(parentSaveableStateRegistry?.canBeSaved(key) ?: true) {
+            val registry = remember {
+                require(canBeSaved(key)) {
                     "Type of the key $key is not supported. On Android you can only use types " +
                         "which can be stored inside the Bundle."
                 }
-                RegistryHolder(key)
+                SaveableStateRegistry(savedStates[key], canBeSaved)
             }
             CompositionLocalProvider(
-                LocalSaveableStateRegistry provides registryHolder.registry,
+                LocalSaveableStateRegistry provides registry,
                 content = content
             )
             DisposableEffect(Unit) {
-                require(key !in registryHolders) { "Key $key was used multiple times " }
+                require(key !in registries) { "Key $key was used multiple times " }
                 savedStates -= key
-                registryHolders[key] = registryHolder
+                registries[key] = registry
                 onDispose {
-                    registryHolder.saveTo(savedStates)
-                    registryHolders -= key
+                    if (registries.remove(key) === registry) {
+                        registry.saveTo(savedStates, key)
+                    }
                 }
             }
         }
     }
 
     private fun saveAll(): MutableMap<Any, Map<String, List<Any?>>>? {
-        val map = savedStates.toMutableMap()
-        registryHolders.values.forEach { it.saveTo(map) }
+        val map = savedStates
+        registries.forEach { key, registry -> registry.saveTo(map, key) }
         return map.ifEmpty { null }
     }
 
     override fun removeState(key: Any) {
-        val registryHolder = registryHolders[key]
-        if (registryHolder != null) {
-            registryHolder.shouldSave = false
-        } else {
+        if (registries.remove(key) == null) {
             savedStates -= key
         }
     }
 
-    inner class RegistryHolder constructor(
-        val key: Any
+    private fun SaveableStateRegistry.saveTo(
+        map: MutableMap<Any, Map<String, List<Any?>>>,
+        key: Any
     ) {
-        var shouldSave = true
-        val registry: SaveableStateRegistry = SaveableStateRegistry(savedStates[key]) {
-            parentSaveableStateRegistry?.canBeSaved(it) ?: true
-        }
-
-        fun saveTo(map: MutableMap<Any, Map<String, List<Any?>>>) {
-            if (shouldSave) {
-                val savedData = registry.performSave()
-                if (savedData.isEmpty()) {
-                    map -= key
-                } else {
-                    map[key] = savedData
-                }
-            }
+        val savedData = performSave()
+        if (savedData.isEmpty()) {
+            map -= key
+        } else {
+            map[key] = savedData
         }
     }
 
     companion object {
-        val Saver: Saver<SaveableStateHolderImpl, *> = Saver(
-            save = { it.saveAll() },
-            restore = { SaveableStateHolderImpl(it) }
-        )
+        val Saver: Saver<SaveableStateHolderImpl, *> =
+            Saver(save = { it.saveAll() }, restore = { SaveableStateHolderImpl(it) })
     }
 }

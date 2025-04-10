@@ -17,26 +17,40 @@
 package androidx.benchmark
 
 /**
- * Experimental config object for microbenchmarks for defining custom metrics, tracing behavior,
- * and profiling, which overrides options set in
+ * Experimental config object for microbenchmarks for defining custom metrics, tracing behavior, and
+ * profiling, which overrides options set in
  * [instrumentation arguments](https://developer.android.com/topic/performance/benchmarking/microbenchmark-instrumentation-args).
  */
 @ExperimentalBenchmarkConfigApi
-class MicrobenchmarkConfig constructor(
+class MicrobenchmarkConfig
+@JvmOverloads
+constructor(
     /**
      * Timing metrics for primary phase, post-warmup
      *
      * Defaults to [TimeCapture].
      */
-    val metrics: List<MetricCapture> = listOf(TimeCapture()),
+    val metrics: List<MetricCapture> =
+        if (Arguments.cpuEventCounterMask != 0) {
+            listOf(
+                TimeCapture(),
+                CpuEventCounterCapture(
+                    MicrobenchmarkPhase.cpuEventCounter,
+                    Arguments.cpuEventCounterMask
+                )
+            )
+        } else {
+            listOf(TimeCapture())
+        },
 
     /**
      * Set to true to enable capture of `trace("foo") {}` blocks in the output Perfetto trace.
      *
      * Defaults to false to minimize interference.
      */
-    @get:JvmName("shouldEnableTraceAppTag")
-    val shouldEnableTraceAppTag: Boolean = false,
+    @get:Suppress("GetterSetterNames") // enabled is more idiomatic for config constructor
+    @get:JvmName("isTraceAppTagEnabled")
+    val traceAppTagEnabled: Boolean = false,
 
     /**
      * Set to true to enable capture of tracing-perfetto trace events, such as in Compose
@@ -44,11 +58,22 @@ class MicrobenchmarkConfig constructor(
      *
      * Defaults to false to minimize interference.
      */
-    @get:JvmName("shouldEnablePerfettoSdkTracing")
-    val shouldEnablePerfettoSdkTracing: Boolean = false,
+    @get:Suppress("GetterSetterNames") // enabled is more idiomatic for config constructor
+    @get:JvmName("isPerfettoSdkTracingEnabled")
+    val perfettoSdkTracingEnabled: Boolean = false,
+
+    /** Optional profiler to be used after the primary timing phase. */
+    val profiler: ProfilerConfig? = null,
 
     /**
-     * Optional profiler to be used after the primary timing phase.
+     * Number of non-measured warmup iterations to perform, leave `null` to determine automatically.
      */
-    val profiler: ProfilerConfig? = null,
+    @Suppress("AutoBoxing") // null is distinct, and boxing cost is trivial (off critical path)
+    @get:Suppress("AutoBoxing") // null is distinct, and boxing cost is trivial (off critical path)
+    val warmupCount: Int? = null,
+
+    /** Number of measurements to perform, leave `null` for default behavior. */
+    @Suppress("AutoBoxing") // null is distinct, and boxing cost is trivial (off critical path)
+    @get:Suppress("AutoBoxing") // null is distinct, and boxing cost is trivial (off critical path)
+    val measurementCount: Int? = null
 )

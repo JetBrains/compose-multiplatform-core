@@ -17,6 +17,8 @@
 package androidx.compose.ui.test
 
 import androidx.annotation.VisibleForTesting
+import androidx.compose.ui.test.platform.makeSynchronizedObject
+import androidx.compose.ui.test.platform.synchronized
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -27,14 +29,11 @@ import kotlinx.coroutines.launch
 internal class IdlingResourceRegistry
 @VisibleForTesting
 @InternalTestApi
-internal constructor(
-    private val pollScopeOverride: CoroutineScope?
-) : IdlingResource {
+internal constructor(private val pollScopeOverride: CoroutineScope?) : IdlingResource {
     // Publicly facing constructor, that doesn't override the poll scope
-    @OptIn(InternalTestApi::class)
-    constructor() : this(null)
+    @OptIn(InternalTestApi::class) constructor() : this(null)
 
-    private val lock = Any()
+    private val lock = makeSynchronizedObject()
 
     // All registered IdlingResources, both idle and busy ones
     private val idlingResources = mutableSetOf<IdlingResource>()
@@ -51,16 +50,15 @@ internal constructor(
     // Callback to be called every time when the last busy resource becomes idle
     private var onIdle: (() -> Unit)? = null
 
-    /**
-     * Returns if all resources are idle
-     */
-    override val isIdleNow: Boolean get() {
-        @Suppress("DEPRECATION_ERROR")
-        return synchronized(lock) {
-            // If a poll job is running, we're not idle now. Let the job do its job.
-            !isPolling && areAllResourcesIdle()
+    /** Returns if all resources are idle */
+    override val isIdleNow: Boolean
+        get() {
+            @Suppress("DEPRECATION_ERROR")
+            return synchronized(lock) {
+                // If a poll job is running, we're not idle now. Let the job do its job.
+                !isPolling && areAllResourcesIdle()
+            }
         }
-    }
 
     /**
      * Installs a callback that will be called when the registry transitions from busy to idle.
@@ -70,19 +68,12 @@ internal constructor(
         onIdle = callback
     }
 
-    /**
-     * Registers the [idlingResource] into the registry
-     */
+    /** Registers the [idlingResource] into the registry */
     fun registerIdlingResource(idlingResource: IdlingResource) {
-        @Suppress("DEPRECATION_ERROR")
-        synchronized(lock) {
-            idlingResources.add(idlingResource)
-        }
+        @Suppress("DEPRECATION_ERROR") synchronized(lock) { idlingResources.add(idlingResource) }
     }
 
-    /**
-     * Unregisters the [idlingResource] from the registry
-     */
+    /** Unregisters the [idlingResource] from the registry */
     fun unregisterIdlingResource(idlingResource: IdlingResource) {
         @Suppress("DEPRECATION_ERROR")
         synchronized(lock) {
@@ -98,16 +89,18 @@ internal constructor(
     internal fun isIdleOrEnsurePolling(): Boolean {
         @Suppress("DEPRECATION_ERROR")
         return synchronized(lock) {
-            !isPolling && areAllResourcesIdle().also { isIdle ->
-                if (!isIdle) {
-                    pollJob = pollScope.launch {
-                        do {
-                            delay(20)
-                        } while (!areAllResourcesIdle())
-                        onIdle?.invoke()
+            !isPolling &&
+                areAllResourcesIdle().also { isIdle ->
+                    if (!isIdle) {
+                        pollJob =
+                            pollScope.launch {
+                                do {
+                                    delay(20)
+                                } while (!areAllResourcesIdle())
+                                onIdle?.invoke()
+                            }
                     }
                 }
-            }
         }
     }
 
@@ -150,7 +143,7 @@ internal constructor(
         return replace("\n(?=.)".toRegex(), "\n$prefix")
     }
 
-    fun <R> withRegistry(block: () -> R): R {
+    inline fun <R> withRegistry(block: () -> R): R {
         try {
             return block()
         } finally {

@@ -13,7 +13,7 @@
  */
 package androidx.leanback.widget;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,9 +61,8 @@ public final class ClassPresenterSelector extends PresenterSelector {
         return this;
     }
 
-    @Nullable
     @Override
-    public Presenter getPresenter(@Nullable Object item) {
+    public @Nullable Presenter getPresenter(@Nullable Object item) {
         if (item == null) {
             return null;
         }

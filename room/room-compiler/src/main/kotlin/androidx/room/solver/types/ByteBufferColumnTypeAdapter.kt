@@ -23,13 +23,11 @@ import androidx.room.ext.CommonTypeNames
 import androidx.room.parser.SQLTypeAffinity
 import androidx.room.solver.CodeGenScope
 
-class ByteBufferColumnTypeAdapter constructor(out: XType) : ColumnTypeAdapter(
-    out = out,
-    typeAffinity = SQLTypeAffinity.BLOB
-) {
-    override fun readFromCursor(
+class ByteBufferColumnTypeAdapter constructor(out: XType) :
+    ColumnTypeAdapter(out = out, typeAffinity = SQLTypeAffinity.BLOB) {
+    override fun readFromStatement(
         outVarName: String,
-        cursorVarName: String,
+        stmtVarName: String,
         indexVarName: String,
         scope: CodeGenScope
     ) {
@@ -39,17 +37,16 @@ class ByteBufferColumnTypeAdapter constructor(out: XType) : ColumnTypeAdapter(
                     "%L = %T.wrap(%L.getBlob(%L))",
                     outVarName,
                     CommonTypeNames.BYTE_BUFFER,
-                    cursorVarName,
+                    stmtVarName,
                     indexVarName
                 )
             }
             if (out.nullability == XNullability.NONNULL) {
                 addGetBlobStatement()
             } else {
-                beginControlFlow("if (%L.isNull(%L))", cursorVarName, indexVarName)
+                beginControlFlow("if (%L.isNull(%L))", stmtVarName, indexVarName)
                     .addStatement("%L = null", outVarName)
-                nextControlFlow("else")
-                    .addGetBlobStatement()
+                nextControlFlow("else").addGetBlobStatement()
                 endControlFlow()
             }
         }
@@ -63,20 +60,14 @@ class ByteBufferColumnTypeAdapter constructor(out: XType) : ColumnTypeAdapter(
     ) {
         scope.builder.apply {
             fun XCodeBlock.Builder.addBindBlobStatement() {
-                addStatement(
-                    "%L.bindBlob(%L, %L.array())",
-                    stmtName,
-                    indexVarName,
-                    valueVarName
-                )
+                addStatement("%L.bindBlob(%L, %L.array())", stmtName, indexVarName, valueVarName)
             }
             if (out.nullability == XNullability.NONNULL) {
                 addBindBlobStatement()
             } else {
                 beginControlFlow("if (%L == null)", valueVarName)
                     .addStatement("%L.bindNull(%L)", stmtName, indexVarName)
-                nextControlFlow("else")
-                    .addBindBlobStatement()
+                nextControlFlow("else").addBindBlobStatement()
                 endControlFlow()
             }
         }

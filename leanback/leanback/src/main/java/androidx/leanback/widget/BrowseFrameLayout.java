@@ -20,8 +20,8 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A ViewGroup for managing focus behavior between overlapping views.
@@ -37,8 +37,7 @@ public class BrowseFrameLayout extends FrameLayout {
          * Returns the view where focus should be requested given the current focused view and
          * the direction of focus search.
          */
-        @Nullable
-        View onFocusSearch(@Nullable View focused, int direction);
+        @Nullable View onFocusSearch(@Nullable View focused, int direction);
     }
 
     /**
@@ -86,8 +85,7 @@ public class BrowseFrameLayout extends FrameLayout {
     /**
      * Returns the {@link OnFocusSearchListener}.
      */
-    @Nullable
-    public OnFocusSearchListener getOnFocusSearchListener() {
+    public @Nullable OnFocusSearchListener getOnFocusSearchListener() {
         return mListener;
     }
 
@@ -101,8 +99,7 @@ public class BrowseFrameLayout extends FrameLayout {
     /**
      * Returns the {@link OnChildFocusListener}.
      */
-    @Nullable
-    public OnChildFocusListener getOnChildFocusListener() {
+    public @Nullable OnChildFocusListener getOnChildFocusListener() {
         return mOnChildFocusListener;
     }
 

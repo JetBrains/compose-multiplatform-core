@@ -16,13 +16,22 @@
 
 package androidx.compose.foundation.textfield
 
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.FocusedWindowTest
 import androidx.compose.foundation.text.Handle
+import androidx.compose.foundation.text.TEST_FONT_FAMILY
+import androidx.compose.foundation.text.contextmenu.internal.ProvidePlatformTextContextMenuToolbar
+import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagFlipperRunner
+import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagSuppress
+import androidx.compose.foundation.text.contextmenu.test.SpyTextActionModeCallback
+import androidx.compose.foundation.text.contextmenu.test.assertShown
 import androidx.compose.foundation.text.selection.ReducedVisualTransformation
 import androidx.compose.foundation.text.selection.isSelectionHandle
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalTextToolbar
@@ -43,20 +52,23 @@ import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 
+@RunWith(ContextMenuFlagFlipperRunner::class)
 class TextFieldSelectionTest : FocusedWindowTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private val testTag = "text field"
 
@@ -109,7 +121,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
         rule.setTextFieldTestContent {
             BasicTextField(
                 value = "text".repeat(10),
-                onValueChange = { },
+                onValueChange = {},
                 visualTransformation = ReducedVisualTransformation(),
                 modifier = Modifier.testTag(testTag)
             )
@@ -146,6 +158,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
         rule.onNode(isSelectionHandle(Handle.Cursor)).assertIsDisplayed()
     }
 
+    @ContextMenuFlagSuppress(suppressedFlagValue = true)
     @Test
     fun textField_tapsCursorHandle_showsTextToolbar() {
         val textFieldValue = mutableStateOf(TextFieldValue("text"))
@@ -171,12 +184,12 @@ class TextFieldSelectionTest : FocusedWindowTest {
         assertThat(textFieldValue.value.selection.start).isEqualTo(0)
         assertThat(textToolbar.status).isEqualTo(TextToolbarStatus.Hidden)
 
-        rule.onNode(isSelectionHandle(Handle.Cursor))
-            .performTouchInput { click() }
+        rule.onNode(isSelectionHandle(Handle.Cursor)).performTouchInput { click() }
 
         assertThat(textToolbar.status).isEqualTo(TextToolbarStatus.Shown)
     }
 
+    @ContextMenuFlagSuppress(suppressedFlagValue = true)
     @Test
     fun textField_dragsCursorHandle() {
         textField_dragsCursorHandle(
@@ -186,6 +199,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
         )
     }
 
+    @ContextMenuFlagSuppress(suppressedFlagValue = true)
     @Test
     fun textField_dragsCursorHandle_withPasswordVisualTransformation() {
         textField_dragsCursorHandle(
@@ -195,6 +209,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
         )
     }
 
+    @ContextMenuFlagSuppress(suppressedFlagValue = true)
     @Test
     fun textField_dragsCursorHandle_withReducedVisualTransformation() {
         textField_dragsCursorHandle(
@@ -204,15 +219,16 @@ class TextFieldSelectionTest : FocusedWindowTest {
         )
     }
 
-    @Ignore("b/308895081")
+    @ContextMenuFlagSuppress(suppressedFlagValue = true)
     @Test
     fun textField_noSelectionHandles_whenWindowLosesFocus() {
         val textFieldValue = mutableStateOf(TextFieldValue("texttexttext"))
         val focusWindow = mutableStateOf(true)
-        val windowInfo = object : WindowInfo {
-            override val isWindowFocused: Boolean
-                get() = focusWindow.value
-        }
+        val windowInfo =
+            object : WindowInfo {
+                override val isWindowFocused: Boolean
+                    get() = focusWindow.value
+            }
         lateinit var textToolbar: TextToolbar
 
         rule.setTextFieldTestContent {
@@ -247,15 +263,16 @@ class TextFieldSelectionTest : FocusedWindowTest {
         assertHandlesNotExist()
     }
 
-    @Ignore("b/308895081")
+    @ContextMenuFlagSuppress(suppressedFlagValue = true)
     @Test
     fun textField_redisplaysSelectionHandlesAndToolbar_whenWindowRegainsFocus() {
         val textFieldValue = mutableStateOf(TextFieldValue("texttexttext"))
         val focusWindow = mutableStateOf(true)
-        val windowInfo = object : WindowInfo {
-            override val isWindowFocused: Boolean
-                get() = focusWindow.value
-        }
+        val windowInfo =
+            object : WindowInfo {
+                override val isWindowFocused: Boolean
+                    get() = focusWindow.value
+            }
         lateinit var textToolbar: TextToolbar
 
         rule.setTextFieldTestContent {
@@ -303,8 +320,8 @@ class TextFieldSelectionTest : FocusedWindowTest {
                 value = textFieldValue.value,
                 onValueChange = {
                     textFieldValue.value = it
-                    if (it.selection.collapsed &&
-                        cursorPositions.lastOrNull() != it.selection.start
+                    if (
+                        it.selection.collapsed && cursorPositions.lastOrNull() != it.selection.start
                     ) {
                         cursorPositions.add(it.selection.start)
                     }
@@ -331,7 +348,209 @@ class TextFieldSelectionTest : FocusedWindowTest {
         assertThat(textToolbar.status).isEqualTo(TextToolbarStatus.Hidden)
     }
 
-    @Ignore // b/265023621
+    @ContextMenuFlagSuppress(suppressedFlagValue = false)
+    @Test
+    fun textField_tapsCursorHandle_showsTextToolbar_newContextMenu() {
+        val textFieldValue = mutableStateOf(TextFieldValue("text"))
+        val spyTextActionModeCallback = SpyTextActionModeCallback()
+
+        rule.setTextFieldTestContent {
+            ProvidePlatformTextContextMenuToolbar(
+                callbackInjector = { spyTextActionModeCallback.apply { delegate = it } }
+            ) {
+                BasicTextField(
+                    value = textFieldValue.value,
+                    onValueChange = { textFieldValue.value = it },
+                    modifier = Modifier.testTag(testTag)
+                )
+            }
+        }
+
+        // selection and cursor are hidden
+        rule.onAllNodes(isPopup()).assertCountEquals(0)
+        spyTextActionModeCallback.assertShown(shown = false)
+
+        // focus textfield, cursor should show at the very beginning of textfield
+        rule.onNodeWithTag(testTag).performTouchInput { click(Offset.Zero) }
+        rule.waitForIdle()
+
+        assertThat(textFieldValue.value.selection.start).isEqualTo(0)
+        spyTextActionModeCallback.assertShown(shown = false)
+
+        rule.onNode(isSelectionHandle(Handle.Cursor)).performTouchInput { click() }
+
+        spyTextActionModeCallback.assertShown(shown = true)
+    }
+
+    @ContextMenuFlagSuppress(suppressedFlagValue = false)
+    @Test
+    fun textField_dragsCursorHandle_newContextMenu() {
+        textField_dragsCursorHandle_newContextMenu(
+            text = "text text text",
+            visualTransformation = VisualTransformation.None,
+            expectedCursorPositions = (0..14).toList()
+        )
+    }
+
+    @ContextMenuFlagSuppress(suppressedFlagValue = false)
+    @Test
+    fun textField_dragsCursorHandle_withPasswordVisualTransformation_newContextMenu() {
+        textField_dragsCursorHandle_newContextMenu(
+            text = "text text text",
+            visualTransformation = PasswordVisualTransformation(),
+            expectedCursorPositions = (0..14).toList()
+        )
+    }
+
+    @ContextMenuFlagSuppress(suppressedFlagValue = false)
+    @Test
+    fun textField_dragsCursorHandle_withReducedVisualTransformation_newContextMenu() {
+        textField_dragsCursorHandle_newContextMenu(
+            text = "text".repeat(10),
+            visualTransformation = ReducedVisualTransformation(),
+            expectedCursorPositions = (0..40).filter { it % 2 == 0 }.toList()
+        )
+    }
+
+    @ContextMenuFlagSuppress(suppressedFlagValue = false)
+    @Test
+    fun textField_noSelectionHandles_whenWindowLosesFocus_newContextMenu() {
+        val textFieldValue = mutableStateOf(TextFieldValue("texttexttext"))
+        val focusWindow = mutableStateOf(true)
+        val windowInfo =
+            object : WindowInfo {
+                override val isWindowFocused: Boolean
+                    get() = focusWindow.value
+            }
+        val spyTextActionModeCallback = SpyTextActionModeCallback()
+
+        rule.setTextFieldTestContent {
+            ProvidePlatformTextContextMenuToolbar(
+                callbackInjector = { spyTextActionModeCallback.apply { delegate = it } }
+            ) {
+                CompositionLocalProvider(LocalWindowInfo provides windowInfo) {
+                    BasicTextField(
+                        value = textFieldValue.value,
+                        onValueChange = { textFieldValue.value = it },
+                        modifier = Modifier.testTag(testTag)
+                    )
+                }
+            }
+        }
+
+        // selection and cursor are hidden
+        rule.onAllNodes(isPopup()).assertCountEquals(0)
+        assertHandlesNotExist()
+        spyTextActionModeCallback.assertShown(shown = false)
+
+        // make selection
+        rule.onNodeWithTag(testTag).performTouchInput { longClick() }
+        rule.waitForIdle()
+
+        assertHandlesDisplayed()
+        spyTextActionModeCallback.assertShown(shown = true)
+
+        // window lost focus, make sure handles and toolbar disappeared
+        rule.runOnIdle { focusWindow.value = false }
+        rule.waitForIdle()
+
+        spyTextActionModeCallback.assertShown(shown = false)
+        rule.onAllNodes(isPopup()).assertCountEquals(0)
+        assertHandlesNotExist()
+    }
+
+    @ContextMenuFlagSuppress(suppressedFlagValue = false)
+    @Test
+    fun textField_redisplaysSelectionHandlesAndToolbar_whenWindowRegainsFocus_newContextMenu() {
+        val textFieldValue = mutableStateOf(TextFieldValue("texttexttext"))
+        val focusWindow = mutableStateOf(true)
+        val windowInfo =
+            object : WindowInfo {
+                override val isWindowFocused: Boolean
+                    get() = focusWindow.value
+            }
+        val spyTextActionModeCallback = SpyTextActionModeCallback()
+
+        rule.setTextFieldTestContent {
+            ProvidePlatformTextContextMenuToolbar(
+                callbackInjector = { spyTextActionModeCallback.apply { delegate = it } }
+            ) {
+                CompositionLocalProvider(LocalWindowInfo provides windowInfo) {
+                    BasicTextField(
+                        value = textFieldValue.value,
+                        onValueChange = { textFieldValue.value = it },
+                        modifier = Modifier.testTag(testTag)
+                    )
+                }
+            }
+        }
+
+        // make selection
+        rule.onNodeWithTag(testTag).performTouchInput { longClick() }
+        rule.waitForIdle()
+
+        // window lost focus, make sure handles and toolbar disappeared
+        rule.runOnIdle { focusWindow.value = false }
+        rule.waitForIdle()
+
+        spyTextActionModeCallback.assertShown(shown = false)
+        rule.onAllNodes(isPopup()).assertCountEquals(0)
+        assertHandlesNotExist()
+
+        // regain window focus
+        rule.runOnIdle { focusWindow.value = true }
+        rule.waitForIdle()
+
+        spyTextActionModeCallback.assertShown(shown = true)
+        assertHandlesDisplayed()
+    }
+
+    private fun textField_dragsCursorHandle_newContextMenu(
+        text: String,
+        visualTransformation: VisualTransformation,
+        expectedCursorPositions: List<Int>
+    ) {
+        val textFieldValue = mutableStateOf(TextFieldValue(text, TextRange(Int.MAX_VALUE)))
+        val cursorPositions = mutableListOf<Int>()
+        val spyTextActionModeCallback = SpyTextActionModeCallback()
+        rule.setTextFieldTestContent {
+            ProvidePlatformTextContextMenuToolbar(
+                callbackInjector = { spyTextActionModeCallback.apply { delegate = it } }
+            ) {
+                BasicTextField(
+                    value = textFieldValue.value,
+                    onValueChange = {
+                        textFieldValue.value = it
+                        if (
+                            it.selection.collapsed &&
+                                cursorPositions.lastOrNull() != it.selection.start
+                        ) {
+                            cursorPositions.add(it.selection.start)
+                        }
+                    },
+                    visualTransformation = visualTransformation,
+                    modifier = Modifier.testTag(testTag)
+                )
+            }
+        }
+
+        // selection and cursor are hidden
+        rule.onAllNodes(isPopup()).assertCountEquals(0)
+        spyTextActionModeCallback.assertShown(shown = false)
+
+        // focus textfield, cursor should show at the very beginning of textfield
+        rule.onNodeWithTag(testTag).performTouchInput { click(Offset.Zero) }
+        rule.waitForIdle()
+
+        assertThat(textFieldValue.value.selection.start).isEqualTo(0)
+        spyTextActionModeCallback.assertShown(shown = false)
+
+        performHandleDrag(Handle.Cursor, toLeft = false, swipeFraction = 1f)
+
+        assertThat(cursorPositions).isEqualTo(expectedCursorPositions)
+        spyTextActionModeCallback.assertShown(shown = false)
+    }
+
     @Test
     fun textField_extendsSelection_toRight() {
         textField_extendsSelection(
@@ -342,7 +561,6 @@ class TextFieldSelectionTest : FocusedWindowTest {
         )
     }
 
-    @Ignore // b/265023621
     @Test
     fun textField_extendsSelection_withPasswordVisualTransformation_toRight() {
         textField_extendsSelection(
@@ -353,21 +571,17 @@ class TextFieldSelectionTest : FocusedWindowTest {
         )
     }
 
-    @Ignore // b/265023621
     @Test
     fun textField_extendsSelection_withReducedVisualTransformation_toRight() {
         textField_extendsSelection(
             text = "text".repeat(10),
             visualTransformation = ReducedVisualTransformation(),
-            expectedSelectionRanges = (21..39)
-                .filter { it % 2 == 0 }
-                .map { TextRange(0, it) }
-                .toList(),
+            expectedSelectionRanges =
+                (21..39).filter { it % 2 == 0 }.map { TextRange(0, it) }.toList(),
             toLeft = false
         )
     }
 
-    @Ignore // b/265023420
     @Test
     fun textField_extendsSelection_toLeft() {
         textField_extendsSelection(
@@ -378,7 +592,6 @@ class TextFieldSelectionTest : FocusedWindowTest {
         )
     }
 
-    @Ignore // b/265023621
     @Test
     fun textField_extendsSelection_withPasswordVisualTransformation_toLeft() {
         textField_extendsSelection(
@@ -394,12 +607,34 @@ class TextFieldSelectionTest : FocusedWindowTest {
         textField_extendsSelection(
             text = "text".repeat(10),
             visualTransformation = ReducedVisualTransformation(),
-            expectedSelectionRanges = (19 downTo 1)
-                .filter { it % 2 == 0 }
-                .map { TextRange(it, 40) }
-                .toList(),
+            expectedSelectionRanges =
+                (19 downTo 1).filter { it % 2 == 0 }.map { TextRange(it, 40) }.toList(),
             toLeft = true
         )
+    }
+
+    @Test
+    fun selectionHandles_appear_whenTextAlignedToEnd() {
+        var value by mutableStateOf("hello")
+
+        rule.setTextFieldTestContent {
+            BasicTextField(
+                value = value,
+                onValueChange = { value = it },
+                textStyle =
+                    TextStyle(
+                        fontFamily = TEST_FONT_FAMILY,
+                        textAlign = TextAlign.End,
+                        letterSpacing = 1.2.sp,
+                    ),
+                modifier = Modifier.testTag(testTag).fillMaxWidth()
+            )
+        }
+
+        rule.onNodeWithTag(testTag).performTouchInput { longClick(centerRight) }
+        rule.waitForIdle()
+
+        assertHandlesDisplayed()
     }
 
     // starts from [0,1] selection
@@ -409,8 +644,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
         expectedSelectionRanges: List<TextRange>,
         toLeft: Boolean
     ) {
-        val textFieldValue =
-            mutableStateOf(TextFieldValue(text, TextRange(Int.MAX_VALUE)))
+        val textFieldValue = mutableStateOf(TextFieldValue(text, TextRange(Int.MAX_VALUE)))
         val selectionRanges = mutableListOf<TextRange>()
         rule.setTextFieldTestContent {
             BasicTextField(
@@ -450,18 +684,19 @@ class TextFieldSelectionTest : FocusedWindowTest {
         return VisualTransformation { text ->
             TransformedText(
                 text = AnnotatedString(text.text.map { "$it*" }.joinToString("")),
-                offsetMapping = object : OffsetMapping {
-                    override fun originalToTransformed(offset: Int) = offset * 2
-                    override fun transformedToOriginal(offset: Int) = offset / 2
-                })
+                offsetMapping =
+                    object : OffsetMapping {
+                        override fun originalToTransformed(offset: Int) = offset * 2
+
+                        override fun transformedToOriginal(offset: Int) = offset / 2
+                    }
+            )
         }
     }
 
     private fun performHandleDrag(handle: Handle, toLeft: Boolean, swipeFraction: Float = 0.5f) {
         val handleNode = rule.onNode(isSelectionHandle(handle))
-        val fieldWidth = rule.onNodeWithTag(testTag)
-            .fetchSemanticsNode()
-            .boundsInRoot.width
+        val fieldWidth = rule.onNodeWithTag(testTag).fetchSemanticsNode().boundsInRoot.width
 
         val swipeDistance = (fieldWidth * swipeFraction).roundToInt()
 
@@ -475,12 +710,12 @@ class TextFieldSelectionTest : FocusedWindowTest {
     }
 
     private fun assertHandlesDisplayed() {
-            rule.onNode(isSelectionHandle(Handle.SelectionStart)).assertIsDisplayed()
-            rule.onNode(isSelectionHandle(Handle.SelectionEnd)).assertIsDisplayed()
+        rule.onNode(isSelectionHandle(Handle.SelectionStart)).assertIsDisplayed()
+        rule.onNode(isSelectionHandle(Handle.SelectionEnd)).assertIsDisplayed()
     }
 
     private fun assertHandlesNotExist() {
-            rule.onNode(isSelectionHandle(Handle.SelectionStart)).assertDoesNotExist()
-            rule.onNode(isSelectionHandle(Handle.SelectionEnd)).assertDoesNotExist()
+        rule.onNode(isSelectionHandle(Handle.SelectionStart)).assertDoesNotExist()
+        rule.onNode(isSelectionHandle(Handle.SelectionEnd)).assertDoesNotExist()
     }
 }

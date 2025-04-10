@@ -38,31 +38,30 @@ import androidx.compose.ui.unit.dp
 fun Modifier.clipScrollableContainer(orientation: Orientation) =
     then(
         if (orientation == Orientation.Vertical) {
-            VerticalScrollableClipModifier
+            Modifier.clip(VerticalScrollableClipShape)
         } else {
-            HorizontalScrollableClipModifier
+            Modifier.clip(HorizontalScrollableClipShape)
         }
     )
 
 /**
  * In the scrollable containers we want to clip the main axis sides in order to not display the
  * content which is scrolled out. But once we apply clipToBounds() modifier on such containers it
- * causes unexpected behavior as we also clip the content on the cross axis sides. It is
- * unexpected as Compose components are not clipping by default. The most common case how it
- * could be reproduced is a horizontally scrolling list of Cards. Cards have the elevation by
- * default and such Cards will be drawn with clipped shadows on top and bottom. This was harder
- * to reproduce in the Views system as usually scrolling containers like RecyclerView didn't have
- * an opaque background which means the ripple was drawn on the surface on the first parent with
- * background. In Compose as we don't clip by default we draw shadows right in place.
- * We faced similar issue in Compose already with Androids Popups and Dialogs where we decided to
- * just predefine some constant with a maximum elevation size we are not going to clip. We are
- * going to reuse this technique here. This will improve how it works in most common cases. If the
- * user will need to have a larger unclipped area for some reason they can always add the needed
- * padding inside the scrollable area.
+ * causes unexpected behavior as we also clip the content on the cross axis sides. It is unexpected
+ * as Compose components are not clipping by default. The most common case how it could be
+ * reproduced is a horizontally scrolling list of Cards. Cards have the elevation by default and
+ * such Cards will be drawn with clipped shadows on top and bottom. This was harder to reproduce in
+ * the Views system as usually scrolling containers like RecyclerView didn't have an opaque
+ * background which means the ripple was drawn on the surface on the first parent with background.
+ * In Compose as we don't clip by default we draw shadows right in place. We faced similar issue in
+ * Compose already with Androids Popups and Dialogs where we decided to just predefine some constant
+ * with a maximum elevation size we are not going to clip. We are going to reuse this technique
+ * here. This will improve how it works in most common cases. If the user will need to have a larger
+ * unclipped area for some reason they can always add the needed padding inside the scrollable area.
  */
 internal val MaxSupportedElevation = 30.dp
 
-private val HorizontalScrollableClipModifier = Modifier.clip(object : Shape {
+private object HorizontalScrollableClipShape : Shape {
     override fun createOutline(
         size: Size,
         layoutDirection: LayoutDirection,
@@ -78,9 +77,9 @@ private val HorizontalScrollableClipModifier = Modifier.clip(object : Shape {
             )
         )
     }
-})
+}
 
-private val VerticalScrollableClipModifier = Modifier.clip(object : Shape {
+private object VerticalScrollableClipShape : Shape {
     override fun createOutline(
         size: Size,
         layoutDirection: LayoutDirection,
@@ -96,4 +95,4 @@ private val VerticalScrollableClipModifier = Modifier.clip(object : Shape {
             )
         )
     }
-})
+}

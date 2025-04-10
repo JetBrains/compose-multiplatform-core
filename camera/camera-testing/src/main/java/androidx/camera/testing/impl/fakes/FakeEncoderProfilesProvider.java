@@ -16,11 +16,11 @@
 
 package androidx.camera.testing.impl.fakes;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.EncoderProfilesProvider;
 import androidx.camera.core.impl.EncoderProfilesProxy;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,7 +28,6 @@ import java.util.Map;
 /**
  * A fake implementation of the {@link EncoderProfilesProvider} and used for test.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class FakeEncoderProfilesProvider implements EncoderProfilesProvider {
 
     private final Map<Integer, EncoderProfilesProxy> mQualityToProfileMap;
@@ -44,16 +43,14 @@ public class FakeEncoderProfilesProvider implements EncoderProfilesProvider {
     }
 
     /** {@inheritDoc} */
-    @Nullable
     @Override
-    public EncoderProfilesProxy getAll(int quality) {
+    public @Nullable EncoderProfilesProxy getAll(int quality) {
         return mQualityToProfileMap.get(quality);
     }
 
     /**
      * The builder to create a FakeEncoderProfilesProvider instance.
      */
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     public static class Builder {
 
         private final Map<Integer, EncoderProfilesProxy> mQualityToProfileMap = new HashMap<>();
@@ -61,8 +58,7 @@ public class FakeEncoderProfilesProvider implements EncoderProfilesProvider {
         /**
          * Adds a quality and its corresponding profiles.
          */
-        @NonNull
-        public Builder add(int quality, @NonNull EncoderProfilesProxy profiles) {
+        public @NonNull Builder add(int quality, @NonNull EncoderProfilesProxy profiles) {
             mQualityToProfileMap.put(quality, profiles);
             return this;
         }
@@ -70,15 +66,14 @@ public class FakeEncoderProfilesProvider implements EncoderProfilesProvider {
         /**
          * Adds qualities and their corresponding profiles.
          */
-        @NonNull
-        public Builder addAll(@NonNull Map<Integer, EncoderProfilesProxy> qualityToProfileMap) {
+        public @NonNull Builder addAll(
+                @NonNull Map<Integer, EncoderProfilesProxy> qualityToProfileMap) {
             mQualityToProfileMap.putAll(qualityToProfileMap);
             return this;
         }
 
         /** Builds the FakeEncoderProfilesProvider instance. */
-        @NonNull
-        public FakeEncoderProfilesProvider build() {
+        public @NonNull FakeEncoderProfilesProvider build() {
             return new FakeEncoderProfilesProvider(mQualityToProfileMap);
         }
     }

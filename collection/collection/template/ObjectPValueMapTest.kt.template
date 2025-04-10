@@ -16,6 +16,7 @@
 
 package androidx.collection
 
+import kotlin.js.JsName
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -186,6 +187,35 @@ class ObjectPValueTest {
         assertEquals(3ValueSuffix, map5["Hallo"])
         assertEquals(4ValueSuffix, map5["Konnichiwa"])
         assertEquals(5ValueSuffix, map5["Ciao"])
+    }
+
+    @Test
+    fun buildObjectPValueMapFunction() {
+        val contract: Boolean
+        val map = buildObjectPValueMap {
+            contract = true
+            put("Hello", 1ValueSuffix)
+            put("Bonjour", 2ValueSuffix)
+        }
+        assertTrue(contract)
+        assertEquals(2, map.size)
+        assertEquals(1ValueSuffix, map["Hello"])
+        assertEquals(2ValueSuffix, map["Bonjour"])
+    }
+
+    @Test
+    fun buildObjectPValueMapWithCapacityFunction() {
+        val contract: Boolean
+        val map = buildObjectPValueMap(20) {
+            contract = true
+            put("Hello", 1ValueSuffix)
+            put("Bonjour", 2ValueSuffix)
+        }
+        assertTrue(contract)
+        assertEquals(2, map.size)
+        assertTrue(map.capacity >= 18)
+        assertEquals(1ValueSuffix, map["Hello"])
+        assertEquals(2ValueSuffix, map["Bonjour"])
     }
 
     @Test
@@ -601,6 +631,7 @@ class ObjectPValueTest {
     }
 
     @Test
+    @JsName("jsEquals")
     fun equals() {
         val map = MutableObjectPValueMap<String?>()
         map["Hello"] = 1ValueSuffix
@@ -616,6 +647,19 @@ class ObjectPValueTest {
 
         map2["Hello"] = 1ValueSuffix
         assertEquals(map, map2)
+
+        // Same number of items but different keys to test that looking up
+        // a non-existing entry doesn't throw during equals()
+        assertNotEquals(
+            mutableObjectPValueMapOf(
+                "Hello", 1ValueSuffix,
+                "World", 2ValueSuffix
+            ),
+            mutableObjectPValueMapOf(
+                "Hello", 1ValueSuffix,
+                "Foo", 2ValueSuffix
+            )
+        )
     }
 
     @Test
@@ -740,5 +784,19 @@ class ObjectPValueTest {
 
         assertEquals(1024, map.trim())
         assertEquals(0, map.trim())
+    }
+
+    @Test
+    fun insertManyRemoveMany() {
+        val map = MutableObjectPValueMap<Int>()
+
+        for (i in 0 .. 1000000) {
+            map[i] = i.toPValue()
+            map.remove(i)
+            assertTrue(
+                map.capacity < 16,
+                "Map grew larger than 16 after step $i"
+            )
+        }
     }
 }

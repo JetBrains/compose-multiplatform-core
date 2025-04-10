@@ -105,6 +105,21 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/PhotoToggle" />
 
+    <Button
+        android:id="@+id/image_output_format"
+        android:layout_width="46dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:layout_marginRight="5dp"
+        android:background="@drawable/round_button"
+        android:scaleType="fitXY"
+        android:textColor="#EEEEEE"
+        android:textSize="14dp"
+        android:visibility="invisible"
+        app:layout_constraintTop_toBottomOf="@id/videoToggle"
+        app:layout_constraintRight_toRightOf="parent"
+        />
+
     <ImageButton
         android:id="@+id/ExtensionToggle"
         android:layout_width="wrap_content"

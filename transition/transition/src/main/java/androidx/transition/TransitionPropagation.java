@@ -19,8 +19,8 @@ package androidx.transition;
 import android.annotation.SuppressLint;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Extend <code>TransitionPropagation</code> to customize start delays for Animators created
@@ -90,7 +90,6 @@ public abstract class TransitionPropagation {
      * {@link TransitionValues}.
      */
     @SuppressLint("NullableCollection")
-    @Nullable
-    public abstract String[] getPropagationProperties();
+    public abstract String @Nullable [] getPropagationProperties();
 
 }

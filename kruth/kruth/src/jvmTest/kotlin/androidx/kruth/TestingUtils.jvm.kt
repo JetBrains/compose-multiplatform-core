@@ -19,8 +19,10 @@ package androidx.kruth
 import kotlin.math.nextDown as kotlinNextDown
 import kotlin.math.nextUp as kotlinNextUp
 
-internal actual fun Float.nextUp(): Float =
-    kotlinNextUp()
+internal actual fun Float.nextUp(): Float = kotlinNextUp()
 
-internal actual fun Float.nextDown(): Float =
-    kotlinNextDown()
+internal actual fun Float.nextDown(): Float = kotlinNextDown()
+
+internal actual inline fun assumeNotJs(block: () -> Unit) {
+    block()
+}

@@ -19,13 +19,11 @@ package androidx.camera.testing.impl.fakes;
 import static androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE;
 
 import android.util.Pair;
+import android.util.Range;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.MirrorMode;
-import androidx.camera.core.UseCase;
 import androidx.camera.core.impl.CaptureConfig;
 import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.ImageInputConfig;
@@ -38,11 +36,12 @@ import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType;
 import androidx.camera.core.resolutionselector.ResolutionSelector;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.List;
 import java.util.UUID;
 
 /** A fake configuration for {@link FakeUseCase}. */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class FakeUseCaseConfig implements UseCaseConfig<FakeUseCase>, ImageOutputConfig {
 
     private final Config mConfig;
@@ -51,9 +50,8 @@ public class FakeUseCaseConfig implements UseCaseConfig<FakeUseCase>, ImageOutpu
         mConfig = config;
     }
 
-    @NonNull
     @Override
-    public Config getConfig() {
+    public @NonNull Config getConfig() {
         return mConfig;
     }
 
@@ -63,14 +61,12 @@ public class FakeUseCaseConfig implements UseCaseConfig<FakeUseCase>, ImageOutpu
                 INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE);
     }
 
-    @NonNull
     @Override
-    public CaptureType getCaptureType() {
+    public @NonNull CaptureType getCaptureType() {
         return retrieveOption(OPTION_CAPTURE_TYPE);
     }
 
     /** Builder for an empty Config */
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     public static final class Builder implements
             UseCaseConfig.Builder<FakeUseCase, FakeUseCaseConfig, FakeUseCaseConfig.Builder>,
             ImageOutputConfig.Builder<FakeUseCaseConfig.Builder>,
@@ -102,28 +98,24 @@ public class FakeUseCaseConfig implements UseCaseConfig<FakeUseCase>, ImageOutpu
         }
 
         @Override
-        @NonNull
-        public MutableConfig getMutableConfig() {
+        public @NonNull MutableConfig getMutableConfig() {
             return mOptionsBundle;
         }
 
-        @NonNull
         @Override
-        public FakeUseCaseConfig getUseCaseConfig() {
+        public @NonNull FakeUseCaseConfig getUseCaseConfig() {
             return new FakeUseCaseConfig(OptionsBundle.from(mOptionsBundle));
         }
 
         @Override
-        @NonNull
-        public FakeUseCase build() {
+        public @NonNull FakeUseCase build() {
             return new FakeUseCase(getUseCaseConfig());
         }
 
         // Implementations of TargetConfig.Builder default methods
 
         @Override
-        @NonNull
-        public Builder setTargetClass(@NonNull Class<FakeUseCase> targetClass) {
+        public @NonNull Builder setTargetClass(@NonNull Class<FakeUseCase> targetClass) {
             getMutableConfig().insertOption(OPTION_TARGET_CLASS, targetClass);
 
             // If no name is set yet, then generate a unique name
@@ -136,8 +128,7 @@ public class FakeUseCaseConfig implements UseCaseConfig<FakeUseCase>, ImageOutpu
         }
 
         @Override
-        @NonNull
-        public Builder setTargetName(@NonNull String targetName) {
+        public @NonNull Builder setTargetName(@NonNull String targetName) {
             getMutableConfig().insertOption(OPTION_TARGET_NAME, targetName);
             return this;
         }
@@ -145,117 +136,96 @@ public class FakeUseCaseConfig implements UseCaseConfig<FakeUseCase>, ImageOutpu
         // Implementations of UseCaseConfig.Builder default methods
 
         @Override
-        @NonNull
-        public Builder setDefaultSessionConfig(@NonNull SessionConfig sessionConfig) {
+        public @NonNull Builder setDefaultSessionConfig(@NonNull SessionConfig sessionConfig) {
             getMutableConfig().insertOption(OPTION_DEFAULT_SESSION_CONFIG, sessionConfig);
             return this;
         }
 
         @Override
-        @NonNull
-        public Builder setDefaultCaptureConfig(@NonNull CaptureConfig captureConfig) {
+        public @NonNull Builder setDefaultCaptureConfig(@NonNull CaptureConfig captureConfig) {
             getMutableConfig().insertOption(OPTION_DEFAULT_CAPTURE_CONFIG, captureConfig);
             return this;
         }
 
         @Override
-        @NonNull
-        public Builder setSessionOptionUnpacker(
-                @NonNull SessionConfig.OptionUnpacker optionUnpacker) {
+        public @NonNull Builder setSessionOptionUnpacker(
+                SessionConfig.@NonNull OptionUnpacker optionUnpacker) {
             getMutableConfig().insertOption(OPTION_SESSION_CONFIG_UNPACKER, optionUnpacker);
             return this;
         }
 
         @Override
-        @NonNull
-        public Builder setDynamicRange(
+        public @NonNull Builder setDynamicRange(
                 @NonNull DynamicRange dynamicRange) {
             getMutableConfig().insertOption(OPTION_INPUT_DYNAMIC_RANGE, dynamicRange);
             return this;
         }
 
         @Override
-        @NonNull
-        public Builder setCaptureOptionUnpacker(
-                @NonNull CaptureConfig.OptionUnpacker optionUnpacker) {
+        public @NonNull Builder setCaptureOptionUnpacker(
+                CaptureConfig.@NonNull OptionUnpacker optionUnpacker) {
             getMutableConfig().insertOption(OPTION_CAPTURE_CONFIG_UNPACKER, optionUnpacker);
             return this;
         }
 
         @Override
-        @NonNull
-        public Builder setSurfaceOccupancyPriority(int priority) {
+        public @NonNull Builder setSurfaceOccupancyPriority(int priority) {
             getMutableConfig().insertOption(OPTION_SURFACE_OCCUPANCY_PRIORITY, priority);
             return this;
         }
 
         @Override
-        @NonNull
-        public Builder setUseCaseEventCallback(@NonNull UseCase.EventCallback eventCallback) {
-            getMutableConfig().insertOption(OPTION_USE_CASE_EVENT_CALLBACK, eventCallback);
-            return this;
-        }
-
-        @NonNull
-        @Override
-        public Builder setTargetAspectRatio(int aspectRatio) {
+        public @NonNull Builder setTargetAspectRatio(int aspectRatio) {
             getMutableConfig().insertOption(OPTION_TARGET_ASPECT_RATIO, aspectRatio);
             return this;
         }
 
-        @NonNull
         @Override
-        public Builder setTargetRotation(int rotation) {
+        public @NonNull Builder setTargetRotation(int rotation) {
             getMutableConfig().insertOption(OPTION_TARGET_ROTATION, rotation);
             return this;
         }
 
-        @NonNull
         @Override
-        public Builder setMirrorMode(@MirrorMode.Mirror int mirrorMode) {
+        public @NonNull Builder setMirrorMode(@MirrorMode.Mirror int mirrorMode) {
             getMutableConfig().insertOption(OPTION_MIRROR_MODE, mirrorMode);
             return this;
         }
 
-        @NonNull
         @Override
-        public Builder setTargetResolution(@NonNull Size resolution) {
+        public @NonNull Builder setTargetResolution(@NonNull Size resolution) {
             getMutableConfig().insertOption(ImageOutputConfig.OPTION_TARGET_RESOLUTION, resolution);
             return this;
         }
 
-        @NonNull
         @Override
-        public Builder setDefaultResolution(@NonNull Size resolution) {
+        public @NonNull Builder setDefaultResolution(@NonNull Size resolution) {
             getMutableConfig().insertOption(OPTION_DEFAULT_RESOLUTION, resolution);
             return this;
         }
 
-        @NonNull
         @Override
-        public Builder setMaxResolution(@NonNull Size resolution) {
+        public @NonNull Builder setMaxResolution(@NonNull Size resolution) {
             getMutableConfig().insertOption(OPTION_MAX_RESOLUTION, resolution);
             return this;
         }
 
-        @NonNull
         @Override
-        public Builder setSupportedResolutions(
+        public @NonNull Builder setSupportedResolutions(
                 @NonNull List<Pair<Integer, Size[]>> resolutionsList) {
             getMutableConfig().insertOption(OPTION_SUPPORTED_RESOLUTIONS, resolutionsList);
             return this;
         }
 
-        @NonNull
         @Override
-        public Builder setCustomOrderedResolutions(@NonNull List<Size> resolutionsList) {
+        public @NonNull Builder setCustomOrderedResolutions(@NonNull List<Size> resolutionsList) {
             getMutableConfig().insertOption(OPTION_CUSTOM_ORDERED_RESOLUTIONS, resolutionsList);
             return this;
         }
 
-        @NonNull
         @Override
-        public Builder setResolutionSelector(@NonNull ResolutionSelector resolutionSelector) {
+        public @NonNull Builder setResolutionSelector(
+                @NonNull ResolutionSelector resolutionSelector) {
             getMutableConfig().insertOption(OPTION_RESOLUTION_SELECTOR, resolutionSelector);
             return this;
         }
@@ -263,30 +233,44 @@ public class FakeUseCaseConfig implements UseCaseConfig<FakeUseCase>, ImageOutpu
         /**
          * Sets specific image format to the fake use case.
          */
-        @NonNull
-        public Builder setBufferFormat(int imageFormat) {
+        public @NonNull Builder setBufferFormat(int imageFormat) {
             getMutableConfig().insertOption(OPTION_INPUT_FORMAT, imageFormat);
             return this;
         }
 
-        @NonNull
         @Override
-        public Builder setZslDisabled(boolean disabled) {
+        public @NonNull Builder setZslDisabled(boolean disabled) {
             getMutableConfig().insertOption(OPTION_ZSL_DISABLED, disabled);
             return this;
         }
 
-        @NonNull
         @Override
-        public Builder setHighResolutionDisabled(boolean disabled) {
+        public @NonNull Builder setHighResolutionDisabled(boolean disabled) {
             getMutableConfig().insertOption(OPTION_HIGH_RESOLUTION_DISABLED, disabled);
             return this;
         }
 
-        @NonNull
         @Override
-        public Builder setCaptureType(@NonNull CaptureType captureType) {
+        public @NonNull Builder setCaptureType(@NonNull CaptureType captureType) {
             getMutableConfig().insertOption(OPTION_CAPTURE_TYPE, captureType);
+            return this;
+        }
+
+        /**
+         * Sets specific target frame rate to the fake use case.
+         */
+        public @NonNull Builder setTargetFrameRate(@NonNull Range<Integer> targetFrameRate) {
+            getMutableConfig().insertOption(OPTION_TARGET_FRAME_RATE, targetFrameRate);
+            return this;
+        }
+
+        /**
+         * Sets specific target high speed frame rate to the fake use case.
+         */
+        public @NonNull Builder setTargetHighSpeedFrameRate(
+                @NonNull Range<Integer> targetHighSPeedFrameRate) {
+            getMutableConfig().insertOption(OPTION_TARGET_HIGH_SPEED_FRAME_RATE,
+                    targetHighSPeedFrameRate);
             return this;
         }
     }

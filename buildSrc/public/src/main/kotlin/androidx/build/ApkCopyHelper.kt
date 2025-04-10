@@ -21,7 +21,7 @@ import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.BuiltArtifactsLoader
-import com.android.build.api.variant.HasAndroidTest
+import com.android.build.api.variant.HasDeviceTests
 import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
@@ -35,7 +35,9 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 
+@DisableCachingByDefault(because = "Copy task that is I/O bound")
 abstract class ApkCopyTask : DefaultTask() {
     @get:InputFiles
     @get:Optional
@@ -61,7 +63,7 @@ fun setupAppApkCopy(project: Project, buildType: String) {
     project.extensions.findByType(ApplicationAndroidComponentsExtension::class.java)?.apply {
         onVariants(selector().withBuildType(buildType)) { variant ->
             val apkCopy =
-                project.tasks.register("copyAppApk", ApkCopyTask::class.java) { task ->
+                project.tasks.register("copyAppApk-$buildType", ApkCopyTask::class.java) { task ->
                     task.apkFolder.set(variant.artifacts.get(SingleArtifact.APK))
                     task.apkLoader.set(variant.artifacts.getBuiltArtifactsLoader())
                     val file =
@@ -76,29 +78,26 @@ fun setupAppApkCopy(project: Project, buildType: String) {
 fun setupTestApkCopy(project: Project) {
     project.extensions.getByType(AndroidComponentsExtension::class.java).apply {
         onVariants { variant ->
-            var name: String? = null
-            var artifacts: Artifacts? = null
+            fun registerAndAddToBuildOnServer(name: String, artifacts: Artifacts) {
+                val apkCopy =
+                    project.tasks.register("copyTestApk$name", ApkCopyTask::class.java) { task ->
+                        task.apkFolder.set(artifacts.get(SingleArtifact.APK))
+                        task.apkLoader.set(artifacts.getBuiltArtifactsLoader())
+                        val file = "apks/${project.path.substring(1).replace(':', '-')}-$name.apk"
+                        task.outputApk.set(File(project.getDistributionDirectory(), file))
+                    }
+                project.addToBuildOnServer(apkCopy)
+            }
             when {
-                variant is HasAndroidTest -> {
-                    name = variant.androidTest?.name
-                    artifacts = variant.androidTest?.artifacts
+                variant is HasDeviceTests -> {
+                    variant.deviceTests.forEach { (_, deviceTest) ->
+                        registerAndAddToBuildOnServer(deviceTest.name, deviceTest.artifacts)
+                    }
                 }
                 project.plugins.hasPlugin("com.android.test") -> {
-                    name = variant.name
-                    artifacts = variant.artifacts
+                    registerAndAddToBuildOnServer(variant.name, variant.artifacts)
                 }
             }
-            if (name == null || artifacts == null) {
-                return@onVariants
-            }
-            val apkCopy =
-                project.tasks.register("copyTestApk", ApkCopyTask::class.java) { task ->
-                    task.apkFolder.set(artifacts.get(SingleArtifact.APK))
-                    task.apkLoader.set(artifacts.getBuiltArtifactsLoader())
-                    val file = "apks/${project.path.substring(1).replace(':', '-')}-$name.apk"
-                    task.outputApk.set(File(project.getDistributionDirectory(), file))
-                }
-            project.addToBuildOnServer(apkCopy)
         }
     }
 }

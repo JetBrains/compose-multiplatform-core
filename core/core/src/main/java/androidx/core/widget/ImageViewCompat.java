@@ -22,10 +22,10 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.widget.ImageView;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing features in {@link ImageView}.
@@ -34,8 +34,7 @@ public class ImageViewCompat {
     /**
      * Return the tint applied to the image drawable, if specified.
      */
-    @Nullable
-    public static ColorStateList getImageTintList(@NonNull ImageView view) {
+    public static @Nullable ColorStateList getImageTintList(@NonNull ImageView view) {
         if (Build.VERSION.SDK_INT >= 21) {
             return Api21Impl.getImageTintList(view);
         }
@@ -71,8 +70,7 @@ public class ImageViewCompat {
     /**
      * Return the blending mode used to apply the tint to the image drawable, if specified.
      */
-    @Nullable
-    public static PorterDuff.Mode getImageTintMode(@NonNull ImageView view) {
+    public static PorterDuff.@Nullable Mode getImageTintMode(@NonNull ImageView view) {
         if (Build.VERSION.SDK_INT >= 21) {
             return Api21Impl.getImageTintMode(view);
         }
@@ -86,7 +84,7 @@ public class ImageViewCompat {
      * {@link #setImageTintList(ImageView, ColorStateList)}
      * to the image drawable. The default mode is {@link PorterDuff.Mode#SRC_IN}.
      */
-    public static void setImageTintMode(@NonNull ImageView view, @Nullable PorterDuff.Mode mode) {
+    public static void setImageTintMode(@NonNull ImageView view, PorterDuff.@Nullable Mode mode) {
         if (Build.VERSION.SDK_INT >= 21) {
             Api21Impl.setImageTintMode(view, mode);
 
@@ -115,22 +113,18 @@ public class ImageViewCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static ColorStateList getImageTintList(ImageView imageView) {
             return imageView.getImageTintList();
         }
 
-        @DoNotInline
         static void setImageTintList(ImageView imageView, ColorStateList tint) {
             imageView.setImageTintList(tint);
         }
 
-        @DoNotInline
         static PorterDuff.Mode getImageTintMode(ImageView imageView) {
             return imageView.getImageTintMode();
         }
 
-        @DoNotInline
         static void setImageTintMode(ImageView imageView, PorterDuff.Mode tintMode) {
             imageView.setImageTintMode(tintMode);
         }

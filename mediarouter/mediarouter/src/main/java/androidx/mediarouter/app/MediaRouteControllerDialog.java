@@ -47,7 +47,6 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
-import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
@@ -189,7 +188,6 @@ public class MediaRouteControllerDialog extends AlertDialog {
     private Interpolator mInterpolator;
     private Interpolator mLinearOutSlowInInterpolator;
     private Interpolator mFastOutSlowInInterpolator;
-    private Interpolator mAccelerateDecelerateInterpolator;
 
     final AccessibilityManager mAccessibilityManager;
 
@@ -219,13 +217,10 @@ public class MediaRouteControllerDialog extends AlertDialog {
                 R.dimen.mr_controller_volume_group_list_padding_top);
         mAccessibilityManager =
                 (AccessibilityManager) mContext.getSystemService(Context.ACCESSIBILITY_SERVICE);
-        if (android.os.Build.VERSION.SDK_INT >= 21) {
-            mLinearOutSlowInInterpolator = AnimationUtils.loadInterpolator(context,
-                    R.interpolator.mr_linear_out_slow_in);
-            mFastOutSlowInInterpolator = AnimationUtils.loadInterpolator(context,
-                    R.interpolator.mr_fast_out_slow_in);
-        }
-        mAccelerateDecelerateInterpolator = new AccelerateDecelerateInterpolator();
+        mLinearOutSlowInInterpolator = AnimationUtils.loadInterpolator(context,
+                R.interpolator.mr_linear_out_slow_in);
+        mFastOutSlowInInterpolator = AnimationUtils.loadInterpolator(context,
+                R.interpolator.mr_fast_out_slow_in);
     }
 
     /**
@@ -237,7 +232,7 @@ public class MediaRouteControllerDialog extends AlertDialog {
     }
 
     private boolean isGroup() {
-        return mRoute.isGroup() && mRoute.getMemberRoutes().size() > 1;
+        return mRoute.isGroup() && mRoute.getSelectedRoutesInGroup().size() > 1;
     }
 
     /**
@@ -629,8 +624,10 @@ public class MediaRouteControllerDialog extends AlertDialog {
         int mainControllerHeight = getMainControllerHeight(canShowPlaybackControlLayout());
         int volumeGroupListCount = mGroupMemberRoutes.size();
         // Scale down volume group list items in landscape mode.
-        int expandedGroupListHeight = isGroup()
-                ? mVolumeGroupListItemHeight * mRoute.getMemberRoutes().size() : 0;
+        int expandedGroupListHeight =
+                isGroup()
+                        ? mVolumeGroupListItemHeight * mRoute.getSelectedRoutesInGroup().size()
+                        : 0;
         if (volumeGroupListCount > 0) {
             expandedGroupListHeight += mVolumeGroupListPaddingTop;
         }
@@ -719,19 +716,13 @@ public class MediaRouteControllerDialog extends AlertDialog {
             }
         };
         anim.setDuration(mGroupListAnimationDurationMs);
-        if (android.os.Build.VERSION.SDK_INT >= 21) {
-            anim.setInterpolator(mInterpolator);
-        }
+        anim.setInterpolator(mInterpolator);
         view.startAnimation(anim);
     }
 
     void loadInterpolator() {
-        if (android.os.Build.VERSION.SDK_INT >= 21) {
-            mInterpolator = mIsGroupExpanded ? mLinearOutSlowInInterpolator
-                    : mFastOutSlowInInterpolator;
-        } else {
-            mInterpolator = mAccelerateDecelerateInterpolator;
-        }
+        mInterpolator = mIsGroupExpanded ? mLinearOutSlowInInterpolator
+                : mFastOutSlowInInterpolator;
     }
 
     private void updateVolumeControlLayout() {
@@ -756,7 +747,7 @@ public class MediaRouteControllerDialog extends AlertDialog {
     }
 
     private void rebuildVolumeGroupList(boolean animate) {
-        List<MediaRouter.RouteInfo> routes = mRoute.getMemberRoutes();
+        List<MediaRouter.RouteInfo> routes = mRoute.getSelectedRoutesInGroup();
         if (routes.isEmpty()) {
             mGroupMemberRoutes.clear();
             mVolumeGroupAdapter.notifyDataSetChanged();

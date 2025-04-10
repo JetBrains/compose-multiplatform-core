@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -23,22 +30,19 @@ plugins {
 
 android {
     defaultConfig {
-        applicationId "androidx.car.app.sample.navigation"
-        minSdkVersion 23
-        targetSdkVersion 33
-        versionCode 1
-        versionName "1.0"
+        applicationId = "androidx.car.app.sample.navigation"
+        minSdk = 23
     }
 
     buildTypes {
         release {
             // Enables code shrinking, obfuscation, and optimization.
-            minifyEnabled true
+            minifyEnabled = true
             proguardFiles getDefaultProguardFile(
                     'proguard-android-optimize.txt')
         }
     }
-    namespace "androidx.car.app.sample.navigation"
+    namespace = "androidx.car.app.sample.navigation"
 }
 
 dependencies {

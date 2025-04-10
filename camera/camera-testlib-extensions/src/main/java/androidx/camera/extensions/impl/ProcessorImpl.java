@@ -19,7 +19,7 @@ package androidx.camera.extensions.impl;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Processes an input image stream and produces an output image stream.

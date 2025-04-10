@@ -20,9 +20,10 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.WorkRequest;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -77,8 +78,7 @@ public class ParcelableWorkRequests implements Parcelable {
         parcel.writeParcelableArray(parcelledArray, flags);
     }
 
-    @NonNull
-    public List<WorkRequest> getRequests() {
+    public @NonNull List<WorkRequest> getRequests() {
         return mRequests;
     }
 }

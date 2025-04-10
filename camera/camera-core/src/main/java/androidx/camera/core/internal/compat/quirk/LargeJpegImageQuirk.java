@@ -18,8 +18,9 @@ package androidx.camera.core.internal.compat.quirk;
 
 import android.os.Build;
 
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.Quirk;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -33,10 +34,13 @@ import java.util.Set;
  *                  0's padding data. For example, Samsung A5 (2017) series devices have the
  *                  problem and result in the output JPEG image to be extremely large (about 32 MB).
  *     Device(s): Samsung Galaxy A5 (2017), A52, A70, A71, A72, M51, S7, S22, S22+ series devices
- *                and Vivo S16 device.
+ *                and Vivo S16, X60, X60 Pro devices. This issue might also happen on some other
+ *                Samsung devices. Therefore, a generic rule is added to force check the invalid
+ *                JPEG data if the captured image size is larger than 10 MB.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class LargeJpegImageQuirk implements Quirk {
+
+    private static final int INVALID_JPEG_DATA_CHECK_THRESHOLD = 10_000_000; // 10 MB
 
     private static final Set<String> SAMSUNG_DEVICE_MODELS = new HashSet<>(Arrays.asList(
             // Samsung Galaxy A5 series devices
@@ -83,11 +87,15 @@ public final class LargeJpegImageQuirk implements Quirk {
 
     private static final Set<String> VIVO_DEVICE_MODELS = new HashSet<>(Arrays.asList(
             // Vivo S16
-            "V2244A"
+            "V2244A",
+            // Vivo X60
+            "V2045",
+            // Vivo X60 Pro
+            "V2046"
     ));
 
     static boolean load() {
-        return isSamsungProblematicDevice() || isVivoProblematicDevice();
+        return isSamsungDevice() || isVivoProblematicDevice();
     }
 
     private static boolean isSamsungProblematicDevice() {
@@ -95,8 +103,25 @@ public final class LargeJpegImageQuirk implements Quirk {
                 Build.MODEL.toUpperCase(Locale.US));
     }
 
+    private static boolean isSamsungDevice() {
+        return "Samsung".equalsIgnoreCase(Build.BRAND);
+    }
+
     private static boolean isVivoProblematicDevice() {
         return "Vivo".equalsIgnoreCase(Build.BRAND) && VIVO_DEVICE_MODELS.contains(
                 Build.MODEL.toUpperCase(Locale.US));
+    }
+
+    /**
+     * Return {@code true} if there might be invalid JPEG data contained in the bytes array.
+     */
+    public boolean shouldCheckInvalidJpegData(byte @NonNull [] bytes) {
+        // For the confirmed problematic devices, always check the invalid data
+        if (isSamsungProblematicDevice() || isVivoProblematicDevice()) {
+            return true;
+        } else {
+            // For other devices, check the invalid data if the image size is larger than 10 MB
+            return bytes.length > INVALID_JPEG_DATA_CHECK_THRESHOLD;
+        }
     }
 }

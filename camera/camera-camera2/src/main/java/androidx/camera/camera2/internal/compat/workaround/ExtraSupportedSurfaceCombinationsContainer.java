@@ -16,11 +16,11 @@
 
 package androidx.camera.camera2.internal.compat.workaround;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.camera2.internal.compat.quirk.ExtraSupportedSurfaceCombinationsQuirk;
 import androidx.camera.core.impl.SurfaceCombination;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +29,6 @@ import java.util.List;
  * Gets the extra supported surface combinations which are additional to the guaranteed supported
  * configurations.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class ExtraSupportedSurfaceCombinationsContainer {
     private final ExtraSupportedSurfaceCombinationsQuirk mQuirk;
 
@@ -44,12 +43,11 @@ public class ExtraSupportedSurfaceCombinationsContainer {
     /**
      * Retrieves the extra surface combinations which can be supported on the device.
      */
-    @NonNull
-    public List<SurfaceCombination> get(@NonNull String cameraId, int hardwareLevel) {
+    public @NonNull List<SurfaceCombination> get(@NonNull String cameraId) {
         if (mQuirk == null) {
             return new ArrayList<>();
         }
 
-        return mQuirk.getExtraSupportedSurfaceCombinations(cameraId, hardwareLevel);
+        return mQuirk.getExtraSupportedSurfaceCombinations(cameraId);
     }
 }

@@ -21,19 +21,21 @@ plugins {
 }
 
 android {
+    compileSdk = 35
     defaultConfig {
-        applicationId "androidx.window.demo2"
-        minSdkVersion 23
+        applicationId = "androidx.window.demo2"
+        minSdk = 23
+        targetSdkVersion 35
     }
     buildFeatures {
-        viewBinding true
+        viewBinding = true
     }
-    namespace "androidx.window.demo2"
+    namespace = "androidx.window.demo2"
 }
 
 dependencies {
-    implementation("androidx.activity:activity:1.2.0")
-    implementation("androidx.appcompat:appcompat:1.2.0")
+    implementation("androidx.activity:activity:1.9.0")
+    implementation(project(":appcompat:appcompat"))
     api(libs.constraintLayout)
     implementation("androidx.core:core-ktx:1.8.0")
     // TODO(b/152245564) Conflicting dependencies cause IDE errors.

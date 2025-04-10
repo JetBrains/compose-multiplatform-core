@@ -20,15 +20,14 @@ import androidx.compose.testutils.benchmark.ComposeBenchmarkRule
 import androidx.compose.testutils.benchmark.benchmarkFirstCompose
 import androidx.compose.testutils.benchmark.benchmarkFirstLayout
 import androidx.compose.testutils.benchmark.benchmarkFirstMeasure
+import androidx.compose.testutils.benchmark.benchmarkReuseFor
 import androidx.test.filters.LargeTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-/**
- * Benchmark that runs [NestedBoxesTestCase].
- */
+/** Benchmark that runs [NestedBoxesTestCase]. */
 @LargeTest
 @RunWith(Parameterized::class)
 class NestedBoxesBenchmark(private val depth: Int, private val children: Int) {
@@ -39,8 +38,7 @@ class NestedBoxesBenchmark(private val depth: Int, private val children: Int) {
         fun initParameters(): Array<Any> = arrayOf(arrayOf(7, 2), arrayOf(4, 5), arrayOf(100, 1))
     }
 
-    @get:Rule
-    val benchmarkRule = ComposeBenchmarkRule()
+    @get:Rule val benchmarkRule = ComposeBenchmarkRule()
 
     private val checkboxCaseFactory = { NestedBoxesTestCase(depth, children) }
 
@@ -57,5 +55,10 @@ class NestedBoxesBenchmark(private val depth: Int, private val children: Int) {
     @Test
     fun first_layout() {
         benchmarkRule.benchmarkFirstLayout(checkboxCaseFactory)
+    }
+
+    @Test
+    fun reuse() {
+        benchmarkRule.benchmarkReuseFor { NestedBoxesTestCase(depth, children).MeasuredContent() }
     }
 }

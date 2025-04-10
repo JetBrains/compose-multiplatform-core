@@ -18,27 +18,25 @@ package androidx.wear.protolayout.expression;
 
 import static java.util.Collections.unmodifiableMap;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RestrictTo;
-import androidx.annotation.VisibleForTesting;
 import androidx.collection.ArrayMap;
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicType;
 import androidx.wear.protolayout.expression.DynamicDataBuilders.DynamicDataValue;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Map;
 
 /** Typed mapping of {@link PlatformDataKey} to {@link DynamicDataValue}. */
 public final class PlatformDataValues {
-    @NonNull final Map<PlatformDataKey<?>, DynamicDataValue<?>> data;
+    final @NonNull Map<PlatformDataKey<?>, DynamicDataValue<?>> data;
 
     /** Builder for {@link PlatformDataValues}. */
     public static final class Builder {
-        @NonNull final Map<PlatformDataKey<?>, DynamicDataValue<?>> data = new ArrayMap<>();
+        final @NonNull Map<PlatformDataKey<?>, DynamicDataValue<?>> data = new ArrayMap<>();
 
         /** Puts a key/value pair. */
-        @NonNull
         @SuppressWarnings("BuilderSetStyle") // Map-style builder, getter is generic get().
-        public <T extends DynamicType> Builder put(
+        public <T extends DynamicType> @NonNull Builder put(
                 @NonNull PlatformDataKey<T> key, @NonNull DynamicDataValue<T> value) {
             data.put(key, value);
             return this;
@@ -49,25 +47,36 @@ public final class PlatformDataValues {
          *
          * <p>Values not in {@code other} are not removed from this {@link Builder}.
          */
-        @NonNull
         @SuppressWarnings("BuilderSetStyle") // Map-style builder, getter is generic get().
-        @VisibleForTesting
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public Builder putAll(@NonNull PlatformDataValues other) {
+        public @NonNull Builder putAll(@NonNull PlatformDataValues other) {
             data.putAll(other.data);
             return this;
         }
 
+        /**
+         * Puts all platform data values from a {@link DynamicDataMap}.
+         *
+         * <p>Values with keys that are not of the type {@link PlatformDataKey} will be ignored.
+         */
+        @SuppressWarnings("BuilderSetStyle") // Map-style builder, getter is generic get().
+        public @NonNull Builder putAll(@NonNull DynamicDataMap dynamicDataMap) {
+            dynamicDataMap.getEntries().stream()
+                    .filter(entry -> entry.getKey() instanceof PlatformDataKey)
+                    .forEach(entry -> {
+                        data.put((PlatformDataKey<?>) entry.getKey(), entry.getValue());
+                    });
+
+            return this;
+        }
+
         /** Builds the {@link PlatformDataValues}. */
-        @NonNull
-        public PlatformDataValues build() {
+        public @NonNull PlatformDataValues build() {
             return new PlatformDataValues(unmodifiableMap(data));
         }
     }
 
     /** Creates a {@link PlatformDataValues} from a single key/value pair. */
-    @NonNull
-    public static <T extends DynamicType> PlatformDataValues of(
+    public static <T extends DynamicType> @NonNull PlatformDataValues of(
             @NonNull PlatformDataKey<T> key, @NonNull DynamicDataValue<T> value) {
         return new PlatformDataValues(Map.of(key, value));
     }
@@ -77,14 +86,12 @@ public final class PlatformDataValues {
     }
 
     /** Returns the key-value mapping. */
-    @NonNull
-    public Map<PlatformDataKey<?>, DynamicDataValue<?>> getAll() {
+    public @NonNull Map<PlatformDataKey<?>, DynamicDataValue<?>> getAll() {
         return unmodifiableMap(data);
     }
 
     @Override
-    @NonNull
-    public String toString() {
+    public @NonNull String toString() {
         return String.format("PlatformDataValues{%s}", data);
     }
 }

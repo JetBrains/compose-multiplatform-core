@@ -40,7 +40,7 @@
     <string name="reject_action_title" msgid="6730366705938402668">"رفض"</string>
     <string name="ok_action_title" msgid="7128494973966098611">"حسنًا"</string>
     <string name="throw_action_title" msgid="7163710562670220163">"طرح"</string>
-    <string name="commute_action_title" msgid="2585755255290185096">"تنقُّل"</string>
+    <string name="commute_action_title" msgid="2585755255290185096">"التنقُّل"</string>
     <string name="sign_out_action_title" msgid="1653943000866713010">"تسجيل الخروج"</string>
     <string name="try_anyway_action_title" msgid="7384500054249311718">"المحاولة على أيّ حال"</string>
     <string name="yes_action_title" msgid="5507096013762092189">"نعم"</string>
@@ -96,10 +96,10 @@
     <string name="unavailable" msgid="3636401138255192934">"غير متوفّر"</string>
     <string name="ev_connector_types" msgid="735458637011996125">"أنواع وصلات المركبات الكهربائية"</string>
     <string name="example_title" msgid="530257630320010494">"‏مثال على %d"</string>
-    <string name="example_1_text" msgid="8456567953748293512">"يحتوي هذا النص على محتوى باللون الأحمر."</string>
-    <string name="example_2_text" msgid="718820705318661440">"يحتوي هذا النص على محتوى باللون الأخضر."</string>
-    <string name="example_3_text" msgid="977269832109695627">"يحتوي هذا النص على محتوى باللون الأزرق."</string>
-    <string name="example_4_text" msgid="2043547015979437373">"يحتوي هذا النص على محتوى باللون الأصفر."</string>
+    <string name="example_1_text" msgid="8631503055894800688">"يحتوي هذا النص على محتوى باللون "<annotation color="red">"الأحمر"</annotation></string>
+    <string name="example_2_text" msgid="1359373957397219102">"يحتوي هذا النص على محتوى باللون "<annotation color="green">"الأخضر"</annotation></string>
+    <string name="example_3_text" msgid="2409207170762049673">"يحتوي هذا النص على محتوى باللون "<annotation color="blue">"الأزرق"</annotation></string>
+    <string name="example_4_text" msgid="9055989886645433000">"يحتوي هذا النص على محتوى باللون "<annotation color="yellow">"الأصفر"</annotation></string>
     <string name="example_5_text" msgid="8828804968749423500">"يستخدم هذا النص اللون الأساسي."</string>
     <string name="example_6_text" msgid="7991523168517599600">"يستخدم هذا النص اللون الثانوي."</string>
     <string name="color_demo" msgid="1822427636476178993">"إصدار تجريبي للألوان"</string>
@@ -165,7 +165,7 @@
     <string name="gas_station" msgid="1203313937444666161">"محطة وقود"</string>
     <string name="short_route" msgid="4831864276538141265">"مسار طريق قصير"</string>
     <string name="less_busy" msgid="310625272281710983">"أقل انشغالاً"</string>
-    <string name="hov_friendly" msgid="6956152104754594971">"المركبات الملائمة التي تشغل حيزًا كبيرًا"</string>
+    <string name="hov_friendly" msgid="6956152104754594971">"المركبات الملائمة العالية الإشغال"</string>
     <string name="long_route" msgid="4737969235741057506">"مسار الرحلة طويل"</string>
     <string name="continue_start_nav" msgid="6231797535084469163">"المتابعة لبدء التنقّل"</string>
     <string name="continue_route" msgid="5172258139245088080">"المتابعة إلى مسار الرحلة"</string>
@@ -231,12 +231,16 @@
     <string name="msg_template_demo_title" msgid="3895210951340409473">"إصدار تجريبي لنموذج الرسالة"</string>
     <string name="msg_template_demo_text" msgid="2275291617716161409">"تظهر الرسالة هنا.\nالمزيد من النص في السطر الثاني."</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"عرض توضيحي لنموذج رسالة قصيرة"</string>
+    <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"عرض توضيحي لنموذج عناصر مُقسَّم"</string>
+    <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"قسم \"زر الاختيار\""</string>
+    <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"تفعيل القسم أو إيقافه"</string>
+    <string name="sectioned_item_template_lots_of_rows_section_title" msgid="1501401956386938735">"قسم \"العديد من الصفوف\""</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"إصدار تجريبي لنموذج اللوحة"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"إصدار تجريبي لنموذج قائمة الأماكن"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"تصفُّح الأماكن"</string>
     <string name="search_template_demo_title" msgid="1770474418958318114">"إصدار تجريبي من نموذج البحث"</string>
     <string name="search_hint" msgid="978495498991026792">"البحث هنا"</string>
-    <string name="additional_text" msgid="8410289578276941586">"يُرجى مراجعة بنود الخدمة التي نتّبعها."</string>
+    <string name="additional_text" msgid="5755100726890686184">"يُرجى مراجعة "<annotation link="terms_of_service">"بنود الخدمة"</annotation>" التي نتّبعها"</string>
     <string name="google_sign_in" msgid="6556259799319701727">"‏تسجيل الدخول بحساب Google"</string>
     <string name="use_pin" msgid="7850893299484337431">"استخدام رقم تعريف شخصي"</string>
     <string name="qr_code" msgid="5487041647280777397">"رمز الاستجابة السريعة"</string>
@@ -321,6 +325,7 @@
     <string name="secondary_actions_test_subtitle" msgid="6985282813402073703">"يمكن اختيار الإجراء الثانوي فقط."</string>
     <string name="decoration_test_title" msgid="8450127046762442244">"تصميم تجريبي"</string>
     <string name="secondary_actions_decoration_test_title" msgid="6282873404859209490">"الإجراءات الثانوية والتصميم"</string>
+    <string name="secondary_actions_decoration_test_title_long" msgid="3700606949229899169">"صف يتضمن \"الإجراءات الثانوية\" و\"التصميم\" وله عنوان طويل جدًا"</string>
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"يمكن أيضًا اختيار الصف."</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"تم اختيار إجراء ثانوي للصف."</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"تم اختيار إجراء أساسي للصف."</string>
@@ -365,12 +370,8 @@
     <string name="route_options_demo_title" msgid="4599699012716426514">"خيارات المسار"</string>
     <string name="avoid_highways_row_title" msgid="4711913426200490304">"تجنّب الطرق السريعة"</string>
     <string name="avoid_ferries_row_title" msgid="8232883866013711974">"تجنّب العبّارات"</string>
-    <!-- no translation found for map_demos_title (2169766615521476592) -->
-    <skip />
-    <!-- no translation found for map_with_content_demo_title (1032610482145018739) -->
-    <skip />
-    <!-- no translation found for map_with_message_demo_title (7007078234918054436) -->
-    <skip />
-    <!-- no translation found for map_with_grid_demo_title (688667167861193192) -->
-    <skip />
+    <string name="map_demos_title" msgid="2169766615521476592">"عروض توضيحية متعلّقة بالخرائط"</string>
+    <string name="map_with_content_demo_title" msgid="1032610482145018739">"عروض توضيحية لخرائط تعرض محتوى"</string>
+    <string name="map_with_message_demo_title" msgid="7007078234918054436">"عرض توضيحي لنموذج خرائط مع رسائل"</string>
+    <string name="map_with_grid_demo_title" msgid="688667167861193192">"عرض توضيحي لنموذج خرائط مع شبكة"</string>
 </resources>

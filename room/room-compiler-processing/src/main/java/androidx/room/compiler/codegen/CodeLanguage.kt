@@ -16,10 +16,7 @@
 
 package androidx.room.compiler.codegen
 
-interface TargetLanguage {
-    val language: CodeLanguage
-}
-
 enum class CodeLanguage {
-    JAVA, KOTLIN
+    JAVA,
+    KOTLIN
 }

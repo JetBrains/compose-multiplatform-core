@@ -143,11 +143,8 @@ import android.view.textservice.TextServicesManager;
 import androidx.annotation.ColorInt;
 import androidx.annotation.ColorRes;
 import androidx.annotation.DisplayContext;
-import androidx.annotation.DoNotInline;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.app.ActivityOptionsCompat;
@@ -159,6 +156,9 @@ import androidx.core.os.EnvironmentCompat;
 import androidx.core.os.ExecutorCompat;
 import androidx.core.os.LocaleListCompat;
 import androidx.core.util.ObjectsCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.lang.annotation.Retention;
@@ -236,7 +236,7 @@ public class ContextCompat {
      *                length-1 will correspond to the top activity on the resulting task stack.
      * @return true if the underlying API was available and the call was successful, false otherwise
      */
-    public static boolean startActivities(@NonNull Context context, @NonNull Intent[] intents) {
+    public static boolean startActivities(@NonNull Context context, Intent @NonNull [] intents) {
         return startActivities(context, intents, null);
     }
 
@@ -267,7 +267,7 @@ public class ContextCompat {
      *                See {@link Context#startActivity(Intent, Bundle)}
      * @return true if the underlying API was available and the call was successful, false otherwise
      */
-    public static boolean startActivities(@NonNull Context context, @NonNull Intent[] intents,
+    public static boolean startActivities(@NonNull Context context, Intent @NonNull [] intents,
             @Nullable Bundle options) {
         context.startActivities(intents, options);
         return true;
@@ -289,7 +289,10 @@ public class ContextCompat {
      *                {@link ActivityOptionsCompat} for how to build the Bundle
      *                supplied here; there are no supported definitions for
      *                building it manually.
+     * @deprecated Call {@link Context#startActivity()} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "context.startActivity(intent, options)")
     public static void startActivity(@NonNull Context context, @NonNull Intent intent,
             @Nullable Bundle options) {
         context.startActivity(intent, options);
@@ -310,8 +313,7 @@ public class ContextCompat {
      *
      * @see ApplicationInfo#dataDir
      */
-    @Nullable
-    public static File getDataDir(@NonNull Context context) {
+    public static @Nullable File getDataDir(@NonNull Context context) {
         if (Build.VERSION.SDK_INT >= 24) {
             return Api24Impl.getDataDir(context);
         } else {
@@ -362,9 +364,11 @@ public class ContextCompat {
      *
      * @see Context#getObbDir()
      * @see EnvironmentCompat#getStorageState(File)
+     * @deprecated Call {@link Context#getObbDirs()} directly.
      */
-    @NonNull
-    public static File[] getObbDirs(@NonNull Context context) {
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "context.getObbDirs()")
+    public static File @NonNull [] getObbDirs(@NonNull Context context) {
         return context.getObbDirs();
     }
 
@@ -411,9 +415,12 @@ public class ContextCompat {
      *
      * @see Context#getExternalFilesDir(String)
      * @see EnvironmentCompat#getStorageState(File)
+     * @deprecated Call {@link Context#getExternalFilesDirs()} directly.
      */
-    @NonNull
-    public static File[] getExternalFilesDirs(@NonNull Context context, @Nullable String type) {
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "context.getExternalFilesDirs(type)")
+    public static File @NonNull [] getExternalFilesDirs(@NonNull Context context,
+            @Nullable String type) {
         return context.getExternalFilesDirs(type);
     }
 
@@ -460,9 +467,11 @@ public class ContextCompat {
      *
      * @see Context#getExternalCacheDir()
      * @see EnvironmentCompat#getStorageState(File)
+     * @deprecated Call {@link Context#getExternalCacheDirs()} directly.
      */
-    @NonNull
-    public static File[] getExternalCacheDirs(@NonNull Context context) {
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "context.getExternalCacheDirs()")
+    public static File @NonNull [] getExternalCacheDirs(@NonNull Context context) {
         return context.getExternalCacheDirs();
     }
 
@@ -479,8 +488,7 @@ public class ContextCompat {
      * @return Drawable An object that can be used to draw this resource.
      */
     @SuppressWarnings("deprecation")
-    @Nullable
-    public static Drawable getDrawable(@NonNull Context context, @DrawableRes int id) {
+    public static @Nullable Drawable getDrawable(@NonNull Context context, @DrawableRes int id) {
         if (Build.VERSION.SDK_INT >= 21) {
             return Api21Impl.getDrawable(context, id);
         } else {
@@ -503,8 +511,8 @@ public class ContextCompat {
      * @throws android.content.res.Resources.NotFoundException if the given ID
      *         does not exist.
      */
-    @Nullable
-    public static ColorStateList getColorStateList(@NonNull Context context, @ColorRes int id) {
+    public static @Nullable ColorStateList getColorStateList(@NonNull Context context,
+            @ColorRes int id) {
         return ResourcesCompat.getColorStateList(context.getResources(), id, context.getTheme());
     }
 
@@ -565,8 +573,7 @@ public class ContextCompat {
      * automatically backed up to remote storage.
      * @see Context#getFilesDir()
      */
-    @Nullable
-    public static File getNoBackupFilesDir(@NonNull Context context) {
+    public static @Nullable File getNoBackupFilesDir(@NonNull Context context) {
         if (Build.VERSION.SDK_INT >= 21) {
             return Api21Impl.getNoBackupFilesDir(context);
         } else {
@@ -590,8 +597,7 @@ public class ContextCompat {
      *
      * @return The path of the directory holding application code cache files.
      */
-    @NonNull
-    public static File getCodeCacheDir(@NonNull Context context) {
+    public static @NonNull File getCodeCacheDir(@NonNull Context context) {
         if (Build.VERSION.SDK_INT >= 21) {
             return Api21Impl.getCodeCacheDir(context);
         } else {
@@ -650,8 +656,7 @@ public class ContextCompat {
      *
      * @see ContextCompat#isDeviceProtectedStorage(Context)
      */
-    @Nullable
-    public static Context createDeviceProtectedStorageContext(@NonNull Context context) {
+    public static @Nullable Context createDeviceProtectedStorageContext(@NonNull Context context) {
         if (Build.VERSION.SDK_INT >= 24) {
             return Api24Impl.createDeviceProtectedStorageContext(context);
         } else {
@@ -678,8 +683,7 @@ public class ContextCompat {
      * thread associated with this context. This is the thread used to dispatch
      * calls to application components (activities, services, etc).
      */
-    @NonNull
-    public static Executor getMainExecutor(@NonNull Context context) {
+    public static @NonNull Executor getMainExecutor(@NonNull Context context) {
         if (Build.VERSION.SDK_INT >= 28) {
             return Api28Impl.getMainExecutor(context);
         }
@@ -718,8 +722,7 @@ public class ContextCompat {
      * @return The display associated with the Context or the default display if the context
      * doesn't associated with any display.
      */
-    @NonNull
-    public static Display getDisplayOrDefault(@NonNull @DisplayContext Context context) {
+    public static @NonNull Display getDisplayOrDefault(@DisplayContext @NonNull Context context) {
         if (Build.VERSION.SDK_INT >= 30) {
             return Api30Impl.getDisplayOrDefault(context);
         } else {
@@ -738,8 +741,8 @@ public class ContextCompat {
      * @see Context#getSystemService(Class)
      */
     @SuppressWarnings("unchecked")
-    @Nullable
-    public static <T> T getSystemService(@NonNull Context context, @NonNull Class<T> serviceClass) {
+    public static <T> @Nullable T getSystemService(@NonNull Context context,
+            @NonNull Class<T> serviceClass) {
         if (Build.VERSION.SDK_INT >= 23) {
             return Api23Impl.getSystemService(context, serviceClass);
         }
@@ -754,16 +757,16 @@ public class ContextCompat {
      * @param context  Context to retrieve service from.
      * @param receiver The BroadcastReceiver to handle the broadcast.
      * @param filter   Selects the Intent broadcasts to be received.
-     * @param flags    If this receiver is listening for broadcasts sent from the system or from
-     *                 other apps—even other apps that you own—use the {@link #RECEIVER_EXPORTED}
-     *                 flag. If instead this receiver is listening only for broadcasts sent by your
-     *                 app, use the {@link #RECEIVER_NOT_EXPORTED} flag.
+     * @param flags    If this receiver is listening for broadcasts sent from other apps—even other
+     *                 apps that you own—use the {@link #RECEIVER_EXPORTED} flag. If instead this 
+     *                 receiver is listening only for broadcasts sent by your
+     *                 app, or from the system UID, use the {@link #RECEIVER_NOT_EXPORTED} flag.
      * @return The first sticky intent found that matches <var>filter</var>,
      * or null if there are none.
      * @see Context#registerReceiver(BroadcastReceiver, IntentFilter, int)
+     * @see https://developer.android.com/develop/background-work/background-tasks/broadcasts#context-registered-receivers
      */
-    @Nullable
-    public static Intent registerReceiver(@NonNull Context context,
+    public static @Nullable Intent registerReceiver(@NonNull Context context,
             @Nullable BroadcastReceiver receiver, @NonNull IntentFilter filter,
             @RegisterReceiverFlags int flags) {
         return registerReceiver(context, receiver, filter, null, null, flags);
@@ -780,17 +783,17 @@ public class ContextCompat {
      *                            required.
      * @param scheduler           Handler identifying the thread will receive the Intent. If
      *                            null, the main thread of the process will be used.
-     * @param flags               If this receiver is listening for broadcasts sent from the
-     *                            system or from other apps—even other apps that you own—use the
+     * @param flags               If this receiver is listening for broadcasts sent from other
+     *                            apps—even other apps that you own—use the
      *                            {@link #RECEIVER_EXPORTED} flag. If instead this receiver is
-     *                            listening only for broadcasts sent by your app, use the
-     *                            {@link #RECEIVER_NOT_EXPORTED} flag.
+     *                            listening only for broadcasts sent by your app, or from the
+     *                            system UID, use the {@link #RECEIVER_NOT_EXPORTED} flag.
      * @return The first sticky intent found that matches <var>filter</var>,
      * or null if there are none.
      * @see Context#registerReceiver(BroadcastReceiver, IntentFilter, String, Handler, int)
+     * @see https://developer.android.com/develop/background-work/background-tasks/broadcasts#context-registered-receivers
      */
-    @Nullable
-    public static Intent registerReceiver(@NonNull Context context,
+    public static @Nullable Intent registerReceiver(@NonNull Context context,
             @Nullable BroadcastReceiver receiver, @NonNull IntentFilter filter,
             @Nullable String broadcastPermission,
             @Nullable Handler scheduler, @RegisterReceiverFlags int flags) {
@@ -838,8 +841,7 @@ public class ContextCompat {
      * @return The service name or null if the class is not a supported system service.
      * @see Context#getSystemServiceName(Class)
      */
-    @Nullable
-    public static String getSystemServiceName(@NonNull Context context,
+    public static @Nullable String getSystemServiceName(@NonNull Context context,
             @NonNull Class<?> serviceClass) {
         if (Build.VERSION.SDK_INT >= 23) {
             return Api23Impl.getSystemServiceName(context, serviceClass);
@@ -864,8 +866,7 @@ public class ContextCompat {
      * </ul>
      * </p>
      */
-    @NonNull
-    public static String getString(@NonNull Context context, int resId) {
+    public static @NonNull String getString(@NonNull Context context, int resId) {
         return getContextForLanguage(context).getString(resId);
     }
 
@@ -889,8 +890,7 @@ public class ContextCompat {
      * </ul>
      * </p>
      */
-    @NonNull
-    public static Context getContextForLanguage(@NonNull Context context) {
+    public static @NonNull Context getContextForLanguage(@NonNull Context context) {
         LocaleListCompat locales = LocaleManagerCompat.getApplicationLocales(context);
 
         // The Android framework supports per-app locales on API 33, so we assume the
@@ -919,8 +919,7 @@ public class ContextCompat {
      *
      * @return the attribution tag this context is for or {@code null} if this is the default.
      */
-    @Nullable
-    public static String getAttributionTag(@NonNull Context context) {
+    public static @Nullable String getAttributionTag(@NonNull Context context) {
         if (Build.VERSION.SDK_INT >= 30) {
             return Api30Impl.getAttributionTag(context);
         }
@@ -944,8 +943,7 @@ public class ContextCompat {
      * @return A {@link Context} that is tagged for the new attribution
      * @see #getAttributionTag(Context)
      */
-    @NonNull
-    public static Context createAttributionContext(@NonNull Context context,
+    public static @NonNull Context createAttributionContext(@NonNull Context context,
             @Nullable String attributionTag) {
         if (Build.VERSION.SDK_INT >= 30) {
             return Api30Impl.createAttributionContext(context, attributionTag);
@@ -959,14 +957,23 @@ public class ContextCompat {
      * Android, and then asserts that the app registering the receiver also has that permission
      * so it can receiver its own broadcasts.
      *
-     * @param obj   Context to check the permission in.
+     * @param obj Context to check the permission in.
      * @return The name of the permission
      */
     static String obtainAndCheckReceiverPermission(Context obj) {
-        String permission =
-                obj.getPackageName() + DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION_SUFFIX;
+        String permission = obj.getApplicationContext().getPackageName()
+                + DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION_SUFFIX;
+
         if (PermissionChecker.checkSelfPermission(obj, permission)
                 != PermissionChecker.PERMISSION_GRANTED) {
+            if (Build.VERSION.SDK_INT >= 29) {
+                permission =
+                        obj.getOpPackageName() + DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION_SUFFIX;
+                if (PermissionChecker.checkSelfPermission(obj, permission)
+                        == PermissionChecker.PERMISSION_GRANTED) {
+                    return permission;
+                }
+            }
             throw new RuntimeException("Permission " + permission + " is required by your "
                     + "application to receive broadcasts, please add it to your manifest");
         }
@@ -1044,17 +1051,14 @@ public class ContextCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static Drawable getDrawable(Context obj, int id) {
             return obj.getDrawable(id);
         }
 
-        @DoNotInline
         static File getNoBackupFilesDir(Context obj) {
             return obj.getNoBackupFilesDir();
         }
 
-        @DoNotInline
         static File getCodeCacheDir(Context obj) {
             return obj.getCodeCacheDir();
         }
@@ -1066,17 +1070,14 @@ public class ContextCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static int getColor(Context obj, int id) {
             return obj.getColor(id);
         }
 
-        @DoNotInline
         static <T> T getSystemService(Context obj, Class<T> serviceClass) {
             return obj.getSystemService(serviceClass);
         }
 
-        @DoNotInline
         static String getSystemServiceName(Context obj, Class<?> serviceClass) {
             return obj.getSystemServiceName(serviceClass);
         }
@@ -1088,17 +1089,14 @@ public class ContextCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static File getDataDir(Context obj) {
             return obj.getDataDir();
         }
 
-        @DoNotInline
         static Context createDeviceProtectedStorageContext(Context obj) {
             return obj.createDeviceProtectedStorageContext();
         }
 
-        @DoNotInline
         static boolean isDeviceProtectedStorage(Context obj) {
             return obj.isDeviceProtectedStorage();
         }
@@ -1110,7 +1108,6 @@ public class ContextCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static Intent registerReceiver(Context obj, @Nullable BroadcastReceiver receiver,
                 IntentFilter filter, String broadcastPermission, Handler scheduler, int flags) {
             if ((flags & RECEIVER_NOT_EXPORTED) != 0 && broadcastPermission == null) {
@@ -1123,7 +1120,6 @@ public class ContextCompat {
         }
 
         @SuppressWarnings("UnusedReturnValue")
-        @DoNotInline
         static ComponentName startForegroundService(Context obj, Intent service) {
             return obj.startForegroundService(service);
         }
@@ -1135,7 +1131,6 @@ public class ContextCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static Executor getMainExecutor(Context obj) {
             return obj.getMainExecutor();
         }
@@ -1147,12 +1142,10 @@ public class ContextCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static String getAttributionTag(Context obj) {
             return obj.getAttributionTag();
         }
 
-        @DoNotInline
         static Display getDisplayOrDefault(Context obj) {
             try {
                 return obj.getDisplay();
@@ -1165,9 +1158,7 @@ public class ContextCompat {
             }
         }
 
-        @DoNotInline
-        @NonNull
-        static Context createAttributionContext(@NonNull Context context,
+        static @NonNull Context createAttributionContext(@NonNull Context context,
                 @Nullable String attributionTag) {
             return context.createAttributionContext(attributionTag);
         }
@@ -1179,7 +1170,6 @@ public class ContextCompat {
             // This class is not instantiable
         }
 
-        @DoNotInline
         static Intent registerReceiver(Context obj, @Nullable BroadcastReceiver receiver,
                 IntentFilter filter, String broadcastPermission, Handler scheduler, int flags) {
             return obj.registerReceiver(receiver, filter, broadcastPermission, scheduler, flags);

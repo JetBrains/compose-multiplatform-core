@@ -18,8 +18,9 @@ package androidx.appsearch.utils;
 
 import static androidx.annotation.RestrictTo.Scope.LIBRARY;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.text.DateFormat;
 import java.text.ParseException;

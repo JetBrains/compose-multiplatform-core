@@ -16,7 +16,6 @@
 
 package androidx.room.solver.query.result
 
-import androidx.room.compiler.codegen.XCodeBlock
 import androidx.room.parser.ParsedQuery
 import androidx.room.processor.Context
 import androidx.room.solver.CodeGenScope
@@ -27,47 +26,44 @@ class MapQueryResultAdapter(
     private val mapValueResultAdapter: MapValueResultAdapter.NestedMapValueResultAdapter,
 ) : MultimapQueryResultAdapter(context, parsedQuery, mapValueResultAdapter.rowAdapters) {
 
-    override fun convert(outVarName: String, cursorVarName: String, scope: CodeGenScope) {
+    override fun convert(outVarName: String, stmtVarName: String, scope: CodeGenScope) {
         scope.builder.apply {
-            generateCursorIndexes(cursorVarName, scope)
+            generateStatementIndexes(stmtVarName, scope)
             addLocalVariable(
                 name = outVarName,
                 typeName = mapValueResultAdapter.getDeclarationTypeName(),
-                assignExpr = XCodeBlock.ofNewInstance(
-                    language,
-                    mapValueResultAdapter.getInstantiationTypeName()
-                )
+                assignExpr = mapValueResultAdapter.getInstantiationCodeBlock()
             )
-            beginControlFlow("while (%L.moveToNext())", cursorVarName).apply {
-                mapValueResultAdapter.convert(
-                    scope,
-                    outVarName,
-                    cursorVarName,
-                    dupeColumnsIndexAdapter,
-                )
-            }.endControlFlow()
+            beginControlFlow("while (%L.step())", stmtVarName)
+                .apply {
+                    mapValueResultAdapter.convert(
+                        scope,
+                        outVarName,
+                        stmtVarName,
+                        dupeColumnsIndexAdapter,
+                    )
+                }
+                .endControlFlow()
         }
     }
 
-    private fun generateCursorIndexes(cursorVarName: String, scope: CodeGenScope) {
+    private fun generateStatementIndexes(stmtVarName: String, scope: CodeGenScope) {
         if (dupeColumnsIndexAdapter != null) {
             // There are duplicate columns in the result objects, generate code that provides
             // us with the indices resolved and pass it to the adapters so it can retrieve
             // the index of each column used by it.
-            dupeColumnsIndexAdapter.onCursorReady(cursorVarName, scope)
+            dupeColumnsIndexAdapter.onStatementReady(stmtVarName, scope)
             rowAdapters.forEach {
                 check(it is QueryMappedRowAdapter)
                 val indexVarNames = dupeColumnsIndexAdapter.getIndexVarsForMapping(it.mapping)
-                it.onCursorReady(
+                it.onStatementReady(
                     indices = indexVarNames,
-                    cursorVarName = cursorVarName,
+                    stmtVarName = stmtVarName,
                     scope = scope
                 )
             }
         } else {
-            rowAdapters.forEach {
-                it.onCursorReady(cursorVarName = cursorVarName, scope = scope)
-            }
+            rowAdapters.forEach { it.onStatementReady(stmtVarName = stmtVarName, scope = scope) }
         }
     }
 }

@@ -18,20 +18,19 @@
 
 package androidx.graphics.shapes
 
-import kotlin.math.atan2
+import kotlin.jvm.JvmName
+import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-/**
- * This class has all internal methods, used by Polygon, Morph, etc.
- */
-
+/** This class has all internal methods, used by Polygon, Morph, etc. */
 internal fun distance(x: Float, y: Float) = sqrt(x * x + y * y)
 
-/**
- * Returns unit vector representing the direction to this point from (0, 0)
- */
+internal fun distanceSquared(x: Float, y: Float) = x * x + y * y
+
+/** Returns unit vector representing the direction to this point from (0, 0) */
 internal fun directionVector(x: Float, y: Float): Point {
     val d = distance(x, y)
     require(d > 0f) { "Required distance greater than zero" }
@@ -40,37 +39,73 @@ internal fun directionVector(x: Float, y: Float): Point {
 
 internal fun directionVector(angleRadians: Float) = Point(cos(angleRadians), sin(angleRadians))
 
-internal fun angle(x: Float, y: Float) = ((atan2(y, x) + TwoPi) % TwoPi)
-
 internal fun radialToCartesian(radius: Float, angleRadians: Float, center: Point = Zero) =
     directionVector(angleRadians) * radius + center
 
 /**
- * These epsilon values are used internally to determine when two points are the same, within
- * some reasonable roundoff error. The distance epsilon is smaller, with the intention that the
- * roundoff should not be larger than a pixel on any reasonable sized display.
+ * These epsilon values are used internally to determine when two points are the same, within some
+ * reasonable roundoff error. The distance epsilon is smaller, with the intention that the roundoff
+ * should not be larger than a pixel on any reasonable sized display.
  */
 internal const val DistanceEpsilon = 1e-4f
 internal const val AngleEpsilon = 1e-6f
+
+/**
+ * This epsilon is based on the observation that people tend to see e.g. collinearity much more
+ * relaxed than what is mathematically correct. This effect is heightened on smaller displays. Use
+ * this epsilon for operations that allow higher tolerances.
+ */
+internal const val RelaxedDistanceEpsilon = 5e-3f
 
 internal fun Point.rotate90() = Point(-y, x)
 
 internal val Zero = Point(0f, 0f)
 
-internal val FloatPi = Math.PI.toFloat()
+internal val FloatPi = PI.toFloat()
 
-internal val TwoPi: Float = 2 * Math.PI.toFloat()
+internal val TwoPi: Float = 2 * PI.toFloat()
 
 internal fun square(x: Float) = x * x
 
-/**
- * Linearly interpolate between [start] and [stop] with [fraction] fraction between them.
- */
+/** Linearly interpolate between [start] and [stop] with [fraction] fraction between them. */
 internal fun interpolate(start: Float, stop: Float, fraction: Float): Float {
     return (1 - fraction) * start + fraction * stop
 }
 
+/**
+ * Similar to num % mod, but ensures the result is always positive. For example: 4 % 3 =
+ * positiveModulo(4, 3) = 1, but: -4 % 3 = -1 positiveModulo(-4, 3) = 2
+ */
 internal fun positiveModulo(num: Float, mod: Float) = (num % mod + mod) % mod
+
+/** Returns whether C is on the line defined by the two points AB */
+internal fun collinearIsh(
+    aX: Float,
+    aY: Float,
+    bX: Float,
+    bY: Float,
+    cX: Float,
+    cY: Float,
+    tolerance: Float = DistanceEpsilon
+): Boolean {
+    // The dot product of a perpendicular angle is 0. By rotating one of the vectors,
+    // we save the calculations to convert the dot product to degrees afterwards.
+    val ab = Point(bX - aX, bY - aY).rotate90()
+    val ac = Point(cX - aX, cY - aY)
+    val dotProduct = abs(ab.dotProduct(ac))
+    val relativeTolerance = tolerance * ab.getDistance() * ac.getDistance()
+
+    return dotProduct < tolerance || dotProduct < relativeTolerance
+}
+
+/**
+ * Approximates whether corner at this vertex is concave or convex, based on the relationship of the
+ * prev->curr/curr->next vectors.
+ */
+internal fun convex(previous: Point, current: Point, next: Point): Boolean {
+    // TODO: b/369320447 - This is a fast, but not reliable calculation.
+    return (current - previous).clockwise(next - current)
+}
 
 /*
  * Does a ternary search in [v0..v1] to find the parameter that minimizes the given function.
@@ -99,50 +134,9 @@ internal fun findMinimum(
     return (a + b) / 2
 }
 
-/**
- * A functional interface for computing a Float value when finding the minimum at [findMinimum].
- */
+/** A functional interface for computing a Float value when finding the minimum at [findMinimum]. */
 internal fun interface FindMinimumFunction {
     fun invoke(value: Float): Float
-}
-
-internal fun verticesFromNumVerts(
-    numVertices: Int,
-    radius: Float,
-    centerX: Float,
-    centerY: Float
-): FloatArray {
-    val result = FloatArray(numVertices * 2)
-    var arrayIndex = 0
-    for (i in 0 until numVertices) {
-        val vertex = radialToCartesian(radius, (FloatPi / numVertices * 2 * i)) +
-            Point(centerX, centerY)
-        result[arrayIndex++] = vertex.x
-        result[arrayIndex++] = vertex.y
-    }
-    return result
-}
-
-internal fun starVerticesFromNumVerts(
-    numVerticesPerRadius: Int,
-    radius: Float,
-    innerRadius: Float,
-    centerX: Float,
-    centerY: Float
-): FloatArray {
-    val result = FloatArray(numVerticesPerRadius * 4)
-    var arrayIndex = 0
-    for (i in 0 until numVerticesPerRadius) {
-        var vertex = radialToCartesian(radius, (FloatPi / numVerticesPerRadius * 2 * i)) +
-            Point(centerX, centerY)
-        result[arrayIndex++] = vertex.x
-        result[arrayIndex++] = vertex.y
-        vertex = radialToCartesian(innerRadius, (FloatPi / numVerticesPerRadius * (2 * i + 1))) +
-            Point(centerX, centerY)
-        result[arrayIndex++] = vertex.x
-        result[arrayIndex++] = vertex.y
-    }
-    return result
 }
 
 internal const val DEBUG = false

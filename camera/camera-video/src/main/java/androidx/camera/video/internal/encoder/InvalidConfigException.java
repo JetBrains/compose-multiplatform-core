@@ -16,11 +16,9 @@
 
 package androidx.camera.video.internal.encoder;
 
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import org.jspecify.annotations.Nullable;
 
 /** An exception thrown to indicate an error has occurred during configuring an encoder. */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class InvalidConfigException extends Exception {
 
     public InvalidConfigException(@Nullable String message) {

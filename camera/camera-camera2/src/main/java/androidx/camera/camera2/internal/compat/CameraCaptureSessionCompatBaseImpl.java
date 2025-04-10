@@ -21,15 +21,14 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CaptureRequest;
 import android.os.Handler;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.Executor;
 
-@RequiresApi(21)
 class CameraCaptureSessionCompatBaseImpl implements
         CameraCaptureSessionCompat.CameraCaptureSessionCompatImpl {
 
@@ -53,7 +52,7 @@ class CameraCaptureSessionCompatBaseImpl implements
     @Override
     public int captureBurstRequests(@NonNull List<CaptureRequest> requests,
             @NonNull Executor executor,
-            @NonNull CameraCaptureSession.CaptureCallback listener) throws CameraAccessException {
+            CameraCaptureSession.@NonNull CaptureCallback listener) throws CameraAccessException {
         // Wrap the executor in the callback
         CameraCaptureSession.CaptureCallback cb =
                 new CameraCaptureSessionCompat.CaptureCallbackExecutorWrapper(executor, listener);
@@ -65,7 +64,7 @@ class CameraCaptureSessionCompatBaseImpl implements
 
     @Override
     public int captureSingleRequest(@NonNull CaptureRequest request, @NonNull Executor executor,
-            @NonNull CameraCaptureSession.CaptureCallback listener) throws CameraAccessException {
+            CameraCaptureSession.@NonNull CaptureCallback listener) throws CameraAccessException {
         // Wrap the executor in the callback
         CameraCaptureSession.CaptureCallback cb =
                 new CameraCaptureSessionCompat.CaptureCallbackExecutorWrapper(executor, listener);
@@ -78,7 +77,7 @@ class CameraCaptureSessionCompatBaseImpl implements
     @Override
     public int setRepeatingBurstRequests(@NonNull List<CaptureRequest> requests,
             @NonNull Executor executor,
-            @NonNull CameraCaptureSession.CaptureCallback listener) throws CameraAccessException {
+            CameraCaptureSession.@NonNull CaptureCallback listener) throws CameraAccessException {
         // Wrap the executor in the callback
         CameraCaptureSession.CaptureCallback cb =
                 new CameraCaptureSessionCompat.CaptureCallbackExecutorWrapper(executor, listener);
@@ -91,7 +90,7 @@ class CameraCaptureSessionCompatBaseImpl implements
     @Override
     public int setSingleRepeatingRequest(@NonNull CaptureRequest request,
             @NonNull Executor executor,
-            @NonNull CameraCaptureSession.CaptureCallback listener) throws CameraAccessException {
+            CameraCaptureSession.@NonNull CaptureCallback listener) throws CameraAccessException {
         // Wrap the executor in the callback
         CameraCaptureSession.CaptureCallback cb =
                 new CameraCaptureSessionCompat.CaptureCallbackExecutorWrapper(executor, listener);
@@ -102,9 +101,8 @@ class CameraCaptureSessionCompatBaseImpl implements
                 request, cb, params.mCompatHandler);
     }
 
-    @NonNull
     @Override
-    public CameraCaptureSession unwrap() {
+    public @NonNull CameraCaptureSession unwrap() {
         return mCameraCaptureSession;
     }
 

@@ -25,21 +25,19 @@ import android.util.Pair;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
 /**
- * Implementation for bokeh preview use case.
+ * Implementation for bokeh preview use case that implements a RequestUpdateProcessorImpl.
  *
- * <p>This class should be implemented by OEM and deployed to the target devices. 3P developers
- * don't need to implement this, unless this is used for related testing usage.
+ * <p>This is only for testing camera-extensions and should not be used as a sample OEM
+ * implementation.
  *
  * @since 1.0
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class BokehPreviewExtenderImpl implements PreviewExtenderImpl {
     private static final int DEFAULT_STAGE_ID = 0;
     private static final int SESSION_STAGE_ID = 101;
@@ -72,15 +70,13 @@ public final class BokehPreviewExtenderImpl implements PreviewExtenderImpl {
         return CameraCharacteristicAvailability.isEffectAvailable(cameraCharacteristics, EFFECT);
     }
 
-    @NonNull
     @Override
-    public CaptureStageImpl getCaptureStage() {
+    public @NonNull CaptureStageImpl getCaptureStage() {
         return mCaptureStage;
     }
 
-    @NonNull
     @Override
-    public ProcessorType getProcessorType() {
+    public @NonNull ProcessorType getProcessorType() {
         return ProcessorType.PROCESSOR_TYPE_REQUEST_UPDATE_ONLY;
     }
 
@@ -123,15 +119,13 @@ public final class BokehPreviewExtenderImpl implements PreviewExtenderImpl {
     };
 
     @SuppressWarnings("ConstantConditions") // Super method is nullable.
-    @Nullable
     @Override
-    public ProcessorImpl getProcessor() {
+    public @Nullable ProcessorImpl getProcessor() {
         return mRequestUpdateProcessor;
     }
 
-    @Nullable
     @Override
-    public List<Pair<Integer, Size[]>> getSupportedResolutions() {
+    public @Nullable List<Pair<Integer, Size[]>> getSupportedResolutions() {
         return null;
     }
 
@@ -147,9 +141,8 @@ public final class BokehPreviewExtenderImpl implements PreviewExtenderImpl {
 
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onPresetSession() {
+    public @Nullable CaptureStageImpl onPresetSession() {
         // The CaptureRequest parameters will be set via SessionConfiguration#setSessionParameters
         // (CaptureRequest) which only supported from API level 28.
         if (Build.VERSION.SDK_INT < 28) {
@@ -165,9 +158,8 @@ public final class BokehPreviewExtenderImpl implements PreviewExtenderImpl {
     }
 
     @SuppressWarnings("ConstantConditions") // Super method is nullable.
-    @Nullable
     @Override
-    public CaptureStageImpl onEnableSession() {
+    public @Nullable CaptureStageImpl onEnableSession() {
         // Set the necessary CaptureRequest parameters via CaptureStage, here we use some
         // placeholder set of CaptureRequest.Key values
         SettableCaptureStage captureStage = new SettableCaptureStage(SESSION_STAGE_ID);
@@ -177,9 +169,8 @@ public final class BokehPreviewExtenderImpl implements PreviewExtenderImpl {
     }
 
     @SuppressWarnings("ConstantConditions") // Super method is nullable.
-    @Nullable
     @Override
-    public CaptureStageImpl onDisableSession() {
+    public @Nullable CaptureStageImpl onDisableSession() {
         // Set the necessary CaptureRequest parameters via CaptureStage, here we use some
         // placeholder set of CaptureRequest.Key values
         SettableCaptureStage captureStage = new SettableCaptureStage(SESSION_STAGE_ID);
@@ -192,4 +183,11 @@ public final class BokehPreviewExtenderImpl implements PreviewExtenderImpl {
     public int onSessionType() {
         return SessionConfiguration.SESSION_REGULAR;
     }
+
+    /**
+     * This method is used to check if test lib is running. If OEM implementation exists, invoking
+     * this method will throw {@link NoSuchMethodError}. This can be used to determine if OEM
+     * implementation is used or not.
+     */
+    public static void checkTestlibRunning() {}
 }

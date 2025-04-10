@@ -25,19 +25,20 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.os.Trace;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityEvent;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
-import androidx.core.os.TraceCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -266,8 +267,8 @@ public class LinearLayoutManager extends RecyclerView.LayoutManager implements
     }
 
     @Override
-    public void onInitializeAccessibilityNodeInfo(@NonNull RecyclerView.Recycler recycler,
-            @NonNull RecyclerView.State state, @NonNull AccessibilityNodeInfoCompat info) {
+    public void onInitializeAccessibilityNodeInfo(RecyclerView.@NonNull Recycler recycler,
+            RecyclerView.@NonNull State state, @NonNull AccessibilityNodeInfoCompat info) {
         super.onInitializeAccessibilityNodeInfo(recycler, state, info);
         // TODO(b/251823537)
         if (mRecyclerView.mAdapter != null && mRecyclerView.mAdapter.getItemCount() > 0) {
@@ -556,8 +557,8 @@ public class LinearLayoutManager extends RecyclerView.LayoutManager implements
      * layout space to swap to the opposite side of the viewport, incurring many rebinds/recycles,
      * unless the cache is large enough to handle it.</p>
      */
-    protected void calculateExtraLayoutSpace(@NonNull RecyclerView.State state,
-            @NonNull int[] extraLayoutSpace) {
+    protected void calculateExtraLayoutSpace(RecyclerView.@NonNull State state,
+            int @NonNull [] extraLayoutSpace) {
         int extraLayoutSpaceStart = 0;
         int extraLayoutSpaceEnd = 0;
 
@@ -1121,7 +1122,7 @@ public class LinearLayoutManager extends RecyclerView.LayoutManager implements
     }
 
     protected boolean isLayoutRTL() {
-        return getLayoutDirection() == ViewCompat.LAYOUT_DIRECTION_RTL;
+        return getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
     }
 
     void ensureLayoutState() {
@@ -1677,11 +1678,11 @@ public class LinearLayoutManager extends RecyclerView.LayoutManager implements
         while ((layoutState.mInfinite || remainingSpace > 0) && layoutState.hasMore(state)) {
             layoutChunkResult.resetInternal();
             if (RecyclerView.VERBOSE_TRACING) {
-                TraceCompat.beginSection("LLM LayoutChunk");
+                Trace.beginSection("LLM LayoutChunk");
             }
             layoutChunk(recycler, state, layoutState, layoutChunkResult);
             if (RecyclerView.VERBOSE_TRACING) {
-                TraceCompat.endSection();
+                Trace.endSection();
             }
             if (layoutChunkResult.mFinished) {
                 break;

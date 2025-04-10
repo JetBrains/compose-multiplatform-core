@@ -19,7 +19,6 @@ package androidx.camera.camera2.pipe.testing
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureRequest
 import android.util.Size
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraStream
@@ -30,7 +29,6 @@ import androidx.camera.camera2.pipe.StreamFormat
  * Fake CameraGraph configuration that can be used for more complicated tests that need a realistic
  * configuration for tests.
  */
-@RequiresApi(21)
 internal object FakeGraphConfigs {
     private val camera1 = CameraId("TestCamera-1")
     private val camera2 = CameraId("TestCamera-2")
@@ -62,7 +60,9 @@ internal object FakeGraphConfigs {
         CameraStream.Config.create(size = Size(100, 100), format = StreamFormat.YUV_420_888)
     val streamConfig2 =
         CameraStream.Config.create(
-            size = Size(123, 321), format = StreamFormat.YUV_420_888, camera = camera1
+            size = Size(123, 321),
+            format = StreamFormat.YUV_420_888,
+            camera = camera1
         )
     val streamConfig3 =
         CameraStream.Config.create(
@@ -125,7 +125,9 @@ internal object FakeGraphConfigs {
 
     val sharedOutputConfig =
         OutputStream.Config.create(
-            size = Size(200, 200), format = StreamFormat.YUV_420_888, camera = camera1
+            size = Size(200, 200),
+            format = StreamFormat.YUV_420_888,
+            camera = camera1
         )
     val sharedStreamConfig1 = CameraStream.Config.create(sharedOutputConfig)
     val sharedStreamConfig2 = CameraStream.Config.create(sharedOutputConfig)
@@ -134,19 +136,19 @@ internal object FakeGraphConfigs {
         CameraGraph.Config(
             camera = camera1,
             streams =
-            listOf(
-                streamConfig1,
-                streamConfig2,
-                streamConfig3,
-                streamConfig4,
-                streamConfig5,
-                streamConfig6,
-                streamConfig7,
-                streamConfig8,
-                sharedStreamConfig1,
-                sharedStreamConfig2
-            ),
-            streamSharingGroups = listOf(listOf(streamConfig1, streamConfig2)),
+                listOf(
+                    streamConfig1,
+                    streamConfig2,
+                    streamConfig3,
+                    streamConfig4,
+                    streamConfig5,
+                    streamConfig6,
+                    streamConfig7,
+                    streamConfig8,
+                    sharedStreamConfig1,
+                    sharedStreamConfig2
+                ),
+            exclusiveStreamGroups = listOf(listOf(streamConfig1, streamConfig2)),
             defaultParameters = mapOf(CaptureRequest.JPEG_THUMBNAIL_QUALITY to 24),
             requiredParameters = mapOf(CaptureRequest.JPEG_THUMBNAIL_QUALITY to 42)
         )

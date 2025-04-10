@@ -30,22 +30,24 @@ import com.squareup.kotlinpoet.TypeName
 
 class ServerBinderCodeConverter(private val api: ParsedApi) : BinderCodeConverter(api) {
     private val basePackageName = api.getOnlyService().type.packageName
-    private val activityLauncherWrapperClass = ClassName(
-        basePackageName,
-        SdkActivityLauncherWrapperGenerator.className
-    )
+    private val activityLauncherWrapperClass =
+        ClassName(basePackageName, SdkActivityLauncherWrapperGenerator.className)
 
     override fun convertToInterfaceModelCode(
         annotatedInterface: AnnotatedInterface,
         expression: String
     ): CodeBlock {
-        if (annotatedInterface.inheritsSandboxedUiAdapter) {
+        if (annotatedInterface.inheritsUiAdapter) {
             return CodeBlock.of(
-                "(%L.binder as %T).delegate", expression, annotatedInterface.stubDelegateNameSpec()
+                "(%L.binder as %T).delegate",
+                expression,
+                annotatedInterface.stubDelegateNameSpec()
             )
         }
         return CodeBlock.of(
-            "(%L as %T).delegate", expression, annotatedInterface.stubDelegateNameSpec()
+            "(%L as %T).delegate",
+            expression,
+            annotatedInterface.stubDelegateNameSpec()
         )
     }
 
@@ -53,21 +55,34 @@ class ServerBinderCodeConverter(private val api: ParsedApi) : BinderCodeConverte
         annotatedInterface: AnnotatedInterface,
         expression: String
     ): CodeBlock {
-        if (annotatedInterface.inheritsSandboxedUiAdapter) {
+
+        if (annotatedInterface.inheritsUiAdapter) {
+            val uiAdapterSpecs = getUiAdapterSpecForInterface(annotatedInterface)
+            val toCoreLibInfoCall =
+                CodeBlock.builder().build {
+                    addNamed(
+                        uiAdapterSpecs.toCoreLibInfoExpression,
+                        hashMapOf<String, Any>(
+                            "toCoreLibInfo" to toCoreLibInfoMethod,
+                            "context" to contextPropertyName
+                        )
+                    )
+                }
             return CodeBlock.builder().build {
                 addNamed(
                     "%coreLibInfoConverter:T.%toParcelable:N(" +
-                        "%interface:L.%toCoreLibInfo:M(%context:N), " +
+                        "%interface:L.%toCoreLibInfoCall:L, " +
                         "%stubDelegate:T(%interface:L, %context:N)" +
                         ")",
                     hashMapOf<String, Any>(
-                        "coreLibInfoConverter" to ClassName(
-                            annotatedInterface.type.packageName,
-                            annotatedInterface.coreLibInfoConverterName()
-                        ),
+                        "coreLibInfoConverter" to
+                            ClassName(
+                                annotatedInterface.type.packageName,
+                                annotatedInterface.coreLibInfoConverterName()
+                            ),
                         "toParcelable" to toParcelableMethodName,
                         "interface" to expression,
-                        "toCoreLibInfo" to toCoreLibInfoMethod,
+                        "toCoreLibInfoCall" to toCoreLibInfoCall,
                         "context" to contextPropertyName,
                         "stubDelegate" to annotatedInterface.stubDelegateNameSpec()
                     )
@@ -83,7 +98,7 @@ class ServerBinderCodeConverter(private val api: ParsedApi) : BinderCodeConverte
     }
 
     override fun convertToInterfaceBinderType(annotatedInterface: AnnotatedInterface): TypeName {
-        if (annotatedInterface.inheritsSandboxedUiAdapter) {
+        if (annotatedInterface.inheritsUiAdapter) {
             return annotatedInterface.uiAdapterAidlWrapper().poetTypeName()
         }
         return annotatedInterface.aidlType().innerType.poetTypeName()

@@ -31,9 +31,10 @@ import android.util.Range;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -49,19 +50,18 @@ import java.util.concurrent.Executor;
  * <p>This implementation enable the Extensions-Interface v1.4 features such as postview,
  * onCaptureProcessProgressed callback and realtime capture latency.
  *
- * <p>This class should be implemented by OEM and deployed to the target devices. 3P developers
- * don't need to implement this, unless this is used for related testing usage.
+ * <p>This is only for testing camera-extensions and should not be used as a sample OEM
+ * implementation.
  *
  * @since 1.0
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class NightImageCaptureExtenderImpl implements ImageCaptureExtenderImpl {
     private static final String TAG = "NightICExtender";
     private static final int DEFAULT_STAGE_ID = 0;
     private static final int SESSION_STAGE_ID = 101;
     private static final int EV_INDEX = 2;
 
-    private static final int CAPTURE_STAGET_COUNT = 10;
+    private static final int CAPTURE_STAGET_COUNT = 6;
 
     public NightImageCaptureExtenderImpl() {
     }
@@ -83,9 +83,8 @@ public final class NightImageCaptureExtenderImpl implements ImageCaptureExtender
         return compensationRange != null && compensationRange.contains(EV_INDEX);
     }
 
-    @NonNull
     @Override
-    public List<CaptureStageImpl> getCaptureStages() {
+    public @NonNull List<CaptureStageImpl> getCaptureStages() {
         // Placeholder set of CaptureRequest.Key values
         List<CaptureStageImpl> captureStages = new ArrayList<>();
         for (int i = 0; i < CAPTURE_STAGET_COUNT; i++) {
@@ -100,9 +99,8 @@ public final class NightImageCaptureExtenderImpl implements ImageCaptureExtender
 
     private NightCaptureProcessorImpl mCaptureProcessor = null;
 
-    @Nullable
     @Override
-    public CaptureProcessorImpl getCaptureProcessor() {
+    public @Nullable CaptureProcessorImpl getCaptureProcessor() {
         if (mCaptureProcessor == null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) { // Needs ImageWriter
                 mCaptureProcessor = new NightCaptureProcessorImpl();
@@ -125,27 +123,24 @@ public final class NightImageCaptureExtenderImpl implements ImageCaptureExtender
         }
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onPresetSession() {
+    public @Nullable CaptureStageImpl onPresetSession() {
         // Set the necessary CaptureRequest parameters via CaptureStage, here we use some
         // placeholder set of CaptureRequest.Key values
         SettableCaptureStage captureStage = new SettableCaptureStage(SESSION_STAGE_ID);
         return captureStage;
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onEnableSession() {
+    public @Nullable CaptureStageImpl onEnableSession() {
         // Set the necessary CaptureRequest parameters via CaptureStage, here we use some
         // placeholder set of CaptureRequest.Key values
         SettableCaptureStage captureStage = new SettableCaptureStage(SESSION_STAGE_ID);
         return captureStage;
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onDisableSession() {
+    public @Nullable CaptureStageImpl onDisableSession() {
         // Set the necessary CaptureRequest parameters via CaptureStage, here we use some
         // placeholder set of CaptureRequest.Key values
         SettableCaptureStage captureStage = new SettableCaptureStage(SESSION_STAGE_ID);
@@ -157,28 +152,25 @@ public final class NightImageCaptureExtenderImpl implements ImageCaptureExtender
         return CAPTURE_STAGET_COUNT + 1;
     }
 
-    @Nullable
     @Override
-    public List<Pair<Integer, Size[]>> getSupportedResolutions() {
+    public @Nullable List<Pair<Integer, Size[]>> getSupportedResolutions() {
         return null;
     }
 
-    @Nullable
     @Override
-    public List<Pair<Integer, Size[]>> getSupportedPostviewResolutions(@Nullable Size captureSize) {
+    public @Nullable List<Pair<Integer, Size[]>> getSupportedPostviewResolutions(
+            @Nullable Size captureSize) {
         Pair<Integer, Size[]> pair = new Pair<>(ImageFormat.YUV_420_888, new Size[]{captureSize});
         return Arrays.asList(pair);
     }
 
-    @Nullable
     @Override
-    public Range<Long> getEstimatedCaptureLatencyRange(@Nullable Size captureOutputSize) {
-        return new Range<>(300L, 1000L);
+    public @Nullable Range<Long> getEstimatedCaptureLatencyRange(@Nullable Size captureOutputSize) {
+        return new Range<>(2600L, 3000L);
     }
 
-    @NonNull
     @Override
-    public List<CaptureRequest.Key> getAvailableCaptureRequestKeys() {
+    public @NonNull List<CaptureRequest.Key> getAvailableCaptureRequestKeys() {
         List<CaptureRequest.Key> keys = new ArrayList<>(Arrays.asList(
                 CaptureRequest.CONTROL_AF_MODE,
                 CaptureRequest.CONTROL_AF_TRIGGER,
@@ -192,9 +184,8 @@ public final class NightImageCaptureExtenderImpl implements ImageCaptureExtender
         return Collections.unmodifiableList(keys);
     }
 
-    @NonNull
     @Override
-    public List<CaptureResult.Key> getAvailableCaptureResultKeys() {
+    public @NonNull List<CaptureResult.Key> getAvailableCaptureResultKeys() {
         List<CaptureResult.Key> keys = new ArrayList<>(Arrays.asList(
                 CaptureResult.CONTROL_AF_MODE,
                 CaptureResult.CONTROL_AE_REGIONS,
@@ -219,10 +210,9 @@ public final class NightImageCaptureExtenderImpl implements ImageCaptureExtender
         return true;
     }
 
-    @Nullable
     @Override
-    public Pair<Long, Long> getRealtimeCaptureLatency() {
-        return new Pair<>(500L, 3000L);
+    public @Nullable Pair<Long, Long> getRealtimeCaptureLatency() {
+        return new Pair<>(500L, 2500L);
     }
 
     @Override
@@ -271,7 +261,7 @@ public final class NightImageCaptureExtenderImpl implements ImageCaptureExtender
             List<Pair<Image, TotalCaptureResult>> imageDataPairs = new ArrayList<>(
                     results.values());
             Image outputImage = mImageWriter.dequeueInputImage();
-
+            outputImage.setTimestamp(imageDataPairs.get(0).first.getTimestamp());
             // Do processing here
             // The sample here simply returns the normal image result
             int stageId = DEFAULT_STAGE_ID;
@@ -284,19 +274,47 @@ public final class NightImageCaptureExtenderImpl implements ImageCaptureExtender
             }
 
             try {
-                ByteBuffer yByteBuffer = outputImage.getPlanes()[0].getBuffer();
-                ByteBuffer uByteBuffer = outputImage.getPlanes()[2].getBuffer();
-                ByteBuffer vByteBuffer = outputImage.getPlanes()[1].getBuffer();
-
-                // Sample here just simply copy/paste the capture image result
-                yByteBuffer.put(normalImage.getPlanes()[0].getBuffer());
+                // copy y plane
+                Image.Plane inYPlane = normalImage.getPlanes()[0];
+                Image.Plane outYPlane = outputImage.getPlanes()[0];
+                ByteBuffer inYBuffer = inYPlane.getBuffer();
+                ByteBuffer outYBuffer = outYPlane.getBuffer();
+                int inYPixelStride = inYPlane.getPixelStride();
+                int inYRowStride = inYPlane.getRowStride();
+                int outYPixelStride = outYPlane.getPixelStride();
+                int outYRowStride = outYPlane.getRowStride();
+                for (int x = 0; x < outputImage.getHeight(); x++) {
+                    for (int y = 0; y < outputImage.getWidth(); y++) {
+                        int inIndex = x * inYRowStride + y * inYPixelStride;
+                        int outIndex = x * outYRowStride + y * outYPixelStride;
+                        outYBuffer.put(outIndex, inYBuffer.get(inIndex));
+                    }
+                }
                 if (resultCallback != null) {
                     executorForCallback.execute(
                             () -> resultCallback.onCaptureProcessProgressed(50));
                 }
-                uByteBuffer.put(normalImage.getPlanes()[2].getBuffer());
-                vByteBuffer.put(normalImage.getPlanes()[1].getBuffer());
 
+                // Copy UV
+                for (int i = 1; i < 3; i++) {
+                    Image.Plane inPlane = normalImage.getPlanes()[i];
+                    Image.Plane outPlane = outputImage.getPlanes()[i];
+                    ByteBuffer inBuffer = inPlane.getBuffer();
+                    ByteBuffer outBuffer = outPlane.getBuffer();
+                    int inPixelStride = inPlane.getPixelStride();
+                    int inRowStride = inPlane.getRowStride();
+                    int outPixelStride = outPlane.getPixelStride();
+                    int outRowStride = outPlane.getRowStride();
+                    // UV are half width compared to Y
+                    for (int x = 0; x < outputImage.getHeight() / 2; x++) {
+                        for (int y = 0; y < outputImage.getWidth() / 2; y++) {
+                            int inIndex = x * inRowStride + y * inPixelStride;
+                            int outIndex = x * outRowStride + y * outPixelStride;
+                            byte b = inBuffer.get(inIndex);
+                            outBuffer.put(outIndex, b);
+                        }
+                    }
+                }
             } catch (IllegalStateException e) {
                 Log.e(TAG, "Error accessing the Image: " + e);
                 // Since something went wrong, don't try to queue up the image.
@@ -337,13 +355,15 @@ public final class NightImageCaptureExtenderImpl implements ImageCaptureExtender
         private List<Pair<CaptureResult.Key, Object>> getFilteredResults(
                 TotalCaptureResult captureResult) {
             List<Pair<CaptureResult.Key, Object>> list = new ArrayList<>();
-            for (CaptureResult.Key key : captureResult.getKeys()) {
-                list.add(new Pair<>(key, captureResult.get(key)));
-            }
 
+            for (CaptureResult.Key availableCaptureResultKey : getAvailableCaptureResultKeys()) {
+                if (captureResult.get(availableCaptureResultKey) != null) {
+                    list.add(new Pair<>(availableCaptureResultKey,
+                            captureResult.get(availableCaptureResultKey)));
+                }
+            }
             return list;
         }
-
 
         @Override
         public void onResolutionUpdate(@NonNull Size size) {
@@ -379,4 +399,11 @@ public final class NightImageCaptureExtenderImpl implements ImageCaptureExtender
             }
         }
     }
+
+    /**
+     * This method is used to check if test lib is running. If OEM implementation exists, invoking
+     * this method will throw {@link NoSuchMethodError}. This can be used to determine if OEM
+     * implementation is used or not.
+     */
+    public static void checkTestlibRunning() {}
 }

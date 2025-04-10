@@ -16,21 +16,19 @@
 
 package androidx.camera.extensions.internal;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * The client version of the Extensions-Interface that CameraX extension library uses.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class ClientVersion {
     // Current version of vendor library implementation that the CameraX extension supports. This
     // needs to be increased along with the version of vendor library interface.
-    private static ClientVersion sCurrent = new ClientVersion("1.4.0");
+    private static ClientVersion sCurrent = new ClientVersion("1.5.0");
 
-    @NonNull
-    public static ClientVersion getCurrentVersion() {
+    public static @NonNull ClientVersion getCurrentVersion() {
         return sCurrent;
     }
 
@@ -44,8 +42,7 @@ public class ClientVersion {
 
     private final Version mVersion;
 
-    @NonNull
-    public Version getVersion() {
+    public @NonNull Version getVersion() {
         return mVersion;
     }
 
@@ -90,8 +87,7 @@ public class ClientVersion {
      *
      * @return the string of the version in a form of MAJOR.MINOR.PATCH-description.
      */
-    @NonNull
-    public String toVersionString() {
+    public @NonNull String toVersionString() {
         return mVersion.toString();
     }
 }

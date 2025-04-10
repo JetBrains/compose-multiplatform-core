@@ -33,13 +33,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
 import androidx.core.view.NestedScrollingParent2;
 import androidx.core.view.ViewCompat;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -406,8 +406,8 @@ public class SwipeRefreshLayoutNestedScrollingParent2Test {
         }
 
         @Override
-        public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed,
-                int type) {
+        public void onNestedPreScroll(@NonNull View target, int dx, int dy,
+                int @NonNull [] consumed, int type) {
 
         }
 

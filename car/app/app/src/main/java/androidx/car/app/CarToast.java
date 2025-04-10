@@ -21,11 +21,12 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY;
 import static java.util.Objects.requireNonNull;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StringRes;
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -53,8 +54,7 @@ public final class CarToast {
     public static final int LENGTH_LONG = 1;
 
     private final CarContext mCarContext;
-    @Nullable
-    private CharSequence mText;
+    private @Nullable CharSequence mText;
     private int mDuration;
 
     /**
@@ -72,14 +72,14 @@ public final class CarToast {
     /**
      * Creates and sets the text and duration for the toast view.
      *
+     * @param carContext the context used for string localization
      * @param textResId the resource id for the text to show. If the {@code textResId} is 0, the
      *                  text will be set to empty
      * @param duration  how long to display the message. Either {@link #LENGTH_SHORT} or {@link
      *                  #LENGTH_LONG}
      * @throws NullPointerException if {@code carContext} is {@code null}
      */
-    @NonNull
-    public static CarToast makeText(
+    public static @NonNull CarToast makeText(
             @NonNull CarContext carContext, @StringRes int textResId, @Duration int duration) {
         return makeText(
                 requireNonNull(carContext),
@@ -90,14 +90,14 @@ public final class CarToast {
     /**
      * Creates and sets the text and duration for the toast view.
      *
+     * @param carContext the CarContext providing the service used to show the toast
      * @param text     the text to show
      * @param duration how long to display the message. Either {@link #LENGTH_SHORT} or {@link
      *                 #LENGTH_LONG}
      * @throws NullPointerException if either the {@code carContext} or the {@code text} are {@code
      *                              null}
      */
-    @NonNull
-    public static CarToast makeText(
+    public static @NonNull CarToast makeText(
             @NonNull CarContext carContext, @NonNull CharSequence text, @Duration int duration) {
         CarToast carToast = new CarToast(requireNonNull(carContext));
         carToast.mText = requireNonNull(text);

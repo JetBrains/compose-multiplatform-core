@@ -18,11 +18,12 @@ package androidx.wear.watchface.style.data;
 
 import android.graphics.drawable.Icon;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -35,12 +36,10 @@ import java.util.List;
 @VersionedParcelize
 public class ComplicationsOptionWireFormat extends OptionWireFormat {
     @ParcelField(2)
-    @NonNull
-    public CharSequence mDisplayName;
+    public @NonNull CharSequence mDisplayName;
 
     @ParcelField(3)
-    @Nullable
-    public Icon mIcon;
+    public @Nullable Icon mIcon;
 
     // WARNING: This class is held in a list and can't change due to flaws in VersionedParcelable.
 
@@ -49,29 +48,25 @@ public class ComplicationsOptionWireFormat extends OptionWireFormat {
      * {@link ComplicationOverlayWireFormat} is ever extended.
      */
     @ParcelField(100)
-    @NonNull
-    public ComplicationOverlayWireFormat[] mComplicationOverlays =
+    public ComplicationOverlayWireFormat @NonNull [] mComplicationOverlays =
             new ComplicationOverlayWireFormat[0];
 
     @ParcelField(value = 101, defaultValue = "null")
-    @Nullable
-    public List<PerComplicationTypeMargins> mComplicationOverlaysMargins;
+    public @Nullable List<PerComplicationTypeMargins> mComplicationOverlaysMargins;
 
     @ParcelField(value = 102, defaultValue = "null")
-    @Nullable
-    public List<Integer> mComplicationNameResourceIds;
+    public @Nullable List<Integer> mComplicationNameResourceIds;
 
     @ParcelField(value = 103, defaultValue = "null")
-    @Nullable
-    public List<Integer> mComplicationScreenReaderNameResourceIds;
+    public @Nullable List<Integer> mComplicationScreenReaderNameResourceIds;
 
     ComplicationsOptionWireFormat() {}
 
     public ComplicationsOptionWireFormat(
-            @NonNull byte[] id,
+            byte @NonNull [] id,
             @NonNull CharSequence displayName,
             @Nullable Icon icon,
-            @NonNull ComplicationOverlayWireFormat[] complicationOverlays,
+            ComplicationOverlayWireFormat @NonNull [] complicationOverlays,
             @Nullable List<PerComplicationTypeMargins> complicationOverlaysMargins,
             @Nullable List<Integer> complicationNameResourceIds,
             @Nullable List<Integer> complicationScreenReaderNameResourceIds) {
@@ -89,10 +84,10 @@ public class ComplicationsOptionWireFormat extends OptionWireFormat {
      */
     @Deprecated
     public ComplicationsOptionWireFormat(
-            @NonNull byte[] id,
+            byte @NonNull [] id,
             @NonNull CharSequence displayName,
             @Nullable Icon icon,
-            @NonNull ComplicationOverlayWireFormat[] complicationOverlays) {
+            ComplicationOverlayWireFormat @NonNull [] complicationOverlays) {
         super(id);
         mDisplayName = displayName;
         mIcon = icon;

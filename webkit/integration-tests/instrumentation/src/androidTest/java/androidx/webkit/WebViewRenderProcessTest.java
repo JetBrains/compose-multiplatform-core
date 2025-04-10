@@ -21,12 +21,13 @@ import android.webkit.RenderProcessGoneDetail;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import androidx.annotation.RequiresApi;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.MediumTest;
 import androidx.test.filters.SdkSuppress;
+import androidx.webkit.test.common.WebViewOnUiThread;
+import androidx.webkit.test.common.WebkitUtils;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -38,7 +39,6 @@ import org.junit.runner.RunWith;
 
 @MediumTest
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
 public class WebViewRenderProcessTest {
     private boolean terminateRenderProcessOnUiThread(
             final WebViewRenderProcess renderer) {
@@ -114,7 +114,6 @@ public class WebViewRenderProcessTest {
 
     @LargeTest
     @Test
-    @RequiresApi(Build.VERSION_CODES.O)
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     public void testGetWebViewRenderProcess() throws Throwable {
         Assume.assumeTrue("Test requires multi-process mode",

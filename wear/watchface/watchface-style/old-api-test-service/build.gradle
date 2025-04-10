@@ -14,13 +14,20 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 import com.android.build.api.artifact.SingleArtifact
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -34,28 +41,36 @@ dependencies {
     api(libs.kotlinStdlib)
 }
 
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions.suppressWarnings = true
+}
+
+tasks.withType(JavaCompile){
+    options.compilerArgs <<"-Xlint:-deprecation"
+}
+
 androidx {
     name = "WatchFace Style Old Api Test Service"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     inceptionYear = "2022"
     description = "Test service built with v1.0.0 of the API, used to check for binary AIDL compat"
 }
 
 android {
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile('proguard-android.txt')
         }
     }
     buildFeatures {
         aidl = true
     }
-    namespace "androidx.wear.watchface.style.test.oldApiTestService"
+    namespace = "androidx.wear.watchface.style.test.oldApiTestService"
 }
 
 /*

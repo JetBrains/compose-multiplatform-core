@@ -54,18 +54,18 @@ interface FocusProperties {
         set(_) {}
 
     /**
-     *  A custom item to be used when the user moves focus "up".
+     * A custom item to be used when the user moves focus "up".
      *
-     *  @sample androidx.compose.ui.samples.CustomFocusOrderSample
+     * @sample androidx.compose.ui.samples.CustomFocusOrderSample
      */
     var up: FocusRequester
         get() = FocusRequester.Default
         set(_) {}
 
     /**
-     *  A custom item to be used when the user moves focus "down".
+     * A custom item to be used when the user moves focus "down".
      *
-     *  @sample androidx.compose.ui.samples.CustomFocusOrderSample
+     * @sample androidx.compose.ui.samples.CustomFocusOrderSample
      */
     var down: FocusRequester
         get() = FocusRequester.Default
@@ -100,8 +100,8 @@ interface FocusProperties {
         set(_) {}
 
     /**
-     * A custom item to be used when the user requests a focus moves to the "right" in LTR mode
-     * and "left" in RTL mode.
+     * A custom item to be used when the user requests a focus moves to the "right" in LTR mode and
+     * "left" in RTL mode.
      *
      * @sample androidx.compose.ui.samples.CustomFocusOrderSample
      */
@@ -111,48 +111,132 @@ interface FocusProperties {
 
     /**
      * A custom item to be used when the user requests focus to move focus in
-     * ([FocusDirection.Enter]). An automatic [Enter][FocusDirection.Enter]"
-     * can be triggered when we move focus to a focus group that is not itself focusable. In this
-     * case, users can use the  the focus direction that triggered the move in to determine the
-     * next item to be focused on.
+     * ([FocusDirection.Enter]). An automatic [Enter][FocusDirection.Enter]" can be triggered when
+     * we move focus to a focus group that is not itself focusable. In this case, users can use the
+     * the focus direction that triggered the move in to determine the next item to be focused on.
      *
      * When you set the [enter] property, provide a lambda that takes the FocusDirection that
-     * triggered the enter as an input, and provides a [FocusRequester] as an output. You can
-     * return a custom destination by providing a [FocusRequester] attached to that destination,
-     * a [Cancel][FocusRequester.Cancel] to cancel the focus enter or
+     * triggered the enter as an input, and provides a [FocusRequester] as an output. You can return
+     * a custom destination by providing a [FocusRequester] attached to that destination, a
+     * [Cancel][FocusRequester.Cancel] to cancel the focus enter or
      * [Default][FocusRequester.Default] to use the default focus enter behavior.
      *
      * @sample androidx.compose.ui.samples.CustomFocusEnterSample
      */
     @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
+    @ExperimentalComposeUiApi
     @get:ExperimentalComposeUiApi
     @set:ExperimentalComposeUiApi
-    @ExperimentalComposeUiApi
+    @set:Deprecated("Use onEnter instead", ReplaceWith("onEnter"))
     var enter: (FocusDirection) -> FocusRequester
         get() = { FocusRequester.Default }
+        set(value) {
+            onEnter = value.toUsingEnterExitScope()
+        }
+
+    /**
+     * A custom item to be used when the user requests focus to move focus in
+     * ([FocusDirection.Enter]). An automatic [Enter][FocusDirection.Enter]" can be triggered when
+     * we move focus to a focus group that is not itself focusable. In this case, users can use the
+     * the focus direction that triggered the move in to determine the next item to be focused on.
+     *
+     * When you set the [onEnter] property, provide a lambda with the [FocusEnterExitScope] scope,
+     * having the [FocusEnterExitScope.requestedFocusDirection] that triggered the enter as an
+     * input. If redirection is required, use [FocusRequester.requestFocus] and if the focus change
+     * should be canceled, use [FocusEnterExitScope.cancelFocusChange].
+     *
+     * @sample androidx.compose.ui.samples.CustomFocusEnterSample
+     */
+    var onEnter: FocusEnterExitScope.() -> Unit
+        get() = {}
         set(_) {}
 
     /**
-     * A custom item to be used when the user requests focus to move out ([FocusDirection.Exit]).
-     * An automatic [Exit][FocusDirection.Exit] can be triggered when we move focus outside the edge
-     * of a parent. In this case, users can use the  the focus direction that triggered the move out
-     * to determine the next focus destination.
+     * A custom item to be used when the user requests focus to move out ([FocusDirection.Exit]). An
+     * automatic [Exit][FocusDirection.Exit] can be triggered when we move focus outside the edge of
+     * a parent. In this case, users can use the focus direction that triggered the move out to
+     * determine the next focus destination.
      *
      * When you set the [exit] property, provide a lambda that takes the FocusDirection that
-     * triggered the exit as an input, and provides a [FocusRequester] as an output. You can
-     * return a custom destination by providing a [FocusRequester] attached to that destination,
-     * a [Cancel][FocusRequester.Cancel] to cancel the focus exit or
-     * [Default][FocusRequester.Default] to use the default focus exit behavior.
+     * triggered the exit as an input, and provides a [FocusRequester] as an output. You can return
+     * a custom destination by providing a [FocusRequester] attached to that destination, a
+     * [Cancel][FocusRequester.Cancel] to cancel the focus exit or [Default][FocusRequester.Default]
+     * to use the default focus exit behavior.
      *
      * @sample androidx.compose.ui.samples.CustomFocusExitSample
      */
     @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
+    @ExperimentalComposeUiApi
     @get:ExperimentalComposeUiApi
     @set:ExperimentalComposeUiApi
-    @ExperimentalComposeUiApi
+    @set:Deprecated("Use onExit instead", ReplaceWith("onExit"))
     var exit: (FocusDirection) -> FocusRequester
         get() = { FocusRequester.Default }
+        set(value) {
+            onExit = value.toUsingEnterExitScope()
+        }
+
+    /**
+     * A custom item to be used when the user requests focus to move out ([FocusDirection.Exit]). An
+     * automatic [Exit][FocusDirection.Exit] can be triggered when we move focus outside the edge of
+     * a parent. In this case, users can use the focus direction that triggered the move out to
+     * determine the next focus destination.
+     *
+     * When you set the [onExit] property, provide a lambda with the [FocusEnterExitScope] scope,
+     * having the [FocusEnterExitScope.requestedFocusDirection] that triggered the exit as an input.
+     * If redirection is required, use [FocusRequester.requestFocus] and if the focus change should
+     * be canceled, use [FocusEnterExitScope.cancelFocusChange].
+     *
+     * @sample androidx.compose.ui.samples.CustomFocusExitSample
+     */
+    var onExit: FocusEnterExitScope.() -> Unit
+        get() = {}
         set(_) {}
+}
+
+/**
+ * A utility to use when upgrading from [FocusProperties.enter] and [FocusProperties.exit] to
+ * [FocusProperties.onEnter] and [FocusProperties.onExit].
+ */
+private fun ((FocusDirection) -> FocusRequester).toUsingEnterExitScope():
+    FocusEnterExitScope.() -> Unit = {
+    val focusRequester = invoke(requestedFocusDirection)
+    if (focusRequester === FocusRequester.Cancel) {
+        cancelFocusChange()
+    } else if (focusRequester !== FocusRequester.Default) {
+        focusRequester.requestFocus()
+    }
+}
+
+/**
+ * Receiver scope for [FocusProperties.onEnter] and [FocusProperties.onExit]. Developers can change
+ * focus with [FocusRequester.requestFocus] to change the focus or [cancelFocusChange] to stop the
+ * focus from changing.
+ */
+sealed interface FocusEnterExitScope {
+    /**
+     * The direction used to get into (with [FocusProperties.onEnter]) or leave (with
+     * [FocusProperties.onExit]) focus.
+     */
+    val requestedFocusDirection: FocusDirection
+
+    /** Stop focus from changing. */
+    fun cancelFocusChange()
+
+    @ExperimentalComposeUiApi
+    @Deprecated("Use cancelFocusChange instead", replaceWith = ReplaceWith("cancelFocusChange"))
+    fun cancelFocus() = cancelFocusChange()
+}
+
+internal class CancelIndicatingFocusBoundaryScope(
+    override val requestedFocusDirection: FocusDirection,
+) : FocusEnterExitScope {
+    var isCanceled = false
+        private set
+
+    override fun cancelFocusChange() {
+        isCanceled = true
+    }
 }
 
 internal class FocusPropertiesImpl : FocusProperties {
@@ -165,25 +249,21 @@ internal class FocusPropertiesImpl : FocusProperties {
     override var right: FocusRequester = FocusRequester.Default
     override var start: FocusRequester = FocusRequester.Default
     override var end: FocusRequester = FocusRequester.Default
-    @OptIn(ExperimentalComposeUiApi::class)
-    override var enter: (FocusDirection) -> FocusRequester = { FocusRequester.Default }
-    @OptIn(ExperimentalComposeUiApi::class)
-    override var exit: (FocusDirection) -> FocusRequester = { FocusRequester.Default }
+    override var onEnter: FocusEnterExitScope.() -> Unit = {}
+    override var onExit: FocusEnterExitScope.() -> Unit = {}
 }
 
 /**
- * This modifier allows you to specify properties that are accessible to [focusTarget]s further
- * down the modifier chain or on child layout nodes.
+ * This modifier allows you to specify properties that are accessible to [focusTarget]s further down
+ * the modifier chain or on child layout nodes.
  *
  * @sample androidx.compose.ui.samples.FocusPropertiesSample
  */
-fun Modifier.focusProperties(
-    scope: FocusProperties.() -> Unit
-): Modifier = this then FocusPropertiesElement(scope)
+fun Modifier.focusProperties(scope: FocusProperties.() -> Unit): Modifier =
+    this then FocusPropertiesElement(scope)
 
-private data class FocusPropertiesElement(
-    val scope: FocusPropertiesScope
-) : ModifierNodeElement<FocusPropertiesNode>() {
+private data class FocusPropertiesElement(val scope: FocusPropertiesScope) :
+    ModifierNodeElement<FocusPropertiesNode>() {
     override fun create() = FocusPropertiesNode(scope)
 
     override fun update(node: FocusPropertiesNode) {

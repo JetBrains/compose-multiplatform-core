@@ -30,14 +30,14 @@ import androidx.compose.ui.platform.debugInspectorInfo
  * will be excluded from the padding. [WindowInsets.Companion.safeDrawing] will be
  * [consumed][consumeWindowInsets] for child layouts as well.
  *
- * For example, if a parent layout uses [statusBarsPadding], the area that the parent
- * pads for the status bars will not be padded again by this [safeDrawingPadding] modifier.
+ * For example, if a parent layout uses [statusBarsPadding], the area that the parent pads for the
+ * status bars will not be padded again by this [safeDrawingPadding] modifier.
  *
  * When used, the [WindowInsets][android.view.WindowInsets] will be consumed.
  *
  * @sample androidx.compose.foundation.layout.samples.safeDrawingPaddingSample
  */
-fun Modifier.safeDrawingPadding() =
+actual fun Modifier.safeDrawingPadding() =
     windowInsetsPadding(debugInspectorInfo { name = "safeDrawingPadding" }) { safeDrawing }
 
 /**
@@ -47,15 +47,14 @@ fun Modifier.safeDrawingPadding() =
  * will be excluded from the padding. [WindowInsets.Companion.safeGestures] will be
  * [consumed][consumeWindowInsets] for child layouts as well.
  *
- * For example, if a parent layout uses [navigationBarsPadding],
- * the area that the parent layout pads for the status bars will not be padded again by this
- * [safeGesturesPadding] modifier.
+ * For example, if a parent layout uses [navigationBarsPadding], the area that the parent layout
+ * pads for the status bars will not be padded again by this [safeGesturesPadding] modifier.
  *
  * When used, the [WindowInsets][android.view.WindowInsets] will be consumed.
  *
  * @sample androidx.compose.foundation.layout.samples.safeGesturesPaddingSample
  */
-fun Modifier.safeGesturesPadding() =
+actual fun Modifier.safeGesturesPadding() =
     windowInsetsPadding(debugInspectorInfo { name = "safeGesturesPadding" }) { safeGestures }
 
 /**
@@ -65,15 +64,14 @@ fun Modifier.safeGesturesPadding() =
  * will be excluded from the padding. [WindowInsets.Companion.safeContent] will be
  * [consumed][consumeWindowInsets] for child layouts as well.
  *
- * For example, if a parent layout uses [navigationBarsPadding],
- * the area that the parent layout pads for the status bars will not be padded again by this
- * [safeContentPadding] modifier.
+ * For example, if a parent layout uses [navigationBarsPadding], the area that the parent layout
+ * pads for the status bars will not be padded again by this [safeContentPadding] modifier.
  *
  * When used, the [WindowInsets][android.view.WindowInsets] will be consumed.
  *
  * @sample androidx.compose.foundation.layout.samples.safeContentPaddingSample
  */
-fun Modifier.safeContentPadding() =
+actual fun Modifier.safeContentPadding() =
     windowInsetsPadding(debugInspectorInfo { name = "safeContentPadding" }) { safeContent }
 
 /**
@@ -83,15 +81,14 @@ fun Modifier.safeContentPadding() =
  * will be excluded from the padding. [WindowInsets.Companion.systemBars] will be
  * [consumed][consumeWindowInsets] for child layouts as well.
  *
- * For example, if a parent layout uses [statusBarsPadding], the
- * area that the parent layout pads for the status bars will not be padded again by this
- * [systemBarsPadding] modifier.
+ * For example, if a parent layout uses [statusBarsPadding], the area that the parent layout pads
+ * for the status bars will not be padded again by this [systemBarsPadding] modifier.
  *
  * When used, the [WindowInsets][android.view.WindowInsets] will be consumed.
  *
  * @sample androidx.compose.foundation.layout.samples.systemBarsPaddingSample
  */
-fun Modifier.systemBarsPadding() =
+actual fun Modifier.systemBarsPadding() =
     windowInsetsPadding(debugInspectorInfo { name = "systemBarsPadding" }) { systemBars }
 
 /**
@@ -101,15 +98,14 @@ fun Modifier.systemBarsPadding() =
  * will be excluded from the padding. [WindowInsets.Companion.displayCutout] will be
  * [consumed][consumeWindowInsets] for child layouts as well.
  *
- * For example, if a parent layout uses [statusBarsPadding], the
- * area that the parent layout pads for the status bars will not be padded again by this
- * [displayCutoutPadding] modifier.
+ * For example, if a parent layout uses [statusBarsPadding], the area that the parent layout pads
+ * for the status bars will not be padded again by this [displayCutoutPadding] modifier.
  *
  * When used, the [WindowInsets][android.view.WindowInsets] will be consumed.
  *
  * @sample androidx.compose.foundation.layout.samples.displayCutoutPaddingSample
  */
-fun Modifier.displayCutoutPadding() =
+actual fun Modifier.displayCutoutPadding() =
     windowInsetsPadding(debugInspectorInfo { name = "displayCutoutPadding" }) { displayCutout }
 
 /**
@@ -119,15 +115,14 @@ fun Modifier.displayCutoutPadding() =
  * will be excluded from the padding. [WindowInsets.Companion.statusBars] will be
  * [consumed][consumeWindowInsets] for child layouts as well.
  *
- * For example, if a parent layout uses [displayCutoutPadding], the
- * area that the parent layout pads for the status bars will not be padded again by this
- * [statusBarsPadding] modifier.
+ * For example, if a parent layout uses [displayCutoutPadding], the area that the parent layout pads
+ * for the status bars will not be padded again by this [statusBarsPadding] modifier.
  *
  * When used, the [WindowInsets][android.view.WindowInsets] will be consumed.
  *
  * @sample androidx.compose.foundation.layout.samples.statusBarsAndNavigationBarsPaddingSample
  */
-fun Modifier.statusBarsPadding() =
+actual fun Modifier.statusBarsPadding() =
     windowInsetsPadding(debugInspectorInfo { name = "statusBarsPadding" }) { statusBars }
 
 /**
@@ -137,15 +132,14 @@ fun Modifier.statusBarsPadding() =
  * will be excluded from the padding. [WindowInsets.Companion.ime] will be
  * [consumed][consumeWindowInsets] for child layouts as well.
  *
- * For example, if a parent layout uses [navigationBarsPadding],
- * the area that the parent layout pads for the status bars will not be padded again by this
- * [imePadding] modifier.
+ * For example, if a parent layout uses [navigationBarsPadding], the area that the parent layout
+ * pads for the status bars will not be padded again by this [imePadding] modifier.
  *
  * When used, the [WindowInsets][android.view.WindowInsets] will be consumed.
  *
  * @sample androidx.compose.foundation.layout.samples.imePaddingSample
  */
-fun Modifier.imePadding() =
+actual fun Modifier.imePadding() =
     windowInsetsPadding(debugInspectorInfo { name = "imePadding" }) { ime }
 
 /**
@@ -155,15 +149,14 @@ fun Modifier.imePadding() =
  * will be excluded from the padding. [WindowInsets.Companion.navigationBars] will be
  * [consumed][consumeWindowInsets] for child layouts as well.
  *
- * For example, if a parent layout uses [systemBarsPadding], the
- * area that the parent layout pads for the status bars will not be padded again by this
- * [navigationBarsPadding] modifier.
+ * For example, if a parent layout uses [systemBarsPadding], the area that the parent layout pads
+ * for the status bars will not be padded again by this [navigationBarsPadding] modifier.
  *
  * When used, the [WindowInsets][android.view.WindowInsets] will be consumed.
  *
  * @sample androidx.compose.foundation.layout.samples.statusBarsAndNavigationBarsPaddingSample
  */
-fun Modifier.navigationBarsPadding() =
+actual fun Modifier.navigationBarsPadding() =
     windowInsetsPadding(debugInspectorInfo { name = "navigationBarsPadding" }) { navigationBars }
 
 /**
@@ -173,15 +166,14 @@ fun Modifier.navigationBarsPadding() =
  * will be excluded from the padding. [WindowInsets.Companion.captionBar] will be
  * [consumed][consumeWindowInsets] for child layouts as well.
  *
- * For example, if a parent layout uses [displayCutoutPadding], the
- * area that the parent layout pads for the status bars will not be padded again by this
- * [captionBarPadding] modifier.
+ * For example, if a parent layout uses [displayCutoutPadding], the area that the parent layout pads
+ * for the status bars will not be padded again by this [captionBarPadding] modifier.
  *
  * When used, the [WindowInsets][android.view.WindowInsets] will be consumed.
  *
  * @sample androidx.compose.foundation.layout.samples.captionBarPaddingSample
  */
-fun Modifier.captionBarPadding() =
+actual fun Modifier.captionBarPadding() =
     windowInsetsPadding(debugInspectorInfo { name = "captionBarPadding" }) { captionBar }
 
 /**
@@ -191,15 +183,14 @@ fun Modifier.captionBarPadding() =
  * will be excluded from the padding. [WindowInsets.Companion.waterfall] will be
  * [consumed][consumeWindowInsets] for child layouts as well.
  *
- * For example, if a parent layout uses [systemGesturesPadding],
- * the area that the parent layout pads for the status bars will not be padded again by this
- * [waterfallPadding] modifier.
+ * For example, if a parent layout uses [systemGesturesPadding], the area that the parent layout
+ * pads for the status bars will not be padded again by this [waterfallPadding] modifier.
  *
  * When used, the [WindowInsets][android.view.WindowInsets] will be consumed.
  *
  * @sample androidx.compose.foundation.layout.samples.waterfallPaddingSample
  */
-fun Modifier.waterfallPadding() =
+actual fun Modifier.waterfallPadding() =
     windowInsetsPadding(debugInspectorInfo { name = "waterfallPadding" }) { waterfall }
 
 /**
@@ -209,15 +200,14 @@ fun Modifier.waterfallPadding() =
  * will be excluded from the padding. [WindowInsets.Companion.systemGestures] will be
  * [consumed][consumeWindowInsets] for child layouts as well.
  *
- * For example, if a parent layout uses [waterfallPadding], the
- * area that the parent layout pads for the status bars will not be padded again by this
- * [systemGesturesPadding] modifier.
+ * For example, if a parent layout uses [waterfallPadding], the area that the parent layout pads for
+ * the status bars will not be padded again by this [systemGesturesPadding] modifier.
  *
  * When used, the [WindowInsets][android.view.WindowInsets] will be consumed.
  *
  * @sample androidx.compose.foundation.layout.samples.systemGesturesPaddingSample
  */
-fun Modifier.systemGesturesPadding() =
+actual fun Modifier.systemGesturesPadding() =
     windowInsetsPadding(debugInspectorInfo { name = "systemGesturesPadding" }) { systemGestures }
 
 /**
@@ -228,15 +218,15 @@ fun Modifier.systemGesturesPadding() =
  * will be excluded from the padding. [WindowInsets.Companion.mandatorySystemGestures] will be
  * [consumed][consumeWindowInsets] for child layouts as well.
  *
- * For example, if a parent layout uses [navigationBarsPadding],
- * the area that the parent layout pads for the status bars will not be padded again by this
- * [mandatorySystemGesturesPadding] modifier.
+ * For example, if a parent layout uses [navigationBarsPadding], the area that the parent layout
+ * pads for the status bars will not be padded again by this [mandatorySystemGesturesPadding]
+ * modifier.
  *
  * When used, the [WindowInsets][android.view.WindowInsets] will be consumed.
  *
  * @sample androidx.compose.foundation.layout.samples.mandatorySystemGesturesPaddingSample
  */
-fun Modifier.mandatorySystemGesturesPadding() =
+actual fun Modifier.mandatorySystemGesturesPadding() =
     windowInsetsPadding(debugInspectorInfo { name = "mandatorySystemGesturesPadding" }) {
         mandatorySystemGestures
     }
@@ -246,10 +236,11 @@ fun Modifier.mandatorySystemGesturesPadding() =
 private inline fun Modifier.windowInsetsPadding(
     noinline inspectorInfo: InspectorInfo.() -> Unit,
     crossinline insetsCalculation: WindowInsetsHolder.() -> WindowInsets
-): Modifier = composed(inspectorInfo) {
-    val composeInsets = WindowInsetsHolder.current()
-    remember(composeInsets) {
-        val insets = composeInsets.insetsCalculation()
-        InsetsPaddingModifier(insets)
+): Modifier =
+    composed(inspectorInfo) {
+        val composeInsets = WindowInsetsHolder.current()
+        remember(composeInsets) {
+            val insets = composeInsets.insetsCalculation()
+            InsetsPaddingModifier(insets)
+        }
     }
-}

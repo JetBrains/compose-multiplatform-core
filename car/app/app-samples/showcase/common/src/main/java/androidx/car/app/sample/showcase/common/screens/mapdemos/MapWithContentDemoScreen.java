@@ -18,20 +18,22 @@ package androidx.car.app.sample.showcase.common.screens.mapdemos;
 
 import static androidx.car.app.model.Action.BACK;
 
-import androidx.annotation.NonNull;
 import androidx.car.app.CarContext;
 import androidx.car.app.Screen;
+import androidx.car.app.model.Header;
 import androidx.car.app.model.ItemList;
 import androidx.car.app.model.ListTemplate;
 import androidx.car.app.model.Row;
 import androidx.car.app.model.Template;
 import androidx.car.app.sample.showcase.common.R;
-import androidx.car.app.sample.showcase.common.screens.mapdemos.mapwithcontent.MapTemplateWithListDemoScreen;
-import androidx.car.app.sample.showcase.common.screens.mapdemos.mapwithcontent.MapTemplateWithPaneDemoScreen;
 import androidx.car.app.sample.showcase.common.screens.mapdemos.mapwithcontent.MapTemplateWithToggleDemoScreen;
 import androidx.car.app.sample.showcase.common.screens.mapdemos.mapwithcontent.MapWithGridTemplateDemoScreen;
+import androidx.car.app.sample.showcase.common.screens.mapdemos.mapwithcontent.MapWithListTemplateDemoScreen;
 import androidx.car.app.sample.showcase.common.screens.mapdemos.mapwithcontent.MapWithMessageTemplateDemoScreen;
+import androidx.car.app.sample.showcase.common.screens.mapdemos.mapwithcontent.MapWithPaneTemplateDemoScreen;
 import androidx.car.app.versioning.CarAppApiLevels;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,9 +44,8 @@ public final class MapWithContentDemoScreen extends Screen {
         super(carContext);
     }
 
-    @NonNull
     @Override
-    public Template onGetTemplate() {
+    public @NonNull Template onGetTemplate() {
         List<Row> screenList = new ArrayList<>();
         if (getCarContext().getCarAppApiLevel() >= CarAppApiLevels.LEVEL_7) {
             screenList.add(buildRowForTemplate(new MapWithMessageTemplateDemoScreen(
@@ -54,9 +55,9 @@ public final class MapWithContentDemoScreen extends Screen {
                     R.string.map_with_grid_demo_title));
         }
 
-        screenList.add(buildRowForTemplate(new MapTemplateWithListDemoScreen(getCarContext()),
+        screenList.add(buildRowForTemplate(new MapWithListTemplateDemoScreen(getCarContext()),
                 R.string.map_template_list_demo_title));
-        screenList.add(buildRowForTemplate(new MapTemplateWithPaneDemoScreen(getCarContext()),
+        screenList.add(buildRowForTemplate(new MapWithPaneTemplateDemoScreen(getCarContext()),
                 R.string.map_template_pane_demo_title));
 
         if (getCarContext().getCarAppApiLevel() >= CarAppApiLevels.LEVEL_6) {
@@ -72,8 +73,10 @@ public final class MapWithContentDemoScreen extends Screen {
 
         return new ListTemplate.Builder()
                 .setSingleList(listBuilder.build())
-                .setTitle(getCarContext().getString(R.string.map_demos_title))
-                .setHeaderAction(BACK)
+                .setHeader(new Header.Builder()
+                        .setTitle(getCarContext().getString(R.string.map_demos_title))
+                        .setStartHeaderAction(BACK)
+                        .build())
                 .build();
     }
 

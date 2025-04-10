@@ -48,15 +48,12 @@ import org.mockito.Mockito.verify
 @MediumTest
 @RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
-class FragmentTransitionTest(
-    private val reorderingAllowed: ReorderingAllowed
-) {
+class FragmentTransitionTest(private val reorderingAllowed: ReorderingAllowed) {
 
     @Suppress("DEPRECATION")
     @get:Rule
-    val activityRule = androidx.test.rule.ActivityTestRule(
-        FragmentTransitionTestActivity::class.java
-    )
+    val activityRule =
+        androidx.test.rule.ActivityTestRule(FragmentTransitionTestActivity::class.java)
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private lateinit var fragmentManager: FragmentManager
@@ -86,16 +83,15 @@ class FragmentTransitionTest(
         val green = activityRule.findGreen()
 
         // exit transition
-        fragmentManager.beginTransaction()
+        fragmentManager
+            .beginTransaction()
             .setReorderingAllowed(reorderingAllowed)
             .remove(fragment)
             .addToBackStack(null)
             .commit()
 
         fragment.waitForTransition()
-        fragment.exitTransition.verifyAndClearTransition {
-            exitingViews += listOf(green, blue)
-        }
+        fragment.exitTransition.verifyAndClearTransition { exitingViews += listOf(green, blue) }
         verifyNoOtherTransitions(fragment)
         assertThat(onBackStackChangedTimes).isEqualTo(2)
 
@@ -113,9 +109,7 @@ class FragmentTransitionTest(
         // return transition
         activityRule.popBackStackImmediate()
         fragment.waitForTransition()
-        fragment.returnTransition.verifyAndClearTransition {
-            exitingViews += listOf(green2, blue2)
-        }
+        fragment.returnTransition.verifyAndClearTransition { exitingViews += listOf(green2, blue2) }
         verifyNoOtherTransitions(fragment)
         assertThat(onBackStackChangedTimes).isEqualTo(4)
     }
@@ -131,13 +125,15 @@ class FragmentTransitionTest(
 
         activityRule.runOnUiThread {
             // exit transition
-            fragmentManager.beginTransaction()
+            fragmentManager
+                .beginTransaction()
                 .setReorderingAllowed(reorderingAllowed)
                 .remove(fragment)
                 .addToBackStack(null)
                 .commit()
 
-            fragmentManager.beginTransaction()
+            fragmentManager
+                .beginTransaction()
                 .setReorderingAllowed(reorderingAllowed)
                 .add(R.id.fragmentContainer, fragment)
                 .addToBackStack(null)
@@ -155,6 +151,7 @@ class FragmentTransitionTest(
         assertThat(fragment.requireView()).isEqualTo(view1)
         verifyNoOtherTransitions(fragment)
     }
+
     @Test
     fun testTimedPostponeImmediateStartNotCanceled() {
         val fm = activityRule.activity.supportFragmentManager
@@ -166,17 +163,19 @@ class FragmentTransitionTest(
 
         fragment.enterTransition.apply {
             setRealTransition(true)
-            addListener(object : TransitionListenerAdapter() {
-                override fun onTransitionCancel(transition: Transition) {
-                    super.onTransitionCancel(transition)
-                    cancelCount++
-                }
+            addListener(
+                object : TransitionListenerAdapter() {
+                    override fun onTransitionCancel(transition: Transition) {
+                        super.onTransitionCancel(transition)
+                        cancelCount++
+                    }
 
-                override fun onTransitionEnd(transition: Transition) {
-                    super.onTransitionEnd(transition)
-                    endTransitionCountDownLatch.countDown()
+                    override fun onTransitionEnd(transition: Transition) {
+                        super.onTransitionEnd(transition)
+                        endTransitionCountDownLatch.countDown()
+                    }
                 }
-            })
+            )
         }
         fm.beginTransaction()
             .replace(R.id.fragmentContainer, fragment)
@@ -197,7 +196,8 @@ class FragmentTransitionTest(
     fun ensureTransitionsFinishBeforeViewDestroyed() {
         // enter transition
         val fragment = TransitionFinishFirstFragment()
-        fragmentManager.beginTransaction()
+        fragmentManager
+            .beginTransaction()
             .setReorderingAllowed(reorderingAllowed)
             .add(R.id.fragmentContainer, fragment)
             .addToBackStack(null)
@@ -215,7 +215,8 @@ class FragmentTransitionTest(
         // Ensure that our countdown latch has been reset for the Fragment
         assertThat(fragment.endTransitionCountDownLatch.count).isEqualTo(1)
 
-        fragmentManager.beginTransaction()
+        fragmentManager
+            .beginTransaction()
             .setReorderingAllowed(reorderingAllowed)
             .replace(R.id.fragmentContainer, TransitionFragment())
             .addToBackStack(null)
@@ -265,7 +266,8 @@ class FragmentTransitionTest(
 
         fragment2.postponeEnterTransition()
 
-        fragmentManager.beginTransaction()
+        fragmentManager
+            .beginTransaction()
             .setReorderingAllowed(reorderingAllowed)
             .addSharedElement(startBlue, "blueSquare")
             .replace(R.id.fragmentContainer, fragment2)
@@ -304,7 +306,8 @@ class FragmentTransitionTest(
 
         val startBlue = activityRule.findBlue()
 
-        fragmentManager.beginTransaction()
+        fragmentManager
+            .beginTransaction()
             .setReorderingAllowed(reorderingAllowed)
             .addSharedElement(startBlue, "blueSquare")
             .add(R.id.fragmentContainer, fragment2)
@@ -364,7 +367,8 @@ class FragmentTransitionTest(
         val fragment2 = TransitionFragment(R.layout.fragment_scene2)
 
         instrumentation.runOnMainSync {
-            fragmentManager.beginTransaction()
+            fragmentManager
+                .beginTransaction()
                 .setReorderingAllowed(reorderingAllowed)
                 .replace(R.id.fragmentContainer, fragment2)
                 .replace(R.id.fragmentContainer, fragment1)
@@ -412,7 +416,8 @@ class FragmentTransitionTest(
         activityRule.setContentView(R.layout.double_container)
         val fragment1 = TransitionFragment(R.layout.fragment_scene1)
         val fragment2 = TransitionFragment(R.layout.fragment_scene1)
-        fragmentManager.beginTransaction()
+        fragmentManager
+            .beginTransaction()
             .setReorderingAllowed(reorderingAllowed)
             .add(R.id.fragmentContainer1, fragment1)
             .add(R.id.fragmentContainer2, fragment2)
@@ -464,20 +469,16 @@ class FragmentTransitionTest(
         val names = ArgumentCaptor.forClass(List::class.java as Class<List<String>>)
         val views = ArgumentCaptor.forClass(List::class.java as Class<List<View>>)
         val snapshots = ArgumentCaptor.forClass(List::class.java as Class<List<View>>)
-        verify(enterCallback).onSharedElementStart(
-            names.capture(), views.capture(),
-            snapshots.capture()
-        )
+        verify(enterCallback)
+            .onSharedElementStart(names.capture(), views.capture(), snapshots.capture())
         assertThat(names.value).containsExactly("blueSquare")
         assertThat(views.value).containsExactly(startBlue)
         assertThat(snapshots.value).isNull()
 
         val endBlue = activityRule.findBlue()
 
-        verify(enterCallback).onSharedElementEnd(
-            names.capture(), views.capture(),
-            snapshots.capture()
-        )
+        verify(enterCallback)
+            .onSharedElementEnd(names.capture(), views.capture(), snapshots.capture())
         assertThat(names.value).containsExactly("blueSquare")
         assertThat(views.value).containsExactly(endBlue)
         assertThat(snapshots.value).isNull()
@@ -486,20 +487,16 @@ class FragmentTransitionTest(
         reset(enterCallback)
         verifyPopTransition(1, fragment2, fragment1)
 
-        verify(enterCallback).onSharedElementStart(
-            names.capture(), views.capture(),
-            snapshots.capture()
-        )
+        verify(enterCallback)
+            .onSharedElementStart(names.capture(), views.capture(), snapshots.capture())
         assertThat(names.value).containsExactly("blueSquare")
         assertThat(views.value).containsExactly(endBlue)
         assertThat(snapshots.value).isNull()
 
         val reenterBlue = activityRule.findBlue()
 
-        verify(enterCallback).onSharedElementEnd(
-            names.capture(), views.capture(),
-            snapshots.capture()
-        )
+        verify(enterCallback)
+            .onSharedElementEnd(names.capture(), views.capture(), snapshots.capture())
         assertThat(names.value).containsExactly("blueSquare")
         assertThat(views.value).containsExactly(reenterBlue)
         assertThat(snapshots.value).isNull()
@@ -518,19 +515,21 @@ class FragmentTransitionTest(
 
         val startGreenBounds = startGreen.boundsOnScreen
 
-        val mapOut = object : SharedElementCallback() {
-            override fun onMapSharedElements(
-                names: List<String>,
-                sharedElements: MutableMap<String, View>
-            ) {
-                assertThat(names).containsExactly("blueSquare")
-                assertThat(sharedElements).containsExactly("blueSquare", startBlue)
-                sharedElements["blueSquare"] = startGreen
+        val mapOut =
+            object : SharedElementCallback() {
+                override fun onMapSharedElements(
+                    names: List<String>,
+                    sharedElements: MutableMap<String, View>
+                ) {
+                    assertThat(names).containsExactly("blueSquare")
+                    assertThat(sharedElements).containsExactly("blueSquare", startBlue)
+                    sharedElements["blueSquare"] = startGreen
+                }
             }
-        }
         fragment1.setExitSharedElementCallback(mapOut)
 
-        fragmentManager.beginTransaction()
+        fragmentManager
+            .beginTransaction()
             .addSharedElement(startBlue, "blueSquare")
             .replace(R.id.fragmentContainer, fragment2)
             .setReorderingAllowed(reorderingAllowed)
@@ -550,18 +549,19 @@ class FragmentTransitionTest(
             enteringViews += endBlue
         }
 
-        val mapBack = object : SharedElementCallback() {
-            override fun onMapSharedElements(
-                names: List<String>,
-                sharedElements: MutableMap<String, View>
-            ) {
-                assertThat(names).containsExactly("blueSquare")
-                val expectedBlue = findViewById(fragment1, R.id.blueSquare)
-                assertThat(sharedElements).containsExactly("blueSquare", expectedBlue)
-                val greenSquare = findViewById(fragment1, R.id.greenSquare)
-                sharedElements["blueSquare"] = greenSquare
+        val mapBack =
+            object : SharedElementCallback() {
+                override fun onMapSharedElements(
+                    names: List<String>,
+                    sharedElements: MutableMap<String, View>
+                ) {
+                    assertThat(names).containsExactly("blueSquare")
+                    val expectedBlue = findViewById(fragment1, R.id.blueSquare)
+                    assertThat(sharedElements).containsExactly("blueSquare", expectedBlue)
+                    val greenSquare = findViewById(fragment1, R.id.greenSquare)
+                    sharedElements["blueSquare"] = greenSquare
+                }
             }
-        }
         fragment1.setExitSharedElementCallback(mapBack)
 
         activityRule.popBackStackImmediate()
@@ -588,21 +588,23 @@ class FragmentTransitionTest(
         val startBlue = activityRule.findBlue()
         val startBlueBounds = startBlue.boundsOnScreen
 
-        val mapIn = object : SharedElementCallback() {
-            override fun onMapSharedElements(
-                names: List<String>,
-                sharedElements: MutableMap<String, View>
-            ) {
-                assertThat(names).containsExactly("blueSquare")
-                val blueSquare = findViewById(fragment2, R.id.blueSquare)
-                assertThat(sharedElements).containsExactly("blueSquare", blueSquare)
-                val greenSquare = findViewById(fragment2, R.id.greenSquare)
-                sharedElements["blueSquare"] = greenSquare
+        val mapIn =
+            object : SharedElementCallback() {
+                override fun onMapSharedElements(
+                    names: List<String>,
+                    sharedElements: MutableMap<String, View>
+                ) {
+                    assertThat(names).containsExactly("blueSquare")
+                    val blueSquare = findViewById(fragment2, R.id.blueSquare)
+                    assertThat(sharedElements).containsExactly("blueSquare", blueSquare)
+                    val greenSquare = findViewById(fragment2, R.id.greenSquare)
+                    sharedElements["blueSquare"] = greenSquare
+                }
             }
-        }
         fragment2.setEnterSharedElementCallback(mapIn)
 
-        fragmentManager.beginTransaction()
+        fragmentManager
+            .beginTransaction()
             .addSharedElement(startBlue, "blueSquare")
             .replace(R.id.fragmentContainer, fragment2)
             .setReorderingAllowed(reorderingAllowed)
@@ -623,16 +625,17 @@ class FragmentTransitionTest(
             enteringViews += endGreen
         }
 
-        val mapBack = object : SharedElementCallback() {
-            override fun onMapSharedElements(
-                names: List<String>,
-                sharedElements: MutableMap<String, View>
-            ) {
-                assertThat(names).containsExactly("blueSquare")
-                assertThat(sharedElements).containsExactly("blueSquare", endBlue)
-                sharedElements["blueSquare"] = endGreen
+        val mapBack =
+            object : SharedElementCallback() {
+                override fun onMapSharedElements(
+                    names: List<String>,
+                    sharedElements: MutableMap<String, View>
+                ) {
+                    assertThat(names).containsExactly("blueSquare")
+                    assertThat(sharedElements).containsExactly("blueSquare", endBlue)
+                    sharedElements["blueSquare"] = endGreen
+                }
             }
-        }
         fragment2.setEnterSharedElementCallback(mapBack)
 
         activityRule.popBackStackImmediate()
@@ -660,7 +663,8 @@ class FragmentTransitionTest(
         val startGreen = activityRule.findGreen()
         val startBlueBounds = startBlue.boundsOnScreen
 
-        fragmentManager.beginTransaction()
+        fragmentManager
+            .beginTransaction()
             .addSharedElement(startBlue, "blueSquare")
             .addSharedElement(startGreen, "greenSquare")
             .replace(R.id.fragmentContainer, fragment2)
@@ -746,17 +750,19 @@ class FragmentTransitionTest(
 
         val listener = TestShowHideTransitionListener(fragment1)
 
-        fragment1.exitTransition = TrackingVisibility().apply {
-            setRealTransition(true)
-            addListener(listener)
-        }
+        fragment1.exitTransition =
+            TrackingVisibility().apply {
+                setRealTransition(true)
+                addListener(listener)
+            }
 
         fragment1.setExitTransition(fragment1.exitTransition)
 
         val startBlue = activityRule.findBlue()
         val startGreen = activityRule.findGreen()
 
-        fragmentManager.beginTransaction()
+        fragmentManager
+            .beginTransaction()
             .setReorderingAllowed(reorderingAllowed)
             .add(R.id.fragmentContainer, fragment2)
             .hide(fragment1)
@@ -818,20 +824,25 @@ class FragmentTransitionTest(
         fragment2.allowEnterTransitionOverlap = false
         fragment2.enterTransition.setRealTransition(true)
         var enterTransitionStarted = false
-        fragment2.enterTransition.addListener(object : TransitionListenerAdapter() {
-            override fun onTransitionStart(transition: Transition) {
-                enterTransitionStarted = true
+        fragment2.enterTransition.addListener(
+            object : TransitionListenerAdapter() {
+                override fun onTransitionStart(transition: Transition) {
+                    enterTransitionStarted = true
+                }
             }
-        })
+        )
         var enterTransitionStartedOnEnd = true
         fragment.exitTransition.setRealTransition(true)
-        fragment.exitTransition.addListener(object : TransitionListenerAdapter() {
-            override fun onTransitionEnd(transition: Transition) {
-                enterTransitionStartedOnEnd = enterTransitionStarted
+        fragment.exitTransition.addListener(
+            object : TransitionListenerAdapter() {
+                override fun onTransitionEnd(transition: Transition) {
+                    enterTransitionStartedOnEnd = enterTransitionStarted
+                }
             }
-        })
+        )
 
-        fragmentManager.beginTransaction()
+        fragmentManager
+            .beginTransaction()
             .setReorderingAllowed(reorderingAllowed)
             .replace(R.id.fragmentContainer, fragment2)
             .addToBackStack(null)
@@ -839,9 +850,7 @@ class FragmentTransitionTest(
 
         fragment.waitForTransition()
         fragment2.waitForTransition()
-        fragment.exitTransition.verifyAndClearTransition {
-            exitingViews += listOf(green, blue)
-        }
+        fragment.exitTransition.verifyAndClearTransition { exitingViews += listOf(green, blue) }
         verifyNoOtherTransitions(fragment)
 
         val endBlue = activityRule.findBlue()
@@ -866,7 +875,8 @@ class FragmentTransitionTest(
         val startBlue = activityRule.findBlue()
         val startGreen = activityRule.findGreen()
 
-        fragmentManager.beginTransaction()
+        fragmentManager
+            .beginTransaction()
             .setReorderingAllowed(reorderingAllowed)
             .add(R.id.fragmentContainer, fragment2)
             .detach(fragment1)
@@ -917,7 +927,8 @@ class FragmentTransitionTest(
         val startBlue = activityRule.findBlue()
         val startGreen = activityRule.findGreen()
 
-        fragmentManager.beginTransaction()
+        fragmentManager
+            .beginTransaction()
             .addSharedElement(startBlue, "fooSquare")
             .replace(R.id.fragmentContainer, fragment2)
             .setReorderingAllowed(reorderingAllowed)
@@ -957,7 +968,8 @@ class FragmentTransitionTest(
             fail("Expected IllegalArgumentException")
         } catch (e: IllegalArgumentException) {
             assertThat(e)
-                .hasMessageThat().contains(
+                .hasMessageThat()
+                .contains(
                     "A shared element with the target name 'blueSquare' " +
                         "has already been added to the transaction."
                 )
@@ -968,7 +980,8 @@ class FragmentTransitionTest(
             fail("Expected IllegalArgumentException")
         } catch (e: IllegalArgumentException) {
             assertThat(e)
-                .hasMessageThat().contains(
+                .hasMessageThat()
+                .contains(
                     "A shared element with the source name 'blueSquare' " +
                         "has already been added to the transaction."
                 )
@@ -983,7 +996,8 @@ class FragmentTransitionTest(
         }
         // enter transition
         val fragment = InvisibleFragment()
-        fragmentManager.beginTransaction()
+        fragmentManager
+            .beginTransaction()
             .setReorderingAllowed(reorderingAllowed)
             .add(R.id.fragmentContainer, fragment)
             .addToBackStack(null)
@@ -993,7 +1007,8 @@ class FragmentTransitionTest(
         verifyNoOtherTransitions(fragment)
 
         // exit transition
-        fragmentManager.beginTransaction()
+        fragmentManager
+            .beginTransaction()
             .setReorderingAllowed(reorderingAllowed)
             .remove(fragment)
             .addToBackStack(null)
@@ -1024,7 +1039,8 @@ class FragmentTransitionTest(
 
         val fragment2 = TransitionFragment(R.layout.fragment_scene2)
 
-        fragmentManager.beginTransaction()
+        fragmentManager
+            .beginTransaction()
             .setReorderingAllowed(reorderingAllowed)
             .addSharedElement(startBlue, "blueSquare")
             .replace(R.id.fragmentContainer, fragment2)
@@ -1109,7 +1125,8 @@ class FragmentTransitionTest(
 
         activityRule.runOnUiThread {
             fragmentManager.popBackStack()
-            fragmentManager.beginTransaction()
+            fragmentManager
+                .beginTransaction()
                 .setReorderingAllowed(reorderingAllowed)
                 .addSharedElement(startBlue, "blueSquare")
                 .replace(R.id.fragmentContainer, fragment2)
@@ -1117,7 +1134,11 @@ class FragmentTransitionTest(
                 .commit()
         }
 
-        fragment1.waitForTransition()
+        // In the none reordered case, the new transaction immediately completes the pop so
+        // there is no transition to wait on.
+        if (reorderingAllowed == Reordered) {
+            fragment1.waitForTransition()
+        }
 
         // This shouldn't give an error.
         activityRule.executePendingTransactions()
@@ -1166,7 +1187,8 @@ class FragmentTransitionTest(
 
         val fragment2 = TransitionFragment(R.layout.fragment_scene3)
 
-        fragmentManager.beginTransaction()
+        fragmentManager
+            .beginTransaction()
             .setReorderingAllowed(reorderingAllowed)
             .addSharedElement(startGreen, "greenSquare")
             .addSharedElement(startBlue, "blueSquare")
@@ -1212,7 +1234,8 @@ class FragmentTransitionTest(
 
     private fun setupInitialFragment(): TransitionFragment {
         val fragment1 = TransitionFragment(R.layout.fragment_scene1)
-        fragmentManager.beginTransaction()
+        fragmentManager
+            .beginTransaction()
             .setReorderingAllowed(reorderingAllowed)
             .add(R.id.fragmentContainer, fragment1)
             .addToBackStack(null)
@@ -1245,7 +1268,8 @@ class FragmentTransitionTest(
 
         val startBlueRect = startBlue.boundsOnScreen
 
-        fragmentManager.beginTransaction()
+        fragmentManager
+            .beginTransaction()
             .setReorderingAllowed(reorderingAllowed)
             .addSharedElement(startBlue, sharedElementName)
             .replace(R.id.fragmentContainer, to)
@@ -1304,13 +1328,15 @@ class FragmentTransitionTest(
         val sharedElementName = if (swapSource) "blueSquare" else "greenSquare"
 
         activityRule.runOnUiThread {
-            fragmentManager.beginTransaction()
+            fragmentManager
+                .beginTransaction()
                 .setReorderingAllowed(reorderingAllowed)
                 .addSharedElement(fromShared1, "blueSquare")
                 .replace(R.id.fragmentContainer1, to1)
                 .addToBackStack(null)
                 .commit()
-            fragmentManager.beginTransaction()
+            fragmentManager
+                .beginTransaction()
                 .setReorderingAllowed(reorderingAllowed)
                 .addSharedElement(fromShared2, sharedElementName)
                 .replace(R.id.fragmentContainer2, to2)
@@ -1473,12 +1499,14 @@ class FragmentTransitionTest(
         val sharedElementReturnTransition1 = TrackingTransition()
         val sharedElementReturnTransition2 = TrackingTransition()
 
-        private val sharedElementEnterTransition: TransitionSet = TransitionSet()
-            .addTransition(sharedElementEnterTransition1)
-            .addTransition(sharedElementEnterTransition2)
-        private val sharedElementReturnTransition: TransitionSet = TransitionSet()
-            .addTransition(sharedElementReturnTransition1)
-            .addTransition(sharedElementReturnTransition2)
+        private val sharedElementEnterTransition: TransitionSet =
+            TransitionSet()
+                .addTransition(sharedElementEnterTransition1)
+                .addTransition(sharedElementEnterTransition2)
+        private val sharedElementReturnTransition: TransitionSet =
+            TransitionSet()
+                .addTransition(sharedElementReturnTransition1)
+                .addTransition(sharedElementReturnTransition2)
 
         init {
             sharedElementEnterTransition1.addTarget(R.id.blueSquare)
@@ -1508,11 +1536,8 @@ class FragmentTransitionTest(
         }
     }
 
-    class TestShowHideTransitionListener(
-        fragment: TransitionFragment
-    ) : TestTransitionFragmentListener(
-        fragment
-    ) {
+    class TestShowHideTransitionListener(fragment: TransitionFragment) :
+        TestTransitionFragmentListener(fragment) {
         override fun onTransitionEnd(transition: Transition) {
             fragment.endTransitionCountDownLatch.countDown()
             fragment.startTransitionCountDownLatch = CountDownLatch(1)
@@ -1525,10 +1550,8 @@ class FragmentTransitionTest(
         }
     }
 
-    class PostponedFragment3(
-        val duration: Long,
-        val startImmediate: Boolean = false
-    ) : TransitionFragment(R.layout.fragment_scene2) {
+    class PostponedFragment3(val duration: Long, val startImmediate: Boolean = false) :
+        TransitionFragment(R.layout.fragment_scene2) {
         var startPostponedCountDownLatch = CountDownLatch(1)
         val onViewCreatedCountDownLatch = CountDownLatch(1)
 
@@ -1561,7 +1584,8 @@ class AddTransitionFragmentInActivity : FragmentActivity() {
 
     override fun onStart() {
         super.onStart()
-        supportFragmentManager.beginTransaction()
+        supportFragmentManager
+            .beginTransaction()
             .setReorderingAllowed(true)
             .add(android.R.id.content, fragment)
             .commit()

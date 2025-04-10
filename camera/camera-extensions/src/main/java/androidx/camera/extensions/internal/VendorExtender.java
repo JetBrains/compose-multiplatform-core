@@ -19,15 +19,16 @@ package androidx.camera.extensions.internal;
 import android.content.Context;
 import android.graphics.ImageFormat;
 import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CaptureResult;
 import android.util.Pair;
 import android.util.Range;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.impl.SessionProcessor;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -37,7 +38,6 @@ import java.util.Map;
  * A unified vendor extensions interface which interacts with both basic and advanced extender
  * vendor implementation.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public interface VendorExtender {
     /**
      * Indicates whether the extension is supported on the device.
@@ -69,8 +69,7 @@ public interface VendorExtender {
      *
      * <p>It must be called after init() is called.
      */
-    @Nullable
-    default Range<Long> getEstimatedCaptureLatencyRange(@Nullable Size size) {
+    default @Nullable Range<Long> getEstimatedCaptureLatencyRange(@Nullable Size size) {
         return null;
     }
 
@@ -86,8 +85,7 @@ public interface VendorExtender {
      *
      * <p>It must be called after init() is called.
      */
-    @NonNull
-    default List<Pair<Integer, Size[]>> getSupportedPreviewOutputResolutions() {
+    default @NonNull List<Pair<Integer, Size[]>> getSupportedPreviewOutputResolutions() {
         return Collections.emptyList();
     }
 
@@ -103,8 +101,7 @@ public interface VendorExtender {
      *
      * <p>It must be called after init() is called.
      */
-    @NonNull
-    default List<Pair<Integer, Size[]>> getSupportedCaptureOutputResolutions() {
+    default @NonNull List<Pair<Integer, Size[]>> getSupportedCaptureOutputResolutions() {
         return Collections.emptyList();
     }
 
@@ -118,8 +115,7 @@ public interface VendorExtender {
      *
      * <p>It must be called after init() is called.
      */
-    @NonNull
-    default Size[] getSupportedYuvAnalysisResolutions() {
+    default Size @NonNull [] getSupportedYuvAnalysisResolutions() {
         return new Size[0];
     }
 
@@ -130,8 +126,8 @@ public interface VendorExtender {
      * same aspect ratio as the given capture size. If no supported resolution exists for the
      * provided capture size then an empty map is returned.
      */
-    @NonNull
-    default Map<Integer, List<Size>> getSupportedPostviewResolutions(@NonNull Size captureSize) {
+    default @NonNull Map<Integer, List<Size>> getSupportedPostviewResolutions(
+            @NonNull Size captureSize) {
         return Collections.emptyMap();
     }
 
@@ -150,12 +146,53 @@ public interface VendorExtender {
     }
 
     /**
+     * Returns if extension strength is supported or not.
+     */
+    default boolean isExtensionStrengthAvailable() {
+        return false;
+    }
+
+    /**
+     * Returns if reporting current extension mode is supported or not.
+     */
+    default boolean isCurrentExtensionModeAvailable() {
+        return false;
+    }
+
+    /**
      * Creates a {@link SessionProcessor} that is responsible for (1) determining the stream
      * configuration based on given output surfaces (2) Requesting OEM implementation to start
      * repeating request and performing a still image capture.
      */
-    @Nullable
-    default SessionProcessor createSessionProcessor(@NonNull Context context) {
+    default @Nullable SessionProcessor createSessionProcessor(@NonNull Context context) {
         return null;
     }
+
+    /**
+     * Return the list of supported {@link CaptureResult.Key}s that will be contained in the
+     * onCaptureCompleted callback.
+     */
+    default @NonNull List<CaptureResult.Key> getSupportedCaptureResultKeys() {
+        return Collections.emptyList();
+    }
+
+    /**
+     * Returns if the onCaptureCompleted with capture result will be invoked or not.
+     */
+    default boolean willReceiveOnCaptureCompleted() {
+        if (ClientVersion.isMaximumCompatibleVersion(Version.VERSION_1_2)
+                || ExtensionVersion.isMaximumCompatibleVersion(Version.VERSION_1_2)) {
+            // For OEM implementing v1.2 or below, onCaptureCompleted won't be invoked.
+            return false;
+        }
+
+        // onCaptureCompleted is invoked when available captureResult keys are not empty.
+        return !getSupportedCaptureResultKeys().isEmpty();
+    }
+
+    default @NonNull List<Pair<CameraCharacteristics.Key, Object>>
+            getAvailableCharacteristicsKeyValues() {
+        return Collections.emptyList();
+    }
+
 }

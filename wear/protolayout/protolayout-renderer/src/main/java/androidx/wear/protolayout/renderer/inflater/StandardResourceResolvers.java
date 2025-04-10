@@ -20,8 +20,9 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Resources;
 
-import androidx.annotation.NonNull;
 import androidx.wear.protolayout.proto.ResourceProto;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -39,9 +40,8 @@ public class StandardResourceResolvers {
      * @param asyncLoadExecutor The executor to use to load any async resources (e.g. Content URI).
      */
     @SuppressLint("CheckResult")
-    @NonNull
-    public static ResourceResolvers.Builder forLocalApp(
-            @NonNull ResourceProto.Resources protoResources,
+    public static ResourceResolvers.@NonNull Builder forLocalApp(
+            ResourceProto.@NonNull Resources protoResources,
             @NonNull Context appContext,
             @NonNull Executor asyncLoadExecutor,
             boolean animationEnabled) {
@@ -103,9 +103,8 @@ public class StandardResourceResolvers {
      *     resources.
      */
     @SuppressLint("CheckResult")
-    @NonNull
-    public static ResourceResolvers.Builder forRemoteService(
-            @NonNull ResourceProto.Resources protoResources,
+    public static ResourceResolvers.@NonNull Builder forRemoteService(
+            ResourceProto.@NonNull Resources protoResources,
             @NonNull String servicePackageName,
             @NonNull Resources serviceAndroidResources,
             @NonNull Context hostAppContext,

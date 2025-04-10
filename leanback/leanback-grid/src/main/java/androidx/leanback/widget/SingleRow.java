@@ -15,9 +15,10 @@
  */
 package androidx.leanback.widget;
 
-import androidx.annotation.NonNull;
 import androidx.collection.CircularIntArray;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.PrintWriter;
 
@@ -136,7 +137,7 @@ class SingleRow extends Grid {
 
     @Override
     public void collectAdjacentPrefetchPositions(int fromLimit, int da,
-            @NonNull RecyclerView.LayoutManager.LayoutPrefetchRegistry layoutPrefetchRegistry) {
+            RecyclerView.LayoutManager.@NonNull LayoutPrefetchRegistry layoutPrefetchRegistry) {
         int indexToPrefetch;
         int nearestEdge;
         if (mReversedFlow ? da > 0 : da < 0) {

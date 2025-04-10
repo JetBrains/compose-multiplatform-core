@@ -17,22 +17,19 @@
 package androidx.compose.lint
 
 import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiJavaFile
+import com.intellij.psi.PsiClassOwner
+import com.intellij.psi.PsiMember
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiType
 import com.intellij.psi.util.InheritanceUtil
 
-/**
- * Returns whether [this] has [packageName] as its package name.
- */
-fun PsiMethod.isInPackageName(packageName: PackageName): Boolean {
-    val actual = (containingFile as? PsiJavaFile)?.packageName
+/** Returns whether [this] has [packageName] as its package name. */
+fun PsiMember.isInPackageName(packageName: PackageName): Boolean {
+    val actual = (containingFile as? PsiClassOwner)?.packageName
     return packageName.javaPackageName == actual
 }
 
-/**
- * Whether this [PsiMethod] returns Unit
- */
+/** Whether this [PsiMethod] returns Unit */
 val PsiMethod.returnsUnit
     get() = returnType.isVoidOrUnit
 
@@ -45,14 +42,8 @@ val PsiMethod.returnsUnit
 val PsiType?.isVoidOrUnit
     get() = this == PsiType.VOID || this?.canonicalText == "kotlin.Unit"
 
-/**
- * @return whether [this] inherits from [name]. Returns `true` if [this] _is_ directly [name].
- */
-fun PsiType.inheritsFrom(name: Name) =
-    InheritanceUtil.isInheritor(this, name.javaFqn)
+/** @return whether [this] inherits from [name]. Returns `true` if [this] _is_ directly [name]. */
+fun PsiType.inheritsFrom(name: Name) = InheritanceUtil.isInheritor(this, name.javaFqn)
 
-/**
- * @return whether [this] inherits from [name]. Returns `true` if [this] _is_ directly [name].
- */
-fun PsiClass.inheritsFrom(name: Name) =
-    InheritanceUtil.isInheritor(this, name.javaFqn)
+/** @return whether [this] inherits from [name]. Returns `true` if [this] _is_ directly [name]. */
+fun PsiClass.inheritsFrom(name: Name) = InheritanceUtil.isInheritor(this, name.javaFqn)

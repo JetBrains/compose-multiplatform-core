@@ -22,13 +22,14 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.wearable.complications.ComplicationData;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -46,8 +47,7 @@ public final class IdTypeAndDefaultProviderPolicyWireFormat
     int mId;
 
     @ParcelField(2)
-    @Nullable
-    List<ComponentName> mDefaultProvidersToTry;
+    @Nullable List<ComponentName> mDefaultProvidersToTry;
 
     @ParcelField(3)
     int mFallbackSystemProvider;
@@ -78,8 +78,7 @@ public final class IdTypeAndDefaultProviderPolicyWireFormat
      * Along with {@link #getFallbackSystemProvider} this is the wire format for
      * DefaultComplicationDataSourcePolicy.
      */
-    @Nullable
-    public List<ComponentName> getDefaultProvidersToTry() {
+    public @Nullable List<ComponentName> getDefaultProvidersToTry() {
         return mDefaultProvidersToTry;
     }
 

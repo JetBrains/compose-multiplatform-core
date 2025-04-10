@@ -18,13 +18,13 @@ package androidx.camera.video.internal.encoder;
 
 import android.media.MediaCodec;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
@@ -36,7 +36,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * <p> To reduce the memory used, the capacity of the copied byte buffer may not equal to its
  * source, only the required size is allocated to put the copied data.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class BufferCopiedEncodedData implements EncodedData {
 
     private final ByteBuffer mByteBuffer;
@@ -57,8 +56,8 @@ public class BufferCopiedEncodedData implements EncodedData {
         mClosedCompleter = Preconditions.checkNotNull(ref.get());
     }
 
-    @NonNull
-    private MediaCodec.BufferInfo generateCopiedByteInfo(@NonNull EncodedData encodedData) {
+    private MediaCodec.@NonNull BufferInfo generateCopiedByteInfo(
+            @NonNull EncodedData encodedData) {
         MediaCodec.BufferInfo bufferInfo = encodedData.getBufferInfo();
 
         MediaCodec.BufferInfo copiedBufferInfo = new MediaCodec.BufferInfo();
@@ -72,8 +71,7 @@ public class BufferCopiedEncodedData implements EncodedData {
         return copiedBufferInfo;
     }
 
-    @NonNull
-    private ByteBuffer generateCopiedByteBuffer(@NonNull EncodedData encodedData) {
+    private @NonNull ByteBuffer generateCopiedByteBuffer(@NonNull EncodedData encodedData) {
         ByteBuffer byteBuffer = encodedData.getByteBuffer();
         MediaCodec.BufferInfo bufferInfo = encodedData.getBufferInfo();
         byteBuffer.position(bufferInfo.offset);
@@ -89,16 +87,14 @@ public class BufferCopiedEncodedData implements EncodedData {
     }
 
     /** {@inheritDoc} */
-    @NonNull
     @Override
-    public ByteBuffer getByteBuffer() {
+    public @NonNull ByteBuffer getByteBuffer() {
         return mByteBuffer;
     }
 
     /** {@inheritDoc} */
-    @NonNull
     @Override
-    public MediaCodec.BufferInfo getBufferInfo() {
+    public MediaCodec.@NonNull BufferInfo getBufferInfo() {
         return mBufferInfo;
     }
 
@@ -131,9 +127,8 @@ public class BufferCopiedEncodedData implements EncodedData {
     /**
      * No need to call this function. Resources will be released by garbage collection.
      */
-    @NonNull
     @Override
-    public ListenableFuture<Void> getClosedFuture() {
+    public @NonNull ListenableFuture<Void> getClosedFuture() {
         return Futures.nonCancellationPropagating(mClosedFuture);
     }
 }

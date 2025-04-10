@@ -113,9 +113,6 @@ import static androidx.exifinterface.media.ExifInterface.Y_CB_CR_POSITIONING_CEN
 import android.os.Build;
 import android.util.Pair;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.ImageInfo;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Logger;
@@ -124,7 +121,11 @@ import androidx.camera.core.impl.ImageOutputConfig;
 import androidx.core.util.Preconditions;
 import androidx.exifinterface.media.ExifInterface;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -145,7 +146,6 @@ import java.util.regex.Pattern;
 // types besides JPEG have been removed. Support for thumbnails/strips has been removed along
 // with many exif tags. If more tags are required, the source code for ExifInterface should be
 // referenced and can be adapted to this class.
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class ExifData {
     private static final String TAG = "ExifData";
     private static final boolean DEBUG = false;
@@ -288,6 +288,8 @@ public class ExifData {
             TAG_F_NUMBER, TAG_EXPOSURE_TIME, TAG_GPS_TIMESTAMP));
 
     private static final int MM_IN_MICRONS = 1000;
+    private static final String COMPONENTS_CONFIGURATION_YCBCR = new String(new byte[]{1, 2, 3, 0},
+            StandardCharsets.UTF_8);
 
     private final List<Map<String, ExifAttribute>> mAttributes;
     private final ByteOrder mByteOrder;
@@ -304,8 +306,7 @@ public class ExifData {
      *
      * @param rotationDegrees overwrites the rotation degrees in the {@link ImageInfo}.
      */
-    @NonNull
-    public static ExifData create(@NonNull ImageProxy imageProxy,
+    public static @NonNull ExifData create(@NonNull ImageProxy imageProxy,
             @ImageOutputConfig.RotationDegreesValue int rotationDegrees) {
         ExifData.Builder builder = ExifData.builderForDevice();
         if (imageProxy.getImageInfo() != null) {
@@ -325,13 +326,11 @@ public class ExifData {
     /**
      * Gets the byte order.
      */
-    @NonNull
-    public ByteOrder getByteOrder() {
+    public @NonNull ByteOrder getByteOrder() {
         return mByteOrder;
     }
 
-    @NonNull
-    Map<String, ExifAttribute> getAttributes(int ifdIndex) {
+    @NonNull Map<String, ExifAttribute> getAttributes(int ifdIndex) {
         Preconditions.checkArgumentInRange(ifdIndex, 0, EXIF_TAGS.length,
                 "Invalid IFD index: " + ifdIndex + ". Index should be between [0, EXIF_TAGS"
                         + ".length] ");
@@ -344,8 +343,7 @@ public class ExifData {
      *
      * @param tag the name of the tag.
      */
-    @Nullable
-    public String getAttribute(@NonNull String tag) {
+    public @Nullable String getAttribute(@NonNull String tag) {
         ExifAttribute attribute = getExifAttribute(tag);
         if (attribute != null) {
             if (!sTagSetForCompatibility.contains(tag)) {
@@ -385,8 +383,7 @@ public class ExifData {
      * @param tag the name of the tag.
      */
     @SuppressWarnings("deprecation")
-    @Nullable
-    private ExifAttribute getExifAttribute(@NonNull String tag) {
+    private @Nullable ExifAttribute getExifAttribute(@NonNull String tag) {
         // Maintain compatibility.
         if (TAG_ISO_SPEED_RATINGS.equals(tag)) {
             if (DEBUG) {
@@ -409,8 +406,7 @@ public class ExifData {
     /**
      * Generates an empty builder suitable for generating ExifData for JPEG from the current device.
      */
-    @NonNull
-    public static Builder builderForDevice() {
+    public static @NonNull Builder builderForDevice() {
         // Add PRIMARY defaults. EXIF and GPS defaults will be added in build()
         return new Builder(ByteOrder.BIG_ENDIAN)
                 .setAttribute(TAG_ORIENTATION, String.valueOf(ORIENTATION_NORMAL))
@@ -487,8 +483,7 @@ public class ExifData {
          *
          * @param width the width of the image.
          */
-        @NonNull
-        public Builder setImageWidth(int width) {
+        public @NonNull Builder setImageWidth(int width) {
             return setAttribute(TAG_IMAGE_WIDTH, String.valueOf(width));
         }
 
@@ -497,8 +492,7 @@ public class ExifData {
          *
          * @param height the height of the image.
          */
-        @NonNull
-        public Builder setImageHeight(int height) {
+        public @NonNull Builder setImageHeight(int height) {
             return setAttribute(TAG_IMAGE_LENGTH, String.valueOf(height));
         }
 
@@ -507,8 +501,7 @@ public class ExifData {
          *
          * @param orientationDegrees the orientation in degrees. Can be one of (0, 90, 180, 270)
          */
-        @NonNull
-        public Builder setOrientationDegrees(int orientationDegrees) {
+        public @NonNull Builder setOrientationDegrees(int orientationDegrees) {
             int orientationEnum;
             switch (orientationDegrees) {
                 case 0:
@@ -539,8 +532,8 @@ public class ExifData {
          *
          * @param flashState the state of the flash at capture time.
          */
-        @NonNull
-        public Builder setFlashState(@NonNull CameraCaptureMetaData.FlashState flashState) {
+        public @NonNull Builder setFlashState(
+                CameraCaptureMetaData.@NonNull FlashState flashState) {
             if (flashState == CameraCaptureMetaData.FlashState.UNKNOWN) {
                 // Cannot set flash state information
                 return this;
@@ -576,8 +569,7 @@ public class ExifData {
          *
          * @param exposureTimeNs The exposure time in nanoseconds.
          */
-        @NonNull
-        public Builder setExposureTimeNanos(long exposureTimeNs) {
+        public @NonNull Builder setExposureTimeNanos(long exposureTimeNs) {
             return setAttribute(TAG_EXPOSURE_TIME,
                     String.valueOf(exposureTimeNs / (double) TimeUnit.SECONDS.toNanos(1)));
         }
@@ -589,8 +581,7 @@ public class ExifData {
          *
          * @param fNumber The f-number.
          */
-        @NonNull
-        public Builder setLensFNumber(float fNumber) {
+        public @NonNull Builder setLensFNumber(float fNumber) {
             return setAttribute(TAG_F_NUMBER, String.valueOf(fNumber));
         }
 
@@ -599,8 +590,7 @@ public class ExifData {
          *
          * @param iso the standard ISO sensitivity value, as defined in ISO 12232:2006.
          */
-        @NonNull
-        public Builder setIso(int iso) {
+        public @NonNull Builder setIso(int iso) {
             return setAttribute(TAG_SENSITIVITY_TYPE, String.valueOf(SENSITIVITY_TYPE_ISO_SPEED))
                     .setAttribute(TAG_PHOTOGRAPHIC_SENSITIVITY, String.valueOf(Math.min(65535,
                             iso)));
@@ -611,8 +601,7 @@ public class ExifData {
          *
          * @param focalLength The lens focal length in millimeters.
          */
-        @NonNull
-        public Builder setFocalLength(float focalLength) {
+        public @NonNull Builder setFocalLength(float focalLength) {
             LongRational focalLengthRational =
                     new LongRational((long) (focalLength * MM_IN_MICRONS), MM_IN_MICRONS);
             return setAttribute(TAG_FOCAL_LENGTH, focalLengthRational.toString());
@@ -624,8 +613,7 @@ public class ExifData {
          * @param whiteBalanceMode The white balance mode. One of {@link WhiteBalanceMode#AUTO}
          *                         or {@link WhiteBalanceMode#MANUAL}.
          */
-        @NonNull
-        public Builder setWhiteBalanceMode(@NonNull WhiteBalanceMode whiteBalanceMode) {
+        public @NonNull Builder setWhiteBalanceMode(@NonNull WhiteBalanceMode whiteBalanceMode) {
             String wbString = null;
             switch (whiteBalanceMode) {
                 case AUTO:
@@ -644,8 +632,7 @@ public class ExifData {
          * @param tag   the name of the tag.
          * @param value the value of the tag.
          */
-        @NonNull
-        public Builder setAttribute(@NonNull String tag, @NonNull String value) {
+        public @NonNull Builder setAttribute(@NonNull String tag, @NonNull String value) {
             setAttributeInternal(tag, value, mAttributes);
             return this;
         }
@@ -655,8 +642,7 @@ public class ExifData {
          *
          * @param tag the name of the tag.
          */
-        @NonNull
-        public Builder removeAttribute(@NonNull String tag) {
+        public @NonNull Builder removeAttribute(@NonNull String tag) {
             setAttributeInternal(tag, null, mAttributes);
             return this;
         }
@@ -853,8 +839,7 @@ public class ExifData {
         /**
          * Builds an {@link ExifData} from the current state of the builder.
          */
-        @NonNull
-        public ExifData build() {
+        public @NonNull ExifData build() {
             // Create a read-only copy of all attributes. This needs to be a deep copy since
             // build() can be called multiple times. We'll remove null values as well.
             List<Map<String, ExifAttribute>> attributes = Collections.list(
@@ -878,7 +863,8 @@ public class ExifData {
                         String.valueOf(EXPOSURE_PROGRAM_NOT_DEFINED), attributes);
                 setAttributeIfMissing(TAG_EXIF_VERSION, "0230", attributes);
                 // Default is for YCbCr components
-                setAttributeIfMissing(TAG_COMPONENTS_CONFIGURATION, "1,2,3,0", attributes);
+                setAttributeIfMissing(TAG_COMPONENTS_CONFIGURATION, COMPONENTS_CONFIGURATION_YCBCR,
+                        attributes);
                 setAttributeIfMissing(TAG_METERING_MODE, String.valueOf(METERING_MODE_UNKNOWN),
                         attributes);
                 setAttributeIfMissing(TAG_LIGHT_SOURCE, String.valueOf(LIGHT_SOURCE_UNKNOWN),
@@ -994,4 +980,3 @@ public class ExifData {
         }
     }
 }
-

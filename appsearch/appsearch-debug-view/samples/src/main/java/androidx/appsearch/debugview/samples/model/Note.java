@@ -15,10 +15,11 @@
  */
 package androidx.appsearch.debugview.samples.model;
 
-import androidx.annotation.NonNull;
 import androidx.appsearch.annotation.Document;
 import androidx.appsearch.app.AppSearchSchema.StringPropertyConfig;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Encapsulates a Note document.
@@ -42,26 +43,22 @@ public class Note {
     private final String mText;
 
     /** Returns the ID of the {@link Note} object. */
-    @NonNull
-    public String getId() {
+    public @NonNull String getId() {
         return mId;
     }
 
     /** Returns the namespace of the {@link Note} object. */
-    @NonNull
-    public String getNamespace() {
+    public @NonNull String getNamespace() {
         return mNamespace;
     }
 
     /** Returns the text of the {@link Note} object. */
-    @NonNull
-    public String getText() {
+    public @NonNull String getText() {
         return mText;
     }
 
     @Override
-    @NonNull
-    public String toString() {
+    public @NonNull String toString() {
         return mText;
     }
 
@@ -72,29 +69,25 @@ public class Note {
         private String mText = "";
 
         /** Sets the namespace of the {@link Note} object. */
-        @NonNull
-        public Note.Builder setNamespace(@NonNull String namespace) {
+        public Note.@NonNull Builder setNamespace(@NonNull String namespace) {
             mNamespace = Preconditions.checkNotNull(namespace);
             return this;
         }
 
         /** Sets the ID of the {@link Note} object. */
-        @NonNull
-        public Note.Builder setId(@NonNull String id) {
+        public Note.@NonNull Builder setId(@NonNull String id) {
             mId = Preconditions.checkNotNull(id);
             return this;
         }
 
         /** Sets the text of the {@link Note} object. */
-        @NonNull
-        public Note.Builder setText(@NonNull String text) {
+        public Note.@NonNull Builder setText(@NonNull String text) {
             mText = Preconditions.checkNotNull(text);
             return this;
         }
 
         /** Creates a new {@link Note} object. */
-        @NonNull
-        public Note build() {
+        public @NonNull Note build() {
             return new Note(mNamespace, mId, mText);
         }
     }

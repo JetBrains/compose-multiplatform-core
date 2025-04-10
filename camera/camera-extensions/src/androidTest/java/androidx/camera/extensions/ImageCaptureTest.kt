@@ -20,11 +20,12 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.ImageFormat
 import android.graphics.SurfaceTexture
+import android.util.Log
 import android.util.Size
 import android.view.Surface
-import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.CameraXConfig
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
@@ -33,7 +34,9 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.internal.compat.workaround.ExifRotationAvailability
 import androidx.camera.extensions.impl.ExtensionsTestlibControl
 import androidx.camera.extensions.util.ExtensionsTestUtil
+import androidx.camera.extensions.util.ExtensionsTestUtil.CAMERA_PIPE_IMPLEMENTATION_OPTION
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.ExifUtil
@@ -48,8 +51,10 @@ import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Assert.assertTrue
@@ -68,21 +73,26 @@ import org.mockito.Mockito
 @RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = 21)
 class ImageCaptureTest(
+    private val implName: String,
+    private val cameraXConfig: CameraXConfig,
     private val implType: ExtensionsTestlibControl.ImplementationType,
     @field:ExtensionMode.Mode @param:ExtensionMode.Mode private val extensionMode: Int,
     @field:CameraSelector.LensFacing @param:CameraSelector.LensFacing private val lensFacing: Int
 ) {
 
     @get:Rule
-    val useCamera = CameraUtil.grantCameraPermissionAndPreTest(
-        PreTestCameraIdList(Camera2Config.defaultConfig())
-    )
+    val cameraPipeConfigTestRule =
+        CameraPipeConfigTestRule(active = implName == CAMERA_PIPE_IMPLEMENTATION_OPTION)
 
     @get:Rule
-    val temporaryFolder = TemporaryFolder(context.cacheDir)
+    val useCamera =
+        CameraUtil.grantCameraPermissionAndPreTestAndPostTest(PreTestCameraIdList(cameraXConfig))
 
+    // Launch activity when testing in Vivo devices to prevent testing process from being killed.
     @get:Rule
-    val wakelockEmptyActivityRule = WakelockEmptyActivityRule()
+    val wakelockEmptyActivityRule = WakelockEmptyActivityRule(brandsToEnable = listOf("vivo"))
+
+    @get:Rule val temporaryFolder = TemporaryFolder(context.cacheDir)
 
     private lateinit var cameraProvider: ProcessCameraProvider
 
@@ -97,26 +107,23 @@ class ImageCaptureTest(
     @Before
     fun setUp(): Unit = runBlocking {
         assumeTrue(
-            ExtensionsTestUtil.isTargetDeviceAvailableForExtensions(
-                lensFacing,
-                extensionMode
-            )
+            ExtensionsTestUtil.isTargetDeviceAvailableForExtensions(lensFacing, extensionMode)
         )
 
+        ProcessCameraProvider.configureInstance(cameraXConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
         baseCameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
         ExtensionsTestlibControl.getInstance().setImplementationType(implType)
-        extensionsManager = ExtensionsManager.getInstanceAsync(
-            context,
-            cameraProvider
-        )[10000, TimeUnit.MILLISECONDS]
+        extensionsManager =
+            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
+                    10000, TimeUnit.MILLISECONDS]
 
-        assumeTrue(extensionsManager.isExtensionAvailable(baseCameraSelector, extensionMode))
-
-        extensionsCameraSelector = extensionsManager.getExtensionEnabledCameraSelector(
-            baseCameraSelector,
-            extensionMode
+        assumeTrue(
+            ExtensionsTestUtil.isExtensionAvailable(extensionsManager, lensFacing, extensionMode)
         )
+
+        extensionsCameraSelector =
+            extensionsManager.getExtensionEnabledCameraSelector(baseCameraSelector, extensionMode)
 
         withContext(Dispatchers.Main) {
             fakeLifecycleOwner = FakeLifecycleOwner().apply { startAndResume() }
@@ -135,104 +142,233 @@ class ImageCaptureTest(
     }
 
     companion object {
+        val TAG = "ImageCaptureTest"
         val context: Context = ApplicationProvider.getApplicationContext()
+
         @JvmStatic
-        @get:Parameterized.Parameters(name = "impl= {0}, mode = {1}, facing = {2}")
-        val parameters: Collection<Array<Any>>
-            get() = ExtensionsTestUtil.getAllImplExtensionsLensFacingCombinations(context, true)
+        @Parameterized.Parameters(
+            name = "cameraXConfig = {0}, impl = {2}, mode = {3}, facing = {4}"
+        )
+        fun data(): Collection<Array<Any>> {
+            return ExtensionsTestUtil.getAllImplExtensionsLensFacingCombinations(context, true)
+        }
     }
 
     @Test
-    fun canBindToLifeCycleAndTakePicture(): Unit = runBlocking {
-        val mockOnImageCapturedCallback = Mockito.mock(
-            ImageCapture.OnImageCapturedCallback::class.java
-        )
+    fun canBindToLifeCycleAndTakeJpegPicture() {
+        canBindToLifeCycleAndTakePicture(ImageCapture.OUTPUT_FORMAT_JPEG)
+    }
 
-        bindAndTakePicture(mockOnImageCapturedCallback)
+    @Test
+    fun canBindToLifeCycleAndTakeJpegUltraHdrPicture() {
+        assumeTrue(isSupportedJpegUltraHdrStillImageCapture())
+        canBindToLifeCycleAndTakePicture(ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR)
+    }
+
+    private fun canBindToLifeCycleAndTakePicture(outputFormat: Int): Unit = runBlocking {
+        val isCaptureProcessProgressSupported = isCaptureProcessProgressSupported()
+        val mockOnImageCapturedCallback =
+            Mockito.mock(ImageCapture.OnImageCapturedCallback::class.java)
+
+        bindAndTakePicture(mockOnImageCapturedCallback, outputFormat = outputFormat)
 
         // Verify the image captured.
-        val imageProxy = ArgumentCaptor.forClass(
-            ImageProxy::class.java
-        )
+        val imageProxy = ArgumentCaptor.forClass(ImageProxy::class.java)
 
-        Mockito.verify(mockOnImageCapturedCallback, Mockito.timeout(5000).times(1))
+        Mockito.verify(mockOnImageCapturedCallback, Mockito.timeout(8000).times(1))
             .onCaptureStarted()
-        Mockito.verify(mockOnImageCapturedCallback, Mockito.timeout(10000)).onCaptureSuccess(
-            imageProxy.capture()
-        )
+
+        if (isCaptureProcessProgressSupported) {
+            Mockito.verify(mockOnImageCapturedCallback, Mockito.timeout(8000).atLeastOnce())
+                .onCaptureProcessProgressed(ArgumentMatchers.anyInt())
+        }
+
+        Mockito.verify(mockOnImageCapturedCallback, Mockito.timeout(15000))
+            .onCaptureSuccess(imageProxy.capture())
         assertThat(imageProxy.value).isNotNull()
         imageProxy.value.close() // Close the image after verification.
 
         // Verify the take picture should not have any error happen.
-        Mockito.verify(mockOnImageCapturedCallback, Mockito.never()).onError(
-            ArgumentMatchers.any(
-                ImageCaptureException::class.java
+        Mockito.verify(mockOnImageCapturedCallback, Mockito.never())
+            .onError(ArgumentMatchers.any(ImageCaptureException::class.java))
+    }
+
+    /**
+     * This following 3 tests ensure the takePicture() request can be interrupted by lifecycle stop
+     * event and when resumed it can execute takePicture() twice normally. The reason why it has to
+     * test takePicture() twice is because we want to ensure that the 1st takePicture after resumed
+     * doesn't get the Image from the aborted request and corrupt the states.
+     */
+    // TODO(b/322416654): Enable test after it can pass on most devices
+    fun canInterruptTakePictureAndResume(): Unit = runBlocking {
+        canInterruptTakePictureAndResumeInternal(delayForStopLifecycle = 500)
+    }
+
+    // TODO(b/322416654): Enable test after it can pass on most devices
+    fun canInterruptTakePictureAndResume_forLongCapture(): Unit = runBlocking {
+        val latency =
+            extensionsManager.getEstimatedCaptureLatencyRange(
+                extensionsCameraSelector,
+                extensionMode
             )
+        assumeTrue(latency != null && latency.lower >= 2000)
+        canInterruptTakePictureAndResumeInternal(
+            delayForStopLifecycle = latency!!.lower,
         )
     }
 
-    fun canBindToLifeCycleAndTakePicture_diskIo(): Unit = runBlocking {
-        val mockOnImageSavedCallback = Mockito.mock(
-            ImageCapture.OnImageSavedCallback::class.java
-        )
+    // TODO(b/322416654): Enable test after it can pass on most devices
+    fun canInterruptTakePictureAndResume_withPostviewEnabled(): Unit = runBlocking {
+        canInterruptTakePictureAndResumeInternal(enablePostview = true, delayForStopLifecycle = 500)
+    }
 
-        bindAndTakePicture(mockOnImageSavedCallback)
+    private fun canInterruptTakePictureAndResumeInternal(
+        enablePostview: Boolean = false,
+        delayForStopLifecycle: Long
+    ): Unit = runBlocking {
+        if (enablePostview) {
+            assumeTrue(isPostviewSupported())
+        }
+        val imageCapturedCallback = FakeOnImageCaptureCallback()
+        val imageCapture = ImageCapture.Builder().setPostviewEnabled(enablePostview).build()
+
+        // Take picture after preview is ready to emulate the real case.
+        bindAndAwaitPreviewReady(imageCapture)
+        Log.w(TAG, "takePicture 1st time")
+        imageCapture.takePicture(CameraXExecutors.mainThreadExecutor(), imageCapturedCallback)
+
+        // Immediately stop the lifecycle after takePicture.
+        delay(delayForStopLifecycle)
+        withContext(Dispatchers.Main) {
+            Log.w(TAG, "Stop the lifecycle")
+            fakeLifecycleOwner.pauseAndStop()
+        }
+
+        val imageProxy = imageCapturedCallback.waitForResult(10000)
+        // imageProxy == null means that onError is invoked and we want to skip the test when
+        // the delay is long enough for the capture to completed.
+        assumeTrue(imageProxy == null)
+
+        // And then restart the lifecycle to resume the camera
+        delay(300)
+        withContext(Dispatchers.Main) {
+            Log.w(TAG, "Start the lifecycle")
+            fakeLifecycleOwner.startAndResume()
+        }
+
+        // Invoke takePicture and verify the image is captured.
+        Log.w(TAG, "Take picture 2nd time")
+        verifyCanTakePictureWithoutError(imageCapture, verifyPostview = enablePostview)
+
+        // Invoke takePicture 2nd time and verify the image is captured.
+        Log.w(TAG, "Take picture 3rd time")
+        verifyCanTakePictureWithoutError(imageCapture, verifyPostview = enablePostview)
+    }
+
+    private fun verifyCanTakePictureWithoutError(
+        imageCapture: ImageCapture,
+        verifyPostview: Boolean = false
+    ) {
+        val mockOnImageCapturedCallback =
+            Mockito.mock(ImageCapture.OnImageCapturedCallback::class.java)
+        val imageProxy = ArgumentCaptor.forClass(ImageProxy::class.java)
+
+        imageCapture.takePicture(CameraXExecutors.mainThreadExecutor(), mockOnImageCapturedCallback)
+
+        if (verifyPostview) {
+            val bitmap = ArgumentCaptor.forClass(Bitmap::class.java)
+            Mockito.verify(mockOnImageCapturedCallback, Mockito.timeout(10000))
+                .onPostviewBitmapAvailable(bitmap.capture())
+            assertThat(bitmap).isNotNull()
+        }
+
+        Mockito.verify(mockOnImageCapturedCallback, Mockito.timeout(15000))
+            .onCaptureSuccess(imageProxy.capture())
+        assertThat(imageProxy.value).isNotNull()
+        imageProxy.value.close()
+        Mockito.verify(mockOnImageCapturedCallback, Mockito.never())
+            .onError(ArgumentMatchers.any(ImageCaptureException::class.java))
+    }
+
+    @Test
+    fun canBindToLifeCycleAndTakeJpegPicture_diskIo() {
+        canBindToLifeCycleAndTakePicture_diskIo(ImageCapture.OUTPUT_FORMAT_JPEG)
+    }
+
+    @Test
+    fun canBindToLifeCycleAndTakeJpegUltraHdrPicture_diskIo() {
+        assumeTrue(isSupportedJpegUltraHdrStillImageCapture())
+        canBindToLifeCycleAndTakePicture_diskIo(ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR)
+    }
+
+    private fun isSupportedJpegUltraHdrStillImageCapture(): Boolean {
+        val cameraInfo = cameraProvider.getCameraInfo(extensionsCameraSelector)
+        val imageCaptureCapabilities = ImageCapture.getImageCaptureCapabilities(cameraInfo)
+        return imageCaptureCapabilities.supportedOutputFormats.contains(
+            ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR
+        )
+    }
+
+    private fun canBindToLifeCycleAndTakePicture_diskIo(outputFormat: Int): Unit = runBlocking {
+        val isCaptureProcessProgressSupported = isCaptureProcessProgressSupported()
+
+        val mockOnImageSavedCallback = Mockito.mock(ImageCapture.OnImageSavedCallback::class.java)
+
+        bindAndTakePicture(mockOnImageSavedCallback, outputFormat = outputFormat)
 
         // Verify the image captured.
-        val outputFileResults = ArgumentCaptor.forClass(
-            ImageCapture.OutputFileResults::class.java
-        )
+        val outputFileResults = ArgumentCaptor.forClass(ImageCapture.OutputFileResults::class.java)
 
-        Mockito.verify(mockOnImageSavedCallback, Mockito.timeout(5000).times(1))
-            .onCaptureStarted()
+        Mockito.verify(mockOnImageSavedCallback, Mockito.timeout(8000).times(1)).onCaptureStarted()
 
-        Mockito.verify(mockOnImageSavedCallback, Mockito.timeout(10000)).onImageSaved(
-            outputFileResults.capture()
-        )
+        if (isCaptureProcessProgressSupported) {
+            Mockito.verify(mockOnImageSavedCallback, Mockito.timeout(8000).atLeastOnce())
+                .onCaptureProcessProgressed(ArgumentMatchers.anyInt())
+        }
+
+        Mockito.verify(mockOnImageSavedCallback, Mockito.timeout(15000))
+            .onImageSaved(outputFileResults.capture())
         assertThat(outputFileResults.value).isNotNull()
 
         // Verify the take picture should not have any error happen.
-        Mockito.verify(mockOnImageSavedCallback, Mockito.never()).onError(
-            ArgumentMatchers.any(
-                ImageCaptureException::class.java
-            )
-        )
+        Mockito.verify(mockOnImageSavedCallback, Mockito.never())
+            .onError(ArgumentMatchers.any(ImageCaptureException::class.java))
     }
 
     private fun isCaptureProcessProgressSupported(): Boolean = runBlocking {
-        val camera = withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                extensionsCameraSelector
-            )
-        }
+        val camera =
+            withContext(Dispatchers.Main) {
+                cameraProvider.bindToLifecycle(fakeLifecycleOwner, extensionsCameraSelector)
+            }
 
         val capabilities = ImageCapture.getImageCaptureCapabilities(camera.cameraInfo)
         capabilities.isCaptureProcessProgressSupported
     }
 
-    private fun isPostviewSupported(): Boolean = runBlocking {
-        val camera = withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                extensionsCameraSelector
+    private fun isPostviewSupported(): Boolean {
+        return ImageCapture.getImageCaptureCapabilities(
+                cameraProvider.getCameraInfo(extensionsCameraSelector)
             )
-        }
-
-        val capabilities = ImageCapture.getImageCaptureCapabilities(camera.cameraInfo)
-        capabilities.isPostviewSupported
+            .isPostviewSupported
     }
 
     private suspend fun bindAndTakePicture(
         onImageCaptureCallback: ImageCapture.OnImageCapturedCallback,
+        imageCapture: ImageCapture? = null,
         targetRotation: Int? = null,
-        enablePostview: Boolean = false
+        enablePostview: Boolean = false,
+        outputFormat: Int = ImageCapture.OUTPUT_FORMAT_JPEG
     ): Camera {
         // To test bind/unbind and take picture.
-        val imageCapture = ImageCapture.Builder().apply {
-            targetRotation?.let { setTargetRotation(it) }
-            setPostviewEnabled(enablePostview)
-        }.build()
+        val imageCaptureUsecase =
+            imageCapture
+                ?: ImageCapture.Builder()
+                    .apply {
+                        setOutputFormat(outputFormat)
+                        targetRotation?.let { setTargetRotation(it) }
+                        setPostviewEnabled(enablePostview)
+                    }
+                    .build()
         val preview = Preview.Builder().build()
         return withContext(Dispatchers.Main) {
             // To set the update listener and Preview will change to active state.
@@ -246,22 +382,22 @@ class ImageCaptureTest(
                             // No-op.
                         }
 
-                        override fun onSafeToRelease(
-                            surfaceTexture: SurfaceTexture
-                        ) {
+                        override fun onSafeToRelease(surfaceTexture: SurfaceTexture) {
                             // No-op.
                         }
-                    })
+                    }
+                )
             )
 
-            val camera = cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                extensionsCameraSelector,
-                preview,
-                imageCapture
-            )
+            val camera =
+                cameraProvider.bindToLifecycle(
+                    fakeLifecycleOwner,
+                    extensionsCameraSelector,
+                    preview,
+                    imageCaptureUsecase
+                )
 
-            imageCapture.takePicture(
+            imageCaptureUsecase.takePicture(
                 CameraXExecutors.mainThreadExecutor(),
                 onImageCaptureCallback
             )
@@ -269,16 +405,58 @@ class ImageCaptureTest(
         }
     }
 
-    private suspend fun bindAndTakePicture(
-        onImageSavedCallback: ImageCapture.OnImageSavedCallback,
+    private suspend fun bindAndAwaitPreviewReady(
+        imageCapture: ImageCapture? = null,
         targetRotation: Int? = null,
         enablePostview: Boolean = false
     ): Camera {
         // To test bind/unbind and take picture.
-        val imageCapture = ImageCapture.Builder().apply {
-            targetRotation?.let { setTargetRotation(it) }
-            setPostviewEnabled(enablePostview)
-        }.build()
+        val imageCaptureUseCase =
+            imageCapture
+                ?: ImageCapture.Builder()
+                    .apply {
+                        targetRotation?.let { setTargetRotation(it) }
+                        setPostviewEnabled(enablePostview)
+                    }
+                    .build()
+        val preview = Preview.Builder().build()
+        return withContext(Dispatchers.Main) {
+            val previewReady = CompletableDeferred<Boolean>()
+            // To set the update listener and Preview will change to active state.
+            preview.setSurfaceProvider(
+                SurfaceTextureProvider.createAutoDrainingSurfaceTextureProvider {
+                    previewReady.complete(true)
+                }
+            )
+
+            val camera =
+                cameraProvider.bindToLifecycle(
+                    fakeLifecycleOwner,
+                    extensionsCameraSelector,
+                    preview,
+                    imageCaptureUseCase
+                )
+
+            assertThat(withTimeoutOrNull(5000) { previewReady.await() }).isTrue()
+            camera
+        }
+    }
+
+    private suspend fun bindAndTakePicture(
+        onImageSavedCallback: ImageCapture.OnImageSavedCallback,
+        targetRotation: Int? = null,
+        enablePostview: Boolean = false,
+        outputFormat: Int = ImageCapture.OUTPUT_FORMAT_JPEG
+    ): Camera {
+        // To test bind/unbind and take picture.
+        val imageCapture =
+            ImageCapture.Builder()
+                .apply {
+                    setOutputFormat(outputFormat)
+                    targetRotation?.let { setTargetRotation(it) }
+                    setPostviewEnabled(enablePostview)
+                }
+                .build()
         val preview = Preview.Builder().build()
         return withContext(Dispatchers.Main) {
             // To set the update listener and Preview will change to active state.
@@ -292,25 +470,23 @@ class ImageCaptureTest(
                             // No-op.
                         }
 
-                        override fun onSafeToRelease(
-                            surfaceTexture: SurfaceTexture
-                        ) {
+                        override fun onSafeToRelease(surfaceTexture: SurfaceTexture) {
                             // No-op.
                         }
-                    })
+                    }
+                )
             )
 
-            val camera = cameraProvider.bindToLifecycle(
-                fakeLifecycleOwner,
-                extensionsCameraSelector,
-                preview,
-                imageCapture
-            )
+            val camera =
+                cameraProvider.bindToLifecycle(
+                    fakeLifecycleOwner,
+                    extensionsCameraSelector,
+                    preview,
+                    imageCapture
+                )
 
             val saveLocation = temporaryFolder.newFile("test.jpg")
-            val outputFileOptions = ImageCapture.OutputFileOptions
-                .Builder(saveLocation)
-                .build()
+            val outputFileOptions = ImageCapture.OutputFileOptions.Builder(saveLocation).build()
             imageCapture.takePicture(
                 outputFileOptions,
                 CameraXExecutors.mainThreadExecutor(),
@@ -318,77 +494,6 @@ class ImageCaptureTest(
             )
             camera
         }
-    }
-
-    @Test
-    fun canBindToLifeCycleAndTakePictureWithCaptureProcessProgress(): Unit = runBlocking {
-        assumeTrue(isCaptureProcessProgressSupported())
-
-        val mockOnImageCapturedCallback = Mockito.mock(
-            ImageCapture.OnImageCapturedCallback::class.java
-        )
-
-        bindAndTakePicture(mockOnImageCapturedCallback)
-
-        // Verify the image captured.
-        val imageProxy = ArgumentCaptor.forClass(
-            ImageProxy::class.java
-        )
-
-        Mockito.verify(mockOnImageCapturedCallback, Mockito.timeout(5000).times(1))
-            .onCaptureStarted()
-
-        Mockito.verify(mockOnImageCapturedCallback, Mockito.timeout(8000).atLeastOnce())
-            .onCaptureProcessProgressed(ArgumentMatchers.anyInt())
-
-        Mockito.verify(mockOnImageCapturedCallback, Mockito.timeout(10000)).onCaptureSuccess(
-            imageProxy.capture()
-        )
-
-        assertThat(imageProxy.value).isNotNull()
-        imageProxy.value.close() // Close the image after verification.
-
-        // Verify the take picture should not have any error happen.
-        Mockito.verify(mockOnImageCapturedCallback, Mockito.never()).onError(
-            ArgumentMatchers.any(
-                ImageCaptureException::class.java
-            )
-        )
-    }
-
-    @Test
-    fun canBindToLifeCycleAndTakePictureWithCaptureProcessProgress_diskIo(): Unit = runBlocking {
-        assumeTrue(isCaptureProcessProgressSupported())
-
-        val mockOnImageSavedCallback = Mockito.mock(
-            ImageCapture.OnImageSavedCallback::class.java
-        )
-
-        bindAndTakePicture(mockOnImageSavedCallback)
-
-        // Verify the image captured.
-        val outputFileResults = ArgumentCaptor.forClass(
-            ImageCapture.OutputFileResults::class.java
-        )
-
-        Mockito.verify(mockOnImageSavedCallback, Mockito.timeout(5000).times(1))
-            .onCaptureStarted()
-
-        Mockito.verify(mockOnImageSavedCallback, Mockito.timeout(8000).atLeastOnce())
-            .onCaptureProcessProgressed(ArgumentMatchers.anyInt())
-
-        Mockito.verify(mockOnImageSavedCallback, Mockito.timeout(10000)).onImageSaved(
-            outputFileResults.capture()
-        )
-
-        assertThat(outputFileResults.value).isNotNull()
-
-        // Verify the take picture should not have any error happen.
-        Mockito.verify(mockOnImageSavedCallback, Mockito.never()).onError(
-            ArgumentMatchers.any(
-                ImageCaptureException::class.java
-            )
-        )
     }
 
     private fun isRotationOptionSupportedDevice() =
@@ -404,42 +509,52 @@ class ImageCaptureTest(
         var hasError = false
         val targetRotation = Surface.ROTATION_0
 
-        val camera = bindAndTakePicture(object : ImageCapture.OnImageCapturedCallback() {
-            override fun onError(exception: ImageCaptureException) {
-                hasError = true
-            }
-            override fun onCaptureStarted() {
-                captureStartedDeferred.complete(true)
-            }
-            override fun onCaptureSuccess(image: ImageProxy) {
-                captureSuccessDeferred.complete(image)
-            }
-            override fun onPostviewBitmapAvailable(bitmap: Bitmap) {
-                PostviewDeferred.complete(bitmap)
-            }
-        }, enablePostview = true, targetRotation = targetRotation)
+        val camera =
+            bindAndTakePicture(
+                object : ImageCapture.OnImageCapturedCallback() {
+                    override fun onError(exception: ImageCaptureException) {
+                        hasError = true
+                    }
+
+                    override fun onCaptureStarted() {
+                        captureStartedDeferred.complete(true)
+                    }
+
+                    override fun onCaptureSuccess(image: ImageProxy) {
+                        captureSuccessDeferred.complete(image)
+                    }
+
+                    override fun onPostviewBitmapAvailable(bitmap: Bitmap) {
+                        PostviewDeferred.complete(bitmap)
+                    }
+                },
+                enablePostview = true,
+                targetRotation = targetRotation
+            )
         val rotationDegree = camera.cameraInfo.getSensorRotationDegrees(targetRotation)
         val isFlipped = (rotationDegree % 180) != 0
 
-        assertThat(withTimeoutOrNull(5000) { captureStartedDeferred.await() }).isTrue()
+        assertThat(withTimeoutOrNull(8000) { captureStartedDeferred.await() }).isTrue()
 
-        withTimeoutOrNull(5000) { PostviewDeferred.await() }.let {
-            assertThat(it).isNotNull()
-            if (isFlipped) {
-                assertTrue(it!!.width <= it.height)
-            } else {
-                assertTrue(it!!.height <= it.width)
+        withTimeoutOrNull(10000) { PostviewDeferred.await() }
+            .let {
+                assertThat(it).isNotNull()
+                if (isFlipped) {
+                    assertTrue(it!!.width <= it.height)
+                } else {
+                    assertTrue(it!!.height <= it.width)
+                }
             }
-        }
 
-        withTimeoutOrNull(7000) { captureSuccessDeferred.await() }.use {
-            assertThat(it).isNotNull()
-            assertThat(it!!.format).isEqualTo(ImageFormat.JPEG)
-            if (isRotationOptionSupportedDevice()) {
-                val exif = ExifUtil.getExif(it)
-                assertThat(exif!!.rotation).isEqualTo(it.imageInfo.rotationDegrees)
+        withTimeoutOrNull(7000) { captureSuccessDeferred.await() }
+            .use {
+                assertThat(it).isNotNull()
+                assertThat(it!!.format).isEqualTo(ImageFormat.JPEG)
+                if (isRotationOptionSupportedDevice()) {
+                    val exif = ExifUtil.getExif(it)
+                    assertThat(exif!!.rotation).isEqualTo(it.imageInfo.rotationDegrees)
+                }
             }
-        }
 
         assertThat(hasError).isFalse()
     }
@@ -454,38 +569,64 @@ class ImageCaptureTest(
         var hasError = false
         val targetRotation = Surface.ROTATION_0
 
-        val camera = bindAndTakePicture(object : ImageCapture.OnImageSavedCallback {
-            override fun onError(exception: ImageCaptureException) {
-                hasError = true
-            }
-            override fun onCaptureStarted() {
-                captureStartedDeferred.complete(true)
-            }
+        val camera =
+            bindAndTakePicture(
+                object : ImageCapture.OnImageSavedCallback {
+                    override fun onError(exception: ImageCaptureException) {
+                        hasError = true
+                    }
 
-            override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                imageSavedDeferred.complete(outputFileResults)
-            }
-            override fun onPostviewBitmapAvailable(bitmap: Bitmap) {
-                PostviewDeferred.complete(bitmap)
-            }
-        }, enablePostview = true, targetRotation = targetRotation)
+                    override fun onCaptureStarted() {
+                        captureStartedDeferred.complete(true)
+                    }
+
+                    override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                        imageSavedDeferred.complete(outputFileResults)
+                    }
+
+                    override fun onPostviewBitmapAvailable(bitmap: Bitmap) {
+                        PostviewDeferred.complete(bitmap)
+                    }
+                },
+                enablePostview = true,
+                targetRotation = targetRotation
+            )
         val rotationDegree = camera.cameraInfo.getSensorRotationDegrees(targetRotation)
         val isFlipped = (rotationDegree % 180) != 0
 
-        assertThat(withTimeoutOrNull(5000) { captureStartedDeferred.await() }).isTrue()
+        assertThat(withTimeoutOrNull(8000) { captureStartedDeferred.await() }).isTrue()
 
-        withTimeoutOrNull(5000) { PostviewDeferred.await() }.let {
-            assertThat(it).isNotNull()
-            if (isFlipped) {
-                assertTrue(it!!.width <= it.height)
-            } else {
-                assertTrue(it!!.height <= it.width)
+        withTimeoutOrNull(10000) { PostviewDeferred.await() }
+            .let {
+                assertThat(it).isNotNull()
+                if (isFlipped) {
+                    assertTrue(it!!.width <= it.height)
+                } else {
+                    assertTrue(it!!.height <= it.width)
+                }
             }
-        }
 
         assertThat(withTimeoutOrNull(7000) { imageSavedDeferred.await() }).isNotNull()
 
         assertThat(hasError).isFalse()
+    }
+
+    /**
+     * Test Bind and then unbind immediately to ensure there is not race conditions or deadlocks.
+     */
+    @Test
+    fun canBindAndUnbindImmediately(): Unit = runBlocking {
+        val imageCapture = ImageCapture.Builder().build()
+
+        withContext(Dispatchers.Main) {
+            cameraProvider.bindToLifecycle(
+                fakeLifecycleOwner,
+                extensionsCameraSelector,
+                imageCapture
+            )
+        }
+
+        withContext(Dispatchers.Main) { cameraProvider.unbindAll() }
     }
 
     @Test
@@ -496,9 +637,31 @@ class ImageCaptureTest(
             cameraProvider.bindToLifecycle(
                 fakeLifecycleOwner,
                 extensionsCameraSelector,
-                imageCapture)
+                imageCapture
+            )
         }
 
-        assertThat(imageCapture.currentConfig.isHigResolutionDisabled(false)).isTrue()
+        assertThat(imageCapture.currentConfig.isHighResolutionDisabled(false)).isTrue()
+    }
+
+    class FakeOnImageCaptureCallback : ImageCapture.OnImageCapturedCallback() {
+        private val deferredImage = CompletableDeferred<ImageProxy?>()
+
+        override fun onCaptureStarted() {}
+
+        override fun onCaptureSuccess(image: ImageProxy) {
+            deferredImage.complete(image)
+        }
+
+        override fun onError(exception: ImageCaptureException) {
+            deferredImage.complete(null)
+        }
+
+        override fun onCaptureProcessProgressed(progress: Int) {}
+
+        override fun onPostviewBitmapAvailable(bitmap: Bitmap) {}
+
+        suspend fun waitForResult(timeoutInMs: Long): ImageProxy? =
+            withTimeout(timeoutInMs) { deferredImage.await() }
     }
 }

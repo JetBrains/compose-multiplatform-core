@@ -16,6 +16,12 @@
   -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
+        <!--
+          Any addition to or deletion of the components below should also have a corresponding
+          change to the GlanceComponents class, so that alternate subclasses of these components may
+          be specified by Glance users. Please also add a release note so that users of the
+          multiprocess library will know if they need to add another manifest entry.
+        -->
         <activity
             android:name=".action.ActionTrampolineActivity"
             android:excludeFromRecents="true"

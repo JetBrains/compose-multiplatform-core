@@ -20,9 +20,9 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.annotation.CameraExecutor;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -36,12 +36,10 @@ import java.util.concurrent.Executor;
  * <p> The repository also help to close the created SynchronizedCaptureSession when the camera is
  * disconnected.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 class CaptureSessionRepository {
     /** Executor for all the callbacks from the {@link CameraCaptureSession}. */
-    @NonNull
     @CameraExecutor
-    final Executor mExecutor;
+    final @NonNull Executor mExecutor;
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     final Object mLock = new Object();
@@ -53,7 +51,7 @@ class CaptureSessionRepository {
     @GuardedBy("mLock")
     final Set<SynchronizedCaptureSession> mCreatingCaptureSessions = new LinkedHashSet<>();
 
-    CaptureSessionRepository(@NonNull @CameraExecutor Executor executor) {
+    CaptureSessionRepository(@CameraExecutor @NonNull Executor executor) {
         mExecutor = executor;
     }
 
@@ -76,6 +74,7 @@ class CaptureSessionRepository {
 
                 @Override
                 public void onClosed(@NonNull CameraDevice camera) {
+                    forceOnClosedCaptureSessions();
                     cameraClosed();
                 }
 
@@ -132,8 +131,7 @@ class CaptureSessionRepository {
                 }
             };
 
-    @NonNull
-    CameraDevice.StateCallback getCameraStateCallback() {
+    CameraDevice.@NonNull StateCallback getCameraStateCallback() {
         return mCameraStateCallback;
     }
 
@@ -161,22 +159,19 @@ class CaptureSessionRepository {
         }
     }
 
-    @NonNull
-    List<SynchronizedCaptureSession> getCaptureSessions() {
+    @NonNull List<SynchronizedCaptureSession> getCaptureSessions() {
         synchronized (mLock) {
             return new ArrayList<>(mCaptureSessions);
         }
     }
 
-    @NonNull
-    List<SynchronizedCaptureSession> getClosingCaptureSession() {
+    @NonNull List<SynchronizedCaptureSession> getClosingCaptureSession() {
         synchronized (mLock) {
             return new ArrayList<>(mClosingCaptureSession);
         }
     }
 
-    @NonNull
-    List<SynchronizedCaptureSession> getCreatingCaptureSessions() {
+    @NonNull List<SynchronizedCaptureSession> getCreatingCaptureSessions() {
         synchronized (mLock) {
             return new ArrayList<>(mCreatingCaptureSessions);
         }
@@ -190,8 +185,7 @@ class CaptureSessionRepository {
      *
      * @return the SynchronizedCaptureSession list in the insertion-ordered
      */
-    @NonNull
-    List<SynchronizedCaptureSession> getSessionsInOrder() {
+    @NonNull List<SynchronizedCaptureSession> getSessionsInOrder() {
         synchronized (mLock) {
             List<SynchronizedCaptureSession> sessions = new ArrayList<>();
             sessions.addAll(getCaptureSessions());

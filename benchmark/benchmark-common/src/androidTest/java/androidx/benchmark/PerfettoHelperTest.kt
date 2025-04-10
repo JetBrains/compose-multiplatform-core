@@ -26,6 +26,7 @@ import androidx.test.filters.SdkSuppress
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.junit.After
 import org.junit.Assume
@@ -40,7 +41,7 @@ class PerfettoHelperTest {
     @Before
     @After
     fun cleanup() {
-        PerfettoHelper.stopAllPerfettoProcesses()
+        PerfettoHelper.cleanupPerfettoState()
     }
 
     private fun validateStopAllPerfettoProcesses(unbundled: Boolean) {
@@ -63,8 +64,15 @@ class PerfettoHelperTest {
         assertNotEquals(illegal = listOf(), actual = getPerfettoPids())
         assertTrue(capture.isRunning())
 
-        // kill all...
-        PerfettoHelper.stopAllPerfettoProcesses()
+        // Don't kill processes, just cleanup
+        PerfettoHelper.cleanupPerfettoState(killExistingPerfettoRecordings = false)
+
+        // should be at least one perfetto process
+        assertNotEquals(illegal = listOf(), actual = getPerfettoPids())
+        assertTrue(capture.isRunning())
+
+        // Actually kill all...
+        PerfettoHelper.cleanupPerfettoState(killExistingPerfettoRecordings = true)
 
         // should be none again
         assertEquals(expected = listOf(), actual = getPerfettoPids())
@@ -81,5 +89,21 @@ class PerfettoHelperTest {
         Assume.assumeTrue(PerfettoHelper.isAbiSupported())
 
         validateStopAllPerfettoProcesses(unbundled = true)
+    }
+
+    @Test
+    fun parserPerfettoCommand() {
+        val pid = 8092
+        val exitCode = 0
+        val output =
+            """
+            $pid
+            EXITCODE=$exitCode
+        """
+                .trimIndent()
+        val parseResult = PerfettoHelper.parsePerfettoCommandOutput(output)
+        assertNotNull(parseResult)
+        assertEquals(parseResult.first, exitCode)
+        assertEquals(parseResult.second, pid)
     }
 }

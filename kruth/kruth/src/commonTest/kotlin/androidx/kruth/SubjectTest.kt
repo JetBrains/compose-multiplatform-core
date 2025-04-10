@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("TYPE_INTERSECTION_AS_REIFIED_WARNING")
+
 package androidx.kruth
 
 import androidx.kruth.Fact.Companion.simpleFact
@@ -43,9 +45,7 @@ class SubjectTest {
     @Test
     fun isNullFail() {
         val o = Any()
-        assertFailsWith<AssertionError> {
-            assertThat(o).isNull()
-        }
+        assertFailsWith<AssertionError> { assertThat(o).isNull() }
     }
 
     @Test
@@ -55,23 +55,17 @@ class SubjectTest {
 
     @Test
     fun isNullWhenSubjectForbidsIsEqualToFail() {
-        assertFailsWith<AssertionError> {
-            ForbidsEqualityChecksSubject(Any()).isNull()
-        }
+        assertFailsWith<AssertionError> { ForbidsEqualityChecksSubject(Any()).isNull() }
     }
 
     @Test
     fun stringIsNullFail() {
-        assertFailsWith<AssertionError> {
-            assertThat("foo").isNull()
-        }
+        assertFailsWith<AssertionError> { assertThat("foo").isNull() }
     }
 
     @Test
     fun isNullBadEqualsImplementation() {
-        assertFailsWith<AssertionError> {
-            assertThat(ThrowsOnEqualsNull()).isNull()
-        }
+        assertFailsWith<AssertionError> { assertThat(ThrowsOnEqualsNull()).isNull() }
     }
 
     @Test
@@ -83,9 +77,7 @@ class SubjectTest {
     @Test
     fun isNotNullFail() {
         val o: Any? = null
-        assertFailsWith<AssertionError> {
-            assertThat(o).isNotNull()
-        }
+        assertFailsWith<AssertionError> { assertThat(o).isNotNull() }
     }
 
     @Test
@@ -100,9 +92,7 @@ class SubjectTest {
 
     @Test
     fun isNotNullWhenSubjectForbidsIsEqualToFail() {
-        assertFailsWith<AssertionError> {
-            ForbidsEqualityChecksSubject(null).isNotNull()
-        }
+        assertFailsWith<AssertionError> { ForbidsEqualityChecksSubject(null).isNotNull() }
     }
 
     @Test
@@ -112,9 +102,7 @@ class SubjectTest {
         }
 
         val wrapper = IntWrapper(5)
-        assertFailsWith<AssertionError> {
-            assertThat(5).isEqualTo(wrapper)
-        }
+        assertFailsWith<AssertionError> { assertThat(5).isEqualTo(wrapper) }
     }
 
     @Test
@@ -126,16 +114,12 @@ class SubjectTest {
     @Test
     fun isEqualToFailureWithNulls() {
         val o: Any? = null
-        assertFailsWith<AssertionError> {
-            assertThat(o).isEqualTo("a")
-        }
+        assertFailsWith<AssertionError> { assertThat(o).isEqualTo("a") }
     }
 
     @Test
     fun isEqualToStringWithNullVsNull() {
-        assertFailsWith<AssertionError> {
-            assertThat("null").isEqualTo(null)
-        }
+        assertFailsWith<AssertionError> { assertThat("null").isEqualTo(null) }
     }
 
     @Test
@@ -149,25 +133,19 @@ class SubjectTest {
     fun isEqualToFailureWithObjects() {
         val a: Any = Any()
         val b: Any = Any()
-        assertFailsWith<AssertionError> {
-            assertThat(a).isEqualTo(b)
-        }
+        assertFailsWith<AssertionError> { assertThat(a).isEqualTo(b) }
     }
 
     @Test
     fun isEqualToFailureWithDifferentTypesAndSameToString() {
         val a: Any = "true"
         val b: Any = true
-        assertFailsWith<AssertionError> {
-            assertThat(a).isEqualTo(b)
-        }
+        assertFailsWith<AssertionError> { assertThat(a).isEqualTo(b) }
     }
 
     @Test
     fun isEqualToNullBadEqualsImplementation() {
-        assertFailsWith<AssertionError> {
-            assertThat(ThrowsOnEqualsNull()).isEqualTo(null)
-        }
+        assertFailsWith<AssertionError> { assertThat(ThrowsOnEqualsNull()).isEqualTo(null) }
     }
 
     @Test
@@ -338,9 +316,7 @@ class SubjectTest {
     @Test
     fun isNotEqualToFailureWithNulls() {
         val o: Any? = null
-        assertFailsWith<AssertionError> {
-            assertThat(o).isNotEqualTo(null)
-        }
+        assertFailsWith<AssertionError> { assertThat(o).isNotEqualTo(null) }
     }
 
     @Test
@@ -353,16 +329,12 @@ class SubjectTest {
     @Test
     fun isNotEqualToFailureWithObjects() {
         val o: Any = 1000
-        assertFailsWith<AssertionError> {
-            assertThat(o).isNotEqualTo(1000)
-        }
+        assertFailsWith<AssertionError> { assertThat(o).isNotEqualTo(1000) }
     }
 
     @Test
     fun isNotEqualToFailureWithSameObject() {
-        assertFailsWith<AssertionError> {
-            assertThat(object1).isNotEqualTo(object1)
-        }
+        assertFailsWith<AssertionError> { assertThat(object1).isNotEqualTo(object1) }
     }
 
     @Test
@@ -380,9 +352,7 @@ class SubjectTest {
     @Test
     fun isNotEqualToSameInstanceBadEqualsImplementation() {
         val o: Any = ThrowsOnEquals()
-        assertFailsWith<AssertionError> {
-            assertThat(o).isNotEqualTo(o)
-        }
+        assertFailsWith<AssertionError> { assertThat(o).isNotEqualTo(o) }
     }
 
     @Test
@@ -394,9 +364,7 @@ class SubjectTest {
     @Test
     fun isSameInstanceAsFailureWithNulls() {
         val o: Any? = null
-        assertFailsWith<AssertionError> {
-            assertThat(o).isSameInstanceAs("a")
-        }
+        assertFailsWith<AssertionError> { assertThat(o).isSameInstanceAs("a") }
     }
 
     @Test
@@ -407,9 +375,7 @@ class SubjectTest {
 
     @Test
     fun isSameInstanceAsFailureWithObjects() {
-        assertFailsWith<AssertionError> {
-            assertThat(object1).isSameInstanceAs(object2)
-        }
+        assertFailsWith<AssertionError> { assertThat(object1).isSameInstanceAs(object2) }
     }
 
     @Test
@@ -424,21 +390,17 @@ class SubjectTest {
     }
 
     @Test
-    fun isSameInstanceAsFailureWithComparableObjects() {
+    fun isSameInstanceAsFailureWithComparableObjects() = assumeNotJs {
         val a: Any = "ab"
         val b: Any = buildString { append("ab") }
-        assertFailsWith<AssertionError> {
-            assertThat(a).isSameInstanceAs(b)
-        }
+        assertFailsWith<AssertionError> { assertThat(a).isSameInstanceAs(b) }
     }
 
     @Test
     fun isSameInstanceAsFailureWithDifferentTypesAndSameToString() {
         val a: Any = "true"
         val b: Any = true
-        assertFailsWith<AssertionError> {
-            assertThat(a).isSameInstanceAs(b)
-        }
+        assertFailsWith<AssertionError> { assertThat(a).isSameInstanceAs(b) }
     }
 
     @Test
@@ -450,9 +412,7 @@ class SubjectTest {
     @Test
     fun isNotSameInstanceAsFailureWithNulls() {
         val o: Any? = null
-        assertFailsWith<AssertionError> {
-            assertThat(o).isNotSameInstanceAs(null)
-        }
+        assertFailsWith<AssertionError> { assertThat(o).isNotSameInstanceAs(null) }
     }
 
     @Test
@@ -464,9 +424,7 @@ class SubjectTest {
 
     @Test
     fun isNotSameInstanceAsFailureWithSameObject() {
-        assertFailsWith<AssertionError> {
-            assertThat(object1).isNotSameInstanceAs(object1)
-        }
+        assertFailsWith<AssertionError> { assertThat(object1).isNotSameInstanceAs(object1) }
     }
 
     @Test
@@ -479,7 +437,7 @@ class SubjectTest {
     }
 
     @Test
-    fun isNotSameInstanceAsWithComparableObjects() {
+    fun isNotSameInstanceAsWithComparableObjects() = assumeNotJs {
         val a: Any = "ab"
         val b: Any = buildString { append("ab") }
         assertThat(a).isNotSameInstanceAs(b)
@@ -509,58 +467,42 @@ class SubjectTest {
 
     @Test
     fun isInstanceOfUnrelatedClass() {
-        assertFailsWith<AssertionError> {
-            assertThat(4.5).isInstanceOf<Long>()
-        }
+        assertFailsWith<AssertionError> { assertThat(4.5).isInstanceOf<Long>() }
     }
 
     @Test
     fun isInstanceOfUnrelatedInterface() {
-        assertFailsWith<AssertionError> {
-            assertThat(4.5).isInstanceOf<CharSequence>()
-        }
+        assertFailsWith<AssertionError> { assertThat(4.5).isInstanceOf<CharSequence>() }
     }
 
     @Test
     fun isInstanceOfClassForNull() {
-        assertFailsWith<AssertionError> {
-            assertThat(null as Any?).isInstanceOf<Long>()
-        }
+        assertFailsWith<AssertionError> { assertThat(null as Any?).isInstanceOf<Long>() }
     }
 
     @Test
     fun isInstanceOfInterfaceForNull() {
-        assertFailsWith<AssertionError> {
-            assertThat(null as Any?).isInstanceOf<CharSequence>()
-        }
+        assertFailsWith<AssertionError> { assertThat(null as Any?).isInstanceOf<CharSequence>() }
     }
 
     @Test
     fun isNotInstanceOfExactType() {
-        assertFailsWith<AssertionError> {
-            assertThat(5).isNotInstanceOf<Int>()
-        }
+        assertFailsWith<AssertionError> { assertThat(5).isNotInstanceOf<Int>() }
     }
 
     @Test
     fun isNotInstanceOfSuperclass() {
-        assertFailsWith<AssertionError> {
-            assertThat(5).isNotInstanceOf<Number>()
-        }
+        assertFailsWith<AssertionError> { assertThat(5).isNotInstanceOf<Number>() }
     }
 
     @Test
     fun isNotInstanceOfImplementedInterface() {
-        assertFailsWith<AssertionError> {
-            assertThat("a").isNotInstanceOf<CharSequence>()
-        }
+        assertFailsWith<AssertionError> { assertThat("a").isNotInstanceOf<CharSequence>() }
     }
 
     @Test
     fun isNotInstanceOfPrimitiveType() {
-        assertFailsWith<AssertionError> {
-            assertThat(1).isNotInstanceOf<Int>()
-        }
+        assertFailsWith<AssertionError> { assertThat(1).isNotInstanceOf<Int>() }
     }
 
     @Test
@@ -582,9 +524,7 @@ class SubjectTest {
 
     @Test
     fun isInFailure() {
-        assertFailsWith<AssertionError> {
-            assertThat("x").isIn(oneShotIterable("a", "b", "c"))
-        }
+        assertFailsWith<AssertionError> { assertThat("x").isIn(oneShotIterable("a", "b", "c")) }
     }
 
     @Test
@@ -606,9 +546,7 @@ class SubjectTest {
 
     @Test
     fun isInEmptyFailure() {
-        assertFailsWith<AssertionError> {
-            assertThat("b").isIn(emptyList<String>())
-        }
+        assertFailsWith<AssertionError> { assertThat("b").isIn(emptyList<String>()) }
     }
 
     @Test
@@ -623,9 +561,7 @@ class SubjectTest {
 
     @Test
     fun isAnyOfFailure() {
-        assertFailsWith<AssertionError> {
-            assertThat("x").isAnyOf("a", "b", "c")
-        }
+        assertFailsWith<AssertionError> { assertThat("x").isAnyOf("a", "b", "c") }
     }
 
     @Test
@@ -640,9 +576,7 @@ class SubjectTest {
 
     @Test
     fun isAnyOfNullFailure() {
-        assertFailsWith<AssertionError> {
-            assertThat(null as String?).isAnyOf("a", "b", "c")
-        }
+        assertFailsWith<AssertionError> { assertThat(null as String?).isAnyOf("a", "b", "c") }
     }
 
     @Test
@@ -652,9 +586,7 @@ class SubjectTest {
 
     @Test
     fun isNotInFailure() {
-        assertFailsWith<AssertionError> {
-            assertThat("b").isNotIn(oneShotIterable("a", "b", "c"))
-        }
+        assertFailsWith<AssertionError> { assertThat("b").isNotIn(oneShotIterable("a", "b", "c")) }
     }
 
     @Test
@@ -681,9 +613,7 @@ class SubjectTest {
 
     @Test
     fun isNoneOfFailure() {
-        assertFailsWith<AssertionError> {
-            assertThat("b").isNoneOf("a", "b", "c")
-        }
+        assertFailsWith<AssertionError> { assertThat("b").isNoneOf("a", "b", "c") }
     }
 
     @Test
@@ -701,10 +631,11 @@ class SubjectTest {
     @Test
     fun failWithActual_printsAllMessagesPlusActualValue() {
         val subject =
-            object : Subject<Int>(
-                actual = 0,
-                metadata = FailureMetadata(messagesToPrepend = listOf("msg1", "msg2")),
-            ) {
+            object :
+                Subject<Int>(
+                    actual = 0,
+                    metadata = FailureMetadata(messagesToPrepend = listOf("msg1", "msg2")),
+                ) {
                 fun fail() {
                     failWithActual(simpleFact("msg3"), simpleFact("msg4"))
                 }
@@ -717,17 +648,21 @@ class SubjectTest {
                 msg3
                 msg4
                 but was: 0
-            """.trimIndent()
-        ) { subject.fail() }
+            """
+                .trimIndent()
+        ) {
+            subject.fail()
+        }
     }
 
     @Test
     fun failWithActual_printsAllMessagesPlusMultilineActualValue() {
         val subject =
-            object : Subject<String>(
-                actual = "a\nb",
-                metadata = FailureMetadata(messagesToPrepend = listOf("msg1", "msg2")),
-            ) {
+            object :
+                Subject<String>(
+                    actual = "a\nb",
+                    metadata = FailureMetadata(messagesToPrepend = listOf("msg1", "msg2")),
+                ) {
                 fun fail() {
                     failWithActual(simpleFact("msg3"), simpleFact("msg4"))
                 }
@@ -742,17 +677,21 @@ class SubjectTest {
                 but was:
                     a
                     b
-            """.trimIndent()
-        ) { subject.fail() }
+            """
+                .trimIndent()
+        ) {
+            subject.fail()
+        }
     }
 
     @Test
     fun failWithoutActual_printsAllMessagesPlusActualValue() {
         val subject =
-            object : Subject<Int>(
-                actual = 0,
-                metadata = FailureMetadata(messagesToPrepend = listOf("msg1", "msg2")),
-            ) {
+            object :
+                Subject<Int>(
+                    actual = 0,
+                    metadata = FailureMetadata(messagesToPrepend = listOf("msg1", "msg2")),
+                ) {
                 fun fail() {
                     failWithoutActual(simpleFact("msg3"), simpleFact("msg4"))
                 }
@@ -764,17 +703,21 @@ class SubjectTest {
                 msg2
                 msg3
                 msg4
-            """.trimIndent()
-        ) { subject.fail() }
+            """
+                .trimIndent()
+        ) {
+            subject.fail()
+        }
     }
 
     @Test
     fun failWithoutActual_printsAllMessagesPlusMultilineActualValue() {
         val subject =
-            object : Subject<String>(
-                actual = "a\nb",
-                metadata = FailureMetadata(messagesToPrepend = listOf("msg1", "msg2")),
-            ) {
+            object :
+                Subject<String>(
+                    actual = "a\nb",
+                    metadata = FailureMetadata(messagesToPrepend = listOf("msg1", "msg2")),
+                ) {
                 fun fail() {
                     failWithoutActual(simpleFact("msg3"), simpleFact("msg4"))
                 }
@@ -786,8 +729,11 @@ class SubjectTest {
                 msg2
                 msg3
                 msg4
-            """.trimIndent()
-        ) { subject.fail() }
+            """
+                .trimIndent()
+        ) {
+            subject.fail()
+        }
     }
 
     private fun <T> oneShotIterable(vararg values: T): Iterable<T> =
@@ -795,6 +741,7 @@ class SubjectTest {
             private val iterator = values.iterator()
 
             override fun iterator(): Iterator<T> = iterator
+
             override fun toString(): String = values.contentToString()
         }
 }
@@ -815,10 +762,10 @@ private class ThrowsOnEqualsNull {
     }
 }
 
-/**
- * Copied from Truth.
- */
-private class ForbidsEqualityChecksSubject(actual: Any?) : Subject<Any>(actual) {
+/** Copied from Truth. */
+private class ForbidsEqualityChecksSubject(actual: Any?) :
+    Subject<Any>(actual = actual, metadata = FailureMetadata()) {
+
     // Not sure how to feel about this, but people do it:
     override fun isEqualTo(expected: Any?) {
         throw UnsupportedOperationException()

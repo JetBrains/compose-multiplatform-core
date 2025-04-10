@@ -19,19 +19,19 @@ package androidx.window.core
 import android.graphics.Rect
 
 /**
- * A wrapper for [Rect] to handle compatibility issues with API 15. In API 15, equals and
- * hashCode operate on the reference as opposed to the attributes. This leads to test failures
- * because the data matches but the equals check fails.
+ * A wrapper for [Rect] to handle compatibility issues with API 15. In API 15, equals and hashCode
+ * operate on the reference as opposed to the attributes. This leads to test failures because the
+ * data matches but the equals check fails.
  *
  * Also useful in unit tests since you can instantiate [Bounds] in a JVM test but when you
- * instantiate [Rect] you are using the class from the mockable jar file. The mockable jar does
- * not contain any behavior or calculations.
+ * instantiate [Rect] you are using the class from the mockable jar file. The mockable jar does not
+ * contain any behavior or calculations.
  */
 internal class Bounds(
-    public val left: Int,
-    public val top: Int,
-    public val right: Int,
-    public val bottom: Int
+    val left: Int,
+    val top: Int,
+    val right: Int,
+    val bottom: Int,
 ) {
     constructor(rect: Rect) : this(rect.left, rect.top, rect.right, rect.bottom)
 
@@ -44,32 +44,22 @@ internal class Bounds(
         }
     }
 
-    /**
-     * Return the [Rect] representation of the bounds
-     */
+    /** Return the [Rect] representation of the bounds */
     fun toRect(): Rect = Rect(left, top, right, bottom)
 
-    /**
-     * The width of the bounds, may be negative.
-     */
+    /** The width of the bounds, may be negative. */
     val width: Int
         get() = right - left
 
-    /**
-     * The height of the bounds, may be negative.
-     */
+    /** The height of the bounds, may be negative. */
     val height: Int
         get() = bottom - top
 
-    /**
-     * Determines if the bounds has empty area.
-     */
+    /** Determines if the bounds has empty area. */
     val isEmpty: Boolean
         get() = height == 0 || width == 0
 
-    /**
-     * Returns if the dimensions of the bounds is 0.
-     */
+    /** Returns if the dimensions of the bounds is 0. */
     val isZero: Boolean
         get() = height == 0 && width == 0
 
@@ -97,5 +87,9 @@ internal class Bounds(
         result = 31 * result + right
         result = 31 * result + bottom
         return result
+    }
+
+    companion object {
+        val EMPTY_BOUNDS = Bounds(0, 0, 0, 0)
     }
 }

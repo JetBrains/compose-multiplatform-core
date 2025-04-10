@@ -28,7 +28,6 @@ import static org.mockito.Mockito.when;
 import android.hardware.camera2.CaptureRequest;
 import android.os.Build;
 
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.ParameterizedRobolectricTestRunner;

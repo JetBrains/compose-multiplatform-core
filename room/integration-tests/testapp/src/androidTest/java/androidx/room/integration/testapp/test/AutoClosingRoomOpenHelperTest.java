@@ -25,7 +25,6 @@ import static org.junit.Assert.assertTrue;
 import android.content.Context;
 import android.database.Cursor;
 
-import androidx.annotation.NonNull;
 import androidx.arch.core.executor.testing.CountingTaskExecutorRule;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.testing.TestLifecycleOwner;
@@ -40,9 +39,10 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.filters.MediumTest;
 import androidx.testutils.AssertionsKt;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -51,6 +51,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+// TODO: Consolidate with AutoClosingDatabaseTest that has access to internal APIs.
 public class AutoClosingRoomOpenHelperTest {
     @Rule
     public CountingTaskExecutorRule mExecutorRule = new CountingTaskExecutorRule();
@@ -252,6 +253,8 @@ public class AutoClosingRoomOpenHelperTest {
         assertFalse(testDatabase.isOpen());
     }
 
+    // TODO(336671494): broken test
+    @Ignore
     @Test
     @MediumTest
     public void invalidationObserver_isCalledOnEachInvalidation()
@@ -284,6 +287,8 @@ public class AutoClosingRoomOpenHelperTest {
         assertEquals(3, invalidationCount.get());
     }
 
+    // TODO(372946311): Broken test
+    @Ignore
     @Test
     @MediumTest
     public void invalidationObserver_canRequeryDb() throws TimeoutException, InterruptedException {
@@ -315,41 +320,6 @@ public class AutoClosingRoomOpenHelperTest {
         db.close();
     }
 
-    @Test
-    @MediumTest
-    public void invalidationObserver_notifiedByTableName() throws TimeoutException,
-            InterruptedException {
-        Context context = ApplicationProvider.getApplicationContext();
-
-        context.deleteDatabase("testDb2");
-        TestDatabase db = Room.databaseBuilder(context, TestDatabase.class, "testDb2")
-                // create contention for callback
-                .setAutoCloseTimeout(0, TimeUnit.MILLISECONDS)
-                .addCallback(mCallback).build();
-
-        AtomicInteger invalidationCount = new AtomicInteger(0);
-
-        UserTableObserver userTableObserver =
-                new UserTableObserver(invalidationCount::getAndIncrement);
-
-        db.getInvalidationTracker().addObserver(userTableObserver);
-
-
-        db.getUserDao().insert(TestUtil.createUser(1));
-
-        drain();
-        assertEquals(1, invalidationCount.get());
-
-        Thread.sleep(100); // Let db auto close
-
-        db.getInvalidationTracker().notifyObserversByTableNames("user");
-
-        drain();
-        assertEquals(2, invalidationCount.get());
-
-        db.close();
-    }
-
     private void drain() throws TimeoutException, InterruptedException {
         mExecutorRule.drainTasks(1, TimeUnit.MINUTES);
     }
@@ -378,7 +348,7 @@ public class AutoClosingRoomOpenHelperTest {
         }
 
         @Override
-        public void onInvalidated(@NonNull @NotNull Set<String> tables) {
+        public void onInvalidated(@NonNull Set<String> tables) {
             mInvalidationCallback.run();
         }
     }

@@ -17,6 +17,7 @@
 package androidx.privacysandbox.tools.core.generator
 
 import androidx.privacysandbox.tools.core.generator.SpecNames.bundleClass
+import androidx.privacysandbox.tools.core.generator.SpecNames.uiCoreLibInfoPropertyName
 import androidx.privacysandbox.tools.core.model.AnnotatedInterface
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
@@ -25,26 +26,36 @@ import com.squareup.kotlinpoet.TypeSpec
 object CoreLibInfoAndBinderWrapperConverterGenerator {
     fun generate(annotatedInterface: AnnotatedInterface) =
         FileSpec.builder(
-            annotatedInterface.type.packageName,
-            annotatedInterface.coreLibInfoConverterName()
-        ).build {
-            addCommonSettings()
-            addType(generateConverter(annotatedInterface))
-        }
+                annotatedInterface.type.packageName,
+                annotatedInterface.coreLibInfoConverterName()
+            )
+            .build {
+                addCommonSettings()
+                addType(generateConverter(annotatedInterface))
+            }
 
     private fun generateConverter(annotatedInterface: AnnotatedInterface) =
         TypeSpec.objectBuilder(annotatedInterface.coreLibInfoConverterName()).build {
-            addFunction(FunSpec.builder("toParcelable").build {
-                addParameter("coreLibInfo", bundleClass)
-                addParameter("interface", annotatedInterface.aidlType().innerType.poetTypeName())
-                returns(annotatedInterface.uiAdapterAidlWrapper().poetTypeName())
-                addStatement(
-                    "val parcelable = %T()",
-                    annotatedInterface.uiAdapterAidlWrapper().poetTypeName()
-                )
-                addStatement("parcelable.coreLibInfo = coreLibInfo")
-                addStatement("parcelable.binder = %N", "interface")
-                addStatement("return parcelable")
-            })
+            addFunction(
+                FunSpec.builder("toParcelable").build {
+                    if (annotatedInterface.inheritsUiAdapter)
+                        addParameter(uiCoreLibInfoPropertyName, bundleClass)
+                    addParameter(
+                        "interface",
+                        annotatedInterface.aidlType().innerType.poetTypeName()
+                    )
+                    returns(annotatedInterface.uiAdapterAidlWrapper().poetTypeName())
+                    addStatement(
+                        "val parcelable = %T()",
+                        annotatedInterface.uiAdapterAidlWrapper().poetTypeName()
+                    )
+                    if (annotatedInterface.inheritsUiAdapter)
+                        addStatement(
+                            "parcelable.$uiCoreLibInfoPropertyName = $uiCoreLibInfoPropertyName"
+                        )
+                    addStatement("parcelable.binder = %N", "interface")
+                    addStatement("return parcelable")
+                }
+            )
         }
 }

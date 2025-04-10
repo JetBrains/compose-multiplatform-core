@@ -16,26 +16,24 @@
 
 package androidx.camera.testing.impl.fakes;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.camera.core.impl.CaptureConfig;
 import androidx.camera.core.impl.CaptureStage;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 /**
  * A fake {@link CaptureStage} where the values can be set.
  *
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @RestrictTo(Scope.LIBRARY_GROUP)
 public class FakeCaptureStage implements CaptureStage {
 
     private final int mId;
 
-    @NonNull
-    private final CaptureConfig mCaptureConfig;
+    private final @NonNull CaptureConfig mCaptureConfig;
 
     /**
      * Create a FakeCaptureStage with the given parameters.
@@ -58,9 +56,8 @@ public class FakeCaptureStage implements CaptureStage {
         return mId;
     }
 
-    @NonNull
     @Override
-    public CaptureConfig getCaptureConfig() {
+    public @NonNull CaptureConfig getCaptureConfig() {
         return mCaptureConfig;
     }
 }

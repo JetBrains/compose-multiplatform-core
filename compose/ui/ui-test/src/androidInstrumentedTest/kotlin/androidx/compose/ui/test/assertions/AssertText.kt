@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.editableText
+import androidx.compose.ui.semantics.inputText
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.test.assertTextContains
@@ -41,69 +42,46 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AssertText {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun equals() {
-        rule.setContent {
-            TestContent()
-        }
-        rule.onNodeWithTag("test")
-            .assertTextEquals("Hello", "World")
-        rule.onNodeWithTag("test")
-            .assertTextEquals("World", "Hello")
+        rule.setContent { TestContent() }
+        rule.onNodeWithTag("test").assertTextEquals("Hello", "World")
+        rule.onNodeWithTag("test").assertTextEquals("World", "Hello")
     }
 
     @Test
     fun equals_empty() {
-        rule.setContent {
-            Box(Modifier.semantics { testTag = "test" })
-        }
-        rule.onNodeWithTag("test")
-            .assertTextEquals()
-        rule.onNodeWithTag("test")
-            .assertTextEquals(includeEditableText = false)
+        rule.setContent { Box(Modifier.semantics { testTag = "test" }) }
+        rule.onNodeWithTag("test").assertTextEquals()
+        rule.onNodeWithTag("test").assertTextEquals(includeEditableText = false)
     }
 
     @Test
     fun contains() {
-        rule.setContent {
-            TestContent()
-        }
-        rule.onNodeWithTag("test")
-            .assertTextContains("Hello")
-        rule.onNodeWithTag("test")
-            .assertTextContains("World")
+        rule.setContent { TestContent() }
+        rule.onNodeWithTag("test").assertTextContains("Hello")
+        rule.onNodeWithTag("test").assertTextContains("World")
     }
 
     @Test
     fun contains_substring() {
-        rule.setContent {
-            TestContent()
-        }
-        rule.onNodeWithTag("test")
-            .assertTextContains("He", substring = true)
-        rule.onNodeWithTag("test")
-            .assertTextContains("Wo", substring = true)
+        rule.setContent { TestContent() }
+        rule.onNodeWithTag("test").assertTextContains("He", substring = true)
+        rule.onNodeWithTag("test").assertTextContains("Wo", substring = true)
     }
 
     @Test(expected = AssertionError::class)
     fun equals_fails_notEnoughElements() {
-        rule.setContent {
-            TestContent()
-        }
-        rule.onNodeWithTag("test")
-            .assertTextEquals("Hello")
+        rule.setContent { TestContent() }
+        rule.onNodeWithTag("test").assertTextEquals("Hello")
     }
 
     @Test(expected = AssertionError::class)
     fun equals_fails_tooManyElements() {
-        rule.setContent {
-            TestContent()
-        }
-        rule.onNodeWithTag("test")
-            .assertTextEquals("Hello", "World", "More")
+        rule.setContent { TestContent() }
+        rule.onNodeWithTag("test").assertTextEquals("Hello", "World", "More")
     }
 
     @Test(expected = AssertionError::class)
@@ -115,62 +93,81 @@ class AssertText {
                 TextField("TextField", onValueChange = {})
             }
         }
-        rule.onNodeWithTag("test")
-            .assertTextEquals("Hello", "World", "TextField")
-        rule.onNodeWithTag("test")
-            .assertTextEquals("Hello", "World", includeEditableText = false)
-        rule.onNodeWithTag("test")
-            .assertTextContains("TextField")
+        rule.onNodeWithTag("test").assertTextEquals("Hello", "World", "TextField")
+        rule.onNodeWithTag("test").assertTextEquals("Hello", "World", includeEditableText = false)
+        rule.onNodeWithTag("test").assertTextContains("TextField")
     }
 
     @Test
     fun assertTextFieldText_isOk() {
         rule.setContent {
-            BoundaryNode { testTag = "test"; editableText = AnnotatedString("Hello World") }
+            BoundaryNode {
+                testTag = "test"
+                editableText = AnnotatedString("Hello World")
+            }
         }
 
-        rule.onNodeWithTag("test")
-            .assertTextEquals("Hello World")
+        rule.onNodeWithTag("test").assertTextEquals("Hello World")
     }
 
     @Test(expected = AssertionError::class)
     fun assertTextFieldText_fails() {
         rule.setContent {
-            BoundaryNode { testTag = "test"; editableText = AnnotatedString("Hello World") }
+            BoundaryNode {
+                testTag = "test"
+                editableText = AnnotatedString("Hello World")
+            }
         }
 
-        rule.onNodeWithTag("test")
-            .assertTextEquals("Hello")
+        rule.onNodeWithTag("test").assertTextEquals("Hello")
+    }
+
+    @Test(expected = AssertionError::class)
+    fun assertTextFieldText_fails2() {
+        rule.setContent {
+            BoundaryNode {
+                testTag = "test"
+                inputText = AnnotatedString("Hello World")
+            }
+        }
+
+        rule.onNodeWithTag("test").assertTextEquals("Hello")
     }
 
     @Test
     fun assertTextFieldText_substring_isOk() {
         rule.setContent {
-            BoundaryNode { testTag = "test"; editableText = AnnotatedString("Hello World") }
+            BoundaryNode {
+                testTag = "test"
+                editableText = AnnotatedString("Hello World")
+            }
         }
 
-        rule.onNodeWithTag("test")
-            .assertTextContains("Hello", substring = true)
+        rule.onNodeWithTag("test").assertTextContains("Hello", substring = true)
     }
 
     @Test(expected = AssertionError::class)
     fun assertTextFieldText_substring_fails() {
         rule.setContent {
-            BoundaryNode { testTag = "test"; editableText = AnnotatedString("Hello World") }
+            BoundaryNode {
+                testTag = "test"
+                editableText = AnnotatedString("Hello World")
+            }
         }
 
-        rule.onNodeWithTag("test")
-            .assertTextContains("hello")
+        rule.onNodeWithTag("test").assertTextContains("hello")
     }
 
     @Test
     fun assertTextFieldText_substring_ignoreCase_isOk() {
         rule.setContent {
-            BoundaryNode { testTag = "test"; editableText = AnnotatedString("Hello World") }
+            BoundaryNode {
+                testTag = "test"
+                editableText = AnnotatedString("Hello World")
+            }
         }
 
-        rule.onNodeWithTag("test")
-            .assertTextContains("hello", ignoreCase = true, substring = true)
+        rule.onNodeWithTag("test").assertTextContains("hello", ignoreCase = true, substring = true)
     }
 
     @Composable

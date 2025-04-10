@@ -16,19 +16,18 @@
 
 package androidx.webkit;
 
-import android.os.Build;
 import android.view.KeyEvent;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
-import androidx.test.filters.SdkSuppress;
+import androidx.webkit.test.common.WebViewOnUiThread;
+import androidx.webkit.test.common.WebkitUtils;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -42,14 +41,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @LargeTest
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
-@RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 public class WebViewRenderProcessClientTest {
     WebViewOnUiThread mWebViewOnUiThread;
 
     @Before
     public void setUp() {
-        mWebViewOnUiThread = new androidx.webkit.WebViewOnUiThread();
+        mWebViewOnUiThread = new WebViewOnUiThread();
     }
 
     @After
@@ -63,8 +60,9 @@ public class WebViewRenderProcessClientTest {
         // A CountDownLatch is used here, instead of a Future, because that makes it
         // easier to support requiring variable numbers of releaseBlock() calls
         // to unblock.
-        private CountDownLatch mLatch;
-        private ResolvableFuture<Void> mBecameBlocked;
+        private final CountDownLatch mLatch;
+        private final ResolvableFuture<Void> mBecameBlocked;
+
         JSBlocker(int requiredReleaseCount) {
             mLatch = new CountDownLatch(requiredReleaseCount);
             mBecameBlocked = ResolvableFuture.create();
@@ -191,7 +189,7 @@ public class WebViewRenderProcessClientTest {
         WebViewRenderProcessClient client = makeWebViewRenderProcessClient(
                 () -> clientCalled.set(true),
                 () -> clientCalled.set(true)
-            );
+        );
         mWebViewOnUiThread.setWebViewRenderProcessClient(client);
 
         mWebViewOnUiThread.setWebViewRenderProcessClient(null);

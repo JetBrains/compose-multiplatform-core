@@ -23,11 +23,11 @@ import android.content.res.AssetManager;
 import android.graphics.Typeface;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.emoji2.text.EmojiCompat;
 import androidx.emoji2.text.MetadataRepo;
 import androidx.test.core.app.ApplicationProvider;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -45,7 +45,6 @@ public class TestConfigBuilder {
      * mocked, a new metadata has to be used instead of the statically cached metadata since the
      * result of GlyphChecker on the same device might effect other tests.
      */
-    @RequiresApi(19)
     public static EmojiCompat.Config freshConfig() {
         return new TestConfig(new ResettingTestDataLoader()).setReplaceAll(true);
     }
@@ -55,12 +54,11 @@ public class TestConfigBuilder {
             super(new TestEmojiDataLoader());
         }
 
-        TestConfig(@NonNull final EmojiCompat.MetadataRepoLoader metadataLoader) {
+        TestConfig(final EmojiCompat.@NonNull MetadataRepoLoader metadataLoader) {
             super(metadataLoader);
         }
     }
 
-    @RequiresApi(19)
     public static class WaitingDataLoader implements EmojiCompat.MetadataRepoLoader {
         private final CountDownLatch mLoaderLatch;
         private final CountDownLatch mTestLatch;
@@ -85,7 +83,7 @@ public class TestConfigBuilder {
         }
 
         @Override
-        public void load(@NonNull final EmojiCompat.MetadataRepoLoaderCallback loaderCallback) {
+        public void load(final EmojiCompat.@NonNull MetadataRepoLoaderCallback loaderCallback) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -116,7 +114,7 @@ public class TestConfigBuilder {
         }
 
         @Override
-        public void load(@NonNull EmojiCompat.MetadataRepoLoaderCallback loaderCallback) {
+        public void load(EmojiCompat.@NonNull MetadataRepoLoaderCallback loaderCallback) {
             if (sMetadataRepo == null) {
                 synchronized (S_METADATA_REPO_LOCK) {
                     if (sMetadataRepo == null) {
@@ -136,7 +134,6 @@ public class TestConfigBuilder {
         }
     }
 
-    @RequiresApi(19)
     public static class ResettingTestDataLoader implements EmojiCompat.MetadataRepoLoader {
         private MetadataRepo mMetadataRepo;
 
@@ -144,7 +141,7 @@ public class TestConfigBuilder {
         }
 
         @Override
-        public void load(@NonNull EmojiCompat.MetadataRepoLoaderCallback loaderCallback) {
+        public void load(EmojiCompat.@NonNull MetadataRepoLoaderCallback loaderCallback) {
             if (mMetadataRepo == null) {
                 try {
                     final Context context = ApplicationProvider.getApplicationContext();

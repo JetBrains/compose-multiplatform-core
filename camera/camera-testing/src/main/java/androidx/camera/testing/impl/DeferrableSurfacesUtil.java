@@ -19,12 +19,12 @@ package androidx.camera.testing.impl;
 import android.os.Looper;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.DeferrableSurface;
 import androidx.camera.core.impl.DeferrableSurfaces;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.core.os.HandlerCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -33,7 +33,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 
 /** Utility functions for DeferrableSurfaces. */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class DeferrableSurfacesUtil {
     private DeferrableSurfacesUtil() {
     }
@@ -45,8 +44,7 @@ public class DeferrableSurfacesUtil {
      * means that the returned list will only be guaranteed to be less than or equal to in size to
      * the original collection.
      */
-    @NonNull
-    public static List<Surface> surfaceList(
+    public static @NonNull List<Surface> surfaceList(
             @NonNull Collection<DeferrableSurface> deferrableSurfaces) {
         return surfaceList(deferrableSurfaces, true);
     }
@@ -56,9 +54,8 @@ public class DeferrableSurfacesUtil {
      *
      * @param removeNullSurfaces If true remove all Surfaces that were not retrieved.
      */
-    @NonNull
     @SuppressWarnings("deprecation") /* AsyncTask */
-    public static List<Surface> surfaceList(
+    public static @NonNull List<Surface> surfaceList(
             @NonNull Collection<DeferrableSurface> deferrableSurfaces, boolean removeNullSurfaces) {
         ScheduledExecutorService scheduledExecutorService =
                 CameraXExecutors.newHandlerExecutor(

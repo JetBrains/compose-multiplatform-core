@@ -24,20 +24,18 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
-import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.CameraEffect;
 import androidx.camera.core.ImageProcessor;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.imagecapture.RgbaImageProxy;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 /**
  * Create a grayscale image effect for testing.
  */
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class GrayscaleImageEffect extends CameraEffect {
 
     public GrayscaleImageEffect() {
@@ -48,8 +46,7 @@ public class GrayscaleImageEffect extends CameraEffect {
                 });
     }
 
-    @Nullable
-    public ImageProxy getInputImage() {
+    public @Nullable ImageProxy getInputImage() {
         return ((GrayscaleProcessor) requireNonNull(getImageProcessor())).getInputImage();
     }
 
@@ -57,17 +54,15 @@ public class GrayscaleImageEffect extends CameraEffect {
 
         private ImageProxy mImageIn;
 
-        @NonNull
         @Override
-        public Response process(@NonNull Request request) {
+        public @NonNull Response process(@NonNull Request request) {
             mImageIn = requireNonNull(request.getInputImage());
             Bitmap bitmapIn = ((RgbaImageProxy) mImageIn).createBitmap();
             Bitmap bitmapOut = createProcessedBitmap(bitmapIn);
             return () -> createOutputImage(bitmapOut, mImageIn);
         }
 
-        @Nullable
-        ImageProxy getInputImage() {
+        @Nullable ImageProxy getInputImage() {
             return mImageIn;
         }
 

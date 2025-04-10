@@ -17,7 +17,6 @@
 
 package androidx.window.testing.embedding
 
-import android.os.Binder
 import androidx.window.embedding.ActivityStack
 import androidx.window.embedding.SplitAttributes
 import androidx.window.embedding.SplitInfo
@@ -29,11 +28,11 @@ import androidx.window.embedding.SplitInfo
  * [TestActivityStack], and [splitAttributes] by [SplitAttributes.Builder] APIs
  *
  * @param primaryActivityStack The primary [ActivityStack] with an empty [ActivityStack] as the
- *     default value.
+ *   default value.
  * @param secondActivityStack The secondary [ActivityStack] with an empty [ActivityStack] as the
- *     default value.
- * @param splitAttributes The current [SplitAttributes] for this test split, which defaults to
- *     split equally with layout direction [SplitAttributes.LayoutDirection.LOCALE].
+ *   default value.
+ * @param splitAttributes The current [SplitAttributes] for this test split, which defaults to split
+ *   equally with layout direction [SplitAttributes.LayoutDirection.LOCALE].
  * @return A [SplitInfo] instance for testing
  */
 @Suppress("FunctionName")
@@ -43,11 +42,9 @@ fun TestSplitInfo(
     primaryActivityStack: ActivityStack = TestActivityStack(),
     secondActivityStack: ActivityStack = TestActivityStack(),
     splitAttributes: SplitAttributes = SplitAttributes.Builder().build(),
-): SplitInfo = SplitInfo(
-    primaryActivityStack,
-    secondActivityStack,
-    splitAttributes,
-    TEST_SPLIT_INFO_TOKEN
-)
-
-private val TEST_SPLIT_INFO_TOKEN = Binder()
+): SplitInfo =
+    SplitInfo(
+        primaryActivityStack,
+        secondActivityStack,
+        splitAttributes,
+    )

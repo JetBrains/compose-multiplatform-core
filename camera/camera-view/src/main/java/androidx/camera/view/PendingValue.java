@@ -20,12 +20,7 @@ import static androidx.camera.core.impl.utils.Threads.checkMainThread;
 
 import static java.util.Objects.requireNonNull;
 
-import android.os.Build;
-
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.arch.core.util.Function;
 import androidx.camera.core.CameraControl;
 import androidx.camera.core.impl.utils.futures.Futures;
@@ -33,6 +28,9 @@ import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.util.Pair;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Pending value assignment that wait for event like camera initialization.
@@ -42,11 +40,9 @@ import com.google.common.util.concurrent.ListenableFuture;
  * {@link CameraController#setZoomRatio}, we will cache the value with this class and propagate it
  * when {@link CameraControl} becomes ready.
  */
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 class PendingValue<T> {
 
-    @Nullable
-    private Pair<CallbackToFutureAdapter.Completer<Void>, T> mCompleterAndValue;
+    private @Nullable Pair<CallbackToFutureAdapter.Completer<Void>, T> mCompleterAndValue;
 
     /**
      * Assigns the pending value.

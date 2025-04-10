@@ -19,14 +19,13 @@ package androidx.profileinstaller;
 import static androidx.profileinstaller.ProfileTranscoder.MAGIC_PROF;
 import static androidx.profileinstaller.ProfileTranscoder.MAGIC_PROFM;
 
-import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -57,31 +56,20 @@ import java.util.concurrent.Executor;
  * </pre>
  *
  */
-@RequiresApi(19)
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class DeviceProfileWriter {
 
-    @NonNull
-    private final AssetManager mAssetManager;
-    @NonNull
-    private final Executor mExecutor;
-    @NonNull
-    private final ProfileInstaller.DiagnosticsCallback mDiagnostics;
-    @Nullable
-    private final byte[] mDesiredVersion;
-    @NonNull
-    private final File mCurProfile;
-    @NonNull
-    private final String mApkName;
-    @NonNull
-    private final String mProfileSourceLocation;
-    @NonNull
-    private final String mProfileMetaSourceLocation;
+    private final @NonNull AssetManager mAssetManager;
+    private final @NonNull Executor mExecutor;
+    private final ProfileInstaller.@NonNull DiagnosticsCallback mDiagnostics;
+    private final byte @Nullable [] mDesiredVersion;
+    private final @NonNull File mCurProfile;
+    private final @NonNull String mApkName;
+    private final @NonNull String mProfileSourceLocation;
+    private final @NonNull String mProfileMetaSourceLocation;
     private boolean mDeviceSupportsAotProfile = false;
-    @Nullable
-    private DexProfileData[] mProfile;
-    @Nullable
-    private byte[] mTranscodedProfile;
+    private DexProfileData @Nullable [] mProfile;
+    private byte @Nullable [] mTranscodedProfile;
 
     private void result(@ProfileInstaller.ResultCode int code, @Nullable Object data) {
         mExecutor.execute(() -> mDiagnostics.onResultReceived(code, data));
@@ -93,7 +81,7 @@ public class DeviceProfileWriter {
     public DeviceProfileWriter(
             @NonNull AssetManager assetManager,
             @NonNull Executor executor,
-            @NonNull ProfileInstaller.DiagnosticsCallback diagnosticsCallback,
+            ProfileInstaller.@NonNull DiagnosticsCallback diagnosticsCallback,
             @NonNull String apkName,
             @NonNull String profileSourceLocation,
             @NonNull String profileMetaSourceLocation,
@@ -167,9 +155,8 @@ public class DeviceProfileWriter {
      *
      * @return this to chain call to transcodeIfNeeded
      */
-    @NonNull
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public DeviceProfileWriter read() {
+    public @NonNull DeviceProfileWriter read() {
         assertDeviceAllowsProfileInstallerAotWritesCalled();
         if (mDesiredVersion == null) {
             return this;
@@ -190,30 +177,6 @@ public class DeviceProfileWriter {
     }
 
     /**
-     * Loads an {@link InputStream} from assets whether the underlying file is compressed or not.
-     *
-     * @param assetManager The {@link AssetManager} to use.
-     * @param location The source file's location.
-     * @return An InputStream in case the profile was successfully read.
-     * @throws IOException If anything goes wrong while opening or reading the file.
-     */
-    private @Nullable InputStream openStreamFromAssets(AssetManager assetManager, String location)
-            throws IOException {
-        InputStream profileStream = null;
-        try {
-            AssetFileDescriptor descriptor = assetManager.openFd(location);
-            profileStream = descriptor.createInputStream();
-        } catch (FileNotFoundException e) {
-            String message = e.getMessage();
-            if (message != null && message.contains("compressed")) {
-                mDiagnostics.onDiagnosticReceived(
-                        ProfileInstaller.DIAGNOSTIC_PROFILE_IS_COMPRESSED, null);
-            }
-        }
-        return profileStream;
-    }
-
-    /**
      * Load the baseline profile file from assets.
      * @param assetManager The {@link AssetManager} to use.
      * @return The opened stream or null if the stream was unable to be opened.
@@ -221,9 +184,17 @@ public class DeviceProfileWriter {
     private @Nullable InputStream getProfileInputStream(AssetManager assetManager) {
         InputStream profileStream = null;
         try {
-            profileStream = openStreamFromAssets(assetManager, mProfileSourceLocation);
+            profileStream = assetManager.openFd(mProfileSourceLocation).createInputStream();
         } catch (FileNotFoundException e) {
-            mDiagnostics.onResultReceived(ProfileInstaller.RESULT_BASELINE_PROFILE_NOT_FOUND, e);
+            String message = e.getMessage();
+            if (message != null && message.contains("compressed")) {
+                mDiagnostics.onDiagnosticReceived(
+                        ProfileInstaller.DIAGNOSTIC_PROFILE_IS_COMPRESSED, null);
+            } else {
+                mDiagnostics.onResultReceived(
+                        ProfileInstaller.RESULT_BASELINE_PROFILE_NOT_FOUND, e
+                );
+            }
         } catch (IOException e) {
             mDiagnostics.onResultReceived(ProfileInstaller.RESULT_IO_EXCEPTION, e);
         }
@@ -236,7 +207,7 @@ public class DeviceProfileWriter {
      *
      * @param profileStream The {@link InputStream} containing the baseline profile data.
      */
-    private @Nullable DexProfileData[] readProfileInternal(InputStream profileStream) {
+    private DexProfileData @Nullable [] readProfileInternal(InputStream profileStream) {
         DexProfileData[] profile = null;
         try {
             byte[] baselineVersion = ProfileTranscoder.readHeader(profileStream, MAGIC_PROF);
@@ -261,10 +232,11 @@ public class DeviceProfileWriter {
      *
      * @return Baseline profile with metaadata.
      */
-    @Nullable
-    private DeviceProfileWriter addMetadata(DexProfileData[] profile, byte[] desiredVersion) {
-
-        try (InputStream is = openStreamFromAssets(mAssetManager, mProfileMetaSourceLocation)) {
+    private @Nullable DeviceProfileWriter addMetadata(DexProfileData[] profile,
+            byte[] desiredVersion) {
+        try (InputStream is = mAssetManager
+                .openFd(mProfileMetaSourceLocation)
+                .createInputStream()) {
             if (is != null) {
                 byte[] metaVersion = ProfileTranscoder.readHeader(is, MAGIC_PROFM);
                 mProfile = ProfileTranscoder.readMeta(
@@ -303,9 +275,8 @@ public class DeviceProfileWriter {
      *
      * @return this to chain call call writeIfNeeded()
      */
-    @NonNull
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public DeviceProfileWriter transcodeIfNeeded() {
+    public @NonNull DeviceProfileWriter transcodeIfNeeded() {
         DexProfileData[] profile = mProfile;
         byte[] desiredVersion = mDesiredVersion;
         if (profile == null || desiredVersion == null) {
@@ -377,11 +348,15 @@ public class DeviceProfileWriter {
         return false;
     }
 
-    private static @Nullable byte[] desiredVersion() {
+    private static byte @Nullable [] desiredVersion() {
         // If SDK is pre or post supported version, we don't want to do anything, so return null.
-        if (Build.VERSION.SDK_INT < ProfileVersion.MIN_SUPPORTED_SDK
-                || Build.VERSION.SDK_INT > ProfileVersion.MAX_SUPPORTED_SDK) {
+        if (Build.VERSION.SDK_INT < ProfileVersion.MIN_SUPPORTED_SDK) {
             return null;
+        }
+
+        // Profile version V015_S is forward compatible.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            return ProfileVersion.V015_S;
         }
 
         switch (Build.VERSION.SDK_INT) {
@@ -399,12 +374,6 @@ public class DeviceProfileWriter {
             case Build.VERSION_CODES.R:
                 return ProfileVersion.V010_P;
 
-            case Build.VERSION_CODES.S:
-            case Build.VERSION_CODES.S_V2:
-            case Build.VERSION_CODES.TIRAMISU:
-            case 34:
-                return ProfileVersion.V015_S;
-
             default:
                 return null;
         }
@@ -412,9 +381,14 @@ public class DeviceProfileWriter {
 
     private static boolean requiresMetadata() {
         // If SDK is pre-N, we don't want to do anything, so return null.
-        if (Build.VERSION.SDK_INT < ProfileVersion.MIN_SUPPORTED_SDK
-                || Build.VERSION.SDK_INT > ProfileVersion.MAX_SUPPORTED_SDK) {
+        if (Build.VERSION.SDK_INT < ProfileVersion.MIN_SUPPORTED_SDK) {
             return false;
+        }
+
+        // The profiles for S require a typeIdCount. Therefore metadata is required.
+        // Profile version V015_S is forward compatible.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            return true;
         }
 
         switch (Build.VERSION.SDK_INT) {
@@ -433,13 +407,6 @@ public class DeviceProfileWriter {
             case Build.VERSION_CODES.Q:
             case Build.VERSION_CODES.R:
                 return false;
-
-            // The profiles for S require a typeIdCount. Therefore metadata is required.
-            case Build.VERSION_CODES.S:
-            case Build.VERSION_CODES.S_V2:
-            case Build.VERSION_CODES.TIRAMISU:
-            case 34:
-                return true;
 
             default:
                 return false;

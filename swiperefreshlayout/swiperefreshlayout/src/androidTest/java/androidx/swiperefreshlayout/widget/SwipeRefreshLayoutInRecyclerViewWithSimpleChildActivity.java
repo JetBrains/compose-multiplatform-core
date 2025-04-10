@@ -18,7 +18,7 @@ package androidx.swiperefreshlayout.widget;
 
 import android.view.View;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 public class SwipeRefreshLayoutInRecyclerViewWithSimpleChildActivity extends
         SwipeRefreshLayoutInRecyclerViewBaseActivity {

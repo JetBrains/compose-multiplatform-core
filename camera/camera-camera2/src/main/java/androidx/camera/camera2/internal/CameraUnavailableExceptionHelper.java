@@ -16,15 +16,14 @@
 
 package androidx.camera.camera2.internal;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.CameraAccessExceptionCompat;
 import androidx.camera.core.CameraUnavailableException;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper class to create a {@link CameraUnavailableException}.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class CameraUnavailableExceptionHelper {
 
     private CameraUnavailableExceptionHelper() {}
@@ -35,8 +34,8 @@ public final class CameraUnavailableExceptionHelper {
      * @param e the {@link CameraAccessExceptionCompat}.
      * @return the {@link CameraUnavailableException}.
      */
-    @NonNull
-    public static CameraUnavailableException createFrom(@NonNull CameraAccessExceptionCompat e) {
+    public static @NonNull CameraUnavailableException createFrom(
+            @NonNull CameraAccessExceptionCompat e) {
         int errorCode;
         switch (e.getReason()) {
             case CameraAccessExceptionCompat.CAMERA_DISABLED:

@@ -30,6 +30,7 @@
     <string name="generic_error_no_device_credential" msgid="3791785319221634505">"Не е поставен PIN, шема или лозинка."</string>
     <string name="generic_error_no_keyguard" msgid="1807436368654974044">"Уредов не поддржува PIN, шема или лозинка."</string>
     <string name="fingerprint_dialog_icon_description" msgid="5462024216548165325">"Икона за отпечаток"</string>
+    <string name="content_view_more_options_button_clicked" msgid="5031325658202184259">"Копчето „Повеќе опции“ во прегледот на содржините е кликнато."</string>
     <string name="use_fingerprint_label" msgid="6961788485681412417">"Користи отпечаток"</string>
     <string name="use_face_label" msgid="6533512708069459542">"Користи лик"</string>
     <string name="use_biometric_label" msgid="6524145989441579428">"Користи биометрика"</string>

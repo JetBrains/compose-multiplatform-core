@@ -22,27 +22,27 @@ plugins {
 }
 
 android {
+    compileSdk = 35
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
-    namespace "androidx.constraintlayout.compose.integration.macrobenchmark.target"
+    namespace = "androidx.constraintlayout.compose.integration.macrobenchmark.target"
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"),
                     'proguard-rules.pro'
-            signingConfig signingConfigs.debug
         }
     }
 }
 
 dependencies {
-    implementation 'androidx.recyclerview:recyclerview:1.2.1'
+    implementation("androidx.recyclerview:recyclerview:1.2.1")
 
     implementation(libs.kotlinStdlib)
-    implementation(project(":activity:activity-compose"))
+    implementation("androidx.activity:activity-compose:1.10.1")
     implementation("androidx.appcompat:appcompat:1.4.1")
     implementation("androidx.cardview:cardview:1.0.0")
     // old version of common-java8 conflicts with newer version, because both have
@@ -55,6 +55,7 @@ dependencies {
     implementation(project(":compose:foundation:foundation-layout"))
     implementation(project(":compose:foundation:foundation"))
     implementation(project(":compose:material:material"))
+    implementation("androidx.compose.material:material-icons-core:1.6.7")
     implementation(project(":compose:runtime:runtime"))
     implementation(project(":compose:runtime:runtime-tracing"))
     implementation(project(":compose:ui:ui"))

@@ -14,42 +14,45 @@
  * limitations under the License.
  */
 
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
 
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import androidx.build.Publish
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
 }
 
 androidXMultiplatform {
-    jvm() {
-        withJava()
-    }
+    js()
+    jvm()
     mac()
     linux()
     ios()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
     sourceSets {
-        all {
-            languageSettings.optIn("kotlin.RequiresOptIn")
-        }
-
         commonMain {
             dependencies {
                 api(libs.kotlinStdlib)
-                api(projectOrArtifact(":annotation:annotation"))
-
+                api("androidx.annotation:annotation:1.9.1")
             }
         }
 
         commonTest {
             dependencies {
                 implementation(project(":kruth:kruth"))
-                implementation(libs.kotlinTest)
+                // https://youtrack.jetbrains.com/issue/KT-71032
+                implementation(libs.kotlinTestForWasmTests)
             }
         }
 
@@ -64,15 +67,39 @@ androidXMultiplatform {
                 implementation(libs.kotlinTestJunit)
             }
         }
+
+        nativeMain {
+            dependsOn(commonMain)
+        }
+
+        jsMain {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.kotlinStdlibJs)
+            }
+        }
+
+        wasmJsMain {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.kotlinStdlibWasm)
+            }
+        }
+
+        targets.configureEach { target ->
+            if (target.platformType == KotlinPlatformType.native) {
+                target.compilations["main"].defaultSourceSet {
+                    dependsOn(nativeMain)
+                }
+            }
+        }
     }
 }
 
 androidx {
     name = "Room-Common"
-    type = LibraryType.PUBLISHED_LIBRARY
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Room-Common"
     legacyDisableKotlinStrictApiMode = true
-    metalavaK2UastEnabled = true
 }

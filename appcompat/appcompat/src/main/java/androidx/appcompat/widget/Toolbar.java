@@ -45,12 +45,9 @@ import android.window.OnBackInvokedCallback;
 import android.window.OnBackInvokedDispatcher;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.DoNotInline;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.MainThread;
 import androidx.annotation.MenuRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StringRes;
@@ -67,7 +64,6 @@ import androidx.appcompat.view.menu.MenuPresenter;
 import androidx.appcompat.view.menu.MenuView;
 import androidx.appcompat.view.menu.SubMenuBuilder;
 import androidx.core.view.GravityCompat;
-import androidx.core.view.MarginLayoutParamsCompat;
 import androidx.core.view.MenuHost;
 import androidx.core.view.MenuHostHelper;
 import androidx.core.view.MenuProvider;
@@ -76,6 +72,9 @@ import androidx.customview.view.AbsSavedState;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.resourceinspection.annotation.Attribute;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -562,7 +561,7 @@ public class Toolbar extends ViewGroup implements MenuHost {
         super.onRtlPropertiesChanged(layoutDirection);
 
         ensureContentInsets();
-        mContentInsets.setDirection(layoutDirection == ViewCompat.LAYOUT_DIRECTION_RTL);
+        mContentInsets.setDirection(layoutDirection == View.LAYOUT_DIRECTION_RTL);
     }
 
     /**
@@ -983,8 +982,7 @@ public class Toolbar extends ViewGroup implements MenuHost {
      * {@link androidx.appcompat.R.attr#navigationContentDescription}
      */
     @Attribute("androidx.appcompat:navigationContentDescription")
-    @Nullable
-    public CharSequence getNavigationContentDescription() {
+    public @Nullable CharSequence getNavigationContentDescription() {
         return mNavButtonView != null ? mNavButtonView.getContentDescription() : null;
     }
 
@@ -1077,8 +1075,7 @@ public class Toolbar extends ViewGroup implements MenuHost {
      * {@link androidx.appcompat.R.attr#navigationIcon}
      */
     @Attribute("androidx.appcompat:navigationIcon")
-    @Nullable
-    public Drawable getNavigationIcon() {
+    public @Nullable Drawable getNavigationIcon() {
         return mNavButtonView != null ? mNavButtonView.getDrawable() : null;
     }
 
@@ -1106,8 +1103,7 @@ public class Toolbar extends ViewGroup implements MenuHost {
      * {@link androidx.appcompat.R.attr#collapseContentDescription}
      */
     @Attribute("androidx.appcompat:collapseContentDescription")
-    @Nullable
-    public CharSequence getCollapseContentDescription() {
+    public @Nullable CharSequence getCollapseContentDescription() {
         return mCollapseButtonView != null ? mCollapseButtonView.getContentDescription() : null;
     }
 
@@ -1152,8 +1148,7 @@ public class Toolbar extends ViewGroup implements MenuHost {
      * {@link androidx.appcompat.R.attr#collapseIcon}
      */
     @Attribute("androidx.appcompat:collapseIcon")
-    @Nullable
-    public Drawable getCollapseIcon() {
+    public @Nullable Drawable getCollapseIcon() {
         return mCollapseButtonView != null ? mCollapseButtonView.getDrawable() : null;
     }
 
@@ -1220,8 +1215,7 @@ public class Toolbar extends ViewGroup implements MenuHost {
      *
      * @return The overflow icon drawable
      */
-    @Nullable
-    public Drawable getOverflowIcon() {
+    public @Nullable Drawable getOverflowIcon() {
         ensureMenu();
         return mMenuView.getOverflowIcon();
     }
@@ -1571,7 +1565,7 @@ public class Toolbar extends ViewGroup implements MenuHost {
      * @see #getContentInsetEndWithActions()
      */
     public int getCurrentContentInsetLeft() {
-        return ViewCompat.getLayoutDirection(this) == ViewCompat.LAYOUT_DIRECTION_RTL
+        return getLayoutDirection() == View.LAYOUT_DIRECTION_RTL
                 ? getCurrentContentInsetEnd()
                 : getCurrentContentInsetStart();
     }
@@ -1586,7 +1580,7 @@ public class Toolbar extends ViewGroup implements MenuHost {
      * @see #getContentInsetEndWithActions()
      */
     public int getCurrentContentInsetRight() {
-        return ViewCompat.getLayoutDirection(this) == ViewCompat.LAYOUT_DIRECTION_RTL
+        return getLayoutDirection() == View.LAYOUT_DIRECTION_RTL
                 ? getCurrentContentInsetStart()
                 : getCurrentContentInsetEnd();
     }
@@ -1606,8 +1600,7 @@ public class Toolbar extends ViewGroup implements MenuHost {
      *
      */
     @VisibleForTesting
-    @Nullable
-    View getNavButtonView() {
+    @Nullable View getNavButtonView() {
         return mNavButtonView;
     }
 
@@ -1953,7 +1946,7 @@ public class Toolbar extends ViewGroup implements MenuHost {
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        final boolean isRtl =  ViewCompat.getLayoutDirection(this) ==  ViewCompat.LAYOUT_DIRECTION_RTL;
+        final boolean isRtl =  getLayoutDirection() ==  View.LAYOUT_DIRECTION_RTL;
         final int width = getWidth();
         final int height = getHeight();
         final int paddingLeft = getPaddingLeft();
@@ -2267,10 +2260,10 @@ public class Toolbar extends ViewGroup implements MenuHost {
      * @param gravity Horizontal gravity to match against
      */
     private void addCustomViewsWithGravity(List<View> views, int gravity) {
-        final boolean isRtl =  ViewCompat.getLayoutDirection(this) == ViewCompat.LAYOUT_DIRECTION_RTL;
+        final boolean isRtl =  getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
         final int childCount = getChildCount();
         final int absGrav = GravityCompat.getAbsoluteGravity(gravity,
-                ViewCompat.getLayoutDirection(this));
+                getLayoutDirection());
 
         views.clear();
 
@@ -2296,7 +2289,7 @@ public class Toolbar extends ViewGroup implements MenuHost {
     }
 
     private int getChildHorizontalGravity(int gravity) {
-        final int ld =  ViewCompat.getLayoutDirection(this);
+        final int ld =  getLayoutDirection();
         final int absGrav = GravityCompat.getAbsoluteGravity(gravity, ld);
         final int hGrav = absGrav & Gravity.HORIZONTAL_GRAVITY_MASK;
         switch (hGrav) {
@@ -2305,7 +2298,7 @@ public class Toolbar extends ViewGroup implements MenuHost {
             case Gravity.CENTER_HORIZONTAL:
                 return hGrav;
             default:
-                return ld == ViewCompat.LAYOUT_DIRECTION_RTL ? Gravity.RIGHT : Gravity.LEFT;
+                return ld == View.LAYOUT_DIRECTION_RTL ? Gravity.RIGHT : Gravity.LEFT;
         }
     }
 
@@ -2315,8 +2308,7 @@ public class Toolbar extends ViewGroup implements MenuHost {
 
     private int getHorizontalMargins(View v) {
         final MarginLayoutParams mlp = (MarginLayoutParams) v.getLayoutParams();
-        return MarginLayoutParamsCompat.getMarginStart(mlp) +
-                MarginLayoutParamsCompat.getMarginEnd(mlp);
+        return mlp.getMarginStart() + mlp.getMarginEnd();
     }
 
     private int getVerticalMargins(View v) {
@@ -2417,16 +2409,14 @@ public class Toolbar extends ViewGroup implements MenuHost {
     /**
      */
     @VisibleForTesting
-    @Nullable
-    final TextView getTitleTextView() {
+    final @Nullable TextView getTitleTextView() {
         return mTitleTextView;
     }
 
     /**
      */
     @VisibleForTesting
-    @Nullable
-    final TextView getSubtitleTextView() {
+    final @Nullable TextView getSubtitleTextView() {
         return mSubtitleTextView;
     }
 
@@ -2478,7 +2468,7 @@ public class Toolbar extends ViewGroup implements MenuHost {
     @MainThread
     @SuppressLint("LambdaLast")
     public void addMenuProvider(@NonNull MenuProvider provider, @NonNull LifecycleOwner owner,
-            @NonNull Lifecycle.State state) {
+            Lifecycle.@NonNull State state) {
         mMenuHostHelper.addMenuProvider(provider, owner, state);
     }
 
@@ -2515,7 +2505,7 @@ public class Toolbar extends ViewGroup implements MenuHost {
                     Api33Impl.findOnBackInvokedDispatcher(this);
             boolean shouldBeRegistered = hasExpandedActionView()
                     && currentDispatcher != null
-                    && ViewCompat.isAttachedToWindow(this)
+                    && this.isAttachedToWindow()
                     && mBackInvokedCallbackEnabled;
 
             if (shouldBeRegistered && mBackInvokedDispatcher == null) {
@@ -2800,7 +2790,6 @@ public class Toolbar extends ViewGroup implements MenuHost {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void tryRegisterOnBackInvokedCallback(@NonNull Object dispatcherObj,
                 @NonNull Object callback) {
             OnBackInvokedDispatcher dispatcher = (OnBackInvokedDispatcher) dispatcherObj;
@@ -2808,22 +2797,17 @@ public class Toolbar extends ViewGroup implements MenuHost {
                     (OnBackInvokedCallback) callback);
         }
 
-        @DoNotInline
         static void tryUnregisterOnBackInvokedCallback(@NonNull Object dispatcherObj,
                 @NonNull Object callbackObj) {
             OnBackInvokedDispatcher dispatcher = (OnBackInvokedDispatcher) dispatcherObj;
             dispatcher.unregisterOnBackInvokedCallback((OnBackInvokedCallback) callbackObj);
         }
 
-        @Nullable
-        @DoNotInline
-        static OnBackInvokedDispatcher findOnBackInvokedDispatcher(@NonNull View view) {
+        static @Nullable OnBackInvokedDispatcher findOnBackInvokedDispatcher(@NonNull View view) {
             return view.findOnBackInvokedDispatcher();
         }
 
-        @NonNull
-        @DoNotInline
-        static OnBackInvokedCallback newOnBackInvokedCallback(@NonNull Runnable action) {
+        static @NonNull OnBackInvokedCallback newOnBackInvokedCallback(@NonNull Runnable action) {
             return action::run;
         }
     }

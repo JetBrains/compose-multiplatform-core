@@ -20,6 +20,7 @@ package androidx.leanback.app;
 
 import static org.junit.Assert.assertTrue;
 
+import android.app.Fragment;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
@@ -31,7 +32,6 @@ import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
-import android.app.Fragment;
 import androidx.leanback.test.R;
 import androidx.leanback.testutils.LeakDetector;
 import androidx.leanback.testutils.PollingCheck;
@@ -47,10 +47,11 @@ import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.testutils.AnimationTest;
 
-import java.util.Objects;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.Objects;
 
 @LargeTest
 @AnimationTest

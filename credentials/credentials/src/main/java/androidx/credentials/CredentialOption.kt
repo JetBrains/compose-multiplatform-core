@@ -18,6 +18,8 @@ package androidx.credentials
 
 import android.content.ComponentName
 import android.os.Bundle
+import androidx.annotation.IntDef
+import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.credentials.internal.FrameworkClassParsingException
 
@@ -27,47 +29,135 @@ import androidx.credentials.internal.FrameworkClassParsingException
  * [GetCredentialRequest] will be composed of a list of [CredentialOption] subclasses to indicate
  * the specific credential types and configurations that your app accepts.
  *
- * @property type the credential type determined by the credential-type-specific subclass (e.g.
- * the type for [GetPasswordOption] is [PasswordCredential.TYPE_PASSWORD_CREDENTIAL] and for
- * [GetPublicKeyCredentialOption] is [PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL])
+ * The [typePriorityHint] value helps decide where the credential will be displayed on the selector.
+ * It is used with more importance than signals like 'last recently used' but with less importance
+ * than other signals, such as the ordering of displayed accounts. It is expected to be one of the
+ * defined [PriorityHints] constants. By default, [GetCustomCredentialOption] will have
+ * [PRIORITY_DEFAULT], [GetPasswordOption] will have [PRIORITY_PASSWORD_OR_SIMILAR] and
+ * [GetPublicKeyCredentialOption] will have [PRIORITY_PASSKEY_OR_SIMILAR]. It is expected that
+ * [GetCustomCredentialOption] types will remain unchanged unless strong reasons arise and cannot
+ * ever have [PRIORITY_PASSKEY_OR_SIMILAR]. Given passkeys prevent many security threats that other
+ * credentials do not, we enforce that nothing is shown higher than passkey types in order to
+ * provide end users with the safest credentials first. See the spec
+ * [here](https://w3c.github.io/webauthn/) for more information on passkeys.
+ *
+ * @property type the credential type determined by the credential-type-specific subclass (e.g. the
+ *   type for [GetPasswordOption] is [PasswordCredential.TYPE_PASSWORD_CREDENTIAL] and for
+ *   [GetPublicKeyCredentialOption] is [PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL])
  * @property requestData the request data in the [Bundle] format
  * @property candidateQueryData the partial request data in the [Bundle] format that will be sent to
- * the provider during the initial candidate query stage, which will not contain sensitive user
- * information
+ *   the provider during the initial candidate query stage, which will not contain sensitive user
+ *   information
  * @property isSystemProviderRequired true if must only be fulfilled by a system provider and false
- * otherwise
+ *   otherwise
  * @property isAutoSelectAllowed whether a credential entry will be automatically chosen if it is
- * the only one available option
+ *   the only one available option
  * @property allowedProviders a set of provider service [ComponentName] allowed to receive this
- * option (Note: a [SecurityException] will be thrown if it is set as non-empty but your app does
- * not have android.permission.CREDENTIAL_MANAGER_SET_ALLOWED_PROVIDERS; for API level < 34,
- * this property will not take effect and you should control the allowed provider via
- * [library dependencies](https://developer.android.com/training/sign-in/passkeys#add-dependencies))
+ *   option (Note: a [SecurityException] will be thrown if it is set as non-empty but your app does
+ *   not have android.permission.CREDENTIAL_MANAGER_SET_ALLOWED_PROVIDERS; empty means every
+ *   provider is eligible; for API level < 34, this property will not take effect and you should
+ *   control the allowed provider via
+ *   [library dependencies](https://developer.android.com/training/sign-in/passkeys#add-dependencies))
+ * @property typePriorityHint sets the priority of this entry, which defines how it appears in the
+ *   credential selector, with less precedence than account ordering but more precedence than last
+ *   used time; see [PriorityHints] for more information
  */
-abstract class CredentialOption internal constructor(
+@OptIn(ExperimentalDigitalCredentialApi::class)
+abstract class CredentialOption
+internal constructor(
     val type: String,
     val requestData: Bundle,
     val candidateQueryData: Bundle,
     val isSystemProviderRequired: Boolean,
     val isAutoSelectAllowed: Boolean,
     val allowedProviders: Set<ComponentName>,
+    val typePriorityHint: @PriorityHints Int,
 ) {
 
     init {
         requestData.putBoolean(BUNDLE_KEY_IS_AUTO_SELECT_ALLOWED, isAutoSelectAllowed)
         candidateQueryData.putBoolean(BUNDLE_KEY_IS_AUTO_SELECT_ALLOWED, isAutoSelectAllowed)
+        requestData.putInt(BUNDLE_KEY_TYPE_PRIORITY_VALUE, typePriorityHint)
+        candidateQueryData.putInt(BUNDLE_KEY_TYPE_PRIORITY_VALUE, typePriorityHint)
     }
 
-    internal companion object {
+    /** Display priority hint for each type of credentials. */
+    @Target(AnnotationTarget.PROPERTY, AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.TYPE)
+    @Retention(AnnotationRetention.SOURCE)
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @IntDef(
+        value =
+            [
+                PRIORITY_PASSKEY_OR_SIMILAR,
+                PRIORITY_OIDC_OR_SIMILAR,
+                PRIORITY_PASSWORD_OR_SIMILAR,
+                PRIORITY_DEFAULT
+            ]
+    )
+    annotation class PriorityHints
+
+    companion object {
+        /** Value of display priority for passkeys or credentials of similar security level. */
+        const val PRIORITY_PASSKEY_OR_SIMILAR = 100
+        /** Value of display priority for OpenID credentials or those of similar security level. */
+        const val PRIORITY_OIDC_OR_SIMILAR = 500
+        /** Value of display priority for passwords or credentials of similar security level. */
+        const val PRIORITY_PASSWORD_OR_SIMILAR = 1000
+        /** Default value of display priority. */
+        const val PRIORITY_DEFAULT = 2000
+
         internal const val BUNDLE_KEY_IS_AUTO_SELECT_ALLOWED =
             "androidx.credentials.BUNDLE_KEY_IS_AUTO_SELECT_ALLOWED"
+
+        internal const val BUNDLE_KEY_TYPE_PRIORITY_VALUE =
+            "androidx.credentials.BUNDLE_KEY_TYPE_PRIORITY_VALUE"
 
         internal fun extractAutoSelectValue(data: Bundle): Boolean {
             return data.getBoolean(BUNDLE_KEY_IS_AUTO_SELECT_ALLOWED)
         }
 
+        /**
+         * Parses the [option] into an instance of [CredentialOption].
+         *
+         * It is recommended to construct a CredentialOption by directly instantiating a
+         * CredentialOption subclass, instead of using this API. This API should only be used by a
+         * small subset of system apps that reconstruct an existing object for user interactions
+         * such as collecting consents.
+         *
+         * @param option the framework CredentialOption object
+         */
+        @RequiresApi(34)
         @JvmStatic
-        @RestrictTo(RestrictTo.Scope.LIBRARY) // used from java tests
+        fun createFrom(option: android.credentials.CredentialOption): CredentialOption {
+            return createFrom(
+                option.type,
+                option.credentialRetrievalData,
+                option.candidateQueryData,
+                option.isSystemProviderRequired,
+                option.allowedProviders
+            )
+        }
+
+        /**
+         * Parses the raw data into an instance of [CredentialOption].
+         *
+         * It is recommended to construct a CredentialOption by directly instantiating a
+         * CredentialOption subclass, instead of using this API. This API should only be used by a
+         * small subset of system apps that reconstruct an existing object for user interactions
+         * such as collecting consents.
+         *
+         * @param type matches [CredentialOption.type]
+         * @param requestData matches [CredentialOption.requestData], the request data in the
+         *   [Bundle] format; this should be constructed and retrieved from the a given
+         *   [CredentialOption] itself and never be created from scratch
+         * @param candidateQueryData matches [CredentialOption.candidateQueryData]; this should be
+         *   constructed and retrieved from the a given [CredentialOption] itself and never be
+         *   created from scratch
+         * @param requireSystemProvider matches [CredentialOption.isSystemProviderRequired]
+         * @param allowedProviders matches [CredentialOption.allowedProviders], empty means every
+         *   provider is eligible
+         */
+        @JvmStatic
         fun createFrom(
             type: String,
             requestData: Bundle,
@@ -79,28 +169,43 @@ abstract class CredentialOption internal constructor(
                 when (type) {
                     PasswordCredential.TYPE_PASSWORD_CREDENTIAL ->
                         GetPasswordOption.createFrom(
-                            requestData, allowedProviders, candidateQueryData)
+                            requestData,
+                            allowedProviders,
+                            candidateQueryData
+                        )
                     PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL ->
                         when (requestData.getString(PublicKeyCredential.BUNDLE_KEY_SUBTYPE)) {
                             GetPublicKeyCredentialOption
                                 .BUNDLE_VALUE_SUBTYPE_GET_PUBLIC_KEY_CREDENTIAL_OPTION ->
                                 GetPublicKeyCredentialOption.createFrom(
-                                    requestData, allowedProviders, candidateQueryData)
+                                    requestData,
+                                    allowedProviders,
+                                    candidateQueryData
+                                )
                             else -> throw FrameworkClassParsingException()
                         }
+                    DigitalCredential.TYPE_DIGITAL_CREDENTIAL ->
+                        GetDigitalCredentialOption.createFrom(
+                            requestData = requestData,
+                            candidateQueryData = candidateQueryData,
+                            requireSystemProvider = requireSystemProvider,
+                            allowedProviders = allowedProviders,
+                        )
                     else -> throw FrameworkClassParsingException()
                 }
             } catch (e: FrameworkClassParsingException) {
                 // Parsing failed but don't crash the process. Instead just output a request with
                 // the raw framework values.
                 GetCustomCredentialOption(
-                    type = type,
-                    requestData = requestData,
+                    requestData,
+                    type,
                     candidateQueryData = candidateQueryData,
                     isSystemProviderRequired = requireSystemProvider,
-                    isAutoSelectAllowed = requestData.getBoolean(
-                        BUNDLE_KEY_IS_AUTO_SELECT_ALLOWED, false),
+                    isAutoSelectAllowed =
+                        requestData.getBoolean(BUNDLE_KEY_IS_AUTO_SELECT_ALLOWED, false),
                     allowedProviders = allowedProviders,
+                    typePriorityHint =
+                        requestData.getInt(BUNDLE_KEY_TYPE_PRIORITY_VALUE, PRIORITY_DEFAULT),
                 )
             }
         }

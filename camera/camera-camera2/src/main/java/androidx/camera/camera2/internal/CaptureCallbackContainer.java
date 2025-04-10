@@ -18,15 +18,14 @@ package androidx.camera.camera2.internal;
 
 import android.hardware.camera2.CameraCaptureSession.CaptureCallback;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.CameraCaptureCallback;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A {@link CameraCaptureCallback} which contains an {@link CaptureCallback} and doesn't handle the
  * callback.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 final class CaptureCallbackContainer extends CameraCaptureCallback {
 
     private final CaptureCallback mCaptureCallback;
@@ -42,8 +41,7 @@ final class CaptureCallbackContainer extends CameraCaptureCallback {
         return new CaptureCallbackContainer(captureCallback);
     }
 
-    @NonNull
-    CaptureCallback getCaptureCallback() {
+    @NonNull CaptureCallback getCaptureCallback() {
         return mCaptureCallback;
     }
 }

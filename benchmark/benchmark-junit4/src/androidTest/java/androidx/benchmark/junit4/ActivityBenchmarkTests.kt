@@ -17,8 +17,8 @@
 package androidx.benchmark.junit4
 
 import android.app.Activity
+import androidx.annotation.WorkerThread
 import androidx.benchmark.IsolationActivity
-import androidx.test.annotation.UiThreadTest
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -30,18 +30,23 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@WorkerThread
 fun BenchmarkRule.validateRunWithIsolationActivityHidden() {
-    // isolation activity *not* on top
-    assertFalse(IsolationActivity.resumed)
+    var first = true
 
-    measureRepeated {}
+    measureRepeatedOnMainThread {
+        if (first) {
+            // isolation activity *not* on top
+            assertFalse(IsolationActivity.resumed)
+            first = false
+        }
+    }
 }
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class ActivityScenarioTest {
-    @get:Rule
-    val benchmarkRule = BenchmarkRule()
+    @get:Rule val benchmarkRule = BenchmarkRule()
 
     private lateinit var activityScenario: ActivityScenario<Activity>
 
@@ -52,23 +57,18 @@ class ActivityScenarioTest {
 
     @Test
     fun verifyActivityLaunched() {
-        activityScenario.onActivity {
-            benchmarkRule.validateRunWithIsolationActivityHidden()
-        }
+        benchmarkRule.validateRunWithIsolationActivityHidden()
     }
 }
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class ActivityScenarioRuleTest {
-    @get:Rule
-    val benchmarkRule = BenchmarkRule()
+    @get:Rule val benchmarkRule = BenchmarkRule()
 
-    @get:Rule
-    val activityRule = ActivityScenarioRule(Activity::class.java)
+    @get:Rule val activityRule = ActivityScenarioRule(Activity::class.java)
 
     @FlakyTest(bugId = 187106319)
-    @UiThreadTest
     @Test
     fun verifyActivityLaunched() {
         benchmarkRule.validateRunWithIsolationActivityHidden()
@@ -78,14 +78,12 @@ class ActivityScenarioRuleTest {
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class ActivityTestRuleTest {
-    @get:Rule
-    val benchmarkRule = BenchmarkRule()
+    @get:Rule val benchmarkRule = BenchmarkRule()
 
     @Suppress("DEPRECATION")
     @get:Rule
     val activityRule = androidx.test.rule.ActivityTestRule(Activity::class.java)
 
-    @UiThreadTest
     @Test
     fun verifyActivityLaunched() {
         benchmarkRule.validateRunWithIsolationActivityHidden()

@@ -47,7 +47,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
@@ -60,15 +59,15 @@ import androidx.wear.compose.foundation.CurvedLayout
 import androidx.wear.compose.foundation.CurvedModifier
 import androidx.wear.compose.foundation.CurvedTextStyle
 import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
-import androidx.wear.compose.foundation.HierarchicalFocusCoordinator
 import androidx.wear.compose.foundation.SwipeToReveal
 import androidx.wear.compose.foundation.basicCurvedText
 import androidx.wear.compose.foundation.expandableButton
 import androidx.wear.compose.foundation.expandableItem
 import androidx.wear.compose.foundation.expandableItems
+import androidx.wear.compose.foundation.hierarchicalFocus
+import androidx.wear.compose.foundation.hierarchicalFocusRequester
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.padding
-import androidx.wear.compose.foundation.rememberActiveFocusRequester
 import androidx.wear.compose.foundation.rememberExpandableState
 import androidx.wear.compose.foundation.rememberRevealState
 import androidx.wear.compose.material.AppCard
@@ -96,6 +95,7 @@ import androidx.wear.compose.material.PlaceholderDefaults
 import androidx.wear.compose.material.PositionIndicator
 import androidx.wear.compose.material.RadioButton
 import androidx.wear.compose.material.Scaffold
+import androidx.wear.compose.material.SelectableChip
 import androidx.wear.compose.material.SplitToggleChip
 import androidx.wear.compose.material.Stepper
 import androidx.wear.compose.material.StepperDefaults
@@ -140,6 +140,7 @@ private val PROGRESS_INDICATOR = "progress-indicator"
 private val PROGRESS_INDICATOR_INDETERMINATE = "progress-indicator-indeterminate"
 private val PROGRESSINDICATORS = "progressindicators"
 private val RADIO_BUTTON = "radio-button"
+private val SELECTABLE_CHIP = "selectable-chip"
 private val SLIDER = "slider"
 private val START_INDEX = "start-index"
 private val STEPPER = "stepper"
@@ -159,9 +160,7 @@ class BaselineActivity : ComponentActivity() {
             MaterialTheme {
                 Scaffold(
                     timeText = {
-                        TimeText(
-                            modifier = Modifier.scrollAway(scrollState = scrollState)
-                        )
+                        TimeText(modifier = Modifier.scrollAway(scrollState = scrollState))
                     },
                     positionIndicator = { PositionIndicator(scrollState = scrollState) },
                     vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
@@ -169,14 +168,13 @@ class BaselineActivity : ComponentActivity() {
                     SwipeDismissableNavHost(
                         navController = navController,
                         startDestination = START_INDEX,
-                        modifier = Modifier
-                            .background(MaterialTheme.colors.background)
-                            .semantics { contentDescription = SWIPE_DISMISS }
+                        modifier =
+                            Modifier.background(MaterialTheme.colors.background).semantics {
+                                contentDescription = SWIPE_DISMISS
+                            }
                     ) {
                         composable(START_INDEX) { StartIndex(navController, scrollState) }
-                        composable(DIALOGS) {
-                            Dialogs(navController)
-                        }
+                        composable(DIALOGS) { Dialogs(navController) }
                         composable(ALERT_DIALOG) {
                             Alert(
                                 title = { Text("Alert") },
@@ -230,11 +228,11 @@ fun StartIndex(navController: NavHostController, scrollState: ScrollState) {
     Box {
         CurvedTexts()
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(state = scrollState)
-                .padding(vertical = 32.dp)
-                .semantics { contentDescription = CONTENT_DESCRIPTION },
+            modifier =
+                Modifier.fillMaxSize()
+                    .verticalScroll(state = scrollState)
+                    .padding(vertical = 32.dp)
+                    .semantics { contentDescription = CONTENT_DESCRIPTION },
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -247,15 +245,18 @@ fun StartIndex(navController: NavHostController, scrollState: ScrollState) {
             Spacer(modifier = Modifier.height(4.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Widget(navController, EXPANDABLES, "E", EXPANDABLES)
-                Widget(navController, HIERARCHICAL_FOCUS_COORDINATOR, "HF",
-                    HIERARCHICAL_FOCUS_COORDINATOR)
+                Widget(
+                    navController,
+                    HIERARCHICAL_FOCUS_COORDINATOR,
+                    "HF",
+                    HIERARCHICAL_FOCUS_COORDINATOR
+                )
                 Widget(navController, PICKER, "PI", PICKER)
                 Widget(navController, PLACEHOLDERS, "PL", PLACEHOLDERS)
             }
             Spacer(modifier = Modifier.height(4.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Widget(navController, PROGRESSINDICATORS,
-                    "PR", PROGRESSINDICATORS)
+                Widget(navController, PROGRESSINDICATORS, "PR", PROGRESSINDICATORS)
                 Widget(navController, SLIDER, "SL", SLIDER)
                 Widget(navController, STEPPER, "ST", STEPPER)
                 Widget(navController, SWIPE_TO_REVEAL, "SW", SWIPE_TO_REVEAL)
@@ -275,18 +276,14 @@ fun Dialogs(navController: NavHostController) {
             onClick = { navController.navigate(ALERT_DIALOG) },
             colors = ChipDefaults.primaryChipColors(),
             label = { Text(ALERT_DIALOG) },
-            modifier = Modifier.semantics {
-                contentDescription = ALERT_DIALOG
-            },
+            modifier = Modifier.semantics { contentDescription = ALERT_DIALOG },
         )
         Spacer(Modifier.height(4.dp))
         CompactChip(
             onClick = { navController.navigate(CONFIRMATION_DIALOG) },
             colors = ChipDefaults.primaryChipColors(),
             label = { Text(CONFIRMATION_DIALOG) },
-            modifier = Modifier.semantics {
-                contentDescription = CONFIRMATION_DIALOG
-            },
+            modifier = Modifier.semantics { contentDescription = CONFIRMATION_DIALOG },
         )
     }
 }
@@ -308,9 +305,7 @@ fun Buttons() {
             OutlinedCompactButton(onClick = {}) { Text("OCB") }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            ToggleButton(
-                checked = true,
-                onCheckedChange = {}) { Text("TB") }
+            ToggleButton(checked = true, onCheckedChange = {}) { Text("TB") }
         }
     }
 }
@@ -323,14 +318,10 @@ fun Cards() {
     ) {
         ListHeader { Text("Cards") }
         Card(onClick = {}) { Text("Card") }
-        AppCard(onClick = {},
-            appName = { Text("AppName") }, title = {},
-            time = { Text("02:34") }) {
+        AppCard(onClick = {}, appName = { Text("AppName") }, title = {}, time = { Text("02:34") }) {
             Text("AppCard")
         }
-        TitleCard(onClick = {}, title = { Text("Title") }) {
-            Text("TitleCard")
-        }
+        TitleCard(onClick = {}, title = { Text("Title") }) { Text("TitleCard") }
     }
 }
 
@@ -347,11 +338,7 @@ fun Chips() {
                 colors = ChipDefaults.primaryChipColors(),
                 label = { Text("C") }
             )
-            OutlinedChip(
-                modifier = Modifier.height(32.dp),
-                onClick = {},
-                label = { Text("OC") }
-            )
+            OutlinedChip(modifier = Modifier.height(32.dp), onClick = {}, label = { Text("OC") })
         }
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             CompactChip(onClick = {}, label = { Text("CC") })
@@ -365,8 +352,7 @@ fun Chips() {
                 label = { Text("R") },
                 toggleControl = {
                     Icon(
-                        imageVector =
-                        ToggleChipDefaults.radioIcon(checked = radioState),
+                        imageVector = ToggleChipDefaults.radioIcon(checked = radioState),
                         contentDescription = null
                     )
                 }
@@ -378,8 +364,7 @@ fun Chips() {
                 label = { Text("S") },
                 toggleControl = {
                     Icon(
-                        imageVector =
-                        ToggleChipDefaults.switchIcon(checked = switchState),
+                        imageVector = ToggleChipDefaults.switchIcon(checked = switchState),
                         contentDescription = null
                     )
                 }
@@ -391,8 +376,7 @@ fun Chips() {
                 label = { Text("C") },
                 toggleControl = {
                     Icon(
-                        imageVector =
-                        ToggleChipDefaults.checkboxIcon(checked = checkboxState),
+                        imageVector = ToggleChipDefaults.checkboxIcon(checked = checkboxState),
                         contentDescription = null
                     )
                 }
@@ -432,11 +416,19 @@ fun Chips() {
                 onClick = {},
                 toggleControl = {
                     Icon(
-                        imageVector =
-                        ToggleChipDefaults.radioIcon(checked = true),
+                        imageVector = ToggleChipDefaults.radioIcon(checked = true),
                         contentDescription = null
                     )
                 }
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            var selectedState by remember { mutableStateOf(false) }
+            SelectableChip(
+                selected = selectedState,
+                onClick = { selectedState = !selectedState },
+                label = { Text("S") },
+                modifier = Modifier.semantics { contentDescription = SELECTABLE_CHIP }
             )
         }
     }
@@ -447,12 +439,8 @@ fun Expandables() {
     val expandableItemsState = rememberExpandableState()
     val expandableTextState = rememberExpandableState()
 
-    ScalingLazyColumn(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        item {
-            CompactChip(label = { Text("Expandables") }, onClick = {})
-        }
+    ScalingLazyColumn(modifier = Modifier.fillMaxSize()) {
+        item { CompactChip(label = { Text("Expandables") }, onClick = {}) }
         expandableItems(expandableItemsState, 2) { it ->
             CompactChip(label = { Text("$it") }, onClick = {})
         }
@@ -464,10 +452,11 @@ fun Expandables() {
             )
         }
         expandableItem(expandableTextState) { expanded ->
-            Text("Some long text goes here " +
-                "that will span across multiple lines and " +
-                "we don't want to always show all of it " +
-                "so we have an expand button",
+            Text(
+                "Some long text goes here " +
+                    "that will span across multiple lines and " +
+                    "we don't want to always show all of it " +
+                    "so we have an expand button",
                 maxLines = if (expanded) 10 else 1
             )
         }
@@ -481,7 +470,6 @@ fun Expandables() {
     }
 }
 
-@OptIn(ExperimentalWearFoundationApi::class)
 @Composable
 fun FocusCoordinator() {
     var selected by remember { mutableIntStateOf(0) }
@@ -489,15 +477,14 @@ fun FocusCoordinator() {
         Row(Modifier.fillMaxWidth()) {
             repeat(5) { ix ->
                 var focused by remember { mutableStateOf(false) }
-                HierarchicalFocusCoordinator(requiresFocus = { selected == ix }) {
-                    val focusRequester = rememberActiveFocusRequester()
-                    Text(
-                        text = "$ix",
-                        modifier = Modifier
-                            .weight(1f)
+                Text(
+                    text = "$ix",
+                    modifier =
+                        Modifier.weight(1f)
                             .clickable { selected = ix }
                             .onFocusChanged { focused = it.isFocused }
-                            .focusRequester(focusRequester)
+                            .hierarchicalFocus(selected == ix)
+                            .hierarchicalFocusRequester()
                             .focusable()
                             .then(
                                 if (focused) {
@@ -506,8 +493,7 @@ fun FocusCoordinator() {
                                     Modifier
                                 }
                             )
-                    )
-                }
+                )
             }
         }
     }
@@ -548,9 +534,7 @@ fun Picker() {
 fun Placeholders() {
     var labelText by remember { mutableStateOf("") }
     var iconContent: @Composable () -> Unit = { Checkbox(true) }
-    val chipPlaceholderState = rememberPlaceholderState {
-        labelText.isNotEmpty()
-    }
+    val chipPlaceholderState = rememberPlaceholderState { labelText.isNotEmpty() }
 
     Chip(
         onClick = { /* Do something */ },
@@ -560,27 +544,22 @@ fun Placeholders() {
                 text = labelText,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .placeholder(chipPlaceholderState)
+                modifier = Modifier.fillMaxWidth().placeholder(chipPlaceholderState)
             )
         },
         icon = {
             Box(
-                modifier = Modifier
-                    .size(ChipDefaults.IconSize)
-                    .placeholder(chipPlaceholderState),
+                modifier = Modifier.size(ChipDefaults.IconSize).placeholder(chipPlaceholderState),
             ) {
                 iconContent()
             }
         },
-        colors = PlaceholderDefaults.placeholderChipColors(
-            originalChipColors = ChipDefaults.primaryChipColors(),
-            placeholderState = chipPlaceholderState
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .placeholderShimmer(chipPlaceholderState)
+        colors =
+            PlaceholderDefaults.placeholderChipColors(
+                originalChipColors = ChipDefaults.primaryChipColors(),
+                placeholderState = chipPlaceholderState
+            ),
+        modifier = Modifier.fillMaxWidth().placeholderShimmer(chipPlaceholderState)
     )
     LaunchedEffect(Unit) {
         delay(50)
@@ -589,9 +568,7 @@ fun Placeholders() {
         labelText = "A label"
     }
     if (!chipPlaceholderState.isShowContent) {
-        LaunchedEffect(chipPlaceholderState) {
-            chipPlaceholderState.startPlaceholderAnimation()
-        }
+        LaunchedEffect(chipPlaceholderState) { chipPlaceholderState.startPlaceholderAnimation() }
     }
 }
 
@@ -607,22 +584,14 @@ fun ProgressIndicators(navController: NavHostController) {
             onClick = { navController.navigate(PROGRESS_INDICATOR) },
             colors = ChipDefaults.primaryChipColors(),
             label = { Text(PROGRESS_INDICATOR) },
-            modifier = Modifier.semantics {
-                contentDescription = PROGRESS_INDICATOR
-            },
+            modifier = Modifier.semantics { contentDescription = PROGRESS_INDICATOR },
         )
         Spacer(Modifier.height(4.dp))
         CompactChip(
-            onClick = {
-                navController.navigate(
-                    PROGRESS_INDICATOR_INDETERMINATE
-                )
-            },
+            onClick = { navController.navigate(PROGRESS_INDICATOR_INDETERMINATE) },
             colors = ChipDefaults.primaryChipColors(),
             label = { Text(PROGRESS_INDICATOR_INDETERMINATE) },
-            modifier = Modifier.semantics {
-                contentDescription = PROGRESS_INDICATOR_INDETERMINATE
-            },
+            modifier = Modifier.semantics { contentDescription = PROGRESS_INDICATOR_INDETERMINATE },
         )
     }
 }
@@ -638,18 +607,8 @@ fun Slider() {
         InlineSlider(
             value = value,
             onValueChange = { value = it },
-            increaseIcon = {
-                Icon(
-                    InlineSliderDefaults.Increase,
-                    "Increase"
-                )
-            },
-            decreaseIcon = {
-                Icon(
-                    InlineSliderDefaults.Decrease,
-                    "Decrease"
-                )
-            },
+            increaseIcon = { Icon(InlineSliderDefaults.Increase, "Increase") },
+            decreaseIcon = { Icon(InlineSliderDefaults.Decrease, "Decrease") },
             valueRange = 3f..6f,
             steps = 5,
             segmented = false
@@ -667,7 +626,9 @@ fun Stepper() {
         decreaseIcon = { Icon(StepperDefaults.Decrease, "Decrease") },
         valueRange = 1f..4f,
         steps = 7
-    ) { Text("Value: $value") }
+    ) {
+        Text("Value: $value")
+    }
 }
 
 @OptIn(ExperimentalWearFoundationApi::class)
@@ -678,11 +639,9 @@ fun SwipeToReveal() {
         state = state,
         primaryAction = {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable { /* Add the primary action */ },
+                modifier = Modifier.fillMaxSize().clickable { /* Add the primary action */ },
             ) {
-                if (abs(state.offset) > revealOffset) {
+                if (abs(state.offset) > state.revealThreshold) {
                     Spacer(Modifier.size(5.dp))
                     Text("Clear")
                 }
@@ -712,17 +671,11 @@ fun CurvedTexts() {
     CurvedLayout(anchor = 235f) {
         basicCurvedText(
             "Basic",
-            CurvedTextStyle(
-                fontSize = 16.sp,
-                color = Color.White,
-                background = background
-            ),
+            CurvedTextStyle(fontSize = 16.sp, color = Color.White, background = background),
             modifier = CurvedModifier.padding(2.dp)
         )
     }
-    CurvedLayout(anchor = 310f) {
-        curvedText(text = "Curved")
-    }
+    CurvedLayout(anchor = 310f) { curvedText(text = "Curved") }
 }
 
 @Composable

@@ -16,10 +16,11 @@
 
 package androidx.appsearch.observer;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.util.ObjectsCompat;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.Set;
@@ -59,14 +60,12 @@ public final class SchemaChangeInfo {
     }
 
     /** Returns the package name of the app which owns the schema that changed. */
-    @NonNull
-    public String getPackageName() {
+    public @NonNull String getPackageName() {
         return mPackageName;
     }
 
     /** Returns the database in which the schema that was changed resides. */
-    @NonNull
-    public String getDatabaseName() {
+    public @NonNull String getDatabaseName() {
         return mDatabaseName;
     }
 
@@ -75,8 +74,7 @@ public final class SchemaChangeInfo {
      *
      * <p>This will never be empty.
      */
-    @NonNull
-    public Set<String> getChangedSchemaNames() {
+    public @NonNull Set<String> getChangedSchemaNames() {
         return mChangedSchemaNames;
     }
 
@@ -101,9 +99,8 @@ public final class SchemaChangeInfo {
         return ObjectsCompat.hash(mPackageName, mDatabaseName, mChangedSchemaNames);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "SchemaChangeInfo{"
                 + "packageName='" + mPackageName + '\''
                 + ", databaseName='" + mDatabaseName + '\''

@@ -16,150 +16,152 @@
 
 package androidx.room.compiler.codegen
 
-import androidx.room.compiler.codegen.java.JavaCodeBlock
+import androidx.room.compiler.codegen.impl.XCodeBlockImpl
+import androidx.room.compiler.codegen.impl.XTypeSpecImpl
 import androidx.room.compiler.codegen.java.JavaTypeSpec
-import androidx.room.compiler.codegen.kotlin.KotlinCodeBlock
 import androidx.room.compiler.codegen.kotlin.KotlinTypeSpec
 import androidx.room.compiler.processing.XElement
-import androidx.room.compiler.processing.addOriginatingElement
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.javapoet.JTypeSpec
 import com.squareup.kotlinpoet.javapoet.KTypeSpec
-import javax.lang.model.element.Modifier
 
-interface XTypeSpec : TargetLanguage {
+interface XTypeSpec {
 
-    val className: XClassName
+    val name: XName?
 
-    interface Builder : TargetLanguage {
+    interface Builder {
         fun superclass(typeName: XTypeName): Builder
+
         fun addSuperinterface(typeName: XTypeName): Builder
-        fun addAnnotation(annotation: XAnnotationSpec)
+
+        fun addAnnotation(annotation: XAnnotationSpec): Builder
+
         fun addProperty(propertySpec: XPropertySpec): Builder
+
         fun addFunction(functionSpec: XFunSpec): Builder
+
         fun addType(typeSpec: XTypeSpec): Builder
+
+        fun addTypeVariable(typeVariable: XTypeName): Builder
+
+        fun addTypeVariables(typeVariables: List<XTypeName>) = apply {
+            typeVariables.forEach { addTypeVariable(it) }
+        }
+
         fun setPrimaryConstructor(functionSpec: XFunSpec): Builder
-        fun setVisibility(visibility: VisibilityModifier)
+
+        fun setVisibility(visibility: VisibilityModifier): Builder
+
         fun addAbstractModifier(): Builder
+
+        fun addOriginatingElement(element: XElement): Builder
+
         fun build(): XTypeSpec
 
+        fun addProperty(
+            name: String,
+            typeName: XTypeName,
+            visibility: VisibilityModifier,
+            isMutable: Boolean = false,
+            initExpr: XCodeBlock? = null,
+        ) = apply {
+            val builder = XPropertySpec.builder(name, typeName, visibility, isMutable)
+            if (initExpr != null) {
+                builder.initializer(initExpr)
+            }
+            addProperty(builder.build())
+        }
+
         companion object {
-
-            fun Builder.addOriginatingElement(element: XElement) = apply {
-                when (language) {
-                    CodeLanguage.JAVA -> {
-                        check(this is JavaTypeSpec.Builder)
-                        actual.addOriginatingElement(element)
+            fun Builder.applyTo(block: Builder.(CodeLanguage) -> Unit) = apply {
+                when (this) {
+                    is XTypeSpecImpl.Builder -> {
+                        this.java.block(CodeLanguage.JAVA)
+                        this.kotlin.block(CodeLanguage.KOTLIN)
                     }
-                    CodeLanguage.KOTLIN -> {
-                        check(this is KotlinTypeSpec.Builder)
-                        actual.addOriginatingElement(element)
-                    }
+                    is JavaTypeSpec.Builder -> block(CodeLanguage.JAVA)
+                    is KotlinTypeSpec.Builder -> block(CodeLanguage.KOTLIN)
                 }
             }
 
-            fun Builder.addProperty(
-                name: String,
-                typeName: XTypeName,
-                visibility: VisibilityModifier,
-                isMutable: Boolean = false,
-                initExpr: XCodeBlock? = null,
-            ) = apply {
-                val builder = XPropertySpec.builder(language, name, typeName, visibility, isMutable)
-                if (initExpr != null) {
-                    builder.initializer(initExpr)
-                }
-                addProperty(builder.build())
-            }
-
-            fun Builder.apply(
-                javaTypeBuilder: com.squareup.javapoet.TypeSpec.Builder.() -> Unit,
-                kotlinTypeBuilder: com.squareup.kotlinpoet.TypeSpec.Builder.() -> Unit,
-            ): Builder = apply {
-                when (language) {
-                    CodeLanguage.JAVA -> {
-                        check(this is JavaTypeSpec.Builder)
-                        this.actual.javaTypeBuilder()
-                    }
-                    CodeLanguage.KOTLIN -> {
-                        check(this is KotlinTypeSpec.Builder)
-                        this.actual.kotlinTypeBuilder()
+            fun Builder.applyTo(language: CodeLanguage, block: Builder.() -> Unit) =
+                applyTo { codeLanguage ->
+                    if (codeLanguage == language) {
+                        block()
                     }
                 }
-            }
         }
     }
 
     companion object {
-        fun classBuilder(
-            language: CodeLanguage,
-            className: XClassName,
-            isOpen: Boolean = false
-        ): Builder {
-            return when (language) {
-                CodeLanguage.JAVA -> JavaTypeSpec.Builder(
-                    className = className,
-                    actual = JTypeSpec.classBuilder(className.java).apply {
+        @JvmStatic
+        fun classBuilder(name: String, isOpen: Boolean = false) =
+            classBuilder(XName.of(name), isOpen)
+
+        @JvmStatic
+        fun classBuilder(className: XClassName, isOpen: Boolean = false) =
+            classBuilder(
+                XName.of(java = className.java.simpleName(), kotlin = className.kotlin.simpleName),
+                isOpen
+            )
+
+        @JvmStatic
+        fun classBuilder(name: XName, isOpen: Boolean = false): Builder =
+            XTypeSpecImpl.Builder(
+                JavaTypeSpec.Builder(
+                    JTypeSpec.classBuilder(name.java).apply {
                         if (!isOpen) {
-                            addModifiers(Modifier.FINAL)
+                            addModifiers(JModifier.FINAL)
                         }
                     }
-                )
-
-                CodeLanguage.KOTLIN -> KotlinTypeSpec.Builder(
-                    className = className,
-                    actual = KTypeSpec.classBuilder(className.kotlin).apply {
+                ),
+                KotlinTypeSpec.Builder(
+                    KTypeSpec.classBuilder(name.kotlin).apply {
                         if (isOpen) {
                             addModifiers(KModifier.OPEN)
                         }
                     }
                 )
-            }
-        }
+            )
 
-        fun anonymousClassBuilder(
-            language: CodeLanguage,
-            argsFormat: String = "",
-            vararg args: Any
-        ): Builder {
-            return when (language) {
-                CodeLanguage.JAVA -> JavaTypeSpec.Builder(
-                    className = null,
-                    actual = JTypeSpec.anonymousClassBuilder(
-                        XCodeBlock.of(language, argsFormat, *args).let {
-                            check(it is JavaCodeBlock)
-                            it.actual
-                        }
-                    )
-                )
-                CodeLanguage.KOTLIN -> KotlinTypeSpec.Builder(
-                    className = null,
-                    actual = KTypeSpec.anonymousClassBuilder().apply {
-                        if (args.isNotEmpty()) {
-                            addSuperclassConstructorParameter(
-                                XCodeBlock.of(language, argsFormat, *args).let {
-                                    check(it is KotlinCodeBlock)
-                                    it.actual
-                                }
-                            )
+        @JvmStatic
+        fun anonymousClassBuilder(argsFormat: String = "", vararg args: Any?): Builder {
+            val codeBlock = XCodeBlock.of(argsFormat, *args)
+            require(codeBlock is XCodeBlockImpl)
+            return XTypeSpecImpl.Builder(
+                JavaTypeSpec.Builder(JTypeSpec.anonymousClassBuilder(codeBlock.java.actual)),
+                KotlinTypeSpec.Builder(
+                    KTypeSpec.anonymousClassBuilder().apply {
+                        if (codeBlock.kotlin.actual.isNotEmpty()) {
+                            addSuperclassConstructorParameter(codeBlock.kotlin.actual)
                         }
                     }
                 )
-            }
+            )
         }
 
-        fun companionObjectBuilder(language: CodeLanguage): Builder {
-            return when (language) {
-                CodeLanguage.JAVA -> JavaTypeSpec.Builder(
-                    className = null,
-                    actual = JTypeSpec.classBuilder("Companion")
-                        .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                )
-                CodeLanguage.KOTLIN -> KotlinTypeSpec.Builder(
-                    className = null,
-                    actual = KTypeSpec.companionObjectBuilder()
-                )
-            }
-        }
+        @JvmStatic
+        fun companionObjectBuilder(): Builder =
+            XTypeSpecImpl.Builder(
+                JavaTypeSpec.Builder(
+                    JTypeSpec.classBuilder("Companion")
+                        .addModifiers(JModifier.PUBLIC, JModifier.STATIC)
+                ),
+                KotlinTypeSpec.Builder(KTypeSpec.companionObjectBuilder())
+            )
+
+        @JvmStatic
+        fun objectBuilder(name: String): Builder =
+            XTypeSpecImpl.Builder(
+                JavaTypeSpec.Builder(JTypeSpec.classBuilder(name)),
+                KotlinTypeSpec.Builder(KTypeSpec.objectBuilder(name))
+            )
+
+        @JvmStatic
+        fun objectBuilder(className: XClassName): Builder =
+            XTypeSpecImpl.Builder(
+                JavaTypeSpec.Builder(JTypeSpec.classBuilder(className.java)),
+                KotlinTypeSpec.Builder(KTypeSpec.objectBuilder(className.kotlin))
+            )
     }
 }

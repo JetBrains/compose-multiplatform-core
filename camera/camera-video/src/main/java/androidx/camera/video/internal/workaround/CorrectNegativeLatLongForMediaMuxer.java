@@ -19,10 +19,10 @@ package androidx.camera.video.internal.workaround;
 import android.media.MediaMuxer;
 import android.util.Pair;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.video.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.video.internal.compat.quirk.NegativeLatLongSavesIncorrectlyQuirk;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Workaround to correct negative geo location in the saved video metadata.
@@ -31,7 +31,6 @@ import androidx.camera.video.internal.compat.quirk.NegativeLatLongSavesIncorrect
  * {@link #adjustGeoLocation} should be applied to the geo location before setting to
  * MediaMuxer#setLocation.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class CorrectNegativeLatLongForMediaMuxer {
 
     private CorrectNegativeLatLongForMediaMuxer() {
@@ -54,8 +53,8 @@ public final class CorrectNegativeLatLongForMediaMuxer {
      * @return a pair of {@link Double}. The first element of the pair is the adjusted latitude.
      * The second element of the pair is the adjusted longitude.
      */
-    @NonNull
-    public static Pair<Double, Double> adjustGeoLocation(double latitude, double longitude) {
+    public static @NonNull Pair<Double, Double> adjustGeoLocation(double latitude,
+            double longitude) {
         if (DeviceQuirks.get(NegativeLatLongSavesIncorrectlyQuirk.class) != null) {
             latitude = adjustInternal(latitude);
             longitude = adjustInternal(longitude);

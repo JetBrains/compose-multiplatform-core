@@ -1,3 +1,5 @@
+import androidx.build.ApkCopyHelperKt
+
 /*
  * Copyright (C) 2019 The Android Open Source Project
  *
@@ -17,15 +19,14 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
+    compileSdk = 35
+
     defaultConfig {
-        applicationId "androidx.camera.integration.core"
-        minSdkVersion 21
-        versionCode 1
-        multiDexEnabled true
+        applicationId = "androidx.camera.integration.core"
 
         externalNativeBuild {
             cmake {
@@ -37,12 +38,12 @@ android {
 
     buildTypes {
         debug {
-            pseudoLocalesEnabled true
+            pseudoLocalesEnabled = true
         }
 
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
     }
@@ -50,13 +51,14 @@ android {
     externalNativeBuild {
         cmake {
             path "src/main/cpp/CMakeLists.txt"
-            version libs.versions.cmake.get()
+            version = libs.versions.cmake.get()
         }
     }
-    namespace "androidx.camera.integration.core"
+    namespace = "androidx.camera.integration.core"
 }
 
 dependencies {
+    api(libs.jspecify)
     // Internal library
     implementation(project(":camera:camera-camera2"))
     implementation(project(":camera:camera-camera2-pipe-integration"))
@@ -65,6 +67,8 @@ dependencies {
     implementation(project(":camera:camera-mlkit-vision"))
     implementation(project(":camera:camera-view"))
     implementation(project(":camera:camera-video"))
+    implementation(project(":camera:camera-extensions"))
+
     // Needed because AGP enforces same version between main and androidTest classpaths
     implementation(project(":concurrent:concurrent-futures"))
 
@@ -97,6 +101,9 @@ dependencies {
     // explicitly add runner here to force consistency with androidTestImplementation
     debugImplementation(libs.testRunner)
 
+    // Align dependencies in debugRuntimeClasspath and debugAndroidTestRuntimeClasspath.
+    androidTestImplementation("androidx.annotation:annotation-experimental:1.4.1")
+
     // Testing framework
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testExtJunit)
@@ -117,10 +124,22 @@ dependencies {
     androidTestImplementation(project(":concurrent:concurrent-futures"))
     androidTestImplementation(project(":concurrent:concurrent-futures-ktx"))
     androidTestImplementation(project(":internal-testutils-runtime"))
+    androidTestImplementation(project(":internal-testutils-lifecycle"))
+    androidTestImplementation(project(":internal-testutils-truth"))
+    androidTestImplementation("androidx.core:core:1.1.0")
     androidTestImplementation("androidx.lifecycle:lifecycle-runtime-testing:2.3.1")
+    androidTestImplementation("androidx.palette:palette:1.0.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
     androidTestImplementation("org.jetbrains.kotlinx:atomicfu:0.13.1")
 
+    testImplementation(libs.kotlinStdlib)
+    testImplementation(libs.kotlinCoroutinesAndroid)
+    testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
     testImplementation(libs.truth)
+    testImplementation(project(":internal-testutils-ktx"))
 }
+
+// Publish the APK to dist/apk for testing.
+ApkCopyHelperKt.setupAppApkCopy(project, "release")

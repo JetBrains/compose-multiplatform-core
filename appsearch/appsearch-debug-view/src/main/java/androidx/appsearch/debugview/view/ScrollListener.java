@@ -16,11 +16,12 @@
 
 package androidx.appsearch.debugview.view;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.Preconditions;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Listens for scrolling and loads the next page of results if the end of the view is reached.

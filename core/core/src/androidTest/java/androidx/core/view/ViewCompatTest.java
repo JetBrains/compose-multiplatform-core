@@ -40,6 +40,7 @@ import static androidx.core.view.accessibility.AccessibilityNodeInfoCompat.Acces
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -58,6 +59,7 @@ import static org.mockito.Mockito.verify;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
@@ -66,18 +68,20 @@ import android.view.Display;
 import android.view.View;
 import android.view.autofill.AutofillId;
 import android.view.contentcapture.ContentCaptureSession;
+import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.graphics.Insets;
 import androidx.core.test.R;
 import androidx.core.view.autofill.AutofillIdCompat;
 import androidx.core.view.contentcapture.ContentCaptureSessionCompat;
+import androidx.core.viewtree.ViewTree;
 import androidx.test.annotation.UiThreadTest;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.SdkSuppress;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -108,8 +112,8 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
     public void testConstants() {
         // Compat constants must match core constants since they can be used interchangeably
         // in various support lib calls.
-        assertEquals("LTR constants", View.LAYOUT_DIRECTION_LTR, ViewCompat.LAYOUT_DIRECTION_LTR);
-        assertEquals("RTL constants", View.LAYOUT_DIRECTION_RTL, ViewCompat.LAYOUT_DIRECTION_RTL);
+        assertEquals("LTR constants", View.LAYOUT_DIRECTION_LTR, View.LAYOUT_DIRECTION_LTR);
+        assertEquals("RTL constants", View.LAYOUT_DIRECTION_RTL, View.LAYOUT_DIRECTION_RTL);
     }
 
     @Test
@@ -130,6 +134,23 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
         final View view = new View(mActivityTestRule.getActivity());
         ViewCompat.setTransitionName(view, "abc");
         assertEquals("abc", ViewCompat.getTransitionName(view));
+    }
+
+    @Test
+    public void testGetDisjointParentOfOverlay() throws Throwable {
+        final Activity activity = mActivityTestRule.getActivity();
+        FrameLayout overlayHost = new FrameLayout(activity);
+        View overlaidView = new View(activity);
+
+        mActivityTestRule.runOnUiThread(() -> {
+            activity.setContentView(overlayHost);
+            ViewCompat.addOverlayView(overlayHost, overlaidView);
+        });
+
+        assertEquals(
+                overlayHost,
+                ViewTree.getParentOrViewTreeDisjointParent((View) overlaidView.getParent())
+        );
     }
 
     @Test
@@ -252,7 +273,7 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
 
         Set<Integer> generatedIds = new HashSet<>();
         for (int i = 0; i < requestCount; i++) {
-            int generatedId = ViewCompat.generateViewId();
+            int generatedId = View.generateViewId();
             assertTrue(isViewIdGenerated(generatedId));
             generatedIds.add(generatedId);
         }
@@ -329,7 +350,7 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
         Bundle bundle = new Bundle();
         bundle.putInt(ACTION_ARGUMENT_PRESS_AND_HOLD_DURATION_MILLIS_INT, 100);
 
-        ViewCompat.performAccessibilityAction(view, actionCompat.getId(), bundle);
+        view.performAccessibilityAction(actionCompat.getId(), bundle);
 
         ArgumentCaptor<Bundle> bundleCaptor = ArgumentCaptor.forClass(Bundle.class);
         verify(view).performAccessibilityAction(eq(actionCompat.getId()), bundleCaptor.capture());
@@ -457,13 +478,22 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
         assertFallbackHapticFeedbackPerformed(CLOCK_TICK, GESTURE_THRESHOLD_DEACTIVATE);
     }
 
-    @SdkSuppress(minSdkVersion = 27, maxSdkVersion = 29)
+    @SdkSuppress(minSdkVersion = 23, maxSdkVersion = 29)
     @Test
     public void testPerformHapticFeedback_useFallbackForConstantsFromSdk30() {
-        // Maintain constants supported in SDK >= 27
-        assertHapticFeedbackPerformed(TEXT_HANDLE_MOVE);
-        assertHapticFeedbackPerformed(KEYBOARD_RELEASE);
-        assertHapticFeedbackPerformed(VIRTUAL_KEY_RELEASE);
+        // Maintain constants supported in SDK >= 23
+        assertHapticFeedbackPerformed(CONTEXT_CLICK);
+
+        if (Build.VERSION.SDK_INT >= 27) {
+            // Maintain constants supported in SDK >= 27
+            assertHapticFeedbackPerformed(TEXT_HANDLE_MOVE);
+            assertHapticFeedbackPerformed(KEYBOARD_RELEASE);
+            assertHapticFeedbackPerformed(VIRTUAL_KEY_RELEASE);
+        } else {
+            assertNoHapticFeedbackPerformed(TEXT_HANDLE_MOVE);
+            assertNoHapticFeedbackPerformed(KEYBOARD_RELEASE);
+            assertNoHapticFeedbackPerformed(VIRTUAL_KEY_RELEASE);
+        }
 
         // Fallbacks for constants from SDK >= 30
         assertFallbackHapticFeedbackPerformed(LONG_PRESS, DRAG_START);
@@ -477,29 +507,6 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
         assertFallbackHapticFeedbackPerformed(CLOCK_TICK, TOGGLE_OFF);
         assertFallbackHapticFeedbackPerformed(CLOCK_TICK, SEGMENT_FREQUENT_TICK);
         assertFallbackHapticFeedbackPerformed(CLOCK_TICK, GESTURE_THRESHOLD_DEACTIVATE);
-    }
-
-    @SdkSuppress(minSdkVersion = 23, maxSdkVersion = 26)
-    @Test
-    public void testPerformHapticFeedback_useFallbackForConstantsFromSdk27() {
-        // Maintain constants supported in SDK >= 23
-        assertHapticFeedbackPerformed(CONTEXT_CLICK);
-
-        // Fallbacks for constants from SDK >= 27
-        assertFallbackHapticFeedbackPerformed(LONG_PRESS, DRAG_START);
-        assertFallbackHapticFeedbackPerformed(LONG_PRESS, REJECT);
-        assertFallbackHapticFeedbackPerformed(VIRTUAL_KEY, CONFIRM);
-        assertFallbackHapticFeedbackPerformed(VIRTUAL_KEY, GESTURE_START);
-        assertFallbackHapticFeedbackPerformed(CONTEXT_CLICK, GESTURE_END);
-        assertFallbackHapticFeedbackPerformed(CONTEXT_CLICK, TOGGLE_ON);
-        assertFallbackHapticFeedbackPerformed(CONTEXT_CLICK, SEGMENT_TICK);
-        assertFallbackHapticFeedbackPerformed(CONTEXT_CLICK, GESTURE_THRESHOLD_ACTIVATE);
-        assertFallbackHapticFeedbackPerformed(CLOCK_TICK, TOGGLE_OFF);
-        assertFallbackHapticFeedbackPerformed(CLOCK_TICK, SEGMENT_FREQUENT_TICK);
-        assertFallbackHapticFeedbackPerformed(CLOCK_TICK, GESTURE_THRESHOLD_DEACTIVATE);
-        assertNoHapticFeedbackPerformed(TEXT_HANDLE_MOVE);
-        assertNoHapticFeedbackPerformed(KEYBOARD_RELEASE);
-        assertNoHapticFeedbackPerformed(VIRTUAL_KEY_RELEASE);
     }
 
     @SdkSuppress(minSdkVersion = 21, maxSdkVersion = 22)
@@ -602,7 +609,7 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
 
         @Override
         public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed,
-                int dyUnconsumed, @Nullable int[] offsetInWindow) {
+                int dyUnconsumed, int @Nullable [] offsetInWindow) {
             return true;
         }
     }
@@ -616,7 +623,7 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
 
         @Override
         public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed,
-                int dyUnconsumed, @Nullable int[] offsetInWindow, int type) {
+                int dyUnconsumed, int @Nullable [] offsetInWindow, int type) {
             return true;
         }
     }
@@ -630,8 +637,54 @@ public class ViewCompatTest extends BaseInstrumentationTestCase<ViewCompatActivi
 
         @Override
         public void dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed,
-                int dyUnconsumed, @Nullable int[] offsetInWindow, int type,
-                @NonNull int[] consumed) {
+                int dyUnconsumed, int @Nullable [] offsetInWindow, int type,
+                int @NonNull [] consumed) {
         }
+    }
+
+    @Test
+    public void testTransformMatrixToGlobal() throws Throwable {
+        View container = mActivityTestRule.getActivity().findViewById(R.id.container);
+        View view = mActivityTestRule.getActivity().findViewById(R.id.view);
+        mActivityTestRule.runOnUiThread(() -> {
+            container.setScrollX(1);
+            container.setScrollY(2);
+            container.setScaleX(3);
+            container.setScaleY(4);
+            container.setLeft(6);
+            container.setRight(7);
+            view.setScrollX(10);
+            view.setScrollY(20);
+            view.setScaleX(30);
+            view.setScaleY(40);
+            view.setLeft(60);
+            view.setRight(70);
+        });
+        Matrix resultMatrix = new Matrix();
+        ViewCompat.transformMatrixToGlobal(view, resultMatrix);
+        float[] resultVals = new float[9];
+        resultMatrix.getValues(resultVals);
+
+        Matrix fallbackResultMatrix = new Matrix();
+        ViewCompat.fallbackTransformMatrixToGlobal(view, fallbackResultMatrix);
+        float[] fallbackResultVals = new float[9];
+        fallbackResultMatrix.getValues(fallbackResultVals);
+
+        int[] viewTopLeftScreenPositionOldInt = new int[2];
+        view.getLocationOnScreen(viewTopLeftScreenPositionOldInt);
+        float[] viewTopLeftScreenPositionOld = new float[]{
+                viewTopLeftScreenPositionOldInt[0], viewTopLeftScreenPositionOldInt[1]};
+        float[] viewTopLeftScreenPositionNew = new float[]{0.0f, 0.0f};
+        resultMatrix.mapPoints(viewTopLeftScreenPositionNew);
+        assertArrayEquals(viewTopLeftScreenPositionOld, viewTopLeftScreenPositionNew, 1.0f);
+
+        Matrix expectedMatrix = new Matrix();
+        expectedMatrix.setScale(30.0f * 3.0f, 40.0f * 4.0f);
+        expectedMatrix.postTranslate(
+                viewTopLeftScreenPositionOld[0], viewTopLeftScreenPositionOld[1]);
+        float[] expectedVals = new float[9];
+        expectedMatrix.getValues(expectedVals);
+        assertArrayEquals(expectedVals, resultVals, 1.0f);
+        assertArrayEquals(expectedVals, fallbackResultVals, 1.0f);
     }
 }

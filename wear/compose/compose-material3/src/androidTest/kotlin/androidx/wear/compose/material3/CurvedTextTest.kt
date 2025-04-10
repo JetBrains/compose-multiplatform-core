@@ -17,7 +17,6 @@
 package androidx.wear.compose.material3
 
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.assertContainsColor
 import androidx.compose.testutils.assertDoesNotContainColor
@@ -26,20 +25,21 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import androidx.wear.compose.foundation.CurvedLayout
 import androidx.wear.compose.foundation.CurvedTextStyle
 import androidx.wear.compose.foundation.curvedRow
+import androidx.wear.compose.material3.tokens.TypographyTokens
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@RequiresApi(Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 class CurvedTextTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private val testText = "TestText"
 
@@ -51,9 +51,7 @@ class CurvedTextTest {
                     curvedText(
                         text = testText,
                         color = Color.Red,
-                        style = CurvedTextStyle(
-                            color = Color.Blue
-                        )
+                        style = CurvedTextStyle(color = Color.Blue)
                     )
                 }
             }
@@ -70,12 +68,7 @@ class CurvedTextTest {
             CompositionLocalProvider(LocalContentColor provides Color.Yellow) {
                 CurvedLayout {
                     curvedRow {
-                        curvedText(
-                            text = testText,
-                            style = CurvedTextStyle(
-                                color = Color.Blue
-                            )
-                        )
+                        curvedText(text = testText, style = CurvedTextStyle(color = Color.Blue))
                     }
                 }
             }
@@ -100,7 +93,30 @@ class CurvedTextTest {
             }
         }
 
-        rule.onNodeWithContentDescription(testText).captureToImage()
+        rule
+            .onNodeWithContentDescription(testText)
+            .captureToImage()
+            .assertContainsColor(Color.Yellow)
+    }
+
+    @Test
+    fun uses_ArcMedium_style() {
+        rule.setContent {
+            MaterialTheme(
+                typography =
+                    Typography(arcMedium = TypographyTokens.ArcMedium.copy(color = Color.Yellow))
+            ) {
+                CurvedLayout {
+                    curvedText(
+                        text = testText,
+                    )
+                }
+            }
+        }
+
+        rule
+            .onNodeWithContentDescription(testText)
+            .captureToImage()
             .assertContainsColor(Color.Yellow)
     }
 }

@@ -31,16 +31,14 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.Surface;
 import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.TextureView.SurfaceTextureListener;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Manages an overlay display window, used for simulating remote playback.
@@ -59,8 +57,7 @@ public abstract class OverlayDisplayWindow {
     protected final int mWidth;
     protected final int mHeight;
     protected final int mGravity;
-    @Nullable
-    protected OverlayWindowListener mListener;
+    protected @Nullable OverlayWindowListener mListener;
 
     protected OverlayDisplayWindow(@NonNull Context context, @NonNull String name, int width,
             int height, int gravity) {
@@ -76,22 +73,16 @@ public abstract class OverlayDisplayWindow {
      *
      * @return the created overlay window.
      */
-    @NonNull
-    public static OverlayDisplayWindow create(@NonNull Context context, @NonNull String name,
-            int width, int height, int gravity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            return new JellybeanMr1Impl(context, name, width, height, gravity);
-        } else {
-            return new LegacyImpl(context, name, width, height, gravity);
-        }
+    public static @NonNull OverlayDisplayWindow create(@NonNull Context context,
+            @NonNull String name, int width, int height, int gravity) {
+        return new JellybeanMr1Impl(context, name, width, height, gravity);
     }
 
     public void setOverlayWindowListener(@NonNull OverlayWindowListener listener) {
         mListener = listener;
     }
 
-    @NonNull
-    public Context getContext() {
+    public @NonNull Context getContext() {
         return mContext;
     }
 
@@ -115,8 +106,7 @@ public abstract class OverlayDisplayWindow {
      *
      * @return a bitmap representing the snapshot of the window.
      */
-    @Nullable
-    public abstract Bitmap getSnapshot();
+    public abstract @Nullable Bitmap getSnapshot();
 
     /**
      * Watches for significant changes in the overlay display window lifecycle.
@@ -139,91 +129,9 @@ public abstract class OverlayDisplayWindow {
     }
 
     /**
-     * Implementation for older versions.
-     */
-    private static final class LegacyImpl extends OverlayDisplayWindow {
-        private final WindowManager mWindowManager;
-
-        private boolean mWindowVisible;
-        private SurfaceView mSurfaceView;
-
-        LegacyImpl(Context context, String name, int width, int height, int gravity) {
-            super(context, name, width, height, gravity);
-
-            mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        }
-
-        @Override
-        public void show() {
-            if (!mWindowVisible) {
-                mSurfaceView = new SurfaceView(mContext);
-
-                Display display = mWindowManager.getDefaultDisplay();
-
-                WindowManager.LayoutParams params;
-                if (Build.VERSION.SDK_INT >= 26) {
-                    // TYPE_SYSTEM_ALERT is deprecated in android O.
-                    params = new WindowManager.LayoutParams(
-                            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
-                } else {
-                    params = new WindowManager.LayoutParams(
-                            WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
-                }
-                params.flags |= WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-                        | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-                        | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                        | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-                        | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
-                params.alpha = WINDOW_ALPHA;
-                params.gravity = Gravity.LEFT | Gravity.BOTTOM;
-                params.setTitle(mName);
-
-                int width = (int) (display.getWidth() * INITIAL_SCALE);
-                int height = (int) (display.getHeight() * INITIAL_SCALE);
-                if (mWidth > mHeight) {
-                    height = mHeight * width / mWidth;
-                } else {
-                    width = mWidth * height / mHeight;
-                }
-                params.width = width;
-                params.height = height;
-
-                mWindowManager.addView(mSurfaceView, params);
-                mWindowVisible = true;
-
-                SurfaceHolder holder = mSurfaceView.getHolder();
-                holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-                mListener.onWindowCreated(holder);
-            }
-        }
-
-        @Override
-        public void dismiss() {
-            if (mWindowVisible) {
-                mListener.onWindowDestroyed();
-
-                mWindowManager.removeView(mSurfaceView);
-                mWindowVisible = false;
-            }
-        }
-
-        @Override
-        public void updateAspectRatio(int width, int height) {
-        }
-
-        @Nullable
-        @Override
-        public Bitmap getSnapshot() {
-            return null;
-        }
-    }
-
-    /**
      * Implementation for API version 17+.
      */
-    @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
-    private static final class JellybeanMr1Impl extends
-            OverlayDisplayWindow {
+    private static final class JellybeanMr1Impl extends OverlayDisplayWindow {
         // When true, disables support for moving and resizing the overlay.
         // The window is made non-touchable, which makes it possible to
         // directly interact with the content underneath.
@@ -302,9 +210,8 @@ public abstract class OverlayDisplayWindow {
             relayout();
         }
 
-        @NonNull
         @Override
-        public Bitmap getSnapshot() {
+        public @NonNull Bitmap getSnapshot() {
             return mTextureView.getBitmap();
         }
 

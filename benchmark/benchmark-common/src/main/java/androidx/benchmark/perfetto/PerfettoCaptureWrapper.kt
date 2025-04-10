@@ -25,16 +25,20 @@ import androidx.benchmark.Outputs
 import androidx.benchmark.Outputs.dateToFileName
 import androidx.benchmark.PropOverride
 import androidx.benchmark.Shell
+import androidx.benchmark.ShellFile
+import androidx.benchmark.UserFile
+import androidx.benchmark.UserInfo
 import androidx.benchmark.perfetto.PerfettoHelper.Companion.LOG_TAG
 import androidx.benchmark.perfetto.PerfettoHelper.Companion.isAbiSupported
 import androidx.tracing.perfetto.handshake.protocol.ResponseResultCodes.RESULT_CODE_ALREADY_ENABLED
 import androidx.tracing.perfetto.handshake.protocol.ResponseResultCodes.RESULT_CODE_SUCCESS
 import java.io.FileOutputStream
 import java.lang.RuntimeException
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
-/**
- * Wrapper for [PerfettoCapture] which does nothing below API 23.
- */
+/** Wrapper for [PerfettoCapture] which does nothing below API 23. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 class PerfettoCaptureWrapper {
     private var capture: PerfettoCapture? = null
@@ -64,9 +68,7 @@ class PerfettoCaptureWrapper {
     ): Boolean {
         capture?.apply {
             Log.d(LOG_TAG, "Recording perfetto trace")
-            if (perfettoSdkConfig != null &&
-                Build.VERSION.SDK_INT >= 30
-            ) {
+            if (perfettoSdkConfig != null && Build.VERSION.SDK_INT >= 30) {
                 val (resultCode, message) = enableAndroidxTracingPerfetto(perfettoSdkConfig)
                 Log.d(LOG_TAG, "Enable full tracing result=$message")
 
@@ -85,19 +87,32 @@ class PerfettoCaptureWrapper {
 
     @RequiresApi(23)
     private fun stop(traceLabel: String): String {
-        return Outputs.writeFile(
-            fileName = "${traceLabel}_${dateToFileName()}.perfetto-trace"
-        ) {
-            capture!!.stop(it.absolutePath)
-            if (Outputs.forceFilesForShellAccessible) {
-                // This shell written file must be made readable to be later accessed by this
-                // process (e.g. for appending UiState). Unlike in other places, shell
-                // must increase access, since it's giving the app access
-                Shell.executeScriptSilent("chmod 777 ${it.absolutePath}")
+        return Outputs.writeFile(fileName = "${traceLabel}_${dateToFileName()}.perfetto-trace") {
+
+            // The output of this method expects the final to be written in a user writeable folder.
+            // If the default user is selected, perfetto can stop and write the file directly there.
+            // Otherwise, we first need to write it in a shell storage and the use the VirtualFile
+            // to cross between shell and user storage.
+
+            if (UserInfo.isAdditionalUser) {
+                ShellFile.inTempDir(it.name).apply {
+                    capture!!.stop(absolutePath)
+                    copyTo(UserFile(it.absolutePath))
+                    delete()
+                }
+            } else {
+                capture!!.stop(it.absolutePath)
+                if (Outputs.forceFilesForShellAccessible) {
+                    // This shell written file must be made readable to be later accessed by this
+                    // process (e.g. for appending UiState). Unlike in other places, shell
+                    // must increase access, since it's giving the app access
+                    Shell.chmod(path = it.absolutePath, args = "777")
+                }
             }
         }
     }
 
+    @OptIn(ExperimentalContracts::class)
     fun record(
         fileLabel: String,
         config: PerfettoConfig,
@@ -107,6 +122,7 @@ class PerfettoCaptureWrapper {
         inMemoryTracingLabel: String? = null,
         block: () -> Unit
     ): String? {
+        contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
         // skip if Perfetto not supported, or if caller opts out
         if (Build.VERSION.SDK_INT < 23 || !isAbiSupported() || !enableTracing) {
             block()
@@ -126,9 +142,10 @@ class PerfettoCaptureWrapper {
         }
         // Prior to Android 11 (R), a shell property must be set to enable perfetto tracing, see
         // https://perfetto.dev/docs/quickstart/android-tracing#starting-the-tracing-services
-        val propOverride = if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
-            PropOverride(TRACE_ENABLE_PROP, "1")
-        } else null
+        val propOverride =
+            if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
+                PropOverride(TRACE_ENABLE_PROP, "1")
+            } else null
 
         val path: String
         try {
@@ -146,16 +163,14 @@ class PerfettoCaptureWrapper {
 
                 if (inMemoryTracingLabel != null) {
                     val inMemoryTrace = InMemoryTracing.commitToTrace(inMemoryTracingLabel)
-                    inMemoryTrace.encode(FileOutputStream(path, /* append = */ true))
+                    inMemoryTrace.encode(FileOutputStream(path, /* append= */ true))
                 }
                 traceCallback?.invoke(path)
             }
             return path
         } finally {
             propOverride?.resetIfOverridden()
-            synchronized(inUseLock) {
-                inUse = false
-            }
+            synchronized(inUseLock) { inUse = false }
         }
     }
 }

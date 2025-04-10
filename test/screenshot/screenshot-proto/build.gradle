@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 
-import androidx.build.BuildServerConfigurationKt
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
 
 plugins {
     id("java-library")
@@ -23,34 +29,14 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.protobufLite)
-}
-
-tasks.withType(Jar) {
-    destinationDirectory.set(BuildServerConfigurationKt.getDistributionDirectory(rootProject))
-}
-
-protobuf {
-    protoc {
-        artifact = libs.protobufCompiler.get()
-    }
-
-    generateProtoTasks {
-        all().each { task ->
-            task.builtins {
-                java {
-                    option "lite"
-                }
-            }
-        }
-    }
+    api(libs.protobufLite)
 }
 
 afterEvaluate {
     lint {
-        lintOptions {
+        lint {
             // protobuf generates unannotated methods
-            disable("UnknownNullness")
+            disable.add("UnknownNullness")
         }
     }
 }

@@ -22,8 +22,6 @@ import android.util.Size;
 import android.util.SizeF;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.CameraAccessExceptionCompat;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
@@ -31,10 +29,11 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.impl.utils.TransformUtils;
 import androidx.core.util.Preconditions;
 
+import org.jspecify.annotations.NonNull;
+
 /**
  * Contains utility methods related to view angle transformation.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class FovUtil {
 
     private static final String TAG = "FovUtil";

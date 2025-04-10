@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -29,7 +36,7 @@ sourceSets {
 }
 
 dependencies {
-    compileOnly(libs.androidLintMinApi)
+    compileOnly(libs.androidLintApi)
     compileOnly(libs.kotlinStdlib)
 
     testImplementation(libs.kotlinStdlib)
@@ -40,8 +47,7 @@ dependencies {
 
 androidx {
     name = "Experimental annotation lint checks"
-    type = LibraryType.LINT
-    mavenVersion = LibraryVersions.ANNOTATION_EXPERIMENTAL
+    type = SoftwareType.LINT
     inceptionYear = "2019"
     description = "Lint checks for the Experimental annotation library. Also enforces the " +
             "semantics of Kotlin @Experimental APIs from within Android Java source code."

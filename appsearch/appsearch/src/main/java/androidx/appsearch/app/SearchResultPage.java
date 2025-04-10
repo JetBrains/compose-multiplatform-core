@@ -16,14 +16,17 @@
 
 package androidx.appsearch.app;
 
-import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
-import androidx.core.util.Preconditions;
+import androidx.appsearch.safeparcel.AbstractSafeParcelable;
+import androidx.appsearch.safeparcel.SafeParcelable;
+import androidx.appsearch.safeparcel.stub.StubCreators.SearchResultPageCreator;
 
-import java.util.ArrayList;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -32,26 +35,28 @@ import java.util.List;
  * @exportToFramework:hide
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class SearchResultPage {
-    public static final String RESULTS_FIELD = "results";
-    public static final String NEXT_PAGE_TOKEN_FIELD = "nextPageToken";
+@SafeParcelable.Class(creator = "SearchResultPageCreator")
+public class SearchResultPage extends AbstractSafeParcelable {
+    public static final Parcelable.@NonNull Creator<SearchResultPage> CREATOR =
+            new SearchResultPageCreator();
+
+    @Field(id = 1, getter = "getNextPageToken")
     private final long mNextPageToken;
+    @Field(id = 2, getter = "getResults")
+    private final @Nullable List<SearchResult> mResults;
 
-    @Nullable
-    private List<SearchResult> mResults;
-
-    @NonNull
-    private final Bundle mBundle;
-
-    public SearchResultPage(@NonNull Bundle bundle) {
-        mBundle = Preconditions.checkNotNull(bundle);
-        mNextPageToken = mBundle.getLong(NEXT_PAGE_TOKEN_FIELD);
+    @Constructor
+    public SearchResultPage(
+            @Param(id = 1) long nextPageToken,
+            @Param(id = 2) @Nullable List<SearchResult> results) {
+        mNextPageToken = nextPageToken;
+        mResults = results;
     }
 
-    /** Returns the {@link Bundle} of this class. */
-    @NonNull
-    public Bundle getBundle() {
-        return mBundle;
+    /** Default constructor for {@link SearchResultPage}. */
+    public SearchResultPage() {
+        mNextPageToken = 0;
+        mResults = Collections.emptyList();
     }
 
     /** Returns the Token to get next {@link SearchResultPage}. */
@@ -60,20 +65,15 @@ public class SearchResultPage {
     }
 
     /** Returns all {@link androidx.appsearch.app.SearchResult}s of this page */
-    @NonNull
-    @SuppressWarnings("deprecation")
-    public List<SearchResult> getResults() {
+    public @NonNull List<SearchResult> getResults() {
         if (mResults == null) {
-            ArrayList<Bundle> resultBundles = mBundle.getParcelableArrayList(RESULTS_FIELD);
-            if (resultBundles == null) {
-                mResults = Collections.emptyList();
-            } else {
-                mResults = new ArrayList<>(resultBundles.size());
-                for (int i = 0; i < resultBundles.size(); i++) {
-                    mResults.add(new SearchResult(resultBundles.get(i)));
-                }
-            }
+            return Collections.emptyList();
         }
         return mResults;
+    }
+
+    @Override
+    public void writeToParcel(@NonNull Parcel dest, int flags) {
+        SearchResultPageCreator.writeToParcel(this, dest, flags);
     }
 }

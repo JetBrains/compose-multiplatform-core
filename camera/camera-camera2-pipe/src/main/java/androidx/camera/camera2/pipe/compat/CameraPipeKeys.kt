@@ -14,60 +14,57 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe.compat
 
 import android.hardware.camera2.CameraExtensionCharacteristics
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.Metadata
 
-object CameraPipeKeys {
+public object CameraPipeKeys {
 
-    /**
-     * Keys for sessionParameters when creating Extension sessions.
-     */
-    val camera2ExtensionMode = Metadata.Key.create<Int>(
-        "androidx.camera.camera2.pipe.ExtensionMode"
-    )
+    /** Keys for sessionParameters when creating Extension sessions. */
+    public val camera2ExtensionMode: Metadata.Key<Int> =
+        Metadata.Key.create<Int>("androidx.camera.camera2.pipe.ExtensionMode")
+
+    /** Key for configuring the tag for a Camera2 CaptureRequest. */
+    public val camera2CaptureRequestTag: Metadata.Key<Any> =
+        Metadata.Key.create<Any>("androidx.camera.camera2.pipe.CaptureRequestTag")
 
     /**
      * Key for defaultParameters and requiredParameters that allows the users to ignore the required
      * 3A parameters stipulated by the 3A controller in CameraPipe.
      */
-    val ignore3ARequiredParameters = Metadata.Key.create<Boolean>(
-        "androidx.camera.camera2.pipe.Ignore3ARequiredParameters"
-    )
+    public val ignore3ARequiredParameters: Metadata.Key<Boolean> =
+        Metadata.Key.create<Boolean>("androidx.camera.camera2.pipe.Ignore3ARequiredParameters")
 
     /**
-     * [CAMERA2_EXTENSION_MODE_AUTOMATIC]: Automatic selection of particular extensions such
-     * as HDR or NIGHT depending on the current lighting and environment conditions. See
+     * [CAMERA2_EXTENSION_MODE_AUTOMATIC]: Automatic selection of particular extensions such as HDR
+     * or NIGHT depending on the current lighting and environment conditions. See
      * [CameraExtensionCharacteristics.EXTENSION_AUTOMATIC]
      */
-    const val CAMERA2_EXTENSION_MODE_AUTOMATIC = 0
+    public const val CAMERA2_EXTENSION_MODE_AUTOMATIC: Int = 0
 
     /**
-     * [CAMERA2_EXTENSION_MODE_FACE_RETOUCH]: Smooth skin and apply other cosmetic effects to
-     * faces. See [CameraExtensionCharacteristics.EXTENSION_FACE_RETOUCH]
+     * [CAMERA2_EXTENSION_MODE_FACE_RETOUCH]: Smooth skin and apply other cosmetic effects to faces.
+     * See [CameraExtensionCharacteristics.EXTENSION_FACE_RETOUCH]
      */
-    const val CAMERA2_EXTENSION_MODE_FACE_RETOUCH = 1
+    public const val CAMERA2_EXTENSION_MODE_FACE_RETOUCH: Int = 1
 
     /**
-     * [CAMERA2_EXTENSION_MODE_BOKEH]: Blur certain regions of the final image thereby
-     * "enhancing" focus for all remaining non-blurred parts. See
+     * [CAMERA2_EXTENSION_MODE_BOKEH]: Blur certain regions of the final image thereby "enhancing"
+     * focus for all remaining non-blurred parts. See
      * [CameraExtensionCharacteristics.EXTENSION_BOKEH]
      */
-    const val CAMERA2_EXTENSION_MODE_BOKEH = 2
+    public const val CAMERA2_EXTENSION_MODE_BOKEH: Int = 2
 
     /**
-     * [CAMERA2_EXTENSION_MODE_HDR]: Enhance the dynamic range of the final image.
-     * See [CameraExtensionCharacteristics.EXTENSION_HDR]
+     * [CAMERA2_EXTENSION_MODE_HDR]: Enhance the dynamic range of the final image. See
+     * [CameraExtensionCharacteristics.EXTENSION_HDR]
      */
-    const val CAMERA2_EXTENSION_MODE_HDR = 3
+    public const val CAMERA2_EXTENSION_MODE_HDR: Int = 3
 
     /**
-     * [CAMERA2_EXTENSION_MODE_NIGHT]: Suppress noise and improve the overall image
-     * quality under low light conditions. See [CameraExtensionCharacteristics.EXTENSION_NIGHT]
+     * [CAMERA2_EXTENSION_MODE_NIGHT]: Suppress noise and improve the overall image quality under
+     * low light conditions. See [CameraExtensionCharacteristics.EXTENSION_NIGHT]
      */
-    const val CAMERA2_EXTENSION_MODE_NIGHT = 4
+    public const val CAMERA2_EXTENSION_MODE_NIGHT: Int = 4
 }

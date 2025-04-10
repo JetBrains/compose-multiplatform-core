@@ -33,13 +33,13 @@ import android.animation.ValueAnimator;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.annotation.UiThreadTest;
 import androidx.test.filters.FlakyTest;
 import androidx.test.filters.MediumTest;
 import androidx.testutils.AnimationDurationScaleRule;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -221,9 +221,8 @@ public class VisibilityTest extends BaseTest {
 
         private static String[] sTransitionProperties;
 
-        @Nullable
         @Override
-        public String[] getTransitionProperties() {
+        public String @Nullable [] getTransitionProperties() {
             if (sTransitionProperties == null) {
                 String[] properties = super.getTransitionProperties();
                 if (properties != null) {

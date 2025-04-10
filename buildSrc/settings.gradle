@@ -14,17 +14,28 @@
  * limitations under the License.
  */
 
+apply from: "settingsScripts/out-setup.groovy"
+getGradle().beforeProject { project ->
+    def checkoutRoot = new File("${buildscript.sourceFile.parent}/../../..")
+    init.chooseBuildDirectory(checkoutRoot, rootProject.name, project)
+    // https://youtrack.jetbrains.com/issue/KT-58223
+    def kotlinDir = new File(System.env.OUT_DIR ?: checkoutRoot, ".kotlinBuildSrc")
+    project.setProperty("kotlin.project.persistent.dir", kotlinDir.absolutePath)
+}
+
 include ":jetpad-integration"
 include ":plugins"
 include ":private"
 include ":public"
+include ":imports:binary-compatibility-validator"
 include ":imports:benchmark-gradle-plugin"
 include ":imports:benchmark-darwin-plugin"
 include ":imports:baseline-profile-gradle-plugin"
 include ":imports:inspection-gradle-plugin"
-include ":imports:compose-icons"
+include ":imports:room-gradle-plugin"
 include ":imports:glance-layout-generator"
 include ":imports:stableaidl-gradle-plugin"
+include ":imports:privacysandbox-gradle-plugin"
 
 dependencyResolutionManagement {
     versionCatalogs {

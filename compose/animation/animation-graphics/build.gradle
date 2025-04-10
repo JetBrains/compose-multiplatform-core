@@ -14,7 +14,15 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 
 plugins {
@@ -24,15 +32,16 @@ plugins {
 }
 
 androidXMultiplatform {
-    android()
-    desktop()
+    androidTarget()
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlibCommon)
+                implementation(libs.kotlinStdlib)
 
                 api(project(":compose:animation:animation"))
                 api(project(":compose:foundation:foundation-layout"))
@@ -41,10 +50,12 @@ androidXMultiplatform {
                 api(project(":compose:ui:ui-geometry"))
 
                 implementation(project(":compose:ui:ui-util"))
+                implementation(project(":collection:collection"))
             }
         }
         androidMain.dependencies {
-            api("androidx.annotation:annotation:1.1.0")
+            api("androidx.annotation:annotation:1.8.1")
+            api("androidx.annotation:annotation-experimental:1.4.1")
             implementation("androidx.core:core-ktx:1.5.0")
         }
 
@@ -59,33 +70,26 @@ androidXMultiplatform {
             }
         }
 
-
         androidMain {
             dependsOn(jvmMain)
             dependencies {
             }
         }
 
-        desktopMain {
-            dependsOn(jvmMain)
-            dependencies {
-                implementation(libs.kotlinStdlib)
-                api(project(":compose:foundation:foundation-layout"))
-                api(project(":compose:runtime:runtime"))
-                api(project(":compose:ui:ui"))
-                api(project(":compose:ui:ui-geometry"))
-                implementation(project(":compose:ui:ui-util"))
-            }
+        commonStubsMain {
+            dependsOn(commonMain)
         }
 
-        jvmTest {
-            dependsOn(commonTest)
-            dependencies {
-            }
+        jvmStubsMain {
+            dependsOn(commonStubsMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
         }
 
         androidInstrumentedTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
@@ -98,17 +102,11 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
                 implementation(libs.junit)
-            }
-        }
-
-        desktopTest {
-            dependsOn(jvmTest)
-            dependencies {
             }
         }
     }
@@ -116,11 +114,13 @@ androidXMultiplatform {
 
 androidx {
     name = "Compose Animation Graphics"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2021"
     description = "Compose Animation Graphics Library for using animated-vector resources in Compose"
+    samples(project(":compose:animation:animation-graphics:animation-graphics-samples"))
 }
 
 android {
-    namespace "androidx.compose.animation.graphics"
+    compileSdk = 35
+    namespace = "androidx.compose.animation.graphics"
 }

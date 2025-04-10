@@ -31,8 +31,6 @@ import android.annotation.SuppressLint;
 import android.graphics.Color;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.ColorBuilders.ColorProp;
@@ -46,6 +44,7 @@ import androidx.wear.protolayout.LayoutElementBuilders.HorizontalAlignment;
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement;
 import androidx.wear.protolayout.LayoutElementBuilders.Row;
 import androidx.wear.protolayout.LayoutElementBuilders.Spacer;
+import androidx.wear.protolayout.ModifiersBuilders;
 import androidx.wear.protolayout.ModifiersBuilders.Background;
 import androidx.wear.protolayout.ModifiersBuilders.Clickable;
 import androidx.wear.protolayout.ModifiersBuilders.Corner;
@@ -56,6 +55,9 @@ import androidx.wear.protolayout.ModifiersBuilders.Semantics;
 import androidx.wear.protolayout.TypeBuilders.StringProp;
 import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.proto.LayoutElementProto;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -112,10 +114,10 @@ public class Chip implements LayoutElement {
     private static final int LABELS_INDEX_ICON = 2;
 
     /** Outer tappable Box. */
-    @NonNull private final Box mImpl;
+    private final @NonNull Box mImpl;
 
     /** Inner visible Box with all Chip elements. */
-    @NonNull private final Box mElement;
+    private final @NonNull Box mElement;
 
     Chip(@NonNull Box impl) {
         mImpl = impl;
@@ -142,21 +144,21 @@ public class Chip implements LayoutElement {
         @IntDef({NOT_SET, TEXT, ICON, CUSTOM_CONTENT})
         public @interface ChipType {}
 
-        @Nullable private LayoutElement mCustomContent;
-        @Nullable private LayoutElement mIconContent = null;
-        @Nullable private LayoutElement mPrimaryLabelContent = null;
-        @Nullable private LayoutElement mSecondaryLabelContent = null;
-        @NonNull private final Clickable mClickable;
-        @Nullable private StringProp mContentDescription = null;
-        @NonNull private ContainerDimension mWidth = dp(0);
-        @NonNull private DpProp mHeight = dp(0);
-        @NonNull private ColorProp mBackgroundColor = argb(Color.BLACK);
+        private @Nullable LayoutElement mCustomContent;
+        private @Nullable LayoutElement mIconContent = null;
+        private @Nullable LayoutElement mPrimaryLabelContent = null;
+        private @Nullable LayoutElement mSecondaryLabelContent = null;
+        private final @NonNull Clickable mClickable;
+        private @Nullable StringProp mContentDescription = null;
+        private @NonNull ContainerDimension mWidth = dp(0);
+        private @NonNull DpProp mHeight = dp(0);
+        private @NonNull ColorProp mBackgroundColor = argb(Color.BLACK);
         @HorizontalAlignment private int mHorizontalAlign = HORIZONTAL_ALIGN_START;
-        @NonNull private DpProp mHorizontalPadding = dp(0);
-        @NonNull private DpProp mIconSpacerWidth = dp(0);
-        @NonNull private DpProp mMinTappableSquareLength = dp(0);
+        private @NonNull DpProp mHorizontalPadding = dp(0);
+        private @NonNull DpProp mIconSpacerWidth = dp(0);
+        private @NonNull DpProp mMinTappableSquareLength = dp(0);
 
-        @NonNull static final Map<Integer, String> TYPE_TO_TAG = new HashMap<>();
+        static final @NonNull Map<Integer, String> TYPE_TO_TAG = new HashMap<>();
 
         static {
             TYPE_TO_TAG.put(ICON, METADATA_TAG_ICON);
@@ -176,15 +178,13 @@ public class Chip implements LayoutElement {
         }
 
         /** Sets the width of {@link Chip}. If not set, Chip won't be shown. */
-        @NonNull
-        public Builder setWidth(@NonNull ContainerDimension width) {
+        public @NonNull Builder setWidth(@NonNull ContainerDimension width) {
             mWidth = width;
             return this;
         }
 
         /** Sets the height of {@link Chip}. If not set, Chip won't be shown. */
-        @NonNull
-        public Builder setHeight(@NonNull DpProp height) {
+        public @NonNull Builder setHeight(@NonNull DpProp height) {
             mHeight = height;
             return this;
         }
@@ -193,8 +193,7 @@ public class Chip implements LayoutElement {
          * Sets the custom content for the {@link Chip}. Any previously added content will be
          * overridden. Provided content should be styled and sized.
          */
-        @NonNull
-        public Builder setCustomContent(@NonNull LayoutElement content) {
+        public @NonNull Builder setCustomContent(@NonNull LayoutElement content) {
             this.mCustomContent = content;
             this.mPrimaryLabelContent = null;
             this.mSecondaryLabelContent = null;
@@ -203,8 +202,7 @@ public class Chip implements LayoutElement {
         }
 
         /** Sets the background colors for the {@link Button}. If not set, black is used. */
-        @NonNull
-        public Builder setBackgroundColor(@NonNull ColorProp backgroundColor) {
+        public @NonNull Builder setBackgroundColor(@NonNull ColorProp backgroundColor) {
             mBackgroundColor = backgroundColor;
             return this;
         }
@@ -216,8 +214,7 @@ public class Chip implements LayoutElement {
          * <p>While this field is statically accessible from 1.0, it's only bindable since version
          * 1.2 and renderers supporting version 1.2 will use the dynamic value (if set).
          */
-        @NonNull
-        public Builder setContentDescription(@NonNull StringProp contentDescription) {
+        public @NonNull Builder setContentDescription(@NonNull StringProp contentDescription) {
             this.mContentDescription = contentDescription;
             return this;
         }
@@ -226,8 +223,7 @@ public class Chip implements LayoutElement {
          * Sets the primary label for the {@link Chip}. Any previously added custom content will be
          * overridden. This should be styled and sized by the caller.
          */
-        @NonNull
-        public Builder setPrimaryLabelContent(@NonNull LayoutElement primaryLabel) {
+        public @NonNull Builder setPrimaryLabelContent(@NonNull LayoutElement primaryLabel) {
             this.mPrimaryLabelContent = primaryLabel;
             this.mCustomContent = null;
             return this;
@@ -238,8 +234,7 @@ public class Chip implements LayoutElement {
          * be overridden. If secondary label is set, primary label must be set too with {@link
          * #setPrimaryLabelContent}. This should be styled and sized by the caller.
          */
-        @NonNull
-        public Builder setSecondaryLabelContent(@NonNull LayoutElement secondaryLabel) {
+        public @NonNull Builder setSecondaryLabelContent(@NonNull LayoutElement secondaryLabel) {
             this.mSecondaryLabelContent = secondaryLabel;
             this.mCustomContent = null;
             return this;
@@ -250,8 +245,7 @@ public class Chip implements LayoutElement {
          * overridden. If icon is set, primary label must be set too with {@link
          * #setPrimaryLabelContent}. This should be styled and sized by the caller.
          */
-        @NonNull
-        public Builder setIconContent(@NonNull LayoutElement imageResourceId) {
+        public @NonNull Builder setIconContent(@NonNull LayoutElement imageResourceId) {
             this.mIconContent = imageResourceId;
             this.mCustomContent = null;
             return this;
@@ -261,37 +255,33 @@ public class Chip implements LayoutElement {
          * Sets the horizontal alignment in the chip. If not set, {@link
          * HorizontalAlignment#HORIZONTAL_ALIGN_START} will be used.
          */
-        @NonNull
-        public Builder setHorizontalAlignment(@HorizontalAlignment int horizontalAlignment) {
+        public @NonNull Builder setHorizontalAlignment(
+                @HorizontalAlignment int horizontalAlignment) {
             mHorizontalAlign = horizontalAlignment;
             return this;
         }
 
         /** Sets the width of spacer used next to the icon if set. */
-        @NonNull
-        public Builder setIconSpacerWidth(@NonNull DpProp iconSpacerWidth) {
+        public @NonNull Builder setIconSpacerWidth(@NonNull DpProp iconSpacerWidth) {
             mIconSpacerWidth = iconSpacerWidth;
             return this;
         }
 
         /** Sets the length of minimal tappable square for this chip. */
-        @NonNull
-        public Builder setMinimalTappableSquareLength(@NonNull DpProp tappableLength) {
+        public @NonNull Builder setMinimalTappableSquareLength(@NonNull DpProp tappableLength) {
             mMinTappableSquareLength = tappableLength;
             return this;
         }
 
         /** Sets the horizontal padding in the chip. */
-        @NonNull
-        public Builder setHorizontalPadding(@NonNull DpProp horizontalPadding) {
+        public @NonNull Builder setHorizontalPadding(@NonNull DpProp horizontalPadding) {
             this.mHorizontalPadding = horizontalPadding;
             return this;
         }
 
         /** Constructs and returns {@link Chip} with the provided content and look. */
-        @NonNull
         @Override
-        public Chip build() {
+        public @NonNull Chip build() {
             Modifiers.Builder modifiers =
                     new Modifiers.Builder()
                             .setClickable(mClickable)
@@ -307,6 +297,11 @@ public class Chip implements LayoutElement {
                                                     new Corner.Builder()
                                                             .setRadius(radiusOf(mHeight))
                                                             .build())
+                                            .build())
+                            .setSemantics(
+                                    new Semantics.Builder()
+                                            .setContentDescription(getCorrectContentDescription())
+                                            .setRole(ModifiersBuilders.SEMANTICS_ROLE_BUTTON)
                                             .build());
 
             Box.Builder visible =
@@ -329,11 +324,6 @@ public class Chip implements LayoutElement {
                             .setModifiers(
                                     new Modifiers.Builder()
                                             .setMetadata(getCorrectMetadataTag())
-                                            .setSemantics(
-                                                    new Semantics.Builder()
-                                                            .setContentDescription(
-                                                                    getCorrectContentDescription())
-                                                            .build())
                                             .build())
                             .addContent(visible.build())
                             .build();
@@ -345,8 +335,15 @@ public class Chip implements LayoutElement {
             if (mWidth instanceof DpProp) {
                 return dp(max(((DpProp) mWidth).getValue(), mMinTappableSquareLength.getValue()));
             } else if (mWidth instanceof WrappedDimensionProp) {
+                WrappedDimensionProp widthWrap = ((WrappedDimensionProp) mWidth);
                 return new WrappedDimensionProp.Builder()
-                        .setMinimumSize(mMinTappableSquareLength)
+                        .setMinimumSize(
+                                dp(
+                                        max(
+                                                widthWrap.getMinimumSize() != null
+                                                        ? widthWrap.getMinimumSize().getValue()
+                                                        : 0,
+                                                mMinTappableSquareLength.getValue())))
                         .build();
             } else {
                 return mWidth;
@@ -357,8 +354,7 @@ public class Chip implements LayoutElement {
             return max(mHeight.getValue(), mMinTappableSquareLength.getValue());
         }
 
-        @NonNull
-        private StringProp getCorrectContentDescription() {
+        private @NonNull StringProp getCorrectContentDescription() {
             if (mContentDescription == null) {
                 String staticValue = "";
                 if (mPrimaryLabelContent != null) {
@@ -383,10 +379,16 @@ public class Chip implements LayoutElement {
         }
 
         @SuppressLint("CheckResult") // (b/247804720)
-        @NonNull
-        private LayoutElement getCorrectContent() {
+        private @NonNull LayoutElement getCorrectContent() {
             if (mCustomContent != null) {
                 return mCustomContent;
+            }
+
+            if (mPrimaryLabelContent == null
+                    && mSecondaryLabelContent == null
+                    && mIconContent != null) {
+                // Icon only variant of chip.
+                return mIconContent;
             }
 
             Column.Builder column =
@@ -422,43 +424,40 @@ public class Chip implements LayoutElement {
     }
 
     /** Returns the visible height of this Chip. */
-    @NonNull
-    public ContainerDimension getHeight() {
+    public @NonNull ContainerDimension getHeight() {
         return checkNotNull(mElement.getHeight());
     }
 
     /** Returns width of this Chip. */
-    @NonNull
-    public ContainerDimension getWidth() {
+    public @NonNull ContainerDimension getWidth() {
         return checkNotNull(mElement.getWidth());
     }
 
     /** Returns click event action associated with this Chip. */
-    @NonNull
-    public Clickable getClickable() {
+    public @NonNull Clickable getClickable() {
         return checkNotNull(checkNotNull(mElement.getModifiers()).getClickable());
     }
 
     /** Returns background color of this Chip. */
-    @NonNull
-    public ColorProp getBackgroundColor() {
+    public @NonNull ColorProp getBackgroundColor() {
         return checkNotNull(
                 checkNotNull(checkNotNull(mElement.getModifiers()).getBackground()).getColor());
     }
 
     /** Returns content description of this Chip. */
-    @Nullable
-    public StringProp getContentDescription() {
-        Semantics semantics = checkNotNull(mImpl.getModifiers()).getSemantics();
-        if (semantics == null) {
-            return null;
-        }
-        return semantics.getContentDescription();
+    public @Nullable StringProp getContentDescription() {
+        // Semantics are applied to the visible view.
+        return getSemantics().getContentDescription();
+    }
+
+    /** Returns semantics of this Chip. */
+    @NonNull
+    Semantics getSemantics() {
+        return checkNotNull(checkNotNull(mElement.getModifiers()).getSemantics());
     }
 
     /** Returns custom content from this Chip if it has been added. Otherwise, it returns null. */
-    @Nullable
-    public LayoutElement getCustomContent() {
+    public @Nullable LayoutElement getCustomContent() {
         if (getMetadataTag().equals(METADATA_TAG_CUSTOM_CONTENT)) {
             return checkNotNull(checkNotNull(mElement.getContents()).get(0));
         }
@@ -466,28 +465,29 @@ public class Chip implements LayoutElement {
     }
 
     /** Returns primary label from this Chip if it has been added. Otherwise, it returns null. */
-    @Nullable
-    public LayoutElement getPrimaryLabelContent() {
+    public @Nullable LayoutElement getPrimaryLabelContent() {
         return getPrimaryOrSecondaryLabelContent(PRIMARY_LABEL_INDEX);
     }
 
     /** Returns secondary label from this Chip if it has been added. Otherwise, it returns null. */
-    @Nullable
-    public LayoutElement getSecondaryLabelContent() {
+    public @Nullable LayoutElement getSecondaryLabelContent() {
         return getPrimaryOrSecondaryLabelContent(SECONDARY_LABEL_INDEX);
     }
 
     /** Returns icon id from this Chip if it has been added. Otherwise, it returns null. */
-    @Nullable
-    public LayoutElement getIconContent() {
+    public @Nullable LayoutElement getIconContent() {
         if (!getMetadataTag().equals(METADATA_TAG_ICON)) {
             return null;
         }
-        return ((Row) mElement.getContents().get(0)).getContents().get(0);
+        // TODO(b/330165026): Refactor to use bit in the metadata tag like layouts do, instead of
+        // relying on the null here. The primary label can be null in case of icon only CompactChip.
+        LayoutElement topLevel = mElement.getContents().get(0);
+        return topLevel instanceof Row
+                ? ((Row) mElement.getContents().get(0)).getContents().get(0)
+                : topLevel;
     }
 
-    @Nullable
-    private LayoutElement getPrimaryOrSecondaryLabelContent(int index) {
+    private @Nullable LayoutElement getPrimaryOrSecondaryLabelContent(int index) {
         String metadataTag = getMetadataTag();
         if (metadataTag.equals(METADATA_TAG_CUSTOM_CONTENT)) {
             return null;
@@ -496,6 +496,11 @@ public class Chip implements LayoutElement {
         // In any other case, text (either primary or primary + label) must be present.
         Column content;
         if (metadataTag.equals(METADATA_TAG_ICON)) {
+            if (!(mElement.getContents().get(0) instanceof Row)) {
+                // This is icon only Chip, no label.
+                return null;
+            }
+
             content =
                     (Column)
                             ((Box)
@@ -526,8 +531,7 @@ public class Chip implements LayoutElement {
     }
 
     /** Returns metadata tag set to this Chip. */
-    @NonNull
-    public String getMetadataTag() {
+    public @NonNull String getMetadataTag() {
         return getMetadataTagName(checkNotNull(checkNotNull(mImpl.getModifiers()).getMetadata()));
     }
 
@@ -536,8 +540,7 @@ public class Chip implements LayoutElement {
      * content with {@code container.getContents().get(index)}) if that element can be converted to
      * Chip. Otherwise, it will return null.
      */
-    @Nullable
-    public static Chip fromLayoutElement(@NonNull LayoutElement element) {
+    public static @Nullable Chip fromLayoutElement(@NonNull LayoutElement element) {
         if (element instanceof Chip) {
             return (Chip) element;
         }
@@ -552,16 +555,14 @@ public class Chip implements LayoutElement {
         return new Chip(boxElement);
     }
 
-    @NonNull
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public LayoutElementProto.LayoutElement toLayoutElementProto() {
+    public LayoutElementProto.@NonNull LayoutElement toLayoutElementProto() {
         return mImpl.toLayoutElementProto();
     }
 
-    @Nullable
     @Override
-    public Fingerprint getFingerprint() {
+    public @Nullable Fingerprint getFingerprint() {
         return mImpl.getFingerprint();
     }
 }

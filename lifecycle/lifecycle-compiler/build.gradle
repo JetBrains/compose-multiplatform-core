@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -54,7 +61,7 @@ tasks.withType(Test).configureEach {
 
 androidx {
     name = "Lifecycles Compiler"
-    type = LibraryType.ANNOTATION_PROCESSOR
+    type = SoftwareType.ANNOTATION_PROCESSOR
     inceptionYear = "2017"
     description = "Android Lifecycles annotation processor"
 }

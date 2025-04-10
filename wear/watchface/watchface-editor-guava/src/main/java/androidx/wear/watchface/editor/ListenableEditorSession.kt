@@ -42,7 +42,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-/** [ListenableFuture]-based compatibility wrapper around [EditorSession]'s suspending methods. */
+/**
+ * [ListenableFuture]-based compatibility wrapper around [EditorSession]'s suspending methods.
+ *
+ * @deprecated use Watch Face Format instead
+ */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public class ListenableEditorSession(private val wrappedEditorSession: EditorSession) :
     EditorSession {
     public companion object {
@@ -155,6 +163,10 @@ public class ListenableEditorSession(private val wrappedEditorSession: EditorSes
             instant,
             slotIdToComplicationData
         )
+
+    override fun setOverrideComplications(slotIdToComplicationData: Map<Int, ComplicationData>) {
+        wrappedEditorSession.setOverrideComplications(slotIdToComplicationData)
+    }
 
     /** [ListenableFuture] wrapper around [EditorSession.openComplicationDataSourceChooser]. */
     public fun listenableOpenComplicationDataSourceChooser(

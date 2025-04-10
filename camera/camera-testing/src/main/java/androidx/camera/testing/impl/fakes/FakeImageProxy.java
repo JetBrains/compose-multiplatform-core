@@ -16,13 +16,11 @@
 
 package androidx.camera.testing.impl.fakes;
 
+import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.media.Image;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.ExperimentalGetImage;
 import androidx.camera.core.ImageInfo;
 import androidx.camera.core.ImageProxy;
@@ -31,24 +29,25 @@ import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 /**
  * A fake implementation of {@link ImageProxy} where the values are settable.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class FakeImageProxy implements ImageProxy {
     private Rect mCropRect = new Rect();
     private int mFormat = 0;
     private int mHeight = 0;
     private int mWidth = 0;
 
-    @NonNull
-    private PlaneProxy[] mPlaneProxy = new PlaneProxy[0];
+    private PlaneProxy @NonNull [] mPlaneProxy = new PlaneProxy[0];
 
     private boolean mClosed = false;
 
-    @NonNull
-    private ImageInfo mImageInfo;
+    private @NonNull ImageInfo mImageInfo;
     private Image mImage;
+    private @Nullable Bitmap mBitmap;
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     final Object mReleaseLock = new Object();
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
@@ -60,6 +59,11 @@ public final class FakeImageProxy implements ImageProxy {
 
     public FakeImageProxy(@NonNull ImageInfo imageInfo) {
         mImageInfo = imageInfo;
+    }
+
+    public FakeImageProxy(@NonNull ImageInfo imageInfo, @NonNull Bitmap bitmap) {
+        mImageInfo = imageInfo;
+        mBitmap = bitmap;
     }
 
     @Override
@@ -74,8 +78,7 @@ public final class FakeImageProxy implements ImageProxy {
     }
 
     @Override
-    @NonNull
-    public Rect getCropRect() {
+    public @NonNull Rect getCropRect() {
         synchronized (mReleaseLock) {
             if (mClosed) {
                 throw new IllegalStateException("FakeImageProxy already closed");
@@ -120,8 +123,7 @@ public final class FakeImageProxy implements ImageProxy {
     }
 
     @Override
-    @NonNull
-    public PlaneProxy[] getPlanes() {
+    public PlaneProxy @NonNull [] getPlanes() {
         synchronized (mReleaseLock) {
             if (mClosed) {
                 throw new IllegalStateException("FakeImageProxy already closed");
@@ -131,15 +133,13 @@ public final class FakeImageProxy implements ImageProxy {
     }
 
     @Override
-    @NonNull
-    public ImageInfo getImageInfo() {
+    public @NonNull ImageInfo getImageInfo() {
         return mImageInfo;
     }
 
     @Override
-    @Nullable
     @ExperimentalGetImage
-    public Image getImage() {
+    public @Nullable Image getImage() {
         return mImage;
     }
 
@@ -165,7 +165,7 @@ public final class FakeImageProxy implements ImageProxy {
         mWidth = width;
     }
 
-    public void setPlanes(@NonNull PlaneProxy[] planeProxy) {
+    public void setPlanes(PlaneProxy @NonNull [] planeProxy) {
         mPlaneProxy = planeProxy;
     }
 
@@ -180,9 +180,8 @@ public final class FakeImageProxy implements ImageProxy {
     /**
      * Returns ListenableFuture that completes when the {@link FakeImageProxy} has closed.
      */
-    @NonNull
     @SuppressWarnings("ObjectToString")
-    public ListenableFuture<Void> getCloseFuture() {
+    public @NonNull ListenableFuture<Void> getCloseFuture() {
         synchronized (mReleaseLock) {
             if (mReleaseFuture == null) {
                 mReleaseFuture = CallbackToFutureAdapter.getFuture(
@@ -197,5 +196,13 @@ public final class FakeImageProxy implements ImageProxy {
             }
             return mReleaseFuture;
         }
+    }
+
+    @Override
+    public @NonNull Bitmap toBitmap() {
+        if (mBitmap != null) {
+            return mBitmap;
+        }
+        return ImageProxy.super.toBitmap();
     }
 }

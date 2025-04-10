@@ -20,15 +20,15 @@ import static androidx.wear.protolayout.ResourceBuilders.ANIMATED_IMAGE_FORMAT_A
 
 import static com.google.common.truth.Truth.assertThat;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.wear.protolayout.expression.AppDataKey;
 import androidx.wear.protolayout.expression.DynamicBuilders;
 import androidx.wear.protolayout.proto.ResourceProto;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
 
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class ResourceBuildersTest {
     private static final int RESOURCE_ID = 10;
     private static final int FORMAT = ANIMATED_IMAGE_FORMAT_AVD;
@@ -64,5 +64,35 @@ public class ResourceBuildersTest {
         assertThat(avdProto.getResourceId()).isEqualTo(RESOURCE_ID);
         assertThat(avdProto.getAnimatedImageFormat().getNumber()).isEqualTo(FORMAT);
         assertThat(avdProto.getProgress().getStateSource().getSourceKey()).isEqualTo(stateKey);
+    }
+
+    @Test
+    public void lottieAnimation() {
+        String stateKey = "state-key";
+        ResourceBuilders.AndroidLottieResourceByResId lottieResource =
+                new ResourceBuilders.AndroidLottieResourceByResId.Builder(RESOURCE_ID)
+                        .setProgress(DynamicBuilders.DynamicFloat.from(new AppDataKey<>(stateKey)))
+                        .build();
+
+        ResourceProto.AndroidLottieResourceByResId lottieProto = lottieResource.toProto();
+
+        assertThat(lottieProto.getRawResourceId()).isEqualTo(RESOURCE_ID);
+        assertThat(lottieProto.getProgress().getStateSource().getSourceKey()).isEqualTo(stateKey);
+    }
+
+    @Test
+    public void lottieAnimation_hasTrigger() {
+        ResourceBuilders.AndroidLottieResourceByResId lottieResource =
+                new ResourceBuilders.AndroidLottieResourceByResId.Builder(RESOURCE_ID)
+                        .setStartTrigger(TriggerBuilders.createOnVisibleTrigger())
+                        .build();
+
+        ResourceProto.AndroidLottieResourceByResId lottieProto = lottieResource.toProto();
+
+        assertThat(lottieProto.getRawResourceId()).isEqualTo(RESOURCE_ID);
+        assertThat(lottieProto.hasStartTrigger()).isTrue();
+        assertThat(lottieProto.getStartTrigger().hasOnVisibleTrigger()).isTrue();
+        assertThat(lottieProto.getStartTrigger().hasOnVisibleOnceTrigger()).isFalse();
+        assertThat(lottieProto.getStartTrigger().hasOnLoadTrigger()).isFalse();
     }
 }

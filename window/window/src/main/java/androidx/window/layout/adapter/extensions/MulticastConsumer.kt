@@ -19,42 +19,36 @@ package androidx.window.layout.adapter.extensions
 import android.content.Context
 import androidx.annotation.GuardedBy
 import androidx.core.util.Consumer
-import androidx.window.extensions.core.util.function.Consumer as OEMConsumer
 import androidx.window.extensions.layout.WindowLayoutInfo as OEMWindowLayoutInfo
 import androidx.window.layout.WindowLayoutInfo
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-/**
- * A [Consumer] that handles multicasting to multiple [Consumer]s downstream.
- */
-internal class MulticastConsumer(
-    private val context: Context
-) : Consumer<OEMWindowLayoutInfo>, OEMConsumer<OEMWindowLayoutInfo> {
-    private val multicastConsumerLock = ReentrantLock()
-    @GuardedBy("lock")
-    private var lastKnownValue: WindowLayoutInfo? = null
-    @GuardedBy("lock")
+/** A [Consumer] that handles multicasting to multiple [Consumer]s downstream. */
+internal class MulticastConsumer(private val context: Context) : Consumer<OEMWindowLayoutInfo> {
+    private val globalLock = ReentrantLock()
+
+    @GuardedBy("globalLock") private var lastKnownValue: WindowLayoutInfo? = null
+    @GuardedBy("globalLock")
     private val registeredListeners = mutableSetOf<Consumer<WindowLayoutInfo>>()
 
     override fun accept(value: OEMWindowLayoutInfo) {
-        multicastConsumerLock.withLock {
-            lastKnownValue = ExtensionsWindowLayoutInfoAdapter.translate(context, value)
-            registeredListeners.forEach { consumer -> consumer.accept(lastKnownValue) }
+        globalLock.withLock {
+            val newValue = ExtensionsWindowLayoutInfoAdapter.translate(context, value)
+            lastKnownValue = newValue
+            registeredListeners.forEach { consumer -> consumer.accept(newValue) }
         }
     }
 
     fun addListener(listener: Consumer<WindowLayoutInfo>) {
-        multicastConsumerLock.withLock {
+        globalLock.withLock {
             lastKnownValue?.let { value -> listener.accept(value) }
             registeredListeners.add(listener)
         }
     }
 
     fun removeListener(listener: Consumer<WindowLayoutInfo>) {
-        multicastConsumerLock.withLock {
-            registeredListeners.remove(listener)
-        }
+        globalLock.withLock { registeredListeners.remove(listener) }
     }
 
     fun isEmpty(): Boolean {

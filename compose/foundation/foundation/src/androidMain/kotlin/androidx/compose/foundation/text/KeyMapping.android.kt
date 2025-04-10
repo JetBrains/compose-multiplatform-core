@@ -23,29 +23,29 @@ import androidx.compose.ui.input.key.isAltPressed
 import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 
-internal actual val platformDefaultKeyMapping = object : KeyMapping {
-    override fun map(event: KeyEvent): KeyCommand? = when {
-        event.isShiftPressed && event.isAltPressed ->
-            when (event.key) {
-                MappedKeys.DirectionLeft -> KeyCommand.SELECT_LINE_LEFT
-                MappedKeys.DirectionRight -> KeyCommand.SELECT_LINE_RIGHT
-                MappedKeys.DirectionUp -> KeyCommand.SELECT_HOME
-                MappedKeys.DirectionDown -> KeyCommand.SELECT_END
+internal actual val platformDefaultKeyMapping =
+    object : KeyMapping {
+        override fun map(event: KeyEvent): KeyCommand? =
+            when {
+                event.isShiftPressed && event.isAltPressed ->
+                    when (event.key) {
+                        MappedKeys.DirectionLeft -> KeyCommand.SELECT_LINE_LEFT
+                        MappedKeys.DirectionRight -> KeyCommand.SELECT_LINE_RIGHT
+                        MappedKeys.DirectionUp -> KeyCommand.SELECT_HOME
+                        MappedKeys.DirectionDown -> KeyCommand.SELECT_END
+                        else -> null
+                    }
+                event.isAltPressed ->
+                    when (event.key) {
+                        MappedKeys.DirectionLeft -> KeyCommand.LINE_LEFT
+                        MappedKeys.DirectionRight -> KeyCommand.LINE_RIGHT
+                        MappedKeys.DirectionUp -> KeyCommand.HOME
+                        MappedKeys.DirectionDown -> KeyCommand.END
+                        else -> null
+                    }
                 else -> null
-            }
-
-        event.isAltPressed ->
-            when (event.key) {
-                MappedKeys.DirectionLeft -> KeyCommand.LINE_LEFT
-                MappedKeys.DirectionRight -> KeyCommand.LINE_RIGHT
-                MappedKeys.DirectionUp -> KeyCommand.HOME
-                MappedKeys.DirectionDown -> KeyCommand.END
-                else -> null
-            }
-
-        else -> null
-    } ?: defaultKeyMapping.map(event)
-}
+            } ?: defaultKeyMapping.map(event)
+    }
 
 internal actual object MappedKeys {
     actual val A: Key = Key(AndroidKeyEvent.KEYCODE_A)
@@ -66,6 +66,7 @@ internal actual object MappedKeys {
     actual val MoveEnd: Key = Key(AndroidKeyEvent.KEYCODE_MOVE_END)
     actual val Insert: Key = Key(AndroidKeyEvent.KEYCODE_INSERT)
     actual val Enter: Key = Key(AndroidKeyEvent.KEYCODE_ENTER)
+    actual val NumPadEnter: Key = Key(AndroidKeyEvent.KEYCODE_NUMPAD_ENTER)
     actual val Backspace: Key = Key(AndroidKeyEvent.KEYCODE_DEL)
     actual val Delete: Key = Key(AndroidKeyEvent.KEYCODE_FORWARD_DEL)
     actual val Paste: Key = Key(AndroidKeyEvent.KEYCODE_PASTE)

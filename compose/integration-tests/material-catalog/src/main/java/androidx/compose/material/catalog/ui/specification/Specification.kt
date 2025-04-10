@@ -16,7 +16,6 @@
 
 package androidx.compose.material.catalog.ui.specification
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -38,14 +37,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 
 @Composable
-@OptIn(ExperimentalFoundationApi::class)
 fun Specification(
     specifications: List<Specification>,
     onSpecificationClick: (specification: Specification) -> Unit
 ) {
-    SpecificationScaffold(
-        topBarTitle = stringResource(id = R.string.compose_material_catalog)
-    ) { paddingValues ->
+    SpecificationScaffold(topBarTitle = stringResource(id = R.string.compose_material_catalog)) {
+        paddingValues ->
         LazyColumn(
             content = {
                 item {
@@ -56,23 +53,21 @@ fun Specification(
                     Spacer(modifier = Modifier.height(SpecificationPadding))
                 }
                 items(specifications) { specification ->
-                    SpecificationItem(
-                        specification = specification,
-                        onClick = onSpecificationClick
-                    )
+                    SpecificationItem(specification = specification, onClick = onSpecificationClick)
                     Spacer(modifier = Modifier.height(SpecificationItemPadding))
                 }
             },
-            contentPadding = WindowInsets.safeDrawing
-                .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
-                .add(
-                    WindowInsets(
-                        left = SpecificationPadding,
-                        top = SpecificationPadding,
-                        right = SpecificationPadding,
+            contentPadding =
+                WindowInsets.safeDrawing
+                    .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
+                    .add(
+                        WindowInsets(
+                            left = SpecificationPadding,
+                            top = SpecificationPadding,
+                            right = SpecificationPadding,
+                        )
                     )
-                )
-                .asPaddingValues(),
+                    .asPaddingValues(),
             modifier = Modifier.padding(paddingValues)
         )
     }

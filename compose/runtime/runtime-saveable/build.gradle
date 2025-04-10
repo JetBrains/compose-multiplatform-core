@@ -14,27 +14,38 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.library")
+    alias(libs.plugins.kotlinSerialization)
 }
 
 androidXMultiplatform {
-    android()
-    desktop()
+    androidTarget()
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlibCommon)
-
-                api project(":compose:runtime:runtime")
+                implementation(libs.kotlinStdlib)
+                implementation("androidx.collection:collection:1.4.2")
+                api(project(":compose:runtime:runtime"))
+                api(project(":savedstate:savedstate-compose"))
             }
         }
 
@@ -49,32 +60,26 @@ androidXMultiplatform {
             }
         }
 
-
         androidMain {
             dependsOn(jvmMain)
             dependencies {
                 implementation(libs.kotlinStdlib)
-                api "androidx.annotation:annotation:1.1.0"
+                api("androidx.annotation:annotation:1.8.1")
             }
         }
 
-        desktopMain {
+        jvmStubsMain {
             dependsOn(jvmMain)
         }
 
-        jvmTest {
-            dependencies {
-            }
-        }
-
         androidInstrumentedTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
-                implementation project(':compose:ui:ui')
-                implementation project(":compose:ui:ui-test-junit4")
-                implementation project(":compose:test-utils")
-                implementation "androidx.fragment:fragment:1.3.0"
-                implementation "androidx.activity:activity-compose:1.7.0"
+                implementation(project(":compose:ui:ui"))
+                implementation(project(":compose:ui:ui-test-junit4"))
+                implementation(project(":compose:test-utils"))
+                implementation("androidx.fragment:fragment:1.3.0")
+                implementation("androidx.activity:activity-compose:1.7.0")
                 implementation(libs.testUiautomator)
                 implementation(libs.testCore)
                 implementation(libs.testRules)
@@ -88,7 +93,7 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
@@ -96,26 +101,23 @@ androidXMultiplatform {
                 implementation(libs.truth)
             }
         }
-
-        desktopTest {
-            dependsOn(jvmTest)
-        }
     }
 }
 
 dependencies {
-    samples(projectOrArtifact(":compose:runtime:runtime-saveable:runtime-saveable-samples"))
     lintPublish(project(":compose:runtime:runtime-saveable-lint"))
 }
 
 androidx {
     name = "Compose Saveable"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2020"
     description = "Compose components that allow saving and restoring the local ui state"
     legacyDisableKotlinStrictApiMode = true
+    samples(project(":compose:runtime:runtime-saveable:runtime-saveable-samples"))
 }
 
 android {
-    namespace "androidx.compose.runtime.saveable"
+    compileSdk = 35
+    namespace = "androidx.compose.runtime.saveable"
 }

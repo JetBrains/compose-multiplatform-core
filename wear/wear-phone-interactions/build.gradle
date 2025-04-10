@@ -14,17 +14,24 @@
  * limitations under the License.
  */
 
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     id("androidx.stableaidl")
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
     api("androidx.core:core:1.6.0")
     api("androidx.wear:wear:1.2.0")
     api(libs.kotlinStdlib)
@@ -43,13 +50,11 @@ dependencies {
     // Includes the wear-sdk jar
     compileOnly files("../../wear/wear_sdk/wear-sdk.jar")
     testImplementation(files("../../wear/wear_sdk/wear-sdk.jar"))
-
-    samples(project(":wear:wear-phone-interactions-samples"))
 }
 
 android {
     defaultConfig {
-        minSdkVersion 25
+        minSdk = 25
     }
 
     // Use Robolectric 4.+
@@ -58,18 +63,20 @@ android {
     buildFeatures {
         aidl = true
     }
-    buildTypes.all {
+    buildTypes.configureEach {
         stableAidl {
-            version 1
+            version = 1
         }
     }
-    namespace "androidx.wear.phone.interactions"
+    namespace = "androidx.wear.phone.interactions"
 }
 
 androidx {
     name = "Android Wear Phone Interactions"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.WEAR_PHONE_INTERACTIONS
     inceptionYear = "2021"
     description = "Android Wear Phone Interactions"
+    legacyDisableKotlinStrictApiMode = true
+    samples(project(":wear:wear-phone-interactions-samples"))
 }

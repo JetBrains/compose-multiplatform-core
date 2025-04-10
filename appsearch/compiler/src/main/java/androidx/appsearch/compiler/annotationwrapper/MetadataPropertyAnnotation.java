@@ -18,11 +18,12 @@ package androidx.appsearch.compiler.annotationwrapper;
 
 import static androidx.appsearch.compiler.IntrospectionHelper.DOCUMENT_ANNOTATION_CLASS;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appsearch.compiler.IntrospectionHelper;
 
 import com.squareup.javapoet.ClassName;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 
@@ -58,8 +59,8 @@ public enum MetadataPropertyAnnotation implements PropertyAnnotation {
      * Attempts to parse an {@link AnnotationMirror} into a {@link MetadataPropertyAnnotation},
      * or null.
      */
-    @Nullable
-    public static MetadataPropertyAnnotation tryParse(@NonNull AnnotationMirror annotation) {
+    public static @Nullable MetadataPropertyAnnotation tryParse(
+            @NonNull AnnotationMirror annotation) {
         String qualifiedClassName = annotation.getAnnotationType().toString();
         return Arrays.stream(values())
                 .filter(val -> val.getClassName().canonicalName().equals(qualifiedClassName))
@@ -67,15 +68,12 @@ public enum MetadataPropertyAnnotation implements PropertyAnnotation {
                 .orElse(null);
     }
 
-    @NonNull
     @SuppressWarnings("ImmutableEnumChecker") // ClassName is an immutable third-party type
-    private final ClassName mClassName;
+    private final @NonNull ClassName mClassName;
 
-    @NonNull
-    private final String mGenericDocGetterName;
+    private final @NonNull String mGenericDocGetterName;
 
-    @NonNull
-    private final String mGenericDocSetterName;
+    private final @NonNull String mGenericDocSetterName;
 
     MetadataPropertyAnnotation(
             @NonNull String simpleClassName,
@@ -87,45 +85,41 @@ public enum MetadataPropertyAnnotation implements PropertyAnnotation {
     }
 
     @Override
-    @NonNull
-    public ClassName getClassName() {
+    public @NonNull ClassName getClassName() {
         return mClassName;
     }
 
 
     @Override
-    @NonNull
-    public PropertyAnnotation.Kind getPropertyKind() {
+    public PropertyAnnotation.@NonNull Kind getPropertyKind() {
         return Kind.METADATA_PROPERTY;
     }
 
-    @NonNull
     @Override
-    public TypeMirror getUnderlyingTypeWithinGenericDoc(@NonNull IntrospectionHelper helper) {
+    public @NonNull TypeMirror getUnderlyingTypeWithinGenericDoc(
+            @NonNull IntrospectionHelper helper) {
         switch (this) {
             case ID: // fall-through
             case NAMESPACE:
-                return helper.mStringType;
+                return helper.stringType;
             case CREATION_TIMESTAMP_MILLIS: // fall-through
             case TTL_MILLIS:
-                return helper.mLongPrimitiveType;
+                return helper.longPrimitiveType;
             case SCORE:
-                return helper.mIntPrimitiveType;
+                return helper.intPrimitiveType;
             default:
                 throw new IllegalStateException("Unhandled metadata property annotation: " + this);
         }
     }
 
-    @NonNull
     @Override
-    public String getGenericDocGetterName() {
+    public @NonNull String getGenericDocGetterName() {
         return mGenericDocGetterName;
     }
 
 
-    @NonNull
     @Override
-    public String getGenericDocSetterName() {
+    public @NonNull String getGenericDocSetterName() {
         return mGenericDocSetterName;
     }
 }

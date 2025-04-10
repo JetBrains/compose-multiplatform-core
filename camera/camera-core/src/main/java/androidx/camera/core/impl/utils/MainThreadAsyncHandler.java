@@ -19,15 +19,14 @@ package androidx.camera.core.impl.utils;
 import android.os.Handler;
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.core.os.HandlerCompat;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Singleton instance of an async main thread {@link Handler}.
  * @see HandlerCompat#createAsync(Looper)
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class MainThreadAsyncHandler {
     private static volatile Handler sHandler;
 
@@ -35,8 +34,7 @@ public final class MainThreadAsyncHandler {
      * Returns a main thread handler which marks all messages/runnables posted as async.
      * @see HandlerCompat#createAsync(Looper)
      */
-    @NonNull
-    public static Handler getInstance() {
+    public static @NonNull Handler getInstance() {
         if (sHandler != null) {
             return sHandler;
         }

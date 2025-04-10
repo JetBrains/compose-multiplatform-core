@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -22,8 +29,9 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation (project(":security:security-app-authenticator"))
-    implementation("androidx.collection:collection:1.1.0")
+    implementation("androidx.collection:collection:1.4.2")
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testExtJunit)
@@ -34,14 +42,13 @@ dependencies {
 
 android {
     testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.security.app.authenticator.testing"
+    namespace = "androidx.security.app.authenticator.testing"
 }
 
 androidx {
     name = "Security App Authenticator Testing Extensions"
-    type = LibraryType.PUBLISHED_TEST_LIBRARY
+    type = SoftwareType.PUBLISHED_TEST_LIBRARY
     mavenVersion = LibraryVersions.SECURITY_APP_AUTHENTICATOR_TESTING
     inceptionYear = "2021"
     description = "This library provides a configurable AppAuthenticator that can be used during testing"
-    metalavaK2UastEnabled = true
 }

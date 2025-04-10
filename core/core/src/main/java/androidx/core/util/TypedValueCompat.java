@@ -28,11 +28,11 @@ import android.os.Build;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -199,7 +199,6 @@ public class TypedValueCompat {
 
     @RequiresApi(34)
     private static class Api34Impl {
-        @DoNotInline
         public static float deriveDimension(
                 @ComplexDimensionUnit int unitToConvertTo,
                 float pixelValue,

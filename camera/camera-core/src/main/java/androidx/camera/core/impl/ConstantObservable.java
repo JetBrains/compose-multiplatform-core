@@ -16,12 +16,12 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.utils.futures.Futures;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -30,7 +30,6 @@ import java.util.concurrent.Executor;
  * An {@link Observable} whose value is set at construction time and never changes.
  * @param <T> The observed type.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class ConstantObservable<T> implements Observable<T> {
     private static final ConstantObservable<Object> NULL_OBSERVABLE =
             new ConstantObservable<>(null);
@@ -43,8 +42,7 @@ public final class ConstantObservable<T> implements Observable<T> {
      * @param value The value which will immediately be sent to observers and is always returned
      *              by {@link #fetchData()}.
      */
-    @NonNull
-    public static <U> Observable<U> withValue(@Nullable U value) {
+    public static <U> @NonNull Observable<U> withValue(@Nullable U value) {
         if (value == null) {
             @SuppressWarnings({"unchecked", "rawtypes"}) // Safe since null can be cast to any type
             Observable<U> typedNull = (Observable) NULL_OBSERVABLE;
@@ -57,9 +55,8 @@ public final class ConstantObservable<T> implements Observable<T> {
         mValueFuture = Futures.immediateFuture(value);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<T> fetchData() {
+    public @NonNull ListenableFuture<T> fetchData() {
         return mValueFuture;
     }
 

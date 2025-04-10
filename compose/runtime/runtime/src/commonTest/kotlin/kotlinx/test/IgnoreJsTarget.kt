@@ -15,4 +15,5 @@
  */
 package kotlinx.test
 
-expect annotation class IgnoreJsTarget
+// TODO(b/409723535): Differentiate between WASM and JS targets.
+expect annotation class IgnoreJsTarget()

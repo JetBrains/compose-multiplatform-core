@@ -26,9 +26,17 @@ import androidx.health.services.client.data.DataType.Companion.DISTANCE_DAILY
 import androidx.health.services.client.data.DataType.Companion.ELEVATION_GAIN_DAILY
 import androidx.health.services.client.data.DataType.Companion.FLOORS_DAILY
 import androidx.health.services.client.data.DataType.Companion.FORMAT_BYTE_ARRAY
+import androidx.health.services.client.data.DataType.Companion.GROUND_CONTACT_TIME
+import androidx.health.services.client.data.DataType.Companion.GROUND_CONTACT_TIME_STATS
 import androidx.health.services.client.data.DataType.Companion.LOCATION
 import androidx.health.services.client.data.DataType.Companion.STEPS
 import androidx.health.services.client.data.DataType.Companion.STEPS_DAILY
+import androidx.health.services.client.data.DataType.Companion.STRIDE_LENGTH
+import androidx.health.services.client.data.DataType.Companion.STRIDE_LENGTH_STATS
+import androidx.health.services.client.data.DataType.Companion.VERTICAL_OSCILLATION
+import androidx.health.services.client.data.DataType.Companion.VERTICAL_OSCILLATION_STATS
+import androidx.health.services.client.data.DataType.Companion.VERTICAL_RATIO
+import androidx.health.services.client.data.DataType.Companion.VERTICAL_RATIO_STATS
 import androidx.health.services.client.data.DataType.TimeType.Companion.INTERVAL
 import androidx.health.services.client.data.DataType.TimeType.Companion.UNKNOWN
 import androidx.health.services.client.proto.DataProto
@@ -97,11 +105,12 @@ internal class DataTypeTest {
 
     @Test
     fun deltaFromProtoDoesNotThrowExceptionForNewDataType() {
-        val proto = DataProto.DataType.newBuilder()
-            .setName("some unknown type")
-            .setTimeType(TIME_TYPE_UNKNOWN)
-            .setFormat(FORMAT_BYTE_ARRAY)
-            .build()
+        val proto =
+            DataProto.DataType.newBuilder()
+                .setName("some unknown type")
+                .setTimeType(TIME_TYPE_UNKNOWN)
+                .setFormat(FORMAT_BYTE_ARRAY)
+                .build()
 
         val dataType = DataType.deltaFromProto(proto)
 
@@ -111,11 +120,12 @@ internal class DataTypeTest {
 
     @Test
     fun aggregateFromProtoDoesNotThrowExceptionForNewDataType() {
-        val proto = DataProto.DataType.newBuilder()
-            .setName("some unknown type")
-            .setTimeType(TIME_TYPE_UNKNOWN)
-            .setFormat(FORMAT_BYTE_ARRAY)
-            .build()
+        val proto =
+            DataProto.DataType.newBuilder()
+                .setName("some unknown type")
+                .setTimeType(TIME_TYPE_UNKNOWN)
+                .setFormat(FORMAT_BYTE_ARRAY)
+                .build()
 
         val dataType = DataType.aggregateFromProto(proto)
 
@@ -146,11 +156,12 @@ internal class DataTypeTest {
 
     @Test
     fun deltaAndAggregateShouldContainBothForNewDataTypes() {
-        val proto = DataProto.DataType.newBuilder()
-            .setName("new")
-            .setTimeType(TIME_TYPE_UNKNOWN)
-            .setFormat(FORMAT_BYTE_ARRAY)
-            .build()
+        val proto =
+            DataProto.DataType.newBuilder()
+                .setName("new")
+                .setTimeType(TIME_TYPE_UNKNOWN)
+                .setFormat(FORMAT_BYTE_ARRAY)
+                .build()
 
         val list = DataType.deltaAndAggregateFromProto(proto)
 
@@ -170,11 +181,12 @@ internal class DataTypeTest {
 
     @Test
     fun onlyDeltaShouldContainCustomDataTypes() {
-        val proto = DataProto.DataType.newBuilder()
-            .setName("health_services.device_private.65537")
-            .setTimeType(TIME_TYPE_INTERVAL)
-            .setFormat(FORMAT_BYTE_ARRAY)
-            .build()
+        val proto =
+            DataProto.DataType.newBuilder()
+                .setName("health_services.device_private.65537")
+                .setTimeType(TIME_TYPE_INTERVAL)
+                .setFormat(FORMAT_BYTE_ARRAY)
+                .build()
 
         val list = DataType.deltaAndAggregateFromProto(proto)
 
@@ -189,27 +201,76 @@ internal class DataTypeTest {
 
     @Test
     fun aggregatesShouldContainAllExpectedDeltas() {
-        val aggregateNames = DataType.aggregateDataTypes.toMutableSet().apply {
-            // Active duration is special cased and does not have a delta form. Developers get the
-            // Active duration not from a DataPoint, but instead from from a property in the
-            // ExerciseUpdate directly. The DataType is only used to enable setting an ExerciseGoal,
-            // which only operate on aggregates. So, we do not have a delta datatype for this and
-            // instead only have an aggregate.
-            remove(ACTIVE_EXERCISE_DURATION_TOTAL)
-        }.map { it.name }
+        val aggregateNames =
+            DataType.aggregateDataTypes
+                .toMutableSet()
+                .apply {
+                    // Active duration is special cased and does not have a delta form. Developers
+                    // get the
+                    // Active duration not from a DataPoint, but instead from from a property in the
+                    // ExerciseUpdate directly. The DataType is only used to enable setting an
+                    // ExerciseGoal,
+                    // which only operate on aggregates. So, we do not have a delta datatype for
+                    // this and
+                    // instead only have an aggregate.
+                    remove(ACTIVE_EXERCISE_DURATION_TOTAL)
+                }
+                .map { it.name }
         // Certain deltas are expected to not have aggregates
-        val deltaNames = DataType.deltaDataTypes.toMutableSet().apply {
-            // Aggregate location doesn't make a lot of sense
-            remove(LOCATION)
-            // Dailies are used in passive and passive only deals with deltas
-            remove(CALORIES_DAILY)
-            remove(DISTANCE_DAILY)
-            remove(ELEVATION_GAIN_DAILY)
-            remove(FLOORS_DAILY)
-            remove(STEPS_DAILY)
-        }.map { it.name }
+        val deltaNames =
+            DataType.deltaDataTypes
+                .toMutableSet()
+                .apply {
+                    // Aggregate location doesn't make a lot of sense
+                    remove(LOCATION)
+                    // Dailies are used in passive and passive only deals with deltas
+                    remove(CALORIES_DAILY)
+                    remove(DISTANCE_DAILY)
+                    remove(ELEVATION_GAIN_DAILY)
+                    remove(FLOORS_DAILY)
+                    remove(STEPS_DAILY)
+                }
+                .map { it.name }
 
         assertThat(aggregateNames).containsExactlyElementsIn(deltaNames)
+    }
+
+    @Test
+    fun aggregatesAndDeltaDataTypeValuesShouldMatch() {
+        val aggregates =
+            DataType.aggregateDataTypes
+                .toMutableSet()
+                .apply {
+                    // Active duration is special cased and does not have a delta form. Developers
+                    // get the
+                    // Active duration not from a DataPoint, but instead from from a property in the
+                    // ExerciseUpdate directly. The DataType is only used to enable setting an
+                    // ExerciseGoal,
+                    // which only operate on aggregates. So, we do not have a delta datatype for
+                    // this and
+                    // instead only have an aggregate.
+                    remove(ACTIVE_EXERCISE_DURATION_TOTAL)
+                }
+                .map { it.name to it.valueClass }
+                .toMap()
+        // Certain deltas are expected to not have aggregates
+        val deltas =
+            DataType.deltaDataTypes
+                .toMutableSet()
+                .apply {
+                    // Aggregate location doesn't make a lot of sense
+                    remove(LOCATION)
+                    // Dailies are used in passive and passive only deals with deltas
+                    remove(CALORIES_DAILY)
+                    remove(DISTANCE_DAILY)
+                    remove(ELEVATION_GAIN_DAILY)
+                    remove(FLOORS_DAILY)
+                    remove(STEPS_DAILY)
+                }
+                .map { it.name to it.valueClass }
+                .toMap()
+
+        assertThat(aggregates).isEqualTo(deltas)
     }
 
     @Test
@@ -218,17 +279,35 @@ internal class DataTypeTest {
         val joinedSet = DataType.deltaDataTypes + DataType.aggregateDataTypes
         // Use reflection get all public data types defined. Reflection is yuck, but not being able
         // to return the same DataType object from a proto is worse.
-        val dataTypesThroughReflection = DataType.Companion::class
-            .declaredMemberProperties
-            .filter { it.visibility == KVisibility.PUBLIC }
-            .filter {
-                it.javaField != null && DataType::class.java.isAssignableFrom(it.javaField!!.type)
-            }
-            .map { it.get(DataType.Companion) }
+        val dataTypesThroughReflection =
+            DataType.Companion::class
+                .declaredMemberProperties
+                .filter { it.visibility == KVisibility.PUBLIC }
+                .filter {
+                    it.javaField != null &&
+                        DataType::class.java.isAssignableFrom(it.javaField!!.type)
+                }
+                .map { it.get(DataType.Companion) }
 
         assertThat(dataTypesThroughReflection).contains(LOCATION)
         assertThat(dataTypesThroughReflection).contains(ABSOLUTE_ELEVATION)
         assertThat(dataTypesThroughReflection).contains(ABSOLUTE_ELEVATION_STATS)
         assertThat(joinedSet).containsExactlyElementsIn(dataTypesThroughReflection)
+    }
+
+    @Test
+    fun sampleDataTypesAreNotAggregates() {
+        assertThat(GROUND_CONTACT_TIME.isAggregate).isFalse()
+        assertThat(VERTICAL_OSCILLATION.isAggregate).isFalse()
+        assertThat(VERTICAL_RATIO.isAggregate).isFalse()
+        assertThat(STRIDE_LENGTH.isAggregate).isFalse()
+    }
+
+    @Test
+    fun statsDataTypesAreAggregates() {
+        assertThat(GROUND_CONTACT_TIME_STATS.isAggregate).isTrue()
+        assertThat(VERTICAL_OSCILLATION_STATS.isAggregate).isTrue()
+        assertThat(VERTICAL_RATIO_STATS.isAggregate).isTrue()
+        assertThat(STRIDE_LENGTH_STATS.isAggregate).isTrue()
     }
 }

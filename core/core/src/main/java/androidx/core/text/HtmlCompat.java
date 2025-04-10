@@ -30,12 +30,12 @@ import android.text.Spanned;
 import android.text.style.BulletSpan;
 import android.text.style.ParagraphStyle;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 
@@ -46,49 +46,49 @@ import java.lang.annotation.Retention;
 public final class HtmlCompat {
     /**
      * Option for {@link #fromHtml(String, int)}: Wrap consecutive lines of text delimited by '\n'
-     * inside &lt;p&gt; elements. {@link BulletSpan}s are ignored.
+     * inside <code>&lt;p&gt;</code> elements. {@link BulletSpan}s are ignored.
      */
     public static final int TO_HTML_PARAGRAPH_LINES_CONSECUTIVE =
             Html.TO_HTML_PARAGRAPH_LINES_CONSECUTIVE;
     /**
      * Option for {@link #fromHtml(String, int)}: Wrap each line of text delimited by '\n' inside a
-     * &lt;p&gt; or a &lt;li&gt; element. This allows {@link ParagraphStyle}s attached to be
-     * encoded as CSS styles within the corresponding &lt;p&gt; or &lt;li&gt; element.
+     * <code>&lt;p&gt;</code> or a <code>&lt;li&gt;</code> element. This allows {@link ParagraphStyle}s attached to be
+     * encoded as CSS styles within the corresponding <code>&lt;p&gt;</code> or <code>&lt;li&gt;</code> element.
      */
     public static final int TO_HTML_PARAGRAPH_LINES_INDIVIDUAL =
             Html.TO_HTML_PARAGRAPH_LINES_INDIVIDUAL;
     /**
-     * Flag indicating that texts inside &lt;p&gt; elements will be separated from other texts with
+     * Flag indicating that texts inside <code>&lt;p&gt;</code> elements will be separated from other texts with
      * one newline character by default.
      */
     public static final int FROM_HTML_SEPARATOR_LINE_BREAK_PARAGRAPH =
             Html.FROM_HTML_SEPARATOR_LINE_BREAK_PARAGRAPH;
     /**
-     * Flag indicating that texts inside &lt;h1&gt;~&lt;h6&gt; elements will be separated from
+     * Flag indicating that texts inside <code>&lt;h1&gt;</code>~<code>&lt;h6&gt;</code> elements will be separated from
      * other texts with one newline character by default.
      */
     public static final int FROM_HTML_SEPARATOR_LINE_BREAK_HEADING =
             Html.FROM_HTML_SEPARATOR_LINE_BREAK_HEADING;
     /**
-     * Flag indicating that texts inside &lt;li&gt; elements will be separated from other texts
+     * Flag indicating that texts inside <code>&lt;li&gt;</code> elements will be separated from other texts
      * with one newline character by default.
      */
     public static final int FROM_HTML_SEPARATOR_LINE_BREAK_LIST_ITEM =
             Html.FROM_HTML_SEPARATOR_LINE_BREAK_LIST_ITEM;
     /**
-     * Flag indicating that texts inside &lt;ul&gt; elements will be separated from other texts
+     * Flag indicating that texts inside <code>&lt;ul&gt;</code> elements will be separated from other texts
      * with one newline character by default.
      */
     public static final int FROM_HTML_SEPARATOR_LINE_BREAK_LIST =
             Html.FROM_HTML_SEPARATOR_LINE_BREAK_LIST;
     /**
-     * Flag indicating that texts inside &lt;div&gt; elements will be separated from other texts
+     * Flag indicating that texts inside <code>&lt;div&gt;<c/ode> elements will be separated from other texts
      * with one newline character by default.
      */
     public static final int FROM_HTML_SEPARATOR_LINE_BREAK_DIV =
             Html.FROM_HTML_SEPARATOR_LINE_BREAK_DIV;
     /**
-     * Flag indicating that texts inside &lt;blockquote&gt; elements will be separated from other
+     * Flag indicating that texts inside <code>&lt;blockquote&gt;</code> elements will be separated from other
      * texts with one newline character by default.
      */
     public static final int FROM_HTML_SEPARATOR_LINE_BREAK_BLOCKQUOTE =
@@ -142,8 +142,7 @@ public final class HtmlCompat {
      * ignored and {@link Html#fromHtml(String)} is used.
      */
     @SuppressWarnings("deprecation")
-    @NonNull
-    public static Spanned fromHtml(@NonNull String source, @FromHtmlFlags int flags) {
+    public static @NonNull Spanned fromHtml(@NonNull String source, @FromHtmlFlags int flags) {
         if (Build.VERSION.SDK_INT >= 24) {
             return Api24Impl.fromHtml(source, flags);
         }
@@ -156,8 +155,7 @@ public final class HtmlCompat {
      * {@link Html#fromHtml(String, ImageGetter, TagHandler)} is used.
      */
     @SuppressWarnings("deprecation")
-    @NonNull
-    public static Spanned fromHtml(@NonNull String source, @FromHtmlFlags int flags,
+    public static @NonNull Spanned fromHtml(@NonNull String source, @FromHtmlFlags int flags,
             @Nullable ImageGetter imageGetter, @Nullable TagHandler tagHandler) {
         if (Build.VERSION.SDK_INT >= 24) {
             return Api24Impl.fromHtml(source, flags, imageGetter, tagHandler);
@@ -170,8 +168,7 @@ public final class HtmlCompat {
      * ignored and {@link Html#toHtml(Spanned)} is used.
      */
     @SuppressWarnings("deprecation")
-    @NonNull
-    public static String toHtml(@NonNull Spanned text, @ToHtmlOptions int options) {
+    public static @NonNull String toHtml(@NonNull Spanned text, @ToHtmlOptions int options) {
         if (Build.VERSION.SDK_INT >= 24) {
             return Api24Impl.toHtml(text, options);
         }
@@ -187,18 +184,15 @@ public final class HtmlCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static Spanned fromHtml(String source, int flags) {
             return Html.fromHtml(source, flags);
         }
 
-        @DoNotInline
         static Spanned fromHtml(String source, int flags, ImageGetter imageGetter,
                 TagHandler tagHandler) {
             return Html.fromHtml(source, flags, imageGetter, tagHandler);
         }
 
-        @DoNotInline
         static String toHtml(Spanned text, int option) {
             return Html.toHtml(text, option);
         }

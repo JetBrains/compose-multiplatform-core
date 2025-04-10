@@ -27,16 +27,47 @@ import org.junit.Test
 class RxJava2QueryTest : TestDatabaseTest() {
 
     @Test
-    fun observeBooksById() {
+    fun observeBooksByIdFlowable() {
         booksDao.addAuthors(TestUtil.AUTHOR_1)
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(TestUtil.BOOK_1)
-        booksDao.getBookFlowable(TestUtil.BOOK_1.bookId)
+        booksDao
+            .getBookFlowable(TestUtil.BOOK_1.bookId)
             .test()
-            .also {
-                drain()
-            }
+            .also { drain() }
             .assertValue { book -> book == TestUtil.BOOK_1 }
+    }
+
+    @Test
+    fun observeBooksByIdFlowable_noBook() {
+        booksDao
+            .getBookFlowable(TestUtil.BOOK_1.bookId)
+            .test()
+            .also { drain() }
+            .assertNoErrors()
+            .assertNoValues()
+    }
+
+    @Test
+    fun observeBooksByIdObservable() {
+        booksDao.addAuthors(TestUtil.AUTHOR_1)
+        booksDao.addPublishers(TestUtil.PUBLISHER)
+        booksDao.addBooks(TestUtil.BOOK_1)
+        booksDao
+            .getBookObservable(TestUtil.BOOK_1.bookId)
+            .test()
+            .also { drain() }
+            .assertValue { book -> book == TestUtil.BOOK_1 }
+    }
+
+    @Test
+    fun observeBooksById_noBook() {
+        booksDao
+            .getBookObservable(TestUtil.BOOK_1.bookId)
+            .test()
+            .also { drain() }
+            .assertNoErrors()
+            .assertNoValues()
     }
 
     @Test
@@ -45,16 +76,20 @@ class RxJava2QueryTest : TestDatabaseTest() {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(TestUtil.BOOK_1)
 
-        booksDao.getBookSingle(TestUtil.BOOK_1.bookId)
+        booksDao
+            .getBookSingle(TestUtil.BOOK_1.bookId)
             .test()
+            .also { drain() }
             .assertComplete()
             .assertValue { book -> book == TestUtil.BOOK_1 }
     }
 
     @Test
     fun observeBooksByIdSingle_noBook() {
-        booksDao.getBookSingle("x")
+        booksDao
+            .getBookSingle("x")
             .test()
+            .also { drain() }
             .assertError(EmptyResultSetException::class.java)
     }
 
@@ -64,16 +99,20 @@ class RxJava2QueryTest : TestDatabaseTest() {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(TestUtil.BOOK_1)
 
-        booksDao.getBookMaybe(TestUtil.BOOK_1.bookId)
+        booksDao
+            .getBookMaybe(TestUtil.BOOK_1.bookId)
             .test()
+            .also { drain() }
             .assertComplete()
             .assertValue { book -> book == TestUtil.BOOK_1 }
     }
 
     @Test
     fun observeBooksByIdMaybe_noBook() {
-        booksDao.getBookMaybe("x")
+        booksDao
+            .getBookMaybe("x")
             .test()
+            .also { drain() }
             .assertComplete()
             .assertNoErrors()
             .assertNoValues()
@@ -85,18 +124,10 @@ class RxJava2QueryTest : TestDatabaseTest() {
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(TestUtil.BOOK_1)
 
-        var expected = BookWithPublisher(
-            TestUtil.BOOK_1.bookId, TestUtil.BOOK_1.title,
-            TestUtil.PUBLISHER
-        )
-        var expectedList = ArrayList<BookWithPublisher>()
-        expectedList.add(expected)
-        booksDao.getBooksWithPublisherFlowable()
-            .test()
-            .also {
-                drain()
-            }
-            .assertValue(expectedList)
+        val expected =
+            BookWithPublisher(TestUtil.BOOK_1.bookId, TestUtil.BOOK_1.title, TestUtil.PUBLISHER)
+        val expectedList = listOf(expected)
+        booksDao.getBooksWithPublisherFlowable().test().also { drain() }.assertValue(expectedList)
     }
 
     @Test
@@ -104,11 +135,10 @@ class RxJava2QueryTest : TestDatabaseTest() {
         booksDao.addAuthors(TestUtil.AUTHOR_1)
         booksDao.addPublishers(TestUtil.PUBLISHER)
         booksDao.addBooks(TestUtil.BOOK_1, TestUtil.BOOK_2)
-        booksDao.getPublisherWithBooksFlowable(TestUtil.PUBLISHER.publisherId)
+        booksDao
+            .getPublisherWithBooksFlowable(TestUtil.PUBLISHER.publisherId)
             .test()
-            .also {
-                drain()
-            }
+            .also { drain() }
             .assertValue {
                 it.publisher == TestUtil.PUBLISHER &&
                     it.books?.size == 2 &&
@@ -120,7 +150,8 @@ class RxJava2QueryTest : TestDatabaseTest() {
     @Test
     fun mainThreadSubscribe_sharedPreparedQuery() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            booksDao.insertPublisherCompletable("a1", "author1")
+            booksDao
+                .insertPublisherCompletable("a1", "author1")
                 .subscribeOn(Schedulers.io())
                 .blockingAwait()
         }
@@ -129,9 +160,7 @@ class RxJava2QueryTest : TestDatabaseTest() {
     @Test
     fun mainThreadSubscribe_preparedQuery() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            booksDao.deleteBookWithIdsSingle("b1", "b2")
-                .subscribeOn(Schedulers.io())
-                .blockingGet()
+            booksDao.deleteBookWithIdsSingle("b1", "b2").subscribeOn(Schedulers.io()).blockingGet()
         }
     }
 }

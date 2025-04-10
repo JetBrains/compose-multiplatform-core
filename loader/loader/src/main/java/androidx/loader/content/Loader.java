@@ -21,9 +21,10 @@ import android.database.ContentObserver;
 import android.os.Handler;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.loader.app.LoaderManager;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -149,8 +150,7 @@ public class Loader<D> {
     /**
      * @return an application context retrieved from the Context passed to the constructor.
      */
-    @NonNull
-    public Context getContext() {
+    public @NonNull Context getContext() {
         return mContext;
     }
 
@@ -522,8 +522,7 @@ public class Loader<D> {
      * For debugging, converts an instance of the Loader's data class to
      * a string that can be printed.  Must handle a null data.
      */
-    @NonNull
-    public String dataToString(@Nullable D data) {
+    public @NonNull String dataToString(@Nullable D data) {
         StringBuilder sb = new StringBuilder(64);
         if (data == null) {
             sb.append("null");
@@ -537,9 +536,8 @@ public class Loader<D> {
         return sb.toString();
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         StringBuilder sb = new StringBuilder(64);
         Class<?> cls = getClass();
         sb.append(cls.getSimpleName());
@@ -564,7 +562,7 @@ public class Loader<D> {
     @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     public void dump(@NonNull String prefix, @Nullable FileDescriptor fd,
-            @NonNull PrintWriter writer, @Nullable String[] args) {
+            @NonNull PrintWriter writer, String @Nullable [] args) {
         writer.print(prefix); writer.print("mId="); writer.print(mId);
                 writer.print(" mListener="); writer.println(mListener);
         if (mStarted || mContentChanged || mProcessingChange) {

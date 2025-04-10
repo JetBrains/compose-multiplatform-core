@@ -18,13 +18,13 @@ package androidx.camera.video.internal;
 
 import static java.util.Collections.unmodifiableList;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.EncoderProfilesProxy;
 import androidx.core.util.Preconditions;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,13 +33,12 @@ import java.util.List;
  * VideoValidatedEncoderProfilesProxy is an implementation of {@link EncoderProfilesProxy} that
  * guarantees to provide video information.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @AutoValue
 public abstract class VideoValidatedEncoderProfilesProxy implements EncoderProfilesProxy {
 
     /** Creates a VideoValidatedEncoderProfilesProxy instance from {@link EncoderProfilesProxy}. */
-    @NonNull
-    public static VideoValidatedEncoderProfilesProxy from(@NonNull EncoderProfilesProxy profiles) {
+    public static @NonNull VideoValidatedEncoderProfilesProxy from(
+            @NonNull EncoderProfilesProxy profiles) {
         return create(
                 profiles.getDefaultDurationSeconds(),
                 profiles.getRecommendedFileFormat(),
@@ -49,8 +48,7 @@ public abstract class VideoValidatedEncoderProfilesProxy implements EncoderProfi
     }
 
     /** Creates a VideoValidatedEncoderProfilesProxy instance. */
-    @NonNull
-    public static VideoValidatedEncoderProfilesProxy create(
+    public static @NonNull VideoValidatedEncoderProfilesProxy create(
             int defaultDurationSeconds,
             int recommendedFileFormat,
             @NonNull List<AudioProfileProxy> audioProfiles,
@@ -75,10 +73,8 @@ public abstract class VideoValidatedEncoderProfilesProxy implements EncoderProfi
     }
 
     /** Returns the default {@link AudioProfileProxy} or null if not existed. */
-    @Nullable
-    public abstract AudioProfileProxy getDefaultAudioProfile();
+    public abstract @Nullable AudioProfileProxy getDefaultAudioProfile();
 
     /** Returns the default {@link VideoProfileProxy}. */
-    @NonNull
-    public abstract VideoProfileProxy getDefaultVideoProfile();
+    public abstract @NonNull VideoProfileProxy getDefaultVideoProfile();
 }

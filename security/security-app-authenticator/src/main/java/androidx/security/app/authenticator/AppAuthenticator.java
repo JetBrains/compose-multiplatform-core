@@ -29,8 +29,6 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.XmlRes;
@@ -39,6 +37,8 @@ import androidx.collection.ArraySet;
 
 import com.google.auto.value.AutoValue;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
@@ -828,8 +828,7 @@ public class AppAuthenticator {
          * Returns the result message for the query; if the query successfully verified an app's
          * signature matches the expected signing identity this value will be {@code null}.
          */
-        @Nullable
-        abstract String getResultMessage();
+        abstract @Nullable String getResultMessage();
 
         /**
          * Creates a new instance with the provided {@code resultCode} and {@code resultMessage}.

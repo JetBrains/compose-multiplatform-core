@@ -18,20 +18,17 @@ package androidx.camera.testing.impl.fakes;
 
 import static androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor;
 
-import android.os.Build;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.CameraEffect;
 import androidx.camera.core.SurfaceProcessor;
 import androidx.camera.core.processing.SurfaceProcessorInternal;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
 /**
  * A fake {@link CameraEffect} with {@link SurfaceProcessor}.
  */
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class FakeSurfaceEffect extends CameraEffect {
 
     private SurfaceProcessorInternal mSurfaceProcessorInternal;
@@ -66,6 +63,14 @@ public class FakeSurfaceEffect extends CameraEffect {
         mSurfaceProcessorInternal = surfaceProcessorInternal;
     }
 
+    public FakeSurfaceEffect(@Targets int targets, @Transformations int transformation,
+            @OutputOptions int targetOption,
+            @NonNull SurfaceProcessorInternal surfaceProcessorInternal) {
+        super(targets, transformation, targetOption, mainThreadExecutor(), surfaceProcessorInternal,
+                throwable -> {
+                });
+    }
+
     /**
      * Create a fake {@link CameraEffect} the {@link #createSurfaceProcessorInternal} value
      * overridden.
@@ -80,9 +85,8 @@ public class FakeSurfaceEffect extends CameraEffect {
         mSurfaceProcessorInternal = surfaceProcessorInternal;
     }
 
-    @NonNull
     @Override
-    public SurfaceProcessorInternal createSurfaceProcessorInternal() {
+    public @NonNull SurfaceProcessorInternal createSurfaceProcessorInternal() {
         if (mSurfaceProcessorInternal != null) {
             return mSurfaceProcessorInternal;
         } else {

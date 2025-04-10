@@ -16,7 +16,9 @@
 
 package androidx.compose.ui.samples
 
+import android.view.MotionEvent
 import androidx.annotation.Sampled
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,7 +30,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 
 // Empty for use in sample
 @Suppress("UNUSED_PARAMETER")
-private fun performAction(parameter: String) {
+private fun performAction(parameter: Any?) {
     // This space for rent
 }
 
@@ -37,15 +39,12 @@ fun keyedPointerInputModifier() {
     @Composable
     fun MyComposable(parameter: String) {
         Box(
-            Modifier.fillMaxSize()
-                .pointerInput(parameter) {
-                    // This entire pointerInput block will restart from the beginning
-                    // if and when `parameter` changes, since it's used as a key in
-                    // the creation of the `pointerInput` modifier
-                    detectTapGestures {
-                        performAction(parameter)
-                    }
-                }
+            Modifier.fillMaxSize().pointerInput(parameter) {
+                // This entire pointerInput block will restart from the beginning
+                // if and when `parameter` changes, since it's used as a key in
+                // the creation of the `pointerInput` modifier
+                detectTapGestures { performAction(parameter) }
+            }
         )
     }
 }
@@ -56,18 +55,41 @@ fun rememberedUpdatedParameterPointerInputModifier() {
     fun MyComposable(parameter: String) {
         val currentParameter by rememberUpdatedState(parameter)
         Box(
-            Modifier.fillMaxSize()
-                .pointerInput(Unit) {
-                    // This pointerInput block will never restart since
-                    // it specifies a key of `Unit`, which never changes
-                    detectTapGestures {
-                        // ...however, currentParameter is updated out from under this running
-                        // pointerInput suspend block by rememberUpdatedState, and will always
-                        // contain the latest value updated by the composition when a tap
-                        // is detected here.
-                        performAction(currentParameter)
-                    }
+            Modifier.fillMaxSize().pointerInput(Unit) {
+                // This pointerInput block will never restart since
+                // it specifies a key of `Unit`, which never changes
+                detectTapGestures {
+                    // ...however, currentParameter is updated out from under this running
+                    // pointerInput suspend block by rememberUpdatedState, and will always
+                    // contain the latest value updated by the composition when a tap
+                    // is detected here.
+                    performAction(currentParameter)
                 }
+            }
+        )
+    }
+}
+
+@Sampled
+fun PointerEventMotionEventSample() {
+    @Composable
+    fun MyComposable() {
+        Box(
+            Modifier.fillMaxSize().pointerInput(Unit) {
+                awaitEachGesture {
+                    val pointerEvent = awaitPointerEvent()
+
+                    // Use MotionEvent only for additional metadata.
+                    performAction(pointerEvent.motionEvent?.getAxisValue(MotionEvent.AXIS_TILT))
+
+                    awaitPointerEvent()
+                    // Do NOT try to access the MotionEvent of the first pointEvent after awaits
+                    // another PointerEvent. The PointerEvent's MotionEvent is set to null when it
+                    // finishes dispatch.
+                    // In the following line, pointerEvent.motionEvent returns null.
+                    performAction(pointerEvent.motionEvent?.getAxisValue(MotionEvent.AXIS_TILT))
+                }
+            }
         )
     }
 }

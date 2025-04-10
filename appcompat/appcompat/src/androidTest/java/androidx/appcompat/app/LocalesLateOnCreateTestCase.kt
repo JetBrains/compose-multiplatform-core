@@ -26,7 +26,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
-import androidx.testutils.LifecycleOwnerUtils.waitUntilState
+import androidx.testutils.lifecycle.LifecycleOwnerUtils.waitUntilState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,8 +36,7 @@ import org.junit.runner.RunWith
 @SdkSuppress(maxSdkVersion = 32)
 class LocalesLateOnCreateTestCase {
 
-    @get:Rule
-    val activityRule = LocalesActivityTestRule(LocalesLateOnCreateActivity::class.java)
+    @get:Rule val activityRule = LocalesActivityTestRule(LocalesLateOnCreateActivity::class.java)
 
     @Test
     fun testActivityRecreateLoop() {
@@ -49,10 +48,7 @@ class LocalesLateOnCreateTestCase {
         )
 
         // Simulate the user set locales, which should force an activity recreate().
-        setLocalesAndWaitForRecreate(
-            activityRule,
-            TEST_LOCALE_LIST
-        )
+        setLocalesAndWaitForRecreate(activityRule, TEST_LOCALE_LIST)
 
         // Activity should be able to reach fully resumed state again.
         waitUntilState(activityRule.activity, Lifecycle.State.RESUMED)

@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalFoundationApi::class, ExperimentalTextApi::class)
+@file:OptIn(ExperimentalTextApi::class)
 
 package androidx.compose.foundation.samples
 
 import androidx.annotation.Sampled
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.basicMarquee
@@ -53,9 +52,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun BasicMarqueeSample() {
     // Marquee only animates when the content doesn't fit in the max width.
-    Column(Modifier.width(30.dp)) {
-        Text("hello world", Modifier.basicMarquee())
-    }
+    Column(Modifier.width(30.dp)) { Text("hello world", Modifier.basicMarquee()) }
 }
 
 @Preview(showBackground = true)
@@ -66,11 +63,12 @@ fun BasicFocusableMarqueeSample() {
 
     // Marquee only animates when the content doesn't fit in the max width.
     Column(Modifier.width(30.dp)) {
-        Text("hello world", Modifier
-            .clickable { focusRequester.requestFocus() }
-            .basicMarquee(animationMode = MarqueeAnimationMode.WhileFocused)
-            .focusRequester(focusRequester)
-            .focusable()
+        Text(
+            "hello world",
+            Modifier.clickable { focusRequester.requestFocus() }
+                .basicMarquee(animationMode = MarqueeAnimationMode.WhileFocused)
+                .focusRequester(focusRequester)
+                .focusable()
         )
     }
 }
@@ -85,19 +83,19 @@ fun BasicMarqueeWithFadedEdgesSample() {
         drawRect(
             topLeft = Offset(if (leftEdge) 0f else size.width - edgeWidthPx, 0f),
             size = Size(edgeWidthPx, size.height),
-            brush = Brush.horizontalGradient(
-                colors = listOf(Color.Transparent, Color.Black),
-                startX = if (leftEdge) 0f else size.width,
-                endX = if (leftEdge) edgeWidthPx else size.width - edgeWidthPx
-            ),
+            brush =
+                Brush.horizontalGradient(
+                    colors = listOf(Color.Transparent, Color.Black),
+                    startX = if (leftEdge) 0f else size.width,
+                    endX = if (leftEdge) edgeWidthPx else size.width - edgeWidthPx
+                ),
             blendMode = BlendMode.DstIn
         )
     }
 
     Text(
         "the quick brown fox jumped over the lazy dogs",
-        Modifier
-            .widthIn(max = edgeWidth * 4)
+        Modifier.widthIn(max = edgeWidth * 4)
             // Rendering to an offscreen buffer is required to get the faded edges' alpha to be
             // applied only to the text, and not whatever is drawn below this composable (e.g. the
             // window).

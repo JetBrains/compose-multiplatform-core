@@ -21,12 +21,12 @@ import android.text.method.TransformationMethod;
 import android.util.SparseArray;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.Preconditions;
 import androidx.emoji2.text.EmojiCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Utility class to enhance custom TextView widgets with {@link EmojiCompat}.
@@ -123,9 +123,8 @@ public final class EmojiTextViewHelper {
      * not.
      */
     @SuppressWarnings("ArrayReturn")
-    @NonNull
-    public InputFilter[] getFilters(
-            @SuppressWarnings("ArrayReturn") @NonNull final InputFilter[] filters) {
+    public InputFilter @NonNull [] getFilters(
+            @SuppressWarnings("ArrayReturn") final InputFilter @NonNull [] filters) {
         return mHelper.getFilters(filters);
     }
 
@@ -136,8 +135,7 @@ public final class EmojiTextViewHelper {
      *
      * @param transformationMethod instance to be wrapped
      */
-    @Nullable
-    public TransformationMethod wrapTransformationMethod(
+    public @Nullable TransformationMethod wrapTransformationMethod(
             @Nullable TransformationMethod transformationMethod) {
         return mHelper.wrapTransformationMethod(transformationMethod);
     }
@@ -184,13 +182,11 @@ public final class EmojiTextViewHelper {
             // do nothing
         }
 
-        @NonNull
-        InputFilter[] getFilters(@NonNull final InputFilter[] filters) {
+        InputFilter @NonNull [] getFilters(final InputFilter @NonNull [] filters) {
             return filters;
         }
 
-        @Nullable
-        TransformationMethod wrapTransformationMethod(
+        @Nullable TransformationMethod wrapTransformationMethod(
                 @Nullable TransformationMethod transformationMethod) {
             return transformationMethod;
         }
@@ -222,7 +218,6 @@ public final class EmojiTextViewHelper {
      * {@link EmojiTextViewHelper#updateTransformationMethod()} after configuring EmojiCompat if
      * TextView's using EmojiTextViewHelper are already displayed to the user.
      */
-    @RequiresApi(19)
     private static class SkippingHelper19 extends HelperInternal {
         private final HelperInternal19 mHelperDelegate;
 
@@ -252,9 +247,8 @@ public final class EmojiTextViewHelper {
          *
          * This method will have no effect if !{@link EmojiCompat#isConfigured()}
          */
-        @NonNull
         @Override
-        InputFilter[] getFilters(@NonNull InputFilter[] filters) {
+        InputFilter @NonNull [] getFilters(InputFilter @NonNull [] filters) {
             if (skipBecauseEmojiCompatNotInitialized()) {
                 return filters;
             }
@@ -266,9 +260,8 @@ public final class EmojiTextViewHelper {
          *
          * This method will have no effect if !{@link EmojiCompat#isConfigured()}
          */
-        @Nullable
         @Override
-        TransformationMethod wrapTransformationMethod(
+        @Nullable TransformationMethod wrapTransformationMethod(
                 @Nullable TransformationMethod transformationMethod) {
             if (skipBecauseEmojiCompatNotInitialized()) {
                 return transformationMethod;
@@ -310,7 +303,6 @@ public final class EmojiTextViewHelper {
         }
     }
 
-    @RequiresApi(19)
     private static class HelperInternal19 extends HelperInternal {
         private final TextView mTextView;
         private final EmojiInputFilter mEmojiInputFilter;
@@ -340,9 +332,8 @@ public final class EmojiTextViewHelper {
             mTextView.setFilters(getFilters(oldFilters));
         }
 
-        @NonNull
         @Override
-        InputFilter[] getFilters(@NonNull final InputFilter[] filters) {
+        InputFilter @NonNull [] getFilters(final InputFilter @NonNull [] filters) {
             if (!mEnabled) {
                 // remove any EmojiInputFilter when disabled
                 return removeEmojiInputFilterIfPresent(filters);
@@ -357,8 +348,8 @@ public final class EmojiTextViewHelper {
          * @param filters to check
          * @return filters with mEmojiInputFilter added, if not previously present
          */
-        @NonNull
-        private InputFilter[] addEmojiInputFilterIfMissing(@NonNull InputFilter[] filters) {
+        private InputFilter @NonNull [] addEmojiInputFilterIfMissing(
+                InputFilter @NonNull [] filters) {
             final int count = filters.length;
             for (int i = 0; i < count; i++) {
                 if (filters[i] == mEmojiInputFilter) {
@@ -376,8 +367,8 @@ public final class EmojiTextViewHelper {
          *
          * @return filters.filter { it !== mEmojiInputFilter }
          */
-        @NonNull
-        private InputFilter[] removeEmojiInputFilterIfPresent(@NonNull InputFilter[] filters) {
+        private InputFilter @NonNull [] removeEmojiInputFilterIfPresent(
+                InputFilter @NonNull [] filters) {
             // find out the new size after removing (all) EmojiInputFilter
             SparseArray<InputFilter> filterSet = getEmojiInputFilterPositionArray(filters);
             if (filterSet.size() == 0) {
@@ -402,7 +393,7 @@ public final class EmojiTextViewHelper {
          * Populate a sparse array with true for all indexes that contain an EmojiInputFilter.
          */
         private SparseArray<InputFilter> getEmojiInputFilterPositionArray(
-                @NonNull InputFilter[] filters) {
+                InputFilter @NonNull [] filters) {
             SparseArray<InputFilter> result = new SparseArray<>(1);
             for (int pos = 0; pos < filters.length; pos++) {
                 if (filters[pos] instanceof EmojiInputFilter) {
@@ -412,9 +403,8 @@ public final class EmojiTextViewHelper {
             return result;
         }
 
-        @Nullable
         @Override
-        TransformationMethod wrapTransformationMethod(
+        @Nullable TransformationMethod wrapTransformationMethod(
                 @Nullable TransformationMethod transformationMethod) {
             if (mEnabled) {
                 return wrapForEnabled(transformationMethod);
@@ -426,8 +416,7 @@ public final class EmojiTextViewHelper {
         /**
          * Unwrap EmojiTransformationMethods safely.
          */
-        @Nullable
-        private TransformationMethod unwrapForDisabled(
+        private @Nullable TransformationMethod unwrapForDisabled(
                 @Nullable TransformationMethod transformationMethod) {
             if (transformationMethod instanceof EmojiTransformationMethod) {
                 EmojiTransformationMethod etm =
@@ -443,8 +432,7 @@ public final class EmojiTextViewHelper {
          *
          * This will not wrap {@link PasswordTransformationMethod}.
          */
-        @NonNull
-        private TransformationMethod wrapForEnabled(
+        private @NonNull TransformationMethod wrapForEnabled(
                 @Nullable TransformationMethod transformationMethod) {
             if (transformationMethod instanceof EmojiTransformationMethod) {
                 return transformationMethod;

@@ -23,20 +23,19 @@ import android.view.View;
 import android.widget.TextView;
 
 import androidx.annotation.IdRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
-import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link RecyclerView.ViewHolder} class which caches views associated with the default
  * {@link Preference} layouts. Cached views can be retrieved by calling {@link #findViewById(int)}.
  */
 public class PreferenceViewHolder extends RecyclerView.ViewHolder {
-    @Nullable
-    private final Drawable mBackground;
+    private final @Nullable Drawable mBackground;
     private ColorStateList mTitleTextColors;
     private final SparseArray<View> mCachedViews = new SparseArray<>(4);
     private boolean mDividerAllowedAbove;
@@ -63,8 +62,7 @@ public class PreferenceViewHolder extends RecyclerView.ViewHolder {
 
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @VisibleForTesting
-    @NonNull
-    public static PreferenceViewHolder createInstanceForTests(@NonNull View itemView) {
+    public static @NonNull PreferenceViewHolder createInstanceForTests(@NonNull View itemView) {
         return new PreferenceViewHolder(itemView);
     }
 
@@ -75,8 +73,7 @@ public class PreferenceViewHolder extends RecyclerView.ViewHolder {
      * @param id Resource ID of the view to find
      * @return The view, or {@code null} if no view with the requested ID is found
      */
-    @Nullable
-    public View findViewById(@IdRes int id) {
+    public @Nullable View findViewById(@IdRes int id) {
         final View cachedView = mCachedViews.get(id);
         if (cachedView != null) {
             return cachedView;
@@ -144,7 +141,7 @@ public class PreferenceViewHolder extends RecyclerView.ViewHolder {
      */
     void resetState() {
         if (itemView.getBackground() != mBackground) {
-            ViewCompat.setBackground(itemView, mBackground);
+            itemView.setBackground(mBackground);
         }
 
         final TextView titleView = (TextView) findViewById(android.R.id.title);

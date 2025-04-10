@@ -21,9 +21,9 @@ import android.util.Log;
 import android.view.View;
 import android.widget.PopupWindow;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -61,7 +61,10 @@ public final class PopupWindowCompat {
      * @param xoff A horizontal offset from the anchor in pixels
      * @param yoff A vertical offset from the anchor in pixels
      * @param gravity Alignment of the popup relative to the anchor
+     * @deprecated Call {@link PopupWindow#showAsDropDown()} directly.
      */
+    @Deprecated
+    @androidx.annotation.ReplaceWith(expression = "popup.showAsDropDown(anchor, xoff, yoff, gravity)")
     public static void showAsDropDown(@NonNull PopupWindow popup, @NonNull View anchor,
             int xoff, int yoff, int gravity) {
         popup.showAsDropDown(anchor, xoff, yoff, gravity);
@@ -201,22 +204,18 @@ public final class PopupWindowCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void setOverlapAnchor(PopupWindow popupWindow, boolean overlapAnchor) {
             popupWindow.setOverlapAnchor(overlapAnchor);
         }
 
-        @DoNotInline
         static boolean getOverlapAnchor(PopupWindow popupWindow) {
             return popupWindow.getOverlapAnchor();
         }
 
-        @DoNotInline
         static void setWindowLayoutType(PopupWindow popupWindow, int layoutType) {
             popupWindow.setWindowLayoutType(layoutType);
         }
 
-        @DoNotInline
         static int getWindowLayoutType(PopupWindow popupWindow) {
             return popupWindow.getWindowLayoutType();
         }

@@ -18,9 +18,10 @@ package androidx.work.worker;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
+
+import org.jspecify.annotations.NonNull;
 
 public class ExceptionWorker extends Worker {
 
@@ -30,6 +31,6 @@ public class ExceptionWorker extends Worker {
 
     @Override
     public @NonNull Result doWork() {
-        throw new IllegalStateException();
+        throw new IllegalStateException("Thrown in doWork Exception");
     }
 }

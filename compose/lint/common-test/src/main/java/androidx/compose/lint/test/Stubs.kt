@@ -24,15 +24,15 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.bytecode
 import java.util.Locale
 import org.intellij.lang.annotations.Language
 
-/**
- * Common Compose-related bytecode lint stubs used for testing
- */
+/** Common Compose-related bytecode lint stubs used for testing */
 object Stubs {
-    val Color: TestFile = bytecodeStub(
-        filename = "Color.kt",
-        filepath = "androidx/compose/ui/graphics",
-        checksum = 0x143250ca,
-        source = """
+    val Color: TestFile =
+        bytecodeStub(
+            filename = "Color.kt",
+            filepath = "androidx/compose/ui/graphics",
+            checksum = 0x143250ca,
+            source =
+                """
             package androidx.compose.ui.graphics
 
             inline class Color(val value: ULong) {
@@ -74,13 +74,13 @@ object Stubs {
                 alpha: Int = 0xFF
             ): Color = Color.Black
         """,
-"""
+            """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgUuWSTMxLKcrPTKnQS87PLcgvTtXL
         TSxJLcpMzBHicM7PyS8q9i7hUueSxalMLy0/X4gtJLW4BKxQBkNhaaZeelFi
         QUZmcrEQO9hI7xIlBi0GAPW9qnSRAAAA
         """,
-        """
+            """
         androidx/compose/ui/graphics/Color＄Companion.class:
         H4sIAAAAAAAA/5WW3VfcRBiHf5P9JLvA8lmWtmhxrYCFBaytlloti8Vtl1Yp
         pVZUHLIRAtmEk8lie8fxHP0/9N4LruzxwsPBO/8oj28mC8E4OdqbmeR93mfe
@@ -108,7 +108,7 @@ object Stubs {
         CnwmMCWwKjAv8FigX2BNYFjgicBVgXWBUYGnAjcEPhcYF3gmcEvgCxGsuSEw
         8zddh+AewgoAAA==
         """,
-        """
+            """
         androidx/compose/ui/graphics/Color.class:
         H4sIAAAAAAAA/41W+1Pc1hX+rvbBIgQIvMaACbFjYi8YvEDa5mHHsYHG2TXg
         xNi4hKSpWJRFIKS1pMV206bUfYT0MZ1OX5N2Op2k79Zu4zgBGnc6lPyW8Z/U
@@ -153,7 +153,7 @@ object Stubs {
         Tzn8OYe/4K/E4lYOt/G3aTAff8f70zjgQ/Nxx0eNjw98POfjjI+Ej6SPlI+n
         xdaTPgZ9POEjK5bHffT6eFzw9T4afNz8Hx1rfp1uDwAA
         """,
-        """
+            """
         androidx/compose/ui/graphics/ColorKt.class:
         H4sIAAAAAAAA/5VUTW8bVRQ9b/wxnskkcRI7NJMm5MMFuzRxGgoFTFtSS5Em
         calESTdZoIk9uJOMZ6x546psoBt+BFv2bBBCEQtUseRHUc4bj9wQgVpG8j33
@@ -176,13 +176,15 @@ object Stubs {
         jJyDpoMdh29m18H7uOXgA3x4DCFxGx8dY0aiIPGxxJrEJxIbEpsSNYmqxFya
         WZBopE7xb1ipCXciBgAA
         """
-    )
+        )
 
-    val Composable: TestFile = bytecodeStub(
-        filename = "Composable.kt",
-        filepath = "androidx/compose/runtime",
-        checksum = 0xbcdac3c7,
-        source = """
+    val Composable: TestFile =
+        bytecodeStub(
+            filename = "Composable.kt",
+            filepath = "androidx/compose/runtime",
+            checksum = 0xbcdac3c7,
+            source =
+                """
         package androidx.compose.runtime
 
         @MustBeDocumented
@@ -195,12 +197,12 @@ object Stubs {
         )
         annotation class Composable
         """,
-"""
+            """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgUuaSTMxLKcrPTKnQS0wuySzLLKnU
         S87PLcgvThViC0ktLvEu4RLl4gYK6aVWJOYW5MCFlRi0GADOEtiIVAAAAA==
         """,
-        """
+            """
         androidx/compose/runtime/Composable.class:
         H4sIAAAAAAAA/41SW28SQRT+ZoFCUVuwXqC19k6tJm5tfPMJ6FY34ZZl24Tw
         0EzZSbNl2W3YAds3Hkz8Tz4Y4qM/yngGImCyiWaTb7455ztzLnt+/vr2HcB7
@@ -215,13 +217,15 @@ object Stubs {
         uMAKVhVkFGQVPMYaaZ9MtU/xDM8VbSMmkENeQVbBOjaQwAuym9g08dLEFraJ
         YsfELvbaYCH2cdCGFqIQ4vA3hGOdXq0DAAA=
         """
-    )
+        )
 
-    val Composables: TestFile = bytecodeStub(
-        filename = "Composables.kt",
-        filepath = "androidx/compose/runtime",
-        checksum = 0x8882d27,
-        source = """
+    val Composables: TestFile =
+        bytecodeStub(
+            filename = "Composables.kt",
+            filepath = "androidx/compose/runtime",
+            checksum = 0x8882d27,
+            source =
+                """
         package androidx.compose.runtime
 
         @Composable
@@ -247,13 +251,13 @@ object Stubs {
             if (active) { content() }
         }
         """,
-        """
+            """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgMuWSSMxLKcrPTKnQS87PLcgvTtUr
         Ks0rycxNFeJ1BgskJuWkFnuXCHEFpeam5ialFnmXcPFxsZSkFpcIsYUASe8S
         JQYtBgAsMUsXXwAAAA==
         """,
-        """
+            """
         androidx/compose/runtime/ComposablesKt.class:
         H4sIAAAAAAAA/51VzXLbVBT+rvwnK7ajyE5xXEhT103tGCrHpfzUaaBNKfHg
         BiY2gWlW17IaFNtSR5I9ZZdhwzN0yxPArrBgMmHHg/AUDMORLCdO7GkK49H5
@@ -278,13 +282,15 @@ object Stubs {
         U0gCtnxawyPi35L1XeruvX2E6rhdh1pHBet1VHGnTn/nd/fBHHyAD/cx72DZ
         wUcOIj7NO/jYgehg1cGab7nnQPIFxUH0X0eNH/YRCAAA
         """
-    )
+        )
 
-    val Modifier: TestFile = bytecodeStub(
-        filename = "Modifier.kt",
-        filepath = "androidx/compose/ui",
-        checksum = 0x33b78359,
-        source = """
+    val Modifier: TestFile =
+        bytecodeStub(
+            filename = "Modifier.kt",
+            filepath = "androidx/compose/ui",
+            checksum = 0x33b78359,
+            source =
+                """
         package androidx.compose.ui
 
         @Suppress("ModifierFactoryExtensionFunction")
@@ -304,13 +310,13 @@ object Stubs {
             private val inner: Modifier
         ) : Modifier
         """,
-"""
+            """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgUueSTMxLKcrPTKnQS87PLcgvTtXL
         TSxJLcpMzBHiCk5OTEvLz0nxLuHi5WJOy88XYgtJLS7xLlFi0GIAADDzNLNQ
         AAAA
         """,
-        """
+            """
         androidx/compose/ui/CombinedModifier.class:
         H4sIAAAAAAAA/6VTWU8TURT+7nRlKFBG2RdBqnRBBhDXGoxiTJoUNECICb7c
         the47XSGzEwbHok/xV+gD0TigyE8+qOM57ZlsZDyYJqe7Z7znXV+//n5C8Ay
@@ -330,7 +336,7 @@ object Stubs {
         iBG8aAAvUTqVkr5WhDC7g0AOyRxSOaSRIRFzOTzC/A6YBxMLOwh5mPAw5EH3
         YHiI/gWbMWV0lgUAAA==
         """,
-        """
+            """
         androidx/compose/ui/Modifier＄Companion.class:
         H4sIAAAAAAAA/41SXU8TQRQ9s1va7bLIggLlQ/ygQgFlofpgLCHBRuOaUo0Q
         EsPTdDvCtNtZs7tteOTJn+AP8BdIfMBoYgiP/ijj3VJRMEEfeufeM+fce3tm
@@ -348,7 +354,7 @@ object Stubs {
         jXXFtMpXaK+PMPEJ1w+7gI5liibRNOoyT5KV7vQFFOl8RPg07XxjB7qLmy5u
         ubiNGUqRd3EHsztgEeZQ2EFfBCtCLoIRYSCC/RM2YumyXwQAAA==
         """,
-        """
+            """
         androidx/compose/ui/Modifier＄DefaultImpls.class:
         H4sIAAAAAAAA/6VS308TQRD+9gq9thShVUAE8QcVWqqcP3ir0Zgak4stGjFN
         jCZme13abe92yd224S/SV+OLRhPjs3+UcQ5OQDTVxIebm/lmdnbnm+/b909f
@@ -365,7 +371,7 @@ object Stubs {
         wUnq7HgV9E1bSXBoU/QykBotlKlpEYvkFVCh/23CLWzgzkEzEgjVXnqJlIvL
         Lq64uIpVFyVcc7H2Ayw1Nq9+BAAA
         """,
-        """
+            """
         androidx/compose/ui/Modifier＄Element＄DefaultImpls.class:
         H4sIAAAAAAAA/6VSXW8SQRQ9A5QFSqVQW62t9aO0haJdm/jGk0FNNqFoWsOL
         vgzLFAZ2Z5rdWdKf5WPjg/HZH2W8C6u2NUESH/Z+nHvu3Zkz9/uPL18BvMQL
@@ -381,7 +387,7 @@ object Stubs {
         KklmNo3nZB+QX0MZu9SyR34/m6dxe9P8aPq7A9jkd6gr5m59RNrBtoOHDmGP
         HDzGEwdPfwJuilgecwQAAA==
         """,
-        """
+            """
         androidx/compose/ui/Modifier＄Element.class:
         H4sIAAAAAAAA/42QTU/CQBCG32mVUkAFRAUlnohHC8SbJ+NH0gRiookXTgtd
         zEK7Jd2WcOR3eTCc/VHGaaKJJ8JhZ2efeedj5+v74xPADdqEjtBBEqtg5U3i
@@ -392,7 +398,7 @@ object Stubs {
         hXw5sNFiW2dmMWkUXJyyd8b0nLmFJi747rGeV47iCLYP10fJR5kHgIsDH4c4
         GoEMqqiNYBnUDY5/AJ5HRJ4KAgAA
         """,
-        """
+            """
         androidx/compose/ui/Modifier.class:
         H4sIAAAAAAAA/4VRTW/TQBB94zhxkgZwKB/9orQ0lIaPulRwoVCpCkUYpQFR
         1EtOm2RbtnXWlXcT9Zhfwf8AbhxQxJEfhRhHhVKQgi3vm3m7+9545vuPL18B
@@ -408,13 +414,14 @@ object Stubs {
         K+B+6oQ7eMD4jCUm2fNKE5kQV0NcC3EdUxxiOmSV2SbIYA43msgZzBvcNMga
         LBj4Bos/AU5gqBi8AwAA
         """
-    )
+        )
 
-    val PaddingValues: TestFile = bytecodeStub(
-        filename = "Padding.kt",
-        filepath = "androidx/compose/foundation/layout",
-        checksum = 0x393214e7,
-        """
+    val PaddingValues: TestFile =
+        bytecodeStub(
+            filename = "Padding.kt",
+            filepath = "androidx/compose/foundation/layout",
+            checksum = 0x393214e7,
+            """
 
             package androidx.compose.foundation.layout
 
@@ -423,13 +430,13 @@ object Stubs {
             interface PaddingValues
 
         """,
-        """
+            """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgUueSTMxLKcrPTKnQS87PLcgvTtXL
         TSxJLcpMzBHiCk5OTEvLz0nxLuHi5WJOy88XYgtJLS7xLlFi0GIAADDzNLNQ
         AAAA
         """,
-        """
+            """
         androidx/compose/foundation/layout/PaddingValues.class:
         H4sIAAAAAAAA/5VOTU/CQBB9syiF+lVUEvwTFog3T15MmmA0mnDpaWkXsrTd
         NeyWwI3f5cFw9kcZp+gfcCZ582Ze8t58fX98ArhDnzCUJl9ZnW/izFbv1ql4
@@ -439,13 +446,15 @@ object Stubs {
         bwlcHfAS1zxHbHnM3U7RShAk6CToImSKkwSnOEtBDue4SCEcIofeD+cWtEFp
         AQAA
         """
-    )
+        )
 
-    val Remember: TestFile = bytecodeStub(
-        filename = "Remember.kt",
-        filepath = "androidx/compose/runtime",
-        checksum = 0x715f1bc1,
-        source = """
+    val Remember: TestFile =
+        bytecodeStub(
+            filename = "Remember.kt",
+            filepath = "androidx/compose/runtime",
+            checksum = 0x715f1bc1,
+            source =
+                """
         package androidx.compose.runtime
 
         import androidx.compose.runtime.Composable
@@ -480,13 +489,13 @@ object Stubs {
             crossinline calculation: () -> V
         ): V = calculation()
         """,
-        """
+            """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgUuOSSMxLKcrPTKnQS87PLcgvTtUr
         Ks0rycxNFeIKSs1NzU1KLfIu4RLl4gZK66VWJOYW5KQKsYWkFpd4lygxaDEA
         ALrkMh5XAAAA
         """,
-        """
+            """
         androidx/compose/runtime/RememberKt.class:
         H4sIAAAAAAAA/61WS3PbVBT+rvySHT8U50HiQAh5tM6rctxQoHZdQiDUgxuY
         2mOYyUq21VR+SB1JNmWXYcNvYMsvYFlYMJmw40cxnCvLjmM7qUu60NW5R+d+
@@ -513,13 +522,15 @@ object Stubs {
         3MtDRipPazydx33sU4CFj/HgBJIFn4VPLIQsfGrBb2HZwmcWliysWlixsGFh
         zcJDC0nHf+c//GYG8S4LAAA=
         """
-    )
+        )
 
-    val StateFactoryMarker: TestFile = bytecodeStub(
-        filename = "StateFactoryMarker.kt",
-        filepath = "androidx/compose/runtime/snapshots",
-        checksum = 0x2ecf44e1,
-        source = """
+    val StateFactoryMarker: TestFile =
+        bytecodeStub(
+            filename = "StateFactoryMarker.kt",
+            filepath = "androidx/compose/runtime/snapshots",
+            checksum = 0x2ecf44e1,
+            source =
+                """
         package androidx.compose.runtime.snapshots
 
         @MustBeDocumented
@@ -527,13 +538,13 @@ object Stubs {
         @Retention(AnnotationRetention.BINARY)
         annotation class StateFactoryMarker
         """,
-        """
+            """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgsuOSSMxLKcrPTKnQS87PLcgvTtUr
         Ks0rycxNFRL0LS1JTMpJ9cwrCS5JLEn1LhHiD85LLCjOyIcJcOlwKeHSr5eT
         mVeiV5JaXCLEFgIkvUuUGLQYAH5U0JeGAAAA
         """,
-        """
+            """
         androidx/compose/runtime/snapshots/StateFactoryMarker.class:
         H4sIAAAAAAAA/51Sy27TQBQ945AmDVBSoJC0lD4o6Q6XCsSCVdI2wlIeKAlI
         KKupPSquHU/kGYdmlx3/xAJFLPkoxJ1GJEFYICFL1+fec+5rZr7/+PIVwAsc
@@ -547,13 +558,15 @@ object Stubs {
         tT1Ahf4BcvQBeeJX+2ACBdzELfJuC6zhDopErs/cu7iH+wZe6zbwAA+RRamP
         jIOyg00HW3hEENsOHmOHVAq72OvDUthXePITiiesbIsDAAA=
         """
-    )
+        )
 
-    val SnapshotState: TestFile = bytecodeStub(
-        filename = "SnapshotState.kt",
-        filepath = "androidx/compose/runtime",
-        checksum = 0xe6e3c192,
-        source = """
+    val SnapshotState: TestFile =
+        bytecodeStub(
+            filename = "SnapshotState.kt",
+            filepath = "androidx/compose/runtime",
+            checksum = 0xe6e3c192,
+            source =
+                """
         package androidx.compose.runtime
 
         import kotlin.reflect.KProperty
@@ -671,13 +684,13 @@ object Stubs {
             override fun toString() = "NeverEqualPolicy"
         }
         """,
-        """
+            """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgsuOSSMxLKcrPTKnQS87PLcgvTtUr
         Ks0rycxNFRL0LS1JTMpJ9cwrCS5JLEn1LhHiD85LLCjOyIcJcOlwKeHSr5eT
         mVeiV5JaXCLEFgIkvUuUGLQYAH5U0JeGAAAA
         """,
-        """
+            """
         androidx/compose/runtime/DerivedState.class:
         H4sIAAAAAAAA/4VRTW/TQBB9Yzuxk4bghhbSAG1BQiQccKk4IFJVQnyISKmQ
         mihCymkbL2Ebx668m6jH/BYO/AgOyOqRH4UYp6hCRIXLzLzZN29Hb378/PYd
@@ -691,7 +704,7 @@ object Stubs {
         wu7A72C9gxpucYmNDjZxewjSuIP6kE+ILY2Gxl2NezqHJY01jcovIuyLgMcC
         AAA=
         """,
-        """
+            """
         androidx/compose/runtime/DerivedStateImpl.class:
         H4sIAAAAAAAA/41S224SURRdZ2YYhpHClN5rvVVrgdpObXwwLcF4SSMJalII
         MfbpABN6Wphp5hxIH/kKP8Av0ERj4oMhffSjjHuANCom8rL32mv22Wtf5sfP
@@ -708,7 +721,7 @@ object Stubs {
         XTW2P27M/G9T5lVTJpb/aEofIx0Phn4T2+QPKWOVtK8fQy9hrYQbJdzELYK4
         XcIdrB+DSdzFvWMkJOYkNiTuS6RkFM5LLEgsSaR/Aaib5exSBAAA
         """,
-        """
+            """
         androidx/compose/runtime/MutableState.class:
         H4sIAAAAAAAA/4VR0WoTURA9c3eT3aQxbmOradRaBTHxwa3FBzGlIKIYSBCa
         EIQ83SZr3GZzt+TeDX3cb/HBj/BBlj76UeJsKkUM1Zc7c+aeOTOc+fHz23cA
@@ -722,7 +735,7 @@ object Stubs {
         A6+DzQ5quMUptjrYxu0RSOMO6iM+IXY0Ghp3Ne7pHJY0NjQqvwDJFOU0xwIA
         AA==
         """,
-        """
+            """
         androidx/compose/runtime/MutableStateImpl.class:
         H4sIAAAAAAAA/41S204TURRdZ2Y6nY6lDIVyE28o0hZhkPhgoKlRE2KToglt
         GiNPh3YCB9oZ0nPa8Niv8AP8Ak00Jj6Yhkc/yrhP2xBiTezLXmuv2Wdf59fv
@@ -739,7 +752,7 @@ object Stubs {
         N7Y7asz+b1P2dVM26TebMkfMxJMBrmOTcJ8ilqn27SOYJayUcKeEu7hHFPdL
         eIDVIzCJh3h0hITErMSaxGOJlNTunERGYkFi+g+3c7/UUgQAAA==
         """,
-        """
+            """
         androidx/compose/runtime/NeverEqualPolicy.class:
         H4sIAAAAAAAA/5VU3W8bRRD/7Z0/zhcndZyQpmn4KA3UTpqeE8pnTNoSinqR
         ayJcBUGe1vbibnK+c+/2rCJeIv4Unnmg4qEIJBTBW/8oxOydCcFJUSLLO7Mz
@@ -762,7 +775,7 @@ object Stubs {
         GF89x9LPuPEsMWRQp9WmsEVq2bvE+uOEnYnNRL6HOyRd8leoB9U9mC6WXay4
         uIlVUnHLpSbW9sAirGF9D3aEyQjvRLgdoRBhKlGmI8xEmCX9b4SHlftABwAA
         """,
-        """
+            """
         androidx/compose/runtime/ProduceStateScope.class:
         H4sIAAAAAAAA/41SW28SQRQ+s1BYkOoWb5TitTUqMe5KfHIJ0WhIMVQbQRPD
         07AMOLDMkJ1Z7CO/xQd/hA+G9NEfZTwL3TYWa/swc27f+c5cvl+/f/wEgOew
@@ -778,7 +791,7 @@ object Stubs {
         Bga5xc9FewxMwP2FvQ3baOtYXUfSyx1INOBKA6wGbEAeXbjagGtwvQNEwQ24
         2YGMgoKCTQVFBaaCLQUlBbcWTuYPf2PH6TMEAAA=
         """,
-        """
+            """
         androidx/compose/runtime/ReferentialEqualityPolicy.class:
         H4sIAAAAAAAA/5VUW08bRxT+ZteX9WITYygBQq8hiblljUuvuDSUpoqRIShG
         RC1PY3viDKx3nb1YifqC+lP60L70oVEfUrVShdq3/qiqZ3Zd6hqoQJbnnDnn
@@ -802,7 +815,7 @@ object Stubs {
         q0lhs9TG94j1esROx6eRfB/3SFbJX6Rrnj+AXsVCFYtVLGGZVNytUmNLB2A+
         VlA+gOkj5+NdH6s+Mj5GI2XMx7iPCdL/Br5SJwt/BwAA
         """,
-        """
+            """
         androidx/compose/runtime/SnapshotMutationPolicy＄DefaultImpls.class:
         H4sIAAAAAAAA/5VSTW/TQBB96yR1E1L6wWcotEADohwwlTiRqBIqQjJKS0Wi
         Hspp4yzpJvautV5HRfwpzhz4AfwoxKyTCmgQIpY9++bNm5n17H7/8fUbgBd4
@@ -817,7 +830,7 @@ object Stubs {
         eQVaJVTC/QL7eDCrsUzrQ/pWykXTi6eEHbI14jzcwSYaaBaJd/GI1i3i10iz
         /gGlEBshroW4jhshbuJWiNs/AT8TejEUBAAA
         """,
-        """
+            """
         androidx/compose/runtime/SnapshotMutationPolicy.class:
         H4sIAAAAAAAA/5VTzW7TQBD+1kltx2mLC6WkKeU3NCkHnFYcEK2QEAjhKgXU
         RBzoaZNswybOOnjtqHDKs/AYHFDEkYdCjJ1WINIDlbzz/83szox//vr2HcBj
@@ -833,7 +846,7 @@ object Stubs {
         xxZRh7S75LuH9bOoHKoZv48a8SPyL1H+5WPkfFzx4fpYwVUScc3HKq4fg2ms
         4cYxljRKGusaZQ0zoxsaNzUsjYLGpsYtjdsazm99oitP5wMAAA==
         """,
-        """
+            """
         androidx/compose/runtime/SnapshotStateKt＄produceState＄1.class:
         H4sIAAAAAAAA/41TbU8TQRB+9np94TxoqYBQFVGrtkU5qCZqCiSGSNJYNaGk
         MeHT0h5l4bpH7rYNH/sr/AH+Ak00Jn4wDR/9UcbZa2NQEEzTmWcnM888uzP3
@@ -851,7 +864,7 @@ object Stubs {
         RHT2MGFENyS5RmcnomZRM2AOy2RN3EdxlBOjK2pfQpn8GmXOUVVuB7Eqrldx
         o4qbmCeIW1Us4PYOWIg7uLuDRKhhPsREiOkQMyHSvwDFJnyjsgQAAA==
         """,
-        """
+            """
         androidx/compose/runtime/SnapshotStateKt＄produceState＄2.class:
         H4sIAAAAAAAA/41TXU8TURA9d7v9YF1oqYCAiqhVt0VZqCYqBRJDIGmsmlDS
         mPC0bNdyob1Ldu82PPZX+AP8BZpoTHwwDY/+KOPcbWNQFHjYmXMnM2fm3jn7
@@ -869,7 +882,7 @@ object Stubs {
         WInpzEHCkG5Aco3OdkzN4mbADJbI6riP4jAnQVdUvoQy+TXKnKGq2V0kqrhe
         xY0qbmKOIG5VMY/bu2Ah7uDuLlKhgoUQYyEmQ0yFyP4CSN9ZzcQEAAA=
         """,
-        """
+            """
         androidx/compose/runtime/SnapshotStateKt＄produceState＄3.class:
         H4sIAAAAAAAA/41TXU8TQRQ9s91+rQstFRBQEbXqtigLxURNgcQQmjRWTShp
         TPq0tGsZ2M6S3WnDY3+FP8BfoInGxAfT8OiPMt7ZNgZFwYe9H5N7zz0z9+z3
@@ -887,7 +900,7 @@ object Stubs {
         WIngzFHBGG4Eco1yO4Jm0TBgHqtkddxHYVwToysqX0SJ/CZVzlPXQhOxKq5X
         caOKm1ikELeqWMLtJliIO7jbRCJUYT7EZIiZELMhMj8ByotGl7MEAAA=
         """,
-        """
+            """
         androidx/compose/runtime/SnapshotStateKt.class:
         H4sIAAAAAAAA/91Ya1cbxxl+RoAkZAHrtTEg20S2IWAwCLCT1IYSu8QYhYup
         wdTYdZxFLLBG7Co7K2LaJnFv7v2eXtImvaT3Nm3dfolTn9PDycf+kp72L/T0
@@ -943,7 +956,7 @@ object Stubs {
         HI0c9zgGOXSOSxxjHD/luMxxnuNnHG9y/FyO/ILjWY4hjivycZojw9HBcY1j
         ieMmxzLHPMcKh/FftSsUaNEeAAA=
         """,
-        """
+            """
         androidx/compose/runtime/SnapshotStateList.class:
         H4sIAAAAAAAA/41QTUsjQRSs7smHGaMZdd2Nun7gSYM4KsKCK8IqCIFRYRNy
         yamTabRN0i3THfE4v2X/wZ4WPCyDR3/Usm+iF3cvXuq9qi7ee9XPfx5/AzjE
@@ -956,7 +969,7 @@ object Stubs {
         PaxOXB7WJnUJ61S/kKdKnpkuvCZmm6g1EWCOWsw3sYAPXTCLRXzsomAxbfHJ
         om5R/gvbVDsvSgIAAA==
         """,
-        """
+            """
         androidx/compose/runtime/SnapshotStateMap.class:
         H4sIAAAAAAAA/41QyW4TQRB91eN1YpJJ2Bx2LogEiUkiTsGKBEhIViYgYTQX
         n9qeVtKx3W1Nt6Mc51v4A05IHNAox3wUosbJheXAoV5VvX5d2+XP7z8AvMJT
@@ -969,7 +982,7 @@ object Stubs {
         Dxk7VwKEWGEf4NFSFeDx0t/DE/b7rOmw5sYQQR+rfaz1EWGdQ2z0cRO3hiCH
         27gzRN1hxeGuQ9dh06H5C310h9RqAgAA
         """,
-        """
+            """
         androidx/compose/runtime/State.class:
         H4sIAAAAAAAA/31QPU8bQRB9c18+XwKciQHjIERpp8g5KEWUGKQ0SJYcRcIW
         iuRqsRez+LyHvGuL8n5LivyIFNGJMj8qYs6kShDNvHlvdmbfzO8/P38BeI8D
@@ -981,7 +994,7 @@ object Stubs {
         8b0C8N2xz8xBCPdv5qK5xgZeM57wiyr3RCO4Pbzo4WUPG9jkFFs9xKiNQAbb
         eDVCYFA32DHYNdgzJa08ADaVmL0DAgAA
         """,
-        """
+            """
         androidx/compose/runtime/StructuralEqualityPolicy.class:
         H4sIAAAAAAAA/5VVW08bRxT+ZteX9WLAcVJqCE2ThjbmljWkdygtIVQxciiq
         I6qWp7E9dcasd53dWStRX1B/Sp/70KgPiVqpQu1bflTVM7suIQYikOU5Z845
@@ -1006,13 +1019,14 @@ object Stubs {
         YgnLxOJOlb6wH+2BhfgYn+zBDjEa4tMQn4XIhRiLmYkQpRCTxP8H9SluIpUH
         AAA=
         """
-    )
+        )
 
-    val Effects: TestFile = bytecodeStub(
-        filename = "Effects.kt",
-        filepath = "androidx/compose/runtime",
-        checksum = 0xade9931f,
-        """
+    val Effects: TestFile =
+        bytecodeStub(
+            filename = "Effects.kt",
+            filepath = "androidx/compose/runtime",
+            checksum = 0xade9931f,
+            """
             package androidx.compose.runtime
 
             @Composable
@@ -1126,13 +1140,13 @@ object Stubs {
                 remember(*keys) { LaunchedEffectImpl(block) }
             }
         """,
-        """
+            """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgMuSSSMxLKcrPTKnQS87PLcgvTtUr
         Ks0rycxNFeJ0TUtLTS4p9i4R4gpKzU3NTUot8i7h4uNiKUktLhFiCwGS3iVK
         DFoMAGDKMaZbAAAA
         """,
-        """
+            """
         androidx/compose/runtime/DisposableEffectImpl.class:
         H4sIAAAAAAAA/51TS08UQRD+enbZx4iyLPJGQEFZQJgFvS0hUYRkkxUNS4gJ
         p2a2gV5me8h0L8Eb0Yu/w3/gwWg8GMLRH2Ws3ocgxgAmM9VV1f1VfV1V/ePn
@@ -1151,7 +1165,7 @@ object Stubs {
         fEliAiRZK6GDhYacwSKtK+QdIgLD24gVMVLEvSJGMUYqxou4jwfbYBoTmNxG
         SmNA46FGWuORxpRGTmNaI/EL6pV/cp8FAAA=
         """,
-        """
+            """
         androidx/compose/runtime/DisposableEffectResult.class:
         H4sIAAAAAAAA/5VPzU4CMRicrwssrIqLv+gDEL24QEw8eDJR4xqMCSZcOBW2
         mMKyJbQQjjyXB8PZhzJ+C09g0kxnvp/O9Of36xvALc4JkcySudHJKhqa6cxY
@@ -1161,7 +1175,7 @@ object Stubs {
         oXrWKee/6O7We9pqXn3IMuOk0yazJbZEAdvgBUIRJWYCp1s8wRnfd/y0z51y
         H16MSowgxh72meIgRhWHfZBFiFofBYsji2OLIuMfte9Y6pYBAAA=
         """,
-        """
+            """
         androidx/compose/runtime/DisposableEffectScope＄onDispose＄1.class:
         H4sIAAAAAAAA/8VUXVPTQBQ9mxZKQ4HwIQIqVkFtA5Km4hcwzDBYxmpRh2p9
         4CltQ1mabpgk7fDk9CfpjI6jD06f/VGON0mRjjry8eJD9t69e/bs3bP35vuP
@@ -1181,7 +1195,7 @@ object Stubs {
         KNJYxMOA4y4ekf3PlUFXBOVDr0ACXd1FJI9reczmcR1JcnEjj5uY2wVzMY9b
         u4i6vnvbxbiLO1ihzb5WS/RpASjzE60KhHSEBgAA
         """,
-        """
+            """
         androidx/compose/runtime/DisposableEffectScope.class:
         H4sIAAAAAAAA/51UW2/TSBT+xrnYdbtNGm5tYaFAgJZC7YT7hkXaLVsRFAoi
         UAn1aeJMy7TOuPI4FY8VD/wHXvkF8AQCCUXljR+12jNOWgo8dIslz7l/Z86c
@@ -1202,7 +1216,7 @@ object Stubs {
         x9k6ynWcw3licaGOacwsg2lcxOwyHA1X45JGXmNY47JGQWOONP8BWe15VNUF
         AAA=
         """,
-        """
+            """
         androidx/compose/runtime/EffectsKt.class:
         H4sIAAAAAAAA/+1Y3VMb1xU/qw+0LALL4ltJHcWQBoSxtOLDYGFcB3CsGmMq
         2VCX1ukiFryw2lW0KxmctHGn05m+9B9IHjqT5770pUmbGTfTx/5Rnf7u3ZWQ
@@ -1251,7 +1265,7 @@ object Stubs {
         bZGapW3ayaK/tQ0Uh3Zpb4P6LRq0SMez2qKiRYZFpkUli2b5zXmLPrJoicsL
         Fq1alLPoU4vuWpSxKGlRzKKgRWXeF11Y1canwr1X/wvUiR6dlRwAAA==
         """,
-        """
+            """
         androidx/compose/runtime/LaunchedEffectImpl.class:
         H4sIAAAAAAAA/5VSW08TURD+znbZtitCWQHLRUSLUKiwhfhWQqJETJOKBpSY
         8HS6Xcppt2fJXhp8a/wp/gMfjMYHQ3j0RxnntEUQVEKyO7f9Zubbmfnx89t3
@@ -1270,13 +1284,14 @@ object Stubs {
         DTXYXZlHkfQmRSeJwNQ+EmVMl3GvjBncJxOzZTzAw32wEDnM7SMVIhviUYh0
         iPkQC13bCDH6C4u/Nd/9BAAA
         """
-    )
+        )
 
-    val Dp: TestFile = bytecodeStub(
-        filename = "Dp.kt",
-        filepath = "androidx/compose/ui/unit",
-        checksum = 0xe65966ab,
-        """
+    val Dp: TestFile =
+        bytecodeStub(
+            filename = "Dp.kt",
+            filepath = "androidx/compose/ui/unit",
+            checksum = 0xe65966ab,
+            """
             package androidx.compose.ui.unit
 
             @kotlin.jvm.JvmInline
@@ -1286,7 +1301,7 @@ object Stubs {
 
             inline val Int.dp: Dp get() = Dp(value = this.toFloat())
         """,
-        """
+            """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/3XNOwvCQBAE4JUExFUQrhARQbERLGIjWIt26QzYyiVZkoN7
         hMsG/PmeqFV0YZphPhYAIgAYhIzgc3jAhbSld6p8JIUzjWspkVYZycpZMcuU
@@ -1294,7 +1309,7 @@ object Stubs {
         OGPJL7jFZQ92Kqm8bGpVtGJ4dtoFiesfH8Kws4pFfGnCYowxU8siuqe8gR08
         AekscysQAQAA
         """,
-        """
+            """
         androidx/compose/ui/unit/Dp.class:
         H4sIAAAAAAAA/31U31MbVRT+7s2v3WWBTdpSQktbQ20DSBOwQpWCUGhKEFot
         iLaodUlWWEiyMbthOj4xvuhf0Bn7Vl986XR0RiljZxykb/4d/hmO47mbS8iE
@@ -1327,7 +1342,7 @@ object Stubs {
         Dyihh6sIZLGaxWdZfI4vaIlHWXwJcxXMxRpyq4i76HSRd6H5Y9bFvAvFhepi
         2bd0uzBcRF3M+Fv6TbiYdDHmYtQV8LRvPO+i9z+OvdduJAoAAA==
         """,
-        """
+            """
         androidx/compose/ui/unit/DpKt.class:
         H4sIAAAAAAAA/31Qy27TQBQ9M04cx5TWLVCalPAoRqJIxSligaAbRBTJIoBE
         UTdZTWxTprE9lmdcdZlVP4QPYI1YoAh2fBTiTum6m3PPPfc1Z/78/fETwHM8
@@ -1340,18 +1355,20 @@ object Stubs {
         oH/+HSvfrHE8IHQvKl3sEN8kxkm5jlVSqRtrxGznwwu8h5DiS6oFtHt9CifG
         RowbMW7iVkzjt2NsoTcF0+hje4q2xh2NgcZdbbn7D0kxfkBPAgAA
         """
-    )
+        )
 
-    val Animatable: TestFile = bytecodeStub(
-        filename = "Animatable.kt",
-        filepath = "androidx/compose/animation/core",
-        checksum = 0xb1ce1ffe,
-        """
+    val Animatable: TestFile =
+        bytecodeStub(
+            filename = "Animatable.kt",
+            filepath = "androidx/compose/animation/core",
+            checksum = 0xa9a240ac,
+            """
             package androidx.compose.animation.core
 
+            import androidx.compose.runtime.annotation.RememberInComposition
             import androidx.compose.runtime.mutableStateOf
 
-            class Animatable<T, V>(
+            class Animatable<T, V> @RememberInComposition constructor(
                 initialValue: T,
                 val typeConverter: V? = null
             ){
@@ -1360,74 +1377,77 @@ object Stubs {
                     get() = internalState.value
             }
 
+            @RememberInComposition
             fun Animatable(initialValue: Float): Animatable<Float, Any> = Animatable(initialValue)
         """,
-        """
-        META-INF/main.kotlin_module:
-        H4sIAAAAAAAA/3XLvQvCQAwF8IiiGEThBhERBBfBoS6Cszh2s+KetqE9uI9y
-        TcE/3xN1KgZehsf7AcAQAAYxU/gennBNrgxel8+k8LbxLSfktCXR3qllpl1l
-        +EGm48uvTQWPuP2vYhNYzT57yg1HcMZVD4TOibas8MaWbc4hFbXIHDVt7SUT
-        kjfc46YHO51UgZpaF62aXL3xUeIcR8KtqPE9/lR2cIAXLlZThPEAAAA=
-        """,
-        """
-        androidx/compose/animation/core/Animatable.class:
-        H4sIAAAAAAAA/41VXXPaRhQ9KyQQMtiC2gkmcZs4pAHsRo775Qbq1HHqGaYm
-        ydiU6YwfOjIojoyQPFrBJC8t09/Ql772F7QzzaTtQ4fJY39Up3cl4hhDWj9o
-        9+7d3XPPvfcs/P3Pn38B+Ag7DGXTbfue3X5mtLzuicctw3TtrhnYnkse3zK2
-        wqV56FgJMIZqtXF399jsm4ZjukfGo8NjqxVUmlN8m5MuBv28LwGZIV61XTvY
-        ZLhVnLw06Sk1GZLFRqPSaIZ2Ydfzj4xjKzj0TdvllIHrBWEK3HjYcxxBnmLH
-        iqVmCnFoGhTMMKSD5yfWtuf2LT+wfIbsZKQU0phNQsIcQ3GiUn7PDeyuZey7
-        5gl/6gX7FNT6ilLKMFzq9sKihb5HTwpt64nZcwKG76el+L/Q9V6U0GPPsVvP
-        K7UpRXk7SP0MFUrpHcxryGKBKmC7lLlrOuEWlf/CGJeRE2VZZJCDpzZnWJ28
-        +lYhUS9SouG26TRNp0eBmxfqe2234wWO7RrH/a7xmrrxIKosNZIHfq8VeH7d
-        9DuWX4m6ndCI53ukvCMraIw3fL5YmqZRpVgiYTGodGPET7ga5Lp5ofok8H4K
-        BSzP4BaKpLsQbUqBpt2tUpxNOn7jvzTtBULWdCrzuiJ1KzDbVF3ySd1+jF43
-        E0NSDGBgHfI/s8Vqjaz2HYYfh4OcJuUkTVLp04cDMuSRQ8kNB2VZHQ50RhPT
-        pXVpLXZ/MRvX5by0MRxkNVXSlbycYxvs1c9xSY/vzeuJvJqVs2J7Tf3m1Q+z
-        YkMbDvYWzpzUKNJMXlaTuraX0VMh2MYObcTJmdY1wW2d6Dboo4dNzJV+1IH0
-        G/nc7tAzSu7bR64Z9Hzau7IXFbLm9m1u04mtN8UigW57bTo0t2u71sNe99Dy
-        GwJFvHevJRTo22I9chbOYz02fbNrkV7GQNPUrFanbp6Mrmn7Xs9vWTu2WCyO
-        MJoTbHCHxKhQFyR6gPTTQvPn4aqMTZrjlHAyXNP7Ot1bOd1bpVmmmVSNGO7R
-        6ltCE11dKL9Eqrz6Anp5hSnsd1x6gfyv4fUvaMzSNQEhQ6UAGubJ3iLPtegy
-        ruCqEApZS0SKhdZZeiruCzVJoZiIoS44vEu24FAlEJHT3JLy3U9QWL28svoS
-        16Lo2zTGwNQxGnECVGmcpSAZXMfyKBtDSJVmpfwb9F9O2cdDpxoyTkUHRowj
-        djfGipcRT4+898K/uAhQI8D8HygxnEdNnUHVxlBvEqnIiuFBOFfxJc1f09kP
-        iMHtA8RqMGpYq1Fb18nEhzWK+PEBGMcn+PQAsxxXOTY4PuO4y7HEkeZIcFzm
-        yHFc51jm4kyFo/Avb5BXyJQHAAA=
-        """,
-        """
-        androidx/compose/animation/core/AnimatableKt.class:
-        H4sIAAAAAAAA/5VRy27TQBQ9Y+dB3NC44dW4PNsNSAinhRVBSBVSJAsTJFp1
-        k9UkHkWT2DPIHkdd5pNYIhYoaz4KcceJFAk2VBqf+5hzr+ee++v3j58A3uCE
-        4SVXSa5lch1OdfZVFyLkSmbcSK0ok4vwvAr5JBUfTROMwZ/zJQ9Trmbh58lc
-        TCnrMng7HkP4fPgi/v/GA4bLm1W8i3ePGKaam0H896sG76ntSazzWTgXZpJz
-        qQpqqLSpOhbhSJtRmaaDNupoeHDQYmhLJY3k6RVPS5qDDRkO4oU2qVThJ2F4
-        Qr+ntk62dElAZqFlAcRdWMehy2tpvT55ySnD6/XK99Yrzzl0PMdv0kfBehUE
-        ZIP9bq3r9J0K3T47a/i1gGJbeka7uZmG9Ijbu8SrhWGofdAJzdGJpRKjMpuI
-        /HKzoW6sp3bMXNp4m2xdyJnipszJP/pSKiMzEamlLCRdn++ko21f6DKfiqG0
-        Zb0t9eofIk5J1ho2AvWsznDxkKLQCka2fvwd3jerGx4RNqpkB48J2xsC9sgD
-        nlScJp5uWbeq+FmFRzgm+9aOT/z9MdwInQh+hAN0I9zB3Qj3cH8MVuABDseo
-        F/b0CgTV2fsD4lpb1BADAAA=
-        """
-    )
+            """
+            META-INF/main.kotlin_module:
+            H4sIAAAAAAAA/3XOsQrCQAwG4KjgEAThXBwEwUHBoY5ugqN0s75A2qZ44CXl
+            moKPb6uCQzEQyP/DBwGACQCMux3Bd/CAa5Iyqi+fSaGh1oYTEh/IvErXRHaz
+            8ztT/uDU8IS7Aai0lfIjvBhHKvrbLS6/kGkbi94fcTnwsRXzgR1eOXDIOabm
+            5plQ3dzVMiPr4RZX/2D3gLrpjRtLbQN7eAFC9Ry96gAAAA==
+            """,
+            """
+            androidx/compose/animation/core/Animatable.class:
+            H4sIAAAAAAAA/41VXW/aVhh+jvkyDhDDko6QpeuaZAWS1UnWbVlhWdO0mdCg
+            rQhClXIxOeCmDmBHPga1Nxvar9hu9ws2aVW3XUyol/tR095jkxQC6SJkv+c8
+            ft/Hz/vhwz///vU3gDv4hiGvW03HNpsvtIbdObW5oemW2dFd07YIcQxt19vq
+            R20jAsZQLNbulk/0nq61detYe3x0YjTcQn0KtjMJMagXsQiCDOGiaZnuDsOt
+            7GTQJJKrM0SztVqhVvfWhfJEEk7Xcs2OSMayXT+bqtExOkeGU7L2PCdToCRp
+            pWw7x9qJ4R45umnxkRCuPeq22yJ1cgtkc/UYwphREEKMIe6+PDX2bKtnOK7h
+            MKQmdcaQwGwUElSG7KUSDyz9lD+33QN6qfEtFSTFcK3T9UruYY+frTSNZ3q3
+            7TL8MK1A/0td6foJPbHbZuNloTSlpJeTVEakUEpzmFfwHq5RBUyLMrf0tveI
+            mndljjQWRFkyDEH3uckZ1idDLx1D6kVMjIupt+t6u0svrl9pakrllu22TUs7
+            6XW0M+naA7+y1EjuOt2GazsV3WkZTsHvdkQhnTdobo8Ntzbe8LlsbtqEh7I5
+            GksGmSKG+gRUI2j1SvWJ4FYMq1ieQRY5mjuPbUqBpsUW6T075L78rpm2XTHW
+            5JU8q0jFcPUmVZcwqdML0NkgiRsTNzCwFuEvTLHboFVzk+GnQT+tSGlJkWS6
+            1EGfFvIZkB7080F50FcZGaZKW9JG4P6SHEmF1WBG2h70U4osqaFMMM222Ztf
+            wkE5rEaq8yOIQpxKJijLarQ6p85k5FQwJQI3Yk/f/JggB0kZ9KtJNe7Rbe8T
+            Eib3hBoV+rZIco0uOhpIfajndyH+doRut+hTih6Yx5budh16tlj1i1myeiY3
+            yWP3bcFoSPfsJjnNlk3LeNQVZ0hNsIhv3m6IKXRMsR+CKxe5nuiO3jFoZsZI
+            49SwRquinw7DlAO76zSMfVNsFoYc9Qk12KSBDIkOISWOF7I73m4NX5MNU8KK
+            t6dv7PzZ+vmzT8gGydJkk71Hu++ITXR2Pv8a8fz6KyTzayzE/sD7r7D4mxe+
+            S/cUucMLitJvho6BCO4TcsMPxgdYEsNCq+skinmrUXnyuYQo2T26opI3XKRW
+            FXo+pLXQUyRCkd/sUuj7nxFilfza+mt85Ct5QPcAmDwmKUyUMtkEcSVxE8vk
+            Ipg0MbpkQ/nfkfz1PJOwB0Y99THfYajeV7oyVsik+BQJvef9YfqEChEu/ok8
+            w0XW+AirMsb6MYnyVwE89OxX2Cf7lHxvkwLtEIESNkrYLGELn5LFnRI+w+eH
+            YBxfYPsQsxxLHF9y3OUocFznSHCEOSIcNzmWuXBIcyxwFDlW/wOgq4NV5QcA
+            AA==
+            """,
+            """
+            androidx/compose/animation/core/AnimatableKt.class:
+            H4sIAAAAAAAA/5VSTWvbQBB9K381qpPY7lfspF/JpYFSOaG9VKUQAqaiqgtJ
+            yMWntbWYtaXdIK1Mjv5JPZYeis/9UaWzUsCluTSwmrfzNG+Yfbu/fv/4CeAt
+            DhhecxWlWkbX3kQnVzoTHlcy4UZqRUwqvJMi5eNYfDYNMIbWjC+4F3M19b6O
+            Z2JCbIXBXdcxeK8Gh+H/N/YZLu6m+BCuhxjEmhs//Hcq/yO19W/3THNlZGJ7
+            K23K5mciEclYpIE6LYqkZUl9EOp06s2EGadcquwvSeYNtRnmcew3UUPdhQOX
+            oSkVSXl8yeOcXGADhnY41yaWyvsiDI9oeGrrJIsK2e/YwGwA1c6Jv5Y269Mu
+            OmJ4t1q23NXSdXYc12k16KNkteztEfa2OtWO03eKWOmz43qr2qP8U8OKj+la
+            72Y/TbC5Jt7MDUP1VEd0iO1QKjHMrT0X5eV2Qj2xZ0ylzW/IjXM5VdzkKe13
+            z0qLA7WQmaTfJ2vf6KGc6zydiIG0su5N6eWtQhyRp1WU7nStyahgjzLPukVY
+            2/+O+9+sj3hKsV6QbTyj2CwLCDcJnxc1DbwgtBd1j3Cj4F4WcRf7hO9Js0Wa
+            7REqAVoB2gE6eEBbPAzwCI9HYBmeYGeEWmZXN0OvWM0/0M/P208DAAA=
+            """
+        )
 
-    val IntOffset: TestFile = bytecodeStub(
-        filename = "IntOffset.kt",
-        filepath = "androidx/compose/ui/unit",
-        checksum = 0xe18c78ef,
-        """
+    val IntOffset: TestFile =
+        bytecodeStub(
+            filename = "IntOffset.kt",
+            filepath = "androidx/compose/ui/unit",
+            checksum = 0xe18c78ef,
+            """
             package androidx.compose.ui.unit
 
             class IntOffset(val x: Int, val y: Int)
         """,
-        """
+            """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/3XLOwvCQBAE4JUI4ioIV4iIINgIFrERrMUynQFb2SRLcnCP
         cNmAP98TtQoOTDPMBwAJAIxip/ANnnBNrgpeV8+09Lb1HafktCXR3qllrl1t
         +E6m58tvzQSPuP2v4hJYzT9/KgxHcMbVAITeibas8MaWbcEhE7XIHbVd4yUX
         kjfc42YAe53WgdpGl52aXL3xUeIMx8KdqOSRyQ4O8AJoAzD57gAAAA==
         """,
-        """
+            """
         androidx/compose/ui/unit/IntOffset.class:
         H4sIAAAAAAAA/41QTWsTURQ9781HJuO0mUwbTdOqtVZNs3Da4k4RVCgMpBZq
         CUo2TpJpfU0yI3kvJe7yW1y7ESyCCwku/VHifZMgCAWFmXvvOffcj3d//vr2
@@ -1442,23 +1462,159 @@ object Stubs {
         sGhYRuXKYv9/ijnu53YLD8gfUO465W60YUSoRliLUMM6hdiIcBO32mASt7HZ
         RlEikLgj4eZ2WcKWWJFYlaj8BpHq1rYeAwAA
         """
-    )
+        )
+
+    val CompositionLocal =
+        bytecodeStub(
+            filename = "CompositionLocal.kt",
+            filepath = "androidx/compose/runtime",
+            checksum = 0xa5bf3022,
+            """
+            package androidx.compose.runtime
+
+            sealed class CompositionLocal<T> constructor(defaultFactory: (() -> T)? = null) {
+                val stubValue: T = defaultFactory!!.invoke()
+
+                inline val current: T
+                    @Composable get() = stubValue
+            }
+
+            abstract class ProvidableCompositionLocal<T> internal constructor(
+                defaultFactory: (() -> T)?
+            ) : CompositionLocal<T>(defaultFactory)
+
+            internal class DynamicProvidableCompositionLocal<T> constructor(
+                defaultFactory: (() -> T)?
+            ) : ProvidableCompositionLocal<T>(defaultFactory)
+
+            internal class StaticProvidableCompositionLocal<T>(
+                defaultFactory: (() -> T)?
+            ) : ProvidableCompositionLocal<T>(defaultFactory)
+
+            fun <T> compositionLocalOf(
+                defaultFactory: (() -> T)? = null
+            ): ProvidableCompositionLocal<T> = DynamicProvidableCompositionLocal(defaultFactory)
+
+            fun <T> staticCompositionLocalOf(
+                defaultFactory: (() -> T)? = null
+            ): ProvidableCompositionLocal<T> = StaticProvidableCompositionLocal(defaultFactory)
+        """,
+            """
+                META-INF/main.kotlin_module:
+                H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijg0uOSSMxLKcrPTKnQS87PLcgvTtUr
+                Ks0rycxNFRJyBgtklmTm5/nkJyfmeJdw6XPJYKgvzdQryEksScsvyhXid4TI
+                gtUXAzWIcnED1emlViTmFuSkCrGFpBaXeJcoMWgxAACzjsPdkAAAAA==
+                """,
+            """
+                androidx/compose/runtime/CompositionLocal.class:
+                H4sIAAAAAAAA/5VUXW/bVBh+juPEiZu2brKOfmylZdnIBzRZ2UZZQseWUQhK
+                O0ijSKgXyHXc7jSJPfnY0biZKm74DdzyC5gEFLhA1bjjR017j5N2XVsUJkvn
+                nPfxe573eT/sf1/+9TeAW/iKIWc6bc/l7adFy+09cYVd9ALH5z27WA1t7nPX
+                qbuW2dXAGLKV5t36vtk3i13T2Ss+2tm3Lb+8dh5iMM5iGlSGWIU73F9juJat
+                d1y/y53ifr9X3A0cS0YSxfXhqVTOtUjeKK9Kodksr4W+kWyulUQMCR1R6AwL
+                p25yx7c9x+wWa47vcUdwS2hIMiStx7bV2XT9zaDbZZjOns9Ekk5gUsc4jDdJ
+                L5CjIUU5cqfvdmyGS9nceb4kLmF6DGlcZkgIP9hpmd2AnFMXuc5gNgEFcwyq
+                /5gLhkL9fzeMejDRtnfNoOuvm5bvet8zLI4qOkNjZGNq9Ysq+3AQqkq+vhfI
+                eBum17G9sDffjCR9W07Z6SWdavMedXHP9rdeVzKazdFQMOgEVwPPsx2f4fqo
+                wpk7XZsqnsG0ZM0yTGZ4ZjdzmoPVZFRNvv+AIZ2xXuv6rhcKY1h+u0RobEOt
+                U8fXNmzfbJu+SZjS60foO2VyScgFJKFD+FMurRKd2jcZnh0dzOjKjKIfHeiK
+                QYvcyVTimtzjd2aODvJq/OjAYCtKSXkwG1dTRlwxInN6Sk0pq3SdldQXP8cU
+                I9pIGbE5Ca3+86NCUGxOjWtGvJE2EiFMkE5BxgjWjfiLHxhLShUrJKzJpL7U
+                cR6nR0qzjit4+7+78LXn9nlbduGCQU6fxZY7xJbY4nuO6QceNV2tum3aJuvc
+                sTeD3o7tNSWXVCT9W6bHpT0Ex7d80+psmE+G9nxjoKLm9LngBN13HNc3wyGl
+                QdpyA8+y17l0nR26ts45qks0GNGwTSn55dL+gCwFJUIVOTm0Vgl5hAidgHT+
+                EGP5wrd/YOpPvMPwG+afhxce0joB2WSVnijRqficrMuDa7iCq3Ic6LSAd0/C
+                xOn/FMMi2dXw9x6hW8DkFfXZT4iyer7ADnFtEGCd1ghYPIykh6wqRUxgSn4A
+                Q5lFOW+0R/O/Yv6XE2GxARgKSg7PA0EDGdeJ5AaRREKSMnlIei1Syf+O3Js0
+                pPkkL1m6PAohoXaG8Iuh//tAmOPSMMdVeiurFMsXDvHh87D0km9xgJ7UKTas
+                kzwtU17y1oA7gi/D/T5qtDfI5ybpWNlGpIaParhVw23coSM+rlG0T7bBBO6i
+                vI1xgasCFYFPBRYE1gQ0gXsCNwSmBWYEMgKzAp+9AtxYnCVtBwAA
+                """,
+            """
+                androidx/compose/runtime/CompositionLocalKt.class:
+                H4sIAAAAAAAA/51UW08TQRT+ZntfCpSi0gsoQlUuyhYQVKgkBkNsKJdIgzE8
+                TbcLmV52ye62gRfD3/Bf+KbRxPTZH2U8sy1RiwXTlzNn5nzznW/PObM/fn79
+                DuApnjPMc7NsW6J8pulW/dRyDM1umK6oG9qmtxeusMyCpfPathsCY4hVeJNr
+                NW6eaHuliqHTqY8hrneh944Z3s0UqpZbE6ZWada144apy7CjbXW87PpsoWf6
+                fdtqijIv1YxuIesMZ7niWqFbyPrGTfly88Xi+kZ/WXPeVYbpgmWfaBXDLdlc
+                EDk3Tcvl7US7lrvbqEmBmetQBJEZCLbWU8jrc5PXhd5bTwgqQzAnTOFukKqb
+                S30YRRSDKgYwxLDcRwVCiDEMlY1j3qi5W1x3LfucYfKmxAypq8OR6dAwVG5U
+                nr/a6f7mJooAgioU3GFIOLIdejdGju2LntwH3p3rKpRUkZL1nexFf/nhUSTa
+                WiYYRi4rsGO4vMxdTjVT6k0fvVEmTUQaMLCqdBQKngnpZckrLzKUWxcxtXWh
+                KglFVcKKt7YuUpkYmXDcH1feKFk25Q8TTFmKhZWYL6W2jxMs6ydc4D9gMtcS
+                w0qfL5YV6Sdx+Z1/DsdoN3ihSlPh37TKBsNwQZjGbqNeMuyiJJYcEnPIbSH3
+                ncPIgTgxuduwyU+/bcvJm03hCAq/+v306F12R/e5zeuGa9h/wQap03p1h592
+                EqgHVsPWjS0hN8kOx+EVfixSQ/2yWWSTctpo1Wi3Ch/1D4h+w8D7uc8YbmHk
+                k+wlsmSDXixJtwnRxiGOUVqXPEwIyx1U2PttAyEqKCJALIJbuE1+O4kCORaD
+                af+Hjwiw7bkvGGtnWSFLCsJeuiEPNUaECSIco8SJfwlNSaHpfwid6E/o+LVC
+                7/YUmibCcSJMU3jVAy3gGa0vie0e1XjyCL487ucxlcc0Mnk8wMM8HmHmCMzB
+                LOaOEHQQcDDv4LGDuIMnDhK/AIiJIGwEBwAA
+                """,
+            """
+                androidx/compose/runtime/DynamicProvidableCompositionLocal.class:
+                H4sIAAAAAAAA/51S308TQRD+9lpaOKG0RRDwByhoBBKvoCaG1iaKITSp2EjT
+                F562dwtuudszd3sNvPVv8T/wycQH0/joH2WcbUtEE9KEl5lvZr/5dmZ2f/3+
+                /gPACzxh2OXKi0LpnTtuGHwOY+FEidIyEM67C8UD6TaisCs93vbF3oAgtQxV
+                PXS5nwVjaFSau/UO73LH5+rU+dDuCFeXq/VrZa/XqzSb5WqZ4fkNarNIM2Qq
+                UkldZVh7Wj8LtS+V0+kGzkmiXEOMnf0RKpU3Wgwb41iVrUFHhrteD6NTpyN0
+                O+KSOFypUPMh/zDxfdNTeRoZZG1MwGZI608yZqhcv4ix+6VV5DxxwhNf73NX
+                h9EFw+q4wRgKl5T3QnOPa045K+im6MWZMVPGgIGdUf5cmqhEyNtmOOj3ira1
+                aNn93r9ust9b7Pc20+TzbGeymC5aB6xkvZ0v5vKpZdvEr4jCSumfXzJWfsLo
+                7dAVTYaXN/kK1HLxcoyrs839T3x2pmnXe6EnGGbrUonDJGiLqGlEjYbhtHgk
+                TTxKTh3JU8V1EhFe/zhspaa6MpZ03OARD4QW0Zu/D8xgH4VJ5Ip9aeqXRjWt
+                YcUVIrZh0euP1ms+A1JYoahKeYt8ZnPrG259JWRhlaw9yBaoZhYPCS0MWZjG
+                zEAlgxydMDwaVExijXzWSE8RSI3SKawP/AM8Jv+aTvMkWDhGqoZiDXM13MY8
+                QSzUcAeLx2AxlrB8jEyMmRh3Y9yLkYtxP0b2D5OoO78aBAAA
+                """,
+            """
+                androidx/compose/runtime/ProvidableCompositionLocal.class:
+                H4sIAAAAAAAA/41SXU9TQRA9e1vacsFSikLBLxBEgcRbURNjK0YxjTUFURpe
+                eNr2Lrjt7V6zd2+Db/0t/gOfTHwwjY/+KONsWyKSEHzZmT1z5szszP76/f0H
+                gMe4x/CIK1+H0j/xmmHnUxgJT8fKyI7w9nTYlT5vBGJ7EJFGhqoWNnmQBmOo
+                lOvPai3e5V7A1bH3rtESTVPaql2od16lXK+XtkoMa/+dkUaSIVWWSpothuX7
+                tXZoAqm8VrfjHcWqaYmRVxl5xdLaAalfxipvDPqw3JVaqI+9ljANzSVxuFKh
+                4UP+bhwEdhbU8PtLC5+NS2WEVjzwXosjHgdmm6hGx00T6h2u20JT6Umk4LoY
+                wwRD0nyUEcOTiwd58WKouaw/LFPhtsJnhsXLmmWYPqXsCMN9bjhhTqeboD/C
+                7DFuDzCwNuEn0t6K5PkPGd72e3nXKThuv/evyawW+r31ZKbfy7HNTD6Zd96w
+                ovNqjoB8NpdYcC30tN8rsGLy55eUkxuziptUpM6w8f+/iFrNn7Z/9k0z54kP
+                2oaGux36gmGqJpXYjTsNoet2jlbDcg64lvY+Asf35bHiJtbkr3wYNlBVXRlJ
+                Cu9xzTuCdvvy7y9hcPfDWDdFRdr8+VHOwTDjDDG5BIfWPRorbT+NBBbp9oKs
+                Qza9vsG+YfIruQ6W6HQH8BWiTuAOebNDGiHZgUwaU8iR1PIgI4MVi1ntcXIS
+                IziBuwN7G6tkn1N0mrrIHyJRxUwVV6u4hllyMVdFAfOHYBEWcP0QqQjZCDci
+                3IwwFeFWhPQfROtXvEUEAAA=
+                """,
+            """
+                androidx/compose/runtime/StaticProvidableCompositionLocal.class:
+                H4sIAAAAAAAA/51SXW8SQRQ9s1A+1pZSkNrWj1aLxraJS6smKkiiTZqSYG2E
+                8MLTsDvFgWXX7M6S+sZv8R/4ZOKDIT76o4x3gMZqQpr05d5z75x75t478+v3
+                9x8AnuERw0vuOYEvnXPL9gef/FBYQeQpORBWQ3El7dPAH0qHd1xxODmXSvpe
+                3be5mwRjOK00X9V7fMgtl3td632nJ2xVrtbnqs7XqzSb5WqZ4ek1apOIMyQq
+                0pOqyrD9uN73lSs9qzccWGeRZ2tiaB3NUKm802LYuYpV2Zt0pLnFuh90rZ5Q
+                nYBL4nDP8/V6NP8kcl3dU3kRCSRNLMBkiKuPMmQoz1/EVeulTWQcccYjVx1x
+                W/nBZ4atq+ZiWLmgvBOKO1xxyhmDYYzem2mT1gYMrE/5c6mjEiFnn+F4PMqZ
+                xpphjkf/utR4tDYe7cbJZ9lBKhfPGcesZLwt5DLZ2Iap4xdEYaX4zy8JI7ug
+                9Q7oiibD8+v8BGo5dzHG5dny/xOf9BWt+tB3BMNyXXriJBp0RNDUolpDc1o8
+                kDqeJdMN2fW4igLCxQ/TVmreUIaSjk95wAdCieDN3/dlMBt+FNjiSOr69VlN
+                a1pxiYh9GPT4s/Xqv4AYNimqUt4gn9jd+4YbXwkZ2CJrTrIFqsnjPqHVKQuL
+                WJqoJJDBMik9mFSksE0+qaXTBGKzdAzFib+Hh+Rf02mWBFfaiNWQqyFfw00U
+                CGK1hltYa4OFWMdGG4kQSyFuh7gTIhPibojkH2XEsYYYBAAA
+                """
+        )
 }
 
 /**
  * Utility for creating a [kotlin] and corresponding [bytecode] stub, to try and make it easier to
  * configure everything correctly.
  *
- * @param filename name of the Kotlin source file, with extension - e.g. "Test.kt". These should
- * be unique across a test.
- * @param filepath directory structure matching the package name of the Kotlin source file. E.g.
- * if the source has `package foo.bar`, this should be `foo/bar`. If this does _not_ match, lint
- * will not be able to match the generated classes with the source file, and so won't print them
- * to console.
+ * @param filename name of the Kotlin source file, with extension - e.g. "Test.kt". These should be
+ *   unique across a test.
+ * @param filepath directory structure matching the package name of the Kotlin source file. E.g. if
+ *   the source has `package foo.bar`, this should be `foo/bar`. If this does _not_ match, lint will
+ *   not be able to match the generated classes with the source file, and so won't print them to
+ *   console.
  * @param source Kotlin source for the bytecode
  * @param bytecode generated bytecode that will be used in tests. Leave empty to generate the
- * bytecode for [source].
- *
+ *   bytecode for [source].
  * @return a pair of kotlin test file, to bytecode test file
  */
 fun kotlinAndBytecodeStub(
@@ -1470,33 +1626,25 @@ fun kotlinAndBytecodeStub(
 ): KotlinAndBytecodeStub {
     val filenameWithoutExtension = filename.substringBefore(".").lowercase(Locale.ROOT)
     val kotlin = kotlin(source).to("$filepath/$filename")
-    val bytecodeStub = bytecode(
-        "libs/$filenameWithoutExtension.jar",
-        kotlin,
-        checksum,
-        *bytecode
-    )
+    val bytecodeStub = bytecode("libs/$filenameWithoutExtension.jar", kotlin, checksum, *bytecode)
     return KotlinAndBytecodeStub(kotlin, bytecodeStub)
 }
 
-class KotlinAndBytecodeStub(
-    val kotlin: TestFile,
-    val bytecode: TestFile
-)
+class KotlinAndBytecodeStub(val kotlin: TestFile, val bytecode: TestFile)
 
 /**
  * Utility for creating a [bytecode] stub, to try and make it easier to configure everything
  * correctly.
  *
- * @param filename name of the Kotlin source file, with extension - e.g. "Test.kt". These should
- * be unique across a test.
- * @param filepath directory structure matching the package name of the Kotlin source file. E.g.
- * if the source has `package foo.bar`, this should be `foo/bar`. If this does _not_ match, lint
- * will not be able to match the generated classes with the source file, and so won't print them
- * to console.
+ * @param filename name of the Kotlin source file, with extension - e.g. "Test.kt". These should be
+ *   unique across a test.
+ * @param filepath directory structure matching the package name of the Kotlin source file. E.g. if
+ *   the source has `package foo.bar`, this should be `foo/bar`. If this does _not_ match, lint will
+ *   not be able to match the generated classes with the source file, and so won't print them to
+ *   console.
  * @param source Kotlin source for the bytecode
  * @param bytecode generated bytecode that will be used in tests. Leave empty to generate the
- * bytecode for [source].
+ *   bytecode for [source].
  */
 fun bytecodeStub(
     filename: String,

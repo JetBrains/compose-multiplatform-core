@@ -23,8 +23,8 @@ import android.util.Pair;
 import android.util.Range;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -50,15 +50,13 @@ public final class NightImageCaptureExtenderImpl implements ImageCaptureExtender
         throw new RuntimeException("Stub, replace with implementation.");
     }
 
-    @Nullable
     @Override
-    public CaptureProcessorImpl getCaptureProcessor() {
+    public @Nullable CaptureProcessorImpl getCaptureProcessor() {
         throw new RuntimeException("Stub, replace with implementation.");
     }
 
-    @NonNull
     @Override
-    public List<CaptureStageImpl> getCaptureStages() {
+    public @NonNull List<CaptureStageImpl> getCaptureStages() {
         throw new RuntimeException("Stub, replace with implementation.");
     }
 
@@ -79,51 +77,44 @@ public final class NightImageCaptureExtenderImpl implements ImageCaptureExtender
         throw new RuntimeException("Stub, replace with implementation.");
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onPresetSession() {
+    public @Nullable CaptureStageImpl onPresetSession() {
         throw new RuntimeException("Stub, replace with implementation.");
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onEnableSession() {
+    public @Nullable CaptureStageImpl onEnableSession() {
         throw new RuntimeException("Stub, replace with implementation.");
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onDisableSession() {
+    public @Nullable CaptureStageImpl onDisableSession() {
         throw new RuntimeException("Stub, replace with implementation.");
     }
 
-    @Nullable
     @Override
-    public List<Pair<Integer, Size[]>> getSupportedResolutions() {
+    public @Nullable List<Pair<Integer, Size[]>> getSupportedResolutions() {
         throw new RuntimeException("Stub, replace with implementation.");
     }
 
-    @Nullable
     @Override
-    public List<Pair<Integer, Size[]>> getSupportedPostviewResolutions(@NonNull Size captureSize) {
+    public @Nullable List<Pair<Integer, Size[]>> getSupportedPostviewResolutions(
+            @NonNull Size captureSize) {
         throw new RuntimeException("Stub, replace with implementation.");
     }
 
-    @Nullable
     @Override
-    public Range<Long> getEstimatedCaptureLatencyRange(@Nullable Size captureOutputSize) {
+    public @Nullable Range<Long> getEstimatedCaptureLatencyRange(@Nullable Size captureOutputSize) {
         throw new RuntimeException("Stub, replace with implementation.");
     }
 
-    @NonNull
     @Override
-    public List<CaptureRequest.Key> getAvailableCaptureRequestKeys() {
+    public @NonNull List<CaptureRequest.Key> getAvailableCaptureRequestKeys() {
         throw new RuntimeException("Stub, replace with implementation.");
     }
 
-    @NonNull
     @Override
-    public List<CaptureResult.Key> getAvailableCaptureResultKeys() {
+    public @NonNull List<CaptureResult.Key> getAvailableCaptureResultKeys() {
         throw new RuntimeException("Stub, replace with implementation.");
     }
 
@@ -137,9 +128,8 @@ public final class NightImageCaptureExtenderImpl implements ImageCaptureExtender
         throw new RuntimeException("Stub, replace with implementation.");
     }
 
-    @Nullable
     @Override
-    public Pair<Long, Long> getRealtimeCaptureLatency() {
+    public @Nullable Pair<Long, Long> getRealtimeCaptureLatency() {
         throw new RuntimeException("Stub, replace with implementation.");
     }
 

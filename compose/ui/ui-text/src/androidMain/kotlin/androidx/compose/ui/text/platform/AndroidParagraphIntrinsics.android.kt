@@ -18,15 +18,14 @@ package androidx.compose.ui.text.platform
 
 import android.graphics.Paint
 import android.graphics.Typeface
+import android.view.View
 import androidx.compose.runtime.State
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.EmojiSupportMatch
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.ParagraphIntrinsics
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.android.InternalPlatformTextApi
 import androidx.compose.ui.text.android.LayoutCompat
 import androidx.compose.ui.text.android.LayoutIntrinsics
 import androidx.compose.ui.text.font.FontFamily
@@ -34,21 +33,19 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.TypefaceResult
-import androidx.compose.ui.text.intl.AndroidLocale
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.platform.extensions.applySpanStyle
 import androidx.compose.ui.text.platform.extensions.setTextMotion
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.util.fastFirstOrNull
 import androidx.core.text.TextUtilsCompat
-import androidx.core.view.ViewCompat
 import java.util.Locale
 
-@OptIn(InternalPlatformTextApi::class, ExperimentalTextApi::class)
-internal class AndroidParagraphIntrinsics constructor(
+internal class AndroidParagraphIntrinsics(
     val text: String,
     val style: TextStyle,
-    val spanStyles: List<AnnotatedString.Range<SpanStyle>>,
+    val annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
     val placeholders: List<AnnotatedString.Range<Placeholder>>,
     val fontFamilyResolver: FontFamily.Resolver,
     val density: Density
@@ -74,27 +71,27 @@ internal class AndroidParagraphIntrinsics constructor(
      * This value will never change
      */
     private val emojiCompatProcessed: Boolean =
-        if (!style.hasEmojiCompat) { false } else { EmojiCompatStatus.fontLoaded.value }
+        if (!style.hasEmojiCompat) {
+            false
+        } else {
+            EmojiCompatStatus.fontLoaded.value
+        }
 
     override val hasStaleResolvedFonts: Boolean
-        get() = (resolvedTypefaces?.isStaleResolvedFont ?: false) ||
-            (!emojiCompatProcessed && style.hasEmojiCompat &&
-                /* short-circuit this state read */ EmojiCompatStatus.fontLoaded.value)
+        get() =
+            (resolvedTypefaces?.isStaleResolvedFont ?: false) ||
+                (!emojiCompatProcessed &&
+                    style.hasEmojiCompat &&
+                    /* short-circuit this state read */ EmojiCompatStatus.fontLoaded.value)
 
-    internal val textDirectionHeuristic = resolveTextDirectionHeuristics(
-        style.textDirection,
-        style.localeList
-    )
+    internal val textDirectionHeuristic =
+        resolveTextDirectionHeuristics(style.textDirection, style.localeList)
 
     init {
         val resolveTypeface: (FontFamily?, FontWeight, FontStyle, FontSynthesis) -> Typeface =
             { fontFamily, fontWeight, fontStyle, fontSynthesis ->
-                val result = fontFamilyResolver.resolve(
-                    fontFamily,
-                    fontWeight,
-                    fontStyle,
-                    fontSynthesis
-                )
+                val result =
+                    fontFamilyResolver.resolve(fontFamily, fontWeight, fontStyle, fontSynthesis)
                 if (result !is TypefaceResult.Immutable) {
                     val newHead = TypefaceDirtyTrackerLinkedList(result, resolvedTypefaces)
                     resolvedTypefaces = newHead
@@ -106,50 +103,53 @@ internal class AndroidParagraphIntrinsics constructor(
 
         textPaint.setTextMotion(style.textMotion)
 
-        val notAppliedStyle = textPaint.applySpanStyle(
-            style = style.toSpanStyle(),
-            resolveTypeface = resolveTypeface,
-            density = density,
-            requiresLetterSpacing = spanStyles.isNotEmpty(),
-        )
+        val notAppliedStyle =
+            textPaint.applySpanStyle(
+                style = style.toSpanStyle(),
+                resolveTypeface = resolveTypeface,
+                density = density,
+                requiresLetterSpacing =
+                    annotations.fastFirstOrNull { it.item is SpanStyle } != null,
+            )
 
-        val finalSpanStyles = if (notAppliedStyle != null) {
-            // This is just a prepend operation, written in a lower alloc way
-            // equivalent to: `AnnotatedString.Range(...) + spanStyles`
-            List(spanStyles.size + 1) { position ->
-                when (position) {
-                    0 -> AnnotatedString.Range(
-                        item = notAppliedStyle,
-                        start = 0,
-                        end = text.length
-                    )
-
-                    else -> spanStyles[position - 1]
+        val finalSpanStyles =
+            if (notAppliedStyle != null) {
+                // This is just a prepend operation, written in a lower alloc way
+                // equivalent to: `AnnotatedString.Range(...) + spanStyles`
+                List(annotations.size + 1) { position ->
+                    when (position) {
+                        0 ->
+                            AnnotatedString.Range(
+                                item = notAppliedStyle,
+                                start = 0,
+                                end = text.length
+                            )
+                        else -> annotations[position - 1]
+                    }
                 }
+            } else {
+                annotations
             }
-        } else {
-            spanStyles
-        }
-        charSequence = createCharSequence(
-            text = text,
-            contextFontSize = textPaint.textSize,
-            contextTextStyle = style,
-            spanStyles = finalSpanStyles,
-            placeholders = placeholders,
-            density = density,
-            resolveTypeface = resolveTypeface,
-            useEmojiCompat = emojiCompatProcessed
-        )
+        charSequence =
+            createCharSequence(
+                text = text,
+                contextFontSize = textPaint.textSize,
+                contextTextStyle = style,
+                annotations = finalSpanStyles,
+                placeholders = placeholders,
+                density = density,
+                resolveTypeface = resolveTypeface,
+                useEmojiCompat = emojiCompatProcessed
+            )
 
         layoutIntrinsics = LayoutIntrinsics(charSequence, textPaint, textDirectionHeuristic)
     }
 }
 
 /**
- * For a given [TextDirection] return [TextLayout] constants for text direction
- * heuristics.
+ * For a given [TextDirection] return [androidx.compose.ui.text.android.TextLayout] constants for
+ * text direction heuristics.
  */
-@OptIn(InternalPlatformTextApi::class)
 internal fun resolveTextDirectionHeuristics(
     textDirection: TextDirection,
     localeList: LocaleList? = null
@@ -159,13 +159,12 @@ internal fun resolveTextDirectionHeuristics(
         TextDirection.ContentOrRtl -> LayoutCompat.TEXT_DIRECTION_FIRST_STRONG_RTL
         TextDirection.Ltr -> LayoutCompat.TEXT_DIRECTION_LTR
         TextDirection.Rtl -> LayoutCompat.TEXT_DIRECTION_RTL
-        TextDirection.Content, TextDirection.Unspecified -> {
-            val currentLocale = localeList?.let {
-                (it[0].platformLocale as AndroidLocale).javaLocale
-            } ?: Locale.getDefault()
+        TextDirection.Content,
+        TextDirection.Unspecified -> {
+            val currentLocale = localeList?.let { it[0].platformLocale } ?: Locale.getDefault()
             when (TextUtilsCompat.getLayoutDirectionFromLocale(currentLocale)) {
-                ViewCompat.LAYOUT_DIRECTION_LTR -> LayoutCompat.TEXT_DIRECTION_FIRST_STRONG_LTR
-                ViewCompat.LAYOUT_DIRECTION_RTL -> LayoutCompat.TEXT_DIRECTION_FIRST_STRONG_RTL
+                View.LAYOUT_DIRECTION_LTR -> LayoutCompat.TEXT_DIRECTION_FIRST_STRONG_LTR
+                View.LAYOUT_DIRECTION_RTL -> LayoutCompat.TEXT_DIRECTION_FIRST_STRONG_RTL
                 else -> LayoutCompat.TEXT_DIRECTION_FIRST_STRONG_LTR
             }
         }
@@ -173,22 +172,22 @@ internal fun resolveTextDirectionHeuristics(
     }
 }
 
-@OptIn(InternalPlatformTextApi::class)
 internal actual fun ActualParagraphIntrinsics(
     text: String,
     style: TextStyle,
-    spanStyles: List<AnnotatedString.Range<SpanStyle>>,
+    annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
     placeholders: List<AnnotatedString.Range<Placeholder>>,
     density: Density,
     fontFamilyResolver: FontFamily.Resolver
-): ParagraphIntrinsics = AndroidParagraphIntrinsics(
-    text = text,
-    style = style,
-    placeholders = placeholders,
-    fontFamilyResolver = fontFamilyResolver,
-    spanStyles = spanStyles,
-    density = density
-)
+): ParagraphIntrinsics =
+    AndroidParagraphIntrinsics(
+        text = text,
+        style = style,
+        placeholders = placeholders,
+        fontFamilyResolver = fontFamilyResolver,
+        annotations = annotations,
+        density = density
+    )
 
 private class TypefaceDirtyTrackerLinkedList(
     private val resolveResult: State<Any>,

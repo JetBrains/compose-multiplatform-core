@@ -19,7 +19,6 @@ import android.annotation.SuppressLint
 import android.hardware.camera2.CameraCharacteristics.LENS_FACING
 import android.hardware.camera2.CameraMetadata.LENS_FACING_BACK
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraMetadata
 
 /**
@@ -36,24 +35,23 @@ import androidx.camera.camera2.pipe.CameraMetadata
  * TODO(b/270421716): enable CameraXQuirksClassDetector lint check when kotlin is supported.
  */
 @SuppressLint("CameraXQuirksClassDetector")
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-class FlashTooSlowQuirk : UseTorchAsFlashQuirk {
+public class FlashTooSlowQuirk : UseTorchAsFlashQuirk {
 
-    companion object {
-        private val AFFECTED_MODEL_PREFIXES = listOf(
-            "PIXEL 3A",
-            "PIXEL 3A XL",
-            "PIXEL 4", // includes Pixel 4 XL, 4A, and 4A (5g) too
-            "PIXEL 5", // includes Pixel 5A too
-            "SM-A320",
-            "MOTO G(20)",
-            "ITEL L6006", // Itel A48
-            "RMX3231" // Realme C11 2021
-        )
+    public companion object {
+        private val AFFECTED_MODEL_PREFIXES =
+            listOf(
+                "PIXEL 3A",
+                "PIXEL 3A XL",
+                "PIXEL 4", // includes Pixel 4 XL, 4A, and 4A (5g) too
+                "PIXEL 5", // includes Pixel 5A too
+                "SM-A320",
+                "MOTO G(20)",
+                "ITEL L6006", // Itel A48
+                "RMX3231" // Realme C11 2021
+            )
 
-        fun isEnabled(cameraMetadata: CameraMetadata): Boolean {
-            return isAffectedModel() &&
-                cameraMetadata[LENS_FACING] == LENS_FACING_BACK
+        public fun isEnabled(cameraMetadata: CameraMetadata): Boolean {
+            return isAffectedModel() && cameraMetadata[LENS_FACING] == LENS_FACING_BACK
         }
 
         private fun isAffectedModel(): Boolean {

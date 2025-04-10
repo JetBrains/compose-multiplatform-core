@@ -20,15 +20,17 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation(project(":wear:wear"))
-    implementation(project(path: ":recyclerview:recyclerview"))
-    implementation(project(path: ":core:core"))
-    implementation(project(path: ":appcompat:appcompat"))
+    implementation(project(":recyclerview:recyclerview"))
+    implementation(project(":core:core"))
+    implementation(project(":appcompat:appcompat"))
 }
 
 android {
+    compileSdk = 36
     defaultConfig {
-        minSdkVersion 24
+        minSdk = 24
     }
-    namespace "com.example.android.support.wear"
+    namespace = "com.example.android.support.wear"
 }

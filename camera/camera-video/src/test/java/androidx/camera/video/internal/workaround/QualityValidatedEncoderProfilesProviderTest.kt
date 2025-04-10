@@ -25,6 +25,7 @@ import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.EncoderProfilesProvider
 import androidx.camera.core.impl.EncoderProfilesProxy
 import androidx.camera.core.impl.Quirks
+import androidx.camera.core.internal.compat.quirk.SurfaceProcessingQuirk
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
 import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_1080P
 import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_2160P
@@ -47,14 +48,15 @@ import org.robolectric.annotation.internal.DoNotInstrument
 @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class QualityValidatedEncoderProfilesProviderTest {
 
-    private val defaultProvider = createFakeEncoderProfilesProvider(
-        mapOf(
-            QUALITY_2160P to PROFILES_2160P,
-            QUALITY_1080P to PROFILES_1080P,
-            QUALITY_720P to PROFILES_720P,
-            QUALITY_480P to PROFILES_480P
+    private val defaultProvider =
+        createFakeEncoderProfilesProvider(
+            mapOf(
+                QUALITY_2160P to PROFILES_2160P,
+                QUALITY_1080P to PROFILES_1080P,
+                QUALITY_720P to PROFILES_720P,
+                QUALITY_480P to PROFILES_480P
+            )
         )
-    )
     private val cameraInfo = FakeCameraInfoInternal()
 
     @Test
@@ -75,9 +77,10 @@ class QualityValidatedEncoderProfilesProviderTest {
 
     @Test
     fun hasQuirk_canNotGetUnsupportedProfiles() {
-        val quirks = createFakeQuirks(
-            unsupportedQualities = setOf(UHD, HD) // 2160P, 720P
-        )
+        val quirks =
+            createFakeQuirks(
+                unsupportedQualities = setOf(UHD, HD) // 2160P, 720P
+            )
         val provider = QualityValidatedEncoderProfilesProvider(defaultProvider, cameraInfo, quirks)
 
         assertThat(provider.hasProfile(QUALITY_2160P)).isFalse()
@@ -92,10 +95,11 @@ class QualityValidatedEncoderProfilesProviderTest {
 
     @Test
     fun hasQuirk_canGetUnsupportedProfiles_whenCanBeWorkaround() {
-        val quirks = createFakeQuirks(
-            unsupportedQualities = setOf(UHD, HD), // 2160P, 720P
-            canBeWorkaround = true
-        )
+        val quirks =
+            createFakeQuirks(
+                unsupportedQualities = setOf(UHD, HD), // 2160P, 720P
+                canBeWorkaround = true
+            )
         val provider = QualityValidatedEncoderProfilesProvider(defaultProvider, cameraInfo, quirks)
 
         assertThat(provider.hasProfile(QUALITY_2160P)).isTrue()
@@ -111,11 +115,13 @@ class QualityValidatedEncoderProfilesProviderTest {
     private fun createFakeEncoderProfilesProvider(
         qualityToProfilesMap: Map<Int, EncoderProfilesProxy> = emptyMap()
     ): EncoderProfilesProvider {
-        return FakeEncoderProfilesProvider.Builder().also { builder ->
-            for ((quality, profiles) in qualityToProfilesMap) {
-                builder.add(quality, profiles)
+        return FakeEncoderProfilesProvider.Builder()
+            .also { builder ->
+                for ((quality, profiles) in qualityToProfilesMap) {
+                    builder.add(quality, profiles)
+                }
             }
-        }.build()
+            .build()
     }
 
     private fun createFakeQuirks(
@@ -128,8 +134,7 @@ class QualityValidatedEncoderProfilesProviderTest {
     class FakeQuirk(
         private val unsupportedQualities: Set<Quality> = emptySet(),
         private val canBeWorkaround: Boolean = false
-    ) :
-        VideoQualityQuirk {
+    ) : VideoQualityQuirk, SurfaceProcessingQuirk {
 
         override fun isProblematicVideoQuality(
             cameraInfo: CameraInfoInternal,

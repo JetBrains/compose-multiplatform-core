@@ -17,17 +17,17 @@
 package androidx.car.app.sample.showcase.common.screens.settings;
 
 import static androidx.car.app.CarToast.LENGTH_LONG;
-import static androidx.car.app.model.Action.BACK;
 import static androidx.car.app.sample.showcase.common.screens.settings.LoadingScreen.loadingScreenTemplate;
 
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
 import androidx.car.app.CarContext;
 import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
+import androidx.car.app.model.Action;
+import androidx.car.app.model.Header;
 import androidx.car.app.model.ItemList;
 import androidx.car.app.model.ListTemplate;
 import androidx.car.app.model.ParkedOnlyOnClickListener;
@@ -37,6 +37,8 @@ import androidx.car.app.sample.showcase.common.R;
 import androidx.car.app.sample.showcase.common.ShowcaseService;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
+
+import org.jspecify.annotations.NonNull;
 
 /** A screen demonstrating selectable lists. */
 public final class ParkedVsDrivingDemoScreen extends Screen implements DefaultLifecycleObserver {
@@ -70,9 +72,8 @@ public final class ParkedVsDrivingDemoScreen extends Screen implements DefaultLi
         }
     }
 
-    @NonNull
     @Override
-    public Template onGetTemplate() {
+    public @NonNull Template onGetTemplate() {
 
         if (!mIsFinishedLoading && mShouldLoadScreens) {
             return loadingScreenTemplate(getCarContext());
@@ -101,8 +102,10 @@ public final class ParkedVsDrivingDemoScreen extends Screen implements DefaultLi
 
         return new ListTemplate.Builder()
                 .setSingleList(listBuilder.build())
-                .setTitle(getCarContext().getString(R.string.parking_vs_driving_demo_title))
-                .setHeaderAction(BACK)
+                .setHeader(new Header.Builder()
+                        .setTitle(getCarContext().getString(R.string.parking_vs_driving_demo_title))
+                        .setStartHeaderAction(Action.BACK)
+                        .build())
                 .build();
     }
 

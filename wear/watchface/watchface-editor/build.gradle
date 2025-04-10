@@ -14,17 +14,24 @@
  * limitations under the License.
  */
 
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
     api("androidx.versionedparcelable:versionedparcelable:1.1.0")
     api("androidx.activity:activity:1.2.0")
     api(project(":wear:watchface:watchface-client"))
@@ -42,26 +49,34 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy) // DexMaker has it"s own MockMaker
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy) // DexMaker has it"s own MockMaker
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation(libs.kotlinTest)
     androidTestImplementation(libs.truth)
+}
 
-    samples(project(":wear:watchface:watchface-samples"))
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions.suppressWarnings = true
+}
+
+tasks.withType(JavaCompile){
+    options.compilerArgs <<"-Xlint:-deprecation"
 }
 
 android {
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
-    namespace "androidx.wear.watchface.editor"
+    namespace = "androidx.wear.watchface.editor"
 }
 
 androidx {
     name = "Android Wear Watchface Editor"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Classes for building Android Wear watchface editors"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
+    samples(project(":wear:watchface:watchface-samples"))
+    failOnDeprecationWarnings = false
 }

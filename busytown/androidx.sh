@@ -3,7 +3,7 @@ set -e
 
 echo "Starting $0 at $(date)"
 
-cd "$(dirname $0)"
+cd "$(dirname $0)/.."
 
 # This target is for testing that clean builds work correctly
 # We disable the remote cache for this target unless it was already enabled
@@ -14,23 +14,24 @@ fi
 EXIT_VALUE=0
 
 # Validate translation exports, if present
-if ! impl/check_translations.sh; then
+if ! busytown/impl/check_translations.sh; then
   EXIT_VALUE=1
 else
   # Run Gradle
   # If/when we enable desktop, enable VerifyDependencyVersionsTask.kt/shouldVerifyConfiguration
-  if ! impl/build.sh buildOnServer createAllArchives checkExternalLicenses listTaskOutputs exportSboms \
+  if ! busytown/impl/build.sh buildOnServer createAllArchives checkExternalLicenses listTaskOutputs exportSboms \
       -Pandroidx.enableComposeCompilerMetrics=true \
       -Pandroidx.enableComposeCompilerReports=true \
-      -Pandroidx.constraints=true \
-      --no-daemon \
-      --profile "$@"; then
+      --no-daemon "$@"; then
     EXIT_VALUE=1
+  else
+    # Run merge-kzips only if Gradle succeeds. Script merges kzips outputted by bOS task
+    busytown/impl/merge-kzips.sh || EXIT_VALUE=1
   fi
 
-  # Parse performance profile reports (generated with the --profile option above) and re-export
+  # Parse performance profile reports (generated with the --profile option) and re-export
   # the metrics in an easily machine-readable format for tracking
-  impl/parse_profile_data.sh
+  busytown/impl/parse_profile_data.sh
 fi
 
 echo "Completing $0 at $(date) with exit value $EXIT_VALUE"

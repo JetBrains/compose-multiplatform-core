@@ -19,9 +19,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.leanback.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The presenter displaying a custom action in {@link AbstractMediaItemPresenter}.
@@ -48,9 +49,8 @@ class MediaItemActionPresenter extends Presenter {
         }
     }
 
-    @NonNull
     @Override
-    public Presenter.ViewHolder onCreateViewHolder(ViewGroup parent) {
+    public Presenter.@NonNull ViewHolder onCreateViewHolder(ViewGroup parent) {
         Context context = parent.getContext();
         View actionView = LayoutInflater.from(context)
                 .inflate(R.layout.lb_row_media_item_action, parent, false);
@@ -58,13 +58,13 @@ class MediaItemActionPresenter extends Presenter {
     }
 
     @Override
-    public void onBindViewHolder(@NonNull Presenter.ViewHolder viewHolder, @Nullable Object item) {
+    public void onBindViewHolder(Presenter.@NonNull ViewHolder viewHolder, @Nullable Object item) {
         ViewHolder actionViewHolder = (ViewHolder) viewHolder;
         MultiActionsProvider.MultiAction action = (MultiActionsProvider.MultiAction) item;
         actionViewHolder.getIcon().setImageDrawable(action.getCurrentDrawable());
     }
 
     @Override
-    public void onUnbindViewHolder(@NonNull Presenter.ViewHolder viewHolder) {
+    public void onUnbindViewHolder(Presenter.@NonNull ViewHolder viewHolder) {
     }
 }

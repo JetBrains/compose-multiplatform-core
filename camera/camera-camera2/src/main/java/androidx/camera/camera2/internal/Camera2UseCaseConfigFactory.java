@@ -27,8 +27,6 @@ import static androidx.camera.core.impl.UseCaseConfig.OPTION_ZSL_DISABLED;
 import android.content.Context;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.ImageCapture.CaptureMode;
 import androidx.camera.core.impl.CaptureConfig;
 import androidx.camera.core.impl.Config;
@@ -37,11 +35,12 @@ import androidx.camera.core.impl.OptionsBundle;
 import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 
+import org.jspecify.annotations.NonNull;
+
 /**
  * Implementation of UseCaseConfigFactory to provide the default camera2 configurations for use
  * cases.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class Camera2UseCaseConfigFactory implements UseCaseConfigFactory {
     final DisplayInfoManager mDisplayInfoManager;
 
@@ -53,9 +52,8 @@ public final class Camera2UseCaseConfigFactory implements UseCaseConfigFactory {
      * Returns the configuration for the given capture type, or <code>null</code> if the
      * configuration cannot be produced.
      */
-    @NonNull
     @Override
-    public Config getConfig(
+    public @NonNull Config getConfig(
             @NonNull CaptureType captureType,
             @CaptureMode int captureMode) {
         final MutableOptionsBundle mutableConfig = MutableOptionsBundle.create();

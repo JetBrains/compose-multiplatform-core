@@ -27,6 +27,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -54,6 +56,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -65,8 +68,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class CheckboxTest {
 
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private val defaultTag = "myCheckbox"
 
@@ -79,12 +81,14 @@ class CheckboxTest {
             }
         }
 
-        rule.onNodeWithTag("checkboxUnchecked")
+        rule
+            .onNodeWithTag("checkboxUnchecked")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox))
             .assertIsEnabled()
             .assertIsOff()
 
-        rule.onNodeWithTag("checkboxChecked")
+        rule
+            .onNodeWithTag("checkboxChecked")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox))
             .assertIsEnabled()
             .assertIsOn()
@@ -97,10 +101,7 @@ class CheckboxTest {
             Checkbox(checked, onCheckedChange, modifier = Modifier.testTag(defaultTag))
         }
 
-        rule.onNodeWithTag(defaultTag)
-            .assertIsOff()
-            .performClick()
-            .assertIsOn()
+        rule.onNodeWithTag(defaultTag).assertIsOff().performClick().assertIsOn()
     }
 
     @Test
@@ -110,7 +111,8 @@ class CheckboxTest {
             Checkbox(checked, onCheckedChange, modifier = Modifier.testTag(defaultTag))
         }
 
-        rule.onNodeWithTag(defaultTag)
+        rule
+            .onNodeWithTag(defaultTag)
             .assertIsOff()
             .performClick()
             .assertIsOn()
@@ -134,12 +136,10 @@ class CheckboxTest {
             }
         }
 
-        rule.onNodeWithTag(defaultTag)
-            .assertHasClickAction()
+        rule.onNodeWithTag(defaultTag).assertHasClickAction()
 
         // Check not merged into parent
-        rule.onNodeWithTag(parentTag)
-            .assert(isNotFocusable())
+        rule.onNodeWithTag(parentTag).assert(isNotFocusable())
     }
 
     @Test
@@ -147,53 +147,34 @@ class CheckboxTest {
         rule.setMaterialContent(lightColorScheme()) {
             val (checked, _) = remember { mutableStateOf(false) }
             Box(Modifier.semantics(mergeDescendants = true) {}.testTag(defaultTag)) {
-                Checkbox(
-                    checked,
-                    null,
-                    modifier = Modifier.semantics { focused = true }
-                )
+                Checkbox(checked, null, modifier = Modifier.semantics { focused = true })
             }
         }
 
-        rule.onNodeWithTag(defaultTag)
+        rule
+            .onNodeWithTag(defaultTag)
             .assertHasNoClickAction()
             .assert(isFocusable()) // Check merged into parent
     }
 
     @Test
     fun checkBoxTest_MaterialSize_WhenChecked_minimumTouchTarget() {
-        materialSizeTestForValue(
-            checkboxValue = On,
-            clickable = true,
-            minimumTouchTarget = true
-        )
+        materialSizeTestForValue(checkboxValue = On, clickable = true, minimumTouchTarget = true)
     }
 
     @Test
     fun checkBoxTest_MaterialSize_WhenChecked_withoutMinimumTouchTarget() {
-        materialSizeTestForValue(
-            checkboxValue = On,
-            clickable = true,
-            minimumTouchTarget = false
-        )
+        materialSizeTestForValue(checkboxValue = On, clickable = true, minimumTouchTarget = false)
     }
 
     @Test
     fun checkBoxTest_MaterialSize_WhenUnchecked_minimumTouchTarget() {
-        materialSizeTestForValue(
-            checkboxValue = Off,
-            clickable = true,
-            minimumTouchTarget = true
-        )
+        materialSizeTestForValue(checkboxValue = Off, clickable = true, minimumTouchTarget = true)
     }
 
     @Test
     fun checkBoxTest_MaterialSize_WhenUnchecked_withoutMinimumTouchTarget() {
-        materialSizeTestForValue(
-            checkboxValue = Off,
-            clickable = true,
-            minimumTouchTarget = false
-        )
+        materialSizeTestForValue(checkboxValue = Off, clickable = true, minimumTouchTarget = false)
     }
 
     @Test
@@ -216,38 +197,22 @@ class CheckboxTest {
 
     @Test
     fun checkBoxTest_MaterialSize_WhenChecked_notClickable_minimumTouchTarget() {
-        materialSizeTestForValue(
-            checkboxValue = On,
-            clickable = false,
-            minimumTouchTarget = true
-        )
+        materialSizeTestForValue(checkboxValue = On, clickable = false, minimumTouchTarget = true)
     }
 
     @Test
     fun checkBoxTest_MaterialSize_WhenChecked_notClickable_withoutMinimumTouchTarget() {
-        materialSizeTestForValue(
-            checkboxValue = On,
-            clickable = false,
-            minimumTouchTarget = false
-        )
+        materialSizeTestForValue(checkboxValue = On, clickable = false, minimumTouchTarget = false)
     }
 
     @Test
     fun checkBoxTest_MaterialSize_WhenUnchecked_notClickable_minimumTouchTarget() {
-        materialSizeTestForValue(
-            checkboxValue = Off,
-            clickable = false,
-            minimumTouchTarget = true
-        )
+        materialSizeTestForValue(checkboxValue = Off, clickable = false, minimumTouchTarget = true)
     }
 
     @Test
     fun checkBoxTest_MaterialSize_WhenUnchecked_notClickable_withoutMinimumTouchTarget() {
-        materialSizeTestForValue(
-            checkboxValue = Off,
-            clickable = false,
-            minimumTouchTarget = false
-        )
+        materialSizeTestForValue(checkboxValue = Off, clickable = false, minimumTouchTarget = false)
     }
 
     @Test
@@ -268,24 +233,102 @@ class CheckboxTest {
         )
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun checkBoxTest_MaterialSize_WhenChecked_withThickStroke_withoutMinimumTouchTarget() {
+        materialSizeTestForValue(
+            checkboxValue = On,
+            clickable = false, // Ensure a minimum size with clickable false and no min touch target
+            minimumTouchTarget = false,
+            strokeWidth = CheckboxDefaults.StrokeWidth * 3
+        )
+    }
+
+    @Test
+    fun checkBoxTest_MaterialSize_WhenChecked_withThinStroke_withoutMinimumTouchTarget() {
+        materialSizeTestForValue(
+            checkboxValue = On,
+            clickable = false, // Ensure a minimum size with clickable false and no min touch target
+            minimumTouchTarget = false,
+            strokeWidth = CheckboxDefaults.StrokeWidth / 3
+        )
+    }
+
+    @Test
+    fun checkBoxTest_MaterialSize_WhenUnchecked_withThickStroke_withoutMinimumTouchTarget() {
+        materialSizeTestForValue(
+            checkboxValue = Off,
+            clickable = false, // Ensure a minimum size with clickable false and no min touch target
+            minimumTouchTarget = false,
+            strokeWidth = CheckboxDefaults.StrokeWidth * 3
+        )
+    }
+
+    @Test
+    fun checkBoxTest_MaterialSize_WhenUnchecked_withThinStroke_withoutMinimumTouchTarget() {
+        materialSizeTestForValue(
+            checkboxValue = Off,
+            clickable = false, // Ensure a minimum size with clickable false and no min touch target
+            minimumTouchTarget = false,
+            strokeWidth = CheckboxDefaults.StrokeWidth / 3
+        )
+    }
+
+    @Test
+    fun checkBoxTest_MaterialSize_WhenIndeterminate_withThickStroke_withoutMinimumTouchTarget() {
+        materialSizeTestForValue(
+            checkboxValue = Indeterminate,
+            clickable = false, // Ensure a minimum size with clickable false and no min touch target
+            minimumTouchTarget = false,
+            strokeWidth = CheckboxDefaults.StrokeWidth * 3
+        )
+    }
+
+    @Test
+    fun checkBoxTest_MaterialSize_WhenIndeterminate_withThinStroke_withoutMinimumTouchTarget() {
+        materialSizeTestForValue(
+            checkboxValue = Indeterminate,
+            clickable = false, // Ensure a minimum size with clickable false and no min touch target
+            minimumTouchTarget = false,
+            strokeWidth = CheckboxDefaults.StrokeWidth / 3
+        )
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
     private fun materialSizeTestForValue(
         checkboxValue: ToggleableState,
         clickable: Boolean,
-        minimumTouchTarget: Boolean
+        minimumTouchTarget: Boolean,
+        strokeWidth: Dp? = null,
     ) {
         rule
             .setMaterialContentForSizeAssertions {
                 CompositionLocalProvider(
-                    LocalMinimumInteractiveComponentEnforcement provides minimumTouchTarget
+                    LocalMinimumInteractiveComponentSize provides
+                        if (minimumTouchTarget) 48.dp else 0.dp
                 ) {
-                    TriStateCheckbox(
-                        state = checkboxValue,
-                        onClick = if (clickable) {
-                            {}
-                        } else null,
-                        enabled = false
-                    )
+                    if (strokeWidth == null) {
+                        TriStateCheckbox(
+                            state = checkboxValue,
+                            onClick =
+                                if (clickable) {
+                                    {}
+                                } else null,
+                            enabled = false
+                        )
+                    } else {
+                        val strokeWidthPx =
+                            Stroke(width = with(LocalDensity.current) { strokeWidth.toPx() })
+                        TriStateCheckbox(
+                            state = checkboxValue,
+                            onClick =
+                                if (clickable) {
+                                    {}
+                                } else null,
+                            enabled = false,
+                            checkmarkStroke = strokeWidthPx,
+                            outlineStroke = strokeWidthPx
+                        )
+                    }
                 }
             }
             .run {
@@ -298,27 +341,28 @@ class CheckboxTest {
     }
 
     @Test
-    fun checkBoxTest_clickInMinimumTouchTarget(): Unit = with(rule.density) {
-        val tag = "switch"
-        var state by mutableStateOf(Off)
-        rule.setMaterialContent(lightColorScheme()) {
-            // Box is needed because otherwise the control will be expanded to fill its parent
-            Box(Modifier.fillMaxSize()) {
-                TriStateCheckbox(
-                    state = state,
-                    onClick = { state = On },
-                    modifier = Modifier.align(Alignment.Center).requiredSize(2.dp).testTag(tag)
-                )
+    fun checkBoxTest_clickInMinimumTouchTarget(): Unit =
+        with(rule.density) {
+            val tag = "switch"
+            var state by mutableStateOf(Off)
+            rule.setMaterialContent(lightColorScheme()) {
+                // Box is needed because otherwise the control will be expanded to fill its parent
+                Box(Modifier.fillMaxSize()) {
+                    TriStateCheckbox(
+                        state = state,
+                        onClick = { state = On },
+                        modifier = Modifier.align(Alignment.Center).requiredSize(2.dp).testTag(tag)
+                    )
+                }
             }
+            rule
+                .onNodeWithTag(tag)
+                .assertIsOff()
+                .assertWidthIsEqualTo(2.dp)
+                .assertHeightIsEqualTo(2.dp)
+                .assertTouchWidthIsEqualTo(48.dp)
+                .assertTouchHeightIsEqualTo(48.dp)
+                .performTouchInput { click(position = Offset(-1f, -1f)) }
+                .assertIsOn()
         }
-        rule.onNodeWithTag(tag)
-            .assertIsOff()
-            .assertWidthIsEqualTo(2.dp)
-            .assertHeightIsEqualTo(2.dp)
-            .assertTouchWidthIsEqualTo(48.dp)
-            .assertTouchHeightIsEqualTo(48.dp)
-            .performTouchInput {
-                click(position = Offset(-1f, -1f))
-            }.assertIsOn()
-    }
 }

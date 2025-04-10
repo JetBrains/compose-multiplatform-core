@@ -17,7 +17,8 @@
 package androidx.room.solver.prepared.result
 
 import androidx.room.compiler.codegen.CodeLanguage
-import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.addLocalVal
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
+import androidx.room.compiler.codegen.XMemberName.Companion.packageMember
 import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.processing.XType
 import androidx.room.compiler.processing.isInt
@@ -26,6 +27,7 @@ import androidx.room.compiler.processing.isLong
 import androidx.room.compiler.processing.isVoid
 import androidx.room.compiler.processing.isVoidObject
 import androidx.room.ext.KotlinTypeNames
+import androidx.room.ext.RoomTypeNames
 import androidx.room.parser.QueryType
 import androidx.room.solver.CodeGenScope
 import androidx.room.solver.prepared.binder.PreparedQueryResultBinder
@@ -34,19 +36,14 @@ import androidx.room.solver.prepared.binder.PreparedQueryResultBinder
  * An adapter for [PreparedQueryResultBinder] that executes queries with INSERT, UPDATE or DELETE
  * statements.
  */
-class PreparedQueryResultAdapter(
-    private val returnType: XType,
-    private val queryType: QueryType
-) {
+class PreparedQueryResultAdapter(private val returnType: XType, private val queryType: QueryType) {
     companion object {
-        fun create(
-            returnType: XType,
-            queryType: QueryType
-        ) = if (isValidReturnType(returnType, queryType)) {
-            PreparedQueryResultAdapter(returnType, queryType)
-        } else {
-            null
-        }
+        fun create(returnType: XType, queryType: QueryType) =
+            if (isValidReturnType(returnType, queryType)) {
+                PreparedQueryResultAdapter(returnType, queryType)
+            } else {
+                null
+            }
 
         private fun isValidReturnType(returnType: XType, queryType: QueryType): Boolean {
             if (returnType.isVoid() || returnType.isVoidObject() || returnType.isKotlinUnit()) {
@@ -54,7 +51,8 @@ class PreparedQueryResultAdapter(
             } else {
                 return when (queryType) {
                     QueryType.INSERT -> returnType.isLong()
-                    QueryType.UPDATE, QueryType.DELETE -> returnType.isInt()
+                    QueryType.UPDATE,
+                    QueryType.DELETE -> returnType.isInt()
                     else -> false
                 }
             }
@@ -68,11 +66,12 @@ class PreparedQueryResultAdapter(
         scope: CodeGenScope
     ) {
         scope.builder.apply {
-            val stmtMethod = if (queryType == QueryType.INSERT) {
-                "executeInsert"
-            } else {
-                "executeUpdateDelete"
-            }
+            val stmtMethod =
+                if (queryType == QueryType.INSERT) {
+                    "executeInsert"
+                } else {
+                    "executeUpdateDelete"
+                }
             if (preparedStmtProperty != null) {
                 beginControlFlow("try")
             }
@@ -83,8 +82,10 @@ class PreparedQueryResultAdapter(
                     addStatement("%N.setTransactionSuccessful()", dbProperty)
                     if (returnType.isVoidObject()) {
                         addStatement("return null")
-                    } else if (returnType.isKotlinUnit() && language == CodeLanguage.JAVA) {
-                        addStatement("return %T.INSTANCE", KotlinTypeNames.UNIT)
+                    } else if (returnType.isKotlinUnit()) {
+                        applyTo(CodeLanguage.JAVA) {
+                            addStatement("return %T.INSTANCE", KotlinTypeNames.UNIT)
+                        }
                     }
                 } else {
                     val resultVar = scope.getTmpVar("_result")
@@ -92,20 +93,52 @@ class PreparedQueryResultAdapter(
                         resultVar,
                         returnType.asTypeName(),
                         "%L.%L()",
-                        stmtQueryVal, stmtMethod
+                        stmtQueryVal,
+                        stmtMethod
                     )
                     addStatement("%N.setTransactionSuccessful()", dbProperty)
                     addStatement("return %L", resultVar)
                 }
             }
-            nextControlFlow("finally").apply {
-                addStatement("%N.endTransaction()", dbProperty)
-            }
+            nextControlFlow("finally").apply { addStatement("%N.endTransaction()", dbProperty) }
             endControlFlow()
             if (preparedStmtProperty != null) {
                 nextControlFlow("finally")
                 addStatement("%N.release(%L)", preparedStmtProperty, stmtQueryVal)
                 endControlFlow()
+            }
+        }
+    }
+
+    fun executeAndReturn(connectionVar: String, statementVar: String, scope: CodeGenScope) {
+        scope.builder.applyTo { language ->
+            addStatement("%L.step()", statementVar)
+            val returnPrefix =
+                when (language) {
+                    CodeLanguage.JAVA -> "return "
+                    CodeLanguage.KOTLIN -> ""
+                }
+            if (returnType.isVoid() || returnType.isVoidObject() || returnType.isKotlinUnit()) {
+                if (returnType.isVoidObject()) {
+                    addStatement("${returnPrefix}null")
+                } else if (returnType.isVoid() && language == CodeLanguage.JAVA) {
+                    addStatement("return null")
+                } else if (returnType.isKotlinUnit() && language == CodeLanguage.JAVA) {
+                    addStatement("return %T.INSTANCE", KotlinTypeNames.UNIT)
+                }
+            } else {
+                val returnFunctionName =
+                    when (queryType) {
+                        QueryType.INSERT -> "getLastInsertedRowId"
+                        QueryType.UPDATE,
+                        QueryType.DELETE -> "getTotalChangedRows"
+                        else -> error("No return function name for query type $queryType")
+                    }
+                addStatement(
+                    "$returnPrefix%M(%L)",
+                    RoomTypeNames.CONNECTION_UTIL.packageMember(returnFunctionName),
+                    connectionVar
+                )
             }
         }
     }

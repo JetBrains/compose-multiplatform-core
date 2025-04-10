@@ -21,6 +21,7 @@ package androidx.compose.foundation.lint
 import androidx.compose.lint.Names
 import androidx.compose.lint.inheritsFrom
 import androidx.compose.lint.isInPackageName
+import androidx.compose.lint.toKmFunction
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
@@ -31,8 +32,8 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.UastLintUtils.Companion.tryResolveUDeclaration
 import com.intellij.psi.PsiMethod
-import com.intellij.psi.util.ClassUtil
 import java.util.EnumSet
+import kotlin.metadata.KmClassifier
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UDeclaration
@@ -52,10 +53,11 @@ import org.jetbrains.uast.visitor.AbstractUastVisitor
  */
 class NonLambdaOffsetModifierDetector : Detector(), SourceCodeScanner {
 
-    override fun getApplicableMethodNames(): List<String> = listOf(
-        FoundationNames.Layout.Offset.shortName,
-        FoundationNames.Layout.AbsoluteOffset.shortName
-    )
+    override fun getApplicableMethodNames(): List<String> =
+        listOf(
+            FoundationNames.Layout.Offset.shortName,
+            FoundationNames.Layout.AbsoluteOffset.shortName
+        )
 
     override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
         // Non Modifier Offset
@@ -72,19 +74,35 @@ class NonLambdaOffsetModifierDetector : Detector(), SourceCodeScanner {
     }
 
     /**
-     * Has two parameters of type DP
+     * For the form of `Modifier.<method-name>(Dp, Dp): Modifier`.
+     *
+     * Note that method-name is already handled by [getApplicableMethodNames].
      */
     private fun PsiMethod.isDesiredOffsetOverload(): Boolean {
-        // use signature
-        return ClassUtil.getAsmMethodSignature(this) == OffsetSignature
+        val kmFunction = this.toKmFunction() ?: return false
+        val receiverClassifier = kmFunction.receiverParameterType?.classifier ?: return false
+        val returnTypeClassifier = kmFunction.returnType.classifier
+
+        if (receiverClassifier != ModifierClassifier) {
+            return false
+        }
+        if (returnTypeClassifier != ModifierClassifier) {
+            return false
+        }
+
+        val valueParameters = kmFunction.valueParameters
+        if (valueParameters.size != 2) {
+            return false
+        }
+        return valueParameters.all { it.type.classifier == DpClassifier }
     }
 
     private fun hasStateBackedArguments(node: UCallExpression): Boolean {
         var dynamicArguments = false
 
-        node.valueArguments
-            .forEach { expression ->
-                expression.accept(object : AbstractUastVisitor() {
+        node.valueArguments.forEach { expression ->
+            expression.accept(
+                object : AbstractUastVisitor() {
                     override fun visitSimpleNameReferenceExpression(
                         node: USimpleNameReferenceExpression
                     ): Boolean {
@@ -92,8 +110,9 @@ class NonLambdaOffsetModifierDetector : Detector(), SourceCodeScanner {
                         dynamicArguments = dynamicArguments || declaration.isCompositionAwareType()
                         return dynamicArguments
                     }
-                })
-            }
+                }
+            )
+        }
 
         return dynamicArguments
     }
@@ -104,19 +123,22 @@ class NonLambdaOffsetModifierDetector : Detector(), SourceCodeScanner {
 
         const val IssueId = "UseOfNonLambdaOffsetOverload"
 
-        val UseOfNonLambdaOverload = Issue.create(
-            IssueId,
-            "Modifier.offset{ } is preferred over Modifier.offset() for " +
-                "`State` backed arguments.",
-            "`Modifier.offset()` is recommended to be used with static arguments only to " +
-                "avoid unnecessary recompositions. `Modifier.offset{ }` is " +
-                "preferred in the cases where the arguments are backed by a `State`.",
-            Category.PERFORMANCE, 3, Severity.WARNING,
-            Implementation(
-                NonLambdaOffsetModifierDetector::class.java,
-                EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)
+        val UseOfNonLambdaOverload =
+            Issue.create(
+                IssueId,
+                "Modifier.offset{ } is preferred over Modifier.offset() for " +
+                    "`State` backed arguments.",
+                "`Modifier.offset()` is recommended to be used with static arguments only to " +
+                    "avoid unnecessary recompositions. `Modifier.offset{ }` is " +
+                    "preferred in the cases where the arguments are backed by a `State`.",
+                Category.PERFORMANCE,
+                3,
+                Severity.WARNING,
+                Implementation(
+                    NonLambdaOffsetModifierDetector::class.java,
+                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)
+                )
             )
-        )
     }
 }
 
@@ -130,9 +152,7 @@ private fun UDeclaration.isStateOrAnimatableVariable(): Boolean {
             type.inheritsFrom(Names.Animation.Core.Animatable))
 }
 
-/**
- * Special handling of implicit receiver types
- */
+/** Special handling of implicit receiver types */
 private fun UDeclaration.isMethodFromStateOrAnimatable(): Boolean {
     val argument = this as? UMethod
     val containingClass = argument?.containingClass ?: return false
@@ -146,12 +166,10 @@ private fun UDeclaration.isDelegateOfState(): Boolean {
     val ktProperty = localVariable?.sourcePsi as? KtProperty ?: return false
     val delegateExpression =
         ktProperty.delegate?.expression.toUElement() as? UExpression ?: return false
-    val cleanCallExpression =
-        (delegateExpression.skipParenthesizedExprDown() as? UCallExpression) ?: return false
-
-    return cleanCallExpression.returnType?.inheritsFrom(Names.Runtime.State) ?: false
+    val expressionType = delegateExpression.skipParenthesizedExprDown().getExpressionType()
+    return expressionType?.inheritsFrom(Names.Runtime.State) ?: false
 }
 
-private const val OffsetSignature =
-    "(Landroidx/compose/ui/Modifier;Landroidx/compose/ui/unit/Dp;Landroidx/compose/ui/unit/Dp;)" +
-        "Landroidx/compose/ui/Modifier;"
+private val ModifierClassifier = KmClassifier.Class(Names.Ui.Modifier.kmClassName)
+
+private val DpClassifier = KmClassifier.Class(Names.Ui.Unit.Dp.kmClassName)

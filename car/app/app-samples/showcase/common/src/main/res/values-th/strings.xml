@@ -96,10 +96,10 @@
     <string name="unavailable" msgid="3636401138255192934">"ไม่พร้อมใช้งาน"</string>
     <string name="ev_connector_types" msgid="735458637011996125">"ประเภทหัวชาร์จไฟฟ้า EV"</string>
     <string name="example_title" msgid="530257630320010494">"ตัวอย่าง %d"</string>
-    <string name="example_1_text" msgid="8456567953748293512">"ข้อความนี้มีสีแดง"</string>
-    <string name="example_2_text" msgid="718820705318661440">"ข้อความนี้มีสีเขียว"</string>
-    <string name="example_3_text" msgid="977269832109695627">"ข้อความนี้มีสีน้ำเงิน"</string>
-    <string name="example_4_text" msgid="2043547015979437373">"ข้อความนี้มีสีเหลือง"</string>
+    <string name="example_1_text" msgid="8631503055894800688">"ข้อความนี้มีสี"<annotation color="red">"แดง"</annotation></string>
+    <string name="example_2_text" msgid="1359373957397219102">"ข้อความนี้มีสี"<annotation color="green">"เขียว"</annotation></string>
+    <string name="example_3_text" msgid="2409207170762049673">"ข้อความนี้มีสี"<annotation color="blue">"น้ำเงิน"</annotation></string>
+    <string name="example_4_text" msgid="9055989886645433000">"ข้อความนี้มีสี"<annotation color="yellow">"เหลือง"</annotation></string>
     <string name="example_5_text" msgid="8828804968749423500">"ข้อความนี้ใช้สีหลัก"</string>
     <string name="example_6_text" msgid="7991523168517599600">"ข้อความนี้ใช้สีขั้นที่ 2"</string>
     <string name="color_demo" msgid="1822427636476178993">"การสาธิตสี"</string>
@@ -231,12 +231,16 @@
     <string name="msg_template_demo_title" msgid="3895210951340409473">"การสาธิตเทมเพลตข้อความ"</string>
     <string name="msg_template_demo_text" msgid="2275291617716161409">"ข้อความจะแสดงที่นี่\nข้อความเพิ่มเติมจะอยู่ในบรรทัดที่ 2"</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"การสาธิตเทมเพลตข้อความสั้น"</string>
+    <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"เดโมเทมเพลตรายการแบบแยกส่วน"</string>
+    <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"ส่วนปุ่มตัวเลือก"</string>
+    <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"สลับส่วน"</string>
+    <string name="sectioned_item_template_lots_of_rows_section_title" msgid="1501401956386938735">"ส่วนแถวจำนวนมาก"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"การสาธิตเทมเพลตแผง"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"การสาธิตเทมเพลตรายการสถานที่"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"เรียกดูสถานที่"</string>
     <string name="search_template_demo_title" msgid="1770474418958318114">"การสาธิตเทมเพลตการค้นหา"</string>
     <string name="search_hint" msgid="978495498991026792">"ค้นหาที่นี่"</string>
-    <string name="additional_text" msgid="8410289578276941586">"โปรดอ่านข้อกำหนดในการให้บริการ"</string>
+    <string name="additional_text" msgid="5755100726890686184">"โปรดอ่าน"<annotation link="terms_of_service">"ข้อกำหนดในการให้บริการ"</annotation></string>
     <string name="google_sign_in" msgid="6556259799319701727">"ลงชื่อเข้าใช้ Google"</string>
     <string name="use_pin" msgid="7850893299484337431">"ใช้ PIN"</string>
     <string name="qr_code" msgid="5487041647280777397">"คิวอาร์โค้ด"</string>
@@ -321,6 +325,7 @@
     <string name="secondary_actions_test_subtitle" msgid="6985282813402073703">"เลือกได้เฉพาะการดำเนินการสำรอง"</string>
     <string name="decoration_test_title" msgid="8450127046762442244">"การทดสอบการตกแต่ง"</string>
     <string name="secondary_actions_decoration_test_title" msgid="6282873404859209490">"การดำเนินการสำรองและการตกแต่ง"</string>
+    <string name="secondary_actions_decoration_test_title_long" msgid="3700606949229899169">"แถวที่มีการดำเนินการสำรองและการตกแต่งซึ่งมีชื่อที่ยาวมาก"</string>
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"เลือกแถวได้ด้วย"</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"เลือกการดำเนินการสำรองแล้ว"</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"เลือกการดำเนินการหลักของแถวแล้ว"</string>

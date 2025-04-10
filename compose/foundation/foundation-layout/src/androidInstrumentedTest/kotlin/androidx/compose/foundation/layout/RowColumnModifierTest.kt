@@ -16,22 +16,17 @@
 
 package androidx.compose.foundation.layout
 
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Measured
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth
@@ -42,8 +37,7 @@ import org.junit.runner.RunWith
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class RowColumnModifierTest() {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun testRow_updatesOnAlignmentChange() {
@@ -53,14 +47,12 @@ class RowColumnModifierTest() {
         rule.setContent {
             with(LocalDensity.current) {
                 Box(Modifier.size(100.toDp())) {
-                    Row(
-                        Modifier.wrapContentHeight()
-                    ) {
+                    Row(Modifier.wrapContentHeight()) {
                         repeat(5) { index ->
                             Box(
-                                Modifier
-                                    .size(
-                                        20.toDp(), if (index == 4) {
+                                Modifier.size(
+                                        20.toDp(),
+                                        if (index == 4) {
                                             10.toDp()
                                         } else {
                                             20.toDp()
@@ -72,7 +64,8 @@ class RowColumnModifierTest() {
                                             val positionInParent = it.positionInParent()
                                             positionInParentY = positionInParent.y
                                         }
-                                    })
+                                    }
+                            )
                         }
                     }
                 }
@@ -84,9 +77,7 @@ class RowColumnModifierTest() {
             alignment = Alignment.CenterVertically
         }
 
-        rule.runOnIdle {
-            Truth.assertThat(positionInParentY).isEqualTo(5)
-        }
+        rule.runOnIdle { Truth.assertThat(positionInParentY).isEqualTo(5) }
     }
 
     @Test
@@ -99,14 +90,12 @@ class RowColumnModifierTest() {
         rule.setContent {
             with(LocalDensity.current) {
                 Box(Modifier.size(100.toDp())) {
-                    Row(
-                        Modifier.wrapContentHeight()
-                    ) {
+                    Row(Modifier.wrapContentHeight()) {
                         repeat(5) { index ->
                             Box(
-                                Modifier
-                                    .size(
-                                        20.toDp(), if (index == 4) {
+                                Modifier.size(
+                                        20.toDp(),
+                                        if (index == 4) {
                                             10.toDp()
                                         } else {
                                             20.toDp()
@@ -124,7 +113,8 @@ class RowColumnModifierTest() {
                                             val positionInParent = it.positionInParent()
                                             positionInParentY = positionInParent.y
                                         }
-                                    })
+                                    }
+                            )
                         }
                     }
                 }
@@ -136,9 +126,7 @@ class RowColumnModifierTest() {
             alignment = alignByNewBlock
         }
 
-        rule.runOnIdle {
-            Truth.assertThat(positionInParentY).isEqualTo(5)
-        }
+        rule.runOnIdle { Truth.assertThat(positionInParentY).isEqualTo(5) }
     }
 
     @Test
@@ -149,25 +137,17 @@ class RowColumnModifierTest() {
         rule.setContent {
             with(LocalDensity.current) {
                 Box(Modifier.size(200.toDp())) {
-                    Row(
-                        Modifier.wrapContentHeight()
-                    ) {
+                    Row(Modifier.wrapContentHeight()) {
                         repeat(5) { index ->
                             Box(
-                                Modifier
-                                    .size(
-                                        20.toDp()
-                                    )
-                                    .weight(1f, fill)
-                                    .onSizeChanged {
-                                        if (index > 0) {
-                                            Truth
-                                                .assertThat(it.width)
-                                                .isEqualTo(width)
-                                        } else {
-                                            width = it.width
-                                        }
-                                    })
+                                Modifier.size(20.toDp()).weight(1f, fill).onSizeChanged {
+                                    if (index > 0) {
+                                        Truth.assertThat(it.width).isEqualTo(width)
+                                    } else {
+                                        width = it.width
+                                    }
+                                }
+                            )
                         }
                     }
                 }
@@ -179,9 +159,7 @@ class RowColumnModifierTest() {
             fill = true
         }
 
-        rule.runOnIdle {
-            Truth.assertThat(width).isEqualTo(40)
-        }
+        rule.runOnIdle { Truth.assertThat(width).isEqualTo(40) }
     }
 
     @Test
@@ -194,14 +172,12 @@ class RowColumnModifierTest() {
         rule.setContent {
             with(LocalDensity.current) {
                 Box(Modifier.size(200.toDp())) {
-                    Row(
-                        Modifier.wrapContentHeight()
-                    ) {
+                    Row(Modifier.wrapContentHeight()) {
                         repeat(5) { index ->
                             Box(
-                                Modifier
-                                    .size(
-                                        20.toDp(), if (index == 4) {
+                                Modifier.size(
+                                        20.toDp(),
+                                        if (index == 4) {
                                             10.toDp()
                                         } else {
                                             20.toDp()
@@ -210,9 +186,7 @@ class RowColumnModifierTest() {
                                     .weight(1f, fill)
                                     .onSizeChanged {
                                         if (index > 0) {
-                                            Truth
-                                                .assertThat(it.width)
-                                                .isEqualTo(width)
+                                            Truth.assertThat(it.width).isEqualTo(width)
                                         } else {
                                             width = it.width
                                         }
@@ -223,7 +197,8 @@ class RowColumnModifierTest() {
                                             val positionInParent = it.positionInParent()
                                             positionInParentY = positionInParent.y
                                         }
-                                    })
+                                    }
+                            )
                         }
                     }
                 }
@@ -251,15 +226,10 @@ class RowColumnModifierTest() {
         rule.setContent {
             with(LocalDensity.current) {
                 Box(Modifier.size(100.toDp())) {
-                    Column(
-                        Modifier
-                            .wrapContentWidth()
-                            .wrapContentHeight()
-                    ) {
+                    Column(Modifier.wrapContentWidth().wrapContentHeight()) {
                         repeat(5) { index ->
                             Box(
-                                Modifier
-                                    .size(
+                                Modifier.size(
                                         if (index == 4) {
                                             10.toDp()
                                         } else {
@@ -273,7 +243,8 @@ class RowColumnModifierTest() {
                                             val positionInParent = it.positionInParent()
                                             positionInParentX = positionInParent.x
                                         }
-                                    })
+                                    }
+                            )
                         }
                     }
                 }
@@ -285,9 +256,7 @@ class RowColumnModifierTest() {
             alignment = Alignment.CenterHorizontally
         }
 
-        rule.runOnIdle {
-            Truth.assertThat(positionInParentX).isEqualTo(5)
-        }
+        rule.runOnIdle { Truth.assertThat(positionInParentX).isEqualTo(5) }
     }
 
     @Test
@@ -300,18 +269,16 @@ class RowColumnModifierTest() {
         rule.setContent {
             with(LocalDensity.current) {
                 Box(Modifier.size(100.toDp())) {
-                    Column(
-                        Modifier.wrapContentHeight()
-                    ) {
+                    Column(Modifier.wrapContentHeight()) {
                         repeat(5) { index ->
                             Box(
-                                Modifier
-                                    .size(
+                                Modifier.size(
                                         if (index == 4) {
                                             10.toDp()
                                         } else {
                                             20.toDp()
-                                        }, 20.toDp()
+                                        },
+                                        20.toDp()
                                     )
                                     .alignBy(
                                         if (index == 4) {
@@ -325,7 +292,8 @@ class RowColumnModifierTest() {
                                             val positionInParent = it.positionInParent()
                                             positionInParentX = positionInParent.x
                                         }
-                                    })
+                                    }
+                            )
                         }
                     }
                 }
@@ -337,27 +305,7 @@ class RowColumnModifierTest() {
             alignment = alignByNewBlock
         }
 
-        rule.runOnIdle {
-            Truth.assertThat(positionInParentX).isEqualTo(5)
-        }
-    }
-
-    @Test
-    fun testColumn_doesNotCrashOnInfinity() {
-        rule.setContent {
-            Column(
-                Modifier
-                    .width(IntrinsicSize.Min)
-                    .verticalScroll(rememberScrollState())
-            ) {
-                Box(Modifier.height(20.dp)) {}
-                Layout(
-                    content = {},
-                ) { _, _ ->
-                    layout(200, Constraints.Infinity) {}
-                }
-            }
-        }
+        rule.runOnIdle { Truth.assertThat(positionInParentX).isEqualTo(5) }
     }
 
     @Test
@@ -368,25 +316,17 @@ class RowColumnModifierTest() {
         rule.setContent {
             with(LocalDensity.current) {
                 Box(Modifier.size(200.toDp())) {
-                    Column(
-                        Modifier.wrapContentHeight()
-                    ) {
+                    Column(Modifier.wrapContentHeight()) {
                         repeat(5) { index ->
                             Box(
-                                Modifier
-                                    .size(
-                                        20.toDp()
-                                    )
-                                    .weight(1f, fill)
-                                    .onSizeChanged {
-                                        if (index > 0) {
-                                            Truth
-                                                .assertThat(it.height)
-                                                .isEqualTo(height)
-                                        } else {
-                                            height = it.height
-                                        }
-                                    })
+                                Modifier.size(20.toDp()).weight(1f, fill).onSizeChanged {
+                                    if (index > 0) {
+                                        Truth.assertThat(it.height).isEqualTo(height)
+                                    } else {
+                                        height = it.height
+                                    }
+                                }
+                            )
                         }
                     }
                 }
@@ -398,9 +338,7 @@ class RowColumnModifierTest() {
             fill = true
         }
 
-        rule.runOnIdle {
-            Truth.assertThat(height).isEqualTo(40)
-        }
+        rule.runOnIdle { Truth.assertThat(height).isEqualTo(40) }
     }
 
     @Test
@@ -413,13 +351,10 @@ class RowColumnModifierTest() {
         rule.setContent {
             with(LocalDensity.current) {
                 Box(Modifier.size(200.toDp())) {
-                    Column(
-                        Modifier.wrapContentHeight()
-                    ) {
+                    Column(Modifier.wrapContentHeight()) {
                         repeat(5) { index ->
                             Box(
-                                Modifier
-                                    .size(
+                                Modifier.size(
                                         if (index == 4) {
                                             10.toDp()
                                         } else {
@@ -430,9 +365,7 @@ class RowColumnModifierTest() {
                                     .weight(1f, fill)
                                     .onSizeChanged {
                                         if (index > 0) {
-                                            Truth
-                                                .assertThat(it.height)
-                                                .isEqualTo(height)
+                                            Truth.assertThat(it.height).isEqualTo(height)
                                         } else {
                                             height = it.height
                                         }
@@ -443,7 +376,8 @@ class RowColumnModifierTest() {
                                             val positionInParent = it.positionInParent()
                                             positionInParentX = positionInParent.x
                                         }
-                                    })
+                                    }
+                            )
                         }
                     }
                 }

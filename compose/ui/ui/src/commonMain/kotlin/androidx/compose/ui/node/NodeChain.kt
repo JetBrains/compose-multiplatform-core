@@ -13,37 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:OptIn(ExperimentalComposeUiApi::class)
-
 package androidx.compose.ui.node
 
 import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.ui.CombinedModifier
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.areObjectsOfSameType
-import androidx.compose.ui.input.pointer.SuspendPointerInputElement
 import androidx.compose.ui.internal.checkPrecondition
+import androidx.compose.ui.internal.checkPreconditionNotNull
+import androidx.compose.ui.internal.throwIllegalStateException
 import androidx.compose.ui.layout.ModifierInfo
 
-private val SentinelHead = object : Modifier.Node() {
-    override fun toString() = "<Head>"
-}.apply {
-    aggregateChildKindSet = 0.inv()
-}
-
 internal class NodeChain(val layoutNode: LayoutNode) {
+    private val sentinelHead =
+        object : Modifier.Node() {
+                override fun toString() = "<Head>"
+            }
+            .apply { aggregateChildKindSet = 0.inv() }
+
     internal val innerCoordinator = InnerNodeCoordinator(layoutNode)
     internal var outerCoordinator: NodeCoordinator = innerCoordinator
         private set
+
     internal val tail: Modifier.Node = innerCoordinator.tail
     internal var head: Modifier.Node = tail
         private set
-    private val isUpdating: Boolean get() = head === SentinelHead
-    private val aggregateChildKindSet: Int get() = head.aggregateChildKindSet
+
+    internal val isUpdating: Boolean
+        get() = sentinelHead.child != null
+
+    private val aggregateChildKindSet: Int
+        get() = head.aggregateChildKindSet
+
     private var current: MutableVector<Modifier.Element>? = null
     private var buffer: MutableVector<Modifier.Element>? = null
+    private val stack = MutableVector<Modifier>(16)
     private var cachedDiffer: Differ? = null
     private var logger: Logger? = null
 
@@ -57,28 +62,28 @@ internal class NodeChain(val layoutNode: LayoutNode) {
      * head", and keep [head] pointing to the actual head.
      *
      * TODO: Now that we run the diff from head to tail, this may not be as helpful as it once was.
-     *  Consider removing this and trimChain entirely. If we don't, we should at least refactor to
-     *  make SentinelHead not a shared global mutable object, and instead just allocate one per
-     *  owner or one per chain.
+     *   Consider removing this and trimChain entirely. If we don't, we should at least refactor to
+     *   make SentinelHead not a shared global mutable object, and instead just allocate one per
+     *   owner or one per chain.
      */
     private fun padChain(): Modifier.Node {
-        checkPrecondition(head !== SentinelHead) { "padChain called on already padded chain" }
+        checkPrecondition(head !== sentinelHead) { "padChain called on already padded chain" }
         val currentHead = head
-        currentHead.parent = SentinelHead
-        SentinelHead.child = currentHead
-        return SentinelHead
+        currentHead.parent = sentinelHead
+        sentinelHead.child = currentHead
+        return sentinelHead
     }
 
     private fun trimChain(paddedHead: Modifier.Node): Modifier.Node {
-        checkPrecondition(paddedHead === SentinelHead) {
+        checkPrecondition(paddedHead === sentinelHead) {
             "trimChain called on already trimmed chain"
         }
-        val result = SentinelHead.child ?: tail
+        val result = sentinelHead.child ?: tail
         result.parent = null
-        SentinelHead.child = null
-        SentinelHead.aggregateChildKindSet = 0.inv()
-        SentinelHead.updateCoordinator(null)
-        checkPrecondition(result !== SentinelHead) { "trimChain did not update the head" }
+        sentinelHead.child = null
+        sentinelHead.aggregateChildKindSet = 0.inv()
+        sentinelHead.updateCoordinator(null)
+        checkPrecondition(result !== sentinelHead) { "trimChain did not update the head" }
         return result
     }
 
@@ -88,12 +93,12 @@ internal class NodeChain(val layoutNode: LayoutNode) {
      * created/disposed/updated during this call.
      *
      * This method will attempt to optimize for the common scenario of the modifier chain being of
-     * equal size and each element being able to be reused from the prior one. In most cases this
-     * is what recomposition will result in, provided modifiers weren't conditionally provided. In
-     * the cases where the modifier is not of equal length to the prior value, or modifiers of
-     * different reuse types ended up in the same position, this method will deopt into a slower
-     * path which will perform a diff on the modifier chain and execute a minimal number of
-     * insertions and deletions.
+     * equal size and each element being able to be reused from the prior one. In most cases this is
+     * what recomposition will result in, provided modifiers weren't conditionally provided. In the
+     * cases where the modifier is not of equal length to the prior value, or modifiers of different
+     * reuse types ended up in the same position, this method will deopt into a slower path which
+     * will perform a diff on the modifier chain and execute a minimal number of insertions and
+     * deletions.
      */
     internal fun updateFrom(m: Modifier) {
         // If we run the diff and there are no structural changes, we can avoid looping through the
@@ -114,7 +119,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
         // vector in those cases.
         var before = current
         val beforeSize = before?.size ?: 0
-        val after = m.fillVector(buffer ?: mutableVectorOf())
+        val after = m.fillVector(buffer ?: mutableVectorOf(), stack)
         var i = 0
         if (after.size == beforeSize) {
             // assume if the sizes are the same, that we are in a common case of no structural
@@ -124,7 +129,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
             // removed we will break into a structural update.
             var node: Modifier.Node? = paddedHead.child
             while (node != null && i < beforeSize) {
-                checkNotNull(before) { "expected prior modifier list to be non-empty" }
+                checkPreconditionNotNull(before) { "expected prior modifier list to be non-empty" }
                 val prev = before[i]
                 val next = after[i]
                 when (actionForModifiers(prev, next)) {
@@ -154,8 +159,8 @@ internal class NodeChain(val layoutNode: LayoutNode) {
             }
             if (i < beforeSize) {
                 coordinatorSyncNeeded = true
-                checkNotNull(before) { "expected prior modifier list to be non-empty" }
-                checkNotNull(node) { "structuralUpdate requires a non-null tail" }
+                checkPreconditionNotNull(before) { "expected prior modifier list to be non-empty" }
+                checkPreconditionNotNull(node) { "structuralUpdate requires a non-null tail" }
                 // there must have been a structural change
                 // we only need to diff what is left of the list, so we use `i` to determine how
                 // much of the list is left.
@@ -164,15 +169,15 @@ internal class NodeChain(val layoutNode: LayoutNode) {
                     before,
                     after,
                     node,
-                    layoutNode.isAttached,
+                    !layoutNode.applyingModifierOnAttach,
                 )
             }
-        } else if (!layoutNode.isAttached && beforeSize == 0) {
+        } else if (layoutNode.applyingModifierOnAttach && beforeSize == 0) {
             // common case where we are initializing the chain and the previous size is zero. In
             // this case we just do all inserts. Since this is so common, we add a fast path here
-            // for this condition. Since the layout node is not attached, the inserted nodes will
-            // not get eagerly attached, which means we can avoid dealing with the coordinator sync
-            // until the end, which keeps this code path much simpler.
+            // for this condition. Since the layout node is currently attaching, the inserted nodes
+            // will not get eagerly attached, which means we can avoid dealing with the coordinator
+            // sync until the end, which keeps this code path much simpler.
             coordinatorSyncNeeded = true
             var node = paddedHead
             while (i < after.size) {
@@ -184,7 +189,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
             }
             syncAggregateChildKindSet()
         } else if (after.size == 0) {
-            checkNotNull(before) { "expected prior modifier list to be non-empty" }
+            checkPreconditionNotNull(before) { "expected prior modifier list to be non-empty" }
             // common case where we we are removing all the modifiers.
             var node = paddedHead.child
             while (node != null && i < before.size) {
@@ -202,7 +207,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
                 before,
                 after,
                 paddedHead,
-                layoutNode.isAttached,
+                !layoutNode.applyingModifierOnAttach,
             )
         }
         current = after
@@ -219,19 +224,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
      * lifecycles, calling the detach lifecycles, and calling [markAsDetached].
      */
     internal fun resetState() {
-        tailToHead {
-            if (it.isAttached) it.reset()
-        }
-        current?.let { elements ->
-            elements.forEachIndexed { i, element ->
-                // we need to make sure the suspending pointer input modifier node is updated after
-                // being reset so we use the latest lambda, even if the keys provided as input
-                // didn't change.
-                if (element is SuspendPointerInputElement) {
-                    elements[i] = ForceUpdateElement(element)
-                }
-            }
-        }
+        tailToHead { if (it.isAttached) it.reset() }
         runDetachLifecycle()
         markAsDetached()
     }
@@ -242,17 +235,18 @@ internal class NodeChain(val layoutNode: LayoutNode) {
         while (node != null) {
             val layoutmod = node.asLayoutModifierNode()
             if (layoutmod != null) {
-                val next = if (node.coordinator != null) {
-                    val c = node.coordinator as LayoutModifierNodeCoordinator
-                    val prevNode = c.layoutModifierNode
-                    c.layoutModifierNode = layoutmod
-                    if (prevNode !== node) c.onLayoutModifierNodeChanged()
-                    c
-                } else {
-                    val c = LayoutModifierNodeCoordinator(layoutNode, layoutmod)
-                    node.updateCoordinator(c)
-                    c
-                }
+                val next =
+                    if (node.coordinator != null) {
+                        val c = node.coordinator as LayoutModifierNodeCoordinator
+                        val prevNode = c.layoutModifierNode
+                        c.layoutModifierNode = layoutmod
+                        if (prevNode !== node) c.onLayoutModifierNodeChanged()
+                        c
+                    } else {
+                        val c = LayoutModifierNodeCoordinator(layoutNode, layoutmod)
+                        node.updateCoordinator(c)
+                        c
+                    }
                 coordinator.wrappedBy = next
                 next.wrapped = coordinator
                 coordinator = next
@@ -274,7 +268,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
     private fun syncAggregateChildKindSet() {
         var node: Modifier.Node? = tail.parent
         var aggregateChildKindSet = 0
-        while (node != null && node !== SentinelHead) {
+        while (node != null && node !== sentinelHead) {
             aggregateChildKindSet = aggregateChildKindSet or node.kindSet
             node.aggregateChildKindSet = aggregateChildKindSet
             node = node.parent
@@ -289,9 +283,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
      * lifecycle is called, all nodes in the hierarchy are marked as attached.
      */
     fun markAsAttached() {
-        headToTail {
-            it.markAsAttached()
-        }
+        headToTail { it.markAsAttached() }
     }
 
     /**
@@ -299,6 +291,15 @@ internal class NodeChain(val layoutNode: LayoutNode) {
      * invalidations as a result of the attach, if needed.
      */
     fun runAttachLifecycle() {
+        // Assign layers that have been recycled in onDetach() in case the node has been reused
+        var coordinator: NodeCoordinator = outerCoordinator
+        val innerCoordinator = innerCoordinator
+        while (coordinator !== innerCoordinator) {
+            coordinator.onAttach()
+            coordinator = coordinator.wrapped!!
+        }
+        innerCoordinator.onAttach()
+
         headToTail {
             it.runAttachLifecycle()
             if (it.insertedNodeAwaitingAttachForInvalidation) {
@@ -317,18 +318,18 @@ internal class NodeChain(val layoutNode: LayoutNode) {
     }
 
     /**
-     * This returns a new List of Modifiers and the coordinates and any extra information
-     * that may be useful. This is used for tooling to retrieve layout modifier and layer
-     * information.
+     * This returns a new List of Modifiers and the coordinates and any extra information that may
+     * be useful. This is used for tooling to retrieve layout modifier and layer information.
      */
     fun getModifierInfo(): List<ModifierInfo> {
-        val current = current ?: return listOf()
+        val current = current ?: return emptyList()
         val infoList = MutableVector<ModifierInfo>(current.size)
         var i = 0
         headToTailExclusive { node ->
-            val coordinator = requireNotNull(node.coordinator) {
-                "getModifierInfo called on node with no coordinator"
-            }
+            val coordinator =
+                requireNotNull(node.coordinator) {
+                    "getModifierInfo called on node with no coordinator"
+                }
             // placeWithLayer puts the layer on the _next_ coordinator
             //
             // - If the last node does placeWithLayer, the layer is on the innerCoordinator
@@ -338,20 +339,24 @@ internal class NodeChain(val layoutNode: LayoutNode) {
             // -- this exists for ui-inspector and must remain stable due to a non-same-version
             // release dependency on tree structure.
             val currentNodeLayer = coordinator.layer
-            val innerNodeLayer = innerCoordinator.layer.takeIf {
-                // emit the innerCoordinator only if it's different than current coordinator and
-                // this is the last node
+            val innerNodeLayer =
+                innerCoordinator.layer.takeIf {
+                    // emit the innerCoordinator only if it's different than current coordinator and
+                    // this is the last node
 
-                // note: this logic will correctly handle the case where a Modifier.Node as the last
-                // element in the chain calls placeWithLayer. However, it does also cause an emit
-                // when .graphicsLayer is the last element in the chain as well - was previously
-                // depended upon by ui-tooling to avoid seeing the Crossfade layer.
+                    // note: this logic will correctly handle the case where a Modifier.Node as the
+                    // last
+                    // element in the chain calls placeWithLayer. However, it does also cause an
+                    // emit
+                    // when .graphicsLayer is the last element in the chain as well - was previously
+                    // depended upon by ui-tooling to avoid seeing the Crossfade layer.
 
-                // Going forward, as a contract, all layers will be emitted. And UI-tooling should
-                // not gain a new dependency on omitted layers.
-                val localChild = node.child
-                localChild === tail && node.coordinator !== localChild.coordinator
-            }
+                    // Going forward, as a contract, all layers will be emitted. And UI-tooling
+                    // should
+                    // not gain a new dependency on omitted layers.
+                    val localChild = node.child
+                    localChild === tail && node.coordinator !== localChild.coordinator
+                }
             val layer = currentNodeLayer ?: innerNodeLayer
             infoList += ModifierInfo(current[i++], coordinator, layer)
         }
@@ -359,15 +364,20 @@ internal class NodeChain(val layoutNode: LayoutNode) {
     }
 
     internal fun markAsDetached() {
-        tailToHead {
-            if (it.isAttached) it.markAsDetached()
-        }
+        tailToHead { if (it.isAttached) it.markAsDetached() }
     }
 
     internal fun runDetachLifecycle() {
-        tailToHead {
-            if (it.isAttached) it.runDetachLifecycle()
+        tailToHead { if (it.isAttached) it.runDetachLifecycle() }
+
+        // Recycle layers
+        var coordinator: NodeCoordinator = innerCoordinator
+        val outerCoordinator = outerCoordinator
+        while (coordinator !== outerCoordinator) {
+            coordinator.onDetach()
+            coordinator = coordinator.wrappedBy!!
         }
+        outerCoordinator.onDetach()
     }
 
     private fun getDiffer(
@@ -381,13 +391,14 @@ internal class NodeChain(val layoutNode: LayoutNode) {
         @Suppress("IfThenToElvis")
         return if (current == null) {
             Differ(
-                head,
-                offset,
-                before,
-                after,
-                // TODO: is this always true?
-                shouldAttachOnInsert,
-            ).also { cachedDiffer = it }
+                    head,
+                    offset,
+                    before,
+                    after,
+                    // TODO: is this always true?
+                    shouldAttachOnInsert,
+                )
+                .also { cachedDiffer = it }
         } else {
             current.also {
                 it.node = head
@@ -402,7 +413,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
     private fun propagateCoordinator(start: Modifier.Node, coordinator: NodeCoordinator) {
         var node = start.parent
         while (node != null) {
-            if (node === SentinelHead) {
+            if (node === sentinelHead) {
                 coordinator.wrappedBy = layoutNode.parent?.innerCoordinator
                 outerCoordinator = coordinator
                 break
@@ -421,10 +432,8 @@ internal class NodeChain(val layoutNode: LayoutNode) {
         var shouldAttachOnInsert: Boolean,
     ) : DiffCallback {
         override fun areItemsTheSame(oldIndex: Int, newIndex: Int): Boolean {
-            return actionForModifiers(
-                before[offset + oldIndex],
-                after[offset + newIndex]
-            ) != ActionReplace
+            return actionForModifiers(before[offset + oldIndex], after[offset + newIndex]) !=
+                ActionReplace
         }
 
         override fun insert(newIndex: Int) {
@@ -515,21 +524,17 @@ internal class NodeChain(val layoutNode: LayoutNode) {
             inserted: Modifier.Node
         )
 
-        fun nodeRemoved(
-            oldIndex: Int,
-            element: Modifier.Element,
-            node: Modifier.Node
-        )
+        fun nodeRemoved(oldIndex: Int, element: Modifier.Element, node: Modifier.Node)
     }
 
     /**
      * This method utilizes a modified Myers Diff Algorithm which will diff the two modifier chains
      * and execute a minimal number of insertions/deletions. We make no attempt to execute "moves"
-     * as part of this diff. If a modifier moves that is no different than it being inserted in
-     * the new location and removed in the old location.
+     * as part of this diff. If a modifier moves that is no different than it being inserted in the
+     * new location and removed in the old location.
      *
      * @param tail - The Node that corresponds to the _end_ of the [before] list. This Node is
-     * expected to have an up to date [aggregateChildKindSet].
+     *   expected to have an up to date [aggregateChildKindSet].
      */
     private fun structuralUpdate(
         offset: Int,
@@ -556,16 +561,15 @@ internal class NodeChain(val layoutNode: LayoutNode) {
     }
 
     /**
-     * This removes [node] from the current linked list.
-     * For example:
+     * This removes [node] from the current linked list. For example:
      *
      *      Head... -> parent -> node -> child -> ...Tail
      *
-     *  gets transformed into a list of the following shape:
+     * gets transformed into a list of the following shape:
      *
      *      Head... -> parent -> child -> ...Tail
      *
-     *  @return The parent of the removed [node]
+     * @return The parent of the removed [node]
      */
     private fun removeNode(node: Modifier.Node): Modifier.Node {
         val child = node.child
@@ -581,56 +585,18 @@ internal class NodeChain(val layoutNode: LayoutNode) {
         return parent!!
     }
 
-    private fun createAndInsertNodeAsParent(
-        element: Modifier.Element,
-        child: Modifier.Node,
-    ): Modifier.Node {
-        val node = when (element) {
-            is ModifierNodeElement<*> -> element.create().also {
-                it.kindSet = calculateNodeKindSetFromIncludingDelegates(it)
-            }
-            else -> BackwardsCompatNode(element)
-        }
-        checkPrecondition(!node.isAttached) {
-            "createAndInsertNodeAsParent called on an attached node"
-        }
-        node.insertedNodeAwaitingAttachForInvalidation = true
-        return insertParent(node, child)
-    }
-
-    /**
-     * This inserts [node] as the parent of [child] in the current linked list.
-     * For example:
-     *
-     *      Head... -> child -> ...Tail
-     *
-     *  gets transformed into a list of the following shape:
-     *
-     *      Head... -> node -> child -> ...Tail
-     *
-     *  @return The inserted [node]
-     */
-    private fun insertParent(node: Modifier.Node, child: Modifier.Node): Modifier.Node {
-        val theParent = child.parent
-        if (theParent != null) {
-            theParent.child = node
-            node.parent = theParent
-        }
-        child.parent = node
-        node.child = child
-        return node
-    }
-
     private fun createAndInsertNodeAsChild(
         element: Modifier.Element,
         parent: Modifier.Node,
     ): Modifier.Node {
-        val node = when (element) {
-            is ModifierNodeElement<*> -> element.create().also {
-                it.kindSet = calculateNodeKindSetFromIncludingDelegates(it)
+        val node =
+            when (element) {
+                is ModifierNodeElement<*> ->
+                    element.create().also {
+                        it.kindSet = calculateNodeKindSetFromIncludingDelegates(it)
+                    }
+                else -> BackwardsCompatNode(element)
             }
-            else -> BackwardsCompatNode(element)
-        }
         checkPrecondition(!node.isAttached) {
             "A ModifierNodeElement cannot return an already attached node from create() "
         }
@@ -639,16 +605,15 @@ internal class NodeChain(val layoutNode: LayoutNode) {
     }
 
     /**
-     * This inserts [node] as the child of [parent] in the current linked list.
-     * For example:
+     * This inserts [node] as the child of [parent] in the current linked list. For example:
      *
      *      Head... -> parent -> ...Tail
      *
-     *  gets transformed into a list of the following shape:
+     * gets transformed into a list of the following shape:
      *
      *      Head... -> parent -> node -> ...Tail
      *
-     *  @return The inserted [node]
+     * @return The inserted [node]
      */
     private fun insertChild(node: Modifier.Node, parent: Modifier.Node): Modifier.Node {
         val theChild = parent.child
@@ -661,11 +626,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
         return node
     }
 
-    private fun updateNode(
-        prev: Modifier.Element,
-        next: Modifier.Element,
-        node: Modifier.Node
-    ) {
+    private fun updateNode(prev: Modifier.Element, next: Modifier.Element, node: Modifier.Node) {
         when {
             prev is ModifierNodeElement<*> && next is ModifierNodeElement<*> -> {
                 next.updateUnsafe(node)
@@ -687,26 +648,19 @@ internal class NodeChain(val layoutNode: LayoutNode) {
                     node.updatedNodeAwaitingAttachForInvalidation = true
                 }
             }
-            else -> error("Unknown Modifier.Node type")
+            else -> throwIllegalStateException("Unknown Modifier.Node type")
         }
     }
 
     // TRAVERSAL
 
-    internal inline fun <reified T> firstFromHead(
-        type: NodeKind<T>,
-        block: (T) -> Boolean
-    ): T? {
-        headToTail(type) {
-            if (block(it)) return it
-        }
+    internal inline fun <reified T> firstFromHead(type: NodeKind<T>, block: (T) -> Boolean): T? {
+        headToTail(type) { if (block(it)) return it }
         return null
     }
 
     internal inline fun <reified T> headToTail(type: NodeKind<T>, block: (T) -> Unit) {
-        headToTail(type.mask) {
-            it.dispatchForKind(type, block)
-        }
+        headToTail(type.mask) { it.dispatchForKind(type, block) }
     }
 
     internal inline fun headToTail(mask: Int, block: (Modifier.Node) -> Unit) {
@@ -721,8 +675,8 @@ internal class NodeChain(val layoutNode: LayoutNode) {
 
     /**
      * Traverses the linked list from head to tail, running [block] on each Node as it goes. If
-     * [block] returns true, it will stop traversing and return true. If [block] returns false,
-     * it will continue.
+     * [block] returns true, it will stop traversing and return true. If [block] returns false, it
+     * will continue.
      *
      * @return Returns true if [block] ever returned true, false otherwise.
      */
@@ -743,9 +697,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
     }
 
     internal inline fun <reified T> tailToHead(type: NodeKind<T>, block: (T) -> Unit) {
-        tailToHead(type.mask) {
-            it.dispatchForKind(type, block)
-        }
+        tailToHead(type.mask) { it.dispatchForKind(type, block) }
     }
 
     internal inline fun tailToHead(mask: Int, block: (Modifier.Node) -> Unit) {
@@ -813,27 +765,22 @@ private const val ActionReuse = 2
 internal fun actionForModifiers(prev: Modifier.Element, next: Modifier.Element): Int {
     return if (prev == next) {
         ActionReuse
-    } else if (areObjectsOfSameType(prev, next) ||
-        (prev is ForceUpdateElement && areObjectsOfSameType(prev.original, next))
-    ) {
+    } else if (areObjectsOfSameType(prev, next)) {
         ActionUpdate
     } else {
         ActionReplace
     }
 }
 
-private fun <T : Modifier.Node> ModifierNodeElement<T>.updateUnsafe(
-    node: Modifier.Node
-) {
-    @Suppress("UNCHECKED_CAST")
-    update(node as T)
+private fun <T : Modifier.Node> ModifierNodeElement<T>.updateUnsafe(node: Modifier.Node) {
+    @Suppress("UNCHECKED_CAST") update(node as T)
 }
 
 private fun Modifier.fillVector(
-    result: MutableVector<Modifier.Element>
+    result: MutableVector<Modifier.Element>,
+    stack: MutableVector<Modifier>,
 ): MutableVector<Modifier.Element> {
-    val capacity = result.size.coerceAtLeast(16)
-    val stack = MutableVector<Modifier>(capacity).also { it.add(this) }
+    stack.add(this)
     var predicate: ((Modifier.Element) -> Boolean)? = null
     while (stack.isNotEmpty()) {
         when (val next = stack.removeAt(stack.size - 1)) {
@@ -842,25 +789,19 @@ private fun Modifier.fillVector(
                 stack.add(next.outer)
             }
             is Modifier.Element -> result.add(next)
-            // some other androidx.compose.ui.node.Modifier implementation that we don't know about...
+            // some other androidx.compose.ui.node.Modifier implementation that we don't know
+            // about...
             // late-allocate the predicate only once for the entire stack
-            else -> next.all(predicate ?: { element: Modifier.Element ->
-                result.add(element)
-                true
-            }.also { predicate = it })
+            else ->
+                next.all(
+                    predicate
+                        ?: { element: Modifier.Element ->
+                                result.add(element)
+                                true
+                            }
+                            .also { predicate = it }
+                )
         }
     }
     return result
-}
-
-@Suppress("ModifierNodeInspectableProperties")
-private data class ForceUpdateElement(val original: ModifierNodeElement<*>) :
-    ModifierNodeElement<Modifier.Node>() {
-    override fun create(): Modifier.Node {
-        throw IllegalStateException("Shouldn't be called")
-    }
-
-    override fun update(node: Modifier.Node) {
-        throw IllegalStateException("Shouldn't be called")
-    }
 }

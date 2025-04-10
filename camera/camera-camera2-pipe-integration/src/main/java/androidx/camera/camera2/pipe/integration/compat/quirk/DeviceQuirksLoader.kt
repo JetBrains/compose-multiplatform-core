@@ -14,79 +14,202 @@
  * limitations under the License.
  */
 
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-
 package androidx.camera.camera2.pipe.integration.compat.quirk
 
-import androidx.annotation.RequiresApi
 import androidx.camera.core.impl.Quirk
+import androidx.camera.core.impl.QuirkSettings
 
-/**
- * Loads all device specific quirks required for the current device.
- */
-object DeviceQuirksLoader {
+/** Loads all device specific quirks required for the current device. */
+public object DeviceQuirksLoader {
 
     /**
-     * Goes through all defined device-specific quirks, and returns those that should be loaded
-     * on the current device.
+     * Goes through all defined device-specific quirks, and returns those that should be loaded on
+     * the current device.
      */
-    fun loadQuirks(): List<Quirk> {
+    public fun loadQuirks(quirkSettings: QuirkSettings): List<Quirk> {
         val quirks: MutableList<Quirk> = mutableListOf()
 
         // Load all device specific quirks, preferably in lexicographical order
-        if (CloseCameraDeviceOnCameraGraphCloseQuirk.isEnabled()) {
+        if (
+            quirkSettings.shouldEnableQuirk(
+                CloseCameraDeviceOnCameraGraphCloseQuirk::class.java,
+                CloseCameraDeviceOnCameraGraphCloseQuirk.isEnabled()
+            )
+        ) {
             quirks.add(CloseCameraDeviceOnCameraGraphCloseQuirk())
         }
-        if (CloseCaptureSessionOnDisconnectQuirk.isEnabled()) {
+        if (
+            quirkSettings.shouldEnableQuirk(
+                CloseCaptureSessionOnDisconnectQuirk::class.java,
+                CloseCaptureSessionOnDisconnectQuirk.isEnabled()
+            )
+        ) {
             quirks.add(CloseCaptureSessionOnDisconnectQuirk())
         }
-        if (CrashWhenTakingPhotoWithAutoFlashAEModeQuirk.isEnabled()) {
+        if (
+            quirkSettings.shouldEnableQuirk(
+                CrashWhenTakingPhotoWithAutoFlashAEModeQuirk::class.java,
+                CrashWhenTakingPhotoWithAutoFlashAEModeQuirk.isEnabled()
+            )
+        ) {
             quirks.add(CrashWhenTakingPhotoWithAutoFlashAEModeQuirk())
         }
-        if (ControlZoomRatioRangeAssertionErrorQuirk.isEnabled()) {
+        if (
+            quirkSettings.shouldEnableQuirk(
+                ControlZoomRatioRangeAssertionErrorQuirk::class.java,
+                ControlZoomRatioRangeAssertionErrorQuirk.isEnabled()
+            )
+        ) {
             quirks.add(ControlZoomRatioRangeAssertionErrorQuirk())
         }
-        if (FlashAvailabilityBufferUnderflowQuirk.isEnabled()) {
+        if (
+            quirkSettings.shouldEnableQuirk(
+                DisableAbortCapturesOnStopQuirk::class.java,
+                DisableAbortCapturesOnStopQuirk.isEnabled()
+            )
+        ) {
+            quirks.add(DisableAbortCapturesOnStopQuirk())
+        }
+        if (
+            quirkSettings.shouldEnableQuirk(
+                DisableAbortCapturesOnStopWithSessionProcessorQuirk::class.java,
+                DisableAbortCapturesOnStopWithSessionProcessorQuirk.isEnabled()
+            )
+        ) {
+            quirks.add(DisableAbortCapturesOnStopWithSessionProcessorQuirk())
+        }
+        if (
+            quirkSettings.shouldEnableQuirk(
+                FlashAvailabilityBufferUnderflowQuirk::class.java,
+                FlashAvailabilityBufferUnderflowQuirk.isEnabled()
+            )
+        ) {
             quirks.add(FlashAvailabilityBufferUnderflowQuirk())
         }
-        if (ImageCapturePixelHDRPlusQuirk.isEnabled()) {
+        if (
+            quirkSettings.shouldEnableQuirk(
+                ImageCapturePixelHDRPlusQuirk::class.java,
+                ImageCapturePixelHDRPlusQuirk.isEnabled()
+            )
+        ) {
             quirks.add(ImageCapturePixelHDRPlusQuirk())
         }
-        if (InvalidVideoProfilesQuirk.isEnabled()) {
+        if (
+            quirkSettings.shouldEnableQuirk(
+                InvalidVideoProfilesQuirk::class.java,
+                InvalidVideoProfilesQuirk.isEnabled()
+            )
+        ) {
             quirks.add(InvalidVideoProfilesQuirk())
         }
-        if (ExcludedSupportedSizesQuirk.isEnabled()) {
+        if (
+            quirkSettings.shouldEnableQuirk(
+                ExcludedSupportedSizesQuirk::class.java,
+                ExcludedSupportedSizesQuirk.isEnabled()
+            )
+        ) {
             quirks.add(ExcludedSupportedSizesQuirk())
         }
-        if (ExtraCroppingQuirk.isEnabled()) {
+        if (
+            quirkSettings.shouldEnableQuirk(
+                ExtraCroppingQuirk::class.java,
+                ExtraCroppingQuirk.isEnabled()
+            )
+        ) {
             quirks.add(ExtraCroppingQuirk())
         }
-        if (ExtraSupportedOutputSizeQuirk.isEnabled()) {
+        if (
+            quirkSettings.shouldEnableQuirk(
+                ExtraSupportedOutputSizeQuirk::class.java,
+                ExtraSupportedOutputSizeQuirk.isEnabled()
+            )
+        ) {
             quirks.add(ExtraSupportedOutputSizeQuirk())
         }
-        if (ExtraSupportedSurfaceCombinationsQuirk.isEnabled()) {
+        if (
+            quirkSettings.shouldEnableQuirk(
+                ExtraSupportedSurfaceCombinationsQuirk::class.java,
+                ExtraSupportedSurfaceCombinationsQuirk.isEnabled()
+            )
+        ) {
             quirks.add(ExtraSupportedSurfaceCombinationsQuirk())
         }
-        if (Nexus4AndroidLTargetAspectRatioQuirk.isEnabled()) {
+        if (
+            quirkSettings.shouldEnableQuirk(
+                Nexus4AndroidLTargetAspectRatioQuirk::class.java,
+                Nexus4AndroidLTargetAspectRatioQuirk.isEnabled()
+            )
+        ) {
             quirks.add(Nexus4AndroidLTargetAspectRatioQuirk())
         }
-        if (PreviewPixelHDRnetQuirk.isEnabled()) {
+        if (
+            quirkSettings.shouldEnableQuirk(
+                PreviewPixelHDRnetQuirk::class.java,
+                PreviewPixelHDRnetQuirk.isEnabled()
+            )
+        ) {
             quirks.add(PreviewPixelHDRnetQuirk())
         }
-        if (RepeatingStreamConstraintForVideoRecordingQuirk.isEnabled()) {
+        if (
+            quirkSettings.shouldEnableQuirk(
+                RepeatingStreamConstraintForVideoRecordingQuirk::class.java,
+                RepeatingStreamConstraintForVideoRecordingQuirk.isEnabled()
+            )
+        ) {
             quirks.add(RepeatingStreamConstraintForVideoRecordingQuirk())
         }
-        if (StillCaptureFlashStopRepeatingQuirk.isEnabled()) {
+        if (
+            quirkSettings.shouldEnableQuirk(
+                StillCaptureFlashStopRepeatingQuirk::class.java,
+                StillCaptureFlashStopRepeatingQuirk.isEnabled()
+            )
+        ) {
             quirks.add(StillCaptureFlashStopRepeatingQuirk())
         }
-        if (TorchIsClosedAfterImageCapturingQuirk.isEnabled()) {
+        if (
+            quirkSettings.shouldEnableQuirk(
+                TorchIsClosedAfterImageCapturingQuirk::class.java,
+                TorchIsClosedAfterImageCapturingQuirk.isEnabled()
+            )
+        ) {
             quirks.add(TorchIsClosedAfterImageCapturingQuirk())
         }
-        if (SurfaceOrderQuirk.isEnabled()) {
+        if (
+            quirkSettings.shouldEnableQuirk(
+                SurfaceOrderQuirk::class.java,
+                SurfaceOrderQuirk.isEnabled()
+            )
+        ) {
             quirks.add(SurfaceOrderQuirk())
         }
-        if (CaptureSessionOnClosedNotCalledQuirk.isEnabled()) {
+        if (
+            quirkSettings.shouldEnableQuirk(
+                CaptureSessionOnClosedNotCalledQuirk::class.java,
+                CaptureSessionOnClosedNotCalledQuirk.isEnabled()
+            )
+        ) {
             quirks.add(CaptureSessionOnClosedNotCalledQuirk())
+        }
+        if (
+            quirkSettings.shouldEnableQuirk(ZslDisablerQuirk::class.java, ZslDisablerQuirk.load())
+        ) {
+            quirks.add(ZslDisablerQuirk())
+        }
+        if (
+            quirkSettings.shouldEnableQuirk(
+                SmallDisplaySizeQuirk::class.java,
+                SmallDisplaySizeQuirk.load()
+            )
+        ) {
+            quirks.add(SmallDisplaySizeQuirk())
+        }
+        if (
+            quirkSettings.shouldEnableQuirk(
+                PreviewUnderExposureQuirk::class.java,
+                PreviewUnderExposureQuirk.load()
+            )
+        ) {
+            quirks.add(PreviewUnderExposureQuirk)
         }
         return quirks
     }

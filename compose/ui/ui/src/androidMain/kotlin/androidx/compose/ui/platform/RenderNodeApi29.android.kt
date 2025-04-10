@@ -20,15 +20,16 @@ import android.graphics.Outline
 import android.graphics.RenderNode
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.CanvasHolder
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RenderEffect
 
-/**
- * RenderNode on Q+ devices, where it is officially supported.
- */
+/** RenderNode on Q+ devices, where it is officially supported. */
 @RequiresApi(Build.VERSION_CODES.Q)
 internal class RenderNodeApi29(val ownerView: AndroidComposeView) : DeviceRenderNode {
     private val renderNode = RenderNode("Compose")
@@ -37,18 +38,32 @@ internal class RenderNodeApi29(val ownerView: AndroidComposeView) : DeviceRender
 
     private var internalCompositingStrategy: CompositingStrategy = CompositingStrategy.Auto
 
+    private var layerPaint: Paint? = null
+
     internal fun isUsingCompositingLayer(): Boolean = renderNode.useCompositingLayer
 
     internal fun hasOverlappingRendering(): Boolean = renderNode.hasOverlappingRendering()
 
-    override val uniqueId: Long get() = renderNode.uniqueId
+    override val uniqueId: Long
+        get() = renderNode.uniqueId
 
-    override val left: Int get() = renderNode.left
-    override val top: Int get() = renderNode.top
-    override val right: Int get() = renderNode.right
-    override val bottom: Int get() = renderNode.bottom
-    override val width: Int get() = renderNode.width
-    override val height: Int get() = renderNode.height
+    override val left: Int
+        get() = renderNode.left
+
+    override val top: Int
+        get() = renderNode.top
+
+    override val right: Int
+        get() = renderNode.right
+
+    override val bottom: Int
+        get() = renderNode.bottom
+
+    override val width: Int
+        get() = renderNode.width
+
+    override val height: Int
+        get() = renderNode.height
 
     override var scaleX: Float
         get() = renderNode.scaleX
@@ -146,6 +161,20 @@ internal class RenderNodeApi29(val ownerView: AndroidComposeView) : DeviceRender
             renderNode.alpha = value
         }
 
+    override var blendMode: BlendMode = BlendMode.SrcOver
+        set(value) {
+            field = value
+            obtainLayerPaint().apply { blendMode = value }
+            updateLayerProperties()
+        }
+
+    override var colorFilter: ColorFilter? = null
+        set(value) {
+            field = value
+            obtainLayerPaint().apply { colorFilter = value }
+            updateLayerProperties()
+        }
+
     override var renderEffect: RenderEffect?
         get() = internalRenderEffect
         set(value) {
@@ -158,24 +187,42 @@ internal class RenderNodeApi29(val ownerView: AndroidComposeView) : DeviceRender
     override var compositingStrategy: CompositingStrategy
         get() = internalCompositingStrategy
         set(value) {
-            with(renderNode) {
-                when (value) {
-                    CompositingStrategy.Offscreen -> {
-                        setUseCompositingLayer(true, null)
-                        setHasOverlappingRendering(true)
-                    }
-                    CompositingStrategy.ModulateAlpha -> {
-                        setUseCompositingLayer(false, null)
-                        setHasOverlappingRendering(false)
-                    }
-                    else -> { // CompositingStrategy.Auto
-                        setUseCompositingLayer(false, null)
-                        setHasOverlappingRendering(true)
-                    }
-                }
-            }
             internalCompositingStrategy = value
+            updateLayerProperties()
         }
+
+    private fun updateLayerProperties() {
+        if (requiresCompositingLayer()) {
+            renderNode.applyCompositingStrategy(CompositingStrategy.Offscreen)
+        } else {
+            renderNode.applyCompositingStrategy(internalCompositingStrategy)
+        }
+    }
+
+    private fun requiresCompositingLayer(): Boolean =
+        compositingStrategy == CompositingStrategy.Offscreen || requiresLayerPaint()
+
+    private fun requiresLayerPaint(): Boolean =
+        blendMode != BlendMode.SrcOver || colorFilter != null
+
+    private fun obtainLayerPaint(): Paint = layerPaint ?: Paint().also { layerPaint = it }
+
+    private fun RenderNode.applyCompositingStrategy(compositingStrategy: CompositingStrategy) {
+        when (compositingStrategy) {
+            CompositingStrategy.Offscreen -> {
+                setUseCompositingLayer(true, layerPaint?.asFrameworkPaint())
+                setHasOverlappingRendering(true)
+            }
+            CompositingStrategy.ModulateAlpha -> {
+                setUseCompositingLayer(false, null)
+                setHasOverlappingRendering(false)
+            }
+            else -> {
+                setUseCompositingLayer(false, null)
+                setHasOverlappingRendering(true)
+            }
+        }
+    }
 
     override val hasDisplayList: Boolean
         get() = renderNode.hasDisplayList()
@@ -196,11 +243,7 @@ internal class RenderNodeApi29(val ownerView: AndroidComposeView) : DeviceRender
         renderNode.offsetTopAndBottom(offset)
     }
 
-    override fun record(
-        canvasHolder: CanvasHolder,
-        clipPath: Path?,
-        drawBlock: (Canvas) -> Unit
-    ) {
+    override fun record(canvasHolder: CanvasHolder, clipPath: Path?, drawBlock: (Canvas) -> Unit) {
         canvasHolder.drawInto(renderNode.beginRecording()) {
             if (clipPath != null) {
                 save()
@@ -255,6 +298,8 @@ internal class RenderNodeApi29(val ownerView: AndroidComposeView) : DeviceRender
             clipToBounds = renderNode.clipToBounds,
             alpha = renderNode.alpha,
             renderEffect = internalRenderEffect,
+            blendMode = blendMode,
+            colorFilter = colorFilter,
             compositingStrategy = internalCompositingStrategy
         )
 
@@ -266,7 +311,6 @@ internal class RenderNodeApi29(val ownerView: AndroidComposeView) : DeviceRender
 @RequiresApi(Build.VERSION_CODES.S)
 private object RenderNodeApi29VerificationHelper {
 
-    @androidx.annotation.DoNotInline
     fun setRenderEffect(renderNode: RenderNode, target: RenderEffect?) {
         renderNode.setRenderEffect(target?.asAndroidRenderEffect())
     }

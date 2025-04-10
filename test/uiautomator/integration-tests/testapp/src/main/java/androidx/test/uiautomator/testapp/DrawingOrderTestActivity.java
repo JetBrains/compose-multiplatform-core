@@ -22,7 +22,7 @@ import android.os.Bundle;
 import android.util.AttributeSet;
 import android.widget.RelativeLayout;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Collections;

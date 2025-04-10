@@ -1,5 +1,3 @@
-// ktlint-disable filename
-
 /*
  * Copyright 2021 The Android Open Source Project
  *
@@ -18,8 +16,6 @@
 
 package androidx.compose.foundation
 
-@Suppress("ACTUAL_WITHOUT_EXPECT") // https://youtrack.jetbrains.com/issue/KT-37316
 internal actual typealias AtomicReference<V> = java.util.concurrent.atomic.AtomicReference<V>
 
-@Suppress("ACTUAL_WITHOUT_EXPECT") // https://youtrack.jetbrains.com/issue/KT-37316
 internal actual typealias AtomicLong = java.util.concurrent.atomic.AtomicLong

@@ -19,7 +19,6 @@ package androidx.compose.ui.focus
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection.Companion.Enter
 import androidx.compose.ui.platform.LocalFocusManager
@@ -32,12 +31,10 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalComposeUiApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class TwoDimensionalFocusTraversalEnterTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     private lateinit var focusManager: FocusManager
     private val initialFocus: FocusRequester = FocusRequester()
@@ -145,9 +142,7 @@ class TwoDimensionalFocusTraversalEnterTest {
         val (child, grandchild) = List(2) { mutableStateOf(false) }
         rule.setContentForTest {
             FocusableBox(focusedItem, 0, 0, 30, 30, initialFocus) {
-                FocusableBox(child, 10, 10, 10, 10) {
-                    FocusableBox(grandchild, 10, 10, 10, 10)
-                }
+                FocusableBox(child, 10, 10, 10, 10) { FocusableBox(grandchild, 10, 10, 10, 10) }
             }
         }
 
@@ -215,7 +210,7 @@ class TwoDimensionalFocusTraversalEnterTest {
         val (child, grandchild) = List(2) { mutableStateOf(false) }
         rule.setContentForTest {
             FocusableBox(focusedItem, 0, 0, 30, 30, initialFocus) {
-                val customEnter = Modifier.focusProperties { enter = { FocusRequester.Cancel } }
+                val customEnter = Modifier.focusProperties { onEnter = { cancelFocusChange() } }
                 FocusableBox(child, 10, 10, 10, 10, deactivated = true, modifier = customEnter) {
                     FocusableBox(grandchild, 10, 10, 10, 10)
                 }
@@ -252,7 +247,8 @@ class TwoDimensionalFocusTraversalEnterTest {
         val grandchild2Requester = FocusRequester()
         rule.setContentForTest {
             FocusableBox(focusedItem, 0, 0, 30, 30, initialFocus) {
-                val customEnter = Modifier.focusProperties { enter = { grandchild2Requester } }
+                val customEnter =
+                    Modifier.focusProperties { onEnter = { grandchild2Requester.requestFocus() } }
                 FocusableBox(child, 10, 10, 10, 10, deactivated = true, modifier = customEnter) {
                     FocusableBox(grandchild1, 10, 10, 10, 10)
                     FocusableBox(grandchild2, 10, 10, 10, 10, grandchild2Requester)
@@ -308,10 +304,7 @@ class TwoDimensionalFocusTraversalEnterTest {
         rule.runOnIdle {
             assertThat(movedFocusSuccessfully).isTrue()
             assertThat(focusedItem.value).isFalse()
-            assertThat(children.values).isExactly(
-                true, false, false,
-                false, false, false
-            )
+            assertThat(children.values).isExactly(true, false, false, false, false, false)
         }
     }
 
@@ -348,10 +341,7 @@ class TwoDimensionalFocusTraversalEnterTest {
         rule.runOnIdle {
             assertThat(movedFocusSuccessfully).isTrue()
             assertThat(focusedItem.value).isFalse()
-            assertThat(children.values).isExactly(
-                false, false, false,
-                true, false, false
-            )
+            assertThat(children.values).isExactly(false, false, false, true, false, false)
         }
     }
 
@@ -371,7 +361,7 @@ class TwoDimensionalFocusTraversalEnterTest {
         // Arrange.
         val children = List(6) { mutableStateOf(false) }
         val child3 = FocusRequester()
-        val customFocusEnter = Modifier.focusProperties { enter = { child3 } }
+        val customFocusEnter = Modifier.focusProperties { onEnter = { child3.requestFocus() } }
         rule.setContentForTest {
             FocusableBox(focusedItem, 0, 0, 70, 50, initialFocus, modifier = customFocusEnter) {
                 FocusableBox(children[0], 10, 10, 10, 10)
@@ -390,10 +380,7 @@ class TwoDimensionalFocusTraversalEnterTest {
         rule.runOnIdle {
             assertThat(movedFocusSuccessfully).isTrue()
             assertThat(focusedItem.value).isFalse()
-            assertThat(children.values).isExactly(
-                false, false, false,
-                true, false, false
-            )
+            assertThat(children.values).isExactly(false, false, false, true, false, false)
         }
     }
 
@@ -406,4 +393,5 @@ class TwoDimensionalFocusTraversalEnterTest {
     }
 }
 
-private val List<MutableState<Boolean>>.values get() = this.map { it.value }
+private val List<MutableState<Boolean>>.values
+    get() = this.map { it.value }

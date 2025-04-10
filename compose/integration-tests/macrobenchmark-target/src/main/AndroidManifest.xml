@@ -17,13 +17,14 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <application
-        android:label="Jetpack Compose Macrobenchmark Target"
-        android:allowBackup="false"
-        android:supportsRtl="true"
-        android:icon="@mipmap/ic_launcher"
-        tools:ignore="GoogleAppIndexingWarning">
+    <uses-permission android:name="android.permission.INTERNET"/>
 
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="Jetpack Compose Macrobenchmark Target"
+        android:supportsRtl="true"
+        tools:ignore="GoogleAppIndexingWarning">
         <!-- Profileable to enable macrobenchmark profiling -->
         <profileable android:shell="true"/>
 
@@ -35,8 +36,8 @@
          -->
         <activity
             android:name=".TrivialStartupActivity"
-            android:label="C Trivial"
-            android:exported="true">
+            android:exported="true"
+            android:label="C Trivial">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -47,9 +48,31 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".InsightActivity"
+            android:exported="true"
+            android:label="C Insight">
+            <intent-filter>
+                <action android:name="androidx.compose.integration.macrobenchmark.target.INSIGHT_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".StaticScrollingContentWithChromeInitialCompositionActivity"
+            android:exported="true"
+            android:label="C StaticScrollingWithChrome Init">
+            <intent-filter>
+                <action android:name="androidx.compose.integration.macrobenchmark.target.STATIC_SCROLLING_CONTENT_WITH_CHROME_INITIAL_COMPOSITION_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.compose.integration.macrobenchmark.target.STATIC_SCROLLING_CONTENT_WITH_CHROME_FIRST_FRAME_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
             android:name=".TrivialStartupTracingActivity"
-            android:label="C TrivialTracing"
-            android:exported="true">
+            android:exported="true"
+            android:label="C TrivialTracing">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -77,14 +100,27 @@
         </activity>
         <activity
             android:name=".LazyColumnActivity"
-            android:label="C LazyColumn"
-            android:exported="true">
+            android:exported="true"
+            android:label="C LazyColumn">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <intent-filter>
                 <action android:name="androidx.compose.integration.macrobenchmark.target.LAZY_COLUMN_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".FrameExperimentActivity"
+            android:exported="true"
+            android:label="FrameExp">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.compose.integration.macrobenchmark.target.FRAME_EXPERIMENT_ACTIVITY" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
@@ -105,6 +141,18 @@
             </intent-filter>
             <intent-filter>
                 <action android:name="androidx.compose.integration.macrobenchmark.target.NESTED_LISTS_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".ComplexNestedListsActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.compose.integration.macrobenchmark.target.COMPLEX_NESTED_LISTS_ACTIVITY" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
@@ -136,7 +184,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".ViewPagerActivity"
             android:exported="true"
@@ -146,7 +193,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".RecyclerViewAsCarouselActivity"
             android:exported="true"
@@ -156,7 +202,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".PagerAsCarouselActivity"
             android:exported="true"
@@ -166,7 +211,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".PagerActivity"
             android:exported="true"
@@ -176,7 +220,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".TrivialTracingActivity"
             android:exported="true">
@@ -185,7 +228,8 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <activity android:name=".AndroidViewListActivity"
+        <activity
+            android:name=".AndroidViewListActivity"
             android:exported="true"
             android:theme="@style/Theme.AppCompat">
             <intent-filter>
@@ -193,11 +237,87 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <activity android:name=".RecyclerViewListActivity"
+        <activity
+            android:name=".RecyclerViewListActivity"
             android:exported="true"
             android:theme="@style/Theme.AppCompat">
             <intent-filter>
                 <action android:name="androidx.compose.integration.macrobenchmark.target.RECYCLERVIEW_LIST_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".VectorsListActivity"
+            android:exported="true"
+            android:label="Compose vectors list">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.compose.integration.macrobenchmark.target.VECTORS_LIST_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".CrossfadeActivity"
+            android:exported="true"
+            android:label="Compose Crossfade Benchmark">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.compose.integration.macrobenchmark.target.CROSSFADE_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".PagerOfLazyGridActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat">
+            <intent-filter>
+                <action android:name="androidx.compose.integration.macrobenchmark.target.PAGER_LAZYGRID_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".FormFillingActivity"
+            android:exported="true"
+            android:label="Compose Form Filling Benchmark"
+            android:launchMode="singleInstance"
+            android:theme="@style/Theme.AppCompat.Light">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.compose.integration.macrobenchmark.target.FORM_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".complexdifferenttypeslist.ComplexDifferentTypesLazyColumnActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat">
+            <intent-filter>
+                <action android:name="androidx.compose.integration.macrobenchmark.target.COMPLEX_DIFFERENT_TYPES_LAZY_COLUMN" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".complexdifferenttypeslist.ComplexDifferentTypesRecyclerViewActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat">
+            <intent-filter>
+                <action android:name="androidx.compose.integration.macrobenchmark.target.COMPLEX_DIFFERENT_TYPES_RECYCLER_VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".TextListActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat">
+            <intent-filter>
+                <action android:name="androidx.compose.integration.macrobenchmark.target.TEXT_LIST_ACTIVITY" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>

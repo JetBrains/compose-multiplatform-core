@@ -39,9 +39,7 @@ internal class KspMethodTypeVariableType(
     val ksTypeVariable: KSTypeParameter,
 ) : KspAnnotated(env), XTypeVariableType, XEquality {
 
-    override val typeName: TypeName by lazy {
-        xTypeName.java
-    }
+    override val typeName: TypeName by lazy { xTypeName.java }
 
     override fun asTypeName() = xTypeName
 
@@ -64,8 +62,7 @@ internal class KspMethodTypeVariableType(
             override val typeName: TypeName
                 get() = this@KspMethodTypeVariableType.typeName
 
-            override fun asTypeName(): XTypeName =
-                this@KspMethodTypeVariableType.asTypeName()
+            override fun asTypeName(): XTypeName = this@KspMethodTypeVariableType.asTypeName()
 
             override fun isAssignableFrom(other: XRawType): Boolean {
                 return this.typeName == other.typeName
@@ -78,7 +75,8 @@ internal class KspMethodTypeVariableType(
 
     override val superTypes: List<XType> by lazy {
         val anyType = env.requireType(XTypeName.ANY_OBJECT).makeNullable()
-        if (upperBounds.size == 1 && upperBounds.single() == anyType) {
+        // Prepend Any? if there's no Any, Any?, or Any! in upperBounds
+        if (upperBounds.size == 1 && upperBounds.single().makeNullable() == anyType) {
             upperBounds
         } else {
             listOf(anyType) + upperBounds
@@ -92,11 +90,12 @@ internal class KspMethodTypeVariableType(
         get() = emptyList()
 
     override fun isAssignableFrom(other: XType): Boolean {
-        val typeVar = when (other) {
-            is KspTypeVariableType -> other.ksTypeVariable
-            is KspMethodTypeVariableType -> other.ksTypeVariable
-            else -> null
-        }
+        val typeVar =
+            when (other) {
+                is KspTypeVariableType -> other.ksTypeVariable
+                is KspMethodTypeVariableType -> other.ksTypeVariable
+                else -> null
+            }
         return ksTypeVariable == typeVar
     }
 
@@ -121,11 +120,12 @@ internal class KspMethodTypeVariableType(
     }
 
     override fun isSameType(other: XType): Boolean {
-        val typeVar = when (other) {
-            is KspTypeVariableType -> other.ksTypeVariable
-            is KspMethodTypeVariableType -> other.ksTypeVariable
-            else -> null
-        }
+        val typeVar =
+            when (other) {
+                is KspTypeVariableType -> other.ksTypeVariable
+                is KspMethodTypeVariableType -> other.ksTypeVariable
+                else -> null
+            }
         return ksTypeVariable == typeVar
     }
 
@@ -141,9 +141,7 @@ internal class KspMethodTypeVariableType(
         return this
     }
 
-    override val equalityItems: Array<out Any?> by lazy {
-        arrayOf(ksTypeVariable)
-    }
+    override val equalityItems: Array<out Any?> by lazy { arrayOf(ksTypeVariable) }
 
     override fun equals(other: Any?): Boolean {
         return XEquality.equals(this, other)

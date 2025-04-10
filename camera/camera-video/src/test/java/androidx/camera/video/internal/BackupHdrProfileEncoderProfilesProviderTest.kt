@@ -22,7 +22,6 @@ import android.media.CamcorderProfile.QUALITY_480P
 import android.media.CamcorderProfile.QUALITY_720P
 import android.media.EncoderProfiles.VideoProfile.HDR_HLG
 import android.os.Build
-import androidx.arch.core.util.Function
 import androidx.camera.core.impl.EncoderProfilesProvider
 import androidx.camera.core.impl.EncoderProfilesProxy
 import androidx.camera.core.impl.EncoderProfilesProxy.VideoProfileProxy.BIT_DEPTH_10
@@ -32,7 +31,6 @@ import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_480P
 import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_720P
 import androidx.camera.testing.impl.fakes.FakeEncoderProfilesProvider
 import androidx.camera.testing.impl.fakes.FakeVideoEncoderInfo
-import androidx.camera.video.internal.encoder.VideoEncoderConfig
 import androidx.camera.video.internal.encoder.VideoEncoderInfo
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -46,16 +44,16 @@ import org.robolectric.annotation.internal.DoNotInstrument
 @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class BackupHdrProfileEncoderProfilesProviderTest {
 
-    private val defaultProvider = createFakeEncoderProfilesProvider(
-        mapOf(
-            QUALITY_2160P to PROFILES_2160P,
-            QUALITY_1080P to PROFILES_1080P,
-            QUALITY_720P to PROFILES_720P,
-            QUALITY_480P to PROFILES_480P
+    private val defaultProvider =
+        createFakeEncoderProfilesProvider(
+            mapOf(
+                QUALITY_2160P to PROFILES_2160P,
+                QUALITY_1080P to PROFILES_1080P,
+                QUALITY_720P to PROFILES_720P,
+                QUALITY_480P to PROFILES_480P
+            )
         )
-    )
-    private val videoEncoderFinder =
-        Function<VideoEncoderConfig, VideoEncoderInfo> { FakeVideoEncoderInfo() }
+    private val videoEncoderFinder = VideoEncoderInfo.Finder { FakeVideoEncoderInfo() }
 
     @Test
     fun hasNoProfile_canNotGetProfiles() {
@@ -91,10 +89,12 @@ class BackupHdrProfileEncoderProfilesProviderTest {
     private fun createFakeEncoderProfilesProvider(
         qualityToProfilesMap: Map<Int, EncoderProfilesProxy> = emptyMap()
     ): EncoderProfilesProvider {
-        return FakeEncoderProfilesProvider.Builder().also { builder ->
-            for ((quality, profiles) in qualityToProfilesMap) {
-                builder.add(quality, profiles)
+        return FakeEncoderProfilesProvider.Builder()
+            .also { builder ->
+                for ((quality, profiles) in qualityToProfilesMap) {
+                    builder.add(quality, profiles)
+                }
             }
-        }.build()
+            .build()
     }
 }

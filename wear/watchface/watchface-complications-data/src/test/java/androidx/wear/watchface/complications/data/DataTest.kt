@@ -27,11 +27,12 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.Icon
 import android.os.Build
+import android.os.PersistableBundle
 import android.support.wearable.complications.ComplicationData as WireComplicationData
 import android.support.wearable.complications.ComplicationText as WireComplicationText
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.filters.SdkSuppress
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicString
 import com.google.common.truth.Expect
@@ -89,7 +90,8 @@ public class AsWireComplicationDataTest {
                 "NoDataComplicationData(placeholder=null, tapActionLostDueToSerialization=false, " +
                     "tapAction=null, validTimeRange=TimeRange(startDateTimeMillis=" +
                     "-1000000000-01-01T00:00:00Z, endDateTimeMillis=" +
-                    "+1000000000-12-31T23:59:59.999999999Z), persistencePolicy=0, displayPolicy=0)"
+                    "+1000000000-12-31T23:59:59.999999999Z), persistencePolicy=0, " +
+                    "displayPolicy=0, extras=PersistableBundle[{}])"
             )
     }
 
@@ -126,6 +128,7 @@ public class AsWireComplicationDataTest {
 
     @Test
     public fun shortTextComplicationData() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
         val data =
             ShortTextComplicationData.Builder(
                     "text".complicationText,
@@ -135,6 +138,7 @@ public class AsWireComplicationDataTest {
                 .setDataSource(dataSource)
                 .setPersistencePolicy(ComplicationPersistencePolicies.DO_NOT_PERSIST)
                 .setDisplayPolicy(ComplicationDisplayPolicies.DO_NOT_SHOW_WHEN_DEVICE_LOCKED)
+                .setExtras(extras)
                 .build()
         ParcelableSubject.assertThat(data.asWireComplicationData())
             .hasSameSerializationAs(
@@ -145,6 +149,7 @@ public class AsWireComplicationDataTest {
                     .setDataSource(dataSource)
                     .setPersistencePolicy(ComplicationPersistencePolicies.DO_NOT_PERSIST)
                     .setDisplayPolicy(ComplicationDisplayPolicies.DO_NOT_SHOW_WHEN_DEVICE_LOCKED)
+                    .setExtras(extras)
                     .build()
             )
         testRoundTripConversions(data)
@@ -153,7 +158,7 @@ public class AsWireComplicationDataTest {
         assertThat(deserialized.contentDescription!!.getTextAt(resources, Instant.EPOCH))
             .isEqualTo("content description")
         assertThat(deserialized.title!!.getTextAt(resources, Instant.EPOCH)).isEqualTo("title")
-
+        assertThat(deserialized.extras.getInt("Key")).isEqualTo(123)
         assertThat(data.toString())
             .isEqualTo(
                 "ShortTextComplicationData(text=ComplicationText{mSurroundingText=text, " +
@@ -166,11 +171,12 @@ public class AsWireComplicationDataTest {
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, persistencePolicy=1, " +
-                    "displayPolicy=1, dynamicValueInvalidationFallback=null)"
+                    "displayPolicy=1, dynamicValueInvalidationFallback=null, " +
+                    "extras=PersistableBundle[{Key=123}])"
             )
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     @Test
     public fun shortTextComplicationData_withImages() {
         val data =
@@ -220,12 +226,35 @@ public class AsWireComplicationDataTest {
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, persistencePolicy=0, " +
-                    "displayPolicy=0, dynamicValueInvalidationFallback=null)"
+                    "displayPolicy=0, dynamicValueInvalidationFallback=null, " +
+                    "extras=PersistableBundle[{}])"
             )
     }
 
     @Test
+    public fun stripExtras() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
+        val data =
+            ShortTextComplicationData.Builder(
+                    "text".complicationText,
+                    "content description".complicationText
+                )
+                .setTitle("title".complicationText)
+                .setDataSource(dataSource)
+                .setPersistencePolicy(ComplicationPersistencePolicies.DO_NOT_PERSIST)
+                .setDisplayPolicy(ComplicationDisplayPolicies.DO_NOT_SHOW_WHEN_DEVICE_LOCKED)
+                .setExtras(extras)
+                .build()
+        val wireData = data.asWireComplicationData()
+
+        wireData.stripExtras()
+
+        assertThat(wireData.extras.size()).isEqualTo(0)
+    }
+
+    @Test
     public fun longTextComplicationData() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
         val data =
             LongTextComplicationData.Builder(
                     "text".complicationText,
@@ -233,6 +262,7 @@ public class AsWireComplicationDataTest {
                 )
                 .setTitle("title".complicationText)
                 .setDataSource(dataSource)
+                .setExtras(extras)
                 .build()
         ParcelableSubject.assertThat(data.asWireComplicationData())
             .hasSameSerializationAs(
@@ -243,6 +273,7 @@ public class AsWireComplicationDataTest {
                     .setDataSource(dataSource)
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                     .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
+                    .setExtras(extras)
                     .build()
             )
         testRoundTripConversions(data)
@@ -251,7 +282,7 @@ public class AsWireComplicationDataTest {
         assertThat(deserialized.contentDescription!!.getTextAt(resources, Instant.EPOCH))
             .isEqualTo("content description")
         assertThat(deserialized.title!!.getTextAt(resources, Instant.EPOCH)).isEqualTo("title")
-
+        assertThat(deserialized.extras.getInt("Key")).isEqualTo(123)
         assertThat(data.toString())
             .isEqualTo(
                 "LongTextComplicationData(text=ComplicationText{mSurroundingText=text, " +
@@ -264,11 +295,12 @@ public class AsWireComplicationDataTest {
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, persistencePolicy=0, " +
-                    "displayPolicy=0, dynamicValueInvalidationFallback=null)"
+                    "displayPolicy=0, dynamicValueInvalidationFallback=null, " +
+                    "extras=PersistableBundle[{Key=123}])"
             )
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     @Test
     public fun longTextComplicationData_withImages() {
         val data =
@@ -319,12 +351,14 @@ public class AsWireComplicationDataTest {
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, persistencePolicy=0, " +
-                    "displayPolicy=0, dynamicValueInvalidationFallback=null)"
+                    "displayPolicy=0, dynamicValueInvalidationFallback=null, " +
+                    "extras=PersistableBundle[{}])"
             )
     }
 
     @Test
     public fun rangedValueComplicationData_withFixedValue() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
         val data =
             RangedValueComplicationData.Builder(
                     value = 95f,
@@ -334,6 +368,7 @@ public class AsWireComplicationDataTest {
                 )
                 .setTitle("battery".complicationText)
                 .setDataSource(dataSource)
+                .setExtras(extras)
                 .build()
         ParcelableSubject.assertThat(data.asWireComplicationData())
             .hasSameSerializationAs(
@@ -347,6 +382,7 @@ public class AsWireComplicationDataTest {
                     .setDataSource(dataSource)
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                     .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
+                    .setExtras(extras)
                     .build()
             )
         testRoundTripConversions(data)
@@ -358,7 +394,7 @@ public class AsWireComplicationDataTest {
         assertThat(deserialized.contentDescription!!.getTextAt(resources, Instant.EPOCH))
             .isEqualTo("content description")
         assertThat(deserialized.title!!.getTextAt(resources, Instant.EPOCH)).isEqualTo("battery")
-
+        assertThat(deserialized.extras.getInt("Key")).isEqualTo(123)
         assertThat(data.toString())
             .isEqualTo(
                 "RangedValueComplicationData(value=95.0, dynamicValue=null, valueType=0, " +
@@ -370,7 +406,8 @@ public class AsWireComplicationDataTest {
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, colorRamp=null, " +
-                    "persistencePolicy=0, displayPolicy=0, dynamicValueInvalidationFallback=null)"
+                    "persistencePolicy=0, displayPolicy=0, " +
+                    "dynamicValueInvalidationFallback=null, extras=PersistableBundle[{Key=123}])"
             )
     }
 
@@ -425,7 +462,8 @@ public class AsWireComplicationDataTest {
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), dataSource=" +
                     "ComponentInfo{com.pkg_a/com.a}, colorRamp=null, persistencePolicy=0, " +
-                    "displayPolicy=0, dynamicValueInvalidationFallback=null)"
+                    "displayPolicy=0, dynamicValueInvalidationFallback=null, " +
+                    "extras=PersistableBundle[{}])"
             )
     }
 
@@ -477,11 +515,12 @@ public class AsWireComplicationDataTest {
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, colorRamp=null, " +
-                    "persistencePolicy=0, displayPolicy=0, dynamicValueInvalidationFallback=null)"
+                    "persistencePolicy=0, displayPolicy=0, " +
+                    "dynamicValueInvalidationFallback=null, extras=PersistableBundle[{}])"
             )
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     @Test
     public fun rangedValueComplicationData_withImages() {
         val data =
@@ -541,12 +580,14 @@ public class AsWireComplicationDataTest {
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, colorRamp=null, " +
-                    "persistencePolicy=0, displayPolicy=0, dynamicValueInvalidationFallback=null)"
+                    "persistencePolicy=0, displayPolicy=0, " +
+                    "dynamicValueInvalidationFallback=null, extras=PersistableBundle[{}])"
             )
     }
 
     @Test
     public fun goalProgressComplicationData_withFixedValue() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
         val data =
             GoalProgressComplicationData.Builder(
                     value = 1200f,
@@ -555,6 +596,7 @@ public class AsWireComplicationDataTest {
                 )
                 .setTitle("steps".complicationText)
                 .setDataSource(dataSource)
+                .setExtras(extras)
                 .build()
         ParcelableSubject.assertThat(data.asWireComplicationData())
             .hasSameSerializationAs(
@@ -566,6 +608,7 @@ public class AsWireComplicationDataTest {
                     .setDataSource(dataSource)
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                     .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
+                    .setExtras(extras)
                     .build()
             )
         testRoundTripConversions(data)
@@ -576,7 +619,7 @@ public class AsWireComplicationDataTest {
         assertThat(deserialized.contentDescription!!.getTextAt(resources, Instant.EPOCH))
             .isEqualTo("content description")
         assertThat(deserialized.title!!.getTextAt(resources, Instant.EPOCH)).isEqualTo("steps")
-
+        assertThat(deserialized.extras.getInt("Key")).isEqualTo(123)
         assertThat(data.toString())
             .isEqualTo(
                 "GoalProgressComplicationData(value=1200.0, dynamicValue=null, " +
@@ -588,7 +631,8 @@ public class AsWireComplicationDataTest {
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, colorRamp=null, " +
-                    "persistencePolicy=0, displayPolicy=0, dynamicValueInvalidationFallback=null)"
+                    "persistencePolicy=0, displayPolicy=0, " +
+                    "dynamicValueInvalidationFallback=null, extras=PersistableBundle[{Key=123}])"
             )
     }
 
@@ -640,7 +684,8 @@ public class AsWireComplicationDataTest {
                     "startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, colorRamp=null, " +
-                    "persistencePolicy=0, displayPolicy=0, dynamicValueInvalidationFallback=null)"
+                    "persistencePolicy=0, displayPolicy=0, " +
+                    "dynamicValueInvalidationFallback=null, extras=PersistableBundle[{}])"
             )
     }
 
@@ -665,7 +710,7 @@ public class AsWireComplicationDataTest {
                     .setContentDescription(WireComplicationText.plainText("content description"))
                     .setDataSource(dataSource)
                     .setColorRamp(intArrayOf(Color.RED, Color.GREEN, Color.BLUE))
-                    .setColorRampIsSmoothShaded(true)
+                    .setColorRampInterpolated(true)
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                     .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
                     .build()
@@ -691,11 +736,11 @@ public class AsWireComplicationDataTest {
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, " +
                     "colorRamp=ColorRamp(colors=[-65536, -16711936, -16776961], " +
                     "interpolated=true), persistencePolicy=0, displayPolicy=0, " +
-                    "dynamicValueInvalidationFallback=null)"
+                    "dynamicValueInvalidationFallback=null, extras=PersistableBundle[{}])"
             )
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     @Test
     public fun goalProgressComplicationData_withColorRampAndImages() {
         val data =
@@ -722,7 +767,7 @@ public class AsWireComplicationDataTest {
                     .setContentDescription(WireComplicationText.plainText("content description"))
                     .setDataSource(dataSource)
                     .setColorRamp(intArrayOf(Color.RED, Color.GREEN, Color.BLUE))
-                    .setColorRampIsSmoothShaded(true)
+                    .setColorRampInterpolated(true)
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                     .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
                     .build()
@@ -755,12 +800,13 @@ public class AsWireComplicationDataTest {
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, " +
                     "colorRamp=ColorRamp(colors=[-65536, -16711936, -16776961], " +
                     "interpolated=true), persistencePolicy=0, displayPolicy=0, " +
-                    "dynamicValueInvalidationFallback=null)"
+                    "dynamicValueInvalidationFallback=null, extras=PersistableBundle[{}])"
             )
     }
 
     @Test
     public fun rangedValueComplicationData_withColorRamp() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
         val data =
             RangedValueComplicationData.Builder(
                     value = 95f,
@@ -771,6 +817,7 @@ public class AsWireComplicationDataTest {
                 .setTitle("battery".complicationText)
                 .setDataSource(dataSource)
                 .setColorRamp(ColorRamp(intArrayOf(Color.RED, Color.GREEN, Color.BLUE), true))
+                .setExtras(extras)
                 .build()
         ParcelableSubject.assertThat(data.asWireComplicationData())
             .hasSameSerializationAs(
@@ -783,9 +830,10 @@ public class AsWireComplicationDataTest {
                     .setContentDescription(WireComplicationText.plainText("content description"))
                     .setDataSource(dataSource)
                     .setColorRamp(intArrayOf(Color.RED, Color.GREEN, Color.BLUE))
-                    .setColorRampIsSmoothShaded(true)
+                    .setColorRampInterpolated(true)
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                     .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
+                    .setExtras(extras)
                     .build()
             )
         testRoundTripConversions(data)
@@ -796,7 +844,7 @@ public class AsWireComplicationDataTest {
         assertThat(deserialized.contentDescription!!.getTextAt(resources, Instant.EPOCH))
             .isEqualTo("content description")
         assertThat(deserialized.title!!.getTextAt(resources, Instant.EPOCH)).isEqualTo("battery")
-
+        assertThat(deserialized.extras.getInt("Key")).isEqualTo(123)
         assertThat(data.toString())
             .isEqualTo(
                 "RangedValueComplicationData(value=95.0, dynamicValue=null, " +
@@ -811,7 +859,7 @@ public class AsWireComplicationDataTest {
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, " +
                     "colorRamp=ColorRamp(colors=[-65536, -16711936, -16776961], " +
                     "interpolated=true), persistencePolicy=0, displayPolicy=0, " +
-                    "dynamicValueInvalidationFallback=null)"
+                    "dynamicValueInvalidationFallback=null, extras=PersistableBundle[{Key=123}])"
             )
     }
 
@@ -832,6 +880,7 @@ public class AsWireComplicationDataTest {
 
     @Test
     public fun weightedElementsComplicationData() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
         val data =
             WeightedElementsComplicationData.Builder(
                     listOf(
@@ -844,6 +893,7 @@ public class AsWireComplicationDataTest {
                 .setElementBackgroundColor(Color.GRAY)
                 .setTitle("calories".complicationText)
                 .setDataSource(dataSource)
+                .setExtras(extras)
                 .build()
         ParcelableSubject.assertThat(data.asWireComplicationData())
             .hasSameSerializationAs(
@@ -856,6 +906,7 @@ public class AsWireComplicationDataTest {
                     .setDataSource(dataSource)
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                     .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
+                    .setExtras(extras)
                     .build()
             )
         testRoundTripConversions(data)
@@ -871,7 +922,7 @@ public class AsWireComplicationDataTest {
         assertThat(deserialized.contentDescription!!.getTextAt(resources, Instant.EPOCH))
             .isEqualTo("content description")
         assertThat(deserialized.title!!.getTextAt(resources, Instant.EPOCH)).isEqualTo("calories")
-
+        assertThat(deserialized.extras.getInt("Key")).isEqualTo(123)
         assertThat(data.toString())
             .isEqualTo(
                 "WeightedElementsComplicationData(elements=Element(color=-65536, weight=0.5), " +
@@ -884,11 +935,12 @@ public class AsWireComplicationDataTest {
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, persistencePolicy=0, " +
-                    "displayPolicy=0, dynamicValueInvalidationFallback=null)"
+                    "displayPolicy=0, dynamicValueInvalidationFallback=null, " +
+                    "extras=PersistableBundle[{Key=123}])"
             )
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     @Test
     public fun weightedElementsComplicationData_withImages() {
         val data =
@@ -953,19 +1005,22 @@ public class AsWireComplicationDataTest {
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, persistencePolicy=0, " +
-                    "displayPolicy=0, dynamicValueInvalidationFallback=null)"
+                    "displayPolicy=0, dynamicValueInvalidationFallback=null, " +
+                    "extras=PersistableBundle[{}])"
             )
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     @Test
     public fun monochromaticImageComplicationData() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
         val data =
             MonochromaticImageComplicationData.Builder(
                     image,
                     "content description".complicationText
                 )
                 .setDataSource(dataSource)
+                .setExtras(extras)
                 .build()
         ParcelableSubject.assertThat(data.asWireComplicationData())
             .hasSameSerializationAs(
@@ -975,6 +1030,7 @@ public class AsWireComplicationDataTest {
                     .setDataSource(dataSource)
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                     .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
+                    .setExtras(extras)
                     .build()
             )
         testRoundTripConversions(data)
@@ -982,7 +1038,7 @@ public class AsWireComplicationDataTest {
         assertThat(deserialized.monochromaticImage.image.uri.toString()).isEqualTo("someuri")
         assertThat(deserialized.contentDescription!!.getTextAt(resources, Instant.EPOCH))
             .isEqualTo("content description")
-
+        assertThat(deserialized.extras.getInt("Key")).isEqualTo(123)
         assertThat(data.toString())
             .isEqualTo(
                 "MonochromaticImageComplicationData(monochromaticImage=MonochromaticImage(" +
@@ -993,17 +1049,20 @@ public class AsWireComplicationDataTest {
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, persistencePolicy=0, " +
-                    "displayPolicy=0, dynamicValueInvalidationFallback=null)"
+                    "displayPolicy=0, dynamicValueInvalidationFallback=null, " +
+                    "extras=PersistableBundle[{Key=123}])"
             )
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     @Test
     public fun smallImageComplicationData() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
         val image = SmallImage.Builder(icon, SmallImageType.PHOTO).build()
         val data =
             SmallImageComplicationData.Builder(image, "content description".complicationText)
                 .setDataSource(dataSource)
+                .setExtras(extras)
                 .build()
         ParcelableSubject.assertThat(data.asWireComplicationData())
             .hasSameSerializationAs(
@@ -1014,6 +1073,7 @@ public class AsWireComplicationDataTest {
                     .setDataSource(dataSource)
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                     .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
+                    .setExtras(extras)
                     .build()
             )
         testRoundTripConversions(data)
@@ -1022,7 +1082,7 @@ public class AsWireComplicationDataTest {
         assertThat(deserialized.smallImage.type).isEqualTo(SmallImageType.PHOTO)
         assertThat(deserialized.contentDescription!!.getTextAt(resources, Instant.EPOCH))
             .isEqualTo("content description")
-
+        assertThat(deserialized.extras.getInt("Key")).isEqualTo(123)
         assertThat(data.toString())
             .isEqualTo(
                 "SmallImageComplicationData(smallImage=SmallImage(image=Icon(" +
@@ -1033,11 +1093,12 @@ public class AsWireComplicationDataTest {
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, persistencePolicy=0, " +
-                    "displayPolicy=0, dynamicValueInvalidationFallback=null)"
+                    "displayPolicy=0, dynamicValueInvalidationFallback=null, " +
+                    "extras=PersistableBundle[{Key=123}])"
             )
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     @Test
     public fun smallImageComplicationData_with_BitmapIcon() {
         val bitmapIcon =
@@ -1071,13 +1132,15 @@ public class AsWireComplicationDataTest {
         assertThat(bitmap.height).isEqualTo(100)
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     @Test
     public fun backgroundImageComplicationData() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
         val photoImage = Icon.createWithContentUri("someuri")
         val data =
             PhotoImageComplicationData.Builder(photoImage, "content description".complicationText)
                 .setDataSource(dataSource)
+                .setExtras(extras)
                 .build()
         ParcelableSubject.assertThat(data.asWireComplicationData())
             .hasSameSerializationAs(
@@ -1087,6 +1150,7 @@ public class AsWireComplicationDataTest {
                     .setDataSource(dataSource)
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                     .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
+                    .setExtras(extras)
                     .build()
             )
         testRoundTripConversions(data)
@@ -1094,7 +1158,7 @@ public class AsWireComplicationDataTest {
         assertThat(deserialized.photoImage.uri.toString()).isEqualTo("someuri")
         assertThat(deserialized.contentDescription!!.getTextAt(resources, Instant.EPOCH))
             .isEqualTo("content description")
-
+        assertThat(deserialized.extras.getInt("Key")).isEqualTo(123)
         assertThat(data.toString())
             .isEqualTo(
                 "PhotoImageComplicationData(photoImage=Icon(typ=URI uri=someuri), " +
@@ -1104,7 +1168,8 @@ public class AsWireComplicationDataTest {
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, persistencePolicy=0, " +
-                    "displayPolicy=0, dynamicValueInvalidationFallback=null)"
+                    "displayPolicy=0, dynamicValueInvalidationFallback=null, " +
+                    "extras=PersistableBundle[{Key=123}])"
             )
     }
 
@@ -1139,18 +1204,21 @@ public class AsWireComplicationDataTest {
                     "tapAction=null, validTimeRange=TimeRange(startDateTimeMillis=" +
                     "-1000000000-01-01T00:00:00Z, endDateTimeMillis=" +
                     "+1000000000-12-31T23:59:59.999999999Z), dataSource=ComponentInfo{" +
-                    "com.pkg_a/com.a}, persistencePolicy=0, displayPolicy=0)"
+                    "com.pkg_a/com.a}, persistencePolicy=0, displayPolicy=0, " +
+                    "extras=PersistableBundle[{}])"
             )
     }
 
     @Test
     public fun noPermissionComplicationData_withImages() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
         val data =
             NoPermissionComplicationData.Builder()
                 .setText("needs location".complicationText)
                 .setMonochromaticImage(monochromaticImage)
                 .setSmallImage(smallImage)
                 .setDataSource(dataSource)
+                .setExtras(extras)
                 .build()
         ParcelableSubject.assertThat(data.asWireComplicationData())
             .hasSameSerializationAs(
@@ -1162,13 +1230,14 @@ public class AsWireComplicationDataTest {
                     .setDataSource(dataSource)
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                     .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
+                    .setExtras(extras)
                     .build()
             )
         testRoundTripConversions(data)
         val deserialized = serializeAndDeserialize(data) as NoPermissionComplicationData
         assertThat(deserialized.text!!.getTextAt(resources, Instant.EPOCH))
             .isEqualTo("needs location")
-
+        assertThat(deserialized.extras.getInt("Key")).isEqualTo(123)
         assertThat(data.toString())
             .isEqualTo(
                 "NoPermissionComplicationData(text=ComplicationText{" +
@@ -1181,12 +1250,13 @@ public class AsWireComplicationDataTest {
                     "startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, persistencePolicy=0, " +
-                    "displayPolicy=0)"
+                    "displayPolicy=0, extras=PersistableBundle[{Key=123}])"
             )
     }
 
     @Test
     public fun noDataComplicationData_shortText() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
         val data =
             NoDataComplicationData(
                 ShortTextComplicationData.Builder(
@@ -1196,6 +1266,7 @@ public class AsWireComplicationDataTest {
                     .setTitle(ComplicationText.PLACEHOLDER)
                     .setMonochromaticImage(MonochromaticImage.PLACEHOLDER)
                     .setDataSource(dataSource)
+                    .setExtras(extras)
                     .build()
             )
         ParcelableSubject.assertThat(data.asWireComplicationData())
@@ -1212,6 +1283,7 @@ public class AsWireComplicationDataTest {
                             .setDataSource(dataSource)
                             .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                             .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
+                            .setExtras(extras)
                             .build()
                     )
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
@@ -1237,16 +1309,40 @@ public class AsWireComplicationDataTest {
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, persistencePolicy=0, " +
-                    "displayPolicy=0, dynamicValueInvalidationFallback=null), " +
+                    "displayPolicy=0, dynamicValueInvalidationFallback=null, " +
+                    "extras=PersistableBundle[{Key=123}]), " +
                     "tapActionLostDueToSerialization=false, tapAction=null, " +
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
-                    "persistencePolicy=0, displayPolicy=0)"
+                    "persistencePolicy=0, displayPolicy=0, extras=PersistableBundle[{}])"
             )
     }
 
     @Test
+    public fun stripExtrasFromPlaceholder() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
+        val data =
+            NoDataComplicationData(
+                ShortTextComplicationData.Builder(
+                        ComplicationText.PLACEHOLDER,
+                        "content description".complicationText
+                    )
+                    .setTitle(ComplicationText.PLACEHOLDER)
+                    .setMonochromaticImage(MonochromaticImage.PLACEHOLDER)
+                    .setDataSource(dataSource)
+                    .setExtras(extras)
+                    .build()
+            )
+        val wireData = data.asWireComplicationData()
+
+        wireData.stripExtras()
+        val roundTripWireData = wireData.toApiComplicationData() as NoDataComplicationData
+        assertThat(roundTripWireData.placeholder!!.extras.size()).isEqualTo(0)
+    }
+
+    @Test
     public fun noDataComplicationData_longText() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
         val data =
             NoDataComplicationData(
                 LongTextComplicationData.Builder(
@@ -1254,6 +1350,7 @@ public class AsWireComplicationDataTest {
                         "content description".complicationText
                     )
                     .setDataSource(dataSource)
+                    .setExtras(extras)
                     .build()
             )
         ParcelableSubject.assertThat(data.asWireComplicationData())
@@ -1268,6 +1365,7 @@ public class AsWireComplicationDataTest {
                             .setDataSource(dataSource)
                             .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                             .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
+                            .setExtras(extras)
                             .build()
                     )
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
@@ -1290,16 +1388,18 @@ public class AsWireComplicationDataTest {
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, persistencePolicy=0, " +
-                    "displayPolicy=0, dynamicValueInvalidationFallback=null), " +
+                    "displayPolicy=0, dynamicValueInvalidationFallback=null, " +
+                    "extras=PersistableBundle[{Key=123}]), " +
                     "tapActionLostDueToSerialization=false, tapAction=null, " +
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
-                    "persistencePolicy=0, displayPolicy=0)"
+                    "persistencePolicy=0, displayPolicy=0, extras=PersistableBundle[{}])"
             )
     }
 
     @Test
     public fun noDataComplicationData_rangedValue() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
         val data =
             NoDataComplicationData(
                 RangedValueComplicationData.Builder(
@@ -1310,6 +1410,7 @@ public class AsWireComplicationDataTest {
                     )
                     .setText(ComplicationText.PLACEHOLDER)
                     .setDataSource(dataSource)
+                    .setExtras(extras)
                     .build()
             )
         ParcelableSubject.assertThat(data.asWireComplicationData())
@@ -1328,6 +1429,7 @@ public class AsWireComplicationDataTest {
                             .setDataSource(dataSource)
                             .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                             .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
+                            .setExtras(extras)
                             .build()
                     )
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
@@ -1351,17 +1453,18 @@ public class AsWireComplicationDataTest {
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, colorRamp=null, " +
-                    "persistencePolicy=0, " +
-                    "displayPolicy=0, dynamicValueInvalidationFallback=null), " +
+                    "persistencePolicy=0, displayPolicy=0, dynamicValueInvalidationFallback=null," +
+                    " extras=PersistableBundle[{Key=123}]), " +
                     "tapActionLostDueToSerialization=false, tapAction=null, " +
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
-                    "persistencePolicy=0, displayPolicy=0)"
+                    "persistencePolicy=0, displayPolicy=0, extras=PersistableBundle[{}])"
             )
     }
 
     @Test
     public fun noDataComplicationData_goalProgress() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
         val data =
             NoDataComplicationData(
                 GoalProgressComplicationData.Builder(
@@ -1372,6 +1475,7 @@ public class AsWireComplicationDataTest {
                     .setText(ComplicationText.PLACEHOLDER)
                     .setDataSource(dataSource)
                     .setColorRamp(ColorRamp(intArrayOf(Color.RED, Color.GREEN, Color.BLUE), false))
+                    .setExtras(extras)
                     .build()
             )
         ParcelableSubject.assertThat(data.asWireComplicationData())
@@ -1387,9 +1491,10 @@ public class AsWireComplicationDataTest {
                             )
                             .setDataSource(dataSource)
                             .setColorRamp(intArrayOf(Color.RED, Color.GREEN, Color.BLUE))
-                            .setColorRampIsSmoothShaded(false)
+                            .setColorRampInterpolated(false)
                             .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                             .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
+                            .setExtras(extras)
                             .build()
                     )
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
@@ -1415,17 +1520,18 @@ public class AsWireComplicationDataTest {
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, " +
                     "colorRamp=ColorRamp(colors=[-65536, -16711936, -16776961], " +
                     "interpolated=false), persistencePolicy=0, displayPolicy=0, " +
-                    "dynamicValueInvalidationFallback=null), " +
-                    "tapActionLostDueToSerialization=false, " +
+                    "dynamicValueInvalidationFallback=null, extras=PersistableBundle[{Key=123}])," +
+                    " tapActionLostDueToSerialization=false, " +
                     "tapAction=null, validTimeRange=TimeRange(startDateTimeMillis=" +
                     "-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
-                    "persistencePolicy=0, displayPolicy=0)"
+                    "persistencePolicy=0, displayPolicy=0, extras=PersistableBundle[{}])"
             )
     }
 
     @Test
     public fun noDataComplicationData_weightedElements() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
         val data =
             NoDataComplicationData(
                 WeightedElementsComplicationData.Builder(
@@ -1439,6 +1545,7 @@ public class AsWireComplicationDataTest {
                     .setTitle("calories".complicationText)
                     .setElementBackgroundColor(Color.GRAY)
                     .setDataSource(dataSource)
+                    .setExtras(extras)
                     .build()
             )
         ParcelableSubject.assertThat(data.asWireComplicationData())
@@ -1456,6 +1563,7 @@ public class AsWireComplicationDataTest {
                             .setDataSource(dataSource)
                             .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                             .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
+                            .setExtras(extras)
                             .build()
                     )
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
@@ -1480,16 +1588,18 @@ public class AsWireComplicationDataTest {
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, persistencePolicy=0, " +
-                    "displayPolicy=0, dynamicValueInvalidationFallback=null), " +
+                    "displayPolicy=0, dynamicValueInvalidationFallback=null, " +
+                    "extras=PersistableBundle[{Key=123}]), " +
                     "tapActionLostDueToSerialization=false, tapAction=null, " +
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
-                    "persistencePolicy=0, displayPolicy=0)"
+                    "persistencePolicy=0, displayPolicy=0, extras=PersistableBundle[{}])"
             )
     }
 
     @Test
     public fun noDataComplicationData_rangedValue_with_ColorRange() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
         val data =
             NoDataComplicationData(
                 RangedValueComplicationData.Builder(
@@ -1502,6 +1612,7 @@ public class AsWireComplicationDataTest {
                     .setDataSource(dataSource)
                     .setColorRamp(ColorRamp(intArrayOf(Color.RED, Color.GREEN, Color.BLUE), true))
                     .setValueType(RangedValueComplicationData.TYPE_RATING)
+                    .setExtras(extras)
                     .build()
             )
         ParcelableSubject.assertThat(data.asWireComplicationData())
@@ -1519,9 +1630,10 @@ public class AsWireComplicationDataTest {
                             )
                             .setDataSource(dataSource)
                             .setColorRamp(intArrayOf(Color.RED, Color.GREEN, Color.BLUE))
-                            .setColorRampIsSmoothShaded(true)
+                            .setColorRampInterpolated(true)
                             .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                             .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
+                            .setExtras(extras)
                             .build()
                     )
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
@@ -1547,16 +1659,18 @@ public class AsWireComplicationDataTest {
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, " +
                     "colorRamp=ColorRamp(colors=[-65536, -16711936, -16776961], " +
                     "interpolated=true), persistencePolicy=0, " +
-                    "displayPolicy=0, dynamicValueInvalidationFallback=null), " +
+                    "displayPolicy=0, dynamicValueInvalidationFallback=null, " +
+                    "extras=PersistableBundle[{Key=123}]), " +
                     "tapActionLostDueToSerialization=false, tapAction=null, " +
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
-                    "persistencePolicy=0, displayPolicy=0)"
+                    "persistencePolicy=0, displayPolicy=0, extras=PersistableBundle[{}])"
             )
     }
 
     @Test
     public fun noDataComplicationData_monochromaticImage() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
         val data =
             NoDataComplicationData(
                 MonochromaticImageComplicationData.Builder(
@@ -1564,6 +1678,7 @@ public class AsWireComplicationDataTest {
                         "content description".complicationText
                     )
                     .setDataSource(dataSource)
+                    .setExtras(extras)
                     .build()
             )
         ParcelableSubject.assertThat(data.asWireComplicationData())
@@ -1578,6 +1693,7 @@ public class AsWireComplicationDataTest {
                             .setDataSource(dataSource)
                             .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                             .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
+                            .setExtras(extras)
                             .build()
                     )
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
@@ -1599,16 +1715,18 @@ public class AsWireComplicationDataTest {
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, persistencePolicy=0, " +
-                    "displayPolicy=0, dynamicValueInvalidationFallback=null), " +
+                    "displayPolicy=0, dynamicValueInvalidationFallback=null, " +
+                    "extras=PersistableBundle[{Key=123}]), " +
                     "tapActionLostDueToSerialization=false, tapAction=null, " +
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
-                    "persistencePolicy=0, displayPolicy=0)"
+                    "persistencePolicy=0, displayPolicy=0, extras=PersistableBundle[{}])"
             )
     }
 
     @Test
     public fun noDataComplicationData_smallImage() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
         val data =
             NoDataComplicationData(
                 SmallImageComplicationData.Builder(
@@ -1616,6 +1734,7 @@ public class AsWireComplicationDataTest {
                         "content description".complicationText
                     )
                     .setDataSource(dataSource)
+                    .setExtras(extras)
                     .build()
             )
         ParcelableSubject.assertThat(data.asWireComplicationData())
@@ -1631,6 +1750,7 @@ public class AsWireComplicationDataTest {
                             .setDataSource(dataSource)
                             .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                             .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
+                            .setExtras(extras)
                             .build()
                     )
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
@@ -1652,16 +1772,18 @@ public class AsWireComplicationDataTest {
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, persistencePolicy=0, " +
-                    "displayPolicy=0, dynamicValueInvalidationFallback=null), " +
+                    "displayPolicy=0, dynamicValueInvalidationFallback=null, " +
+                    "extras=PersistableBundle[{Key=123}]), " +
                     "tapActionLostDueToSerialization=false, tapAction=null, " +
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
-                    "persistencePolicy=0, displayPolicy=0)"
+                    "persistencePolicy=0, displayPolicy=0, extras=PersistableBundle[{}])"
             )
     }
 
     @Test
     public fun noDataComplicationData_photoImage() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
         val data =
             NoDataComplicationData(
                 PhotoImageComplicationData.Builder(
@@ -1669,6 +1791,7 @@ public class AsWireComplicationDataTest {
                         "content description".complicationText
                     )
                     .setDataSource(dataSource)
+                    .setExtras(extras)
                     .build()
             )
         ParcelableSubject.assertThat(data.asWireComplicationData())
@@ -1683,6 +1806,7 @@ public class AsWireComplicationDataTest {
                             .setDataSource(dataSource)
                             .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                             .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
+                            .setExtras(extras)
                             .build()
                     )
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
@@ -1704,11 +1828,12 @@ public class AsWireComplicationDataTest {
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
                     "dataSource=ComponentInfo{com.pkg_a/com.a}, persistencePolicy=0, " +
-                    "displayPolicy=0, dynamicValueInvalidationFallback=null), " +
+                    "displayPolicy=0, dynamicValueInvalidationFallback=null, " +
+                    "extras=PersistableBundle[{Key=123}]), " +
                     "tapActionLostDueToSerialization=false, tapAction=null, " +
                     "validTimeRange=TimeRange(startDateTimeMillis=-1000000000-01-01T00:00:00Z, " +
                     "endDateTimeMillis=+1000000000-12-31T23:59:59.999999999Z), " +
-                    "persistencePolicy=0, displayPolicy=0)"
+                    "persistencePolicy=0, displayPolicy=0, extras=PersistableBundle[{}])"
             )
     }
 
@@ -1849,7 +1974,7 @@ public class FromWireComplicationDataTest {
                 .setShortTitle(WireComplicationText.plainText("steps"))
                 .setContentDescription(WireComplicationText.plainText("content description"))
                 .setColorRamp(intArrayOf(Color.RED, Color.GREEN, Color.BLUE))
-                .setColorRampIsSmoothShaded(false)
+                .setColorRampInterpolated(false)
                 .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                 .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
                 .build(),
@@ -1866,7 +1991,7 @@ public class FromWireComplicationDataTest {
                 .setShortTitle(WireComplicationText.plainText("steps"))
                 .setContentDescription(WireComplicationText.plainText("content description"))
                 .setColorRamp(intArrayOf(Color.RED, Color.GREEN, Color.BLUE))
-                .setColorRampIsSmoothShaded(false)
+                .setColorRampInterpolated(false)
                 .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                 .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
                 .build(),
@@ -2034,7 +2159,7 @@ public class FromWireComplicationDataTest {
                             WireComplicationText.plainText("content description")
                         )
                         .setColorRamp(intArrayOf(Color.RED, Color.GREEN, Color.BLUE))
-                        .setColorRampIsSmoothShaded(true)
+                        .setColorRampInterpolated(true)
                         .setIcon(icon)
                         .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                         .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
@@ -2114,6 +2239,29 @@ public class FromWireComplicationDataTest {
                 .build(),
             ComplicationType.NO_DATA
         )
+    }
+
+    @Test
+    public fun stripExtrasFromInvalidatedData() {
+        val extras = PersistableBundle().apply { putInt("Key", 123) }
+        val strippedData =
+            ShortTextComplicationData.Builder(
+                    ComplicationText.PLACEHOLDER,
+                    "content description".complicationText
+                )
+                .setTitle(ComplicationText.PLACEHOLDER)
+                .setMonochromaticImage(MonochromaticImage.PLACEHOLDER)
+                .setExtras(extras)
+                .build()
+        val wireData = NoDataComplicationData().asWireComplicationData()
+        val wireDataWithInvalidatedData =
+            WireComplicationData.Builder(wireData)
+                .setInvalidatedData(strippedData.asWireComplicationData())
+                .build()
+
+        wireDataWithInvalidatedData.stripExtras()
+
+        assertThat(wireDataWithInvalidatedData.invalidatedData!!.extras.size()).isEqualTo(0)
     }
 
     private fun assertRoundtrip(wireData: WireComplicationData, type: ComplicationType) {
@@ -2252,7 +2400,7 @@ class GetContentDescriptionTest {
                 .that(
                     case.data
                         .getContentDescription(context)
-                        ?.getTextAt(context.resources, /* dateTimeMillis = */ 0)
+                        ?.getTextAt(context.resources, /* dateTimeMillis= */ 0)
                 )
                 .isEqualTo(case.contentDescription)
         }
@@ -2651,7 +2799,7 @@ public class ValidTimeRangeTest {
                     .setShortTitle(WireComplicationText.plainText("steps"))
                     .setContentDescription(WireComplicationText.plainText("content description"))
                     .setColorRamp(intArrayOf(Color.YELLOW, Color.MAGENTA))
-                    .setColorRampIsSmoothShaded(true)
+                    .setColorRampInterpolated(true)
                     .setStartDateTimeMillis(testStartInstant.toEpochMilli())
                     .setEndDateTimeMillis(testEndDateInstant.toEpochMilli())
                     .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
@@ -2854,7 +3002,7 @@ public class ValidTimeRangeTest {
                                 WireComplicationText.plainText("content description")
                             )
                             .setColorRamp(intArrayOf(Color.RED, Color.GREEN, Color.BLUE))
-                            .setColorRampIsSmoothShaded(false)
+                            .setColorRampInterpolated(false)
                             .setPersistencePolicy(ComplicationPersistencePolicies.CACHING_ALLOWED)
                             .setDisplayPolicy(ComplicationDisplayPolicies.ALWAYS_DISPLAY)
                             .build()
@@ -3011,7 +3159,8 @@ public class RedactionTest {
                     "mSurroundingText=REDACTED, mTimeDependentText=null, mDynamicText=null}, " +
                     "tapActionLostDueToSerialization=false, tapAction=null, " +
                     "validTimeRange=TimeRange(REDACTED), dataSource=null, persistencePolicy=0, " +
-                    "displayPolicy=0, dynamicValueInvalidationFallback=null)"
+                    "displayPolicy=0, dynamicValueInvalidationFallback=null, " +
+                    "extras=PersistableBundle[{}])"
             )
         assertThat(data.asWireComplicationData().toString())
             .isEqualTo("ComplicationData{mType=3, mFields=REDACTED}")
@@ -3037,7 +3186,8 @@ public class RedactionTest {
                     "mSurroundingText=REDACTED, mTimeDependentText=null, mDynamicText=null}), " +
                     "tapActionLostDueToSerialization=false, tapAction=null, " +
                     "validTimeRange=TimeRange(REDACTED), dataSource=null, persistencePolicy=0, " +
-                    "displayPolicy=0, dynamicValueInvalidationFallback=null)"
+                    "displayPolicy=0, dynamicValueInvalidationFallback=null, " +
+                    "extras=PersistableBundle[{}])"
             )
         assertThat(data.asWireComplicationData().toString())
             .isEqualTo("ComplicationData{mType=4, mFields=REDACTED}")
@@ -3066,7 +3216,8 @@ public class RedactionTest {
                     "ComplicationText{mSurroundingText=REDACTED, mTimeDependentText=null, " +
                     "mDynamicText=null}), tapActionLostDueToSerialization=false, tapAction=null, " +
                     "validTimeRange=TimeRange(REDACTED), dataSource=null, colorRamp=null, " +
-                    "persistencePolicy=0, displayPolicy=0, dynamicValueInvalidationFallback=null)"
+                    "persistencePolicy=0, displayPolicy=0, " +
+                    "dynamicValueInvalidationFallback=null, extras=PersistableBundle[{}])"
             )
         assertThat(data.asWireComplicationData().toString())
             .isEqualTo("ComplicationData{mType=5, mFields=REDACTED}")
@@ -3095,7 +3246,8 @@ public class RedactionTest {
                     "tapActionLostDueToSerialization=false, tapAction=null, validTimeRange=" +
                     "TimeRange(REDACTED), dataSource=null, colorRamp=ColorRamp(colors=[-65536, " +
                     "-16711936, -16776961], interpolated=true), persistencePolicy=0, " +
-                    "displayPolicy=0, dynamicValueInvalidationFallback=null)"
+                    "displayPolicy=0, dynamicValueInvalidationFallback=null, " +
+                    "extras=PersistableBundle[{}])"
             )
         assertThat(data.asWireComplicationData().toString())
             .isEqualTo("ComplicationData{mType=13, mFields=REDACTED}")
@@ -3122,9 +3274,10 @@ public class RedactionTest {
                     "mTimeDependentText=null, mDynamicText=null}), " +
                     "tapActionLostDueToSerialization=false, tapAction=null, " +
                     "validTimeRange=TimeRange(REDACTED), dataSource=null, persistencePolicy=0, " +
-                    "displayPolicy=0, dynamicValueInvalidationFallback=null), " +
-                    "tapActionLostDueToSerialization=false, tapAction=null, " +
-                    "validTimeRange=TimeRange(REDACTED), persistencePolicy=0, displayPolicy=0)"
+                    "displayPolicy=0, dynamicValueInvalidationFallback=null, " +
+                    "extras=PersistableBundle[{}]), tapActionLostDueToSerialization=false, " +
+                    "tapAction=null, validTimeRange=TimeRange(REDACTED), persistencePolicy=0, " +
+                    "displayPolicy=0, extras=PersistableBundle[{}])"
             )
         assertThat(data.asWireComplicationData().toString())
             .isEqualTo("ComplicationData{mType=10, mFields=REDACTED}")
@@ -3178,6 +3331,7 @@ class ValidationTest {
                     contentDescription = "".complicationText,
                 )
                 .setText("".complicationText)
+                .setExtras(PersistableBundle())
                 .build()
         }
     }

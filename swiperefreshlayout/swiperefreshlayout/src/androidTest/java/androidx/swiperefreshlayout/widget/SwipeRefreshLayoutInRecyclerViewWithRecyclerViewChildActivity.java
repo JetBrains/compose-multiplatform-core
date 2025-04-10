@@ -27,10 +27,11 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
 
 public class SwipeRefreshLayoutInRecyclerViewWithRecyclerViewChildActivity extends
         SwipeRefreshLayoutInRecyclerViewBaseActivity {
@@ -63,9 +64,8 @@ public class SwipeRefreshLayoutInRecyclerViewWithRecyclerViewChildActivity exten
             return 100;
         }
 
-        @NonNull
         @Override
-        public MyViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        public @NonNull MyViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             TextView textView = new TextView(parent.getContext());
             textView.setLayoutParams(new ViewGroup.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
             textView.setGravity(Gravity.CENTER);

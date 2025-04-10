@@ -19,11 +19,10 @@ package androidx.camera.core.impl;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
@@ -34,7 +33,6 @@ import java.util.Map;
  * guaranteed stream combinations for different hardware level devices.
  */
 @SuppressWarnings("AutoValueImmutableFields")
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @AutoValue
 public abstract class SurfaceSizeDefinition {
 
@@ -68,8 +66,7 @@ public abstract class SurfaceSizeDefinition {
      *                            resolution in the maximum resolution sensor pixel mode.
      * @return new {@link SurfaceSizeDefinition} object
      */
-    @NonNull
-    public static SurfaceSizeDefinition create(
+    public static @NonNull SurfaceSizeDefinition create(
             @NonNull Size analysisSize,
             @NonNull Map<Integer, Size> s720pSizeMap,
             @NonNull Size previewSize,
@@ -88,39 +85,31 @@ public abstract class SurfaceSizeDefinition {
     }
 
     /** Returns the size of an ANALYSIS stream. */
-    @NonNull
-    public abstract Size getAnalysisSize();
+    public abstract @NonNull Size getAnalysisSize();
 
     /** Returns the format to size map of an s720p stream. */
-    @NonNull
-    public abstract Map<Integer, Size> getS720pSizeMap();
+    public abstract @NonNull Map<Integer, Size> getS720pSizeMap();
 
     /** Returns the size of a PREVIEW stream. */
-    @NonNull
-    public abstract Size getPreviewSize();
+    public abstract @NonNull Size getPreviewSize();
 
     /** Returns the format to size map of an s1440p stream. */
-    @NonNull
-    public abstract Map<Integer, Size> getS1440pSizeMap();
+    public abstract @NonNull Map<Integer, Size> getS1440pSizeMap();
 
     /** Returns the size of a RECORD stream*/
-    @NonNull
-    public abstract Size getRecordSize();
+    public abstract @NonNull Size getRecordSize();
 
     /** Returns the format to size map of an MAXIMUM stream. */
-    @NonNull
-    public abstract Map<Integer, Size> getMaximumSizeMap();
+    public abstract @NonNull Map<Integer, Size> getMaximumSizeMap();
 
     /** Returns the format to size map of an ULTRA_MAXIMUM stream. */
-    @NonNull
-    public abstract Map<Integer, Size> getUltraMaximumSizeMap();
+    public abstract @NonNull Map<Integer, Size> getUltraMaximumSizeMap();
 
     /**
      * Returns the s720p size for the specified format, or {@code null} null if there is no data
      * for the format.
      */
-    @NonNull
-    public Size getS720pSize(int format) {
+    public @NonNull Size getS720pSize(int format) {
         return getS720pSizeMap().get(format);
     }
 
@@ -128,8 +117,7 @@ public abstract class SurfaceSizeDefinition {
      * Returns the s1440p size for the specified format, or {@code null} null if there is no data
      * for the format.
      */
-    @NonNull
-    public Size getS1440pSize(int format) {
+    public @NonNull Size getS1440pSize(int format) {
         return getS1440pSizeMap().get(format);
     }
 
@@ -137,8 +125,7 @@ public abstract class SurfaceSizeDefinition {
      * Returns the MAXIMUM size for the specified format, or {@code null} null if there is no
      * data for the format.
      */
-    @NonNull
-    public Size getMaximumSize(int format) {
+    public @Nullable Size getMaximumSize(int format) {
         return getMaximumSizeMap().get(format);
     }
 
@@ -146,8 +133,7 @@ public abstract class SurfaceSizeDefinition {
      * Returns the ULTRA_MAXIMUM size for the specified format, or {@code null} if the device
      * doesn't support maximum resolution sensor pixel mode.
      */
-    @Nullable
-    public Size getUltraMaximumSize(int format) {
+    public @Nullable Size getUltraMaximumSize(int format) {
         return getUltraMaximumSizeMap().get(format);
     }
 }

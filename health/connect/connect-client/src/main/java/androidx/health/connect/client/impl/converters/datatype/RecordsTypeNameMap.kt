@@ -18,6 +18,7 @@
 package androidx.health.connect.client.impl.converters.datatype
 
 import androidx.annotation.RestrictTo
+import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.BasalBodyTemperatureRecord
 import androidx.health.connect.client.records.BasalMetabolicRateRecord
@@ -41,6 +42,7 @@ import androidx.health.connect.client.records.IntermenstrualBleedingRecord
 import androidx.health.connect.client.records.LeanBodyMassRecord
 import androidx.health.connect.client.records.MenstruationFlowRecord
 import androidx.health.connect.client.records.MenstruationPeriodRecord
+import androidx.health.connect.client.records.MindfulnessSessionRecord
 import androidx.health.connect.client.records.NutritionRecord
 import androidx.health.connect.client.records.OvulationTestRecord
 import androidx.health.connect.client.records.OxygenSaturationRecord
@@ -49,6 +51,7 @@ import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.records.RespiratoryRateRecord
 import androidx.health.connect.client.records.RestingHeartRateRecord
 import androidx.health.connect.client.records.SexualActivityRecord
+import androidx.health.connect.client.records.SkinTemperatureRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.SpeedRecord
 import androidx.health.connect.client.records.StepsCadenceRecord
@@ -59,6 +62,7 @@ import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.records.WheelchairPushesRecord
 import kotlin.reflect.KClass
 
+@OptIn(ExperimentalMindfulnessSessionApi::class)
 val RECORDS_TYPE_NAME_MAP: Map<String, KClass<out Record>> =
     mapOf(
         "ActiveCaloriesBurned" to ActiveCaloriesBurnedRecord::class,
@@ -84,6 +88,7 @@ val RECORDS_TYPE_NAME_MAP: Map<String, KClass<out Record>> =
         "LeanBodyMass" to LeanBodyMassRecord::class,
         "Menstruation" to MenstruationFlowRecord::class,
         "MenstruationPeriod" to MenstruationPeriodRecord::class,
+        "MindfulnessSession" to MindfulnessSessionRecord::class,
         "Nutrition" to NutritionRecord::class,
         "OvulationTest" to OvulationTestRecord::class,
         "OxygenSaturation" to OxygenSaturationRecord::class,
@@ -91,6 +96,7 @@ val RECORDS_TYPE_NAME_MAP: Map<String, KClass<out Record>> =
         "RespiratoryRate" to RespiratoryRateRecord::class,
         "RestingHeartRate" to RestingHeartRateRecord::class,
         "SexualActivity" to SexualActivityRecord::class,
+        "SkinTemperature" to SkinTemperatureRecord::class,
         "SleepSession" to SleepSessionRecord::class,
         "SpeedSeries" to SpeedRecord::class, // Keep legacy Series suffix
         "IntermenstrualBleeding" to IntermenstrualBleedingRecord::class,

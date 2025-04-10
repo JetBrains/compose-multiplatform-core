@@ -17,32 +17,32 @@
 package androidx.room.solver.query.result
 
 import androidx.room.compiler.codegen.CodeLanguage
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.processing.XNullability
 import androidx.room.solver.CodeGenScope
 
-/**
- * Wraps a row adapter when there is only 1 item in the result
- */
-class SingleItemQueryResultAdapter(
-    private val rowAdapter: RowAdapter
-) : QueryResultAdapter(listOf(rowAdapter)) {
+/** Wraps a row adapter when there is only 1 item in the result */
+class SingleItemQueryResultAdapter(private val rowAdapter: RowAdapter) :
+    QueryResultAdapter(listOf(rowAdapter)) {
     val type = rowAdapter.out
-    override fun convert(outVarName: String, cursorVarName: String, scope: CodeGenScope) {
+
+    override fun convert(outVarName: String, stmtVarName: String, scope: CodeGenScope) {
         scope.builder.apply {
-            rowAdapter.onCursorReady(cursorVarName = cursorVarName, scope = scope)
+            rowAdapter.onStatementReady(stmtVarName = stmtVarName, scope = scope)
             addLocalVariable(outVarName, type.asTypeName())
-            beginControlFlow("if (%L.moveToFirst())", cursorVarName).apply {
-                rowAdapter.convert(outVarName, cursorVarName, scope)
+            beginControlFlow("if (%L.step())", stmtVarName).apply {
+                rowAdapter.convert(outVarName, stmtVarName, scope)
             }
-            nextControlFlow("else").apply {
+            nextControlFlow("else").applyTo { language ->
                 val defaultValue = rowAdapter.out.defaultValue()
                 if (
                     language == CodeLanguage.KOTLIN &&
-                    type.nullability == XNullability.NONNULL &&
-                    defaultValue == "null"
+                        type.nullability == XNullability.NONNULL &&
+                        defaultValue == "null"
                 ) {
                     addStatement(
-                        "error(%S)", "The query result was empty, but expected a single row to " +
+                        "error(%S)",
+                        "The query result was empty, but expected a single row to " +
                             "return a NON-NULL object of " +
                             "type <${type.asTypeName().toString(language)}>."
                     )

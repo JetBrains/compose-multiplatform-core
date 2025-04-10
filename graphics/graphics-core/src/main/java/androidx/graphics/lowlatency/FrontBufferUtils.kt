@@ -29,9 +29,7 @@ internal class FrontBufferUtils private constructor() {
 
         internal const val TAG = "FrontBufferUtils"
 
-        /**
-         * Flags that are expected to be supported on all [HardwareBuffer] instances
-         */
+        /** Flags that are expected to be supported on all [HardwareBuffer] instances */
         @SuppressLint("WrongConstant")
         internal const val BaseFlags =
             HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE or
@@ -39,8 +37,7 @@ internal class FrontBufferUtils private constructor() {
                 USAGE_COMPOSER_OVERLAY
 
         internal fun obtainHardwareBufferUsageFlags(): Long =
-            if (!UseCompatSurfaceControl &&
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (!UseCompatSurfaceControl && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 UsageFlagsVerificationHelper.obtainUsageFlagsV33()
             } else {
                 BaseFlags
@@ -58,31 +55,28 @@ internal class FrontBufferUtils private constructor() {
                 if (targetTransaction == null) {
                     targetTransaction = SurfaceControlCompat.Transaction()
                 }
-                targetTransaction
-                    .setFrameRate(
-                        frontBufferSurfaceControl,
-                        frameRate,
-                        SurfaceControlCompat.FRAME_RATE_COMPATIBILITY_DEFAULT,
-                        SurfaceControlCompat.CHANGE_FRAME_RATE_ONLY_IF_SEAMLESS
-                    )
+                targetTransaction.setFrameRate(
+                    frontBufferSurfaceControl,
+                    frameRate,
+                    SurfaceControlCompat.FRAME_RATE_COMPATIBILITY_DEFAULT,
+                    SurfaceControlCompat.CHANGE_FRAME_RATE_ONLY_IF_SEAMLESS
+                )
             }
             return targetTransaction
         }
     }
 }
 
-/**
- * Helper class to avoid class verification failures
- */
+/** Helper class to avoid class verification failures */
 @RequiresApi(Build.VERSION_CODES.Q)
 internal class UsageFlagsVerificationHelper private constructor() {
     companion object {
 
         /**
-         * Helper method to determine if a particular HardwareBuffer usage flag is supported.
-         * Even though the FRONT_BUFFER_USAGE and COMPOSER_OVERLAY flags are introduced in
-         * Android T, not all devices may support this flag. So we conduct a capability query
-         * with a sample 1x1 HardwareBuffer with the provided flag to see if it is compatible
+         * Helper method to determine if a particular HardwareBuffer usage flag is supported. Even
+         * though the FRONT_BUFFER_USAGE and COMPOSER_OVERLAY flags are introduced in Android T, not
+         * all devices may support this flag. So we conduct a capability query with a sample 1x1
+         * HardwareBuffer with the provided flag to see if it is compatible
          */
         // Suppressing WrongConstant warnings as we are leveraging a constant with the same value
         // as HardwareBuffer.USAGE_COMPOSER_OVERLAY to avoid SDK checks as the constant has been
@@ -91,7 +85,6 @@ internal class UsageFlagsVerificationHelper private constructor() {
         // developer.android.com/ndk/reference/group/a-hardware-buffer#ahardwarebuffer_usageflags
         @SuppressLint("WrongConstant")
         @RequiresApi(Build.VERSION_CODES.Q)
-        @androidx.annotation.DoNotInline
         internal fun isSupported(flag: Long): Boolean =
             HardwareBuffer.isSupported(
                 1, // width
@@ -102,14 +95,16 @@ internal class UsageFlagsVerificationHelper private constructor() {
             )
 
         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-        @androidx.annotation.DoNotInline
         fun obtainUsageFlagsV33(): Long {
             // First verify if the front buffer usage flag is supported along with the
             // "usage composer overlay" flag that was introduced in API level 33
             return if (isSupported(HardwareBuffer.USAGE_FRONT_BUFFER)) {
                 FrontBufferUtils.BaseFlags or HardwareBuffer.USAGE_FRONT_BUFFER
             } else {
-                FrontBufferUtils.BaseFlags
+                // If the front buffer usage flag is not supported, configure the CPU write flag
+                // in order to prevent arm frame buffer compression from causing visual artifacts
+                // on certain devices like the Samsung Galaxy Tab S6 lite. See b/365131024
+                FrontBufferUtils.BaseFlags or HardwareBuffer.USAGE_CPU_WRITE_OFTEN
             }
         }
     }

@@ -48,7 +48,7 @@ import org.robolectric.annotation.Config
 @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 internal class Controller3AUpdate3ATest {
     private val graphState3A = GraphState3A()
-    private val graphProcessor = FakeGraphProcessor(graphState3A = graphState3A)
+    private val graphProcessor = FakeGraphProcessor()
     private val fakeCaptureSequenceProcessor = FakeCaptureSequenceProcessor()
     private val fakeGraphRequestProcessor = GraphRequestProcessor.from(fakeCaptureSequenceProcessor)
     private val listener3A = Listener3A()
@@ -58,16 +58,12 @@ internal class Controller3AUpdate3ATest {
     @Test
     fun testUpdate3AFailsImmediatelyWithoutRepeatingRequest() = runTest {
         val graphProcessor2 = FakeGraphProcessor()
+        val graphState3A2 = GraphState3A()
         val controller3A =
-            Controller3A(
-                graphProcessor2,
-                FakeCameraMetadata(),
-                graphProcessor2.graphState3A,
-                listener3A
-            )
+            Controller3A(graphProcessor2, FakeCameraMetadata(), graphState3A2, listener3A)
         val result = controller3A.update3A(afMode = AfMode.OFF)
         assertThat(result.await().status).isEqualTo(Result3A.Status.SUBMIT_FAILED)
-        assertThat(graphProcessor2.graphState3A.afMode).isEqualTo(AfMode.OFF)
+        assertThat(graphState3A2.afMode).isEqualTo(AfMode.OFF)
     }
 
     @Test
@@ -88,7 +84,8 @@ internal class Controller3AUpdate3ATest {
         // Invoking update3A before the previous one is complete will cancel the result of the
         // previous call.
         controller3A.update3A(afMode = AfMode.CONTINUOUS_PICTURE)
-        assertThat(result.getCompletionExceptionOrNull() is CancellationException)
+        assertThat(result.getCompletionExceptionOrNull())
+            .isInstanceOf(CancellationException::class.java)
     }
 
     @Test
@@ -106,7 +103,7 @@ internal class Controller3AUpdate3ATest {
                 FakeFrameMetadata(
                     frameNumber = FrameNumber(101L),
                     resultMetadata =
-                    mapOf(CaptureResult.CONTROL_AF_MODE to CaptureResult.CONTROL_AF_MODE_OFF)
+                        mapOf(CaptureResult.CONTROL_AF_MODE to CaptureResult.CONTROL_AF_MODE_OFF)
                 )
             )
         }
@@ -130,10 +127,10 @@ internal class Controller3AUpdate3ATest {
                 FakeFrameMetadata(
                     frameNumber = FrameNumber(101L),
                     resultMetadata =
-                    mapOf(
-                        CaptureResult.CONTROL_AE_MODE to
-                            CaptureResult.CONTROL_AE_MODE_ON_ALWAYS_FLASH
-                    )
+                        mapOf(
+                            CaptureResult.CONTROL_AE_MODE to
+                                CaptureResult.CONTROL_AE_MODE_ON_ALWAYS_FLASH
+                        )
                 )
             )
         }
@@ -157,10 +154,10 @@ internal class Controller3AUpdate3ATest {
                 FakeFrameMetadata(
                     frameNumber = FrameNumber(101L),
                     resultMetadata =
-                    mapOf(
-                        CaptureResult.CONTROL_AWB_MODE to
-                            CaptureResult.CONTROL_AWB_MODE_CLOUDY_DAYLIGHT
-                    )
+                        mapOf(
+                            CaptureResult.CONTROL_AWB_MODE to
+                                CaptureResult.CONTROL_AWB_MODE_CLOUDY_DAYLIGHT
+                        )
                 )
             )
         }
@@ -184,9 +181,10 @@ internal class Controller3AUpdate3ATest {
                 FakeFrameMetadata(
                     frameNumber = FrameNumber(101L),
                     resultMetadata =
-                    mapOf(
-                        CaptureResult.CONTROL_AF_REGIONS to
-                            Array(1) { MeteringRectangle(1, 1, 99, 99, 2) })
+                        mapOf(
+                            CaptureResult.CONTROL_AF_REGIONS to
+                                Array(1) { MeteringRectangle(1, 1, 99, 99, 2) }
+                        )
                 )
             )
         }
@@ -210,9 +208,10 @@ internal class Controller3AUpdate3ATest {
                 FakeFrameMetadata(
                     frameNumber = FrameNumber(101L),
                     resultMetadata =
-                    mapOf(
-                        CaptureResult.CONTROL_AE_REGIONS to
-                            Array(1) { MeteringRectangle(1, 1, 99, 99, 2) })
+                        mapOf(
+                            CaptureResult.CONTROL_AE_REGIONS to
+                                Array(1) { MeteringRectangle(1, 1, 99, 99, 2) }
+                        )
                 )
             )
         }
@@ -237,9 +236,10 @@ internal class Controller3AUpdate3ATest {
                 FakeFrameMetadata(
                     frameNumber = FrameNumber(101L),
                     resultMetadata =
-                    mapOf(
-                        CaptureResult.CONTROL_AWB_REGIONS to
-                            Array(1) { MeteringRectangle(1, 1, 99, 99, 2) })
+                        mapOf(
+                            CaptureResult.CONTROL_AWB_REGIONS to
+                                Array(1) { MeteringRectangle(1, 1, 99, 99, 2) }
+                        )
                 )
             )
         }
@@ -250,6 +250,6 @@ internal class Controller3AUpdate3ATest {
 
     private fun initGraphProcessor() {
         graphProcessor.onGraphStarted(fakeGraphRequestProcessor)
-        graphProcessor.startRepeating(Request(streams = listOf(StreamId(1))))
+        graphProcessor.repeatingRequest = Request(streams = listOf(StreamId(1)))
     }
 }

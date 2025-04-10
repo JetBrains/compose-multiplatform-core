@@ -1,4 +1,11 @@
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -6,16 +13,17 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     api(project(":vectordrawable:vectordrawable"))
-    api("androidx.core:core-animation:1.0.0-rc01")
-    implementation("androidx.collection:collection:1.1.0")
+    api("androidx.core:core-animation:1.0.0")
+    implementation("androidx.collection:collection:1.4.2")
 
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.espressoCore, excludes.espresso)
+    androidTestImplementation(libs.espressoCore)
     androidTestImplementation(project(":core:core-animation-testing"))
 }
 
@@ -32,14 +40,13 @@ android {
     aaptOptions {
         additionalParameters("--no-version-vectors")
     }
-    namespace "androidx.vectordrawable.seekable"
+    namespace = "androidx.vectordrawable.seekable"
 }
 
 androidx {
     name = "SeekableAnimatedVectorDrawable"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.VECTORDRAWABLE_SEEKABLE
     inceptionYear = "2020"
     description = "Android SeekableAnimatedVectorDrawable"
-    metalavaK2UastEnabled = true
 }

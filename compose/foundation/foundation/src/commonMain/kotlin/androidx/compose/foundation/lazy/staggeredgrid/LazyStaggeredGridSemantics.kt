@@ -16,14 +16,14 @@
 
 package androidx.compose.foundation.lazy.staggeredgrid
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.lazy.layout.LazyLayoutSemanticState
+import androidx.compose.foundation.lazy.layout.estimatedLazyMaxScrollOffset
+import androidx.compose.foundation.lazy.layout.estimatedLazyScrollOffset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.semantics.CollectionInfo
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun rememberLazyStaggeredGridSemanticState(
     state: LazyStaggeredGridState,
@@ -31,22 +31,36 @@ internal fun rememberLazyStaggeredGridSemanticState(
 ): LazyLayoutSemanticState =
     remember(state, reverseScrolling) {
         object : LazyLayoutSemanticState {
-            override val firstVisibleItemScrollOffset: Int
-                get() = state.firstVisibleItemScrollOffset
-            override val firstVisibleItemIndex: Int
-                get() = state.firstVisibleItemIndex
-            override val canScrollForward: Boolean
-                get() = state.canScrollForward
+            override val scrollOffset: Float
+                get() =
+                    estimatedLazyScrollOffset(
+                        state.firstVisibleItemIndex,
+                        state.firstVisibleItemScrollOffset
+                    )
 
-            override suspend fun animateScrollBy(delta: Float) {
-                state.animateScrollBy(delta)
-            }
+            override val maxScrollOffset: Float
+                get() =
+                    estimatedLazyMaxScrollOffset(
+                        state.firstVisibleItemIndex,
+                        state.firstVisibleItemScrollOffset,
+                        state.canScrollForward
+                    )
 
             override suspend fun scrollToItem(index: Int) {
                 state.scrollToItem(index)
             }
 
-            override fun collectionInfo(): CollectionInfo =
-                CollectionInfo(-1, -1)
+            override fun collectionInfo(): CollectionInfo = CollectionInfo(-1, -1)
+
+            override val viewport: Int
+                get() =
+                    if (state.layoutInfo.orientation == Orientation.Vertical) {
+                        state.layoutInfo.viewportSize.height
+                    } else {
+                        state.layoutInfo.viewportSize.width
+                    }
+
+            override val contentPadding: Int
+                get() = state.layoutInfo.beforeContentPadding + state.layoutInfo.afterContentPadding
         }
     }

@@ -66,21 +66,27 @@ public annotation class CanvasTypeIntDef
 /**
  * Describes the type of [Canvas] a [Renderer.CanvasRenderer] or [Renderer.CanvasRenderer2] can
  * request from a [SurfaceHolder].
+ *
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 public object CanvasType {
     /** A software canvas will be requested. */
     public const val SOFTWARE: Int = 0
 
     /**
-     * A hardware canvas will be requested. This is usually faster than software rendering,
-     * however it can sometimes increase battery usage by rendering at a higher frame rate.
+     * A hardware canvas will be requested. This is usually faster than software rendering, however
+     * it can sometimes increase battery usage by rendering at a higher frame rate.
      *
-     * NOTE this is only supported on API level 26 and above. On lower API levels we fall back
-     * to a software canvas.
+     * NOTE this is only supported on API level 26 and above. On lower API levels we fall back to a
+     * software canvas.
      *
-     * NOTE the system takes screenshots for use in the watch face picker UI and these will be
-     * taken using software rendering for API level 27 and below. This means on API level 27 and
-     * below [Bitmap]s with [Bitmap.Config.HARDWARE] must be avoided.
+     * NOTE the system takes screenshots for use in the watch face picker UI and these will be taken
+     * using software rendering for API level 27 and below. This means on API level 27 and below
+     * [Bitmap]s with [Bitmap.Config.HARDWARE] must be avoided.
      */
     public const val HARDWARE: Int = 1
 }
@@ -166,7 +172,12 @@ internal fun verticalFlip(buffer: ByteBuffer, width: Int, height: Int) {
  *   better battery life. Variable frame rates can also help preserve battery life, e.g. if a watch
  *   face has a short animation once per second it can adjust the frame rate inorder to sleep when
  *   not animating. In ambient mode the watch face will be rendered once per minute.
+ * @deprecated use Watch Face Format instead
  */
+@Deprecated(
+    message =
+        "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+)
 @Suppress("Deprecation")
 public sealed class Renderer
 @WorkerThread
@@ -265,25 +276,29 @@ constructor(
         }
     }
 
+    // WallpaperService can retain SurfaceHolderCallback even after it's unregistered so we need
+    // a nullable renderer reference, in order to prevent the Renderer from being retained after
+    // onDestroy is called.
+    private class SurfaceHolderCallback(var renderer: Renderer?) : SurfaceHolder.Callback {
+        override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+            renderer?.surfaceChanged(holder)
+        }
+
+        override fun surfaceDestroyed(holder: SurfaceHolder) {}
+
+        override fun surfaceCreated(holder: SurfaceHolder) {}
+    }
+
+    private val surfaceChangedCallback = SurfaceHolderCallback(this)
+
+    private fun surfaceChanged(holder: SurfaceHolder) {
+        screenBounds = holder.surfaceFrame
+        centerX = screenBounds.exactCenterX()
+        centerY = screenBounds.exactCenterY()
+    }
+
     init {
-        surfaceHolder.addCallback(
-            object : SurfaceHolder.Callback {
-                override fun surfaceChanged(
-                    holder: SurfaceHolder,
-                    format: Int,
-                    width: Int,
-                    height: Int
-                ) {
-                    screenBounds = holder.surfaceFrame
-                    centerX = screenBounds.exactCenterX()
-                    centerY = screenBounds.exactCenterY()
-                }
-
-                override fun surfaceDestroyed(holder: SurfaceHolder) {}
-
-                override fun surfaceCreated(holder: SurfaceHolder) {}
-            }
-        )
+        surfaceHolder.addCallback(surfaceChangedCallback)
     }
 
     /**
@@ -340,6 +355,8 @@ constructor(
 
     internal fun onDestroyInternal() {
         try {
+            surfaceHolder.removeCallback(surfaceChangedCallback)
+            surfaceChangedCallback.renderer = null
             onDestroy()
         } finally {
             runBlocking { releaseSharedAssets(this@Renderer) }
@@ -551,8 +568,8 @@ constructor(
      *   into [render].
      * @param currentUserStyleRepository The watch face's associated [CurrentUserStyleRepository].
      * @param watchState The watch face's associated [WatchState].
-     * @param canvasType The [CanvasTypeIntDef] to request. Note even if [CanvasType.HARDWARE] is used,
-     *   screenshots will taken using the software rendering pipeline, as such [Bitmap]s with
+     * @param canvasType The [CanvasTypeIntDef] to request. Note even if [CanvasType.HARDWARE] is
+     *   used, screenshots will taken using the software rendering pipeline, as such [Bitmap]s with
      *   [Bitmap.Config.HARDWARE] must be avoided.
      * @param interactiveDrawModeUpdateDelayMillis The interval in milliseconds between frames in
      *   interactive [DrawMode]s. To render at 60hz set to 16. Note when battery is low, the frame
@@ -588,8 +605,7 @@ constructor(
                     surfaceHolder.lockHardwareCanvas()
                 } else {
                     surfaceHolder.lockCanvas()
-                })
-                    ?: return
+                }) ?: return
             try {
                 if (Build.VERSION.SDK_INT >= 30 || watchState.isVisible.value!!) {
                     renderAndComposite(canvas, zonedDateTime)
@@ -599,6 +615,10 @@ constructor(
             } finally {
                 surfaceHolder.unlockCanvasAndPost(canvas)
             }
+        }
+
+        internal companion object {
+            internal const val TAG = "CanvasRenderer"
         }
 
         internal override fun takeScreenshot(
@@ -681,18 +701,20 @@ constructor(
                         }
                         renderHighlightLayer(highlightCanvas, screenBounds, zonedDateTime)
                         picture.endRecording()
-                        highlightLayerBitmap = Api28CreateBitmapHelper.createBitmap(
-                            picture,
-                            screenBounds.width(),
-                            screenBounds.height(),
-                            Bitmap.Config.ARGB_8888
-                        )
+                        highlightLayerBitmap =
+                            Api28CreateBitmapHelper.createBitmap(
+                                picture,
+                                screenBounds.width(),
+                                screenBounds.height(),
+                                Bitmap.Config.ARGB_8888
+                            )
                     } else {
-                        highlightLayerBitmap = Bitmap.createBitmap(
-                            screenBounds.width(),
-                            screenBounds.height(),
-                            Bitmap.Config.ARGB_8888
-                        )
+                        highlightLayerBitmap =
+                            Bitmap.createBitmap(
+                                screenBounds.width(),
+                                screenBounds.height(),
+                                Bitmap.Config.ARGB_8888
+                            )
                         val highlightCanvas = Canvas(highlightLayerBitmap)
                         if (clearWithBackgroundTintBeforeRenderingHighlightLayer) {
                             highlightCanvas.drawColor(highlightLayer.backgroundTint)
@@ -748,6 +770,11 @@ constructor(
         public abstract fun render(canvas: Canvas, bounds: Rect, zonedDateTime: ZonedDateTime)
 
         internal override fun renderBlackFrame() {
+            // Check the surface is still valid before trying to use it.
+            if (!surfaceHolder.surface.isValid) {
+                Log.w(TAG, "renderBlackFrame ")
+                return
+            }
             val canvas =
                 if (canvasType == CanvasType.SOFTWARE) {
                     surfaceHolder.lockCanvas()
@@ -825,8 +852,8 @@ constructor(
      *   into [render].
      * @param currentUserStyleRepository The watch face's associated [CurrentUserStyleRepository].
      * @param watchState The watch face's associated [WatchState].
-     * @param canvasType The [CanvasTypeIntDef] to request. Note even if [CanvasType.HARDWARE] is used,
-     *   screenshots will taken using the software rendering pipeline, as such [Bitmap]s with
+     * @param canvasType The [CanvasTypeIntDef] to request. Note even if [CanvasType.HARDWARE] is
+     *   used, screenshots will taken using the software rendering pipeline, as such [Bitmap]s with
      *   [Bitmap.Config.HARDWARE] must be avoided.
      * @param interactiveDrawModeUpdateDelayMillis The interval in milliseconds between frames in
      *   interactive [DrawMode]s. To render at 60hz set to 16. Note when battery is low, the frame
@@ -837,7 +864,12 @@ constructor(
      * @param clearWithBackgroundTintBeforeRenderingHighlightLayer Whether the [Canvas] is cleared
      *   with [RenderParameters.HighlightLayer.backgroundTint] before [renderHighlightLayer] is
      *   called. Defaults to `false`.
+     * @deprecated use Watch Face Format instead
      */
+    @Deprecated(
+        message =
+            "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+    )
     public abstract class CanvasRenderer2<SharedAssetsT>
     @WorkerThread
     constructor(
@@ -999,7 +1031,8 @@ constructor(
         private val eglConfigAttribListList: List<IntArray>,
         private val eglSurfaceAttribList: IntArray,
         private val eglContextAttribList: IntArray
-    ) : Renderer(
+    ) :
+        Renderer(
             surfaceHolder,
             currentUserStyleRepository,
             watchState,
@@ -1154,7 +1187,8 @@ constructor(
 
             // Select the first successful config.
             for ((i, eglConfigAttribList) in eglConfigAttribListList.withIndex()) {
-                if (!EGL14.eglChooseConfig(
+                if (
+                    !EGL14.eglChooseConfig(
                         eglDisplay,
                         eglConfigAttribList,
                         0,
@@ -1163,7 +1197,7 @@ constructor(
                         eglConfigs.size,
                         numEglConfigs,
                         0
-                     )
+                    )
                 ) {
                     if (this is GlesRenderer2<*>) {
                         selectedEglConfigAttribListIndexInternal = Integer(i)
@@ -1723,7 +1757,12 @@ constructor(
      * @param eglContextAttribList The attributes to be passed to [EGL14.eglCreateContext]. By
      *   default this selects [EGL14.EGL_CONTEXT_CLIENT_VERSION] 2.
      * @throws [GlesRenderer.GlesException] If any GL calls fail during initialization.
+     * @deprecated use Watch Face Format instead
      */
+    @Deprecated(
+        message =
+            "AndroidX watchface libraries are deprecated, use Watch Face Format instead. For more info see: https://developer.android.com/training/wearables/wff"
+    )
     public abstract class GlesRenderer2<SharedAssetsT>
     @Throws(GlesException::class)
     @WorkerThread
@@ -1900,10 +1939,6 @@ constructor(
 /** Helper to allow class verification. */
 @RequiresApi(28)
 internal object Api28CreateBitmapHelper {
-    fun createBitmap(
-        picture: Picture,
-        width: Int,
-        height: Int,
-        config: Bitmap.Config
-    ) = Bitmap.createBitmap(picture, width, height, config)
+    fun createBitmap(picture: Picture, width: Int, height: Int, config: Bitmap.Config) =
+        Bitmap.createBitmap(picture, width, height, config)
 }

@@ -17,15 +17,13 @@
 package androidx.car.app.sample.showcase.common.screens.templatelayouts.listtemplates;
 
 import static androidx.car.app.CarToast.LENGTH_LONG;
-import static androidx.car.app.model.Action.BACK;
 
-import androidx.annotation.NonNull;
 import androidx.car.app.CarContext;
 import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
 import androidx.car.app.model.Action;
-import androidx.car.app.model.ActionStrip;
 import androidx.car.app.model.CarIcon;
+import androidx.car.app.model.Header;
 import androidx.car.app.model.ItemList;
 import androidx.car.app.model.ListTemplate;
 import androidx.car.app.model.Row;
@@ -33,6 +31,8 @@ import androidx.car.app.model.SectionedItemList;
 import androidx.car.app.model.Template;
 import androidx.car.app.sample.showcase.common.R;
 import androidx.core.graphics.drawable.IconCompat;
+
+import org.jspecify.annotations.NonNull;
 
 /** A screen demonstrating selectable lists. */
 public final class RadioButtonListDemoScreen extends Screen {
@@ -43,9 +43,8 @@ public final class RadioButtonListDemoScreen extends Screen {
 
     private boolean mIsEnabled = true;
 
-    @NonNull
     @Override
-    public Template onGetTemplate() {
+    public @NonNull Template onGetTemplate() {
         ListTemplate.Builder templateBuilder = new ListTemplate.Builder();
         ItemList radioList =
                 new ItemList.Builder()
@@ -71,25 +70,23 @@ public final class RadioButtonListDemoScreen extends Screen {
                         getCarContext().getString(R.string.sample_additional_list)));
 
         return templateBuilder
-                .setTitle(getCarContext().getString(R.string.radio_button_list_demo_title))
-                .setActionStrip(
-                        new ActionStrip.Builder()
-                                .addAction(
-                                        new Action.Builder()
-                                                .setTitle(mIsEnabled
-                                                        ? getCarContext().getString(
-                                                        R.string.disable_all_rows)
-                                                        : getCarContext().getString(
-                                                                R.string.enable_all_rows))
-                                                .setOnClickListener(
-                                                        () -> {
-                                                            mIsEnabled = !mIsEnabled;
-                                                            invalidate();
-                                                        })
-                                                .build())
+                .setHeader(new Header.Builder()
+                        .setTitle(getCarContext().getString(R.string.radio_button_list_demo_title))
+                        .setStartHeaderAction(Action.BACK)
+                        .addEndHeaderAction(new Action.Builder()
+                                .setTitle(mIsEnabled
+                                        ? getCarContext().getString(
+                                        R.string.disable_all_rows)
+                                        : getCarContext().getString(
+                                                R.string.enable_all_rows))
+                                .setOnClickListener(
+                                        () -> {
+                                            mIsEnabled = !mIsEnabled;
+                                            invalidate();
+                                        })
                                 .build())
-                .setHeaderAction(
-                        BACK).build();
+                        .build())
+                .build();
     }
 
     private CarIcon buildImageWithResource(int imageId) {

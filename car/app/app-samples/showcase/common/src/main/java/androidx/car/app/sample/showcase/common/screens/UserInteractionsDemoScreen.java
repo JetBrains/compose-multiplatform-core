@@ -18,12 +18,11 @@ package androidx.car.app.sample.showcase.common.screens;
 
 import static androidx.car.app.model.Action.BACK;
 
-import androidx.annotation.NonNull;
 import androidx.car.app.CarContext;
 import androidx.car.app.Screen;
 import androidx.car.app.model.Action;
-import androidx.car.app.model.ActionStrip;
 import androidx.car.app.model.CarIcon;
+import androidx.car.app.model.Header;
 import androidx.car.app.model.Item;
 import androidx.car.app.model.ItemList;
 import androidx.car.app.model.ListTemplate;
@@ -37,6 +36,8 @@ import androidx.car.app.sample.showcase.common.screens.userinteractions.RequestP
 import androidx.car.app.sample.showcase.common.screens.userinteractions.TaskOverflowDemoScreen;
 import androidx.core.graphics.drawable.IconCompat;
 
+import org.jspecify.annotations.NonNull;
+
 /** A screen demonstrating User Interactions */
 public final class UserInteractionsDemoScreen extends Screen {
     private static final int MAX_STEPS_ALLOWED = 4;
@@ -49,9 +50,8 @@ public final class UserInteractionsDemoScreen extends Screen {
         this.mStep = step;
     }
 
-    @NonNull
     @Override
-    public Template onGetTemplate() {
+    public @NonNull Template onGetTemplate() {
 
         // Last step must either be a PaneTemplate, MessageTemplate or NavigationTemplate.
         if (mStep == MAX_STEPS_ALLOWED) {
@@ -70,18 +70,16 @@ public final class UserInteractionsDemoScreen extends Screen {
 
         return new ListTemplate.Builder()
                 .setSingleList(builder.build())
-                .setTitle(getCarContext().getString(R.string.user_interactions_demo_title))
-                .setHeaderAction(BACK)
-                .setActionStrip(
-                        new ActionStrip.Builder()
-                                .addAction(
-                                        new Action.Builder()
-                                                .setTitle(getCarContext().getString(
-                                                        R.string.home_caps_action_title))
-                                                .setOnClickListener(
-                                                        () -> getScreenManager().popToRoot())
-                                                .build())
+                .setHeader(new Header.Builder()
+                        .setTitle(getCarContext().getString(R.string.user_interactions_demo_title))
+                        .setStartHeaderAction(BACK)
+                        .addEndHeaderAction(new Action.Builder()
+                                .setTitle(getCarContext().getString(
+                                        R.string.home_caps_action_title))
+                                .setOnClickListener(
+                                        () -> getScreenManager().popToRoot())
                                 .build())
+                        .build())
                 .build();
 
     }
@@ -185,7 +183,9 @@ public final class UserInteractionsDemoScreen extends Screen {
 
         return new MessageTemplate.Builder(
                 getCarContext().getString(R.string.task_limit_reached_msg))
-                .setHeaderAction(BACK)
+                .setHeader(new Header.Builder().setTitle(getCarContext()
+                                .getString(R.string.latest_feature_title))
+                        .setStartHeaderAction(Action.BACK).build())
                 .addAction(
                         new Action.Builder()
                                 .setTitle(getCarContext().getString(

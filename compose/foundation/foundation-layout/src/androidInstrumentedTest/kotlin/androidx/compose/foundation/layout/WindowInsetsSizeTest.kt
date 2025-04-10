@@ -23,12 +23,12 @@ import android.view.ViewGroup
 import android.view.WindowInsets as AndroidWindowInsets
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.compose.ui.test.LayoutDirection
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
@@ -39,6 +39,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
 import org.junit.Before
@@ -49,8 +50,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class WindowInsetsSizeTest {
-    @get:Rule
-    val rule = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     private lateinit var insetsView: InsetsView
 
@@ -62,8 +62,14 @@ class WindowInsetsSizeTest {
     @After
     fun teardown() {
         WindowInsetsHolder.setUseTestInsets(false)
-        rule.runOnUiThread {
-            rule.activity.finish()
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val activity = rule.activity
+        while (!activity.isDestroyed) {
+            instrumentation.runOnMainSync {
+                if (!activity.isDestroyed) {
+                    activity.finish()
+                }
+            }
         }
     }
 
@@ -73,34 +79,38 @@ class WindowInsetsSizeTest {
         lateinit var coordinates: LayoutCoordinates
 
         rule.setContent {
-            AndroidView(factory = { context ->
-                val view = InsetsView(context)
-                insetsView = view
-                val composeView = ComposeView(rule.activity)
-                view.addView(
-                    composeView,
-                    ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
+            AndroidView(
+                factory = { context ->
+                    val view = InsetsView(context)
+                    insetsView = view
+                    val composeView = ComposeView(rule.activity)
+                    view.addView(
+                        composeView,
+                        ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
+                        )
                     )
-                )
-                composeView.setContent {
-                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                        Box(Modifier
-                            .wrapContentSize()
-                            .onGloballyPositioned { coordinates = it }
-                            .consumeWindowInsets(WindowInsets(left = 10))
+                    composeView.setContent {
+                        DeviceConfigurationOverride(
+                            DeviceConfigurationOverride.LayoutDirection(LayoutDirection.Ltr)
                         ) {
                             Box(
-                                Modifier
-                                    .fillMaxHeight()
-                                    .windowInsetsStartWidth(WindowInsets.navigationBars)
-                            )
+                                Modifier.wrapContentSize()
+                                    .onGloballyPositioned { coordinates = it }
+                                    .consumeWindowInsets(WindowInsets(left = 10))
+                            ) {
+                                Box(
+                                    Modifier.fillMaxHeight()
+                                        .windowInsetsStartWidth(WindowInsets.navigationBars)
+                                )
+                            }
                         }
                     }
-                }
-                view
-            }, modifier = Modifier.fillMaxSize())
+                    view
+                },
+                modifier = Modifier.fillMaxSize()
+            )
         }
 
         // wait for layout
@@ -125,32 +135,34 @@ class WindowInsetsSizeTest {
         lateinit var coordinates: LayoutCoordinates
 
         rule.setContent {
-            AndroidView(factory = { context ->
-                val view = InsetsView(context)
-                insetsView = view
-                val composeView = ComposeView(rule.activity)
-                view.addView(
-                    composeView,
-                    ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
-                    )
-                )
-                composeView.setContent {
-                    Box(Modifier
-                        .wrapContentSize()
-                        .onGloballyPositioned { coordinates = it }
-                        .consumeWindowInsets(WindowInsets(bottom = 10))
-                    ) {
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .windowInsetsBottomHeight(WindowInsets.navigationBars)
+            AndroidView(
+                factory = { context ->
+                    val view = InsetsView(context)
+                    insetsView = view
+                    val composeView = ComposeView(rule.activity)
+                    view.addView(
+                        composeView,
+                        ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
                         )
+                    )
+                    composeView.setContent {
+                        Box(
+                            Modifier.wrapContentSize()
+                                .onGloballyPositioned { coordinates = it }
+                                .consumeWindowInsets(WindowInsets(bottom = 10))
+                        ) {
+                            Box(
+                                Modifier.fillMaxWidth()
+                                    .windowInsetsBottomHeight(WindowInsets.navigationBars)
+                            )
+                        }
                     }
-                }
-                view
-            }, modifier = Modifier.fillMaxSize())
+                    view
+                },
+                modifier = Modifier.fillMaxSize()
+            )
         }
 
         // wait for layout
@@ -177,7 +189,9 @@ class WindowInsetsSizeTest {
             { Modifier.windowInsetsStartWidth(WindowInsets.ime).fillMaxHeight() },
             AndroidXInsets.of(10, 0, 0, 0),
             LayoutDirection.Ltr
-        ) { size -> IntSize(10, size.height) }
+        ) { size ->
+            IntSize(10, size.height)
+        }
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
@@ -188,7 +202,9 @@ class WindowInsetsSizeTest {
             { Modifier.windowInsetsStartWidth(WindowInsets.ime).fillMaxHeight() },
             AndroidXInsets.of(0, 0, 10, 0),
             LayoutDirection.Rtl
-        ) { size -> IntSize(10, size.height) }
+        ) { size ->
+            IntSize(10, size.height)
+        }
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
@@ -199,7 +215,9 @@ class WindowInsetsSizeTest {
             { Modifier.windowInsetsEndWidth(WindowInsets.ime).fillMaxHeight() },
             AndroidXInsets.of(0, 0, 10, 0),
             LayoutDirection.Ltr
-        ) { size -> IntSize(10, size.height) }
+        ) { size ->
+            IntSize(10, size.height)
+        }
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
@@ -210,7 +228,9 @@ class WindowInsetsSizeTest {
             { Modifier.windowInsetsTopHeight(WindowInsets.ime).fillMaxWidth() },
             AndroidXInsets.of(0, 10, 0, 0),
             LayoutDirection.Ltr
-        ) { size -> IntSize(size.width, 10) }
+        ) { size ->
+            IntSize(size.width, 10)
+        }
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
@@ -221,7 +241,9 @@ class WindowInsetsSizeTest {
             { Modifier.windowInsetsBottomHeight(WindowInsets.ime).fillMaxWidth() },
             AndroidXInsets.of(0, 0, 0, 10),
             LayoutDirection.Ltr
-        ) { size -> IntSize(size.width, 10) }
+        ) { size ->
+            IntSize(size.width, 10)
+        }
     }
 
     @Test
@@ -231,7 +253,9 @@ class WindowInsetsSizeTest {
             { Modifier.windowInsetsStartWidth(WindowInsets.navigationBars).fillMaxHeight() },
             AndroidXInsets.of(10, 0, 0, 0),
             LayoutDirection.Ltr
-        ) { size -> IntSize(10, size.height) }
+        ) { size ->
+            IntSize(10, size.height)
+        }
     }
 
     @Test
@@ -241,7 +265,9 @@ class WindowInsetsSizeTest {
             { Modifier.windowInsetsStartWidth(WindowInsets.navigationBars).fillMaxHeight() },
             AndroidXInsets.of(0, 0, 10, 0),
             LayoutDirection.Rtl
-        ) { size -> IntSize(10, size.height) }
+        ) { size ->
+            IntSize(10, size.height)
+        }
     }
 
     @Test
@@ -251,7 +277,9 @@ class WindowInsetsSizeTest {
             { Modifier.windowInsetsEndWidth(WindowInsets.navigationBars).fillMaxHeight() },
             AndroidXInsets.of(0, 0, 10, 0),
             LayoutDirection.Ltr
-        ) { size -> IntSize(10, size.height) }
+        ) { size ->
+            IntSize(10, size.height)
+        }
     }
 
     @Test
@@ -261,23 +289,27 @@ class WindowInsetsSizeTest {
             { Modifier.windowInsetsTopHeight(WindowInsets.statusBars).fillMaxWidth() },
             AndroidXInsets.of(0, 10, 0, 0),
             LayoutDirection.Ltr
-        ) { size -> IntSize(size.width, 10) }
+        ) { size ->
+            IntSize(size.width, 10)
+        }
     }
 
     @Test
     fun insetsTopHeightMixed() {
-        val coordinates = setInsetContent(
-            {
-                val insets = WindowInsets
-                Modifier.windowInsetsTopHeight(insets.navigationBars.union(insets.systemBars))
-                    .fillMaxWidth()
-            },
-            LayoutDirection.Ltr
-        )
-        val insets = WindowInsetsCompat.Builder()
-            .setInsets(WindowInsetsCompat.Type.navigationBars(), AndroidXInsets.of(0, 3, 0, 0))
-            .setInsets(WindowInsetsCompat.Type.systemBars(), AndroidXInsets.of(0, 10, 0, 0))
-            .build()
+        val coordinates =
+            setInsetContent(
+                {
+                    val insets = WindowInsets
+                    Modifier.windowInsetsTopHeight(insets.navigationBars.union(insets.systemBars))
+                        .fillMaxWidth()
+                },
+                LayoutDirection.Ltr
+            )
+        val insets =
+            WindowInsetsCompat.Builder()
+                .setInsets(WindowInsetsCompat.Type.navigationBars(), AndroidXInsets.of(0, 3, 0, 0))
+                .setInsets(WindowInsetsCompat.Type.systemBars(), AndroidXInsets.of(0, 10, 0, 0))
+                .build()
 
         val view = findComposeView()
         rule.runOnIdle {
@@ -285,9 +317,7 @@ class WindowInsetsSizeTest {
             view.dispatchApplyWindowInsets(insets.toWindowInsets())
         }
 
-        rule.waitUntil {
-            coordinates.size == IntSize(view.width, 10)
-        }
+        rule.waitUntil { coordinates.size == IntSize(view.width, 10) }
     }
 
     @Test
@@ -351,8 +381,7 @@ class WindowInsetsSizeTest {
         type: Int,
         sentInsets: AndroidXInsets = AndroidXInsets.of(10, 11, 12, 13)
     ): AndroidWindowInsets {
-        val builder = WindowInsetsCompat.Builder()
-            .setInsets(type, sentInsets)
+        val builder = WindowInsetsCompat.Builder().setInsets(type, sentInsets)
         if (type == WindowInsetsCompat.Type.displayCutout()) {
             val view = findComposeView()
             val width = view.width
@@ -384,9 +413,7 @@ class WindowInsetsSizeTest {
             }
             builder.setDisplayCutout(DisplayCutoutCompat(safeRect, listOf(cutoutRect)))
         }
-        val insets = WindowInsetsCompat.Builder()
-            .setInsets(type, sentInsets)
-            .build()
+        val insets = WindowInsetsCompat.Builder().setInsets(type, sentInsets).build()
         insetsView.myInsets = insets.toWindowInsets()
         return rule.runOnIdle {
             AndroidWindowInsets(
@@ -402,26 +429,33 @@ class WindowInsetsSizeTest {
         lateinit var coordinates: LayoutCoordinates
 
         rule.setContent {
-            AndroidView(factory = { context ->
-                val view = InsetsView(context)
-                insetsView = view
-                val composeView = ComposeView(rule.activity)
-                view.addView(
-                    composeView,
-                    ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
+            AndroidView(
+                factory = { context ->
+                    val view = InsetsView(context)
+                    insetsView = view
+                    val composeView = ComposeView(rule.activity)
+                    view.addView(
+                        composeView,
+                        ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
+                        )
                     )
-                )
-                composeView.setContent {
-                    CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
-                        Box(Modifier.wrapContentSize().onGloballyPositioned { coordinates = it }) {
-                            Box(sizeModifier())
+                    composeView.setContent {
+                        DeviceConfigurationOverride(
+                            DeviceConfigurationOverride.LayoutDirection(layoutDirection)
+                        ) {
+                            Box(
+                                Modifier.wrapContentSize().onGloballyPositioned { coordinates = it }
+                            ) {
+                                Box(sizeModifier())
+                            }
                         }
                     }
-                }
-                view
-            }, modifier = Modifier.fillMaxSize())
+                    view
+                },
+                modifier = Modifier.fillMaxSize()
+            )
         }
 
         // wait for layout

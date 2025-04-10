@@ -27,7 +27,8 @@ internal class KspEnumEntry(
     env: KspProcessingEnv,
     override val declaration: KSClassDeclaration,
     override val enclosingElement: XEnumTypeElement
-) : KspElement(env, declaration),
+) :
+    KspElement(env, declaration),
     XHasModifiers by KspHasModifiers.create(declaration),
     XAnnotated by KspAnnotated.create(env, declaration, KspAnnotated.UseSiteFilter.NO_USE_SITE),
     XEnumEntry {
@@ -56,11 +57,9 @@ internal class KspEnumEntry(
             return KspEnumEntry(
                 env,
                 declaration,
-                KspTypeElement.create(
-                    env,
-                    declaration
-                        .requireEnclosingMemberContainer(env)
-                        .declaration as KSClassDeclaration
+                env.wrapClassDeclaration(
+                    declaration.requireEnclosingMemberContainer(env).declaration
+                        as KSClassDeclaration
                 ) as XEnumTypeElement
             )
         }

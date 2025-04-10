@@ -18,8 +18,7 @@ package androidx.camera.extensions.impl;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Implementation for extension version check.
@@ -29,10 +28,9 @@ import androidx.annotation.RequiresApi;
  *
  * @since 1.0
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class ExtensionVersionImpl {
     private static final String TAG = "ExtenderVersionImpl";
-    private static final String VERSION = "1.4.0";
+    private static final String VERSION = "1.5.0";
 
     public ExtensionVersionImpl() {
     }
@@ -61,8 +59,7 @@ public class ExtensionVersionImpl {
      * should be used.
      */
     @SuppressWarnings("unused")
-    @NonNull
-    public String checkApiVersion(@NonNull String version) {
+    public @NonNull String checkApiVersion(@NonNull String version) {
         Log.d(TAG, "Extension device library version " + VERSION);
         return VERSION;
     }

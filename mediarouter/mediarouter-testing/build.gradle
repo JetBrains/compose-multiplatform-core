@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -22,19 +29,18 @@ plugins {
 }
 
 dependencies {
-    implementation("androidx.annotation:annotation:1.2.0")
+    implementation("androidx.annotation:annotation:1.8.1")
     implementation(project(":mediarouter:mediarouter"))
 }
 
 androidx {
     name = "MediaRouter Testing"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2021"
     description = "Test utilities for AndroidX MediaRouter"
-    metalavaK2UastEnabled = true
 }
 
 android {
-    namespace "androidx.mediarouter.testing"
+    namespace = "androidx.mediarouter.testing"
 }
 

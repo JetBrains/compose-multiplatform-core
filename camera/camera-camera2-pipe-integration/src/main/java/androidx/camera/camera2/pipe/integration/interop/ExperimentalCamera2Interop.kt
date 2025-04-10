@@ -22,9 +22,9 @@ package androidx.camera.camera2.pipe.integration.interop
  * The Camera2Interop and Camera2Interop.Extender exposes the underlying instances of camera2
  * classes such CameraDevice.StateCallback, CameraCaptureSession.StateCallback and
  * CameraCaptureSession.CaptureCallback. In addition the configs allow setting of camera2
- * CaptureRequest parameters. However, CameraX does not provide any guarantee on how it operates
- * on these parameters. The ordering and number of times these objects might in order to best
- * optimize the top level behavior.
+ * CaptureRequest parameters. However, CameraX does not provide any guarantee on how it operates on
+ * these parameters. The ordering and number of times these objects might in order to best optimize
+ * the top level behavior.
  *
  * The values from the callbacks should only be read. Methods that modify the CameraDevice or
  * CameraCaptureSession will likely move CameraX into an inconsistent internal state.
@@ -33,4 +33,4 @@ package androidx.camera.camera2.pipe.integration.interop
  */
 @Retention(AnnotationRetention.BINARY)
 @RequiresOptIn
-annotation class ExperimentalCamera2Interop
+public annotation class ExperimentalCamera2Interop

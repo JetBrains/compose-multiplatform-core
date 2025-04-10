@@ -659,6 +659,14 @@ class PKeyListTest {
     }
 
     @Test
+    fun sortEmpty() {
+        val l = MutablePKeyList(0)
+        l.sort()
+        l.sortDescending()
+        assertEquals(MutablePKeyList(0), l)
+    }
+
+    @Test
     fun testEmptyPKeyList() {
         val l = emptyPKeyList()
         assertEquals(0, l.size)
@@ -740,5 +748,47 @@ class PKeyListTest {
         assertEquals(10KeySuffix, l[1])
         assertEquals(-1KeySuffix, l[2])
         assertEquals(10KeySuffix, l[3])
+    }
+
+    @Test
+    fun buildPKeyListFunction() {
+        val contract: Boolean
+        val l = buildPKeyList {
+            contract = true
+            add(2KeySuffix)
+            add(10KeySuffix)
+        }
+        assertTrue(contract)
+        assertEquals(2, l.size)
+        assertEquals(2KeySuffix, l[0])
+        assertEquals(10KeySuffix, l[1])
+    }
+
+    @Test
+    fun buildPKeyListWithCapacityFunction() {
+        val contract: Boolean
+        val l = buildPKeyList(20) {
+            contract = true
+            add(2KeySuffix)
+            add(10KeySuffix)
+        }
+        assertTrue(contract)
+        assertEquals(2, l.size)
+        assertTrue(l.content.size >= 20)
+        assertEquals(2KeySuffix, l[0])
+        assertEquals(10KeySuffix, l[1])
+    }
+
+    @Test
+    fun binarySearchPKeyList() {
+        val l = mutablePKeyListOf(-2KeySuffix, -1KeySuffix, 2KeySuffix, 10KeySuffix, 10KeySuffix)
+        assertEquals(0, l.binarySearch(-2))
+        assertEquals(2, l.binarySearch(2))
+        assertEquals(3, l.binarySearch(10))
+
+        assertEquals(-1, l.binarySearch(-20))
+        assertEquals(-4, l.binarySearch(3))
+        assertEquals(-6, l.binarySearch(20))
+
     }
 }

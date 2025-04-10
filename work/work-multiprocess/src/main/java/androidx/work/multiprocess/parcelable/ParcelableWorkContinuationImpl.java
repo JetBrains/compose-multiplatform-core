@@ -24,14 +24,15 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.work.ExistingWorkPolicy;
 import androidx.work.WorkRequest;
 import androidx.work.impl.WorkContinuationImpl;
 import androidx.work.impl.WorkManagerImpl;
 import androidx.work.impl.WorkRequestHolder;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,8 +57,7 @@ public class ParcelableWorkContinuationImpl implements Parcelable {
         mInfo = info;
     }
 
-    @NonNull
-    public WorkContinuationImplInfo getInfo() {
+    public @NonNull WorkContinuationImplInfo getInfo() {
         return mInfo;
     }
 
@@ -159,8 +159,8 @@ public class ParcelableWorkContinuationImpl implements Parcelable {
      * @param workManager The {@link  WorkManagerImpl} instance.
      * @return The {@link WorkContinuationImpl} instance
      */
-    @NonNull
-    public WorkContinuationImpl toWorkContinuationImpl(@NonNull WorkManagerImpl workManager) {
+    public @NonNull WorkContinuationImpl toWorkContinuationImpl(
+            @NonNull WorkManagerImpl workManager) {
         return mInfo.toWorkContinuationImpl(workManager);
     }
 
@@ -199,23 +199,19 @@ public class ParcelableWorkContinuationImpl implements Parcelable {
             mParents = parents;
         }
 
-        @Nullable
-        public String getName() {
+        public @Nullable String getName() {
             return mName;
         }
 
-        @NonNull
-        public ExistingWorkPolicy getExistingWorkPolicy() {
+        public @NonNull ExistingWorkPolicy getExistingWorkPolicy() {
             return mWorkPolicy;
         }
 
-        @NonNull
-        public List<? extends WorkRequest> getWork() {
+        public @NonNull List<? extends WorkRequest> getWork() {
             return mRequests;
         }
 
-        @Nullable
-        public List<WorkContinuationImplInfo> getParentInfos() {
+        public @Nullable List<WorkContinuationImplInfo> getParentInfos() {
             return mParents;
         }
 
@@ -226,8 +222,8 @@ public class ParcelableWorkContinuationImpl implements Parcelable {
          * @param workManager The {@link  WorkManagerImpl} instance.
          * @return The {@link WorkContinuationImpl} instance
          */
-        @NonNull
-        public WorkContinuationImpl toWorkContinuationImpl(@NonNull WorkManagerImpl workManager) {
+        public @NonNull WorkContinuationImpl toWorkContinuationImpl(
+                @NonNull WorkManagerImpl workManager) {
             return new WorkContinuationImpl(
                     workManager,
                     getName(),
@@ -237,8 +233,7 @@ public class ParcelableWorkContinuationImpl implements Parcelable {
             );
         }
 
-        @Nullable
-        private static List<WorkContinuationImpl> parents(
+        private static @Nullable List<WorkContinuationImpl> parents(
                 @NonNull WorkManagerImpl workManager,
                 @Nullable List<WorkContinuationImplInfo> parentInfos) {
 

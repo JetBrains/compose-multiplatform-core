@@ -8,12 +8,12 @@ package androidx.annotation {
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS) public @interface RequiresOptIn {
     method public abstract androidx.annotation.RequiresOptIn.Level level() default androidx.annotation.RequiresOptIn.Level.ERROR;
+    method public abstract String message() default "";
     property public abstract androidx.annotation.RequiresOptIn.Level level;
+    property public abstract String message;
   }
 
   public enum RequiresOptIn.Level {
-    method public static androidx.annotation.RequiresOptIn.Level valueOf(String value) throws java.lang.IllegalArgumentException, java.lang.NullPointerException;
-    method public static androidx.annotation.RequiresOptIn.Level[] values();
     enum_constant public static final androidx.annotation.RequiresOptIn.Level ERROR;
     enum_constant public static final androidx.annotation.RequiresOptIn.Level WARNING;
   }
@@ -28,8 +28,6 @@ package androidx.annotation.experimental {
   }
 
   @Deprecated public enum Experimental.Level {
-    method @Deprecated public static androidx.annotation.experimental.Experimental.Level valueOf(String value) throws java.lang.IllegalArgumentException, java.lang.NullPointerException;
-    method @Deprecated public static androidx.annotation.experimental.Experimental.Level[] values();
     enum_constant @Deprecated public static final androidx.annotation.experimental.Experimental.Level ERROR;
     enum_constant @Deprecated public static final androidx.annotation.experimental.Experimental.Level WARNING;
   }

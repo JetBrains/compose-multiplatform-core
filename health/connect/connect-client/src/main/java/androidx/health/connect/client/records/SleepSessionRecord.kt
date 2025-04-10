@@ -39,12 +39,12 @@ class SleepSessionRecord(
     override val startZoneOffset: ZoneOffset?,
     override val endTime: Instant,
     override val endZoneOffset: ZoneOffset?,
+    override val metadata: Metadata,
     /** Title of the session. Optional field. */
     val title: String? = null,
     /** Additional notes for the session. Optional field. */
     val notes: String? = null,
     val stages: List<Stage> = emptyList(),
-    override val metadata: Metadata = Metadata.EMPTY,
 ) : IntervalRecord {
 
     init {
@@ -86,6 +86,10 @@ class SleepSessionRecord(
         result = 31 * result + (endZoneOffset?.hashCode() ?: 0)
         result = 31 * result + metadata.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "SleepSessionRecord(startTime=$startTime, startZoneOffset=$startZoneOffset, endTime=$endTime, endZoneOffset=$endZoneOffset, title=$title, notes=$notes, stages=$stages, metadata=$metadata)"
     }
 
     companion object {
@@ -192,6 +196,10 @@ class SleepSessionRecord(
             result = 31 * result + startTime.hashCode()
             result = 31 * result + endTime.hashCode()
             return result
+        }
+
+        override fun toString(): String {
+            return "Stage(startTime=$startTime, endTime=$endTime, stage=$stage)"
         }
     }
 }

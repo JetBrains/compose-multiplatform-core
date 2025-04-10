@@ -17,21 +17,21 @@
 package androidx.health.platform.client.request
 
 import android.os.Parcelable
+import androidx.annotation.RestrictTo
 import androidx.health.platform.client.impl.data.ProtoParcelable
 import androidx.health.platform.client.proto.RequestProto
 
-/** @suppress */
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 class RegisterForDataNotificationsRequest(
     override val proto: RequestProto.RegisterForDataNotificationsRequest
 ) : ProtoParcelable<RequestProto.RegisterForDataNotificationsRequest>() {
 
     companion object {
         @JvmField
-        val CREATOR: Parcelable.Creator<RegisterForDataNotificationsRequest> =
-            newCreator {
-                RegisterForDataNotificationsRequest(
-                    RequestProto.RegisterForDataNotificationsRequest.parseFrom(it)
-                )
-            }
+        val CREATOR: Parcelable.Creator<RegisterForDataNotificationsRequest> = newCreator {
+            RegisterForDataNotificationsRequest(
+                RequestProto.RegisterForDataNotificationsRequest.parseFrom(it)
+            )
+        }
     }
 }

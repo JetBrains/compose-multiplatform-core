@@ -17,6 +17,7 @@
 package androidx.work.testutils
 
 import android.content.Context
+import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.Configuration
 import androidx.work.impl.Processor
@@ -28,28 +29,35 @@ import androidx.work.impl.background.greedy.GreedyScheduler
 import androidx.work.impl.constraints.trackers.Trackers
 import androidx.work.impl.utils.taskexecutor.WorkManagerTaskExecutor
 
-class TestEnv(
-    val configuration: Configuration
-) {
+class TestEnv(configuration: Configuration) {
+    val configuration: Configuration =
+        Configuration.Builder(configuration).setMinimumLoggingLevel(Log.VERBOSE).build()
     val context = ApplicationProvider.getApplicationContext<Context>()
     val taskExecutor = WorkManagerTaskExecutor(configuration.taskExecutor)
-    val db = WorkDatabase.create(
-        context,
-        taskExecutor.serialTaskExecutor, configuration.clock, true
-    )
+    val db =
+        WorkDatabase.create(context, taskExecutor.serialTaskExecutor, configuration.clock, true)
     val processor = Processor(context, configuration, taskExecutor, db)
 }
 
 fun GreedyScheduler(env: TestEnv, trackers: Trackers): GreedyScheduler {
     val launcher = WorkLauncherImpl(env.processor, env.taskExecutor)
     return GreedyScheduler(
-        env.context, env.configuration, trackers,
-        env.processor, launcher,
+        env.context,
+        env.configuration,
+        trackers,
+        env.processor,
+        launcher,
         env.taskExecutor
     )
 }
 
-fun WorkManager(env: TestEnv, schedulers: List<Scheduler>, trackers: Trackers) = WorkManagerImpl(
-    env.context, env.configuration, env.taskExecutor, env.db, schedulers,
-    env.processor, trackers
-)
+fun WorkManager(env: TestEnv, schedulers: List<Scheduler>, trackers: Trackers) =
+    WorkManagerImpl(
+        env.context,
+        env.configuration,
+        env.taskExecutor,
+        env.db,
+        schedulers,
+        env.processor,
+        trackers
+    )

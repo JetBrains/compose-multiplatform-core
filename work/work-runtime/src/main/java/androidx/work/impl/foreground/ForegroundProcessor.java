@@ -16,9 +16,10 @@
 
 package androidx.work.impl.foreground;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.ForegroundInfo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * An interface that provides {@link androidx.work.impl.WorkerWrapper} the hooks to move a

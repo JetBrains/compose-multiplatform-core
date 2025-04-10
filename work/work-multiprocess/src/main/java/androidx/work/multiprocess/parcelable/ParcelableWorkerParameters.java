@@ -20,7 +20,6 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.Configuration;
 import androidx.work.Data;
@@ -33,6 +32,8 @@ import androidx.work.impl.WorkManagerImpl;
 import androidx.work.impl.utils.WorkForegroundUpdater;
 import androidx.work.impl.utils.WorkProgressUpdater;
 import androidx.work.impl.utils.taskexecutor.TaskExecutor;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -47,14 +48,10 @@ import java.util.UUID;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @SuppressLint("BanParcelableUsage")
 public class ParcelableWorkerParameters implements Parcelable {
-    @NonNull
-    private final UUID mId;
-    @NonNull
-    private final Data mData;
-    @NonNull
-    private final Set<String> mTags;
-    @NonNull
-    private final WorkerParameters.RuntimeExtras mRuntimeExtras;
+    private final @NonNull UUID mId;
+    private final @NonNull Data mData;
+    private final @NonNull Set<String> mTags;
+    private final WorkerParameters.@NonNull RuntimeExtras mRuntimeExtras;
     private final int mRunAttemptCount;
     private final int mGeneration;
 
@@ -70,8 +67,7 @@ public class ParcelableWorkerParameters implements Parcelable {
     public static final Creator<ParcelableWorkerParameters> CREATOR =
             new Creator<ParcelableWorkerParameters>() {
                 @Override
-                @NonNull
-                public ParcelableWorkerParameters createFromParcel(Parcel in) {
+                public @NonNull ParcelableWorkerParameters createFromParcel(Parcel in) {
                     return new ParcelableWorkerParameters(in);
                 }
 
@@ -124,13 +120,11 @@ public class ParcelableWorkerParameters implements Parcelable {
         parcel.writeInt(mGeneration);
     }
 
-    @NonNull
-    public UUID getId() {
+    public @NonNull UUID getId() {
         return mId;
     }
 
-    @NonNull
-    public Data getData() {
+    public @NonNull Data getData() {
         return mData;
     }
 
@@ -138,8 +132,7 @@ public class ParcelableWorkerParameters implements Parcelable {
         return mRunAttemptCount;
     }
 
-    @NonNull
-    public Set<String> getTags() {
+    public @NonNull Set<String> getTags() {
         return mTags;
     }
 
@@ -147,8 +140,7 @@ public class ParcelableWorkerParameters implements Parcelable {
      * Converts {@link ParcelableWorkerParameters} to an instance of {@link WorkerParameters}
      * lazily.
      */
-    @NonNull
-    public WorkerParameters toWorkerParameters(@NonNull WorkManagerImpl workManager) {
+    public @NonNull WorkerParameters toWorkerParameters(@NonNull WorkManagerImpl workManager) {
         Configuration configuration = workManager.getConfiguration();
         WorkDatabase workDatabase = workManager.getWorkDatabase();
         TaskExecutor taskExecutor = workManager.getWorkTaskExecutor();
@@ -171,8 +163,7 @@ public class ParcelableWorkerParameters implements Parcelable {
      * Converts {@link ParcelableWorkerParameters} to an instance of {@link WorkerParameters}
      * lazily.
      */
-    @NonNull
-    public WorkerParameters toWorkerParameters(
+    public @NonNull WorkerParameters toWorkerParameters(
             @NonNull Configuration configuration,
             @NonNull TaskExecutor taskExecutor,
             @NonNull ProgressUpdater progressUpdater,
@@ -185,6 +176,7 @@ public class ParcelableWorkerParameters implements Parcelable {
                 mRunAttemptCount,
                 mGeneration,
                 configuration.getExecutor(),
+                configuration.getWorkerCoroutineContext(),
                 taskExecutor,
                 configuration.getWorkerFactory(),
                 progressUpdater,

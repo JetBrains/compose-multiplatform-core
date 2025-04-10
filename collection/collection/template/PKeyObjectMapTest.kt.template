@@ -16,6 +16,7 @@
 
 package androidx.collection
 
+import kotlin.js.JsName
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -185,6 +186,35 @@ class PKeyObjectMapTest {
         assertEquals("Welt", map5[3KeySuffix])
         assertEquals("Sekai", map5[4KeySuffix])
         assertEquals("Mondo", map5[5KeySuffix])
+    }
+
+    @Test
+    fun buildPKeyObjectMapFunction() {
+        val contract: Boolean
+        val map = buildPKeyObjectMap {
+            contract = true
+            put(1KeySuffix, "World")
+            put(2KeySuffix, "Monde")
+        }
+        assertTrue(contract)
+        assertEquals(2, map.size)
+        assertEquals("World", map[1KeySuffix])
+        assertEquals("Monde", map[2KeySuffix])
+    }
+
+    @Test
+    fun buildPKeyObjectMapWithCapacityFunction() {
+        val contract: Boolean
+        val map = buildPKeyObjectMap(20) {
+            contract = true
+            put(1KeySuffix, "World")
+            put(2KeySuffix, "Monde")
+        }
+        assertTrue(contract)
+        assertEquals(2, map.size)
+        assertTrue(map.capacity >= 18)
+        assertEquals("World", map[1KeySuffix])
+        assertEquals("Monde", map[2KeySuffix])
     }
 
     @Test
@@ -622,6 +652,7 @@ class PKeyObjectMapTest {
     }
 
     @Test
+    @JsName("jsEquals")
     fun equals() {
         val map = MutablePKeyObjectMap<String?>()
         map[1KeySuffix] = "World"
@@ -730,5 +761,19 @@ class PKeyObjectMapTest {
 
         assertTrue(map.all { key, value -> key < 7KeySuffix && value.isNotEmpty() })
         assertFalse(map.all { key, _ -> key < 6KeySuffix })
+    }
+
+    @Test
+    fun insertManyRemoveMany() {
+        val map = MutablePKeyObjectMap<String>()
+
+        for (i in 0 .. 1000000) {
+            map[i.toPKey()] = i.toString()
+            map.remove(i.toPKey())
+            assertTrue(
+                map.capacity < 16,
+                "Map grew larger than 16 after step $i"
+            )
+        }
     }
 }

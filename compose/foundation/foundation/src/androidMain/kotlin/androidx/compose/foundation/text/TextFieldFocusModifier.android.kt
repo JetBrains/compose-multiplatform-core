@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text
 
+import android.view.InputDevice
 import android.view.InputDevice.SOURCE_DPAD
 import android.view.KeyEvent.KEYCODE_DPAD_CENTER
 import android.view.KeyEvent.KEYCODE_DPAD_DOWN
@@ -47,34 +48,35 @@ internal actual fun Modifier.interceptDPadAndMoveFocus(
     state: LegacyTextFieldState,
     focusManager: FocusManager
 ): Modifier {
-    return this
-        .onPreviewKeyEvent { keyEvent ->
-            val device = keyEvent.nativeKeyEvent.device
-            when {
-                device == null -> false
+    return this.onPreviewKeyEvent { keyEvent ->
+        val device = keyEvent.nativeKeyEvent.device
+        when {
+            device == null -> false
 
-                // Ignore key events from non-dpad sources
-                !device.supportsSource(SOURCE_DPAD) -> false
+            // Ignore key events from non-dpad sources
+            !device.supportsSource(SOURCE_DPAD) -> false
 
-                // Ignore key events from virtual keyboards
-                device.isVirtual -> false
+            // Ignore key events from virtual keyboards
+            device.isVirtual -> false
 
-                // Ignore key release events
-                keyEvent.type != KeyDown -> false
+            // Ignore key release events
+            keyEvent.type != KeyDown -> false
 
-                keyEvent.isKeyCode(KEYCODE_DPAD_UP) -> focusManager.moveFocus(Up)
-                keyEvent.isKeyCode(KEYCODE_DPAD_DOWN) -> focusManager.moveFocus(Down)
-                keyEvent.isKeyCode(KEYCODE_DPAD_LEFT) -> focusManager.moveFocus(Left)
-                keyEvent.isKeyCode(KEYCODE_DPAD_RIGHT) -> focusManager.moveFocus(Right)
-                keyEvent.isKeyCode(KEYCODE_DPAD_CENTER) -> {
-                    // Enable keyboard on center key press
-                    state.keyboardController?.show()
-                    true
-                }
-                else -> false
+            // Ignore events that originate from a source that only identifies as keyboard.
+            // This logic is taken from `android.widget.TextView#doKeyDown()` method.
+            keyEvent.nativeKeyEvent.source == InputDevice.SOURCE_KEYBOARD -> false
+            keyEvent.isKeyCode(KEYCODE_DPAD_UP) -> focusManager.moveFocus(Up)
+            keyEvent.isKeyCode(KEYCODE_DPAD_DOWN) -> focusManager.moveFocus(Down)
+            keyEvent.isKeyCode(KEYCODE_DPAD_LEFT) -> focusManager.moveFocus(Left)
+            keyEvent.isKeyCode(KEYCODE_DPAD_RIGHT) -> focusManager.moveFocus(Right)
+            keyEvent.isKeyCode(KEYCODE_DPAD_CENTER) -> {
+                // Enable keyboard on center key press
+                state.keyboardController?.show()
+                true
             }
+            else -> false
         }
+    }
 }
 
-private fun KeyEvent.isKeyCode(keyCode: Int): Boolean =
-    this.key.nativeKeyCode == keyCode
+private fun KeyEvent.isKeyCode(keyCode: Int): Boolean = this.key.nativeKeyCode == keyCode

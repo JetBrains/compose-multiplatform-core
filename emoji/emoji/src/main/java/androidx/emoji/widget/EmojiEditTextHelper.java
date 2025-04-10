@@ -24,13 +24,13 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.Preconditions;
 import androidx.emoji.text.EmojiCompat;
 import androidx.emoji.text.EmojiSpan;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Utility class to enhance custom EditText widgets with {@link EmojiCompat}.
@@ -68,19 +68,23 @@ import androidx.emoji.text.EmojiSpan;
  *
  */
 public final class EmojiEditTextHelper {
-    private final HelperInternal mHelper;
     private int mMaxEmojiCount = EditTextAttributeHelper.MAX_EMOJI_COUNT;
     @EmojiCompat.ReplaceStrategy
     private int mEmojiReplaceStrategy = EmojiCompat.REPLACE_STRATEGY_DEFAULT;
+    private final EditText mEditText;
+    private final EmojiTextWatcher mTextWatcher;
 
     /**
      * Default constructor.
      *
      * @param editText EditText instance
      */
-    public EmojiEditTextHelper(@NonNull final EditText editText) {
+    public EmojiEditTextHelper(final @NonNull EditText editText) {
         Preconditions.checkNotNull(editText, "editText cannot be null");
-        mHelper = new HelperInternal19(editText);
+        mEditText = editText;
+        mTextWatcher = new EmojiTextWatcher(mEditText);
+        mEditText.addTextChangedListener(mTextWatcher);
+        mEditText.setEditableFactory(EmojiEditableFactory.getInstance());
     }
 
     /**
@@ -98,7 +102,7 @@ public final class EmojiEditTextHelper {
         Preconditions.checkArgumentNonnegative(maxEmojiCount,
                 "maxEmojiCount should be greater than 0");
         mMaxEmojiCount = maxEmojiCount;
-        mHelper.setMaxEmojiCount(maxEmojiCount);
+        mTextWatcher.setMaxEmojiCount(maxEmojiCount);
     }
 
     /**
@@ -121,10 +125,12 @@ public final class EmojiEditTextHelper {
      *
      * @return a new KeyListener instance that wraps {@code keyListener}.
      */
-    @NonNull
-    public KeyListener getKeyListener(@NonNull final KeyListener keyListener) {
+    public @NonNull KeyListener getKeyListener(final @NonNull KeyListener keyListener) {
         Preconditions.checkNotNull(keyListener, "keyListener cannot be null");
-        return mHelper.getKeyListener(keyListener);
+        if (keyListener instanceof EmojiKeyListener) {
+            return keyListener;
+        }
+        return new EmojiKeyListener(keyListener);
     }
 
     /**
@@ -139,11 +145,13 @@ public final class EmojiEditTextHelper {
      *
      * @return a new InputConnection instance that wraps {@code inputConnection}
      */
-    @Nullable
-    public InputConnection onCreateInputConnection(@Nullable final InputConnection inputConnection,
-            @NonNull final EditorInfo outAttrs) {
+    public @Nullable InputConnection onCreateInputConnection(
+            final @Nullable InputConnection inputConnection, final @NonNull EditorInfo outAttrs) {
         if (inputConnection == null) return null;
-        return mHelper.onCreateInputConnection(inputConnection, outAttrs);
+        if (inputConnection instanceof EmojiInputConnection) {
+            return inputConnection;
+        }
+        return new EmojiInputConnection(mEditText, inputConnection, outAttrs);
     }
 
     /**
@@ -158,7 +166,7 @@ public final class EmojiEditTextHelper {
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     void setEmojiReplaceStrategy(@EmojiCompat.ReplaceStrategy int replaceStrategy) {
         mEmojiReplaceStrategy = replaceStrategy;
-        mHelper.setEmojiReplaceStrategy(replaceStrategy);
+        mTextWatcher.setEmojiReplaceStrategy(replaceStrategy);
     }
 
     /**
@@ -172,66 +180,5 @@ public final class EmojiEditTextHelper {
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     int getEmojiReplaceStrategy() {
         return mEmojiReplaceStrategy;
-    }
-
-    @SuppressWarnings("WeakerAccess") /* synthetic access */
-    static class HelperInternal {
-
-        KeyListener getKeyListener(@NonNull KeyListener keyListener) {
-            return keyListener;
-        }
-
-        InputConnection onCreateInputConnection(@NonNull InputConnection inputConnection,
-                @NonNull EditorInfo outAttrs) {
-            return inputConnection;
-        }
-
-        void setMaxEmojiCount(int maxEmojiCount) {
-            // do nothing
-        }
-
-        void setEmojiReplaceStrategy(@EmojiCompat.ReplaceStrategy int replaceStrategy) {
-            // do nothing
-        }
-    }
-
-    @RequiresApi(19)
-    private static class HelperInternal19 extends HelperInternal {
-        private final EditText mEditText;
-        private final EmojiTextWatcher mTextWatcher;
-
-        HelperInternal19(@NonNull EditText editText) {
-            mEditText = editText;
-            mTextWatcher = new EmojiTextWatcher(mEditText);
-            mEditText.addTextChangedListener(mTextWatcher);
-            mEditText.setEditableFactory(EmojiEditableFactory.getInstance());
-        }
-
-        @Override
-        void setMaxEmojiCount(int maxEmojiCount) {
-            mTextWatcher.setMaxEmojiCount(maxEmojiCount);
-        }
-
-        @Override
-        void setEmojiReplaceStrategy(@EmojiCompat.ReplaceStrategy int replaceStrategy) {
-            mTextWatcher.setEmojiReplaceStrategy(replaceStrategy);
-        }
-
-        @Override
-        KeyListener getKeyListener(@NonNull final KeyListener keyListener) {
-            if (keyListener instanceof EmojiKeyListener) {
-                return keyListener;
-            }
-            return new EmojiKeyListener(keyListener);
-        }
-
-        @Override
-        InputConnection onCreateInputConnection(@NonNull final InputConnection inputConnection,
-                @NonNull final EditorInfo outAttrs) {
-            if (inputConnection instanceof EmojiInputConnection) {
-                return inputConnection;
-            }
-            return new EmojiInputConnection(mEditText, inputConnection, outAttrs);
-        }
     }
 }

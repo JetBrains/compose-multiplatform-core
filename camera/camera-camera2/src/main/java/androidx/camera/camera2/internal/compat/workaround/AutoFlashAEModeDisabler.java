@@ -18,26 +18,25 @@ package androidx.camera.camera2.internal.compat.workaround;
 
 import android.hardware.camera2.CaptureRequest;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.quirk.CrashWhenTakingPhotoWithAutoFlashAEModeQuirk;
 import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.camera2.internal.compat.quirk.ImageCaptureFailWithAutoFlashQuirk;
 import androidx.camera.core.impl.Quirks;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A workaround to turn off the auto flash AE mode if device has the
  * {@link CrashWhenTakingPhotoWithAutoFlashAEModeQuirk} or
  * {@link ImageCaptureFailWithAutoFlashQuirk}.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class AutoFlashAEModeDisabler {
 
     private final boolean mIsImageCaptureFailWithAutoFlashQuirkEnabled;
     private final boolean mIsCrashWhenTakingPhotoWithAutoFlashAEModeQuirkEnabled;
 
 
-    public AutoFlashAEModeDisabler(@NonNull final Quirks quirks) {
+    public AutoFlashAEModeDisabler(final @NonNull Quirks quirks) {
         mIsImageCaptureFailWithAutoFlashQuirkEnabled =
                 quirks.contains(ImageCaptureFailWithAutoFlashQuirk.class);
         mIsCrashWhenTakingPhotoWithAutoFlashAEModeQuirkEnabled = DeviceQuirks.get(

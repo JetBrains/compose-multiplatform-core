@@ -21,10 +21,10 @@ import static androidx.car.app.model.Action.BACK;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.car.app.CarContext;
 import androidx.car.app.CarToast;
 import androidx.car.app.Screen;
+import androidx.car.app.model.Header;
 import androidx.car.app.model.ItemList;
 import androidx.car.app.model.ListTemplate;
 import androidx.car.app.model.Row;
@@ -38,13 +38,14 @@ import androidx.car.app.sample.showcase.common.screens.settings.ContentLimitsDem
 import androidx.car.app.sample.showcase.common.screens.settings.LatestFeatures;
 import androidx.car.app.sample.showcase.common.screens.settings.ParkedVsDrivingDemoScreen;
 
+import org.jspecify.annotations.NonNull;
+
 /** A screen demonstrating selectable lists. */
 public final class SettingsScreen extends Screen {
 
     private boolean mLoadingToggleState;
 
-    @NonNull
-    private final ShowcaseSession mShowcaseSession;
+    private final @NonNull ShowcaseSession mShowcaseSession;
 
     public SettingsScreen(@NonNull CarContext carContext,
             @NonNull ShowcaseSession showcaseSession) {
@@ -52,9 +53,8 @@ public final class SettingsScreen extends Screen {
         mShowcaseSession = showcaseSession;
     }
 
-    @NonNull
     @Override
-    public Template onGetTemplate() {
+    public @NonNull Template onGetTemplate() {
         Toggle mLoadingToggle = new Toggle.Builder((checked) -> {
             if (checked) {
                 makeCarToast(R.string.loading_toggle_enabled);
@@ -84,10 +84,12 @@ public final class SettingsScreen extends Screen {
 
         return new ListTemplate.Builder()
                 .setSingleList(listBuilder.build())
-                .setTitle(getCarContext().getString(R.string.settings_action_title) + " ("
-                        + getCarContext().getString(R.string.cal_api_level_prefix,
-                        getCarContext().getCarAppApiLevel()) + ")")
-                .setHeaderAction(BACK)
+                .setHeader(new Header.Builder()
+                        .setTitle(getCarContext().getString(R.string.settings_action_title) + " ("
+                                + getCarContext().getString(R.string.cal_api_level_prefix,
+                                getCarContext().getCarAppApiLevel()) + ")")
+                        .setStartHeaderAction(BACK)
+                        .build())
                 .build();
     }
 

@@ -31,7 +31,6 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.FrameLayout.LayoutParams;
 
-import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.wear.protolayout.LayoutElementBuilders;
 import androidx.wear.protolayout.LayoutElementBuilders.Layout;
@@ -41,6 +40,8 @@ import androidx.wear.protolayout.ResourceBuilders.Resources;
 import androidx.wear.protolayout.proto.LayoutElementProto.LayoutElement;
 import androidx.wear.tiles.material.R;
 import androidx.wear.tiles.renderer.TileRenderer;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;

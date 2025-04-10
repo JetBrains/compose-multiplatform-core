@@ -19,18 +19,32 @@ package androidx.kruth
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 
+internal const val HUMAN_UNDERSTANDABLE_EMPTY_STRING = "\"\" (empty String)"
+
 /**
  * Same as [requireNotNull] but throws [NullPointerException] instead of [IllegalArgumentException].
- * Used for better behaviour compatibility with Truth.
+ *
+ * Used for better behaviour compatibility with Truth, which uses Guava's checkNotNull.
+ */
+@OptIn(ExperimentalContracts::class)
+@Suppress("NOTHING_TO_INLINE")
+internal inline fun <T : Any> requireNonNull(value: T?): T {
+    contract { returns() implies (value != null) }
+
+    return value ?: throw NullPointerException()
+}
+
+/**
+ * Same as [requireNotNull] but throws [NullPointerException] instead of [IllegalArgumentException].
+ *
+ * Used for better behaviour compatibility with Truth, which uses Guava's checkNotNull.
  */
 @OptIn(ExperimentalContracts::class)
 internal inline fun <T : Any> requireNonNull(
     value: T?,
-    lazyMessage: () -> Any = { "Required value was null." },
+    lazyMessage: () -> Any,
 ): T {
-    contract {
-        returns() implies (value != null)
-    }
+    contract { returns() implies (value != null) }
 
     return value ?: throw NullPointerException(lazyMessage().toString())
 }
@@ -39,12 +53,10 @@ internal fun Iterable<*>.isEmpty(): Boolean =
     (this as? Collection<*>)?.isEmpty() ?: !iterator().hasNext()
 
 /**
- * Returns a new collection containing all elements in [this] for which there exists at
- * least one element in [itemsToCheck] that has the same [toString][Any.toString] value without
- * being equal.
+ * Returns a new collection containing all elements in [this] for which there exists at least one
+ * element in [itemsToCheck] that has the same [toString][Any.toString] value without being equal.
  *
  * Example:
- *
  * ```
  * listOf(1L, 2L, 2L).retainMatchingToString(listOf(2, 3)) == listOf(2L, 2L)
  * ```
@@ -65,19 +77,20 @@ internal fun Iterable<*>.hasMatchingToStringPair(items: Iterable<*>): Boolean =
         retainMatchingToString(items).isNotEmpty()
     }
 
+// TODO(b/317811086): Truth does some extra String processing here for nested classes and Subjects
+//  for j2cl that we do not yet have implemented. It is possible we don't need anything, but we need
+//  to double check and add a test.
 internal fun Any?.typeName(): String =
     when (this) {
         null -> {
             // The name "null type" comes from the interface javax.lang.model.type.NullType
             "null type"
         }
-
         is Map.Entry<*, *> -> {
             // Fix for interesting bug when entry.getValue() returns itself b/170390717
             val valueTypeName = if (value === this) "Map.Entry" else value.typeName()
             "Map.Entry<${key.typeName()}, $valueTypeName>"
         }
-
         else -> this::class.simpleName ?: "unknown type"
     }
 
@@ -103,9 +116,7 @@ internal fun Iterable<*>.countDuplicates(): String =
             },
         )
 
-/**
- * Returns the name of the single type of all given items or `null` if no such type exists.
- */
+/** Returns the name of the single type of all given items or `null` if no such type exists. */
 private fun Iterable<*>.homogeneousTypeName(): String? {
     var homogeneousTypeName: String? = null
 
@@ -120,5 +131,4 @@ private fun Iterable<*>.homogeneousTypeName(): String? {
     return homogeneousTypeName
 }
 
-private fun Iterable<*>.addTypeInfoToEveryItem(): List<String> =
-    map { "$it (${it.typeName()})" }
+private fun Iterable<*>.addTypeInfoToEveryItem(): List<String> = map { "$it (${it.typeName()})" }

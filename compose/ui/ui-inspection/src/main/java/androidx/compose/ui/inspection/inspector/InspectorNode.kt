@@ -22,39 +22,29 @@ import androidx.compose.ui.unit.IntRect
 internal const val UNDEFINED_ID = 0L
 
 internal val emptyBox = IntRect(0, 0, 0, 0)
-internal val outsideBox = IntRect(Int.MAX_VALUE, Int.MIN_VALUE, Int.MAX_VALUE, Int.MIN_VALUE)
 
-/**
- * Node representing a Composable for the Layout Inspector.
- */
-class InspectorNode internal constructor(
-    /**
-     * The associated render node id or 0.
-     */
+/** Node representing a Composable for the Layout Inspector. */
+class InspectorNode
+internal constructor(
+    /** The associated render node id or 0. */
     val id: Long,
 
-    /**
-     * The associated key for tracking recomposition counts.
-     */
+    /** The associated key for tracking recomposition counts. */
     val key: Int,
 
     /**
      * The id of the associated anchor for tracking recomposition counts.
      *
-     * An Anchor is a mechanism in the compose runtime that can identify a Group
-     * in the SlotTable that is invariant to SlotTable updates.
-     * See [androidx.compose.runtime.Anchor] for more information.
+     * An Anchor is a mechanism in the compose runtime that can identify a Group in the SlotTable
+     * that is invariant to SlotTable updates. See [androidx.compose.runtime.Anchor] for more
+     * information.
      */
     val anchorId: Int,
 
-    /**
-     * The name of the Composable.
-     */
+    /** The name of the Composable. */
     val name: String,
 
-    /**
-     * The fileName where the Composable was called.
-     */
+    /** The fileName where the Composable was called. */
     val fileName: String,
 
     /**
@@ -62,7 +52,7 @@ class InspectorNode internal constructor(
      *
      * This hash is calculated by,
      *
-     *   `packageName.fold(0) { hash, current -> hash * 31 + current.toInt() }?.absoluteValue`
+     * `packageName.fold(0) { hash, current -> hash * 31 + current.toInt() }?.absoluteValue`
      *
      * where the package name is the dotted name of the package. This can be used to disambiguate
      * which file is referenced by [fileName]. This number is -1 if there was no package hash
@@ -70,90 +60,58 @@ class InspectorNode internal constructor(
      */
     val packageHash: Int,
 
-    /**
-     * The line number where the Composable was called.
-     */
+    /** The line number where the Composable was called. */
     val lineNumber: Int,
 
-    /**
-     * The UTF-16 offset in the file where the Composable was called
-     */
+    /** The UTF-16 offset in the file where the Composable was called */
     val offset: Int,
 
-    /**
-     * The number of UTF-16 code point comprise the Composable call
-     */
-    val length: Int,
-
-    /**
-     * The bounding box of the Composable.
-     */
+    /** The bounding box of the Composable. */
     internal val box: IntRect,
 
-    /**
-     * The 4 corners of the polygon after transformations of the original rectangle.
-     */
+    /** The 4 corners of the polygon after transformations of the original rectangle. */
     val bounds: QuadBounds? = null,
 
-    /**
-     * True if the code for the Composable was inlined
-     */
+    /** True if the code for the Composable was inlined */
     val inlined: Boolean = false,
 
-    /**
-     * The parameters of this Composable.
-     */
+    /** The parameters of this Composable. */
     val parameters: List<RawParameter>,
 
-    /**
-     * The id of a android View embedded under this node.
-     */
+    /** The id of a android View embedded under this node. */
     val viewId: Long,
 
-    /**
-     * The merged semantics information of this Composable.
-     */
+    /** The merged semantics information of this Composable. */
     val mergedSemantics: List<RawParameter>,
 
-    /**
-     * The un-merged semantics information of this Composable.
-     */
+    /** The un-merged semantics information of this Composable. */
     val unmergedSemantics: List<RawParameter>,
 
-    /**
-     * The children nodes of this Composable.
-     */
+    /** The children nodes of this Composable. */
     val children: List<InspectorNode>
 ) {
-    /**
-     * Left side of the Composable in pixels.
-     */
+    /** Left side of the Composable in pixels. */
     val left: Int
-      get() = box.left
+        get() = box.left
 
-    /**
-     * Top of the Composable in pixels.
-     */
+    /** Top of the Composable in pixels. */
     val top: Int
-      get() = box.top
+        get() = box.top
 
-    /**
-     * Width of the Composable in pixels.
-     */
+    /** Width of the Composable in pixels. */
     val width: Int
-      get() = box.width
+        get() = box.width
 
-    /**
-     * Width of the Composable in pixels.
-     */
+    /** Width of the Composable in pixels. */
     val height: Int
-      get() = box.height
+        get() = box.height
 
-    fun parametersByKind(kind: ParameterKind): List<RawParameter> = when (kind) {
-        ParameterKind.Normal -> parameters
-        ParameterKind.MergedSemantics -> mergedSemantics
-        ParameterKind.UnmergedSemantics -> unmergedSemantics
-    }
+    fun parametersByKind(kind: ParameterKind): List<RawParameter> =
+        when (kind) {
+            ParameterKind.Normal -> parameters
+            ParameterKind.MergedSemantics -> mergedSemantics
+            ParameterKind.UnmergedSemantics -> unmergedSemantics
+        }
 }
 
 data class QuadBounds(
@@ -165,22 +123,12 @@ data class QuadBounds(
     val y2: Int,
     val x3: Int,
     val y3: Int,
-) {
-    val xMin: Int get() = sequenceOf(x0, x1, x2, x3).minOrNull()!!
-    val xMax: Int get() = sequenceOf(x0, x1, x2, x3).maxOrNull()!!
-    val yMin: Int get() = sequenceOf(y0, y1, y2, y3).minOrNull()!!
-    val yMax: Int get() = sequenceOf(y0, y1, y2, y3).maxOrNull()!!
-    val outerBox: IntRect get() = IntRect(xMin, yMin, xMax, yMax)
-}
+)
 
-/**
- * Parameter definition with a raw value reference.
- */
+/** Parameter definition with a raw value reference. */
 class RawParameter(val name: String, val value: Any?)
 
-/**
- * Mutable version of [InspectorNode].
- */
+/** Mutable version of [InspectorNode]. */
 internal class MutableInspectorNode {
     var id = UNDEFINED_ID
     var key = 0
@@ -193,14 +141,13 @@ internal class MutableInspectorNode {
     var packageHash = -1
     var lineNumber = 0
     var offset = 0
-    var length = 0
     var box: IntRect = emptyBox
     var bounds: QuadBounds? = null
+    var unknownLocation = false
     var inlined = false
     val parameters = mutableListOf<RawParameter>()
     var viewId = UNDEFINED_ID
     val children = mutableListOf<InspectorNode>()
-    var outerBox: IntRect = outsideBox
 
     fun reset() {
         markUnwanted()
@@ -213,22 +160,22 @@ internal class MutableInspectorNode {
         unmergedSemantics.clear()
         box = emptyBox
         bounds = null
+        unknownLocation = false
         inlined = false
-        outerBox = outsideBox
         children.clear()
     }
 
-    fun markUnwanted() {
+    fun markUnwanted(): MutableInspectorNode {
         name = ""
         fileName = ""
         packageHash = -1
         lineNumber = 0
         offset = 0
-        length = 0
         parameters.clear()
+        return this
     }
 
-    fun shallowCopy(node: InspectorNode): MutableInspectorNode = apply {
+    fun shallowCopy(node: MutableInspectorNode): MutableInspectorNode = apply {
         id = node.id
         key = node.key
         anchorId = node.anchorId
@@ -239,7 +186,6 @@ internal class MutableInspectorNode {
         packageHash = node.packageHash
         lineNumber = node.lineNumber
         offset = node.offset
-        length = node.length
         box = node.box
         bounds = node.bounds
         inlined = node.inlined
@@ -248,10 +194,33 @@ internal class MutableInspectorNode {
         children.addAll(node.children)
     }
 
+    val isUnwanted: Boolean
+        get() = name.isEmpty()
+
+    val hostingAndroidView: Boolean
+        get() = viewId != UNDEFINED_ID
+
+    val hasLayerId: Boolean
+        get() = id > UNDEFINED_ID
+
+    val hasAssignedId: Boolean
+        get() = id != UNDEFINED_ID
+
     fun build(withSemantics: Boolean = true): InspectorNode =
         InspectorNode(
-            id, key, anchorId, name, fileName, packageHash, lineNumber, offset, length,
-            box, bounds, inlined, parameters.toList(), viewId,
+            id,
+            key,
+            anchorId,
+            name,
+            fileName,
+            packageHash,
+            lineNumber,
+            offset,
+            box,
+            bounds,
+            inlined,
+            parameters.toList(),
+            viewId,
             if (withSemantics) mergedSemantics.toList() else emptyList(),
             if (withSemantics) unmergedSemantics.toList() else emptyList(),
             children.toList()

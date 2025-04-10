@@ -18,7 +18,7 @@ package androidx.core.view;
 
 import android.view.View;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Listener for applying window insets on a view in a custom way.
@@ -41,6 +41,6 @@ public interface OnApplyWindowInsetsListener {
      * @param insets The insets to apply
      * @return The insets supplied, minus any insets that were consumed
      */
-    @NonNull
-    WindowInsetsCompat onApplyWindowInsets(@NonNull View v, @NonNull WindowInsetsCompat insets);
+    @NonNull WindowInsetsCompat onApplyWindowInsets(@NonNull View v,
+            @NonNull WindowInsetsCompat insets);
 }

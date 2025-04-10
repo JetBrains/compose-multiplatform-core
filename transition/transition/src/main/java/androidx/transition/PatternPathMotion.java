@@ -16,7 +16,6 @@
 
 package androidx.transition;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Matrix;
@@ -24,10 +23,10 @@ import android.graphics.Path;
 import android.graphics.PathMeasure;
 import android.util.AttributeSet;
 
-import androidx.annotation.NonNull;
 import androidx.core.content.res.TypedArrayUtils;
 import androidx.core.graphics.PathParser;
 
+import org.jspecify.annotations.NonNull;
 import org.xmlpull.v1.XmlPullParser;
 
 /**
@@ -57,8 +56,6 @@ public class PatternPathMotion extends PathMotion {
         mOriginalPatternPath = mPatternPath;
     }
 
-    @SuppressLint("RestrictedApi") // remove once core lib would be released with the new
-    // LIBRARY_GROUP_PREFIX restriction. tracking in b/127286008
     public PatternPathMotion(@NonNull Context context, @NonNull AttributeSet attrs) {
         TypedArray a = context.obtainStyledAttributes(attrs, Styleable.PATTERN_PATH_MOTION);
         try {
@@ -93,8 +90,7 @@ public class PatternPathMotion extends PathMotion {
      *
      * @return the Path defining a pattern of motion between two coordinates.
      */
-    @NonNull
-    public Path getPatternPath() {
+    public @NonNull Path getPatternPath() {
         return mOriginalPatternPath;
     }
 
@@ -132,9 +128,8 @@ public class PatternPathMotion extends PathMotion {
         mOriginalPatternPath = patternPath;
     }
 
-    @NonNull
     @Override
-    public Path getPath(float startX, float startY, float endX, float endY) {
+    public @NonNull Path getPath(float startX, float startY, float endX, float endY) {
         float dx = endX - startX;
         float dy = endY - startY;
         float length = distance(dx, dy);

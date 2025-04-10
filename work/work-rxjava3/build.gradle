@@ -14,17 +14,26 @@
  * limitations under the License.
  */
 
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
+    api(libs.jspecify)
     api(project(":work:work-runtime"))
     api(libs.rxjava3)
+    implementation("androidx.concurrent:concurrent-futures:1.1.0")
     testImplementation(libs.truth)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinStdlib)
@@ -33,12 +42,13 @@ dependencies {
 
 androidx {
     name = "WorkManager RxJava3"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Android WorkManager RxJava3 interoperatibility library"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }
 
 android {
-    namespace "androidx.work.rxjava3"
+    compileSdk = 35
+    namespace = "androidx.work.rxjava3"
 }

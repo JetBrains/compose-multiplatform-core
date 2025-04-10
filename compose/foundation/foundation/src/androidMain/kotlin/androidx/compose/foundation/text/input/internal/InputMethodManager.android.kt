@@ -17,10 +17,12 @@
 package androidx.compose.foundation.text.input.internal
 
 import android.content.Context
+import android.os.Build
 import android.util.Log
 import android.view.View
 import android.view.inputmethod.CursorAnchorInfo
 import android.view.inputmethod.ExtractedText
+import androidx.annotation.RequiresApi
 import androidx.core.view.SoftwareKeyboardControllerCompat
 
 internal interface InputMethodManager {
@@ -32,10 +34,7 @@ internal interface InputMethodManager {
 
     fun hideSoftInput()
 
-    fun updateExtractedText(
-        token: Int,
-        extractedText: ExtractedText
-    )
+    fun updateExtractedText(token: Int, extractedText: ExtractedText)
 
     fun updateSelection(
         selectionStart: Int,
@@ -45,21 +44,23 @@ internal interface InputMethodManager {
     )
 
     fun updateCursorAnchorInfo(cursorAnchorInfo: CursorAnchorInfo)
+
+    fun startStylusHandwriting()
 }
 
 /**
- * Wrapper class to prevent depending on getSystemService and final InputMethodManager.
- * Let's us test TextInputServiceAndroid class.
+ * Wrapper class to prevent depending on getSystemService and final InputMethodManager. Let's us
+ * test TextInputServiceAndroid class.
  */
 internal class InputMethodManagerImpl(private val view: View) : InputMethodManager {
 
-    private val imm by lazy(LazyThreadSafetyMode.NONE) {
-        view.context.getSystemService(Context.INPUT_METHOD_SERVICE)
-            as android.view.inputmethod.InputMethodManager
-    }
+    private val imm by
+        lazy(LazyThreadSafetyMode.NONE) {
+            view.context.getSystemService(Context.INPUT_METHOD_SERVICE)
+                as android.view.inputmethod.InputMethodManager
+        }
 
-    private val softwareKeyboardControllerCompat =
-        SoftwareKeyboardControllerCompat(view)
+    private val softwareKeyboardControllerCompat = SoftwareKeyboardControllerCompat(view)
 
     override fun isActive(): Boolean = imm.isActive(view)
 
@@ -79,10 +80,7 @@ internal class InputMethodManagerImpl(private val view: View) : InputMethodManag
         softwareKeyboardControllerCompat.hide()
     }
 
-    override fun updateExtractedText(
-        token: Int,
-        extractedText: ExtractedText
-    ) {
+    override fun updateExtractedText(token: Int, extractedText: ExtractedText) {
         imm.updateExtractedText(view, token, extractedText)
     }
 
@@ -97,5 +95,18 @@ internal class InputMethodManagerImpl(private val view: View) : InputMethodManag
 
     override fun updateCursorAnchorInfo(cursorAnchorInfo: CursorAnchorInfo) {
         imm.updateCursorAnchorInfo(view, cursorAnchorInfo)
+    }
+
+    override fun startStylusHandwriting() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            Api34StartStylusHandwriting.startStylusHandwriting(imm, view)
+        }
+    }
+}
+
+@RequiresApi(34)
+internal object Api34StartStylusHandwriting {
+    fun startStylusHandwriting(imm: android.view.inputmethod.InputMethodManager, view: View) {
+        imm.startStylusHandwriting(view)
     }
 }

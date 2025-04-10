@@ -14,32 +14,41 @@
  * limitations under the License.
  */
 
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
-    id("kotlin-kapt")
+    id("org.jetbrains.kotlin.android")
+    id("com.google.devtools.ksp")
 }
 
 dependencies {
     api(libs.kotlinStdlib)
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
     api("androidx.navigation:navigation-runtime:2.5.1")
     api(libs.hiltAndroid)
-    kapt(libs.hiltCompiler)
+    ksp(libs.hiltCompiler)
 }
 
 androidx {
     name = "Navigation Hilt Extension"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.HILT_NAVIGATION
     inceptionYear = "2021"
     description = "Android Navigation Hilt Extension"
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
 }
 
 android {
-    namespace "androidx.hilt.navigation"
+    namespace = "androidx.hilt.navigation"
 }
+

@@ -22,9 +22,6 @@ import android.util.Size;
 import android.view.Surface;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.VisibleForTesting;
@@ -35,6 +32,9 @@ import androidx.camera.core.processing.SurfaceEdge;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -48,7 +48,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>Resources managed by this class can be safely cleaned up upon completion of the
  * {@link ListenableFuture} returned by {@link #getTerminationFuture()}.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public abstract class DeferrableSurface {
 
     /**
@@ -79,8 +78,7 @@ public abstract class DeferrableSurface {
          *
          * <p>The deferrable surface will already be closed.
          */
-        @NonNull
-        public DeferrableSurface getDeferrableSurface() {
+        public @NonNull DeferrableSurface getDeferrableSurface() {
             return mDeferrableSurface;
         }
     }
@@ -115,11 +113,9 @@ public abstract class DeferrableSurface {
     private CallbackToFutureAdapter.Completer<Void> mCloseCompleter;
     private final ListenableFuture<Void> mCloseFuture;
 
-    @NonNull
-    private final Size mPrescribedSize;
+    private final @NonNull Size mPrescribedSize;
     private final int mPrescribedStreamFormat;
-    @Nullable
-    Class<?> mContainerClass;
+    @Nullable Class<?> mContainerClass;
 
     /**
      * Creates a new DeferrableSurface which has no use count.
@@ -194,8 +190,7 @@ public abstract class DeferrableSurface {
      * @return Will return a {@link ListenableFuture} with an exception if the DeferrableSurface
      * is already closed.
      */
-    @NonNull
-    public final ListenableFuture<Surface> getSurface() {
+    public final @NonNull ListenableFuture<Surface> getSurface() {
         synchronized (mLock) {
             if (mClosed) {
                 return Futures.immediateFailedFuture(
@@ -209,8 +204,7 @@ public abstract class DeferrableSurface {
      * Returns a {@link Surface} that is wrapped in a {@link ListenableFuture} when the
      * DeferrableSurface has not yet been closed.
      */
-    @NonNull
-    protected abstract ListenableFuture<Surface> provideSurface();
+    protected abstract @NonNull ListenableFuture<Surface> provideSurface();
 
     /**
      * Returns a future which completes when the deferrable surface is terminated.
@@ -224,8 +218,7 @@ public abstract class DeferrableSurface {
      * @return A future signalling the deferrable surface has terminated. Cancellation of this
      * future is a no-op.
      */
-    @NonNull
-    public ListenableFuture<Void> getTerminationFuture() {
+    public @NonNull ListenableFuture<Void> getTerminationFuture() {
         return Futures.nonCancellationPropagating(mTerminationFuture);
     }
 
@@ -302,8 +295,7 @@ public abstract class DeferrableSurface {
      * @return A future signalling the deferrable surface is closed. Cancellation of this
      * future is a no-op.
      */
-    @NonNull
-    public ListenableFuture<Void> getCloseFuture() {
+    public @NonNull ListenableFuture<Void> getCloseFuture() {
         return Futures.nonCancellationPropagating(mCloseFuture);
     }
 
@@ -347,8 +339,7 @@ public abstract class DeferrableSurface {
     /**
      * @return the {@link Size} of the surface
      */
-    @NonNull
-    public Size getPrescribedSize() {
+    public @NonNull Size getPrescribedSize() {
         return mPrescribedSize;
     }
 
@@ -379,8 +370,7 @@ public abstract class DeferrableSurface {
      * Returns the {@link Class} that contains this {@link DeferrableSurface} to provide more
      * context about it.
      */
-    @Nullable
-    public Class<?> getContainerClass() {
+    public @Nullable Class<?> getContainerClass() {
         return mContainerClass;
     }
 

@@ -24,7 +24,6 @@ import android.util.Log;
 import android.widget.TextView;
 
 import androidx.activity.ComponentActivity;
-import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.wear.watchface.editor.ListenableEditorSession;
 import androidx.wear.watchface.style.MutableUserStyle;
@@ -32,6 +31,8 @@ import androidx.wear.watchface.style.UserStyleSetting;
 import androidx.wear.widget.CurvedTextView;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
@@ -45,7 +46,7 @@ public class ConfigActivity extends ComponentActivity {
     private TextView mStyleValue;
     private final UserStyleSetting.Id mTimeStyleId = new UserStyleSetting.Id("TimeStyle");
 
-    @Nullable private ListenableEditorSession mEditorSession;
+    private @Nullable ListenableEditorSession mEditorSession;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {

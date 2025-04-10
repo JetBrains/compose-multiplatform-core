@@ -27,8 +27,6 @@ import android.os.Build;
 import android.util.Log;
 import android.util.Rational;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
@@ -55,6 +53,9 @@ import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.concurrent.futures.CallbackToFutureAdapter.Completer;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -84,7 +85,6 @@ import java.util.concurrent.TimeUnit;
  * {@link FocusMeteringControl#addFocusMeteringOptions} to construct the 3A regions and append
  * them to all repeating requests and single requests.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @OptIn(markerClass = ExperimentalCamera2Interop.class)
 class FocusMeteringControl {
     private static final String TAG = "FocusMeteringControl";
@@ -98,14 +98,12 @@ class FocusMeteringControl {
     private volatile boolean mIsActive = false;
     private volatile Rational mPreviewAspectRatio = null;
     private static final MeteringRectangle[] EMPTY_RECTANGLES = new MeteringRectangle[0];
-    @NonNull
-    private final MeteringRegionCorrection mMeteringRegionCorrection;
+    private final @NonNull MeteringRegionCorrection mMeteringRegionCorrection;
 
     //******************** Should only be accessed by executor (WorkThread) ****************//
     private boolean mIsInAfAutoMode = false;
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    @NonNull
-    Integer mCurrentAfState = CaptureResult.CONTROL_AF_STATE_INACTIVE;
+    @NonNull Integer mCurrentAfState = CaptureResult.CONTROL_AF_STATE_INACTIVE;
     private ScheduledFuture<?> mAutoCancelHandle;
     private ScheduledFuture<?> mAutoFocusTimeoutHandle;
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
@@ -140,7 +138,7 @@ class FocusMeteringControl {
      */
     FocusMeteringControl(@NonNull Camera2CameraControlImpl cameraControl,
             @NonNull ScheduledExecutorService scheduler,
-            @NonNull @CameraExecutor Executor executor,
+            @CameraExecutor @NonNull Executor executor,
             @NonNull Quirks cameraQuirks) {
         mCameraControl = cameraControl;
         mExecutor = executor;
@@ -192,7 +190,7 @@ class FocusMeteringControl {
      * applies to all repeating requests and single requests.
      */
     @ExecutedBy("mExecutor")
-    void addFocusMeteringOptions(@NonNull Camera2ImplConfig.Builder configBuilder) {
+    void addFocusMeteringOptions(Camera2ImplConfig.@NonNull Builder configBuilder) {
 
         int afMode = mIsInAfAutoMode
                 ? CaptureRequest.CONTROL_AF_MODE_AUTO
@@ -215,7 +213,7 @@ class FocusMeteringControl {
         }
     }
 
-    private static boolean isValid(@NonNull final MeteringPoint pt) {
+    private static boolean isValid(final @NonNull MeteringPoint pt) {
         return pt.getX() >= 0f && pt.getX() <= 1f && pt.getY() >= 0f && pt.getY() <= 1f;
     }
 
@@ -276,15 +274,13 @@ class FocusMeteringControl {
         return Math.min(Math.max(val, min), max);
     }
 
-    @NonNull
-    ListenableFuture<FocusMeteringResult> startFocusAndMetering(
+    @NonNull ListenableFuture<FocusMeteringResult> startFocusAndMetering(
             @NonNull FocusMeteringAction action) {
         return startFocusAndMetering(action, AUTO_FOCUS_TIMEOUT_DURATION);
     }
 
     @VisibleForTesting
-    @NonNull
-    ListenableFuture<FocusMeteringResult> startFocusAndMetering(
+    @NonNull ListenableFuture<FocusMeteringResult> startFocusAndMetering(
             @NonNull FocusMeteringAction action, long timeoutDurationMs) {
         return CallbackToFutureAdapter.getFuture(completer -> {
             mExecutor.execute(
@@ -293,8 +289,7 @@ class FocusMeteringControl {
         });
     }
 
-    @NonNull
-    private List<MeteringRectangle> getMeteringRectangles(
+    private @NonNull List<MeteringRectangle> getMeteringRectangles(
             @NonNull List<MeteringPoint> meteringPoints,
             int maxRegionCount,
             @NonNull Rational defaultAspectRatio,
@@ -404,20 +399,23 @@ class FocusMeteringControl {
             // On many devices, triggering Af with CONTROL_AE_MODE_ON_ALWAYS_FLASH or
             // CONTROL_AE_MODE_ON_AUTO_FLASH will fire the flash when it's low light.
             // Override it to AE_MODE_ON to prevent from this issue.
-            configBuilder.setCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE,
-                    mCameraControl.getSupportedAeMode(CaptureRequest.CONTROL_AE_MODE_ON));
+            configBuilder.setCaptureRequestOptionWithPriority(CaptureRequest.CONTROL_AE_MODE,
+                    mCameraControl.getSupportedAeMode(CaptureRequest.CONTROL_AE_MODE_ON),
+                    Config.OptionPriority.HIGH_PRIORITY_REQUIRED);
         }
         builder.addImplementationOptions(configBuilder.build());
         builder.addCameraCaptureCallback(new CameraCaptureCallback() {
             @Override
-            public void onCaptureCompleted(@NonNull CameraCaptureResult cameraCaptureResult) {
+            public void onCaptureCompleted(int captureConfigId,
+                    @NonNull CameraCaptureResult cameraCaptureResult) {
                 if (completer != null) {
                     completer.set(cameraCaptureResult);
                 }
             }
 
             @Override
-            public void onCaptureFailed(@NonNull CameraCaptureFailure failure) {
+            public void onCaptureFailed(int captureConfigId,
+                    @NonNull CameraCaptureFailure failure) {
                 if (completer != null) {
                     completer.setException(
                             new CameraControlInternal.CameraControlException(failure));
@@ -425,7 +423,7 @@ class FocusMeteringControl {
             }
 
             @Override
-            public void onCaptureCancelled() {
+            public void onCaptureCancelled(int captureConfigId) {
                 if (completer != null) {
                     completer.setException(
                             new CameraControl.OperationCanceledException("Camera is closed"));
@@ -456,6 +454,8 @@ class FocusMeteringControl {
      */
     @ExecutedBy("mExecutor")
     void triggerAePrecapture(@Nullable Completer<Void> completer) {
+        Logger.d(TAG, "triggerAePrecapture");
+
         if (!mIsActive) {
             if (completer != null) {
                 completer.setException(
@@ -473,7 +473,8 @@ class FocusMeteringControl {
         builder.addImplementationOptions(configBuilder.build());
         builder.addCameraCaptureCallback(new CameraCaptureCallback() {
             @Override
-            public void onCaptureCompleted(@NonNull CameraCaptureResult cameraCaptureResult) {
+            public void onCaptureCompleted(int captureConfigId,
+                    @NonNull CameraCaptureResult cameraCaptureResult) {
                 if (completer != null) {
                     Logger.d(TAG, "triggerAePrecapture: triggering capture request completed");
                     completer.set(null);
@@ -481,7 +482,8 @@ class FocusMeteringControl {
             }
 
             @Override
-            public void onCaptureFailed(@NonNull CameraCaptureFailure failure) {
+            public void onCaptureFailed(int captureConfigId,
+                    @NonNull CameraCaptureFailure failure) {
                 if (completer != null) {
                     completer.setException(
                             new CameraControlInternal.CameraControlException(failure));
@@ -489,7 +491,7 @@ class FocusMeteringControl {
             }
 
             @Override
-            public void onCaptureCancelled() {
+            public void onCaptureCancelled(int captureConfigId) {
                 if (completer != null) {
                     completer.setException(
                             new CameraControl.OperationCanceledException("Camera is closed"));
@@ -695,9 +697,9 @@ class FocusMeteringControl {
 
     @ExecutedBy("mExecutor")
     private void executeMeteringAction(
-            @NonNull MeteringRectangle[] afRects,
-            @NonNull MeteringRectangle[] aeRects,
-            @NonNull MeteringRectangle[] awbRects,
+            MeteringRectangle @NonNull [] afRects,
+            MeteringRectangle @NonNull [] aeRects,
+            MeteringRectangle @NonNull [] awbRects,
             FocusMeteringAction focusMeteringAction,
             long timeoutDurationMs) {
         mCameraControl.removeCaptureResultListener(mSessionListenerForFocus);
@@ -813,7 +815,7 @@ class FocusMeteringControl {
 
     @ExecutedBy("mExecutor")
     void cancelFocusAndMeteringInternal(
-            @Nullable CallbackToFutureAdapter.Completer<Void> completer) {
+            CallbackToFutureAdapter.@Nullable Completer<Void> completer) {
         failCancelFuture("Cancelled by another cancelFocusAndMetering()");
         failActionFuture("Cancelled by cancelFocusAndMetering()");
         mRunningCancelCompleter = completer;

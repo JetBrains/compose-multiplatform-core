@@ -26,60 +26,62 @@ actual fun PathIterator(
     tolerance: Float
 ): PathIterator = AndroidPathIterator(path, conicEvaluation, tolerance)
 
-class AndroidPathIterator(
+private class AndroidPathIterator(
     override val path: Path,
     override val conicEvaluation: PathIterator.ConicEvaluation,
     override val tolerance: Float
 ) : PathIterator {
     private val segmentPoints = FloatArray(8)
 
-    private val implementation = PlatformPathIterator(
-        path.asAndroidPath(),
-        when (conicEvaluation) {
-            PathIterator.ConicEvaluation.AsConic -> PlatformConicEvaluation.AsConic
-            PathIterator.ConicEvaluation.AsQuadratics -> PlatformConicEvaluation.AsQuadratics
-        },
-        tolerance
-    )
+    private val implementation =
+        PlatformPathIterator(
+            path.asAndroidPath(),
+            when (conicEvaluation) {
+                PathIterator.ConicEvaluation.AsConic -> PlatformConicEvaluation.AsConic
+                PathIterator.ConicEvaluation.AsQuadratics -> PlatformConicEvaluation.AsQuadratics
+            },
+            tolerance
+        )
 
     override fun calculateSize(includeConvertedConics: Boolean): Int =
         implementation.calculateSize(includeConvertedConics)
 
     override fun hasNext(): Boolean = implementation.hasNext()
 
-    override fun next(points: FloatArray, offset: Int): PathSegment.Type =
-        implementation.next(points, offset).toPathSegmentType()
+    override fun next(outPoints: FloatArray, offset: Int): PathSegment.Type =
+        implementation.next(outPoints, offset).toPathSegmentType()
 
     override fun next(): PathSegment {
         val p = segmentPoints
+        // Compiler hint to bypass bound checks
+        if (p.size < 8) return DoneSegment
 
         val type = implementation.next(p, 0).toPathSegmentType()
         if (type == PathSegment.Type.Done) return DoneSegment
         if (type == PathSegment.Type.Close) return CloseSegment
 
-        val points = when (type) {
-            PathSegment.Type.Move -> floatArrayOf(p[0], p[1])
-            PathSegment.Type.Line -> floatArrayOf(p[0], p[1], p[2], p[3])
-            PathSegment.Type.Quadratic -> floatArrayOf(p[0], p[1], p[2], p[3], p[4], p[5])
-            PathSegment.Type.Conic -> floatArrayOf(p[0], p[1], p[2], p[3], p[4], p[5])
-            PathSegment.Type.Cubic -> floatArrayOf(p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7])
-            else -> FloatArray(0) // Unreachable since we tested for Done and Close above
-        }
+        val points =
+            when (type) {
+                PathSegment.Type.Move -> floatArrayOf(p[0], p[1])
+                PathSegment.Type.Line -> floatArrayOf(p[0], p[1], p[2], p[3])
+                PathSegment.Type.Quadratic -> floatArrayOf(p[0], p[1], p[2], p[3], p[4], p[5])
+                PathSegment.Type.Conic -> floatArrayOf(p[0], p[1], p[2], p[3], p[4], p[5])
+                PathSegment.Type.Cubic ->
+                    floatArrayOf(p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7])
+                else -> FloatArray(0) // Unreachable since we tested for Done and Close above
+            }
 
-        return PathSegment(
-            type,
-            points,
-            if (type == PathSegment.Type.Conic) p[6] else 0.0f
-        )
+        return PathSegment(type, points, if (type == PathSegment.Type.Conic) p[6] else 0.0f)
     }
 }
 
-private fun PlatformPathSegmentType.toPathSegmentType() = when (this) {
-    PlatformPathSegmentType.Move -> PathSegment.Type.Move
-    PlatformPathSegmentType.Line -> PathSegment.Type.Line
-    PlatformPathSegmentType.Quadratic -> PathSegment.Type.Quadratic
-    PlatformPathSegmentType.Conic -> PathSegment.Type.Conic
-    PlatformPathSegmentType.Cubic -> PathSegment.Type.Cubic
-    PlatformPathSegmentType.Close -> PathSegment.Type.Close
-    PlatformPathSegmentType.Done -> PathSegment.Type.Done
-}
+private fun PlatformPathSegmentType.toPathSegmentType() =
+    when (this) {
+        PlatformPathSegmentType.Move -> PathSegment.Type.Move
+        PlatformPathSegmentType.Line -> PathSegment.Type.Line
+        PlatformPathSegmentType.Quadratic -> PathSegment.Type.Quadratic
+        PlatformPathSegmentType.Conic -> PathSegment.Type.Conic
+        PlatformPathSegmentType.Cubic -> PathSegment.Type.Cubic
+        PlatformPathSegmentType.Close -> PathSegment.Type.Close
+        PlatformPathSegmentType.Done -> PathSegment.Type.Done
+    }

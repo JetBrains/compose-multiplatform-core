@@ -28,7 +28,6 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewDynamicColors
 import androidx.compose.ui.tooling.preview.PreviewFontScale
@@ -37,22 +36,20 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.currentStateAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Preview
 @Composable
 fun SimpleComposablePreview() {
-    Surface(color = Color.Red) {
-        Text("Hello world")
-    }
+    Surface(color = Color.Red) { Text("Hello world") }
 }
 
 @Preview
 @Composable
 private fun PrivateSimpleComposablePreview() {
-    Surface(color = Color.Red) {
-        Text("Private Hello world")
-    }
+    Surface(color = Color.Red) { Text("Private Hello world") }
 }
 
 data class Data(val name: String = "123")
@@ -92,37 +89,33 @@ fun DefaultParametersPreview4(a: String = "Hello", b: Color = Color.White) {
 @Preview
 @Composable
 private fun LifecyclePreview() {
-    val lifecycleState = LocalLifecycleOwner.current.lifecycle.currentState
-    if (lifecycleState != Lifecycle.State.RESUMED) throw IllegalArgumentException(
-        "Lifecycle state is not resumed. $lifecycleState"
-    )
+    val lifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
+    if (lifecycleState != Lifecycle.State.RESUMED)
+        throw IllegalArgumentException("Lifecycle state is not resumed. $lifecycleState")
     Text("Lifecycle is $lifecycleState")
 }
 
 @Preview
 @Composable
 private fun SaveableStateRegistryPreview() {
-    if (LocalSaveableStateRegistry.current == null) throw IllegalArgumentException(
-        "SaveableStateRegistry is not provided"
-    )
+    if (LocalSaveableStateRegistry.current == null)
+        throw IllegalArgumentException("SaveableStateRegistry is not provided")
     Text("SaveableStateRegistry preview")
 }
 
 @Preview
 @Composable
 private fun OnBackPressedDispatcherPreview() {
-    if (LocalOnBackPressedDispatcherOwner.current == null) throw IllegalArgumentException(
-        "OnBackPressedDispatcher is not provided"
-    )
+    if (LocalOnBackPressedDispatcherOwner.current == null)
+        throw IllegalArgumentException("OnBackPressedDispatcher is not provided")
     Text("OnBackPressedDispatcher preview")
 }
 
 @Preview
 @Composable
 private fun ActivityResultRegistryPreview() {
-    if (LocalActivityResultRegistryOwner.current == null) throw IllegalArgumentException(
-        "ActivityResultRegistry is not provided"
-    )
+    if (LocalActivityResultRegistryOwner.current == null)
+        throw IllegalArgumentException("ActivityResultRegistry is not provided")
     Text("ActivityResultRegistry preview")
 }
 
@@ -143,21 +136,16 @@ class TestGroup {
     @Preview
     @Composable
     fun InClassPreview() {
-        Surface(color = Color.Red) {
-            Text("In class")
-        }
+        Surface(color = Color.Red) { Text("In class") }
     }
 }
 
-@Preview
-annotation class MyAnnotation()
+@Preview annotation class MyAnnotation()
 
 @Composable
 @MyAnnotation
 fun Multipreview() {
-    Surface(color = Color.Red) {
-        Text("Hello world")
-    }
+    Surface(color = Color.Red) { Text("Hello world") }
 }
 
 @PreviewDynamicColors
@@ -176,25 +164,19 @@ class TestContentParameterProviderBoolean : PreviewParameterProvider<Boolean> {
 @Preview
 @Composable
 fun PreviewParametersComposablePreview(
-    @PreviewParameter(TestContentParameterProviderBoolean::class)
-    valueParameter: Boolean
+    @PreviewParameter(TestContentParameterProviderBoolean::class) valueParameter: Boolean
 ) {
     Text(valueParameter.toString())
 }
 
 class TestContentParameterProviderCornerRadius : PreviewParameterProvider<CornerRadius> {
-    override val values = sequenceOf(
-        CornerRadius(42f),
-        CornerRadius.Zero,
-        CornerRadius(0f, 34f)
-    )
+    override val values = sequenceOf(CornerRadius(42f), CornerRadius.Zero, CornerRadius(0f, 34f))
 }
 
 @Preview
 @Composable
 fun TestCornerRadius(
-    @PreviewParameter(TestContentParameterProviderCornerRadius::class)
-    radius: CornerRadius
+    @PreviewParameter(TestContentParameterProviderCornerRadius::class) radius: CornerRadius
 ) {
     Text(radius.toString())
 }

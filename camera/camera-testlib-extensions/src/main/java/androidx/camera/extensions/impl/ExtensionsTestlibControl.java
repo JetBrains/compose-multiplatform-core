@@ -16,8 +16,7 @@
 
 package androidx.camera.extensions.impl;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
+import org.jspecify.annotations.NonNull;
 
 /**
  * An internal utility class that allows tests to specify whether to enable basic extender or
@@ -25,7 +24,6 @@ import androidx.annotation.RequiresApi;
  * implementation type is always {@link ImplementationType#OEM_IMPL} and can't be changed to
  * other types.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class ExtensionsTestlibControl {
     public enum ImplementationType {
         OEM_IMPL,
@@ -45,8 +43,7 @@ public class ExtensionsTestlibControl {
     /**
      * Gets the singleton instance.
      */
-    @NonNull
-    public static ExtensionsTestlibControl getInstance() {
+    public static @NonNull ExtensionsTestlibControl getInstance() {
         synchronized (sLock) {
             if (sInstance == null) {
                 sInstance = new ExtensionsTestlibControl();
@@ -95,8 +92,7 @@ public class ExtensionsTestlibControl {
     /**
      * Gets the implementation type;
      */
-    @NonNull
-    public ImplementationType getImplementationType() {
+    public @NonNull ImplementationType getImplementationType() {
         return mImplementationType;
     }
 }

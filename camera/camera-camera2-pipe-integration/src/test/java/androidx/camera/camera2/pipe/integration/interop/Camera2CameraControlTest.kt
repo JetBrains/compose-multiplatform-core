@@ -28,7 +28,6 @@ import androidx.camera.camera2.pipe.integration.impl.ComboRequestListener
 import androidx.camera.camera2.pipe.integration.impl.UseCaseCameraRequestControl
 import androidx.camera.camera2.pipe.integration.impl.UseCaseThreads
 import androidx.camera.camera2.pipe.integration.impl.toParameters
-import androidx.camera.camera2.pipe.integration.testing.FakeUseCaseCamera
 import androidx.camera.camera2.pipe.integration.testing.FakeUseCaseCameraRequestControl
 import androidx.camera.camera2.pipe.testing.FakeFrameInfo
 import androidx.camera.camera2.pipe.testing.FakeFrameMetadata
@@ -68,48 +67,50 @@ class Camera2CameraControlTest {
     }
     private val comboRequestListener = ComboRequestListener()
     private val fakeRequestControl = FakeUseCaseCameraRequestControl()
-    private val fakeUseCaseCamera = FakeUseCaseCamera(requestControl = fakeRequestControl)
     private val camera2CameraControlCompatImpl = Camera2CameraControlCompatImpl()
     private lateinit var camera2CameraControl: Camera2CameraControl
 
     @Before
     fun setUp() {
-        camera2CameraControl = Camera2CameraControl.create(
-            compat = camera2CameraControlCompatImpl,
-            threads = fakeUseCaseThreads,
-            requestListener = comboRequestListener,
-        )
-        camera2CameraControl.useCaseCamera = fakeUseCaseCamera
+        camera2CameraControl =
+            Camera2CameraControl.create(
+                compat = camera2CameraControlCompatImpl,
+                threads = fakeUseCaseThreads,
+                requestListener = comboRequestListener,
+            )
+        camera2CameraControl.requestControl = fakeRequestControl
     }
 
     @Test
     fun useCaseCameraUpdated_setRequestOptionResultShouldPropagate(): Unit = runBlocking {
         // Arrange.
         val completeDeferred = CompletableDeferred<Unit>()
-        val fakeRequestControl = FakeUseCaseCameraRequestControl().apply {
-            setConfigResult = completeDeferred
-        }
-        val fakeUseCaseCamera = FakeUseCaseCamera(requestControl = fakeRequestControl)
+        val fakeRequestControl =
+            FakeUseCaseCameraRequestControl().apply { setConfigResult = completeDeferred }
 
-        val resultFuture = camera2CameraControl.setCaptureRequestOptions(
-            CaptureRequestOptions.Builder().setCaptureRequestOption(
-                CaptureRequest.CONTROL_AE_MODE,
-                CaptureRequest.CONTROL_AE_MODE_OFF
-            ).build()
-        )
+        val resultFuture =
+            camera2CameraControl.setCaptureRequestOptions(
+                CaptureRequestOptions.Builder()
+                    .setCaptureRequestOption(
+                        CaptureRequest.CONTROL_AE_MODE,
+                        CaptureRequest.CONTROL_AE_MODE_OFF
+                    )
+                    .build()
+            )
 
         // Act. Simulate the UseCaseCamera is recreated.
-        camera2CameraControl.useCaseCamera = fakeUseCaseCamera
+        camera2CameraControl.requestControl = fakeRequestControl
         // Simulate setRequestOption is completed in the recreated UseCaseCamera
         completeDeferred.complete(Unit)
-        val requestsToCamera = fakeRequestControl.setConfigCalls.filter {
-            it.type == UseCaseCameraRequestControl.Type.CAMERA2_CAMERA_CONTROL
-        }.onEach { request ->
-            comboRequestListener.simulateRepeatingResult(
-                requests = request.config?.toParameters() ?: emptyMap(),
-                tags = request.tags,
-            )
-        }
+        val requestsToCamera =
+            fakeRequestControl.setConfigCalls
+                .filter { it.type == UseCaseCameraRequestControl.Type.CAMERA2_CAMERA_CONTROL }
+                .onEach { request ->
+                    comboRequestListener.simulateRepeatingResult(
+                        requests = request.config?.toParameters() ?: emptyMap(),
+                        tags = request.tags,
+                    )
+                }
 
         // Assert. The setRequestOption task should be completed.
         assertThat(requestsToCamera).isNotEmpty()
@@ -120,51 +121,53 @@ class Camera2CameraControlTest {
     fun useCaseCameraUpdated_onlyCompleteLatestRequest(): Unit = runBlocking {
         // Arrange.
         val completeDeferred = CompletableDeferred<Unit>()
-        val fakeRequestControl = FakeUseCaseCameraRequestControl().apply {
-            setConfigResult = completeDeferred
-        }
-        val fakeUseCaseCamera = FakeUseCaseCamera(requestControl = fakeRequestControl)
+        val fakeRequestControl =
+            FakeUseCaseCameraRequestControl().apply { setConfigResult = completeDeferred }
 
-        val resultFuture = camera2CameraControl.setCaptureRequestOptions(
-            CaptureRequestOptions.Builder().setCaptureRequestOption(
-                CaptureRequest.CONTROL_AE_MODE,
-                CaptureRequest.CONTROL_AE_MODE_OFF
-            ).build()
-        )
+        val resultFuture =
+            camera2CameraControl.setCaptureRequestOptions(
+                CaptureRequestOptions.Builder()
+                    .setCaptureRequestOption(
+                        CaptureRequest.CONTROL_AE_MODE,
+                        CaptureRequest.CONTROL_AE_MODE_OFF
+                    )
+                    .build()
+            )
 
         // Act. Simulate the UseCaseCamera is recreated.
-        camera2CameraControl.useCaseCamera = fakeUseCaseCamera
+        camera2CameraControl.requestControl = fakeRequestControl
         // Act. Submit a new request option.
-        val resultFuture2 = camera2CameraControl.setCaptureRequestOptions(
-            CaptureRequestOptions.Builder().setCaptureRequestOption(
-                CaptureRequest.CONTROL_AE_MODE,
-                CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH
-            ).build()
-        )
+        val resultFuture2 =
+            camera2CameraControl.setCaptureRequestOptions(
+                CaptureRequestOptions.Builder()
+                    .setCaptureRequestOption(
+                        CaptureRequest.CONTROL_AE_MODE,
+                        CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH
+                    )
+                    .build()
+            )
         // Simulate setRequestOption is completed in the recreated UseCaseCamera
         completeDeferred.complete(Unit)
-        val requestsToCamera = fakeRequestControl.setConfigCalls.filter {
-            it.type == UseCaseCameraRequestControl.Type.CAMERA2_CAMERA_CONTROL
-        }.onEach { request ->
-            comboRequestListener.simulateRepeatingResult(
-                requests = request.config?.toParameters() ?: emptyMap(),
-                tags = request.tags,
-            )
-        }
+        val requestsToCamera =
+            fakeRequestControl.setConfigCalls
+                .filter { it.type == UseCaseCameraRequestControl.Type.CAMERA2_CAMERA_CONTROL }
+                .onEach { request ->
+                    comboRequestListener.simulateRepeatingResult(
+                        requests = request.config?.toParameters() ?: emptyMap(),
+                        tags = request.tags,
+                    )
+                }
 
         // Assert. The first request should be cancelled., the latest setRequestOption
         // task should be completed.
         assertThat(requestsToCamera).isNotEmpty()
-        assertThrows<ExecutionException> {
-            resultFuture.get(3, TimeUnit.SECONDS)
-        }
+        assertThrows<ExecutionException> { resultFuture.get(3, TimeUnit.SECONDS) }
         assertThat(resultFuture2.get(3, TimeUnit.SECONDS)).isNull()
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun fromCameraControlThrows_whenNotCamera2Impl() {
-        val wrongCameraControl =
-            CameraControlInternal.DEFAULT_EMPTY_INSTANCE
+        val wrongCameraControl = CameraControlInternal.DEFAULT_EMPTY_INSTANCE
         Camera2CameraControl.from(wrongCameraControl)
     }
 
@@ -174,24 +177,30 @@ class Camera2CameraControlTest {
         results: Map<CaptureResult.Key<*>, Any> = emptyMap(),
         frameNumber: FrameNumber = FrameNumber(101L),
     ) {
-        val requestMetadata = FakeRequestMetadata(
-            requestParameters = requests,
-            metadata = mapOf(
-                CAMERAX_TAG_BUNDLE to MutableTagBundle.create().also { tagBundle ->
-                    tags.forEach { (tagKey, tagValue) ->
-                        tagBundle.putTag(tagKey, tagValue)
-                    }
-                }
-            ),
-            requestNumber = RequestNumber(1)
-        )
-        val resultMetaData = FakeFrameMetadata(
-            resultMetadata = results,
-            frameNumber = frameNumber,
-        )
+        val requestMetadata =
+            FakeRequestMetadata(
+                requestParameters = requests,
+                metadata =
+                    mapOf(
+                        CAMERAX_TAG_BUNDLE to
+                            MutableTagBundle.create().also { tagBundle ->
+                                tags.forEach { (tagKey, tagValue) ->
+                                    tagBundle.putTag(tagKey, tagValue)
+                                }
+                            }
+                    ),
+                requestNumber = RequestNumber(1)
+            )
+        val resultMetaData =
+            FakeFrameMetadata(
+                resultMetadata = results,
+                frameNumber = frameNumber,
+            )
         fakeUseCaseThreads.sequentialExecutor.execute {
             onComplete(
-                requestMetadata, frameNumber, FakeFrameInfo(
+                requestMetadata,
+                frameNumber,
+                FakeFrameInfo(
                     metadata = resultMetaData,
                     requestMetadata = requestMetadata,
                 )

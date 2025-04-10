@@ -27,10 +27,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appsearch.app.AppSearchEnvironmentFactory;
 import androidx.appsearch.debugview.samples.model.Note;
 import androidx.appsearch.debugview.view.AppSearchDebugActivity;
 import androidx.core.content.ContextCompat;
@@ -45,11 +44,13 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executors;
 
 /**
  * Default Activity for AppSearch Debug View Sample App
@@ -80,7 +81,8 @@ public class NotesActivity extends AppCompatActivity {
         mListView = findViewById(R.id.list_view);
         mLoadingView = findViewById(R.id.text_view);
 
-        mBackgroundExecutor = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool());
+        mBackgroundExecutor = MoreExecutors.listeningDecorator(AppSearchEnvironmentFactory
+                .getEnvironmentInstance().createCachedThreadPoolExecutor());
 
         mNotesAppSearchManagerFuture.setFuture(NotesAppSearchManager.createNotesAppSearchManager(
                 getApplicationContext(), mBackgroundExecutor));

@@ -18,12 +18,12 @@ package androidx.camera.video;
 
 import android.os.ParcelFileDescriptor;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.core.util.Preconditions;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A class providing options for storing the result to a given file descriptor.
@@ -36,7 +36,6 @@ import com.google.auto.value.AutoValue;
  * <p>To use a {@link java.io.File} as an output destination instead of a file descriptor, use
  * {@link FileOutputOptions}.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class FileDescriptorOutputOptions extends OutputOptions {
 
     private final FileDescriptorOutputOptionsInternal mFileDescriptorOutputOptionsInternal;
@@ -52,14 +51,12 @@ public final class FileDescriptorOutputOptions extends OutputOptions {
      *
      * @return the file descriptor used as the output destination.
      */
-    @NonNull
-    public ParcelFileDescriptor getParcelFileDescriptor() {
+    public @NonNull ParcelFileDescriptor getParcelFileDescriptor() {
         return mFileDescriptorOutputOptionsInternal.getParcelFileDescriptor();
     }
 
     @Override
-    @NonNull
-    public String toString() {
+    public @NonNull String toString() {
         // Don't use Class.getSimpleName(), class name will be changed by proguard obfuscation.
         return mFileDescriptorOutputOptionsInternal.toString().replaceFirst(
                 "FileDescriptorOutputOptionsInternal", "FileDescriptorOutputOptions");
@@ -83,7 +80,6 @@ public final class FileDescriptorOutputOptions extends OutputOptions {
     }
 
     /** The builder of the {@link FileDescriptorOutputOptions} object. */
-    @RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
     public static final class Builder extends
             OutputOptions.Builder<FileDescriptorOutputOptions, Builder> {
 
@@ -104,26 +100,22 @@ public final class FileDescriptorOutputOptions extends OutputOptions {
 
         /** Builds the {@link FileDescriptorOutputOptions} instance. */
         @Override
-        @NonNull
-        public FileDescriptorOutputOptions build() {
+        public @NonNull FileDescriptorOutputOptions build() {
             return new FileDescriptorOutputOptions(mInternalBuilder.build());
         }
     }
 
     @AutoValue
     abstract static class FileDescriptorOutputOptionsInternal extends OutputOptionsInternal {
-        @NonNull
-        abstract ParcelFileDescriptor getParcelFileDescriptor();
+        abstract @NonNull ParcelFileDescriptor getParcelFileDescriptor();
 
         @SuppressWarnings("NullableProblems") // Nullable problem in AutoValue generated class
         @AutoValue.Builder
         abstract static class Builder extends OutputOptionsInternal.Builder<Builder> {
-            @NonNull
-            abstract Builder setParcelFileDescriptor(
+            abstract @NonNull Builder setParcelFileDescriptor(
                     @NonNull ParcelFileDescriptor parcelFileDescriptor);
             @Override
-            @NonNull
-            abstract FileDescriptorOutputOptionsInternal build();
+            abstract @NonNull FileDescriptorOutputOptionsInternal build();
         }
     }
 }

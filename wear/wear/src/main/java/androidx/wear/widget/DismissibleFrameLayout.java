@@ -22,10 +22,11 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.wear.utils.WearableNavigationHelper;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 
@@ -202,8 +203,7 @@ public class DismissibleFrameLayout extends FrameLayout {
         return mBackButtonDismissController != null;
     }
 
-    @Nullable
-    SwipeDismissController getSwipeDismissController() {
+    @Nullable SwipeDismissController getSwipeDismissController() {
         return mSwipeDismissController;
     }
 

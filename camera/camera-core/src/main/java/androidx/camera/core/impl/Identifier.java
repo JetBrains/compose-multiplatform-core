@@ -16,30 +16,26 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
-
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * The {@link Identifier} class allows anything to be wrapped as an {@link Identifier} instance.
  * The caller should make the input value object unique when calling the {@link #create(Object)}
  * function. So that the {@link Identifier} can be recognized and used for specific purposes.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @AutoValue
 public abstract class Identifier {
     /**
      * Creates an {@link Identifier} for the specified input value.
      */
-    @NonNull
-    public static Identifier create(@NonNull Object value) {
+    public static @NonNull Identifier create(@NonNull Object value) {
         return new AutoValue_Identifier(value);
     }
 
     /**
      * Retrieves the value of this {@link Identifier}.
      */
-    @NonNull
-    public abstract Object getValue();
+    public abstract @NonNull Object getValue();
 }

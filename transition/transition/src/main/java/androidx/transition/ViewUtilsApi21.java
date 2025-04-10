@@ -20,10 +20,10 @@ import android.annotation.SuppressLint;
 import android.graphics.Matrix;
 import android.view.View;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 @RequiresApi(21)
 class ViewUtilsApi21 extends ViewUtilsApi19 {
@@ -89,17 +89,14 @@ class ViewUtilsApi21 extends ViewUtilsApi19 {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void transformMatrixToGlobal(View view, Matrix matrix) {
             view.transformMatrixToGlobal(matrix);
         }
 
-        @DoNotInline
         static void transformMatrixToLocal(View view, Matrix matrix) {
             view.transformMatrixToLocal(matrix);
         }
 
-        @DoNotInline
         static void setAnimationMatrix(View view, Matrix matrix) {
             view.setAnimationMatrix(matrix);
         }

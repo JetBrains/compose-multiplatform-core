@@ -28,15 +28,15 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.JavaScriptReplyProxy;
 import androidx.webkit.WebMessageCompat;
 import androidx.webkit.WebViewAssetLoader;
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -58,12 +58,11 @@ public class WebMessageListenerMaliciousWebsiteActivity extends AppCompatActivit
         }
 
         @Override
-        @RequiresApi(21)
         public WebResourceResponse shouldInterceptRequest(WebView view,
                 WebResourceRequest request) {
             for (WebViewAssetLoader loader : mAssetLoaders) {
                 WebResourceResponse response = loader.shouldInterceptRequest(
-                        Api21Impl.getUrl(request));
+                        request.getUrl());
                 if (response != null) {
                     return response;
                 }

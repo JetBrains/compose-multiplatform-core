@@ -34,14 +34,16 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 import androidx.test.filters.SdkSuppress;
+import androidx.webkit.test.common.WebViewOnUiThread;
+import androidx.webkit.test.common.WebkitUtils;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -65,13 +67,12 @@ import okhttp3.mockwebserver.RecordedRequest;
 
 @MediumTest
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
 public class WebViewCompatTest {
     WebViewOnUiThread mWebViewOnUiThread;
 
     @Before
     public void setUp() {
-        mWebViewOnUiThread = new androidx.webkit.WebViewOnUiThread();
+        mWebViewOnUiThread = new WebViewOnUiThread();
     }
 
     @After
@@ -136,6 +137,7 @@ public class WebViewCompatTest {
      * android.webkit.cts.WebViewTest#testStartSafeBrowsingUseApplicationContext. Modifications to
      * this test should be reflected in that test as necessary. See http://go/modifying-webview-cts.
      */
+    @SuppressWarnings("deprecation")
     @Test
     public void testStartSafeBrowsingUseApplicationContext() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.START_SAFE_BROWSING);
@@ -155,6 +157,7 @@ public class WebViewCompatTest {
      * Modifications to this test should be reflected in that test as necessary. See
      * http://go/modifying-webview-cts.
      */
+    @SuppressWarnings("deprecation")
     @Test
     public void testStartSafeBrowsingWithNullCallbackDoesntCrash() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.START_SAFE_BROWSING);
@@ -167,6 +170,7 @@ public class WebViewCompatTest {
      * android.webkit.cts.WebViewTest#testStartSafeBrowsingInvokesCallback. Modifications to this
      * test should be reflected in that test as necessary. See http://go/modifying-webview-cts.
      */
+    @SuppressWarnings("deprecation")
     @Test
     public void testStartSafeBrowsingInvokesCallback() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.START_SAFE_BROWSING);
@@ -410,6 +414,32 @@ public class WebViewCompatTest {
         }
     }
 
+    /**
+     * Test that setting a TrafficStats tag does not break WebView.
+     */
+    @Test
+    public void testSetTrafficStatsTag_UrlLoads() throws Exception {
+        WebkitUtils.checkFeature(WebViewFeature.DEFAULT_TRAFFICSTATS_TAGGING);
+
+        WebViewCompat.setDefaultTrafficStatsTag(0x123456);
+        try (MockWebServer server = new MockWebServer()) {
+            server.start();
+            server.setDispatcher(new Dispatcher() {
+                @Override
+                public MockResponse dispatch(RecordedRequest request) {
+                    return new MockResponse().setResponseCode(200);
+                }
+            });
+            HttpUrl url = server.url("/");
+            mWebViewOnUiThread.loadUrl(url.toString());
+
+            // Assert request was served successfully
+            assertNotNull(server.takeRequest(WebkitUtils.TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS));
+        }
+
+        // TODO(crbug.com/374694125): Update this test to confirm that the bytes transferred were
+        //  tagged.
+    }
 
     /**
      * ApiHelper class to ensure that the CompletableFuture is not classloaded on API < N.

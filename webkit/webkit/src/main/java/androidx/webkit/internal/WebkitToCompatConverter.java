@@ -23,8 +23,8 @@ import android.webkit.WebMessagePort;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
+import android.webkit.WebStorage;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.webkit.SafeBrowsingResponseCompat;
 import androidx.webkit.WebResourceErrorCompat;
@@ -32,9 +32,11 @@ import androidx.webkit.WebResourceErrorCompat;
 import org.chromium.support_lib_boundary.ServiceWorkerWebSettingsBoundaryInterface;
 import org.chromium.support_lib_boundary.WebResourceRequestBoundaryInterface;
 import org.chromium.support_lib_boundary.WebSettingsBoundaryInterface;
+import org.chromium.support_lib_boundary.WebStorageBoundaryInterface;
 import org.chromium.support_lib_boundary.WebViewCookieManagerBoundaryInterface;
 import org.chromium.support_lib_boundary.WebkitToCompatConverterBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.InvocationHandler;
 
@@ -54,8 +56,7 @@ public class WebkitToCompatConverter {
      * objects affect the other object. That WebSettingsAdapter can be used to implement
      * {@link androidx.webkit.WebSettingsCompat}.
      */
-    @NonNull
-    public WebSettingsAdapter convertSettings(@NonNull WebSettings webSettings) {
+    public @NonNull WebSettingsAdapter convertSettings(@NonNull WebSettings webSettings) {
         return new WebSettingsAdapter(BoundaryInterfaceReflectionUtil.castToSuppLibClass(
                 WebSettingsBoundaryInterface.class, mImpl.convertSettings(webSettings)));
     }
@@ -64,8 +65,7 @@ public class WebkitToCompatConverter {
      * Return a {@link WebResourceRequestAdapter} linked to the given {@link WebResourceRequest} so
      * that calls on either of those objects affect the other object.
      */
-    @NonNull
-    public WebResourceRequestAdapter convertWebResourceRequest(
+    public @NonNull WebResourceRequestAdapter convertWebResourceRequest(
             @NonNull WebResourceRequest request) {
         return new WebResourceRequestAdapter(BoundaryInterfaceReflectionUtil.castToSuppLibClass(
                 WebResourceRequestBoundaryInterface.class,
@@ -77,8 +77,7 @@ public class WebkitToCompatConverter {
      * {@link ServiceWorkerWebSettings} such that calls on either of those objects affect the other
      * object.
      */
-    @NonNull
-    public InvocationHandler convertServiceWorkerSettings(
+    public @NonNull InvocationHandler convertServiceWorkerSettings(
             @NonNull ServiceWorkerWebSettings settings) {
         return mImpl.convertServiceWorkerSettings(settings);
     }
@@ -89,9 +88,8 @@ public class WebkitToCompatConverter {
      * {@link ServiceWorkerWebSettings}.
      */
     @RequiresApi(24)
-    @NonNull
-    public ServiceWorkerWebSettings convertServiceWorkerSettings(
-            @NonNull /* SupportLibServiceWorkerSettings */ InvocationHandler
+    public @NonNull ServiceWorkerWebSettings convertServiceWorkerSettings(
+            /* SupportLibServiceWorkerSettings */ @NonNull InvocationHandler
             serviceWorkerSettings) {
         return (ServiceWorkerWebSettings) mImpl.convertServiceWorkerSettings(serviceWorkerSettings);
     }
@@ -101,8 +99,8 @@ public class WebkitToCompatConverter {
      * {@link WebResourceError}such that calls on either of those objects affect the other
      * object.
      */
-    @NonNull
-    public InvocationHandler convertWebResourceError(@NonNull WebResourceError webResourceError) {
+    public @NonNull InvocationHandler convertWebResourceError(
+            @NonNull WebResourceError webResourceError) {
         return mImpl.convertWebResourceError(webResourceError);
     }
 
@@ -112,9 +110,8 @@ public class WebkitToCompatConverter {
      * a {@link WebResourceError}.
      */
     @RequiresApi(23)
-    @NonNull
-    public WebResourceError convertWebResourceError(
-            @NonNull /* SupportLibWebResourceError */ InvocationHandler webResourceError) {
+    public @NonNull WebResourceError convertWebResourceError(
+            /* SupportLibWebResourceError */ @NonNull InvocationHandler webResourceError) {
         return (WebResourceError) mImpl.convertWebResourceError(webResourceError);
     }
 
@@ -123,8 +120,7 @@ public class WebkitToCompatConverter {
      * {@link SafeBrowsingResponse} such that calls on either of those objects affect the other
      * object.
      */
-    @NonNull
-    public InvocationHandler convertSafeBrowsingResponse(
+    public @NonNull InvocationHandler convertSafeBrowsingResponse(
             @NonNull SafeBrowsingResponse safeBrowsingResponse) {
         return mImpl.convertSafeBrowsingResponse(safeBrowsingResponse);
     }
@@ -135,9 +131,8 @@ public class WebkitToCompatConverter {
      * into a {@link SafeBrowsingResponse}.
      */
     @RequiresApi(27)
-    @NonNull
-    public SafeBrowsingResponse convertSafeBrowsingResponse(
-            @NonNull /* SupportLibSafeBrowsingResponse */ InvocationHandler safeBrowsingResponse) {
+    public @NonNull SafeBrowsingResponse convertSafeBrowsingResponse(
+            /* SupportLibSafeBrowsingResponse */ @NonNull InvocationHandler safeBrowsingResponse) {
         return (SafeBrowsingResponse) mImpl.convertSafeBrowsingResponse(safeBrowsingResponse);
     }
 
@@ -146,8 +141,8 @@ public class WebkitToCompatConverter {
      * {@link WebResourceError} such that calls on either of those objects affect the other
      * object.
      */
-    @NonNull
-    public InvocationHandler convertWebMessagePort(@NonNull WebMessagePort webMessagePort) {
+    public @NonNull InvocationHandler convertWebMessagePort(
+            @NonNull WebMessagePort webMessagePort) {
         return mImpl.convertWebMessagePort(webMessagePort);
     }
 
@@ -157,9 +152,8 @@ public class WebkitToCompatConverter {
      * a {@link WebResourceError}.
      */
     @RequiresApi(23)
-    @NonNull
-    public WebMessagePort convertWebMessagePort(
-            @NonNull /* SupportLibWebMessagePort */ InvocationHandler webMessagePort) {
+    public @NonNull WebMessagePort convertWebMessagePort(
+            /* SupportLibWebMessagePort */ @NonNull InvocationHandler webMessagePort) {
         return (WebMessagePort) mImpl.convertWebMessagePort(webMessagePort);
     }
 
@@ -168,10 +162,18 @@ public class WebkitToCompatConverter {
      * objects affect the other object. That CookieManagerAdapter can be used to implement
      * {@link androidx.webkit.CookieManagerCompat}.
      */
-    @NonNull
-    public CookieManagerAdapter convertCookieManager(@NonNull CookieManager cookieManager) {
+    public @NonNull CookieManagerAdapter convertCookieManager(
+            @NonNull CookieManager cookieManager) {
         return new CookieManagerAdapter(BoundaryInterfaceReflectionUtil.castToSuppLibClass(
                 WebViewCookieManagerBoundaryInterface.class,
                 mImpl.convertCookieManager(cookieManager)));
+    }
+
+    /**
+     * Returns a {@link WebStorageAdapter} for the pased-in {@code webStorage}.
+     */
+    public @NonNull WebStorageAdapter convertWebStorage(@NonNull WebStorage webStorage) {
+        return new WebStorageAdapter(BoundaryInterfaceReflectionUtil.castToSuppLibClass(
+                WebStorageBoundaryInterface.class, mImpl.convertWebStorage(webStorage)));
     }
 }

@@ -16,10 +16,10 @@
 
 package androidx.arch.core.executor.testing;
 
-import androidx.annotation.NonNull;
 import androidx.arch.core.executor.ArchTaskExecutor;
 import androidx.arch.core.executor.TaskExecutor;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 

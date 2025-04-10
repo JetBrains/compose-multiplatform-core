@@ -22,9 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertPositionInRootIsEqualTo
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -32,20 +30,19 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * Tests for the Grid Helper
- */
+/** Tests for the Grid Helper */
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class GridDslTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Before
     fun setup() {
@@ -66,23 +63,21 @@ class GridDslTest {
         rule.setContent {
             gridComposableTest(
                 modifier = Modifier.size(rootSize),
-                boxesCount = boxesCount,
-                gridOrientation = 0,
                 numRows = rows,
                 numColumns = columns,
-                hGap = 0,
-                vGap = 0,
                 gridSpans = arrayOf(),
                 gridSkips = arrayOf(),
-                gridRowWeights = intArrayOf(),
-                gridColumnWeights = intArrayOf(),
-                gridFlags = arrayOf(),
+                gridRowWeights = floatArrayOf(),
+                gridColumnWeights = floatArrayOf(),
+                boxesCount = boxesCount,
+                isHorizontalArrangement = true,
+                gridFlags = GridFlag.None,
             )
         }
         var leftX = 0.dp
         var topY = 0.dp
-        var rightX: Dp
-        var bottomY: Dp
+        val rightX: Dp
+        val bottomY: Dp
 
         // 10.dp is the size of a singular box
         val gapSize = (rootSize - (10.dp * 2f)) / (columns * 2f)
@@ -106,23 +101,21 @@ class GridDslTest {
         rule.setContent {
             gridComposableTest(
                 modifier = Modifier.size(rootSize),
-                boxesCount = boxesCount,
-                gridOrientation = 1,
                 numRows = rows,
                 numColumns = columns,
-                hGap = 0,
-                vGap = 0,
                 gridSpans = arrayOf(),
                 gridSkips = arrayOf(),
-                gridRowWeights = intArrayOf(),
-                gridColumnWeights = intArrayOf(),
-                gridFlags = arrayOf(),
+                gridRowWeights = floatArrayOf(),
+                gridColumnWeights = floatArrayOf(),
+                boxesCount = boxesCount,
+                isHorizontalArrangement = false,
+                gridFlags = GridFlag.None,
             )
         }
         var leftX = 0.dp
         var topY = 0.dp
-        var rightX: Dp
-        var bottomY: Dp
+        val rightX: Dp
+        val bottomY: Dp
 
         // 10.dp is the size of a singular box
         val gapSize = (rootSize - (10.dp * 2f)) / (columns * 2f)
@@ -146,17 +139,15 @@ class GridDslTest {
         rule.setContent {
             gridComposableTest(
                 modifier = Modifier.size(rootSize),
-                boxesCount = boxesCount,
-                gridOrientation = 0,
                 numRows = rows,
                 numColumns = columns,
-                hGap = 0,
-                vGap = 0,
                 gridSpans = arrayOf(),
                 gridSkips = arrayOf(),
-                gridRowWeights = intArrayOf(),
-                gridColumnWeights = intArrayOf(),
-                gridFlags = arrayOf(),
+                gridRowWeights = floatArrayOf(),
+                gridColumnWeights = floatArrayOf(),
+                boxesCount = boxesCount,
+                isHorizontalArrangement = true,
+                gridFlags = GridFlag.None,
             )
         }
         var expectedX = 0.dp
@@ -186,17 +177,15 @@ class GridDslTest {
         rule.setContent {
             gridComposableTest(
                 modifier = Modifier.size(rootSize),
-                boxesCount = boxesCount,
-                gridOrientation = 0,
                 numRows = rows,
                 numColumns = columns,
-                hGap = 0,
-                vGap = 0,
                 gridSpans = arrayOf(),
                 gridSkips = arrayOf(),
-                gridRowWeights = intArrayOf(),
-                gridColumnWeights = intArrayOf(),
-                gridFlags = arrayOf(),
+                gridRowWeights = floatArrayOf(),
+                gridColumnWeights = floatArrayOf(),
+                boxesCount = boxesCount,
+                isHorizontalArrangement = true,
+                gridFlags = GridFlag.None,
             )
         }
         var expectedX = 0.dp
@@ -226,23 +215,21 @@ class GridDslTest {
         rule.setContent {
             gridComposableTest(
                 modifier = Modifier.size(rootSize),
-                boxesCount = boxesCount,
-                gridOrientation = 0,
                 numRows = rows,
                 numColumns = columns,
-                hGap = 0,
-                vGap = 0,
                 gridSpans = arrayOf(),
                 gridSkips = arrayOf(Skip(0, 1, 1)),
-                gridRowWeights = intArrayOf(),
-                gridColumnWeights = intArrayOf(),
-                gridFlags = arrayOf(),
+                gridRowWeights = floatArrayOf(),
+                gridColumnWeights = floatArrayOf(),
+                boxesCount = boxesCount,
+                isHorizontalArrangement = true,
+                gridFlags = GridFlag.None,
             )
         }
         var leftX = 0.dp
         var topY = 0.dp
-        var rightX: Dp
-        var bottomY: Dp
+        val rightX: Dp
+        val bottomY: Dp
 
         // 10.dp is the size of a singular box
         val gapSize = (rootSize - (10.dp * 2f)) / (columns * 2f)
@@ -265,23 +252,21 @@ class GridDslTest {
         rule.setContent {
             gridComposableTest(
                 modifier = Modifier.size(rootSize),
-                boxesCount = boxesCount,
-                gridOrientation = 0,
                 numRows = rows,
                 numColumns = columns,
-                hGap = 0,
-                vGap = 0,
                 gridSpans = arrayOf(),
                 gridSkips = arrayOf(Skip(0, 2, 1)),
-                gridRowWeights = intArrayOf(),
-                gridColumnWeights = intArrayOf(),
-                gridFlags = arrayOf(GridFlag.SpansRespectWidgetOrder, GridFlag.SubGridByColRow)
+                gridRowWeights = floatArrayOf(),
+                gridColumnWeights = floatArrayOf(),
+                boxesCount = boxesCount,
+                isHorizontalArrangement = true,
+                gridFlags = GridFlag.SubGridByColRow
             )
         }
         var leftX = 0.dp
         var topY = 0.dp
-        var rightX: Dp
-        var bottomY: Dp
+        val rightX: Dp
+        val bottomY: Dp
 
         // 10.dp is the size of a singular box
         val gapSize = (rootSize - (10.dp * 2f)) / (columns * 2f)
@@ -303,26 +288,24 @@ class GridDslTest {
         rule.setContent {
             gridComposableTest(
                 modifier = Modifier.size(rootSize),
-                boxesCount = boxesCount,
-                gridOrientation = 0,
                 numRows = rows,
                 numColumns = columns,
-                hGap = 0,
-                vGap = 0,
                 gridSpans = arrayOf(Span(0, 1, 2)),
                 gridSkips = arrayOf(),
-                gridRowWeights = intArrayOf(),
-                gridColumnWeights = intArrayOf(),
-                gridFlags = arrayOf(),
+                gridRowWeights = floatArrayOf(),
+                gridColumnWeights = floatArrayOf(),
+                boxesCount = boxesCount,
+                isHorizontalArrangement = true,
+                gridFlags = GridFlag.None,
             )
         }
         var leftX = 0.dp
         var topY = 0.dp
-        var rightX: Dp
-        var bottomY: Dp
+        val rightX: Dp
+        val bottomY: Dp
 
         // 10.dp is the size of a singular box
-        var spanLeft = (rootSize - 10.dp) / 2f
+        val spanLeft = (rootSize - 10.dp) / 2f
         val gapSize = (rootSize - (10.dp * 2f)) / (columns * 2f)
         rule.waitForIdle()
         leftX += gapSize
@@ -335,6 +318,46 @@ class GridDslTest {
     }
 
     @Test
+    fun testSpans_placeOnSpansFirstFlag() {
+        val rootSize = 200.dp
+        val boxesCount = 3
+        val rows = 2
+        val columns = 2
+        rule.setContent {
+            gridComposableTest(
+                modifier = Modifier.size(rootSize),
+                numRows = rows,
+                numColumns = columns,
+                gridSpans = arrayOf(Span(2, 1, 2)),
+                gridSkips = arrayOf(),
+                gridRowWeights = floatArrayOf(),
+                gridColumnWeights = floatArrayOf(),
+                boxesCount = boxesCount,
+                isHorizontalArrangement = true,
+                gridFlags = GridFlag.PlaceLayoutsOnSpansFirst,
+            )
+        }
+        var leftX = 0.dp
+        var topY = 0.dp
+
+        // 10.dp is the size of a singular box
+        val gapSize = (rootSize - (10.dp * 2f)) / (columns * 2f)
+        rule.waitForIdle()
+        leftX += gapSize
+        topY += gapSize
+        // Because of the flag, box0 is first positioned on the Span, which is on cells 2 and 3
+        // So the boxes at cells 0 and 1 are box1 and box2 respectively.
+        rule.onNodeWithTag("box1").assertPositionInRootIsEqualTo(leftX, topY)
+        leftX += 10.dp + gapSize + gapSize
+        rule.onNodeWithTag("box2").assertPositionInRootIsEqualTo(leftX, topY)
+
+        // Layout is centered within the span
+        val spanLeft = (rootSize - 10.dp) / 2f
+        topY += 10.dp + gapSize + gapSize
+        rule.onNodeWithTag("box0").assertPositionInRootIsEqualTo(spanLeft, topY)
+    }
+
+    @Test
     fun testMultipleSpans() {
         val rootSize = 200.dp
         val boxesCount = 2
@@ -343,24 +366,22 @@ class GridDslTest {
         rule.setContent {
             gridComposableTest(
                 modifier = Modifier.size(rootSize),
-                boxesCount = boxesCount,
-                gridOrientation = 0,
                 numRows = rows,
                 numColumns = columns,
-                hGap = 0,
-                vGap = 0,
                 gridSpans = arrayOf(Span(2, 1, 2), Span(0, 1, 2)),
                 gridSkips = arrayOf(),
-                gridRowWeights = intArrayOf(),
-                gridColumnWeights = intArrayOf(),
-                gridFlags = arrayOf(GridFlag.SpansRespectWidgetOrder),
+                gridRowWeights = floatArrayOf(),
+                gridColumnWeights = floatArrayOf(),
+                boxesCount = boxesCount,
+                isHorizontalArrangement = true,
+                gridFlags = GridFlag.None,
             )
         }
         var topY = 0.dp
-        var bottomY: Dp
+        val bottomY: Dp
 
         // 10.dp is the size of a singular box
-        var spanLeft = (rootSize - 10.dp) / 2f
+        val spanLeft = (rootSize - 10.dp) / 2f
         val gapSize = (rootSize - (10.dp * 2f)) / (columns * 2f)
         rule.waitForIdle()
         topY += gapSize
@@ -378,26 +399,24 @@ class GridDslTest {
         rule.setContent {
             gridComposableTest(
                 modifier = Modifier.size(rootSize),
-                boxesCount = boxesCount,
-                gridOrientation = 0,
                 numRows = rows,
                 numColumns = columns,
-                hGap = 0,
-                vGap = 0,
                 gridSpans = arrayOf(Span(1, 2, 1)),
                 gridSkips = arrayOf(),
-                gridRowWeights = intArrayOf(),
-                gridColumnWeights = intArrayOf(),
-                gridFlags = arrayOf(GridFlag.SpansRespectWidgetOrder),
+                gridRowWeights = floatArrayOf(),
+                gridColumnWeights = floatArrayOf(),
+                boxesCount = boxesCount,
+                isHorizontalArrangement = true,
+                gridFlags = GridFlag.None,
             )
         }
         var leftX = 0.dp
         var topY = 0.dp
-        var rightX: Dp
-        var bottomY: Dp
+        val rightX: Dp
+        val bottomY: Dp
 
         // 10.dp is the size of a singular box
-        var spanTop = (rootSize - 10.dp) / 2f
+        val spanTop = (rootSize - 10.dp) / 2f
         val gapSize = (rootSize - (10.dp * 2f)) / (columns * 2f)
         rule.waitForIdle()
         leftX += gapSize
@@ -418,26 +437,24 @@ class GridDslTest {
         rule.setContent {
             gridComposableTest(
                 modifier = Modifier.size(rootSize),
-                boxesCount = boxesCount,
-                gridOrientation = 0,
                 numRows = rows,
                 numColumns = columns,
-                hGap = 0,
-                vGap = 0,
                 gridSpans = arrayOf(Span(0, 2, 1)),
                 gridSkips = arrayOf(),
-                gridRowWeights = intArrayOf(),
-                gridColumnWeights = intArrayOf(),
-                gridFlags = arrayOf(GridFlag.SubGridByColRow),
+                gridRowWeights = floatArrayOf(),
+                gridColumnWeights = floatArrayOf(),
+                boxesCount = boxesCount,
+                isHorizontalArrangement = true,
+                gridFlags = GridFlag.SubGridByColRow,
             )
         }
         var leftX = 0.dp
         var topY = 0.dp
-        var rightX: Dp
-        var bottomY: Dp
+        val rightX: Dp
+        val bottomY: Dp
 
         // 10.dp is the size of a singular box
-        var spanLeft = (rootSize - 10.dp) / 2f
+        val spanLeft = (rootSize - 10.dp) / 2f
         val gapSize = (rootSize - (10.dp * 2f)) / (columns * 2f)
         rule.waitForIdle()
         leftX += gapSize
@@ -455,24 +472,22 @@ class GridDslTest {
         val boxesCount = 2
         val rows = 0
         val columns = 1
-        val weights = intArrayOf(1, 3)
+        val weights = floatArrayOf(1f, 3f)
         rule.setContent {
             gridComposableTest(
                 modifier = Modifier.size(rootSize),
-                boxesCount = boxesCount,
-                gridOrientation = 0,
                 numRows = rows,
                 numColumns = columns,
-                hGap = 0,
-                vGap = 0,
                 gridSpans = arrayOf(),
                 gridSkips = arrayOf(),
                 gridRowWeights = weights,
-                gridColumnWeights = intArrayOf(),
-                gridFlags = arrayOf(),
+                gridColumnWeights = floatArrayOf(),
+                boxesCount = boxesCount,
+                isHorizontalArrangement = true,
+                gridFlags = GridFlag.None,
             )
         }
-        var expectedLeft = (rootSize - 10.dp) / 2f
+        val expectedLeft = (rootSize - 10.dp) / 2f
         var expectedTop = 0.dp
 
         // 10.dp is the size of a singular box
@@ -493,25 +508,23 @@ class GridDslTest {
         val boxesCount = 2
         val rows = 1
         val columns = 0
-        val weights = intArrayOf(1, 3)
+        val weights = floatArrayOf(1f, 3f)
         rule.setContent {
             gridComposableTest(
                 modifier = Modifier.size(rootSize),
-                boxesCount = boxesCount,
-                gridOrientation = 0,
                 numRows = rows,
                 numColumns = columns,
-                hGap = 0,
-                vGap = 0,
                 gridSpans = arrayOf(),
                 gridSkips = arrayOf(),
-                gridRowWeights = intArrayOf(),
+                gridRowWeights = floatArrayOf(),
                 gridColumnWeights = weights,
-                gridFlags = arrayOf(),
+                boxesCount = boxesCount,
+                isHorizontalArrangement = true,
+                gridFlags = GridFlag.None,
             )
         }
         var expectedLeft = 0.dp
-        var expectedTop = (rootSize - 10.dp) / 2f
+        val expectedTop = (rootSize - 10.dp) / 2f
 
         // 10.dp is the size of a singular box
         // first box takes the 1/4 of the width
@@ -524,6 +537,54 @@ class GridDslTest {
         rule.onNodeWithTag("box0").assertPositionInRootIsEqualTo(expectedLeft, expectedTop)
         expectedLeft += 10.dp + firstGapSize + secondGapSize
         rule.onNodeWithTag("box1").assertPositionInRootIsEqualTo(expectedLeft, expectedTop)
+    }
+
+    @Test
+    fun testIconsistendRowWeightsThrows() {
+        val rowCount = 3
+        val error =
+            assertFailsWith<IllegalArgumentException> {
+                rule.setContent {
+                    gridComposableTest(
+                        modifier = Modifier.size(100.dp),
+                        numRows = rowCount,
+                        numColumns = 1,
+                        gridSpans = emptyArray(),
+                        gridSkips = emptyArray(),
+                        // Insufficient weights in array should throw
+                        gridRowWeights = FloatArray(rowCount - 1) { it.toFloat() },
+                        gridColumnWeights = floatArrayOf(),
+                        boxesCount = 1,
+                        isHorizontalArrangement = true,
+                        gridFlags = GridFlag.None
+                    )
+                }
+            }
+        assertEquals("Number of weights (2) should match number of rows (3).", error.message)
+    }
+
+    @Test
+    fun testInconsistentColumnWeightsThrows() {
+        val columnCount = 3
+        val error =
+            assertFailsWith<IllegalArgumentException> {
+                rule.setContent {
+                    gridComposableTest(
+                        modifier = Modifier.size(100.dp),
+                        numRows = 1,
+                        numColumns = columnCount,
+                        gridSpans = emptyArray(),
+                        gridSkips = emptyArray(),
+                        gridRowWeights = floatArrayOf(),
+                        // Excessive weights in array should throw
+                        gridColumnWeights = FloatArray(columnCount + 1) { it.toFloat() },
+                        boxesCount = 1,
+                        isHorizontalArrangement = true,
+                        gridFlags = GridFlag.None
+                    )
+                }
+            }
+        assertEquals("Number of weights (4) should match number of columns (3).", error.message)
     }
 
     @Test
@@ -560,13 +621,11 @@ class GridDslTest {
         numColumns: Int,
         gridSpans: Array<Span>,
         gridSkips: Array<Skip>,
-        gridRowWeights: IntArray,
-        gridColumnWeights: IntArray,
+        gridRowWeights: FloatArray,
+        gridColumnWeights: FloatArray,
         boxesCount: Int,
-        gridOrientation: Int,
-        vGap: Int,
-        hGap: Int,
-        gridFlags: Array<GridFlag>,
+        isHorizontalArrangement: Boolean,
+        gridFlags: GridFlag,
     ) {
         ConstraintLayout(
             ConstraintSet {
@@ -576,19 +635,18 @@ class GridDslTest {
                     elem.add(createRefFor(ids[i]))
                 }
 
-                val g1 = createGrid(
-                    elements = elem.toTypedArray(),
-                    orientation = gridOrientation,
-                    skips = gridSkips,
-                    spans = gridSpans,
-                    rows = numRows,
-                    columns = numColumns,
-                    verticalGap = vGap.dp,
-                    horizontalGap = hGap.dp,
-                    rowWeights = gridRowWeights,
-                    columnWeights = gridColumnWeights,
-                    flags = gridFlags,
-                )
+                val g1 =
+                    createGrid(
+                        elements = elem.toTypedArray(),
+                        isHorizontalArrangement = isHorizontalArrangement,
+                        skips = gridSkips,
+                        spans = gridSpans,
+                        rows = numRows,
+                        columns = numColumns,
+                        rowWeights = gridRowWeights,
+                        columnWeights = gridColumnWeights,
+                        flags = gridFlags,
+                    )
                 constrain(g1) {
                     width = Dimension.matchParent
                     height = Dimension.matchParent
@@ -597,15 +655,7 @@ class GridDslTest {
             modifier = modifier
         ) {
             val ids = (0 until boxesCount).map { "box$it" }.toTypedArray()
-            ids.forEach { id ->
-                Box(
-                    Modifier
-                        .layoutId(id)
-                        .background(Color.Red)
-                        .testTag(id)
-                        .size(10.dp)
-                )
-            }
+            ids.forEach { id -> Box(Modifier.layoutTestId(id).background(Color.Red).size(10.dp)) }
         }
     }
 
@@ -621,13 +671,17 @@ class GridDslTest {
                 val b = createRefFor("box1")
                 val c = createRefFor("box2")
                 val d = createRefFor("box3")
-                val g1 = createGrid(
-                    a, b, c, d,
-                    rows = 2,
-                    columns = 2,
-                    verticalGap = vGap.dp,
-                    horizontalGap = hGap.dp,
-                )
+                val g1 =
+                    createGrid(
+                        a,
+                        b,
+                        c,
+                        d,
+                        rows = 2,
+                        columns = 2,
+                        verticalSpacing = vGap.dp,
+                        horizontalSpacing = hGap.dp,
+                    )
                 constrain(g1) {
                     width = Dimension.matchParent
                     height = Dimension.matchParent
@@ -652,15 +706,7 @@ class GridDslTest {
             modifier = modifier,
         ) {
             val ids = (0 until 4).map { "box$it" }.toTypedArray()
-            ids.forEach { id ->
-                Box(
-                    Modifier
-                        .layoutId(id)
-                        .background(Color.Red)
-                        .testTag(id)
-                        .size(10.dp)
-                )
-            }
+            ids.forEach { id -> Box(Modifier.layoutTestId(id).background(Color.Red).size(10.dp)) }
         }
     }
 }

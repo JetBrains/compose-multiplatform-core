@@ -19,7 +19,8 @@
      supplies a unique name for the application.  When writing your
      own application, the package name must be changed from "com.example.*"
      to come from a domain that you own or have control over. -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <uses-permission android:name="android.permission.BLUETOOTH"
@@ -32,8 +33,7 @@
         android:icon="@drawable/app_sample_code"
         android:label="@string/media_router_app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.SampleMediaRouter"
-        android:name="androidx.multidex.MultiDexApplication">
+        android:theme="@style/Theme.SampleMediaRouter">
 
         <activity
             android:name=".activities.MainActivity"
@@ -103,13 +103,24 @@
 
         <service
             android:name=".services.SampleDynamicGroupMediaRouteProviderService"
-            android:label="@string/sample_media_route_provider_service"
+            android:label="@string/sample_dynamic_group_mrp_service"
             android:exported="true">
-
             <intent-filter>
                 <action android:name="android.media.MediaRouteProviderService" />
                 <action android:name="android.media.MediaRoute2ProviderService" />
                 <action android:name="com.example.androidx.mediarouting.BIND_LOCAL" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".services.WrapperMediaRouteProviderService"
+            android:label="@string/wrapper_media_route_provider_service"
+            android:exported="false"
+            android:enabled="false"
+            tools:ignore="MissingServiceExportedEqualsTrue">
+            <intent-filter>
+                <action android:name="android.media.MediaRouteProviderService" />
+                <action android:name="android.media.MediaRoute2ProviderService" />
             </intent-filter>
         </service>
 

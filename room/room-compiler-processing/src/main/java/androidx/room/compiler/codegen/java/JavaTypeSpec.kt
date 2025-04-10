@@ -19,70 +19,73 @@ package androidx.room.compiler.codegen.java
 import androidx.room.compiler.codegen.JTypeSpecBuilder
 import androidx.room.compiler.codegen.VisibilityModifier
 import androidx.room.compiler.codegen.XAnnotationSpec
-import androidx.room.compiler.codegen.XClassName
 import androidx.room.compiler.codegen.XFunSpec
+import androidx.room.compiler.codegen.XName
 import androidx.room.compiler.codegen.XPropertySpec
+import androidx.room.compiler.codegen.XSpec
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.XTypeSpec
+import androidx.room.compiler.codegen.impl.XAnnotationSpecImpl
+import androidx.room.compiler.codegen.impl.XFunSpecImpl
+import androidx.room.compiler.codegen.impl.XPropertySpecImpl
+import androidx.room.compiler.codegen.impl.XTypeSpecImpl
+import androidx.room.compiler.processing.XElement
+import androidx.room.compiler.processing.addOriginatingElement
 import com.squareup.kotlinpoet.javapoet.JTypeSpec
+import com.squareup.kotlinpoet.javapoet.JTypeVariableName
 import javax.lang.model.element.Modifier
 
-internal class JavaTypeSpec(
-    private val _className: XClassName?,
-    internal val actual: JTypeSpec
-) : JavaLang(), XTypeSpec {
-    override fun toString() = actual.toString()
+internal class JavaTypeSpec(internal val actual: JTypeSpec) : XSpec(), XTypeSpec {
 
-    override val className: XClassName
-        get() {
-            checkNotNull(_className) { "Anonymous classes have no name." }
-            return _className
-        }
+    override val name = actual.name?.let { XName.of(it) }
 
-    internal class Builder(
-        private val className: XClassName?,
-        internal val actual: JTypeSpecBuilder
-    ) : JavaLang(), XTypeSpec.Builder {
-        override fun superclass(typeName: XTypeName) = apply {
-            actual.superclass(typeName.java)
-        }
+    internal class Builder(internal val actual: JTypeSpecBuilder) :
+        XSpec.Builder(), XTypeSpec.Builder {
+        override fun superclass(typeName: XTypeName) = apply { actual.superclass(typeName.java) }
 
         override fun addSuperinterface(typeName: XTypeName) = apply {
             actual.addSuperinterface(typeName.java)
         }
 
-        override fun addAnnotation(annotation: XAnnotationSpec) {
-            require(annotation is JavaAnnotationSpec)
-            actual.addAnnotation(annotation.actual)
+        override fun addAnnotation(annotation: XAnnotationSpec) = apply {
+            require(annotation is XAnnotationSpecImpl)
+            actual.addAnnotation(annotation.java.actual)
         }
 
         override fun addProperty(propertySpec: XPropertySpec) = apply {
-            require(propertySpec is JavaPropertySpec)
-            actual.addField(propertySpec.actual)
+            require(propertySpec is XPropertySpecImpl)
+            actual.addField(propertySpec.java.actual)
         }
 
         override fun addFunction(functionSpec: XFunSpec) = apply {
-            require(functionSpec is JavaFunSpec)
-            actual.addMethod(functionSpec.actual)
+            require(functionSpec is XFunSpecImpl)
+            actual.addMethod(functionSpec.java.actual)
         }
 
         override fun addType(typeSpec: XTypeSpec) = apply {
-            require(typeSpec is JavaTypeSpec)
-            actual.addType(typeSpec.actual)
+            require(typeSpec is XTypeSpecImpl)
+            actual.addType(typeSpec.java.actual)
+        }
+
+        override fun addTypeVariable(typeVariable: XTypeName) = apply {
+            require(typeVariable.java is JTypeVariableName)
+            actual.addTypeVariable(typeVariable.java as JTypeVariableName)
         }
 
         override fun setPrimaryConstructor(functionSpec: XFunSpec) = addFunction(functionSpec)
 
-        override fun setVisibility(visibility: VisibilityModifier) {
+        override fun setVisibility(visibility: VisibilityModifier) = apply {
             actual.addModifiers(visibility.toJavaVisibilityModifier())
-        }
-
-        override fun build(): XTypeSpec {
-            return JavaTypeSpec(className, actual.build())
         }
 
         override fun addAbstractModifier(): XTypeSpec.Builder = apply {
             actual.addModifiers(Modifier.ABSTRACT)
         }
+
+        override fun addOriginatingElement(element: XElement) = apply {
+            actual.addOriginatingElement(element)
+        }
+
+        override fun build() = JavaTypeSpec(actual.build())
     }
 }

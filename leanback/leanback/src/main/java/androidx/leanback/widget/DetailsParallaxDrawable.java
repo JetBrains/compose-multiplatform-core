@@ -24,11 +24,12 @@ import android.graphics.drawable.Drawable;
 import android.util.TypedValue;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.leanback.R;
 import androidx.leanback.graphics.CompositeDrawable;
 import androidx.leanback.graphics.FitWidthBitmapDrawable;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper class responsible for wiring in parallax effect in
@@ -146,16 +147,14 @@ public class DetailsParallaxDrawable extends CompositeDrawable {
     /**
      * @return First child which is cover drawable appearing at top.
      */
-    @NonNull
-    public Drawable getCoverDrawable() {
+    public @NonNull Drawable getCoverDrawable() {
         return getChildAt(0).getDrawable();
     }
 
     /**
      * @return Second child which is ColorDrawable by default.
      */
-    @NonNull
-    public Drawable getBottomDrawable() {
+    public @NonNull Drawable getBottomDrawable() {
         return mBottomDrawable;
     }
 

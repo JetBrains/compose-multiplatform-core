@@ -16,13 +16,15 @@
 
 package androidx.camera.testing.impl;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
+import static org.junit.Assume.assumeTrue;
+
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraInfoUnavailableException;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.impl.CameraRepository;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,7 +32,6 @@ import java.util.List;
 /**
  * Utility class to check whether or not specified cameras are available.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class CameraAvailabilityUtil {
     /**
      * Checks whether this repository supports at least one camera that meets the requirements
@@ -80,6 +81,14 @@ public class CameraAvailabilityUtil {
             throw new IllegalStateException("Unable to get default lens facing.");
         }
         return lensFacingCandidate;
+    }
+
+    /**
+     * Ignores the current test if a front camera doesn't exist, meant to be invoked inside a junit
+     * test code.
+     */
+    public static void assumeDeviceHasFrontCamera() {
+        assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT));
     }
 
     // Private to prevent instantiation

@@ -18,27 +18,26 @@ package androidx.work.testing.workers;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
+import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.work.ListenableWorker;
 import androidx.work.WorkerParameters;
-import androidx.work.impl.utils.futures.SettableFuture;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
-public class TestListenableWorker extends ListenableWorker {
-    private SettableFuture<Result> mResult;
+import org.jspecify.annotations.NonNull;
 
+public class TestListenableWorker extends ListenableWorker {
     public TestListenableWorker(
             @NonNull Context context,
             @NonNull WorkerParameters workerParameters) {
         super(context, workerParameters);
-        mResult = SettableFuture.create();
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Result> startWork() {
-        mResult.set(Result.success());
-        return mResult;
+    public @NonNull ListenableFuture<Result> startWork() {
+        return CallbackToFutureAdapter.getFuture(completer -> {
+            completer.set(Result.success());
+            return "successfully completed future";
+        });
     }
 }

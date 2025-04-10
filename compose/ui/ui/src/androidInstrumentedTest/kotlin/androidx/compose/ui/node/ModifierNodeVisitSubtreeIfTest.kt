@@ -19,6 +19,7 @@ package androidx.compose.ui.node
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.zIndex
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
@@ -30,24 +31,17 @@ import org.junit.runner.RunWith
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class ModifierNodeVisitSubtreeIfTest {
-    @get:Rule
-    val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule()
 
     @Test
     fun noChildren() {
         // Arrange.
         val node = object : Modifier.Node() {}
         val visitedChildren = mutableListOf<Modifier.Node>()
-        rule.setContent {
-            Box(Modifier.elementOf(node))
-        }
+        rule.setContent { Box(Modifier.elementOf(node)) }
 
         // Act.
-        rule.runOnIdle {
-            node.visitSubtreeIf(Nodes.Any) {
-                visitedChildren.add(it)
-            }
-        }
+        rule.runOnIdle { node.visitSubtreeIf(Nodes.Any) { visitedChildren.add(it) } }
 
         // Assert.
         assertThat(visitedChildren).isEmpty()
@@ -63,9 +57,7 @@ class ModifierNodeVisitSubtreeIfTest {
             Box(Modifier.elementOf(node1)) {
                 Box(Modifier.elementOf(node2)) {
                     Box(Modifier.elementOf(node3))
-                    Box(Modifier.elementOf(node4)) {
-                        Box(Modifier.elementOf(node6))
-                    }
+                    Box(Modifier.elementOf(node4)) { Box(Modifier.elementOf(node6)) }
                     Box(Modifier.elementOf(node5))
                 }
             }
@@ -81,9 +73,7 @@ class ModifierNodeVisitSubtreeIfTest {
         }
 
         // Assert.
-        assertThat(visitedChildren)
-            .containsExactly(node2, node3, node4, node5)
-            .inOrder()
+        assertThat(visitedChildren).containsExactly(node2, node3, node4, node5).inOrder()
     }
 
     @Test
@@ -96,9 +86,7 @@ class ModifierNodeVisitSubtreeIfTest {
             Box(Modifier.elementOf(node1)) {
                 Box(Modifier.elementOf(node2)) {
                     Box(Modifier.elementOf(node3))
-                    Box(Modifier.elementOf(node4)) {
-                        Box(Modifier.elementOf(node6))
-                    }
+                    Box(Modifier.elementOf(node4)) { Box(Modifier.elementOf(node6)) }
                     Box(Modifier.elementOf(node5))
                 }
             }
@@ -113,9 +101,7 @@ class ModifierNodeVisitSubtreeIfTest {
         }
 
         // Assert.
-        assertThat(visitedChildren)
-            .containsExactly(node2, node3, node4, node6, node5)
-            .inOrder()
+        assertThat(visitedChildren).containsExactly(node2, node3, node4, node6, node5).inOrder()
     }
 
     @Test
@@ -125,32 +111,12 @@ class ModifierNodeVisitSubtreeIfTest {
         val (node6, node7, node8, node9, node10) = List(5) { object : Modifier.Node() {} }
         val visitedChildren = mutableListOf<Modifier.Node>()
         rule.setContent {
-            Box(
-                Modifier
-                    .elementOf(node1)
-                    .elementOf(node2)
-            ) {
-                Box(
-                    Modifier
-                        .elementOf(node3)
-                        .elementOf(node4)
-                ) {
-                    Box(
-                        Modifier
-                            .elementOf(node7)
-                            .elementOf(node8)
-                    )
+            Box(Modifier.elementOf(node1).elementOf(node2)) {
+                Box(Modifier.elementOf(node3).elementOf(node4)) {
+                    Box(Modifier.elementOf(node7).elementOf(node8))
                 }
-                Box(
-                    Modifier
-                        .elementOf(node5)
-                        .elementOf(node6)
-                ) {
-                    Box(
-                        Modifier
-                            .elementOf(node9)
-                            .elementOf(node10)
-                    )
+                Box(Modifier.elementOf(node5).elementOf(node6)) {
+                    Box(Modifier.elementOf(node9).elementOf(node10))
                 }
             }
         }
@@ -169,6 +135,58 @@ class ModifierNodeVisitSubtreeIfTest {
             .inOrder()
     }
 
+    @Test
+    fun visitsItemsAcrossLayoutNodesInDrawOrder_zIndex() {
+        // Arrange.
+        abstract class TrackedNode : Modifier.Node()
+        val (node, child1, child2, child3) = List(5) { object : TrackedNode() {} }
+        val visitedChildren = mutableListOf<Modifier.Node>()
+        rule.setContent {
+            Box(Modifier.elementOf(node)) {
+                Box(Modifier.elementOf(child1).zIndex(10f))
+                Box(Modifier.elementOf(child2).zIndex(-10f))
+                Box(Modifier.elementOf(child3))
+            }
+        }
+
+        // Act.
+        rule.runOnIdle {
+            node.visitSubtreeIf(Nodes.Any, zOrder = true) {
+                @Suppress("KotlinConstantConditions") if (it is TrackedNode) visitedChildren.add(it)
+                true
+            }
+        }
+
+        // Assert.
+        assertThat(visitedChildren).containsExactly(child2, child3, child1).inOrder()
+    }
+
+    @Test
+    fun visitsItemsAcrossLayoutNodesInDrawOrder_subcompose() {
+        // Arrange.
+        val (node, child1, child2, child3) = List(5) { object : Modifier.Node() {} }
+        val visitedChildren = mutableListOf<Modifier.Node>()
+        rule.setContent {
+            ReverseMeasureLayout(
+                Modifier.elementOf(node),
+                { Box(Modifier.elementOf(child1)) },
+                { Box(Modifier.elementOf(child2)) },
+                { Box(Modifier.elementOf(child3)) }
+            )
+        }
+
+        // Act.
+        rule.runOnIdle {
+            node.visitSubtreeIf(Nodes.Any, zOrder = true) {
+                visitedChildren.add(it)
+                true
+            }
+        }
+
+        // Assert.
+        assertThat(visitedChildren).containsExactly(child1, child2, child3).inOrder()
+    }
+
     @Ignore("b/278765590")
     @Test
     fun skipsUnattachedItems() {
@@ -177,28 +195,12 @@ class ModifierNodeVisitSubtreeIfTest {
         val (node4, node5, node6, node7, node8) = List(5) { object : Modifier.Node() {} }
         val visitedChildren = mutableListOf<Modifier.Node>()
         rule.setContent {
-            Box(
-                Modifier
-                    .elementOf(parent)
-                    .elementOf(node)
-            ) {
-                Box(
-                    Modifier
-                        .elementOf(node1)
-                        .elementOf(node2)
-                ) {
-                    Box(Modifier.elementOf(node3)) {
-                        Box(Modifier.elementOf(node4))
-                    }
+            Box(Modifier.elementOf(parent).elementOf(node)) {
+                Box(Modifier.elementOf(node1).elementOf(node2)) {
+                    Box(Modifier.elementOf(node3)) { Box(Modifier.elementOf(node4)) }
                     Box(Modifier.elementOf(node5))
                 }
-                Box(Modifier.elementOf(node6)) {
-                    Box(
-                        Modifier
-                            .elementOf(node7)
-                            .elementOf(node8)
-                    )
-                }
+                Box(Modifier.elementOf(node6)) { Box(Modifier.elementOf(node7).elementOf(node8)) }
             }
         }
         rule.runOnIdle {
@@ -215,8 +217,6 @@ class ModifierNodeVisitSubtreeIfTest {
         }
 
         // Assert.
-        assertThat(visitedChildren)
-            .containsExactly(node1, node3, node4, node5)
-            .inOrder()
+        assertThat(visitedChildren).containsExactly(node1, node3, node4, node5).inOrder()
     }
 }

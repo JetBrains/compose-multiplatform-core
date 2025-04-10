@@ -16,7 +16,7 @@
 
 package androidx.window.extensions;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Provides the OEM implementation of {@link WindowExtensions}.
@@ -30,8 +30,7 @@ public class WindowExtensionsProvider {
      * implemented by the OEM also.
      * @return the OEM implementation of {@link WindowExtensions}
      */
-    @NonNull
-    public static WindowExtensions getWindowExtensions() {
+    public static @NonNull WindowExtensions getWindowExtensions() {
         throw new UnsupportedOperationException("Stub, replace with implementation");
     }
 }

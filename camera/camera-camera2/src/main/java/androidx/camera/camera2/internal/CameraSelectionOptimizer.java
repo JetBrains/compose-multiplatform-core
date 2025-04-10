@@ -19,9 +19,6 @@ package androidx.camera.camera2.internal;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraMetadata;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.CameraAccessExceptionCompat;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
 import androidx.camera.core.CameraInfo;
@@ -30,11 +27,13 @@ import androidx.camera.core.CameraUnavailableException;
 import androidx.camera.core.InitializationException;
 import androidx.camera.core.impl.CameraInfoInternal;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 class CameraSelectionOptimizer {
     private CameraSelectionOptimizer() {
     }

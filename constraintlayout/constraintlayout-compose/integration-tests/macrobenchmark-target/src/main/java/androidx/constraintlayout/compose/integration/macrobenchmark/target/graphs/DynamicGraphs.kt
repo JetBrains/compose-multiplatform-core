@@ -54,7 +54,7 @@ import kotlin.random.Random
  * Demonstrates how to dynamically create constraints based on input. See [DynamicGraph]. Where
  * constraints are created to lay out the given values into a single graph layout.
  */
-@Preview(group = "scroll", device = "spec:shape=Normal,width=480,height=800,unit=dp,dpi=440")
+@Preview(group = "scroll", device = "spec:width=480dp,height=800dp,dpi=440")
 @Composable
 fun DynamicGraphsPreview(modifier: Modifier = Modifier) {
     val graphs = remember {
@@ -67,18 +67,12 @@ fun DynamicGraphsPreview(modifier: Modifier = Modifier) {
     }
     LazyColumn(modifier.testTag("LazyColumn")) {
         items(graphs.size) {
-            Box(
-                modifier = Modifier
-                    .padding(3.dp)
-                    .height(200.dp)
-            ) {
-                DynamicGraph(graphs[it])
-            }
+            Box(modifier = Modifier.padding(3.dp).height(200.dp)) { DynamicGraph(graphs[it]) }
         }
     }
 }
 
-@Preview(group = "scroll", device = "spec:shape=Normal,width=480,height=800,unit=dp,dpi=440")
+@Preview(group = "scroll", device = "spec:width=480dp,height=800dp,dpi=440")
 @Composable
 private fun DynamicGraph(
     values: List<Float> = listOf<Float>(12f, 32f, 21f, 32f, 2f),
@@ -120,27 +114,24 @@ private fun DynamicGraph(
 
     // Animate on reveal
     LaunchedEffect(animateToEnd) {
-        progress.animateTo(
-            if (animateToEnd) 1f else 0f,
-            animationSpec = tween(800)
-        )
+        progress.animateTo(if (animateToEnd) 1f else 0f, animationSpec = tween(800))
     }
 
     MotionLayout(
-        modifier = Modifier
-            .background(Color(0xFF221010))
-            .fillMaxSize()
-            .clickable { animateToEnd = !animateToEnd }
-            .padding(1.dp),
+        modifier =
+            Modifier.background(Color(0xFF221010))
+                .fillMaxSize()
+                .clickable { animateToEnd = !animateToEnd }
+                .padding(1.dp),
         motionScene = scene,
         progress = progress.value
     ) {
         for (i in 0..values.size) {
             Box(
-                modifier = Modifier
-                    .layoutId("foo$i")
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Color.hsv(i * 240f / values.size, 0.6f, 0.6f))
+                modifier =
+                    Modifier.layoutId("foo$i")
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color.hsv(i * 240f / values.size, 0.6f, 0.6f))
             )
         }
     }

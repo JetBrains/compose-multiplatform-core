@@ -18,7 +18,6 @@ package androidx.wear.watchface.samples.minimal;
 
 import android.view.SurfaceHolder;
 
-import androidx.annotation.NonNull;
 import androidx.wear.watchface.ComplicationSlotsManager;
 import androidx.wear.watchface.ListenableWatchFaceService;
 import androidx.wear.watchface.Renderer;
@@ -29,6 +28,8 @@ import androidx.wear.watchface.style.CurrentUserStyleRepository;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 /** The service that defines the watch face. */
 public class WatchFaceService extends ListenableWatchFaceService {

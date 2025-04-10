@@ -1,0 +1,76 @@
+/*
+ * Copyright (C) 2024 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
+
+plugins {
+    id("AndroidXPlugin")
+    id("com.android.library")
+    id("androidx.stableaidl")
+    id("org.jetbrains.kotlin.android")
+}
+
+dependencies {
+    api(libs.kotlinStdlib)
+    api(project(":pdf:pdf-viewer"))
+    api("androidx.core:core:1.13.1")
+
+    androidTestImplementation(libs.testExtJunit)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.testCore)
+    androidTestImplementation(libs.testRules)
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
+    androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.kotlinCoroutinesTest)
+}
+
+android {
+    namespace = "androidx.pdf.document.service"
+
+    defaultConfig {
+        minSdk = 31
+        compileSdk = 35
+    }
+
+    buildFeatures.aidl = true
+
+    buildTypes.configureEach {
+        stableAidl {
+            version = 1
+        }
+    }
+
+    // Use Robolectric 4.+
+    testOptions.unitTests.includeAndroidResources = true
+}
+
+androidx {
+    name = "androidx.pdf:pdf-document-service"
+    type = SoftwareType.PUBLISHED_LIBRARY
+    inceptionYear = "2024"
+    description = "Parse and process PDF documents providing the implementations of PdfDocument and PdfLoader sandboxing the underlying android PdfRenderer class."
+}

@@ -27,10 +27,10 @@ import android.os.IBinder
 import android.support.wearable.complications.ComplicationProviderInfo as WireComplicationProviderInfo
 import android.support.wearable.complications.IPreviewComplicationDataCallback
 import android.support.wearable.complications.IProviderInfoService
-import androidx.annotation.RequiresApi
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.wear.watchface.complications.data.ComplicationText
 import androidx.wear.watchface.complications.data.ComplicationType
 import androidx.wear.watchface.complications.data.LongTextComplicationData
@@ -167,7 +167,7 @@ public class ComplicationDataSourceInfoRetrieverTest {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.R)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
     @Test
     public fun retrievePreviewComplicationData() {
         runBlocking {

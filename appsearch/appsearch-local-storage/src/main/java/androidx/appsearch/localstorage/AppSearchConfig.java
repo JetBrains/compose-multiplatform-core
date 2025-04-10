@@ -19,6 +19,10 @@ package androidx.appsearch.localstorage;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.GenericDocument;
 
+import com.google.android.icing.proto.PersistType;
+
+import org.jspecify.annotations.NonNull;
+
 /**
  * An interface that wraps AppSearch configurations required to create {@link AppSearchImpl}.
  */
@@ -33,7 +37,15 @@ public interface AppSearchConfig extends IcingOptionsConfig, LimitConfig {
     boolean shouldStoreParentInfoAsSyntheticProperty();
 
     /**
-     * Whether to include the list of parent types when returning a {@link GenericDocument}.
+     * Whether to include the list of parent types when returning a {@link GenericDocument} or a
+     * {@link androidx.appsearch.app.SearchResult} when
+     * {@link androidx.appsearch.flags.Flags#FLAG_ENABLE_SEARCH_RESULT_PARENT_TYPES} in on.
      */
     boolean shouldRetrieveParentInfo();
+
+    /**
+     * Returns the {@code PersistType.Code} that should be used to persist common mutations such as
+     * PUTs or DELETEs.
+     */
+    PersistType. @NonNull Code getLightweightPersistType();
 }

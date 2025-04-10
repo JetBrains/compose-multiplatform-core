@@ -28,12 +28,8 @@ import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.media.Image;
-import android.os.Build;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.ExperimentalGetImage;
 import androidx.camera.core.ImageInfo;
@@ -41,6 +37,9 @@ import androidx.camera.core.ImageProxy;
 import androidx.camera.core.impl.TagBundle;
 import androidx.camera.core.impl.utils.ExifData;
 import androidx.camera.core.processing.Packet;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 
@@ -52,7 +51,6 @@ import java.nio.ByteBuffer;
  *
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public final class RgbaImageProxy implements ImageProxy {
 
     private final Object mLock = new Object();
@@ -61,16 +59,13 @@ public final class RgbaImageProxy implements ImageProxy {
 
     private final int mHeight;
 
-    @NonNull
-    private final Rect mCropRect;
+    private final @NonNull Rect mCropRect;
 
     // Null if the ImageProxy is closed. Otherwise non-null.
     @GuardedBy("mLock")
-    @Nullable
-    PlaneProxy[] mPlaneProxy;
+    PlaneProxy @Nullable [] mPlaneProxy;
 
-    @NonNull
-    private final ImageInfo mImageInfo;
+    private final @NonNull ImageInfo mImageInfo;
 
     /**
      * Constructs the object from a {@link Packet}.
@@ -130,9 +125,8 @@ public final class RgbaImageProxy implements ImageProxy {
         }
     }
 
-    @NonNull
     @Override
-    public Rect getCropRect() {
+    public @NonNull Rect getCropRect() {
         synchronized (mLock) {
             checkNotClosed();
             return mCropRect;
@@ -173,28 +167,25 @@ public final class RgbaImageProxy implements ImageProxy {
         }
     }
 
-    @NonNull
     @Override
-    public PlaneProxy[] getPlanes() {
+    public PlaneProxy @NonNull [] getPlanes() {
         synchronized (mLock) {
             checkNotClosed();
             return requireNonNull(mPlaneProxy);
         }
     }
 
-    @NonNull
     @Override
-    public ImageInfo getImageInfo() {
+    public @NonNull ImageInfo getImageInfo() {
         synchronized (mLock) {
             checkNotClosed();
             return mImageInfo;
         }
     }
 
-    @Nullable
     @ExperimentalGetImage
     @Override
-    public Image getImage() {
+    public @Nullable Image getImage() {
         synchronized (mLock) {
             checkNotClosed();
             return null;
@@ -204,8 +195,7 @@ public final class RgbaImageProxy implements ImageProxy {
     /**
      * Creates a {@link Bitmap} form the value of the underlying {@link ByteBuffer}.
      */
-    @NonNull
-    public Bitmap createBitmap() {
+    public @NonNull Bitmap createBitmap() {
         synchronized (mLock) {
             checkNotClosed();
             return createBitmapFromPlane(getPlanes(), getWidth(), getHeight());
@@ -231,9 +221,8 @@ public final class RgbaImageProxy implements ImageProxy {
                 return pixelStride;
             }
 
-            @NonNull
             @Override
-            public ByteBuffer getBuffer() {
+            public @NonNull ByteBuffer getBuffer() {
                 return byteBuffer;
             }
         };
@@ -242,9 +231,8 @@ public final class RgbaImageProxy implements ImageProxy {
     private static ImageInfo createImageInfo(
             long timestamp, int rotationDegrees, @NonNull Matrix sensorToBuffer) {
         return new ImageInfo() {
-            @NonNull
             @Override
-            public TagBundle getTagBundle() {
+            public @NonNull TagBundle getTagBundle() {
                 throw new UnsupportedOperationException(
                         "Custom ImageProxy does not contain TagBundle");
             }
@@ -260,13 +248,12 @@ public final class RgbaImageProxy implements ImageProxy {
             }
 
             @Override
-            @NonNull
-            public Matrix getSensorToBufferTransformMatrix() {
+            public @NonNull Matrix getSensorToBufferTransformMatrix() {
                 return new Matrix(sensorToBuffer);
             }
 
             @Override
-            public void populateExifData(@NonNull ExifData.Builder exifBuilder) {
+            public void populateExifData(ExifData.@NonNull Builder exifBuilder) {
                 throw new UnsupportedOperationException(
                         "Custom ImageProxy does not contain Exif data.");
             }

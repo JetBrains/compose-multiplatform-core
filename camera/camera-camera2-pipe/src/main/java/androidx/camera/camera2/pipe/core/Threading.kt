@@ -16,38 +16,44 @@
 
 package androidx.camera.camera2.pipe.core
 
-import androidx.annotation.RequiresApi
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 internal object Threading {
     private val globalSupervisorScope =
         CoroutineScope(CoroutineName("GlobalThreadingScope") + SupervisorJob())
 
     /**
-     * runBlockingWithTime runs the specified [block] on a timeout of [timeoutMs] using the given
+     * runBlockingChecked runs the specified [block] on a timeout of [timeoutMs] using the given
      * [dispatcher]. The function runs the given block asynchronously on a supervised scope,
      * allowing it to return after the timeout completes, even if the calling thread is blocked.
-     * Throws [kotlinx.coroutines.TimeoutCancellationException] when the execution of the [block]
-     * times out.
+     * Throws [IllegalStateException] when the execution of the [block] times out.
      */
-    fun <T> runBlockingWithTimeout(
+    fun <T> runBlockingChecked(
+        coroutineContext: CoroutineContext = EmptyCoroutineContext,
         dispatcher: CoroutineDispatcher,
         timeoutMs: Long,
         block: suspend () -> T
-    ): T? {
-        return runBlocking {
+    ): T {
+        return runBlocking(coroutineContext) {
             val result = runAsyncSupervised(dispatcher, block)
-            withTimeout(timeoutMs) {
-                result.await()
+            try {
+                withTimeout(timeoutMs) { result.await() }
+            } catch (e: TimeoutCancellationException) {
+                Log.error(e) { "Timed out after ${timeoutMs}ms!" }
+                // For some reason, if TimeoutCancellationException is thrown, runBlocking can
+                // suspend indefinitely. Catch it and rethrow IllegalStateException.
+                throw IllegalStateException("Timed out after ${timeoutMs}ms!")
             }
         }
     }
@@ -58,16 +64,15 @@ internal object Threading {
      * allowing it to return after the timeout completes, even if the calling thread is blocked.
      * Returns null when the execution of the [block] times out.
      */
-    fun <T> runBlockingWithTimeoutOrNull(
+    fun <T> runBlockingCheckedOrNull(
+        coroutineContext: CoroutineContext = EmptyCoroutineContext,
         dispatcher: CoroutineDispatcher,
         timeoutMs: Long,
         block: suspend () -> T
     ): T? {
-        return runBlocking {
+        return runBlocking(coroutineContext) {
             val result = runAsyncSupervised(dispatcher, block)
-            withTimeoutOrNull(timeoutMs) {
-                result.await()
-            }
+            withTimeoutOrNull(timeoutMs) { result.await() }
         }
     }
 
@@ -75,8 +80,6 @@ internal object Threading {
         dispatcher: CoroutineDispatcher,
         block: suspend () -> T
     ): Deferred<T> {
-        return globalSupervisorScope.async(dispatcher) {
-            block()
-        }
+        return globalSupervisorScope.async(dispatcher) { block() }
     }
 }

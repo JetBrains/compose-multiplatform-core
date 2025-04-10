@@ -23,10 +23,10 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
 import androidx.core.view.MarginLayoutParamsCompat;
-import androidx.core.view.ViewCompat;
 import androidx.percentlayout.R;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper for layouts that want to support percentage based dimensions.
@@ -549,7 +549,7 @@ public class PercentLayoutHelper {
                 // Force the resolve pass so that start / end margins are propagated to the
                 // matching left / right fields
                 MarginLayoutParamsCompat.resolveLayoutDirection(params,
-                        ViewCompat.getLayoutDirection(view));
+                        view.getLayoutDirection());
             }
             if (DEBUG) {
                 Log.d(TAG, "after fillMarginLayoutParams: (" + params.width + ", " + params.height

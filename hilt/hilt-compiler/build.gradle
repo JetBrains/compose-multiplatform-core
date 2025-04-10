@@ -14,7 +14,15 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+
+import androidx.build.SoftwareType
 import androidx.build.SdkHelperKt
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -32,7 +40,7 @@ dependencies {
     implementation(libs.kspApi)
 
     testImplementation(project(":hilt:hilt-common"))
-    testImplementation(project(":annotation:annotation"))
+    testImplementation("androidx.annotation:annotation:1.8.1")
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(project(":room:room-compiler-processing-testing"))
@@ -57,7 +65,7 @@ tasks.withType(Test).configureEach {
 
 androidx {
     name = "Hilt Extension Compiler"
-    type = LibraryType.ANNOTATION_PROCESSOR
+    type = SoftwareType.ANNOTATION_PROCESSOR
     mavenVersion = LibraryVersions.HILT
     inceptionYear = "2020"
     description = "AndroidX Hilt Extension Compiler"

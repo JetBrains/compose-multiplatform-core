@@ -18,25 +18,32 @@ package androidx.privacysandbox.sdkruntime.core
 
 import androidx.annotation.Keep
 import androidx.annotation.RestrictTo
+import androidx.privacysandbox.sdkruntime.core.internal.ClientApiVersion
 import org.jetbrains.annotations.TestOnly
 
 /**
  * Store internal API version (for Client-Core communication).
- * Methods invoked via reflection.
  *
+ * DO NOT CHANGE THIS CLASS. Methods invoked via reflection from previously released versions of
+ * sdkruntime-client.
  */
 @Suppress("unused")
 @Keep
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 object Versions {
 
-    const val API_VERSION = 4
+    @JvmField val API_VERSION = ClientApiVersion.CURRENT_VERSION.apiLevel
 
-    @JvmField
-    var CLIENT_VERSION: Int? = null
+    @JvmField var CLIENT_VERSION: Int? = null
 
     @JvmStatic
     fun handShake(clientVersion: Int): Int {
+        if (clientVersion < ClientApiVersion.MIN_SUPPORTED_CLIENT_VERSION.apiLevel) {
+            throw IllegalArgumentException(
+                "Unsupported version of sdkruntime-client library. To load this SDK please use a more recent version."
+            )
+        }
+
         CLIENT_VERSION = clientVersion
         return API_VERSION
     }

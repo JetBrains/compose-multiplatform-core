@@ -20,7 +20,8 @@ import android.content.Context;
 import android.graphics.Color;
 
 import androidx.annotation.Dimension;
-import androidx.annotation.NonNull;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,11 +38,12 @@ public class TestCasesGenerator {
      * different for different user font sizes. Note that some of the golden will have the same name
      * as it should point on the same size independent image.
      */
-    @NonNull
-    static Map<String, androidx.wear.tiles.LayoutElementBuilders.LayoutElement> generateTestCases(
-            @NonNull Context context,
-            @NonNull androidx.wear.tiles.DeviceParametersBuilders.DeviceParameters deviceParameters,
-            @NonNull String goldenSuffix) {
+    static @NonNull Map<String, androidx.wear.tiles.LayoutElementBuilders.LayoutElement>
+            generateTestCases(
+                    @NonNull Context context,
+                    androidx.wear.tiles.DeviceParametersBuilders.@NonNull DeviceParameters
+                            deviceParameters,
+                    @NonNull String goldenSuffix) {
         androidx.wear.tiles.ModifiersBuilders.Clickable clickable =
                 new androidx.wear.tiles.ModifiersBuilders.Clickable.Builder()
                         .setOnClick(
@@ -635,13 +637,11 @@ public class TestCasesGenerator {
         return testCases;
     }
 
-    @NonNull
-    private static androidx.wear.tiles.ColorBuilders.ColorProp color(int yellow) {
+    private static androidx.wear.tiles.ColorBuilders.@NonNull ColorProp color(int yellow) {
         return androidx.wear.tiles.ColorBuilders.argb(yellow);
     }
 
-    @NonNull
-    private static androidx.wear.tiles.material.Text buildTextLabel(
+    private static androidx.wear.tiles.material.@NonNull Text buildTextLabel(
             @NonNull Context context, @NonNull String text) {
         return new androidx.wear.tiles.material.Text.Builder(context, text)
                 .setTypography(androidx.wear.tiles.material.Typography.TYPOGRAPHY_CAPTION1)
@@ -649,8 +649,8 @@ public class TestCasesGenerator {
                 .build();
     }
 
-    @NonNull
-    private static androidx.wear.tiles.LayoutElementBuilders.Box buildColoredBoxMSL(int color) {
+    private static androidx.wear.tiles.LayoutElementBuilders.@NonNull Box buildColoredBoxMSL(
+            int color) {
         return new androidx.wear.tiles.LayoutElementBuilders.Box.Builder()
                 .setWidth(androidx.wear.tiles.DimensionBuilders.dp(60))
                 .setHeight(androidx.wear.tiles.DimensionBuilders.dp(60))
@@ -665,8 +665,8 @@ public class TestCasesGenerator {
                 .build();
     }
 
-    @NonNull
-    private static androidx.wear.tiles.LayoutElementBuilders.Box buildColoredBoxPLL(int color) {
+    private static androidx.wear.tiles.LayoutElementBuilders.@NonNull Box buildColoredBoxPLL(
+            int color) {
         return new androidx.wear.tiles.LayoutElementBuilders.Box.Builder()
                 .setWidth(androidx.wear.tiles.DimensionBuilders.expand())
                 .setHeight(androidx.wear.tiles.DimensionBuilders.dp(60))

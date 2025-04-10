@@ -19,9 +19,9 @@ package androidx.core.os;
 import android.os.Build;
 import android.os.Environment;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 
@@ -29,21 +29,23 @@ import java.io.File;
  * Helper for accessing features in {@link Environment}.
  */
 public final class EnvironmentCompat {
-    private static final String TAG = "EnvironmentCompat";
-
     /**
      * Unknown storage state, such as when a path isn't backed by known storage
      * media.
      *
      * @see #getStorageState(File)
+     *
+     * @deprecated Use {@link Environment#MEDIA_UNKNOWN} directly.
      */
+    @Deprecated
     public static final String MEDIA_UNKNOWN = "unknown";
 
     /**
      * Returns the current state of the storage device that provides the given
      * path.
      *
-     * @return one of {@link #MEDIA_UNKNOWN}, {@link Environment#MEDIA_REMOVED},
+     * @return one of {@link Environment#MEDIA_UNKNOWN},
+     *         {@link Environment#MEDIA_REMOVED},
      *         {@link Environment#MEDIA_UNMOUNTED},
      *         {@link Environment#MEDIA_CHECKING},
      *         {@link Environment#MEDIA_NOFS},
@@ -54,8 +56,7 @@ public final class EnvironmentCompat {
      *         {@link Environment#MEDIA_UNMOUNTABLE}.
      */
     @SuppressWarnings("deprecation")
-    @NonNull
-    public static String getStorageState(@NonNull File path) {
+    public static @NonNull String getStorageState(@NonNull File path) {
         if (Build.VERSION.SDK_INT >= 21) {
             return Api21Impl.getExternalStorageState(path);
         } else {
@@ -72,7 +73,6 @@ public final class EnvironmentCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static String getExternalStorageState(File path) {
             return Environment.getExternalStorageState(path);
         }

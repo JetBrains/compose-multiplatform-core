@@ -23,11 +23,13 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
+import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.LocaleList;
+import android.text.TextUtils;
 import android.text.method.PasswordTransformationMethod;
 import android.util.AttributeSet;
 import android.util.TypedValue;
@@ -35,20 +37,24 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.widget.TextView;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+import androidx.annotation.UiThread;
 import androidx.appcompat.R;
+import androidx.collection.LruCache;
 import androidx.core.content.res.ResourcesCompat;
+import androidx.core.util.Pair;
 import androidx.core.util.TypedValueCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.inputmethod.EditorInfoCompat;
 import androidx.core.widget.TextViewCompat;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.lang.ref.WeakReference;
 import java.util.Locale;
+import java.util.Objects;
 
 class AppCompatTextHelper {
 
@@ -59,8 +65,7 @@ class AppCompatTextHelper {
     private static final int SERIF = 2;
     private static final int MONOSPACE = 3;
 
-    @NonNull
-    private final TextView mView;
+    private final @NonNull TextView mView;
 
     private TintInfo mDrawableLeftTint;
     private TintInfo mDrawableTopTint;
@@ -70,12 +75,12 @@ class AppCompatTextHelper {
     private TintInfo mDrawableEndTint;
     private TintInfo mDrawableTint; // Tint used for all compound drawables
 
-    @NonNull
-    private final AppCompatTextViewAutoSizeHelper mAutoSizeTextHelper;
+    private final @NonNull AppCompatTextViewAutoSizeHelper mAutoSizeTextHelper;
 
     private int mStyle = Typeface.NORMAL;
     private int mFontWeight = TEXT_FONT_WEIGHT_UNSPECIFIED;
     private Typeface mFontTypeface;
+    private @Nullable String mFontVariationSettings = null;
     private boolean mAsyncFontPending;
 
     AppCompatTextHelper(@NonNull TextView view) {
@@ -113,16 +118,13 @@ class AppCompatTextHelper {
             mDrawableBottomTint = createTintInfo(context, drawableManager,
                     a.getResourceId(R.styleable.AppCompatTextHelper_android_drawableBottom, 0));
         }
-
-        if (Build.VERSION.SDK_INT >= 17) {
-            if (a.hasValue(R.styleable.AppCompatTextHelper_android_drawableStart)) {
-                mDrawableStartTint = createTintInfo(context, drawableManager,
-                        a.getResourceId(R.styleable.AppCompatTextHelper_android_drawableStart, 0));
-            }
-            if (a.hasValue(R.styleable.AppCompatTextHelper_android_drawableEnd)) {
-                mDrawableEndTint = createTintInfo(context, drawableManager,
-                        a.getResourceId(R.styleable.AppCompatTextHelper_android_drawableEnd, 0));
-            }
+        if (a.hasValue(R.styleable.AppCompatTextHelper_android_drawableStart)) {
+            mDrawableStartTint = createTintInfo(context, drawableManager,
+                    a.getResourceId(R.styleable.AppCompatTextHelper_android_drawableStart, 0));
+        }
+        if (a.hasValue(R.styleable.AppCompatTextHelper_android_drawableEnd)) {
+            mDrawableEndTint = createTintInfo(context, drawableManager,
+                    a.getResourceId(R.styleable.AppCompatTextHelper_android_drawableEnd, 0));
         }
 
         a.recycle();
@@ -137,7 +139,6 @@ class AppCompatTextHelper {
         ColorStateList textColor = null;
         ColorStateList textColorHint = null;
         ColorStateList textColorLink = null;
-        String fontVariation = null;
         String localeListString = null;
 
         // First check TextAppearance's textAllCaps value
@@ -166,10 +167,6 @@ class AppCompatTextHelper {
             }
             if (a.hasValue(R.styleable.TextAppearance_textLocale)) {
                 localeListString = a.getString(R.styleable.TextAppearance_textLocale);
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                    && a.hasValue(R.styleable.TextAppearance_fontVariationSettings)) {
-                fontVariation = a.getString(R.styleable.TextAppearance_fontVariationSettings);
             }
             a.recycle();
         }
@@ -200,10 +197,6 @@ class AppCompatTextHelper {
             localeListString = a.getString(R.styleable.TextAppearance_textLocale);
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                && a.hasValue(R.styleable.TextAppearance_fontVariationSettings)) {
-            fontVariation = a.getString(R.styleable.TextAppearance_fontVariationSettings);
-        }
         // In P, when the text size attribute is 0, this would not be set. Fix this here.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
                 && a.hasValue(R.styleable.TextAppearance_android_textSize)) {
@@ -227,16 +220,9 @@ class AppCompatTextHelper {
         if (!hasPwdTm && allCapsSet) {
             setAllCaps(allCaps);
         }
-        if (mFontTypeface != null) {
-            if (mFontWeight == TEXT_FONT_WEIGHT_UNSPECIFIED) {
-                mView.setTypeface(mFontTypeface, mStyle);
-            } else {
-                mView.setTypeface(mFontTypeface);
-            }
-        }
-        if (fontVariation != null) {
-            Api26Impl.setFontVariationSettings(mView, fontVariation);
-        }
+
+        applyFontAndVariationSettings(/* forceNullSet */ false);
+
         if (localeListString != null) {
             if (Build.VERSION.SDK_INT >= 24) {
                 Api24Impl.setTextLocales(mView, Api24Impl.forLanguageTags(localeListString));
@@ -358,7 +344,39 @@ class AppCompatTextHelper {
         }
     }
 
-    private void updateTypefaceAndStyle(Context context, TintTypedArray a) {
+    /**
+     * Apply mFontTypeface previously loaded from XML, and apply mFontVariationSettings to it.
+     *
+     * This should only be called from xml initialization, or setTextAppearance.
+     *
+     * @param forceNullSet Explicit null values should clobber existing Typefaces
+     */
+    private void applyFontAndVariationSettings(boolean forceNullSet) {
+        if (mFontTypeface != null) {
+            if (mFontWeight == TEXT_FONT_WEIGHT_UNSPECIFIED) {
+                mView.setTypeface(mFontTypeface, mStyle);
+            } else {
+                mView.setTypeface(mFontTypeface);
+            }
+        } else if (forceNullSet) {
+            mView.setTypeface(null);
+        }
+
+        if (mFontVariationSettings != null && Build.VERSION.SDK_INT >= 26) {
+            Api26Impl.setFontVariationSettings(mView, mFontVariationSettings);
+        }
+    }
+
+    /**
+     * Load mFontTypeface from an xml, may be called multiple times with e.g. style, textAppearance,
+     * and attribute items.
+     *
+     * Note: Setting multiple fonts at different levels currently triggers multiple font-loads.
+     *
+     * @param context to check if restrictions avoid loading downloadable fonts
+     * @param a attributes to read from, e.g. a textappearance
+     */
+    private boolean updateTypefaceAndStyle(Context context, TintTypedArray a) {
         mStyle = a.getInt(R.styleable.TextAppearance_android_textStyle, mStyle);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -367,6 +385,11 @@ class AppCompatTextHelper {
             if (mFontWeight != TEXT_FONT_WEIGHT_UNSPECIFIED) {
                 mStyle = Typeface.NORMAL | (mStyle & Typeface.ITALIC);
             }
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                && a.hasValue(R.styleable.TextAppearance_fontVariationSettings)) {
+            mFontVariationSettings = a.getString(R.styleable.TextAppearance_fontVariationSettings);
         }
 
         if (a.hasValue(R.styleable.TextAppearance_android_fontFamily)
@@ -378,27 +401,12 @@ class AppCompatTextHelper {
             final int fontWeight = mFontWeight;
             final int style = mStyle;
             if (!context.isRestricted()) {
-                final WeakReference<TextView> textViewWeak = new WeakReference<>(mView);
-                ResourcesCompat.FontCallback replyCallback = new ResourcesCompat.FontCallback() {
-                    @Override
-                    public void onFontRetrieved(@NonNull Typeface typeface) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                            if (fontWeight != TEXT_FONT_WEIGHT_UNSPECIFIED) {
-                                typeface = Api28Impl.create(typeface, fontWeight,
-                                        (style & Typeface.ITALIC) != 0);
-                            }
-                        }
-                        onAsyncTypefaceReceived(textViewWeak, typeface);
-                    }
-
-                    @Override
-                    public void onFontRetrievalFailed(int reason) {
-                        // Do nothing.
-                    }
-                };
+                ResourcesCompat.FontCallback replyCallback = makeFontCallback(fontWeight,
+                        style);
                 try {
                     // Note the callback will be triggered on the UI thread.
                     final Typeface typeface = a.getFont(fontFamilyId, mStyle, replyCallback);
+                    // assume Typeface does have fontVariationSettings in this path
                     if (typeface != null) {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
                                 && mFontWeight != TEXT_FONT_WEIGHT_UNSPECIFIED) {
@@ -429,7 +437,7 @@ class AppCompatTextHelper {
                     }
                 }
             }
-            return;
+            return true;
         }
 
         if (a.hasValue(R.styleable.TextAppearance_android_typeface)) {
@@ -449,27 +457,76 @@ class AppCompatTextHelper {
                     mFontTypeface = Typeface.MONOSPACE;
                     break;
             }
+            return true;
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                && mFontWeight != TEXT_FONT_WEIGHT_UNSPECIFIED && mFontTypeface != null) {
+            mFontTypeface = Api28Impl.create(mFontTypeface, mFontWeight,
+                    (mStyle & Typeface.ITALIC) != 0);
+            return true;
+        }
+
+        return false;
+    }
+
+    private ResourcesCompat.@NonNull FontCallback makeFontCallback(int fontWeight, int style) {
+        final WeakReference<TextView> textViewWeak = new WeakReference<>(mView);
+        return new ResourcesCompat.FontCallback() {
+            @Override
+            public void onFontRetrieved(@NonNull Typeface typeface) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    if (fontWeight != TEXT_FONT_WEIGHT_UNSPECIFIED) {
+                        typeface = Api28Impl.create(typeface, fontWeight,
+                                (style & Typeface.ITALIC) != 0);
+                    }
+                }
+                onAsyncTypefaceReceived(textViewWeak, typeface);
+            }
+
+            @Override
+            public void onFontRetrievalFailed(int reason) {
+                // Do nothing.
+            }
+        };
     }
 
     @SuppressWarnings("WeakerAccess") /* synthetic access */
     void onAsyncTypefaceReceived(WeakReference<TextView> textViewWeak, final Typeface typeface) {
         if (mAsyncFontPending) {
+            // we assume that typeface has the correct variation settings from androidx.core
             mFontTypeface = typeface;
+            // TODO(b/266112457) unset mFontVariationSettings here so we don't double apply it
             final TextView textView = textViewWeak.get();
             if (textView != null) {
-                if (ViewCompat.isAttachedToWindow(textView)) {
+                if (textView.isAttachedToWindow()) {
                     final int style = mStyle;
                     textView.post(new Runnable() {
                         @Override
                         public void run() {
-                            textView.setTypeface(typeface, style);
+                            applyNewTypefacePreservingVariationSettings(textView, typeface, style);
                         }
                     });
                 } else {
-                    textView.setTypeface(typeface, mStyle);
+                    applyNewTypefacePreservingVariationSettings(textView, typeface, mStyle);
                 }
             }
+        }
+    }
+
+    private static void applyNewTypefacePreservingVariationSettings(TextView textView,
+            Typeface typeface, int style) {
+        String fontVariationSettings = null;
+        if (Build.VERSION.SDK_INT >= 26) {
+            fontVariationSettings = Api26Impl.getFontVariationSettings(textView);
+            if (!TextUtils.isEmpty(fontVariationSettings)) {
+                Api26Impl.setFontVariationSettings(textView, null);
+            }
+        }
+
+        textView.setTypeface(typeface, style);
+        if (Build.VERSION.SDK_INT >= 26 && !TextUtils.isEmpty(fontVariationSettings)) {
+            Api26Impl.setFontVariationSettings(textView, fontVariationSettings);
         }
     }
 
@@ -515,20 +572,9 @@ class AppCompatTextHelper {
             }
         }
 
-        updateTypefaceAndStyle(context, a);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                && a.hasValue(R.styleable.TextAppearance_fontVariationSettings)) {
-            final String fontVariation = a.getString(
-                    R.styleable.TextAppearance_fontVariationSettings);
-            if (fontVariation != null) {
-                Api26Impl.setFontVariationSettings(mView, fontVariation);
-            }
-        }
+        boolean containsTypeface = updateTypefaceAndStyle(context, a);
         a.recycle();
-        if (mFontTypeface != null) {
-            mView.setTypeface(mFontTypeface, mStyle);
-        }
+        applyFontAndVariationSettings(containsTypeface);
     }
 
     void setAllCaps(boolean allCaps) {
@@ -616,7 +662,7 @@ class AppCompatTextHelper {
                 autoSizeMinTextSize, autoSizeMaxTextSize, autoSizeStepGranularity, unit);
     }
 
-    void setAutoSizeTextTypeUniformWithPresetSizes(@NonNull int[] presetSizes, int unit)
+    void setAutoSizeTextTypeUniformWithPresetSizes(int @NonNull [] presetSizes, int unit)
             throws IllegalArgumentException {
         mAutoSizeTextHelper.setAutoSizeTextTypeUniformWithPresetSizes(presetSizes, unit);
     }
@@ -642,8 +688,7 @@ class AppCompatTextHelper {
         return mAutoSizeTextHelper.getAutoSizeTextAvailableSizes();
     }
 
-    @Nullable
-    ColorStateList getCompoundDrawableTintList() {
+    @Nullable ColorStateList getCompoundDrawableTintList() {
         return mDrawableTint != null ? mDrawableTint.mTintList : null;
     }
 
@@ -656,12 +701,11 @@ class AppCompatTextHelper {
         setCompoundTints();
     }
 
-    @Nullable
-    PorterDuff.Mode getCompoundDrawableTintMode() {
+    PorterDuff.@Nullable Mode getCompoundDrawableTintMode() {
         return mDrawableTint != null ? mDrawableTint.mTintMode : null;
     }
 
-    void setCompoundDrawableTintMode(@Nullable PorterDuff.Mode tintMode) {
+    void setCompoundDrawableTintMode(PorterDuff.@Nullable Mode tintMode) {
         if (mDrawableTint == null) {
             mDrawableTint = new TintInfo();
         }
@@ -735,21 +779,84 @@ class AppCompatTextHelper {
 
     @RequiresApi(26)
     static class Api26Impl {
+        /**
+         * Cache for variation instances created based on an existing Typeface
+         */
+        private static final LruCache<Pair<Typeface, String>, Typeface> sVariationsCache =
+                new LruCache<>(30);
+
+        /**
+         * Used to create variation instances; initialized lazily
+         */
+        private static @Nullable Paint sPaint;
+
         private Api26Impl() {
             // This class is not instantiable.
         }
 
-        @DoNotInline
+        static String getFontVariationSettings(TextView textView) {
+            return textView.getFontVariationSettings();
+        }
+
         static boolean setFontVariationSettings(TextView textView, String fontVariationSettings) {
+            if (Objects.equals(textView.getFontVariationSettings(), fontVariationSettings)) {
+                // textView will early-exit if we don't clear fontVariationSettings
+                textView.setFontVariationSettings("");
+            }
             return textView.setFontVariationSettings(fontVariationSettings);
         }
 
-        @DoNotInline
+        /**
+         * Create a new Typeface based on {@code baseTypeFace} with the specified variation
+         * settings.  Uses a cache to avoid memory scaling with the number of AppCompatTextViews.
+         *
+         * @param baseTypeface the original typeface, preferably without variations applied
+         *                     (used both to create the new instance, and as a cache key).
+         *                     Note: this method will correctly handle instances with variations
+         *                     applied, as we have no way of detecting that.  However, cache hit
+         *                     rates may be decreased.
+         * @param fontVariationSettings the new font variation settings.
+         *                              This is used as a cache key without sorting, to avoid
+         *                              additional per-TextView allocations to parse and sort the
+         *                              variation settings.  App developers should strive to provide
+         *                              the settings in the same order every time within their app,
+         *                              in order to get the best cache performance.
+         * @return the new instance, or {@code null} if
+         *         {@link Paint#setFontVariationSettings(String)} would return null for this
+         *         Typeface and font variation settings string.
+         */
+        @UiThread
+        static @Nullable Typeface createVariationInstance(@Nullable Typeface baseTypeface,
+                @Nullable String fontVariationSettings) {
+            Pair<Typeface, String> cacheKey = new Pair<>(baseTypeface, fontVariationSettings);
+
+            Typeface result = sVariationsCache.get(cacheKey);
+            if (result != null) {
+                return result;
+            }
+            Paint paint = sPaint != null ? sPaint : (sPaint = new Paint());
+
+            // Work around b/353609778
+            if (Objects.equals(paint.getFontVariationSettings(), fontVariationSettings)) {
+                paint.setFontVariationSettings(null);
+            }
+
+            // Use Paint to create a new Typeface based on an existing one
+            paint.setTypeface(baseTypeface);
+            boolean effective = paint.setFontVariationSettings(fontVariationSettings);
+            if (effective) {
+                result = paint.getTypeface();
+                sVariationsCache.put(cacheKey, result);
+                return result;
+            } else {
+                return null;
+            }
+        }
+
         static int getAutoSizeStepGranularity(TextView textView) {
             return textView.getAutoSizeStepGranularity();
         }
 
-        @DoNotInline
         static void setAutoSizeTextTypeUniformWithConfiguration(TextView textView,
                 int autoSizeMinTextSize, int autoSizeMaxTextSize, int autoSizeStepGranularity,
                 int unit) {
@@ -757,7 +864,6 @@ class AppCompatTextHelper {
                     autoSizeMaxTextSize, autoSizeStepGranularity, unit);
         }
 
-        @DoNotInline
         static void setAutoSizeTextTypeUniformWithPresetSizes(TextView textView, int[] presetSizes,
                 int unit) {
             textView.setAutoSizeTextTypeUniformWithPresetSizes(presetSizes, unit);
@@ -770,12 +876,10 @@ class AppCompatTextHelper {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void setTextLocales(TextView textView, LocaleList locales) {
             textView.setTextLocales(locales);
         }
 
-        @DoNotInline
         static LocaleList forLanguageTags(String list) {
             return LocaleList.forLanguageTags(list);
         }
@@ -787,7 +891,6 @@ class AppCompatTextHelper {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static Locale forLanguageTag(String languageTag) {
             return Locale.forLanguageTag(languageTag);
         }
@@ -800,7 +903,6 @@ class AppCompatTextHelper {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static Typeface create(Typeface family, int weight, boolean italic) {
             return Typeface.create(family, weight, italic);
         }

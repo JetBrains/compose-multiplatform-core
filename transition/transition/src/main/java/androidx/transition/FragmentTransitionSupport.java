@@ -24,23 +24,21 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransitionImpl;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
-
 
 /**
  */
 // This is instantiated in androidx.fragment.app.FragmentTransition
 @SuppressWarnings("unused")
 @RestrictTo(LIBRARY_GROUP_PREFIX)
-@SuppressLint("RestrictedApi") // remove once fragment lib would be released with the new
-// LIBRARY_GROUP_PREFIX restriction. tracking in b/127286008
 public class FragmentTransitionSupport extends FragmentTransitionImpl {
 
     @Override
@@ -48,9 +46,8 @@ public class FragmentTransitionSupport extends FragmentTransitionImpl {
         return transition instanceof Transition;
     }
 
-    @Nullable
     @Override
-    public Object cloneTransition(@Nullable Object transition) {
+    public @Nullable Object cloneTransition(@Nullable Object transition) {
         Transition copy = null;
         if (transition != null) {
             copy = ((Transition) transition).clone();
@@ -58,9 +55,8 @@ public class FragmentTransitionSupport extends FragmentTransitionImpl {
         return copy;
     }
 
-    @Nullable
     @Override
-    public Object wrapTransitionInSet(@Nullable Object transition) {
+    public @Nullable Object wrapTransitionInSet(@Nullable Object transition) {
         if (transition == null) {
             return null;
         }
@@ -132,9 +128,8 @@ public class FragmentTransitionSupport extends FragmentTransitionImpl {
                 || !isNullOrEmpty(transition.getTargetTypes());
     }
 
-    @NonNull
     @Override
-    public Object mergeTransitionsTogether(@Nullable Object transition1,
+    public @NonNull Object mergeTransitionsTogether(@Nullable Object transition1,
             @Nullable Object transition2, @Nullable Object transition3) {
         TransitionSet transitionSet = new TransitionSet();
         if (transition1 != null) {
@@ -190,9 +185,8 @@ public class FragmentTransitionSupport extends FragmentTransitionImpl {
         });
     }
 
-    @Nullable
     @Override
-    public Object mergeTransitionsInSequence(@Nullable Object exitTransitionObj,
+    public @Nullable Object mergeTransitionsInSequence(@Nullable Object exitTransitionObj,
             @Nullable Object enterTransitionObj, @Nullable Object sharedElementTransitionObj) {
         // First do exit, then enter, but allow shared element transition to happen
         // during both.
@@ -245,8 +239,7 @@ public class FragmentTransitionSupport extends FragmentTransitionImpl {
     }
 
     @Override
-    @Nullable
-    public Object controlDelayedTransition(@NonNull ViewGroup sceneRoot,
+    public @Nullable Object controlDelayedTransition(@NonNull ViewGroup sceneRoot,
             @NonNull Object transition) {
         return TransitionManager.controlDelayedTransition(sceneRoot, (Transition) transition);
     }
@@ -322,10 +315,10 @@ public class FragmentTransitionSupport extends FragmentTransitionImpl {
      */
     @SuppressWarnings("deprecation")
     @Override
-    public void setListenerForTransitionEnd(@NonNull final Fragment outFragment,
-            @NonNull final Object transition,
-            @NonNull final androidx.core.os.CancellationSignal signal,
-            @NonNull final Runnable transitionCompleteRunnable) {
+    public void setListenerForTransitionEnd(final @NonNull Fragment outFragment,
+            final @NonNull Object transition,
+            final androidx.core.os.@NonNull CancellationSignal signal,
+            final @NonNull Runnable transitionCompleteRunnable) {
         setListenerForTransitionEnd(outFragment, transition, signal,
                 null, transitionCompleteRunnable);
     }
@@ -333,12 +326,13 @@ public class FragmentTransitionSupport extends FragmentTransitionImpl {
     @SuppressWarnings("deprecation")
     @Override
     public void setListenerForTransitionEnd(@NonNull Fragment outFragment,
-            @NonNull Object transition, @NonNull androidx.core.os.CancellationSignal signal,
+            @NonNull Object transition, androidx.core.os.@NonNull CancellationSignal signal,
             @Nullable Runnable cancelRunnable, @NonNull Runnable transitionCompleteRunnable) {
         final Transition realTransition = ((Transition) transition);
         signal.setOnCancelListener(() -> {
             if (cancelRunnable == null) {
                 realTransition.cancel();
+                transitionCompleteRunnable.run();
             } else {
                 cancelRunnable.run();
             }

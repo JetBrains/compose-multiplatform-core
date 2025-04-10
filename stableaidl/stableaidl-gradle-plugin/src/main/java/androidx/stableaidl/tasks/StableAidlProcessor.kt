@@ -32,8 +32,7 @@ import java.nio.file.Path
 @Throws(IOException::class)
 fun callStableAidlProcessor(
     aidlExecutable: String,
-    @Suppress("UNUSED_PARAMETER")
-    frameworkLocation: String, // TODO: Unused until the framework has been fully annotated.
+    frameworkLocation: String?,
     importFolders: Iterable<File>,
     extraArgs: List<String?>,
     processExecutor: GradleProcessExecutor,
@@ -52,9 +51,10 @@ fun callStableAidlProcessor(
         builder.addArgs("-o" + sourceOutputDir.absolutePath)
     }
 
-    // TODO: Remove when the framework has been fully annotated.
     // Specify the framework as a pre-processed file for use in import statements.
-    // builder.addArgs("-p$frameworkLocation")
+    if (frameworkLocation != null) {
+        builder.addArgs("-p$frameworkLocation")
+    }
 
     // Specify all library AIDL directories for use in import statements.
     for (f in importFolders) {
@@ -82,13 +82,14 @@ fun callStableAidlProcessor(
         throw IOException(pe)
     }
 
-    val relativeInputFile = if (startDir != null && inputFilePath != null) {
-        FileUtils.toSystemIndependentPath(
-            FileOpUtils.makeRelative(startDir.toFile(), inputFilePath.toFile())
-        )
-    } else {
-        null
-    }
+    val relativeInputFile =
+        if (startDir != null && inputFilePath != null) {
+            FileUtils.toSystemIndependentPath(
+                FileOpUtils.makeRelative(startDir.toFile(), inputFilePath.toFile())
+            )
+        } else {
+            null
+        }
 
     // Process the dependency file by deleting empty generated source files and copying parcelable
     // headers to secondary output for AAR packaging.
@@ -101,8 +102,9 @@ fun callStableAidlProcessor(
         if (outputFiles.isNotEmpty()) {
             for (path in outputFiles) {
                 val outputFileContent = Files.readLines(File(path), StandardCharsets.UTF_8)
-                val emptyFileLine = "// This file is intentionally left blank as placeholder for " +
-                    "parcel declaration."
+                val emptyFileLine =
+                    "// This file is intentionally left blank as placeholder for " +
+                        "parcel declaration."
                 if (outputFileContent.size <= 2 && outputFileContent[0].equals(emptyFileLine)) {
                     FileUtils.delete(File(path))
                 } else {

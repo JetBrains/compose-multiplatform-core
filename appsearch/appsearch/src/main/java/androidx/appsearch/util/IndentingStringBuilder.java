@@ -16,9 +16,10 @@
 
 package androidx.appsearch.util;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Utility for building indented strings.
@@ -43,8 +44,7 @@ public class IndentingStringBuilder {
      * Increases the indent level by one for appended strings.
      */
     @CanIgnoreReturnValue
-    @NonNull
-    public IndentingStringBuilder increaseIndentLevel() {
+    public @NonNull IndentingStringBuilder increaseIndentLevel() {
         mIndentLevel++;
         return this;
     }
@@ -53,8 +53,7 @@ public class IndentingStringBuilder {
      * Decreases the indent level by one for appended strings.
      */
     @CanIgnoreReturnValue
-    @NonNull
-    public IndentingStringBuilder decreaseIndentLevel() throws IllegalStateException {
+    public @NonNull IndentingStringBuilder decreaseIndentLevel() throws IllegalStateException {
         if (mIndentLevel == 0) {
             throw new IllegalStateException("Cannot set indent level below 0.");
         }
@@ -68,8 +67,7 @@ public class IndentingStringBuilder {
      * <p>Indentation is applied after each newline character.
      */
     @CanIgnoreReturnValue
-    @NonNull
-    public IndentingStringBuilder append(@NonNull String str) {
+    public @NonNull IndentingStringBuilder append(@NonNull String str) {
         applyIndentToString(str);
         return this;
     }
@@ -81,15 +79,13 @@ public class IndentingStringBuilder {
      * <p>Indentation is applied after each newline character.
      */
     @CanIgnoreReturnValue
-    @NonNull
-    public IndentingStringBuilder append(@NonNull Object obj) {
+    public @NonNull IndentingStringBuilder append(@NonNull Object obj) {
         applyIndentToString(obj.toString());
         return this;
     }
 
     @Override
-    @NonNull
-    public String toString() {
+    public @NonNull String toString() {
         return mStringBuilder.toString();
     }
 

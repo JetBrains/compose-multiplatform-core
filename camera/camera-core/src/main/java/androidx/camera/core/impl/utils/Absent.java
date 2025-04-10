@@ -16,18 +16,17 @@
 
 package androidx.camera.core.impl.utils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.core.util.Preconditions;
 import androidx.core.util.Supplier;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Implementation of an {@link Optional} not containing a reference.
  *
  * <p>Copied and adapted from Guava.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 final class Absent<T> extends Optional<T> {
     static final Absent<Object> sInstance = new Absent<>();
 
@@ -44,15 +43,13 @@ final class Absent<T> extends Optional<T> {
         return false;
     }
 
-    @NonNull
     @Override
-    public T get() {
+    public @NonNull T get() {
         throw new IllegalStateException("Optional.get() cannot be called on an absent value");
     }
 
-    @NonNull
     @Override
-    public T or(@NonNull T defaultValue) {
+    public @NonNull T or(@NonNull T defaultValue) {
         return Preconditions.checkNotNull(defaultValue,
                 "use Optional.orNull() instead of Optional.or(null)");
     }
@@ -63,16 +60,14 @@ final class Absent<T> extends Optional<T> {
         return (Optional<T>) Preconditions.checkNotNull(secondChoice);
     }
 
-    @NonNull
     @Override
-    public T or(@NonNull Supplier<? extends T> supplier) {
+    public @NonNull T or(@NonNull Supplier<? extends T> supplier) {
         return Preconditions.checkNotNull(
                 supplier.get(), "use Optional.orNull() instead of a Supplier that returns null");
     }
 
     @Override
-    @Nullable
-    public T orNull() {
+    public @Nullable T orNull() {
         return null;
     }
 
@@ -86,9 +81,8 @@ final class Absent<T> extends Optional<T> {
         return 0x79a31aac;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "Optional.absent()";
     }
 

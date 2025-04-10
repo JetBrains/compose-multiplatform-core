@@ -20,11 +20,12 @@ import android.view.MotionEvent;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.recyclerview.selection.ItemDetailsLookup.ItemDetails;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.androidx.R;
+
+import org.jspecify.annotations.NonNull;
 
 final class DemoHolder extends RecyclerView.ViewHolder {
 

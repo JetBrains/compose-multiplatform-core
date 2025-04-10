@@ -309,7 +309,8 @@ void JniBindings_nSetVisibility(
     if (android_get_device_api_level() >= 29) {
         auto st = reinterpret_cast<ASurfaceTransaction *>(surfaceTransaction);
         auto sc = reinterpret_cast<ASurfaceControl *>(surfaceControl);
-        ASurfaceTransaction_setVisibility(st, sc, jVisibility);
+        auto stv = static_cast<ASurfaceTransactionVisibility>(jVisibility);
+        ASurfaceTransaction_setVisibility(st, sc, stv);
     }
 }
 
@@ -368,7 +369,7 @@ void JniBindings_nSetBufferTransparency(
         ASurfaceTransaction_setBufferTransparency(
                 reinterpret_cast<ASurfaceTransaction *>(surfaceTransaction),
                 reinterpret_cast<ASurfaceControl *>(surfaceControl),
-                transparency);
+                static_cast<ASurfaceTransactionTransparency>(transparency));
     }
 }
 
@@ -458,6 +459,15 @@ jstring JniBindings_nGetDisplayOrientation(JNIEnv *env, jclass) {
     char name[PROP_VALUE_MAX];
     __system_property_get("ro.surface_flinger.primary_display_orientation", name);
     return (*env).NewStringUTF(name);
+}
+
+jboolean JniBindings_nIsHwuiUsingVulkanRenderer(JNIEnv*, jclass) {
+    char value[PROP_VALUE_MAX];
+    __system_property_get("ro.hwui.use_vulkan", value);
+    bool device_is_vulkan = strcmp(value, "true") == 0;
+    __system_property_get("debug.hwui.renderer", value);
+    bool is_debug_vulkan = strcmp(value, "skiavk") == 0;
+    return device_is_vulkan || is_debug_vulkan;
 }
 
 jint JniBindings_nGetPreviousReleaseFenceFd(JNIEnv *env, jclass,
@@ -648,6 +658,11 @@ static const JNINativeMethod JNI_METHOD_TABLE[] = {
             "nSetFrameRate",
                 "(JJFII)V",
                 (void *) JniBindings_nSetFrameRate
+        },
+        {
+            "nIsHwuiUsingVulkanRenderer",
+                "()Z",
+                (void *) JniBindings_nIsHwuiUsingVulkanRenderer
         }
 };
 

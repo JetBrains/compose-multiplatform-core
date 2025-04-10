@@ -44,14 +44,14 @@ import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.Logger;
 import androidx.camera.core.SurfaceRequest;
 import androidx.camera.core.ViewPort;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Handles {@link PreviewView} transformation.
@@ -91,7 +91,6 @@ import androidx.core.util.Preconditions;
  * <p> The transformed Surface is how the PreviewView's inner view should behave, to make the
  * crop rect matches the PreviewView.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 final class PreviewTransformation {
 
     private static final String TAG = "PreviewTransform";
@@ -124,7 +123,7 @@ final class PreviewTransformation {
      *
      * <p> All the values originally come from a {@link SurfaceRequest}.
      */
-    void setTransformationInfo(@NonNull SurfaceRequest.TransformationInfo transformationInfo,
+    void setTransformationInfo(SurfaceRequest.@NonNull TransformationInfo transformationInfo,
             Size resolution, boolean isFrontCamera) {
         Logger.d(TAG, "Transformation info set: " + transformationInfo + " " + resolution + " "
                 + isFrontCamera);
@@ -269,8 +268,7 @@ final class PreviewTransformation {
      *
      * <p>Returns null when it's not ready.
      */
-    @Nullable
-    Matrix getSensorToViewTransform(@NonNull Size previewViewSize, int layoutDirection) {
+    @Nullable Matrix getSensorToViewTransform(@NonNull Size previewViewSize, int layoutDirection) {
         if (!isTransformationInfoReady()) {
             return null;
         }
@@ -432,8 +430,7 @@ final class PreviewTransformation {
     /**
      * Return the crop rect of the preview surface.
      */
-    @Nullable
-    Rect getSurfaceCropRect() {
+    @Nullable Rect getSurfaceCropRect() {
         return mSurfaceCropRect;
     }
 
@@ -477,20 +474,20 @@ final class PreviewTransformation {
      *
      * @return null if transformation info is not set.
      */
-    @Nullable
-    Matrix getPreviewViewToNormalizedSurfaceMatrix(Size previewViewSize, int layoutDirection) {
+    @Nullable Matrix getPreviewViewToNormalizedSensorMatrix(
+            Size previewViewSize, int layoutDirection, Rect sensorRect) {
         if (!isTransformationInfoReady()) {
             return null;
         }
         Matrix matrix = new Matrix();
 
         // Map PreviewView coordinates to Surface coordinates.
-        getSurfaceToPreviewViewMatrix(previewViewSize, layoutDirection).invert(matrix);
+        getSensorToViewTransform(previewViewSize, layoutDirection).invert(matrix);
 
         // Map Surface coordinates to normalized coordinates (-1, -1) - (1, 1).
         Matrix normalization = new Matrix();
         normalization.setRectToRect(
-                new RectF(0, 0, mResolution.getWidth(), mResolution.getHeight()),
+                new RectF(0, 0, sensorRect.width(), sensorRect.height()),
                 new RectF(0, 0, 1, 1), Matrix.ScaleToFit.FILL);
         matrix.postConcat(normalization);
 

@@ -25,19 +25,16 @@ import androidx.compose.ui.platform.InspectorInfo
 
 /**
  * Invoke [onPlaced] after the parent [LayoutModifier] and parent layout has been placed and before
- * child [LayoutModifier] is placed. This allows child [LayoutModifier] to adjust its
- * own placement based on where the parent is.
+ * child [LayoutModifier] is placed. This allows child [LayoutModifier] to adjust its own placement
+ * based on where the parent is.
  *
  * @sample androidx.compose.ui.samples.OnPlaced
  */
 @Stable
-fun Modifier.onPlaced(
-    onPlaced: (LayoutCoordinates) -> Unit
-) = this then OnPlacedElement(onPlaced)
+fun Modifier.onPlaced(onPlaced: (LayoutCoordinates) -> Unit) = this then OnPlacedElement(onPlaced)
 
-private data class OnPlacedElement(
-    val onPlaced: (LayoutCoordinates) -> Unit
-) : ModifierNodeElement<OnPlacedNode>() {
+private class OnPlacedElement(val onPlaced: (LayoutCoordinates) -> Unit) :
+    ModifierNodeElement<OnPlacedNode>() {
     override fun create() = OnPlacedNode(callback = onPlaced)
 
     override fun update(node: OnPlacedNode) {
@@ -48,11 +45,23 @@ private data class OnPlacedElement(
         name = "onPlaced"
         properties["onPlaced"] = onPlaced
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is OnPlacedElement) return false
+
+        if (onPlaced !== other.onPlaced) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return onPlaced.hashCode()
+    }
 }
 
-private class OnPlacedNode(
-    var callback: (LayoutCoordinates) -> Unit
-) : LayoutAwareModifierNode, Modifier.Node() {
+private class OnPlacedNode(var callback: (LayoutCoordinates) -> Unit) :
+    LayoutAwareModifierNode, Modifier.Node() {
 
     override fun onPlaced(coordinates: LayoutCoordinates) {
         callback(coordinates)
@@ -61,16 +70,16 @@ private class OnPlacedNode(
 
 /**
  * A modifier whose [onPlaced] is called after the parent [LayoutModifier] and parent layout has
- * been placed and before child [LayoutModifier] is placed. This allows child
- * [LayoutModifier] to adjust its own placement based on where the parent is.
+ * been placed and before child [LayoutModifier] is placed. This allows child [LayoutModifier] to
+ * adjust its own placement based on where the parent is.
  *
  * @sample androidx.compose.ui.samples.OnPlaced
  */
 @JvmDefaultWithCompatibility
 interface OnPlacedModifier : Modifier.Element {
     /**
-     * [onPlaced] is called after parent [LayoutModifier] and parent layout gets placed and
-     * before any child [LayoutModifier] is placed.
+     * [onPlaced] is called after parent [LayoutModifier] and parent layout gets placed and before
+     * any child [LayoutModifier] is placed.
      *
      * [coordinates] provides [LayoutCoordinates] of the [OnPlacedModifier]. Placement in both
      * parent [LayoutModifier] and parent layout can be calculated using the [LayoutCoordinates].

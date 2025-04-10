@@ -22,7 +22,7 @@ import static org.junit.Assert.assertNotNull;
 import android.content.Context;
 import android.graphics.Point;
 import android.graphics.drawable.RotateDrawable;
-import android.provider.Settings;
+import android.os.Bundle;
 import android.view.Display;
 import android.view.KeyEvent;
 import android.view.Surface;
@@ -31,6 +31,9 @@ import android.view.WindowManager;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.wear.input.testing.TestWearableButtonsProvider;
 
+import com.google.android.wearable.input.WearableInputDevice;
+
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Shadows;
@@ -252,68 +255,189 @@ public class WearableButtonsTest {
                 WearableButtons.LOCATION_TOP_LEFT, R.drawable.ic_cc_settings_button_top, -90);
     }
 
+    @SuppressWarnings("deprecation")
     @Test
-    public void testGetButtonsRighty() {
+    public void testGetButtonsRotation0() {
+        Context context = ApplicationProvider.getApplicationContext();
+        WindowManager wm = context.getSystemService(WindowManager.class);
+        Display display = wm.getDefaultDisplay();
+        Shadows.shadowOf(display).setWidth(/* width= */ 500);
+        Shadows.shadowOf(display).setHeight(/* height= */ 600);
+        Shadows.shadowOf(display).setRotation(Surface.ROTATION_0);
+
         Map<Integer, TestWearableButtonsProvider.TestWearableButtonLocation> buttons =
                 new HashMap<>();
         buttons.put(
                 KeyEvent.KEYCODE_STEM_1,
-                new TestWearableButtonsProvider.TestWearableButtonLocation(1, 2, 3, 4));
+                new TestWearableButtonsProvider.TestWearableButtonLocation(
+                        /* x= */ 100, /* y= */ 200, /* rotatedX= */ 300, /* rotatedY= */ 400));
 
         TestWearableButtonsProvider provider = new TestWearableButtonsProvider(buttons);
         WearableButtons.setWearableButtonsProvider(provider);
 
-        setLeftyModeEnabled(false);
         WearableButtons.ButtonInfo info =
                 WearableButtons.getButtonInfo(
                         ApplicationProvider.getApplicationContext(), KeyEvent.KEYCODE_STEM_1);
         assertNotNull(info);
-        assertEquals(1, info.getX(), 1.0e-7);
-        assertEquals(2, info.getY(), 1.0e-7);
-    }
-
-    @Test
-    public void testGetButtonsLefty() {
-        setLeftyModeEnabled(true);
-        Map<Integer, TestWearableButtonsProvider.TestWearableButtonLocation> buttons =
-                new HashMap<>();
-        buttons.put(
-                KeyEvent.KEYCODE_STEM_1,
-                new TestWearableButtonsProvider.TestWearableButtonLocation(1, 2, 3, 4));
-
-        TestWearableButtonsProvider provider = new TestWearableButtonsProvider(buttons);
-        WearableButtons.setWearableButtonsProvider(provider);
-        WearableButtons.ButtonInfo info =
-                WearableButtons.getButtonInfo(
-                        ApplicationProvider.getApplicationContext(), KeyEvent.KEYCODE_STEM_1);
-        assertNotNull(info);
-        assertEquals(3, info.getX(), 1.0e-7);
-        assertEquals(4, info.getY(), 1.0e-7);
+        // expectedX = x, expectedY = y
+        assertEquals(/* expected= */ 100, info.getX(), 1.0e-7);
+        assertEquals(/* expected= */ 200, info.getY(), 1.0e-7);
     }
 
     @SuppressWarnings("deprecation")
     @Test
-    public void testGetButtonsLeftyNoData() {
+    public void testGetButtonsRotation90() {
         Context context = ApplicationProvider.getApplicationContext();
-        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        WindowManager wm = context.getSystemService(WindowManager.class);
         Display display = wm.getDefaultDisplay();
-        Shadows.shadowOf(display).setWidth(480);
-        Shadows.shadowOf(display).setHeight(480);
+        Shadows.shadowOf(display).setWidth(/* width= */ 500);
+        Shadows.shadowOf(display).setHeight(/* height= */ 600);
+        Shadows.shadowOf(display).setRotation(Surface.ROTATION_90);
 
-        setLeftyModeEnabled(true);
         Map<Integer, TestWearableButtonsProvider.TestWearableButtonLocation> buttons =
                 new HashMap<>();
         buttons.put(
                 KeyEvent.KEYCODE_STEM_1,
-                new TestWearableButtonsProvider.TestWearableButtonLocation(1, 2));
+                new TestWearableButtonsProvider.TestWearableButtonLocation(
+                        /* x= */ 100, /* y= */ 200, /* rotatedX= */ 300, /* rotatedY= */ 400));
 
         TestWearableButtonsProvider provider = new TestWearableButtonsProvider(buttons);
         WearableButtons.setWearableButtonsProvider(provider);
+
         WearableButtons.ButtonInfo info =
-                WearableButtons.getButtonInfo(context, KeyEvent.KEYCODE_STEM_1);
+                WearableButtons.getButtonInfo(
+                        ApplicationProvider.getApplicationContext(), KeyEvent.KEYCODE_STEM_1);
         assertNotNull(info);
-        assertEquals(479, info.getX(), 1.0e-7); // == 480 - 1
-        assertEquals(478, info.getY(), 1.0e-7); // == 480 - 2
+        // expectedX = (y - height/2) + width/2, expectedY = -(x - width/2) + height/2
+        assertEquals(/* expected= */ 150, info.getX(), 1.0e-7);
+        assertEquals(/* expected= */ 450, info.getY(), 1.0e-7);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void testGetButtonsRotation180_rotatedXAndYCoordinatesPresent() {
+        float rotatedX = 450;
+        float rotatedY = 550;
+        Context context = ApplicationProvider.getApplicationContext();
+        WindowManager wm = context.getSystemService(WindowManager.class);
+        Display display = wm.getDefaultDisplay();
+        Shadows.shadowOf(display).setWidth(/* width= */ 500);
+        Shadows.shadowOf(display).setHeight(/* height= */ 600);
+        Shadows.shadowOf(display).setRotation(Surface.ROTATION_180);
+
+        Map<Integer, TestWearableButtonsProvider.TestWearableButtonLocation> buttons =
+                new HashMap<>();
+        buttons.put(
+                KeyEvent.KEYCODE_STEM_1,
+                new TestWearableButtonsProvider.TestWearableButtonLocation(
+                        /* x= */ 100, /* y= */ 200, rotatedX, rotatedY));
+
+        TestWearableButtonsProvider provider = new TestWearableButtonsProvider(buttons);
+        WearableButtons.setWearableButtonsProvider(provider);
+
+        WearableButtons.ButtonInfo info =
+                WearableButtons.getButtonInfo(
+                        ApplicationProvider.getApplicationContext(), KeyEvent.KEYCODE_STEM_1);
+        assertNotNull(info);
+        // expectedX = rotatedX, expectedY = rotatedY
+        assertEquals(/* expected= */ rotatedX, info.getX(), 1.0e-7);
+        assertEquals(/* expected= */ rotatedY, info.getY(), 1.0e-7);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void testGetButtonsRotation180_onlyRotatedXCoordinatePresent() {
+        float rotatedX = 450;
+        Context context = ApplicationProvider.getApplicationContext();
+        WindowManager wm = context.getSystemService(WindowManager.class);
+        Display display = wm.getDefaultDisplay();
+        Shadows.shadowOf(display).setWidth(/* width= */ 500);
+        Shadows.shadowOf(display).setHeight(/* height= */ 600);
+        Shadows.shadowOf(display).setRotation(Surface.ROTATION_180);
+
+        Map<Integer, TestWearableButtonsProvider.TestWearableButtonLocation> buttons =
+                new HashMap<>();
+        buttons.put(
+                KeyEvent.KEYCODE_STEM_1,
+                new TestWearableButtonsProvider.TestWearableButtonLocation(
+                        /* x= */ 100, /* y= */ 200));
+
+        TestWearableButtonsProvider provider =
+                new TestWearableButtonsProvider(buttons) {
+                    @Override
+                    public @NonNull Bundle getButtonInfo(@NonNull Context context, int keycode) {
+                        Bundle bundle = super.getButtonInfo(context, keycode);
+                        bundle.putFloat(WearableInputDevice.X_KEY_ROTATED, rotatedX);
+                        return bundle;
+                    }
+                };
+        WearableButtons.setWearableButtonsProvider(provider);
+
+        WearableButtons.ButtonInfo info =
+                WearableButtons.getButtonInfo(
+                        ApplicationProvider.getApplicationContext(), KeyEvent.KEYCODE_STEM_1);
+        assertNotNull(info);
+        // expectedX = width - x, expectedY = height - y
+        assertEquals(/* expected= */ 400, info.getX(), 1.0e-7);
+        assertEquals(/* expected= */ 400, info.getY(), 1.0e-7);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void testGetButtonsRotation180_rotatedCoordinatesAbsent() {
+        Context context = ApplicationProvider.getApplicationContext();
+        WindowManager wm = context.getSystemService(WindowManager.class);
+        Display display = wm.getDefaultDisplay();
+        Shadows.shadowOf(display).setWidth(/* width= */ 500);
+        Shadows.shadowOf(display).setHeight(/* height= */ 600);
+        Shadows.shadowOf(display).setRotation(Surface.ROTATION_180);
+
+        Map<Integer, TestWearableButtonsProvider.TestWearableButtonLocation> buttons =
+                new HashMap<>();
+        buttons.put(
+                KeyEvent.KEYCODE_STEM_1,
+                new TestWearableButtonsProvider.TestWearableButtonLocation(
+                        /* x= */ 100, /* y= */ 200));
+
+        TestWearableButtonsProvider provider = new TestWearableButtonsProvider(buttons);
+        WearableButtons.setWearableButtonsProvider(provider);
+
+        WearableButtons.ButtonInfo info =
+                WearableButtons.getButtonInfo(
+                        ApplicationProvider.getApplicationContext(), KeyEvent.KEYCODE_STEM_1);
+        assertNotNull(info);
+        // expectedX = width - x, expectedY = height - y
+        assertEquals(/* expected= */ 400, info.getX(), 1.0e-7);
+        assertEquals(/* expected= */ 400, info.getY(), 1.0e-7);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void testGetButtonsRotation270() {
+        Context context = ApplicationProvider.getApplicationContext();
+        WindowManager wm = context.getSystemService(WindowManager.class);
+        Display display = wm.getDefaultDisplay();
+        Shadows.shadowOf(display).setWidth(/* width= */ 500);
+        Shadows.shadowOf(display).setHeight(/* height= */ 600);
+        Shadows.shadowOf(display).setRotation(Surface.ROTATION_270);
+
+        Map<Integer, TestWearableButtonsProvider.TestWearableButtonLocation> buttons =
+                new HashMap<>();
+        buttons.put(
+                KeyEvent.KEYCODE_STEM_1,
+                new TestWearableButtonsProvider.TestWearableButtonLocation(
+                        /* x= */ 100, /* y= */ 200, /* rotatedX= */ 300, /* rotatedY= */ 400));
+
+        TestWearableButtonsProvider provider = new TestWearableButtonsProvider(buttons);
+        WearableButtons.setWearableButtonsProvider(provider);
+
+        WearableButtons.ButtonInfo info =
+                WearableButtons.getButtonInfo(
+                        ApplicationProvider.getApplicationContext(), KeyEvent.KEYCODE_STEM_1);
+        assertNotNull(info);
+        // expectedX = -(y - height/2) + width/2, expectedY = (x - width/2) + height/2
+        assertEquals(/* expected= */ 350, info.getX(), 1.0e-7);
+        assertEquals(/* expected= */ 150, info.getY(), 1.0e-7);
     }
 
     private void testRotateDrawable(
@@ -327,12 +451,5 @@ public class WearableButtonsTest {
 
         assertEquals(rotateDrawableShadow.getCreatedFromResId(), expectedDrawableId);
         assertEquals(expectedDegreeRotation, rotateDrawable.getFromDegrees(), .001);
-    }
-
-    private void setLeftyModeEnabled(boolean enabled) {
-        Settings.System.putInt(
-                ApplicationProvider.getApplicationContext().getContentResolver(),
-                Settings.System.USER_ROTATION,
-                enabled ? Surface.ROTATION_180 : Surface.ROTATION_0);
     }
 }

@@ -29,38 +29,35 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.VectorPainter
 import androidx.compose.ui.graphics.vector.compat.seekToStartTag
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalImageVectorCache
 import androidx.compose.ui.platform.LocalResourceIdCache
+import androidx.compose.ui.platform.LocalResources
 
 /**
  * Create a [Painter] from an Android resource id. This can load either an instance of
  * [BitmapPainter] or [VectorPainter] for [ImageBitmap] based assets or vector based assets
- * respectively. The resources with the given id must point to either fully rasterized
- * images (ex. PNG or JPG files) or VectorDrawable xml assets. API based xml Drawables
- * are not supported here.
+ * respectively. The resources with the given id must point to either fully rasterized images (ex.
+ * PNG or JPG files) or VectorDrawable xml assets. API based xml Drawables are not supported here.
  *
  * Example:
+ *
  * @sample androidx.compose.ui.samples.PainterResourceSample
  *
- * Alternative Drawable implementations can be used with compose by calling
- * [drawIntoCanvas] and drawing with the Android framework canvas provided through [nativeCanvas]
+ * Alternative Drawable implementations can be used with compose by calling [drawIntoCanvas] and
+ * drawing with the Android framework canvas provided through [nativeCanvas]
  *
  * Example:
+ *
  * @sample androidx.compose.ui.samples.AndroidDrawableInDrawScopeSample
- *
  * @param id Resources object to query the image file from
- *
  * @return [Painter] used for drawing the loaded resource
  */
 @Composable
 fun painterResource(@DrawableRes id: Int): Painter {
     val context = LocalContext.current
 
-    // Query the current configuration in order to recompose during configuration changes
-    LocalConfiguration.current
-    val res = context.resources
+    val res = LocalResources.current
     val resourceIdCache = LocalResourceIdCache.current
     val value = resourceIdCache.resolveResourcePath(res, id)
 
@@ -71,17 +68,16 @@ fun painterResource(@DrawableRes id: Int): Painter {
         rememberVectorPainter(imageVector)
     } else {
         // Otherwise load the bitmap resource
-        val imageBitmap = remember(path, id, context.theme) {
-            loadImageBitmapResource(path, res, id)
-        }
+        val imageBitmap =
+            remember(path, id, context.theme) { loadImageBitmapResource(path, res, id) }
         BitmapPainter(imageBitmap)
     }
 }
 
 /**
- * Helper method to validate that the xml resource is a vector drawable then load
- * the ImageVector. Because this throws exceptions we cannot have this implementation as part of
- * the composable implementation it is invoked in.
+ * Helper method to validate that the xml resource is a vector drawable then load the ImageVector.
+ * Because this throws exceptions we cannot have this implementation as part of the composable
+ * implementation it is invoked in.
  */
 @Composable
 private fun loadVectorResource(
@@ -105,9 +101,9 @@ private fun loadVectorResource(
 }
 
 /**
- * Helper method to validate the asset resource is a supported resource type and returns
- * an ImageBitmap resource. Because this throws exceptions we cannot have this implementation
- * as part of the composable implementation it is invoked in.
+ * Helper method to validate the asset resource is a supported resource type and returns an
+ * ImageBitmap resource. Because this throws exceptions we cannot have this implementation as part
+ * of the composable implementation it is invoked in.
  */
 private fun loadImageBitmapResource(path: CharSequence, res: Resources, id: Int): ImageBitmap {
     try {
@@ -117,13 +113,9 @@ private fun loadImageBitmapResource(path: CharSequence, res: Resources, id: Int)
     }
 }
 
-/**
- * [Throwable] that is thrown in situations where a resource failed to load.
- */
-class ResourceResolutionException(
-    message: String,
-    cause: Throwable
-) : RuntimeException(message, cause)
+/** [Throwable] that is thrown in situations where a resource failed to load. */
+class ResourceResolutionException(message: String, cause: Throwable) :
+    RuntimeException(message, cause)
 
 private const val errorMessage =
     "Only VectorDrawables and rasterized asset types are supported ex. PNG, JPG, WEBP"

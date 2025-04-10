@@ -124,11 +124,6 @@ When to use?
         introduced
 *   Implementation *may* delegate to `PlatformClass` methods when available (see
     below note for caveats)
-*   To avoid runtime class verification issues, all operations that interact
-    with the internal structure of `PlatformClass` must be implemented in inner
-    classes targeted to the SDK level at which the operation was added.
-    *   See the [sample](#wrapper-sample) for an example of interacting with a
-        method that was added in SDK level 23.
 
 #### Sample {#wrapper-sample}
 
@@ -209,23 +204,6 @@ public final class ModemInfoCompat {
     }
     // Default behavior.
     return false;
-  }
-
-  // All references to class members -- including the constructor -- must be
-  // made on an inner class to avoid soft-verification errors that slow class
-  // loading and prevent optimization.
-  @RequiresApi(23)
-  private static class Api23Impl {
-    @DoNotInline
-    @NonNull
-    static ModemInfo create() {
-      return new ModemInfo();
-    }
-
-    @DoNotInline
-    static boolean isLteSupported(Object obj) {
-      return ((ModemInfo) obj).isLteSupported();
-    }
   }
 }
 ```
@@ -321,52 +299,3 @@ that want to use a different SQL implementation on device. This abstraction, and
 the fact that Room generates code dynamically, means that Room interfaces can be
 used in host-side tests (though actual DB code should be tested on device, since
 DB impls may be significantly different on host).
-
-### Addressing class verification failures on `super.` invocation {#compat-super}
-
-Invoking a `super` call on a method introduced in an API level higher than a
-class's minimum SDK level will raise a run-time class verification failure, and
-will be detected by the `ClassVerificationFailure` lint check.
-
-```java {.bad}
-public void performAction() {
-  if (SDK_INT >= 31) {
-    super.performAction(); // This will cause a verification failure.
-  }
-}
-```
-
-These failures can be addressed by out-of-lining the `super` call to a
-non-static inner class.
-
-#### Sample {#compat-super-sample}
-
-```java
-class AppCompatTextView : TextView {
-
-  @Nullable
-  SuperCaller mSuperCaller = null;
-
-  @Override
-  int getPropertyFromApi99() {
-  if (Build.VERSION.SDK_INT > 99) {
-    getSuperCaller().getPropertyFromApi99)();
-  }
-
-  @NonNull
-  @RequiresApi(99)
-  private SuperCaller getSuperCaller() {
-    if (mSuperCaller == null) {
-      mSuperCaller = new Api99SuperCaller();
-    }
-    return mSuperCaller;
-  }
-
-  @RequiresApi(99)
-  private class Api99SuperCaller {
-    int getPropertyFromApi99() {
-      return AppCompatTextView.super.getPropertyFromApi99();
-    }
-  }
-}
-```

@@ -14,7 +14,7 @@ package androidx.mediarouter.app {
     method public void setRouteSelector(androidx.mediarouter.media.MediaRouteSelector);
   }
 
-  public class MediaRouteButton extends androidx.appcompat.widget.AppCompatImageView {
+  public class MediaRouteButton extends android.view.View {
     ctor public MediaRouteButton(android.content.Context);
     ctor public MediaRouteButton(android.content.Context, android.util.AttributeSet?);
     ctor public MediaRouteButton(android.content.Context, android.util.AttributeSet?, int);
@@ -102,7 +102,9 @@ package androidx.mediarouter.media {
     field public static final String ACTION_STOP = "android.media.intent.action.STOP";
     field public static final String CATEGORY_LIVE_AUDIO = "android.media.intent.category.LIVE_AUDIO";
     field public static final String CATEGORY_LIVE_VIDEO = "android.media.intent.category.LIVE_VIDEO";
+    field public static final String CATEGORY_REMOTE_AUDIO_PLAYBACK = "android.media.intent.category.REMOTE_AUDIO_PLAYBACK";
     field public static final String CATEGORY_REMOTE_PLAYBACK = "android.media.intent.category.REMOTE_PLAYBACK";
+    field public static final String CATEGORY_REMOTE_VIDEO_PLAYBACK = "android.media.intent.category.REMOTE_VIDEO_PLAYBACK";
     field public static final int ERROR_INVALID_ITEM_ID = 3; // 0x3
     field public static final int ERROR_INVALID_SESSION_ID = 2; // 0x2
     field public static final int ERROR_UNKNOWN = 0; // 0x0
@@ -242,6 +244,7 @@ package androidx.mediarouter.media {
     method public final android.os.Handler getHandler();
     method public final androidx.mediarouter.media.MediaRouteProvider.ProviderMetadata getMetadata();
     method public androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController? onCreateDynamicGroupRouteController(String);
+    method public androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController? onCreateDynamicGroupRouteController(String, androidx.mediarouter.media.MediaRouteProvider.RouteControllerOptions);
     method public androidx.mediarouter.media.MediaRouteProvider.RouteController? onCreateRouteController(String);
     method public void onDiscoveryRequestChanged(androidx.mediarouter.media.MediaRouteDiscoveryRequest?);
     method public final void setCallback(androidx.mediarouter.media.MediaRouteProvider.Callback?);
@@ -271,6 +274,7 @@ package androidx.mediarouter.media {
     method public boolean isGroupable();
     method public boolean isTransferable();
     method public boolean isUnselectable();
+    field public static final int NOT_IN_GROUP = 4; // 0x4
     field public static final int SELECTED = 3; // 0x3
     field public static final int SELECTING = 2; // 0x2
     field public static final int UNSELECTED = 1; // 0x1
@@ -303,6 +307,16 @@ package androidx.mediarouter.media {
     method public void onUpdateVolume(int);
   }
 
+  public static final class MediaRouteProvider.RouteControllerOptions {
+    method public android.os.Bundle getControlHints();
+  }
+
+  public static final class MediaRouteProvider.RouteControllerOptions.Builder {
+    ctor public MediaRouteProvider.RouteControllerOptions.Builder();
+    method public androidx.mediarouter.media.MediaRouteProvider.RouteControllerOptions build();
+    method public androidx.mediarouter.media.MediaRouteProvider.RouteControllerOptions.Builder setControlHints(android.os.Bundle?);
+  }
+
   public final class MediaRouteProviderDescriptor {
     method public android.os.Bundle asBundle();
     method public static androidx.mediarouter.media.MediaRouteProviderDescriptor? fromBundle(android.os.Bundle?);
@@ -322,10 +336,21 @@ package androidx.mediarouter.media {
 
   public abstract class MediaRouteProviderService extends android.app.Service {
     ctor public MediaRouteProviderService();
+    method public void addClientInfoListener(java.util.concurrent.Executor, androidx.core.util.Consumer<java.util.List<androidx.mediarouter.media.MediaRouteProviderService.ClientInfo!>!>);
     method public androidx.mediarouter.media.MediaRouteProvider? getMediaRouteProvider();
     method public android.os.IBinder? onBind(android.content.Intent);
     method public abstract androidx.mediarouter.media.MediaRouteProvider? onCreateMediaRouteProvider();
+    method public void removeClientInfoListener(androidx.core.util.Consumer<java.util.List<androidx.mediarouter.media.MediaRouteProviderService.ClientInfo!>!>);
     field public static final String SERVICE_INTERFACE = "android.media.MediaRouteProviderService";
+  }
+
+  public static final class MediaRouteProviderService.ClientInfo {
+    method public String getPackageName();
+  }
+
+  public static final class MediaRouteProviderService.ClientInfo.Builder {
+    ctor public MediaRouteProviderService.ClientInfo.Builder(String);
+    method public androidx.mediarouter.media.MediaRouteProviderService.ClientInfo build();
   }
 
   public final class MediaRouteSelector {
@@ -355,6 +380,7 @@ package androidx.mediarouter.media {
     method @MainThread public void addProvider(androidx.mediarouter.media.MediaRouteProvider);
     method @Deprecated @MainThread public void addRemoteControlClient(Object);
     method @MainThread public androidx.mediarouter.media.MediaRouter.RouteInfo? getBluetoothRoute();
+    method @MainThread public java.util.List<androidx.mediarouter.media.MediaRouter.GroupRouteInfo!> getConnectedGroupRoutes();
     method @MainThread public androidx.mediarouter.media.MediaRouter.RouteInfo getDefaultRoute();
     method @MainThread public static androidx.mediarouter.media.MediaRouter getInstance(android.content.Context);
     method public android.support.v4.media.session.MediaSessionCompat.Token? getMediaSessionToken();
@@ -380,6 +406,13 @@ package androidx.mediarouter.media {
     field public static final int CALLBACK_FLAG_PERFORM_ACTIVE_SCAN = 1; // 0x1
     field public static final int CALLBACK_FLAG_REQUEST_DISCOVERY = 4; // 0x4
     field public static final int CALLBACK_FLAG_UNFILTERED_EVENTS = 2; // 0x2
+    field public static final int REASON_DISCONNECT_CALLED = 1; // 0x1
+    field public static final int REASON_FAILED_TO_CREATE_DYNAMIC_GROUP_ROUTE_CONTROLLER = 6; // 0x6
+    field public static final int REASON_REJECTED_FOR_SELECTED_ROUTE = 4; // 0x4
+    field public static final int REASON_ROUTE_CONNECTION_TIMEOUT = 7; // 0x7
+    field public static final int REASON_ROUTE_NOT_AVAILABLE = 2; // 0x2
+    field public static final int REASON_ROUTE_NOT_ENABLED = 3; // 0x3
+    field public static final int REASON_UNSUPPORTED_FOR_NON_DYNAMIC_CONTROLLER = 5; // 0x5
     field public static final int UNSELECT_REASON_DISCONNECTED = 1; // 0x1
     field public static final int UNSELECT_REASON_ROUTE_CHANGED = 3; // 0x3
     field public static final int UNSELECT_REASON_STOPPED = 2; // 0x2
@@ -393,6 +426,8 @@ package androidx.mediarouter.media {
     method public void onProviderRemoved(androidx.mediarouter.media.MediaRouter, androidx.mediarouter.media.MediaRouter.ProviderInfo);
     method public void onRouteAdded(androidx.mediarouter.media.MediaRouter, androidx.mediarouter.media.MediaRouter.RouteInfo);
     method public void onRouteChanged(androidx.mediarouter.media.MediaRouter, androidx.mediarouter.media.MediaRouter.RouteInfo);
+    method public void onRouteConnected(androidx.mediarouter.media.MediaRouter, androidx.mediarouter.media.MediaRouter.RouteInfo, androidx.mediarouter.media.MediaRouter.RouteInfo);
+    method public void onRouteDisconnected(androidx.mediarouter.media.MediaRouter, androidx.mediarouter.media.MediaRouter.RouteInfo?, androidx.mediarouter.media.MediaRouter.RouteInfo, int);
     method public void onRoutePresentationDisplayChanged(androidx.mediarouter.media.MediaRouter, androidx.mediarouter.media.MediaRouter.RouteInfo);
     method public void onRouteRemoved(androidx.mediarouter.media.MediaRouter, androidx.mediarouter.media.MediaRouter.RouteInfo);
     method @Deprecated public void onRouteSelected(androidx.mediarouter.media.MediaRouter, androidx.mediarouter.media.MediaRouter.RouteInfo);
@@ -409,6 +444,27 @@ package androidx.mediarouter.media {
     method public void onResult(android.os.Bundle?);
   }
 
+  public static class MediaRouter.GroupRouteInfo extends androidx.mediarouter.media.MediaRouter.RouteInfo {
+    method @MainThread public int addRoute(androidx.mediarouter.media.MediaRouter.RouteInfo);
+    method public java.util.List<androidx.mediarouter.media.MediaRouter.RouteInfo!> getRoutesInGroup();
+    method public int getSelectionState(androidx.mediarouter.media.MediaRouter.RouteInfo);
+    method @MainThread public boolean isConnected();
+    method public boolean isGroupable(androidx.mediarouter.media.MediaRouter.RouteInfo);
+    method public boolean isUnselectable(androidx.mediarouter.media.MediaRouter.RouteInfo);
+    method @MainThread public int removeRoute(androidx.mediarouter.media.MediaRouter.RouteInfo);
+    field public static final int ADD_ROUTE_FAILED_REASON_ALREADY_IN_GROUP = 3; // 0x3
+    field public static final int ADD_ROUTE_FAILED_REASON_NOT_AVAILABLE_ROUTE_CONNECTION = 5; // 0x5
+    field public static final int ADD_ROUTE_FAILED_REASON_NOT_GROUPABLE = 2; // 0x2
+    field public static final int ADD_ROUTE_FAILED_REASON_UNSUPPORTED_FOR_GROUP_ROUTE = 4; // 0x4
+    field public static final int ADD_ROUTE_SUCCESSFUL = 1; // 0x1
+    field public static final int REMOVE_ROUTE_FAILED_REASON_LAST_ROUTE_IN_GROUP = 4; // 0x4
+    field public static final int REMOVE_ROUTE_FAILED_REASON_NOT_AVAILABLE_ROUTE_CONNECTION = 6; // 0x6
+    field public static final int REMOVE_ROUTE_FAILED_REASON_NOT_IN_GROUP = 3; // 0x3
+    field public static final int REMOVE_ROUTE_FAILED_REASON_NOT_UNSELECTABLE = 2; // 0x2
+    field public static final int REMOVE_ROUTE_FAILED_REASON_UNSUPPORTED_FOR_GROUP_ROUTE = 5; // 0x5
+    field public static final int REMOVE_ROUTE_SUCCESSFUL = 1; // 0x1
+  }
+
   public static interface MediaRouter.OnPrepareTransferListener {
     method @MainThread public com.google.common.util.concurrent.ListenableFuture<java.lang.Void!>? onPrepareTransfer(androidx.mediarouter.media.MediaRouter.RouteInfo, androidx.mediarouter.media.MediaRouter.RouteInfo);
   }
@@ -422,6 +478,8 @@ package androidx.mediarouter.media {
 
   public static class MediaRouter.RouteInfo {
     method public boolean canDisconnect();
+    method @MainThread public void connect();
+    method @MainThread public void disconnect();
     method public int getConnectionState();
     method public java.util.List<android.content.IntentFilter!> getControlFilters();
     method public String? getDescription();
@@ -429,6 +487,7 @@ package androidx.mediarouter.media {
     method public android.os.Bundle? getExtras();
     method public android.net.Uri? getIconUri();
     method public String getId();
+    method public androidx.mediarouter.media.MediaRouteDescriptor? getMediaRouteDescriptor();
     method public String getName();
     method public int getPlaybackStream();
     method public int getPlaybackType();
@@ -457,16 +516,30 @@ package androidx.mediarouter.media {
     field public static final int CONNECTION_STATE_CONNECTING = 1; // 0x1
     field public static final int CONNECTION_STATE_DISCONNECTED = 0; // 0x0
     field public static final int DEVICE_TYPE_AUDIO_VIDEO_RECEIVER = 4; // 0x4
+    field public static final int DEVICE_TYPE_BLE_HEADSET = 22; // 0x16
+    field public static final int DEVICE_TYPE_BLUETOOTH_A2DP = 3; // 0x3
+    field public static final int DEVICE_TYPE_BUILTIN_SPEAKER = 12; // 0xc
     field public static final int DEVICE_TYPE_CAR = 9; // 0x9
     field public static final int DEVICE_TYPE_COMPUTER = 7; // 0x7
+    field public static final int DEVICE_TYPE_DOCK = 19; // 0x13
     field public static final int DEVICE_TYPE_GAME_CONSOLE = 8; // 0x8
     field public static final int DEVICE_TYPE_GROUP = 1000; // 0x3e8
+    field public static final int DEVICE_TYPE_HDMI = 16; // 0x10
+    field public static final int DEVICE_TYPE_HDMI_ARC = 23; // 0x17
+    field public static final int DEVICE_TYPE_HDMI_EARC = 24; // 0x18
+    field public static final int DEVICE_TYPE_HEARING_AID = 21; // 0x15
+    field public static final int DEVICE_TYPE_REMOTE_SPEAKER = 2; // 0x2
     field public static final int DEVICE_TYPE_SMARTPHONE = 11; // 0xb
     field public static final int DEVICE_TYPE_SMARTWATCH = 10; // 0xa
-    field public static final int DEVICE_TYPE_SPEAKER = 2; // 0x2
+    field @Deprecated public static final int DEVICE_TYPE_SPEAKER = 2; // 0x2
     field public static final int DEVICE_TYPE_TABLET = 5; // 0x5
     field public static final int DEVICE_TYPE_TABLET_DOCKED = 6; // 0x6
     field public static final int DEVICE_TYPE_TV = 1; // 0x1
+    field public static final int DEVICE_TYPE_USB_ACCESSORY = 18; // 0x12
+    field public static final int DEVICE_TYPE_USB_DEVICE = 17; // 0x11
+    field public static final int DEVICE_TYPE_USB_HEADSET = 20; // 0x14
+    field public static final int DEVICE_TYPE_WIRED_HEADPHONES = 14; // 0xe
+    field public static final int DEVICE_TYPE_WIRED_HEADSET = 13; // 0xd
     field public static final int PLAYBACK_TYPE_LOCAL = 0; // 0x0
     field public static final int PLAYBACK_TYPE_REMOTE = 1; // 0x1
     field public static final int PLAYBACK_VOLUME_FIXED = 0; // 0x0
@@ -476,6 +549,7 @@ package androidx.mediarouter.media {
   public class MediaRouterParams {
     method public int getDialogType();
     method public boolean isMediaTransferReceiverEnabled();
+    method public boolean isMediaTransferRestrictedToSelfProviders();
     method public boolean isOutputSwitcherEnabled();
     method public boolean isTransferToLocalEnabled();
     field public static final int DIALOG_TYPE_DEFAULT = 1; // 0x1
@@ -489,6 +563,7 @@ package androidx.mediarouter.media {
     method public androidx.mediarouter.media.MediaRouterParams build();
     method public androidx.mediarouter.media.MediaRouterParams.Builder setDialogType(int);
     method public androidx.mediarouter.media.MediaRouterParams.Builder setMediaTransferReceiverEnabled(boolean);
+    method public androidx.mediarouter.media.MediaRouterParams.Builder setMediaTransferRestrictedToSelfProviders(boolean);
     method public androidx.mediarouter.media.MediaRouterParams.Builder setOutputSwitcherEnabled(boolean);
     method public androidx.mediarouter.media.MediaRouterParams.Builder setTransferToLocalEnabled(boolean);
   }

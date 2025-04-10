@@ -22,12 +22,13 @@ import android.net.Uri;
 import android.util.Log;
 import android.webkit.WebResourceResponse;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import androidx.core.util.Pair;
 import androidx.webkit.internal.AssetHelper;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -62,21 +63,20 @@ import java.util.List;
  * final WebViewAssetLoader assetLoader = new WebViewAssetLoader.Builder()
  *          .addPathHandler("/assets/", new AssetsPathHandler(this))
  *          .build();
- *
+ * <p>
  * webView.setWebViewClient(new WebViewClientCompat() {
  *     {@literal @}Override
- *     {@literal @}RequiresApi(21)
  *     public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
  *         return assetLoader.shouldInterceptRequest(request.getUrl());
  *     }
- *
+ * <p>
  *     {@literal @}Override
  *     {@literal @}SuppressWarnings("deprecation") // for API < 21
  *     public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
  *         return assetLoader.shouldInterceptRequest(Uri.parse(url));
  *     }
  * });
- *
+ * <p>
  * WebSettings webViewSettings = webView.getSettings();
  * // Setting this off for security. Off by default for SDK versions >= 16.
  * webViewSettings.setAllowFileAccessFromFileURLs(false);
@@ -86,7 +86,7 @@ import java.util.List;
  * // using file:// or content:// URLs.
  * webViewSettings.setAllowFileAccess(false);
  * webViewSettings.setAllowContentAccess(false);
- *
+ * <p>
  * // Assets are hosted under http(s)://appassets.androidplatform.net/assets/... .
  * // If the application's assets are in the "main/assets" folder this will read the file
  * // from "main/assets/www/index.html" and load it as if it were hosted on:
@@ -141,15 +141,14 @@ public final class WebViewAssetLoader {
          *                                     handle this path.
          */
         @WorkerThread
-        @Nullable
-        WebResourceResponse handle(@NonNull String path);
+        @Nullable WebResourceResponse handle(@NonNull String path);
     }
 
     /**
      * Handler class to open a file from assets directory in the application APK.
      */
     public static final class AssetsPathHandler implements PathHandler {
-        private AssetHelper mAssetHelper;
+        private final AssetHelper mAssetHelper;
 
         /**
          * @param context {@link Context} used to resolve assets.
@@ -183,8 +182,7 @@ public final class WebViewAssetLoader {
          */
         @Override
         @WorkerThread
-        @Nullable
-        public WebResourceResponse handle(@NonNull String path) {
+        public @Nullable WebResourceResponse handle(@NonNull String path) {
             try {
                 InputStream is = mAssetHelper.openAsset(path);
                 String mimeType = AssetHelper.guessMimeType(path);
@@ -200,7 +198,7 @@ public final class WebViewAssetLoader {
      * Handler class to open a file from resources directory in the application APK.
      */
     public static final class ResourcesPathHandler implements PathHandler {
-        private AssetHelper mAssetHelper;
+        private final AssetHelper mAssetHelper;
 
         /**
          * @param context {@link Context} used to resolve resources.
@@ -234,8 +232,7 @@ public final class WebViewAssetLoader {
          */
         @Override
         @WorkerThread
-        @Nullable
-        public WebResourceResponse handle(@NonNull String path) {
+        public @Nullable WebResourceResponse handle(@NonNull String path) {
             try {
                 InputStream is = mAssetHelper.openResource(path);
                 String mimeType = AssetHelper.guessMimeType(path);
@@ -279,7 +276,7 @@ public final class WebViewAssetLoader {
         private static final String[] FORBIDDEN_DATA_DIRS =
                 new String[] {"app_webview/", "databases/", "lib/", "shared_prefs/", "code_cache/"};
 
-        @NonNull private final File mDirectory;
+        private final @NonNull File mDirectory;
 
         /**
          * Creates PathHandler for app's internal storage.
@@ -359,8 +356,7 @@ public final class WebViewAssetLoader {
          */
         @Override
         @WorkerThread
-        @NonNull
-        public WebResourceResponse handle(@NonNull String path) {
+        public @NonNull WebResourceResponse handle(@NonNull String path) {
             try {
                 File file = AssetHelper.getCanonicalFileIfChild(mDirectory, path);
                 if (file != null) {
@@ -401,9 +397,9 @@ public final class WebViewAssetLoader {
         static final String HTTPS_SCHEME = "https";
 
         final boolean mHttpEnabled;
-        @NonNull final String mAuthority;
-        @NonNull final String mPath;
-        @NonNull final PathHandler mHandler;
+        final @NonNull String mAuthority;
+        final @NonNull String mPath;
+        final @NonNull PathHandler mHandler;
 
         /**
          * @param authority the authority to match (For instance {@code "example.com"})
@@ -411,8 +407,8 @@ public final class WebViewAssetLoader {
          * @param httpEnabled enable hosting under the HTTP scheme, HTTPS is always enabled.
          * @param handler the {@link PathHandler} the handler class for this URI.
          */
-        PathMatcher(@NonNull final String authority, @NonNull final String path,
-                            boolean httpEnabled, @NonNull final PathHandler handler) {
+        PathMatcher(final @NonNull String authority, final @NonNull String path,
+                            boolean httpEnabled, final @NonNull PathHandler handler) {
             if (path.isEmpty() || path.charAt(0) != '/') {
                 throw new IllegalArgumentException("Path should start with a slash '/'.");
             }
@@ -427,7 +423,7 @@ public final class WebViewAssetLoader {
 
         /**
          * Match against registered scheme, authority and path prefix.
-         *
+         * <p>
          * Match happens when:
          * <ul>
          *      <li>Scheme is "https" <b>or</b> the scheme is "http" and http is enabled.</li>
@@ -440,8 +436,7 @@ public final class WebViewAssetLoader {
          * @return {@code PathHandler} if a match happens, {@code null} otherwise.
          */
         @WorkerThread
-        @Nullable
-        public PathHandler match(@NonNull Uri uri) {
+        public @Nullable PathHandler match(@NonNull Uri uri) {
             // Only match HTTP_SCHEME if caller enabled HTTP matches.
             if (uri.getScheme().equals(HTTP_SCHEME) && !mHttpEnabled) {
                 return null;
@@ -466,8 +461,7 @@ public final class WebViewAssetLoader {
          * @return the suffix path.
          */
         @WorkerThread
-        @NonNull
-        public String getSuffixPath(@NonNull String path) {
+        public @NonNull String getSuffixPath(@NonNull String path) {
             return path.replaceFirst(mPath, "");
         }
     }
@@ -480,7 +474,7 @@ public final class WebViewAssetLoader {
         private String mDomain = DEFAULT_DOMAIN;
         // This is stored as a List<Pair> to preserve the order in which PathHandlers are added and
         // permit multiple PathHandlers for the same path.
-        @NonNull private final List<Pair<String, PathHandler>> mHandlerList = new ArrayList<>();
+        private final @NonNull List<Pair<String, PathHandler>> mHandlerList = new ArrayList<>();
 
         /**
          * Set the domain under which app assets can be accessed.
@@ -489,8 +483,7 @@ public final class WebViewAssetLoader {
          * @param domain the domain on which app assets should be hosted.
          * @return {@link Builder} object.
          */
-        @NonNull
-        public Builder setDomain(@NonNull String domain) {
+        public @NonNull Builder setDomain(@NonNull String domain) {
             mDomain = domain;
             return this;
         }
@@ -501,8 +494,7 @@ public final class WebViewAssetLoader {
          *
          * @return {@link Builder} object.
          */
-        @NonNull
-        public Builder setHttpAllowed(boolean httpAllowed) {
+        public @NonNull Builder setHttpAllowed(boolean httpAllowed) {
             mHttpAllowed = httpAllowed;
             return this;
         }
@@ -522,8 +514,7 @@ public final class WebViewAssetLoader {
          * @return {@link Builder} object.
          * @throws IllegalArgumentException if the path is invalid.
          */
-        @NonNull
-        public Builder addPathHandler(@NonNull String path, @NonNull PathHandler handler) {
+        public @NonNull Builder addPathHandler(@NonNull String path, @NonNull PathHandler handler) {
             mHandlerList.add(Pair.create(path, handler));
             return this;
         }
@@ -533,8 +524,7 @@ public final class WebViewAssetLoader {
          *
          * @return immutable {@link WebViewAssetLoader} object.
          */
-        @NonNull
-        public WebViewAssetLoader build() {
+        public @NonNull WebViewAssetLoader build() {
             List<PathMatcher> pathMatcherList = new ArrayList<>();
             for (Pair<String, PathHandler> pair : mHandlerList) {
                 String path = pair.first;
@@ -561,8 +551,7 @@ public final class WebViewAssetLoader {
      *         {@code null} otherwise.
      */
     @WorkerThread
-    @Nullable
-    public WebResourceResponse shouldInterceptRequest(@NonNull Uri url) {
+    public @Nullable WebResourceResponse shouldInterceptRequest(@NonNull Uri url) {
         for (PathMatcher matcher : mMatchers) {
             PathHandler handler = matcher.match(url);
             // The requested URL doesn't match the URL where this handler has been registered.

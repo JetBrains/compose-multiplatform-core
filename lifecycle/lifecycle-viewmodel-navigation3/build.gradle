@@ -1,0 +1,110 @@
+/*
+ * Copyright 2024 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+
+import androidx.build.SoftwareType
+import androidx.build.PlatformIdentifier
+
+plugins {
+    id("AndroidXPlugin")
+    id("AndroidXComposePlugin")
+    id("com.android.library")
+}
+
+androidXMultiplatform {
+    androidTarget()
+
+    defaultPlatform(PlatformIdentifier.ANDROID)
+
+    sourceSets {
+        commonMain {
+            dependencies {
+                api("androidx.lifecycle:lifecycle-viewmodel:2.8.7")
+                api("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+
+                implementation(libs.kotlinStdlib)
+                implementation("androidx.collection:collection-ktx:1.4.5")
+                implementation("androidx.compose.runtime:runtime:1.7.5")
+                implementation("androidx.compose.runtime:runtime-saveable:1.7.5")
+                implementation(project(":navigation3:navigation3"))
+                implementation(project(":savedstate:savedstate"))
+                implementation(project(":savedstate:savedstate-compose"))
+            }
+        }
+
+        commonTest {
+            dependencies {
+                implementation(libs.kotlinTest)
+                implementation(project(":kruth:kruth"))
+                implementation(project(":compose:runtime:runtime-test-utils"))
+            }
+        }
+
+        jvmMain {
+            dependsOn(commonMain)
+            dependencies {
+            }
+        }
+
+        androidMain {
+            dependsOn(jvmMain)
+            dependencies {
+                implementation("androidx.activity:activity-compose:1.10.0-beta01")
+            }
+        }
+
+        jvmTest {
+            dependsOn(commonTest)
+            dependencies {
+            }
+        }
+
+        androidInstrumentedTest {
+            dependsOn(jvmTest)
+            dependencies {
+                implementation(libs.testRules)
+                implementation(libs.testRunner)
+                implementation(libs.junit)
+                implementation(libs.testExtJunitKtx)
+                implementation(libs.truth)
+                implementation(project(":compose:test-utils"))
+                implementation("androidx.compose.ui:ui-test:1.7.5")
+                implementation("androidx.compose.ui:ui-test-junit4:1.7.5")
+            }
+        }
+    }
+}
+
+android {
+    compileSdk = 35
+    namespace = "androidx.lifecycle.viewmodel.navigation3"
+}
+
+androidx {
+    name = "Androidx Lifecycle Navigation3 ViewModel"
+    mavenVersion = LibraryVersions.LIFECYCLE_VIEWMODEL_NAV3
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    inceptionYear = "2024"
+    description = "Provides the ViewModel wrapper for nav3."
+    doNotDocumentReason = "Not published to maven"
+}

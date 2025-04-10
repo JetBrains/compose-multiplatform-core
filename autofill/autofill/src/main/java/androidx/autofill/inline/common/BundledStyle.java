@@ -21,9 +21,10 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY;
 import android.os.Build;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Base class representing a type that encodes the style information, and can be exported
@@ -34,8 +35,7 @@ import androidx.annotation.RestrictTo;
 @RequiresApi(api = Build.VERSION_CODES.R)
 public abstract class BundledStyle {
 
-    @NonNull
-    protected final Bundle mBundle;
+    protected final @NonNull Bundle mBundle;
 
     protected BundledStyle(@NonNull Bundle bundle) {
         mBundle = bundle;
@@ -46,8 +46,7 @@ public abstract class BundledStyle {
      *
      */
     @RestrictTo(LIBRARY)
-    @NonNull
-    public final Bundle getBundle() {
+    public final @NonNull Bundle getBundle() {
         return mBundle;
     }
 
@@ -74,8 +73,7 @@ public abstract class BundledStyle {
     /**
      * Allows the subclass to define their own style key by implementing this method.
      */
-    @NonNull
-    protected abstract String getStyleKey();
+    protected abstract @NonNull String getStyleKey();
 
     /**
      * Base builder class for the {@link BundledStyle}.
@@ -84,8 +82,7 @@ public abstract class BundledStyle {
      */
     public abstract static class Builder<T extends BundledStyle> {
 
-        @NonNull
-        protected final Bundle mBundle = new Bundle();
+        protected final @NonNull Bundle mBundle = new Bundle();
 
         protected Builder(@NonNull String style) {
             mBundle.putBoolean(style, true);
@@ -94,7 +91,6 @@ public abstract class BundledStyle {
         /**
          * Returns a subclass of {@link BundledStyle} built by this builder.
          */
-        @NonNull
-        public abstract T build();
+        public abstract @NonNull T build();
     }
 }

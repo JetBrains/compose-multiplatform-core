@@ -18,9 +18,7 @@ package androidx.camera.camera2.internal.compat.workaround;
 
 import android.hardware.camera2.CaptureRequest;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
-import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
 import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.camera2.internal.compat.quirk.TorchIsClosedAfterImageCapturingQuirk;
@@ -28,13 +26,14 @@ import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.camera.core.impl.CaptureConfig;
 import androidx.camera.core.impl.DeferrableSurface;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.List;
 
 /**
  * This is a workaround for b/228272227 where the Torch is unexpectedly closed after a single
  * capturing.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class TorchStateReset {
     private final boolean mIsImageCaptureTorchIsClosedQuirkEnabled;
 
@@ -73,8 +72,7 @@ public class TorchStateReset {
      * Tags since it is only used for Torch reset.
      */
     @OptIn(markerClass = ExperimentalCamera2Interop.class)
-    @NonNull
-    public CaptureConfig createTorchResetRequest(@NonNull CaptureConfig repeatingConfig) {
+    public @NonNull CaptureConfig createTorchResetRequest(@NonNull CaptureConfig repeatingConfig) {
         CaptureConfig.Builder captureConfigBuilder = new CaptureConfig.Builder();
         captureConfigBuilder.setTemplateType(repeatingConfig.getTemplateType());
 

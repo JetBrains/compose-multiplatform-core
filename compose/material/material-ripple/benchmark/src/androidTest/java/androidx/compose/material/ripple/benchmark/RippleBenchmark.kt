@@ -49,15 +49,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * Benchmark for Android ripple performance
- */
+/** Benchmark for Android ripple performance */
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class RippleBenchmark {
 
-    @get:Rule
-    val benchmarkRule = ComposeBenchmarkRule()
+    @get:Rule val benchmarkRule = ComposeBenchmarkRule()
 
     @Test
     fun firstComposition() {
@@ -66,10 +63,12 @@ class RippleBenchmark {
             object : LayeredComposeTestCase() {
                 @Composable
                 override fun MeasuredContent() {
-                    Box(Modifier.indication(
-                        interactionSource = interactionSource,
-                        indication = TestRipple
-                    ))
+                    Box(
+                        Modifier.indication(
+                            interactionSource = interactionSource,
+                            indication = TestRipple
+                        )
+                    )
                 }
             }
         }
@@ -89,7 +88,7 @@ class RippleBenchmark {
         with(benchmarkRule) {
             runBenchmarkFor({ RippleInteractionTestCase() }) {
                 measureRepeatedOnUiThread {
-                    runWithTimingDisabled {
+                    runWithMeasurementDisabled {
                         doFramesUntilNoChangesMeasureLayoutOrDrawPending()
                     }
 
@@ -98,9 +97,7 @@ class RippleBenchmark {
 
                     // We explicitly tear down after each iteration so we incur costs for anything
                     // cached at the view hierarchy level, in this case the RippleContainer.
-                    runWithTimingDisabled {
-                        disposeContent()
-                    }
+                    runWithMeasurementDisabled { disposeContent() }
                 }
             }
         }
@@ -119,7 +116,7 @@ class RippleBenchmark {
         with(benchmarkRule) {
             runBenchmarkFor({ RippleInteractionTestCase() }) {
                 measureRepeatedOnUiThread {
-                    runWithTimingDisabled {
+                    runWithMeasurementDisabled {
                         doFramesUntilNoChangesMeasureLayoutOrDrawPending()
                         runBlocking {
                             getTestCase().emitInteraction(press1)
@@ -136,9 +133,7 @@ class RippleBenchmark {
                     runBlocking { getTestCase().emitInteraction(press2) }
                     doFrame()
 
-                    runWithTimingDisabled {
-                        disposeContent()
-                    }
+                    runWithMeasurementDisabled { disposeContent() }
                 }
             }
         }
@@ -158,7 +153,7 @@ class RippleBenchmark {
         with(benchmarkRule) {
             runBenchmarkFor({ RippleInteractionTestCase() }) {
                 measureRepeatedOnUiThread {
-                    runWithTimingDisabled {
+                    runWithMeasurementDisabled {
                         doFramesUntilNoChangesMeasureLayoutOrDrawPending()
                     }
 
@@ -169,9 +164,7 @@ class RippleBenchmark {
                     // cached at the view hierarchy level. There shouldn't be anything cached in
                     // this way for the hover case, but we do it to be consistent with the press
                     // case.
-                    runWithTimingDisabled {
-                        disposeContent()
-                    }
+                    runWithMeasurementDisabled { disposeContent() }
                 }
             }
         }
@@ -190,7 +183,7 @@ class RippleBenchmark {
         with(benchmarkRule) {
             runBenchmarkFor({ RippleInteractionTestCase() }) {
                 measureRepeatedOnUiThread {
-                    runWithTimingDisabled {
+                    runWithMeasurementDisabled {
                         doFramesUntilNoChangesMeasureLayoutOrDrawPending()
                         runBlocking {
                             getTestCase().emitInteraction(hover1)
@@ -202,29 +195,21 @@ class RippleBenchmark {
                     runBlocking { getTestCase().emitInteraction(hover2) }
                     doFrame()
 
-                    runWithTimingDisabled {
-                        disposeContent()
-                    }
+                    runWithMeasurementDisabled { disposeContent() }
                 }
             }
         }
     }
 }
 
-/**
- * Test case a ripple that allows emitting [Interaction]s with [emitInteraction].
- */
+/** Test case a ripple that allows emitting [Interaction]s with [emitInteraction]. */
 @Suppress("DEPRECATION_ERROR")
 private class RippleInteractionTestCase : LayeredComposeTestCase() {
     private val interactionSource = MutableInteractionSource()
 
     @Composable
     override fun MeasuredContent() {
-        Box(
-            Modifier
-                .size(100.dp)
-                .indication(interactionSource, TestRipple)
-        )
+        Box(Modifier.size(100.dp).indication(interactionSource, TestRipple))
     }
 
     suspend fun emitInteraction(interaction: Interaction) {
@@ -265,12 +250,8 @@ private val TestRipple = TestIndicationNodeFactory({ TestRippleColor }, { TestRi
 
 private val TestRippleColor = Color.Red
 
-private val TestRippleAlpha = RippleAlpha(
-    draggedAlpha = 0.1f,
-    focusedAlpha = 0.2f,
-    hoveredAlpha = 0.3f,
-    pressedAlpha = 0.4f
-)
+private val TestRippleAlpha =
+    RippleAlpha(draggedAlpha = 0.1f, focusedAlpha = 0.2f, hoveredAlpha = 0.3f, pressedAlpha = 0.4f)
 
 private class TestIndicationNodeFactory(
     private val color: ColorProducer,

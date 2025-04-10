@@ -17,11 +17,17 @@
 package androidx.compose.ui.text
 
 /**
- * An annotation that contains a url string. When clicking on the text to which this annotation is
- * attached, the app will try to open the url using [androidx.compose.ui.platform.UriHandler].
+ * An annotation that contains the metadata intended for text-to-speech engine. If the text is being
+ * processed by a text-to-speech engine, the engine may use the data in this annotation in addition
+ * to or instead of its associated text.
+ *
+ * Note: this is now deprecated. In order to display a link in the text, add a [LinkAnnotation] to
+ * the AnnotatedString and pass it to the Text composable function
  */
 @ExperimentalTextApi
-class UrlAnnotation(val url: String) {
+@Deprecated("Use LinkAnnotatation.Url(url) instead", ReplaceWith("LinkAnnotation.Url(url)"))
+@Suppress("Deprecation")
+class UrlAnnotation(val url: String) : AnnotatedString.Annotation {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is UrlAnnotation) return false

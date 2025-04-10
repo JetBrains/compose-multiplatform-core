@@ -30,7 +30,7 @@ public class OvulationTestRecord(
      * field.
      */
     @property:Results public val result: Int,
-    override val metadata: Metadata = Metadata.EMPTY,
+    override val metadata: Metadata,
 ) : InstantaneousRecord {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -50,6 +50,10 @@ public class OvulationTestRecord(
         result = 31 * result + (zoneOffset?.hashCode() ?: 0)
         result = 31 * result + metadata.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "OvulationTestRecord(time=$time, zoneOffset=$zoneOffset, result=$result, metadata=$metadata)"
     }
 
     /** The result of a user's ovulation test. */
@@ -101,9 +105,7 @@ public class OvulationTestRecord(
         val RESULT_INT_TO_STRING_MAP = RESULT_STRING_TO_INT_MAP.reverse()
     }
 
-    /**
-     * The result of a user's ovulation test.
-     */
+    /** The result of a user's ovulation test. */
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(value = [RESULT_INCONCLUSIVE, RESULT_POSITIVE, RESULT_HIGH, RESULT_NEGATIVE])
     @RestrictTo(RestrictTo.Scope.LIBRARY)

@@ -17,7 +17,6 @@ package com.example.android.leanback.room;
 import android.content.ContentValues;
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.room.Database;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Room;
@@ -26,6 +25,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 
 import com.example.android.leanback.PhotoItem;
 import com.example.android.leanback.R;
+
+import org.jspecify.annotations.NonNull;
+
 /**
  * PhotoDatabase
  */

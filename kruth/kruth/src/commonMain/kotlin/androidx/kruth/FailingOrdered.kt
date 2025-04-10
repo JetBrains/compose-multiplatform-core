@@ -16,15 +16,15 @@
 
 package androidx.kruth
 
-/**
- * Always fails with the provided error message.
- */
+import androidx.kruth.Fact.Companion.simpleFact
+
+/** Always fails with the provided error message. */
 internal class FailingOrdered(
     private val metadata: FailureMetadata,
     private val message: () -> String,
 ) : Ordered {
 
     override fun inOrder() {
-        metadata.fail(message())
+        metadata.fail(simpleFact(message()))
     }
 }

@@ -18,9 +18,9 @@ package androidx.work;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
 
@@ -38,8 +38,7 @@ public interface ProgressUpdater {
      * Cancelling this {@link ListenableFuture} does not cancel the writes to the database
      * to update progress.
      */
-    @NonNull
-    ListenableFuture<Void> updateProgress(
+    @NonNull ListenableFuture<Void> updateProgress(
             @NonNull Context context,
             @NonNull UUID id,
             @NonNull Data data);

@@ -14,7 +14,15 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -25,24 +33,26 @@ plugins {
 }
 
 android {
+    compileSdk = 35
+
     defaultConfig {
-        minSdkVersion 25
+        minSdk = 25
     }
-    buildTypes.all {
+    buildTypes.configureEach {
         consumerProguardFiles "benchmark-proguard-rules.pro"
     }
-    namespace "androidx.wear.compose.foundation.benchmark"
+    namespace = "androidx.wear.compose.foundation.benchmark"
 }
 
 dependencies {
 
-    androidTestImplementation project(":benchmark:benchmark-junit4")
-    androidTestImplementation project(":compose:runtime:runtime")
-    androidTestImplementation project(":compose:ui:ui-text:ui-text-benchmark")
-    androidTestImplementation project(":compose:foundation:foundation")
-    androidTestImplementation project(":compose:runtime:runtime")
-    androidTestImplementation project(":compose:benchmark-utils")
-    androidTestImplementation project(":wear:compose:compose-foundation")
+    androidTestImplementation(project(":benchmark:benchmark-junit4"))
+    androidTestImplementation(project(":compose:runtime:runtime"))
+    androidTestImplementation(project(":compose:ui:ui-text:ui-text-benchmark"))
+    androidTestImplementation(project(":compose:foundation:foundation"))
+    androidTestImplementation(project(":compose:runtime:runtime"))
+    androidTestImplementation(project(":compose:benchmark-utils"))
+    androidTestImplementation(project(":wear:compose:compose-foundation"))
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.kotlinStdlib)
@@ -51,5 +61,5 @@ dependencies {
     androidTestImplementation(libs.truth)
 }
 androidx {
-    type = LibraryType.INTERNAL_TEST_LIBRARY
+    type = SoftwareType.BENCHMARK
 }

@@ -16,14 +16,11 @@
 
 package androidx.webkit;
 
-import android.net.Uri;
-import android.os.Build;
-import android.webkit.WebView;
-
-import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.filters.SdkSuppress;
+import androidx.webkit.test.common.TestWebMessageListener;
+import androidx.webkit.test.common.WebViewOnUiThread;
+import androidx.webkit.test.common.WebkitUtils;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -31,11 +28,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Test
@@ -45,50 +40,16 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
 public class WebViewDocumentStartJavaScriptTest {
     private static final String BASE_URI = "http://www.example.com";
     private static final String JS_OBJECT_NAME = "myObject";
     private static final String BASIC_USAGE = "<!DOCTYPE html><html><body></body></html>";
     private static final String BASIC_SCRIPT = "myObject.postMessage('hello');";
-    private static final Set<String> MATCH_EXAMPLE_COM = new HashSet<>(Arrays.asList(BASE_URI));
+    private static final Set<String> MATCH_EXAMPLE_COM = new HashSet<>(
+            Collections.singletonList(BASE_URI));
 
     private WebViewOnUiThread mWebViewOnUiThread;
-    private TestWebMessageListener mListener = new TestWebMessageListener();
-
-    private static class TestWebMessageListener implements WebViewCompat.WebMessageListener {
-        private BlockingQueue<Data> mQueue = new LinkedBlockingQueue<>();
-
-        static class Data {
-            WebMessageCompat mMessage;
-            Uri mSourceOrigin;
-            boolean mIsMainFrame;
-            JavaScriptReplyProxy mReplyProxy;
-
-            Data(WebMessageCompat message, Uri sourceOrigin, boolean isMainFrame,
-                    JavaScriptReplyProxy replyProxy) {
-                mMessage = message;
-                mSourceOrigin = sourceOrigin;
-                mIsMainFrame = isMainFrame;
-                mReplyProxy = replyProxy;
-            }
-        }
-
-        @Override
-        public void onPostMessage(@NonNull WebView webView, @NonNull WebMessageCompat message,
-                @NonNull Uri sourceOrigin,
-                boolean isMainFrame, @NonNull JavaScriptReplyProxy replyProxy) {
-            mQueue.add(new Data(message, sourceOrigin, isMainFrame, replyProxy));
-        }
-
-        public Data waitForOnPostMessage() throws Exception {
-            return WebkitUtils.waitForNextQueueElement(mQueue);
-        }
-
-        public boolean hasNoMoreOnPostMessage() {
-            return mQueue.isEmpty();
-        }
-    }
+    private final TestWebMessageListener mListener = new TestWebMessageListener();
 
     @Before
     public void setUp() {

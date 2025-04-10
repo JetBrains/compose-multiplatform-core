@@ -23,8 +23,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
-import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
 
 abstract class DemoHolder extends RecyclerView.ViewHolder {
     DemoHolder(LinearLayout layout) {

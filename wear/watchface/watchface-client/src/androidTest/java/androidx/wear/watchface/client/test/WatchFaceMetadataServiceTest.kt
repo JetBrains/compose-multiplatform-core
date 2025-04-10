@@ -24,10 +24,10 @@ import android.content.res.XmlResourceParser
 import android.graphics.RectF
 import android.os.Build
 import android.support.wearable.watchface.Constants
-import androidx.annotation.RequiresApi
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.wear.watchface.BoundingArc
 import androidx.wear.watchface.ComplicationSlotBoundsType
 import androidx.wear.watchface.client.WatchFaceMetadataClient
@@ -49,7 +49,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @MediumTest
-@RequiresApi(Build.VERSION_CODES.O_MR1)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
 public class WatchFaceMetadataServiceTest {
     private val exampleWatchFaceComponentName =
         ComponentName(

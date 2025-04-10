@@ -16,9 +16,11 @@
 
 package androidx.build.studio
 
+import java.io.BufferedReader
 import java.io.File
+import java.io.InputStreamReader
 import java.util.Locale
-import org.gradle.process.ExecSpec
+import org.gradle.process.ExecOperations
 
 /**
  * Utility class containing helper functions and values that change between Linux and OSX
@@ -50,20 +52,10 @@ sealed class StudioPlatformUtilities(val projectRoot: File, val studioInstallati
     abstract val StudioTask.licensePath: String
 
     /** Extracts an archive at [fromPath] with [archiveExtension] to [toPath] */
-    abstract fun extractArchive(fromPath: String, toPath: String, execSpec: ExecSpec)
-
-    /**
-     * Updates the Jvm heap size for this Studio installation.
-     *
-     * TODO: this is temporary until b/135183535 is fixed
-     */
-    abstract fun StudioTask.updateJvmHeapSize()
+    abstract fun extractArchive(fromPath: String, toPath: String, execOperations: ExecOperations)
 
     /** Returns the PID of the process started by this task, or `null` if not running. */
     abstract fun findProcess(): Int?
-
-    /** Regex to match '-Xmx512m' or similar, so we can replace it with a larger heap size. */
-    protected val jvmHeapRegex = "-Xmx.*".toRegex()
 
     companion object {
         val osName =
@@ -91,7 +83,7 @@ sealed class StudioPlatformUtilities(val projectRoot: File, val studioInstallati
 private class MacOsUtilities(projectRoot: File, studioInstallationDir: File) :
     StudioPlatformUtilities(projectRoot, studioInstallationDir) {
     override val archiveExtension: String
-        get() = ".zip"
+        get() = ".dmg"
 
     override val StudioTask.binaryDirectory: File
         get() {
@@ -118,32 +110,48 @@ private class MacOsUtilities(projectRoot: File, studioInstallationDir: File) :
     override val StudioTask.licensePath: String
         get() = File(binaryDirectory, "Contents/Resources/LICENSE.txt").absolutePath
 
-    override fun extractArchive(fromPath: String, toPath: String, execSpec: ExecSpec) {
-        with(execSpec) {
-            executable("unzip")
-            args(fromPath, "-d", toPath)
+    override fun extractArchive(fromPath: String, toPath: String, execOperations: ExecOperations) {
+        val mountPoint = File.createTempFile("mount", null)
+        mountPoint.delete()
+        mountPoint.mkdir()
+        execOperations.exec { execOperation ->
+            with(execOperation) {
+                executable("hdiutil")
+                args("attach", fromPath, "-noverify", "-mountpoint", mountPoint.absolutePath)
+            }
         }
-    }
-
-    override fun StudioTask.updateJvmHeapSize() {
-        val vmoptions = File(binaryDirectory, "Contents/bin/studio.vmoptions")
-        val newText = vmoptions.readText().replace(jvmHeapRegex, "-Xmx8g")
-        vmoptions.writeText(newText)
+        execOperations.exec { execOperation ->
+            with(execOperation) {
+                commandLine("sh", "-c", "cp -R ${mountPoint.absolutePath}/*.app $toPath")
+            }
+        }
+        execOperations.exec { execOperation ->
+            with(execOperation) {
+                executable("hdiutil")
+                args("detach", mountPoint.absolutePath)
+            }
+        }
+        mountPoint.delete()
     }
 
     override fun findProcess(): Int? {
         println("Detecting active managed Studio instances...")
-        val process = ProcessBuilder().let {
-            it.command(listOf("ps", "-x"))
-            it.redirectError(ProcessBuilder.Redirect.INHERIT)
-            it.start()
-        }
-        val stdout = process.inputReader().lines().toList()
+        val process =
+            ProcessBuilder().let {
+                it.command(listOf("ps", "-x"))
+                it.redirectError(ProcessBuilder.Redirect.INHERIT)
+                it.start()
+            }
+        val stdout =
+            BufferedReader(InputStreamReader(process.inputStream)).use { reader ->
+                reader.lineSequence().toList()
+            }
         process.waitFor()
         val projectRootPath = projectRoot.absolutePath
-        return stdout.firstOrNull { line ->
-            line.endsWith("Contents/MacOS/studio $projectRootPath")
-        }?.substringBefore(' ')?.toIntOrNull()
+        return stdout
+            .firstOrNull { line -> line.endsWith("Contents/MacOS/studio $projectRootPath") }
+            ?.substringBefore(' ')
+            ?.toIntOrNull()
     }
 }
 
@@ -157,8 +165,8 @@ private class LinuxUtilities(projectRoot: File, studioInstallationDir: File) :
 
     override val StudioTask.launchCommandArguments: List<String>
         get() {
-            val studioScript = File(binaryDirectory, "bin/studio.sh")
-            return listOf("sh", studioScript.absolutePath, projectRoot.absolutePath)
+            val studioBinary = File(binaryDirectory, "bin/studio")
+            return listOf(studioBinary.absolutePath, projectRoot.absolutePath)
         }
 
     override val StudioTask.pluginsDirectory: File
@@ -170,31 +178,32 @@ private class LinuxUtilities(projectRoot: File, studioInstallationDir: File) :
     override val StudioTask.licensePath: String
         get() = File(binaryDirectory, "LICENSE.txt").absolutePath
 
-    override fun extractArchive(fromPath: String, toPath: String, execSpec: ExecSpec) {
-        with(execSpec) {
-            executable("tar")
-            args("-xf", fromPath, "-C", toPath)
+    override fun extractArchive(fromPath: String, toPath: String, execOperations: ExecOperations) {
+        execOperations.exec { execOperation ->
+            with(execOperation) {
+                executable("tar")
+                args("-xf", fromPath, "-C", toPath)
+            }
         }
-    }
-
-    override fun StudioTask.updateJvmHeapSize() {
-        val vmoptions64 = File(binaryDirectory, "bin/studio64.vmoptions")
-        val newText64 = vmoptions64.readText().replace(jvmHeapRegex, "-Xmx8g")
-        vmoptions64.writeText(newText64)
     }
 
     override fun findProcess(): Int? {
         println("Detecting active managed Studio instances...")
-        val process = ProcessBuilder().let {
-            it.command(listOf("ps", "-x"))
-            it.redirectError(ProcessBuilder.Redirect.INHERIT)
-            it.start()
-        }
-        val stdout = process.inputReader().lines().toList()
+        val process =
+            ProcessBuilder().let {
+                it.command(listOf("ps", "-x"))
+                it.redirectError(ProcessBuilder.Redirect.INHERIT)
+                it.start()
+            }
+        val stdout =
+            BufferedReader(InputStreamReader(process.inputStream)).use { reader ->
+                reader.lineSequence().toList()
+            }
         process.waitFor()
         val projectRootPath = projectRoot.absolutePath
-        return stdout.firstOrNull { line ->
-            line.endsWith("com.intellij.idea.Main $projectRootPath")
-        }?.substringBefore(' ')?.toIntOrNull()
+        return stdout
+            .firstOrNull { line -> line.endsWith("com.intellij.idea.Main $projectRootPath") }
+            ?.substringBefore(' ')
+            ?.toIntOrNull()
     }
 }

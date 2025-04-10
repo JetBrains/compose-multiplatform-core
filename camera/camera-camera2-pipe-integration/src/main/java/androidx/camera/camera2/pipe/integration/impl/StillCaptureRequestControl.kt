@@ -17,10 +17,9 @@
 package androidx.camera.camera2.pipe.integration.impl
 
 import androidx.annotation.GuardedBy
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.integration.adapter.asListenableFuture
-import androidx.camera.camera2.pipe.integration.adapter.propagateOnceTo
+import androidx.camera.camera2.pipe.integration.adapter.propagateCompletion
 import androidx.camera.camera2.pipe.integration.config.CameraScope
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -40,71 +39,72 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @CameraScope
-class StillCaptureRequestControl @Inject constructor(
+public class StillCaptureRequestControl
+@Inject
+constructor(
     private val flashControl: FlashControl,
     private val threads: UseCaseThreads,
 ) : UseCaseCameraControl {
     private val mutex = Mutex()
 
-    private var _useCaseCamera: UseCaseCamera? = null
-    override var useCaseCamera: UseCaseCamera?
-        get() = _useCaseCamera
+    private var _requestControl: UseCaseCameraRequestControl? = null
+    override var requestControl: UseCaseCameraRequestControl?
+        get() = _requestControl
         set(value) {
-            _useCaseCamera = value
-            _useCaseCamera?.let {
-                submitPendingRequests()
-            }
+            _requestControl = value
+            trySubmitPendingRequests()
         }
 
-    data class CaptureRequest(
+    public data class CaptureRequest(
         val captureConfigs: List<CaptureConfig>,
-        val captureMode: Int,
-        val flashType: Int,
+        @ImageCapture.CaptureMode val captureMode: Int,
+        @ImageCapture.FlashType val flashType: Int,
         val result: CompletableDeferred<List<Void?>>,
     )
 
     /**
      * These requests failed to be completely processed with some UseCaseCamera that was open when
-     * corresponding request was issued. (e.g. UseCaseCamera was closed for recreation)
-     * Thus, these requests should be retried when a new UseCaseCamera is created.
+     * corresponding request was issued. (e.g. UseCaseCamera was closed for recreation) Thus, these
+     * requests should be retried when a new UseCaseCamera is created.
      */
-    @GuardedBy("mutex")
-    private val pendingRequests = LinkedList<CaptureRequest>()
+    @GuardedBy("mutex") private val pendingRequests = LinkedList<CaptureRequest>()
 
     override fun reset() {
         threads.sequentialScope.launch {
             mutex.withLock {
                 while (pendingRequests.isNotEmpty()) {
-                    pendingRequests.poll()?.result?.completeExceptionally(
-                        ImageCaptureException(
-                            ImageCapture.ERROR_CAMERA_CLOSED,
-                            "Capture request is cancelled due to a reset",
-                            null
+                    pendingRequests
+                        .poll()
+                        ?.result
+                        ?.completeExceptionally(
+                            ImageCaptureException(
+                                ImageCapture.ERROR_CAMERA_CLOSED,
+                                "Capture request is cancelled due to a reset",
+                                null
+                            )
                         )
-                    )
                 }
             }
         }
     }
 
-    fun issueCaptureRequests(
+    public fun issueCaptureRequests(
         captureConfigs: List<CaptureConfig>,
-        captureMode: Int,
-        flashType: Int,
+        @ImageCapture.CaptureMode captureMode: Int,
+        @ImageCapture.FlashType flashType: Int,
     ): ListenableFuture<List<Void?>> {
         val signal = CompletableDeferred<List<Void?>>()
 
         threads.sequentialScope.launch {
             val request = CaptureRequest(captureConfigs, captureMode, flashType, signal)
-            useCaseCamera?.let { camera ->
-                submitRequest(request, camera).propagateResultOrEnqueueRequest(request, camera)
-            } ?: run {
+            val requestControl = requestControl
+            if (requestControl != null && requestControl.awaitSurfaceSetup()) {
+                submitRequest(request, requireNotNull(requestControl))
+                    .propagateResultOrEnqueueRequest(request, requireNotNull(requestControl))
+            } else {
                 // UseCaseCamera may become null by the time the coroutine is started
-                mutex.withLock {
-                    pendingRequests.add(request)
-                }
+                mutex.withLock { pendingRequests.add(request) }
                 debug {
                     "StillCaptureRequestControl: useCaseCamera is null, $request" +
                         " will be retried with a future UseCaseCamera"
@@ -115,16 +115,20 @@ class StillCaptureRequestControl @Inject constructor(
         return Futures.nonCancellationPropagating(signal.asListenableFuture())
     }
 
-    private fun submitPendingRequests() {
+    private fun trySubmitPendingRequests() {
         threads.sequentialScope.launch {
-            mutex.withLock {
-                while (pendingRequests.isNotEmpty()) {
-                    pendingRequests.poll()?.let { request ->
-                        useCaseCamera?.let { camera ->
-                            submitRequest(request, camera).propagateResultOrEnqueueRequest(
-                                submittedRequest = request,
-                                requestCamera = camera
-                            )
+            val requestControl = requestControl ?: return@launch
+            if (requestControl.awaitSurfaceSetup()) {
+                mutex.withLock {
+                    while (pendingRequests.isNotEmpty()) {
+                        pendingRequests.poll()?.let { request ->
+                            requestControl.let { requestControl ->
+                                submitRequest(request, requestControl)
+                                    .propagateResultOrEnqueueRequest(
+                                        submittedRequest = request,
+                                        currentRequestControl = requestControl
+                                    )
+                            }
                         }
                     }
                 }
@@ -134,22 +138,21 @@ class StillCaptureRequestControl @Inject constructor(
 
     private suspend fun submitRequest(
         request: CaptureRequest,
-        camera: UseCaseCamera
+        requestControl: UseCaseCameraRequestControl
     ): Deferred<List<Void?>> {
-        debug { "StillCaptureRequestControl: submitting $request at $camera" }
-        val flashMode = flashControl.flashMode
+        debug { "StillCaptureRequestControl: submitting $request at $requestControl" }
         // Prior to submitStillCaptures, wait until the pending flash mode session change is
         // completed. On some devices, AE preCapture triggered in submitStillCaptures may not
         // work properly if the repeating request to change the flash mode is not completed.
-        debug { "StillCaptureRequestControl: Waiting for flash control" }
-        flashControl.updateSignal.join()
+        val flashMode = flashControl.awaitFlashModeUpdate()
         debug { "StillCaptureRequestControl: Issuing single capture" }
-        val deferredList = camera.requestControl.issueSingleCaptureAsync(
-            request.captureConfigs,
-            request.captureMode,
-            request.flashType,
-            flashMode,
-        )
+        val deferredList =
+            requestControl.issueSingleCaptureAsync(
+                request.captureConfigs,
+                request.captureMode,
+                request.flashType,
+                flashMode,
+            )
 
         return threads.sequentialScope.async {
             // requestControl.issueSingleCaptureAsync shouldn't be invoked from here directly,
@@ -163,34 +166,31 @@ class StillCaptureRequestControl @Inject constructor(
 
     private fun Deferred<List<Void?>>.propagateResultOrEnqueueRequest(
         submittedRequest: CaptureRequest,
-        requestCamera: UseCaseCamera
+        currentRequestControl: UseCaseCameraRequestControl
     ) {
         invokeOnCompletion { cause: Throwable? ->
-            if (cause is ImageCaptureException &&
-                cause.imageCaptureError == ImageCapture.ERROR_CAMERA_CLOSED
+            if (
+                cause is ImageCaptureException &&
+                    cause.imageCaptureError == ImageCapture.ERROR_CAMERA_CLOSED
             ) {
                 threads.sequentialScope.launch {
                     var isPending = true
 
-                    useCaseCamera?.let { latestCamera ->
-                        if (requestCamera != latestCamera) {
+                    requestControl?.let { latestRequestControl ->
+                        if (currentRequestControl != latestRequestControl) {
                             // camera has already been changed, can retry immediately
-                            submitRequest(
-                                submittedRequest,
-                                latestCamera
-                            ).propagateResultOrEnqueueRequest(
-                                submittedRequest = submittedRequest,
-                                requestCamera = latestCamera
-                            )
+                            submitRequest(submittedRequest, latestRequestControl)
+                                .propagateResultOrEnqueueRequest(
+                                    submittedRequest = submittedRequest,
+                                    currentRequestControl = latestRequestControl
+                                )
                             isPending = false
                         }
                     }
 
                     // no new camera to retry at, adding to pending list for trying later
                     if (isPending) {
-                        mutex.withLock {
-                            pendingRequests.add(submittedRequest)
-                        }
+                        mutex.withLock { pendingRequests.add(submittedRequest) }
                         debug {
                             "StillCaptureRequestControl: failed to submit $submittedRequest" +
                                 ", will be retried with a future UseCaseCamera"
@@ -198,15 +198,17 @@ class StillCaptureRequestControl @Inject constructor(
                     }
                 }
             } else {
-                propagateOnceTo(submittedRequest.result, cause)
+                propagateCompletion(submittedRequest.result, cause)
             }
         }
     }
 
     @Module
-    abstract class Bindings {
+    public abstract class Bindings {
         @Binds
         @IntoSet
-        abstract fun provideControls(control: StillCaptureRequestControl): UseCaseCameraControl
+        public abstract fun provideControls(
+            control: StillCaptureRequestControl
+        ): UseCaseCameraControl
     }
 }

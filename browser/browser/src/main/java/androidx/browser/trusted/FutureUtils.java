@@ -16,17 +16,17 @@
 
 package androidx.browser.trusted;
 
-import androidx.annotation.NonNull;
 import androidx.concurrent.futures.ResolvableFuture;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Holds utility methods for working with Futures.
  */
 class FutureUtils {
-    @NonNull
-    static <T> ListenableFuture<T> immediateFailedFuture(@NonNull Throwable cause) {
+    static <T> @NonNull ListenableFuture<T> immediateFailedFuture(@NonNull Throwable cause) {
         ResolvableFuture<T> future = ResolvableFuture.create();
         future.setException(cause);
         return future;

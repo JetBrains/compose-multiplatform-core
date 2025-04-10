@@ -21,16 +21,15 @@ import static androidx.work.testing.WorkManagerTestInitHelper.ExecutorsMode.LEGA
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.work.Configuration;
-import androidx.work.impl.WorkDatabase;
 import androidx.work.impl.WorkManagerImpl;
 import androidx.work.impl.utils.SerialExecutorImpl;
 import androidx.work.impl.utils.taskexecutor.SerialExecutor;
 
-import java.util.UUID;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
+import java.util.UUID;
 
 /**
  * Helps initialize {@link androidx.work.WorkManager} for testing.
@@ -199,13 +198,17 @@ public final class WorkManagerTestInitHelper {
      * make sure that {@code WorkManager} finished all operations and won't touch database
      * anymore. Meaning that both {@link Configuration#getTaskExecutor()} and
      * {@link Configuration#getExecutor()} are idle.
+     * <p>
+     * It shouldn't be called from {@link Configuration#getTaskExecutor()}
+     * because this method will block until all internal work is complete after
+     * cancellation. To complete this work {@link Configuration#getTaskExecutor()}
+     * could be require and blocking it may lead to deadlocks.
      */
     @SuppressWarnings("deprecation")
     public static void closeWorkDatabase() {
         WorkManagerImpl workManager = WorkManagerImpl.getInstance();
         if (workManager != null) {
-            WorkDatabase workDatabase = workManager.getWorkDatabase();
-            workDatabase.close();
+            workManager.closeDatabase();
         }
     }
 

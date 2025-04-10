@@ -20,12 +20,13 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,8 +37,7 @@ import java.util.Map;
 public class UserStyleWireFormat implements VersionedParcelable, Parcelable {
     /** Map from user style setting id to user style option id. */
     @ParcelField(1)
-    @NonNull
-    public Map<String, byte[]> mUserStyle = new HashMap<>();
+    public @NonNull Map<String, byte[]> mUserStyle = new HashMap<>();
 
     UserStyleWireFormat() {}
 

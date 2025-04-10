@@ -16,9 +16,6 @@
 
 package androidx.camera.core;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.StreamSpec;
@@ -26,13 +23,15 @@ import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.testing.impl.fakes.FakeUseCase;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 /**
  * A second fake {@link UseCase}.
  *
  * <p>This is used to complement the {@link FakeUseCase} for testing instances where a use case of
  * different type is created.
  */
-@RequiresApi(21)
 public class FakeOtherUseCase extends UseCase {
     private volatile boolean mIsDetached = false;
 
@@ -57,9 +56,8 @@ public class FakeOtherUseCase extends UseCase {
      *
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @Nullable
     @Override
-    public UseCaseConfig<?> getDefaultConfig(boolean applyDefaultConfig,
+    public @Nullable UseCaseConfig<?> getDefaultConfig(boolean applyDefaultConfig,
             @NonNull UseCaseConfigFactory factory) {
         return null;
     }
@@ -69,16 +67,16 @@ public class FakeOtherUseCase extends UseCase {
      *
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
     @Override
-    public UseCaseConfig.Builder<?, ?, ?> getUseCaseConfigBuilder(@NonNull Config config) {
+    public UseCaseConfig.@NonNull Builder<?, ?, ?> getUseCaseConfigBuilder(@NonNull Config config) {
         throw new RuntimeException("Not implemented");
     }
 
     @Override
-    @NonNull
-    protected StreamSpec onSuggestedStreamSpecUpdated(@NonNull StreamSpec suggestedStreamSpec) {
-        return suggestedStreamSpec;
+    protected @NonNull StreamSpec onSuggestedStreamSpecUpdated(
+            @NonNull StreamSpec primaryStreamSpec,
+            @Nullable StreamSpec secondaryStreamSpec) {
+        return primaryStreamSpec;
     }
 
     /** Returns true if {@link #onUnbind()} has been called previously. */

@@ -18,6 +18,8 @@ package androidx.appsearch.localstorage;
 
 import androidx.annotation.RestrictTo;
 
+import org.jspecify.annotations.NonNull;
+
 /**
  * Icing options for AppSearch local-storage. Note, these values are not necessarily the defaults
  * set in {@link com.google.android.icing.proto.IcingSearchEngineOptions} proto.
@@ -47,6 +49,11 @@ public class LocalStorageIcingOptionsConfig implements IcingOptionsConfig {
     @Override
     public int getCompressionLevel() {
         return DEFAULT_COMPRESSION_LEVEL;
+    }
+
+    @Override
+    public int getCompressionMemLevel() {
+        return DEFAULT_COMPRESSION_MEM_LEVEL;
     }
 
     @Override
@@ -96,6 +103,21 @@ public class LocalStorageIcingOptionsConfig implements IcingOptionsConfig {
 
     @Override
     public boolean getBuildPropertyExistenceMetadataHits() {
-        return DEFAULT_BUILD_PROPERTY_EXISTENCE_METADATA_HITS;
+        return true;
+    }
+
+    @Override
+    public long getOrphanBlobTimeToLiveMs() {
+        return DEFAULT_ORPHAN_BLOB_TIME_TO_LIVE_MS;
+    }
+
+    @Override
+    public @NonNull String getIcuDataFileAbsolutePath() {
+        return DEFAULT_ICU_DATA_FILE_ABSOLUTE_PATH;
+    }
+
+    @Override
+    public int getCompressionThresholdBytes() {
+        return DEFAULT_COMPRESSION_THRESHOLD_BYTES;
     }
 }

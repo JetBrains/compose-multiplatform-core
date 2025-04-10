@@ -2,20 +2,20 @@ package androidx.room.processor
 
 import COMMON
 import androidx.room.compiler.codegen.CodeLanguage
+import androidx.room.compiler.processing.XProcessingEnv
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.runProcessorTest
 import androidx.room.testing.context
 import androidx.room.vo.Dao
 import androidx.room.writer.DaoWriter
+import androidx.room.writer.TypeWriter
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-/**
- * we don't assert much in these tests since if type resolution fails, compilation fails.
- */
+/** we don't assert much in these tests since if type resolution fails, compilation fails. */
 @RunWith(JUnit4::class)
 class BaseDaoTest {
     @Test
@@ -26,7 +26,7 @@ class BaseDaoTest {
             void insertMe(T t);
         """
         ) { dao ->
-            assertThat(dao.insertionMethods.size, `is`(1))
+            assertThat(dao.insertFunctions.size, `is`(1))
         }
     }
 
@@ -38,7 +38,7 @@ class BaseDaoTest {
             void insertMe(T[] t);
         """
         ) { dao ->
-            assertThat(dao.insertionMethods.size, `is`(1))
+            assertThat(dao.insertFunctions.size, `is`(1))
         }
     }
 
@@ -50,7 +50,7 @@ class BaseDaoTest {
             void insertMe(T... t);
         """
         ) { dao ->
-            assertThat(dao.insertionMethods.size, `is`(1))
+            assertThat(dao.insertFunctions.size, `is`(1))
         }
     }
 
@@ -62,7 +62,7 @@ class BaseDaoTest {
             void insertMe(List<T> t);
         """
         ) { dao ->
-            assertThat(dao.insertionMethods.size, `is`(1))
+            assertThat(dao.insertFunctions.size, `is`(1))
         }
     }
 
@@ -74,7 +74,7 @@ class BaseDaoTest {
             void deleteMe(T t);
         """
         ) { dao ->
-            assertThat(dao.deletionMethods.size, `is`(1))
+            assertThat(dao.deleteFunctions.size, `is`(1))
         }
     }
 
@@ -86,7 +86,7 @@ class BaseDaoTest {
             void deleteMe(T[] t);
         """
         ) { dao ->
-            assertThat(dao.deletionMethods.size, `is`(1))
+            assertThat(dao.deleteFunctions.size, `is`(1))
         }
     }
 
@@ -98,7 +98,7 @@ class BaseDaoTest {
             void deleteMe(T... t);
         """
         ) { dao ->
-            assertThat(dao.deletionMethods.size, `is`(1))
+            assertThat(dao.deleteFunctions.size, `is`(1))
         }
     }
 
@@ -110,7 +110,7 @@ class BaseDaoTest {
             void deleteMe(List<T> t);
         """
         ) { dao ->
-            assertThat(dao.deletionMethods.size, `is`(1))
+            assertThat(dao.deleteFunctions.size, `is`(1))
         }
     }
 
@@ -122,7 +122,7 @@ class BaseDaoTest {
             void updateMe(T t);
         """
         ) { dao ->
-            assertThat(dao.updateMethods.size, `is`(1))
+            assertThat(dao.updateFunctions.size, `is`(1))
         }
     }
 
@@ -134,7 +134,7 @@ class BaseDaoTest {
             void updateMe(T[] t);
         """
         ) { dao ->
-            assertThat(dao.updateMethods.size, `is`(1))
+            assertThat(dao.updateFunctions.size, `is`(1))
         }
     }
 
@@ -146,7 +146,7 @@ class BaseDaoTest {
             void updateMe(T... t);
         """
         ) { dao ->
-            assertThat(dao.updateMethods.size, `is`(1))
+            assertThat(dao.updateFunctions.size, `is`(1))
         }
     }
 
@@ -158,15 +158,16 @@ class BaseDaoTest {
             void updateMe(List<T> t);
         """
         ) { dao ->
-            assertThat(dao.updateMethods.size, `is`(1))
+            assertThat(dao.updateFunctions.size, `is`(1))
         }
     }
 
     @Test
     fun extendSameInterfaceTwice() {
-        val source = Source.kotlin(
-            "Foo.kt",
-            """
+        val source =
+            Source.kotlin(
+                "Foo.kt",
+                """
             import androidx.room.*
 
             interface Parent<T> {
@@ -205,30 +206,36 @@ class BaseDaoTest {
 
             abstract class MyDb : RoomDatabase() {
             }
-            """.trimIndent()
-        )
-        runProcessorTest(
-            sources = listOf(source)
-        ) { invocation ->
-            val dbElm = invocation.context.processingEnv
-                .requireTypeElement("MyDb")
+            """
+                    .trimIndent()
+            )
+        runProcessorTest(sources = listOf(source)) { invocation ->
+            val dbElm = invocation.context.processingEnv.requireTypeElement("MyDb")
             val dbType = dbElm.type
             // if we could create valid code, it is good, no need for assertions.
             listOf("Dao1", "Dao2", "Dao3").forEach { name ->
                 val dao = invocation.processingEnv.requireTypeElement(name)
-                val processed = DaoProcessor(
-                    invocation.context, dao, dbType, null
-                ).process()
-                DaoWriter(processed, dbElm, CodeLanguage.JAVA)
+                val processed = DaoProcessor(invocation.context, dao, dbType, null).process()
+                DaoWriter(
+                        dao = processed,
+                        dbElement = dbElm,
+                        writerContext =
+                            TypeWriter.WriterContext(
+                                codeLanguage = CodeLanguage.JAVA,
+                                javaLambdaSyntaxAvailable = false,
+                                targetPlatforms = setOf(XProcessingEnv.Platform.JVM)
+                            )
+                    )
                     .write(invocation.processingEnv)
             }
         }
     }
 
     fun baseDao(code: String, handler: (Dao) -> Unit) {
-        val baseClass = Source.java(
-            "foo.bar.BaseDao",
-            """
+        val baseClass =
+            Source.java(
+                "foo.bar.BaseDao",
+                """
                 package foo.bar;
                 import androidx.room.*;
                 import java.util.List;
@@ -237,20 +244,22 @@ class BaseDaoTest {
                     $code
                 }
             """
-        )
-        val extension = Source.java(
-            "foo.bar.MyDao",
-            """
+            )
+        val extension =
+            Source.java(
+                "foo.bar.MyDao",
+                """
                 package foo.bar;
                 import androidx.room.*;
                 @Dao
                 interface MyDao extends BaseDao<Integer, User> {
                 }
             """
-        )
-        val fakeDb = Source.java(
-            "foo.bar.MyDb",
-            """
+            )
+        val fakeDb =
+            Source.java(
+                "foo.bar.MyDb",
+                """
                 package foo.bar;
                 import androidx.room.*;
                 // we need a RoomDatabase subclass in sources to match incremental compilation
@@ -258,19 +267,26 @@ class BaseDaoTest {
                 abstract class MyDb extends RoomDatabase {
                 }
             """
-        )
-        runProcessorTest(
-            sources = listOf(baseClass, extension, COMMON.USER, fakeDb)
-        ) { invocation ->
+            )
+        // https://github.com/google/ksp/issues/2051
+        runProcessorTest(sources = listOf(baseClass, extension, COMMON.USER, fakeDb)) { invocation
+            ->
             val daoElm = invocation.processingEnv.requireTypeElement("foo.bar.MyDao")
-            val dbElm = invocation.context.processingEnv
-                .requireTypeElement("foo.bar.MyDb")
+            val dbElm = invocation.context.processingEnv.requireTypeElement("foo.bar.MyDb")
             val dbType = dbElm.type
-            val processedDao = DaoProcessor(
-                invocation.context, daoElm, dbType, null
-            ).process()
+            val processedDao = DaoProcessor(invocation.context, daoElm, dbType, null).process()
             handler(processedDao)
-            DaoWriter(processedDao, dbElm, CodeLanguage.JAVA).write(invocation.processingEnv)
+            DaoWriter(
+                    dao = processedDao,
+                    dbElement = dbElm,
+                    writerContext =
+                        TypeWriter.WriterContext(
+                            codeLanguage = CodeLanguage.JAVA,
+                            javaLambdaSyntaxAvailable = false,
+                            targetPlatforms = setOf(XProcessingEnv.Platform.JVM)
+                        )
+                )
+                .write(invocation.processingEnv)
         }
     }
 }

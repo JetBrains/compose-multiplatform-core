@@ -21,7 +21,6 @@ import android.os.FileUtils
 import android.system.ErrnoException
 import android.system.Os
 import android.util.Log
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import java.io.File
 import java.io.FileInputStream
@@ -30,14 +29,13 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 
-@RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 internal object MigrationUtils {
 
     private const val LOG_TAG = "LocalSdkMigrationUtils"
 
     /**
-     * Try to migrate all files from source to target that match requested prefix.
-     * Skip failed files.
+     * Try to migrate all files from source to target that match requested prefix. Skip failed
+     * files.
      *
      * @return true if all files moved, or false if some fails happened.
      */
@@ -46,8 +44,7 @@ internal object MigrationUtils {
             return true
         }
 
-        val sourceFiles = srcDir.listFiles { _, name -> name.startsWith(prefix) }
-            ?: emptyArray()
+        val sourceFiles = srcDir.listFiles { _, name -> name.startsWith(prefix) } ?: emptyArray()
 
         var hadFails = false
         for (sourceFile in sourceFiles) {
@@ -98,8 +95,6 @@ internal object MigrationUtils {
 
     @RequiresApi(Build.VERSION_CODES.Q)
     private object Api29 {
-        @DoNotInline
-        fun copy(from: InputStream, to: OutputStream): Long =
-            FileUtils.copy(from, to)
+        fun copy(from: InputStream, to: OutputStream): Long = FileUtils.copy(from, to)
     }
 }

@@ -17,9 +17,9 @@
 package androidx.camera.camera2.pipe.integration.adapter
 
 import android.annotation.SuppressLint
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.integration.config.CameraScope
 import androidx.camera.camera2.pipe.integration.impl.EvCompControl
+import androidx.camera.camera2.pipe.integration.impl.LowLightBoostControl
 import androidx.camera.camera2.pipe.integration.impl.TorchControl
 import androidx.camera.camera2.pipe.integration.impl.ZoomControl
 import androidx.camera.core.ExposureState
@@ -31,19 +31,27 @@ import javax.inject.Inject
  * [CameraControlStateAdapter] caches and updates based on callbacks from the active CameraGraph.
  */
 @SuppressLint("UnsafeOptInUsageError")
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @CameraScope
-class CameraControlStateAdapter @Inject constructor(
+public class CameraControlStateAdapter
+@Inject
+constructor(
     private val zoomControl: ZoomControl,
     private val evCompControl: EvCompControl,
     private val torchControl: TorchControl,
+    private val lowLightBoostControl: LowLightBoostControl,
 ) {
-    val torchStateLiveData: LiveData<Int>
+    public val torchStateLiveData: LiveData<Int>
         get() = torchControl.torchStateLiveData
 
-    val zoomStateLiveData: LiveData<ZoomState>
+    public val torchStrengthLiveData: LiveData<Int>
+        get() = torchControl.torchStrengthLiveData
+
+    public val zoomStateLiveData: LiveData<ZoomState>
         get() = zoomControl.zoomStateLiveData
 
-    val exposureState: ExposureState
+    public val exposureState: ExposureState
         get() = evCompControl.exposureState
+
+    public val lowLightBoostState: LiveData<Int>
+        get() = lowLightBoostControl.lowLightBoostStateLiveData
 }

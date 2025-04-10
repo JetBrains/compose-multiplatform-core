@@ -16,13 +16,12 @@
 
 package androidx.kruth
 
-/**
- * A Subject for object arrays.
- */
-class ObjectArraySubject<T> internal constructor(
+/** A Subject for object arrays. */
+class ObjectArraySubject<T>
+internal constructor(
     actual: Array<out T>?,
     metadata: FailureMetadata = FailureMetadata(),
-) : Subject<Array<out T>>(actual = actual, metadata = metadata) {
+) : Subject<Array<out T>>(actual, metadata = metadata, typeDescriptionOverride = "array") {
 
     private val helper =
         HelperArraySubject(
@@ -50,10 +49,9 @@ class ObjectArraySubject<T> internal constructor(
         helper.hasLength(length)
     }
 
-    /** Converts this [ObjectArraySubject] to [IterableSubject].*/
+    /** Converts this [ObjectArraySubject] to [IterableSubject]. */
     fun asList(): IterableSubject<*> {
-        metadata.assertNotNull(actual)
-
+        requireNonNull(actual)
         return IterableSubject(actual = actual.toList(), metadata = metadata)
     }
 }

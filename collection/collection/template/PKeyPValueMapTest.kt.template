@@ -16,6 +16,7 @@
 
 package androidx.collection
 
+import kotlin.js.JsName
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -185,6 +186,35 @@ class PKeyPValueMapTest {
         assertEquals(3ValueSuffix, map5[3KeySuffix])
         assertEquals(4ValueSuffix, map5[4KeySuffix])
         assertEquals(5ValueSuffix, map5[5KeySuffix])
+    }
+
+    @Test
+    fun buildPKeyPValueMapFunction() {
+        val contract: Boolean
+        val map = buildPKeyPValueMap {
+            contract = true
+            put(1KeySuffix, 1ValueSuffix)
+            put(2KeySuffix, 2ValueSuffix)
+        }
+        assertTrue(contract)
+        assertEquals(2, map.size)
+        assertEquals(1ValueSuffix, map[1KeySuffix])
+        assertEquals(2ValueSuffix, map[2KeySuffix])
+    }
+
+    @Test
+    fun buildPKeyObjectMapWithCapacityFunction() {
+        val contract: Boolean
+        val map = buildPKeyPValueMap(20) {
+            contract = true
+            put(1KeySuffix, 1ValueSuffix)
+            put(2KeySuffix, 2ValueSuffix)
+        }
+        assertTrue(contract)
+        assertEquals(2, map.size)
+        assertTrue(map.capacity >= 18)
+        assertEquals(1ValueSuffix, map[1KeySuffix])
+        assertEquals(2ValueSuffix, map[2KeySuffix])
     }
 
     @Test
@@ -585,6 +615,7 @@ class PKeyPValueMapTest {
     }
 
     @Test
+    @JsName("jsEquals")
     fun equals() {
         val map = MutablePKeyPValueMap()
         map[1KeySuffix] = 1ValueSuffix
@@ -597,6 +628,19 @@ class PKeyPValueMapTest {
 
         map2[1KeySuffix] = 1ValueSuffix
         assertEquals(map, map2)
+
+        // Same number of items but different keys to test that looking up
+        // a non-existing entry doesn't throw during equals()
+        assertNotEquals(
+            mutablePKeyPValueMapOf(
+                1KeySuffix, 1ValueSuffix,
+                2KeySuffix, 2ValueSuffix
+            ),
+            mutablePKeyPValueMapOf(
+                1KeySuffix, 1ValueSuffix,
+                3KeySuffix, 2ValueSuffix
+            )
+        )
     }
 
     @Test
@@ -715,5 +759,19 @@ class PKeyPValueMapTest {
 
         assertEquals(1024, map.trim())
         assertEquals(0, map.trim())
+    }
+
+    @Test
+    fun insertManyRemoveMany() {
+        val map = MutablePKeyPValueMap()
+
+        for (i in 0 .. 1000000) {
+            map[i.toPKey()] = i.toPValue()
+            map.remove(i.toPKey())
+            assertTrue(
+                map.capacity < 16,
+                "Map grew larger than 16 after step $i"
+            )
+        }
     }
 }

@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -25,27 +32,25 @@ plugins {
 
 dependencies {
     api(libs.kotlinStdlib)
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
 }
 
 android {
-    namespace "androidx.privacysandbox.activity.core"
+    namespace = "androidx.privacysandbox.activity.core"
     buildFeatures {
         aidl = true
     }
-    buildTypes.all {
+    buildTypes.configureEach {
         stableAidl {
-            version 1
+            version = 1
         }
-    }
-    defaultConfig {
-        minSdk 21
     }
 }
 
 androidx {
     name = "androidx.privacysandbox.activity:activity-core"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2023"
     description = "Core utilities for Activities in the Privacy Sandbox."
+    legacyDisableKotlinStrictApiMode = true
 }

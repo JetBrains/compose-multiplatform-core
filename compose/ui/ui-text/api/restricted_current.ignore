@@ -1,7 +1,21 @@
 // Baseline format: 1.0
-ChangedClass: androidx.compose.ui.text.input.PlatformImeOptions:
-    Class androidx.compose.ui.text.input.PlatformImeOptions changed class/interface declaration
-
-
-RemovedClass: androidx.compose.ui.text.input.AndroidImeOptions:
-    Removed class androidx.compose.ui.text.input.AndroidImeOptions
+RemovedMethod: androidx.compose.ui.text.TextRange#getCollapsed():
+    Removed method androidx.compose.ui.text.TextRange.getCollapsed()
+RemovedMethod: androidx.compose.ui.text.TextRange#getEnd():
+    Removed method androidx.compose.ui.text.TextRange.getEnd()
+RemovedMethod: androidx.compose.ui.text.TextRange#getLength():
+    Removed method androidx.compose.ui.text.TextRange.getLength()
+RemovedMethod: androidx.compose.ui.text.TextRange#getMax():
+    Removed method androidx.compose.ui.text.TextRange.getMax()
+RemovedMethod: androidx.compose.ui.text.TextRange#getMin():
+    Removed method androidx.compose.ui.text.TextRange.getMin()
+RemovedMethod: androidx.compose.ui.text.TextRange#getReversed():
+    Removed method androidx.compose.ui.text.TextRange.getReversed()
+RemovedMethod: androidx.compose.ui.text.TextRange#getStart():
+    Removed method androidx.compose.ui.text.TextRange.getStart()
+RemovedMethod: androidx.compose.ui.text.style.LineBreak#getStrategy():
+    Removed method androidx.compose.ui.text.style.LineBreak.getStrategy()
+RemovedMethod: androidx.compose.ui.text.style.LineBreak#getStrictness():
+    Removed method androidx.compose.ui.text.style.LineBreak.getStrictness()
+RemovedMethod: androidx.compose.ui.text.style.LineBreak#getWordBreak():
+    Removed method androidx.compose.ui.text.style.LineBreak.getWordBreak()

@@ -24,11 +24,11 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebViewAssetLoader;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link Activity} to show case a very simple use case of using
@@ -50,10 +50,9 @@ public class AssetLoaderSimpleActivity extends AppCompatActivity {
         }
 
         @Override
-        @RequiresApi(21)
         public WebResourceResponse shouldInterceptRequest(WebView view,
                                             WebResourceRequest request) {
-            return mAssetLoader.shouldInterceptRequest(Api21Impl.getUrl(request));
+            return mAssetLoader.shouldInterceptRequest(request.getUrl());
         }
 
         @Override

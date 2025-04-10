@@ -38,11 +38,40 @@ class CreateCredentialUnsupportedExceptionTest {
     @Test
     fun getter_success() {
         val expectedType =
-            CreateCredentialUnsupportedException
-                .TYPE_CREATE_CREDENTIAL_UNSUPPORTED_EXCEPTION
+            CreateCredentialUnsupportedException.TYPE_CREATE_CREDENTIAL_UNSUPPORTED_EXCEPTION
         val expectedMessage = "message"
         val exception = CreateCredentialUnsupportedException(expectedMessage)
         assertThat(exception.type).isEqualTo(expectedType)
         assertThat(exception.errorMessage).isEqualTo(expectedMessage)
+    }
+
+    @Test
+    fun bundleConversion_withMessage_success() {
+        val expectedType =
+            CreateCredentialUnsupportedException.TYPE_CREATE_CREDENTIAL_UNSUPPORTED_EXCEPTION
+        val expectedMessage = "message"
+        val exception = CreateCredentialUnsupportedException(expectedMessage)
+
+        val actual =
+            CreateCredentialException.fromBundle(CreateCredentialException.asBundle(exception))
+
+        assertThat(actual).isInstanceOf(CreateCredentialUnsupportedException::class.java)
+        assertThat(actual.type).isEqualTo(expectedType)
+        assertThat(actual.errorMessage).isEqualTo(expectedMessage)
+    }
+
+    @Test
+    fun bundleConversion_withoutMessage_success() {
+        val expectedType =
+            CreateCredentialUnsupportedException.TYPE_CREATE_CREDENTIAL_UNSUPPORTED_EXCEPTION
+        val expectedMessage = null
+        val exception = CreateCredentialUnsupportedException(expectedMessage)
+
+        val actual =
+            CreateCredentialException.fromBundle(CreateCredentialException.asBundle(exception))
+
+        assertThat(actual).isInstanceOf(CreateCredentialUnsupportedException::class.java)
+        assertThat(actual.type).isEqualTo(expectedType)
+        assertThat(actual.errorMessage).isEqualTo(expectedMessage)
     }
 }

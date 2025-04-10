@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -23,7 +30,7 @@ plugins {
 
 dependencies {
     api(project(":lifecycle:lifecycle-common"))
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
 
     testImplementation(libs.junit)
     testImplementation(libs.mockitoCore4)
@@ -31,8 +38,7 @@ dependencies {
 
 androidx {
     name = "Lifecycle-Common for Java 8"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Lifecycle-Common for Java 8 Language"
-    metalavaK2UastEnabled = true
 }

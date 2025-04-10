@@ -44,15 +44,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * Test for [clickable] [PressInteraction] behavior in scrollable [ViewGroup]s.
- */
+/** Test for [clickable] [PressInteraction] behavior in scrollable [ViewGroup]s. */
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalFoundationApi::class)
 class ClickableInScrollableViewGroupTest {
-    @get:Rule
-    val rule = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
     fun clickable_scrollableViewGroup() {
@@ -74,9 +70,8 @@ class ClickableInScrollableViewGroupTest {
                     Box {
                         BasicText(
                             "ClickableText",
-                            modifier = Modifier
-                                .testTag("myClickable")
-                                .combinedClickable(
+                            modifier =
+                                Modifier.testTag("myClickable").combinedClickable(
                                     interactionSource = interactionSource,
                                     indication = null
                                 ) {}
@@ -88,25 +83,18 @@ class ClickableInScrollableViewGroupTest {
 
         val interactions = mutableListOf<Interaction>()
 
-        scope.launch {
-            interactionSource.interactions.collect { interactions.add(it) }
-        }
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
 
-        rule.runOnIdle {
-            assertThat(interactions).isEmpty()
-        }
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
 
-        rule.onNodeWithTag("myClickable")
-            .performTouchInput { down(center) }
+        rule.onNodeWithTag("myClickable").performTouchInput { down(center) }
 
         val halfTapIndicationDelay = TapIndicationDelay / 2
 
         rule.mainClock.advanceTimeBy(halfTapIndicationDelay)
 
         // Haven't reached the tap delay yet, so we shouldn't have started a press
-        rule.runOnIdle {
-            assertThat(interactions).isEmpty()
-        }
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
 
         // Advance past the tap delay
         rule.mainClock.advanceTimeBy(halfTapIndicationDelay)
@@ -116,8 +104,7 @@ class ClickableInScrollableViewGroupTest {
             assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
         }
 
-        rule.onNodeWithTag("myClickable")
-            .performTouchInput { up() }
+        rule.onNodeWithTag("myClickable").performTouchInput { up() }
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(2)
@@ -128,9 +115,7 @@ class ClickableInScrollableViewGroupTest {
         }
     }
 
-    /**
-     * Test case for a [clickable] inside an [AndroidView] inside a scrollable Compose container
-     */
+    /** Test case for a [clickable] inside an [AndroidView] inside a scrollable Compose container */
     @Test
     fun clickable_androidViewInScrollableContainer() {
         val interactionSource = MutableInteractionSource()
@@ -142,45 +127,39 @@ class ClickableInScrollableViewGroupTest {
         rule.setContent {
             scope = rememberCoroutineScope()
             Box(Modifier.verticalScroll(rememberScrollState())) {
-                AndroidView({ context -> ComposeView(context).apply {
-                    setContent {
-                        Box {
-                            BasicText(
-                                "ClickableText",
-                                modifier = Modifier
-                                    .testTag("myClickable")
-                                    .combinedClickable(
-                                        interactionSource = interactionSource,
-                                        indication = null
-                                    ) {}
-                            )
+                AndroidView({ context ->
+                    ComposeView(context).apply {
+                        setContent {
+                            Box {
+                                BasicText(
+                                    "ClickableText",
+                                    modifier =
+                                        Modifier.testTag("myClickable").combinedClickable(
+                                            interactionSource = interactionSource,
+                                            indication = null
+                                        ) {}
+                                )
+                            }
                         }
                     }
-                } })
+                })
             }
         }
 
         val interactions = mutableListOf<Interaction>()
 
-        scope.launch {
-            interactionSource.interactions.collect { interactions.add(it) }
-        }
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
 
-        rule.runOnIdle {
-            assertThat(interactions).isEmpty()
-        }
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
 
-        rule.onNodeWithTag("myClickable")
-            .performTouchInput { down(center) }
+        rule.onNodeWithTag("myClickable").performTouchInput { down(center) }
 
         val halfTapIndicationDelay = TapIndicationDelay / 2
 
         rule.mainClock.advanceTimeBy(halfTapIndicationDelay)
 
         // Haven't reached the tap delay yet, so we shouldn't have started a press
-        rule.runOnIdle {
-            assertThat(interactions).isEmpty()
-        }
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
 
         // Advance past the tap delay
         rule.mainClock.advanceTimeBy(halfTapIndicationDelay)
@@ -190,8 +169,7 @@ class ClickableInScrollableViewGroupTest {
             assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
         }
 
-        rule.onNodeWithTag("myClickable")
-            .performTouchInput { up() }
+        rule.onNodeWithTag("myClickable").performTouchInput { up() }
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(2)
@@ -220,36 +198,32 @@ class ClickableInScrollableViewGroupTest {
         rule.setContent {
             scope = rememberCoroutineScope()
             Box {
-                AndroidView({ context -> ComposeView(context).apply {
-                    setContent {
-                        Box {
-                            BasicText(
-                                "ClickableText",
-                                modifier = Modifier
-                                    .testTag("myClickable")
-                                    .combinedClickable(
-                                        interactionSource = interactionSource,
-                                        indication = null
-                                    ) {}
-                            )
+                AndroidView({ context ->
+                    ComposeView(context).apply {
+                        setContent {
+                            Box {
+                                BasicText(
+                                    "ClickableText",
+                                    modifier =
+                                        Modifier.testTag("myClickable").combinedClickable(
+                                            interactionSource = interactionSource,
+                                            indication = null
+                                        ) {}
+                                )
+                            }
                         }
                     }
-                } })
+                })
             }
         }
 
         val interactions = mutableListOf<Interaction>()
 
-        scope.launch {
-            interactionSource.interactions.collect { interactions.add(it) }
-        }
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
 
-        rule.runOnIdle {
-            assertThat(interactions).isEmpty()
-        }
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
 
-        rule.onNodeWithTag("myClickable")
-            .performTouchInput { down(center) }
+        rule.onNodeWithTag("myClickable").performTouchInput { down(center) }
 
         // No scrollable container, so there should be no delay and we should instantly appear
         // pressed
@@ -258,8 +232,7 @@ class ClickableInScrollableViewGroupTest {
             assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
         }
 
-        rule.onNodeWithTag("myClickable")
-            .performTouchInput { up() }
+        rule.onNodeWithTag("myClickable").performTouchInput { up() }
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(2)

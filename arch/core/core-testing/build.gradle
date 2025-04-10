@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -22,28 +29,25 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     api(project(":arch:core:core-runtime"))
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
     api(libs.junit)
-    api(libs.mockitoCore, excludes.bytebuddy)
+    api(libs.mockitoCore)
 
-    testImplementation(libs.junit)
-
-    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.hamcrestCore)
     androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.espressoCore)
+    androidTestRuntimeOnly(libs.testCore)
 }
 
 androidx {
     name = "Core-Testing"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Core-Testing"
-    metalavaK2UastEnabled = true
 }
 
 android {
-    namespace "androidx.arch.core.testing"
+    namespace = "androidx.arch.core.testing"
 }

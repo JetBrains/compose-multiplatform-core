@@ -16,12 +16,9 @@
 package androidx.health.platform.client.error
 
 import androidx.annotation.IntDef
+import androidx.annotation.RestrictTo
 
-/**
- * List of error codes returned by Health Platform, used in [ErrorStatus].
- *
- * @suppress
- */
+/** List of error codes returned by Health Platform, used in [ErrorStatus]. */
 @IntDef(
     ErrorCode.PROVIDER_NOT_INSTALLED,
     ErrorCode.PROVIDER_NOT_ENABLED,
@@ -38,6 +35,7 @@ import androidx.annotation.IntDef
     ErrorCode.CHANGES_TOKEN_OUTDATED,
     ErrorCode.TRANSACTION_TOO_LARGE
 )
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 annotation class ErrorCode {
     companion object {
         /** Health Platform is not installed. */

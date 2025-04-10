@@ -18,11 +18,11 @@ package androidx.percentlayout.widget;
 
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 
-import androidx.test.espresso.UiController;
-import androidx.test.espresso.ViewAction;
 import android.view.View;
 
 import androidx.core.view.ViewCompat;
+import androidx.test.espresso.UiController;
+import androidx.test.espresso.ViewAction;
 
 import org.hamcrest.Matcher;
 

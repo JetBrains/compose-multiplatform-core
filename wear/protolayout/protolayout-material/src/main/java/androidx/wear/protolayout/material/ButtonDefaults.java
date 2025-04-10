@@ -20,41 +20,38 @@ import static androidx.annotation.Dimension.DP;
 import static androidx.wear.protolayout.DimensionBuilders.dp;
 
 import androidx.annotation.Dimension;
-import androidx.annotation.NonNull;
 import androidx.wear.protolayout.DimensionBuilders.DpProp;
+
+import org.jspecify.annotations.NonNull;
 
 /** Contains the default values used by {@link Button}. */
 public class ButtonDefaults {
     private ButtonDefaults() {}
 
     /** The default size for standard {@link Button}. */
-    @NonNull public static final DpProp DEFAULT_SIZE = dp(52);
+    public static final @NonNull DpProp DEFAULT_SIZE = dp(52);
 
     /** The recommended size for large {@link Button}. */
-    @NonNull public static final DpProp LARGE_SIZE = dp(60);
+    public static final @NonNull DpProp LARGE_SIZE = dp(60);
 
     /** The recommended size for extra large {@link Button}. */
-    @NonNull public static final DpProp EXTRA_LARGE_SIZE = dp(88);
+    public static final @NonNull DpProp EXTRA_LARGE_SIZE = dp(88);
 
-    /** Returns the recommended icon size for the given size of a {@link Button}. */
-    @NonNull
-    public static DpProp recommendedIconSize(@NonNull DpProp buttonSize) {
+    /** Returns the recommended icon size for the given size of {@link Button}. */
+    public static @NonNull DpProp recommendedIconSize(@NonNull DpProp buttonSize) {
         return recommendedIconSize(buttonSize.getValue());
     }
 
-    /** Returns the recommended icon size for the given size of a {@link Button}. */
-    @NonNull
-    public static DpProp recommendedIconSize(@Dimension(unit = DP) float buttonSize) {
+    /** Returns the recommended icon size for the given size of {@link Button}. */
+    public static @NonNull DpProp recommendedIconSize(@Dimension(unit = DP) float buttonSize) {
         return dp(buttonSize / 2);
     }
 
     /** The recommended colors for a primary {@link Button}. */
-    @NonNull
-    public static final ButtonColors PRIMARY_COLORS =
+    public static final @NonNull ButtonColors PRIMARY_COLORS =
             ButtonColors.primaryButtonColors(Colors.DEFAULT);
 
     /** The recommended colors for a secondary {@link Button}. */
-    @NonNull
-    public static final ButtonColors SECONDARY_COLORS =
+    public static final @NonNull ButtonColors SECONDARY_COLORS =
             ButtonColors.secondaryButtonColors(Colors.DEFAULT);
 }

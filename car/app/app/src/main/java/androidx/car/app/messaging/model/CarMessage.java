@@ -21,31 +21,26 @@ import static androidx.car.app.messaging.model.ConversationItem.validateSender;
 import android.net.Uri;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.car.app.annotations.CarProtocol;
-import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.annotations.KeepFields;
 import androidx.car.app.annotations.RequiresCarApi;
 import androidx.car.app.model.CarText;
 import androidx.core.app.Person;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.Objects;
 
 /** Represents a single message in a {@link ConversationItem} */
-@ExperimentalCarApi
 @CarProtocol
 @RequiresCarApi(7)
 @KeepFields
 public class CarMessage {
-    @Nullable
-    private final Bundle mSender;
-    @Nullable
-    private final CarText mBody;
-    @Nullable
-    private final String mMultimediaMimeType;
-    @Nullable
-    private final Uri mMultimediaUri;
+    private final @Nullable Bundle mSender;
+    private final @Nullable CarText mBody;
+    private final @Nullable String mMultimediaMimeType;
+    private final @Nullable Uri mMultimediaUri;
     private final long mReceivedTimeEpochMillis;
     private final boolean mIsRead;
 
@@ -102,8 +97,7 @@ public class CarMessage {
      * <p> For self-sent messages, this method will return {@code null} or
      * {@link ConversationItem#getSelf()}.
      */
-    @Nullable
-    public Person getSender() {
+    public @Nullable Person getSender() {
         return mSender == null ? null : Person.fromBundle(mSender);
     }
 
@@ -119,8 +113,7 @@ public class CarMessage {
      * @see #getMultimediaMimeType()
      * @see #getMultimediaUri()
      */
-    @Nullable
-    public CarText getBody() {
+    public @Nullable CarText getBody() {
         return mBody;
     }
 
@@ -136,8 +129,7 @@ public class CarMessage {
      * @see #getBody()
      * @see #getMultimediaUri()
      */
-    @Nullable
-    public String getMultimediaMimeType() {
+    public @Nullable String getMultimediaMimeType() {
         return mMultimediaMimeType;
     }
 
@@ -153,8 +145,7 @@ public class CarMessage {
      * @see #getBody()
      * @see #getMultimediaMimeType()
      */
-    @Nullable
-    public Uri getMultimediaUri() {
+    public @Nullable Uri getMultimediaUri() {
         return mMultimediaUri;
     }
 
@@ -170,14 +161,10 @@ public class CarMessage {
 
     /** A builder for {@link CarMessage} */
     public static final class Builder {
-        @Nullable
-        Person mSender;
-        @Nullable
-        CarText mBody;
-        @Nullable
-        String mMultimediaMimeType;
-        @Nullable
-        Uri mMultimediaUri;
+        @Nullable Person mSender;
+        @Nullable CarText mBody;
+        @Nullable String mMultimediaMimeType;
+        @Nullable Uri mMultimediaUri;
         long mReceivedTimeEpochMillis;
         boolean mIsRead;
 

@@ -20,21 +20,18 @@ import static android.os.Build.VERSION.SDK_INT;
 
 import static androidx.appsearch.testutil.AppSearchTestUtils.checkIsBatchResultSuccess;
 import static androidx.appsearch.testutil.AppSearchTestUtils.convertSearchResultsToDocuments;
-import static androidx.appsearch.testutil.AppSearchTestUtils.doGet;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import android.content.Context;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.appsearch.app.AppSearchBatchResult;
 import androidx.appsearch.app.AppSearchResult;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.AppSearchSession;
 import androidx.appsearch.app.Features;
 import androidx.appsearch.app.GenericDocument;
-import androidx.appsearch.app.GetByDocumentIdRequest;
 import androidx.appsearch.app.Migrator;
 import androidx.appsearch.app.PutDocumentsRequest;
 import androidx.appsearch.app.SearchResult;
@@ -51,6 +48,7 @@ import androidx.test.core.app.ApplicationProvider;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Assume;
 import org.junit.Test;
 
@@ -559,45 +557,5 @@ public class AppSearchSessionLocalCtsTest extends AppSearchSessionCtsTestBase {
         assertThat(result.getFailures()).containsKey("id1");
         assertThat(result.getFailures().get("id1").getErrorMessage())
                 .contains("was too large to write. Max is 16777215");
-    }
-
-    @Test
-    public void testPutDocuments_emptyBytesAndDocuments() throws Exception {
-        Context context = ApplicationProvider.getApplicationContext();
-        AppSearchSession db = LocalStorage.createSearchSessionAsync(
-                new LocalStorage.SearchContext.Builder(context, DB_NAME_1).build()).get();
-        // Schema registration
-        AppSearchSchema schema = new AppSearchSchema.Builder("testSchema")
-                .addProperty(new AppSearchSchema.BytesPropertyConfig.Builder("bytes")
-                        .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_REPEATED)
-                        .build())
-                .addProperty(new AppSearchSchema.DocumentPropertyConfig.Builder(
-                        "document", AppSearchEmail.SCHEMA_TYPE)
-                        .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_REPEATED)
-                        .setShouldIndexNestedProperties(true)
-                        .build())
-                .build();
-        db.setSchemaAsync(new SetSchemaRequest.Builder()
-                .addSchemas(schema, AppSearchEmail.SCHEMA).build()).get();
-
-        // Index a document
-        GenericDocument document = new GenericDocument.Builder<>("namespace", "id1", "testSchema")
-                .setPropertyBytes("bytes")
-                .setPropertyDocument("document")
-                .build();
-
-        AppSearchBatchResult<String, Void> result = checkIsBatchResultSuccess(db.putAsync(
-                new PutDocumentsRequest.Builder().addGenericDocuments(document).build()));
-        assertThat(result.getSuccesses()).containsExactly("id1", null);
-        assertThat(result.getFailures()).isEmpty();
-
-        GetByDocumentIdRequest request = new GetByDocumentIdRequest.Builder("namespace")
-                .addIds("id1")
-                .build();
-        List<GenericDocument> outDocuments = doGet(db, request);
-        assertThat(outDocuments).hasSize(1);
-        GenericDocument outDocument = outDocuments.get(0);
-        assertThat(outDocument.getPropertyBytesArray("bytes")).isEmpty();
-        assertThat(outDocument.getPropertyDocumentArray("document")).isEmpty();
     }
 }

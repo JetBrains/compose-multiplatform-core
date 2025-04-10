@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.NonRestartableComposable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -42,37 +41,36 @@ import androidx.tv.material3.tokens.Elevation
  *
  * Choose the best button for an action based on the amount of emphasis it needs. The more important
  * an action is, the higher emphasis its button should be.
- *
  * - See [Button] for high emphasis (important, final actions that complete a flow).
  * - See [OutlinedButton] for a medium-emphasis button with a border.
  *
  * The default text style for internal [Text] components will be set to [Typography.labelLarge].
  *
  * Samples:
- * @sample androidx.tv.samples.ButtonSample
- * @sample androidx.tv.samples.LikeButtonSample
  *
+ * @sample androidx.tv.material3.samples.ButtonSample
+ * @sample androidx.tv.material3.samples.LikeButtonSample
  * @param onClick called when this button is clicked
  * @param modifier the [Modifier] to be applied to this button
  * @param onLongClick called when this button is long clicked (long-pressed).
  * @param enabled controls the enabled state of this button. When `false`, this component will not
- * respond to user input, and it will appear visually disabled and disabled to accessibility
- * services.
+ *   respond to user input, and it will appear visually disabled and disabled to accessibility
+ *   services.
  * @param scale Defines size of the Button relative to its original size.
  * @param glow Shadow to be shown behind the Button.
  * @param shape Defines the Button's shape.
  * @param colors Color to be used for background and content of the Button
  * @param tonalElevation tonal elevation used to apply a color shift to the button to give the it
- * higher emphasis
+ *   higher emphasis
  * @param border Defines a border around the Button.
  * @param contentPadding the spacing values to apply internally between the container and the
- * content
- * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
- * for this button. You can create and pass in your own `remember`ed instance to observe
- * [Interaction]s and customize the appearance / behavior of this button in different states.
+ *   content
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this button. You can use this to change the button's appearance or
+ *   preview the button in different states. Note that if `null` is provided, interactions will
+ *   still happen internally.
  * @param content the content of the button
  */
-@ExperimentalTvMaterial3Api
 @NonRestartableComposable
 @Composable
 fun Button(
@@ -87,7 +85,7 @@ fun Button(
     tonalElevation: Dp = Elevation.Level0,
     border: ButtonBorder = ButtonDefaults.border(),
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    interactionSource: MutableInteractionSource? = null,
     content: @Composable RowScope.() -> Unit
 ) {
     ButtonImpl(
@@ -116,36 +114,35 @@ fun Button(
  *
  * Choose the best button for an action based on the amount of emphasis it needs. The more important
  * an action is, the higher emphasis its button should be.
- *
  * - See [Button] for high emphasis (important, final actions that complete a flow).
  * - See [OutlinedButton] for a medium-emphasis button with a border.
  *
  * The default text style for internal [Text] components will be set to [Typography.labelLarge].
  *
  * Samples:
- * @sample androidx.tv.samples.OutlinedButtonSample
  *
+ * @sample androidx.tv.material3.samples.OutlinedButtonSample
  * @param onClick called when this button is clicked
  * @param modifier the [Modifier] to be applied to this button
  * @param onLongClick called when this button is long clicked (long-pressed).
  * @param enabled controls the enabled state of this button. When `false`, this component will not
- * respond to user input, and it will appear visually disabled and disabled to accessibility
- * services.
+ *   respond to user input, and it will appear visually disabled and disabled to accessibility
+ *   services.
  * @param scale Defines size of the Button relative to its original size.
  * @param glow Shadow to be shown behind the Button.
  * @param shape Defines the Button's shape.
  * @param colors Color to be used for background and content of the Button
  * @param tonalElevation tonal elevation used to apply a color shift to the button to give the it
- * higher emphasis
+ *   higher emphasis
  * @param border Defines a border around the Button.
  * @param contentPadding the spacing values to apply internally between the container and the
- * content
- * @param interactionSource the [MutableInteractionSource] representing the stream of [Interaction]s
- * for this button. You can create and pass in your own `remember`ed instance to observe
- * [Interaction]s and customize the appearance / behavior of this button in different states.
+ *   content
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this button. You can use this to change the button's appearance or
+ *   preview the button in different states. Note that if `null` is provided, interactions will
+ *   still happen internally.
  * @param content the content of the button
  */
-@ExperimentalTvMaterial3Api
 @NonRestartableComposable
 @Composable
 fun OutlinedButton(
@@ -160,7 +157,7 @@ fun OutlinedButton(
     tonalElevation: Dp = Elevation.Level0,
     border: ButtonBorder = OutlinedButtonDefaults.border(),
     contentPadding: PaddingValues = OutlinedButtonDefaults.ContentPadding,
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    interactionSource: MutableInteractionSource? = null,
     content: @Composable RowScope.() -> Unit
 ) {
     ButtonImpl(
@@ -180,7 +177,6 @@ fun OutlinedButton(
     )
 }
 
-@ExperimentalTvMaterial3Api
 @Composable
 private fun ButtonImpl(
     onClick: () -> Unit,
@@ -194,7 +190,7 @@ private fun ButtonImpl(
     tonalElevation: Dp,
     border: ButtonBorder,
     contentPadding: PaddingValues,
-    interactionSource: MutableInteractionSource,
+    interactionSource: MutableInteractionSource?,
     content: @Composable RowScope.() -> Unit
 ) {
     Surface(
@@ -212,12 +208,12 @@ private fun ButtonImpl(
     ) {
         ProvideTextStyle(value = MaterialTheme.typography.labelLarge) {
             Row(
-                modifier = Modifier
-                    .defaultMinSize(
-                        minWidth = BaseButtonDefaults.MinWidth,
-                        minHeight = BaseButtonDefaults.MinHeight
-                    )
-                    .padding(contentPadding),
+                modifier =
+                    Modifier.defaultMinSize(
+                            minWidth = BaseButtonDefaults.MinWidth,
+                            minHeight = BaseButtonDefaults.MinHeight
+                        )
+                        .padding(contentPadding),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
                 content = content

@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.toFontFamily
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.TextUnit
@@ -61,10 +62,8 @@ class MultiParagraphIntegrationTextDirectionTest {
     fun unspecifiedTextDirection_withLtrLocale_resolvesToLtr() {
         Locale.setDefault(ltrLocale)
 
-        val paragraph = multiParagraph(
-            text = AnnotatedString(""),
-            textDirection = TextDirection.Unspecified
-        )
+        val paragraph =
+            multiParagraph(text = AnnotatedString(""), textDirection = TextDirection.Unspecified)
 
         assertThat(paragraph.getParagraphDirection(0)).isEqualTo(ResolvedTextDirection.Ltr)
     }
@@ -73,32 +72,32 @@ class MultiParagraphIntegrationTextDirectionTest {
     fun unspecifiedTextDirection_withRtlLocale_resolvesToRtl() {
         Locale.setDefault(rtlLocale)
 
-        val paragraph = multiParagraph(
-            text = AnnotatedString(""),
-            textDirection = TextDirection.Unspecified
-        )
+        val paragraph =
+            multiParagraph(text = AnnotatedString(""), textDirection = TextDirection.Unspecified)
 
         assertThat(paragraph.getParagraphDirection(0)).isEqualTo(ResolvedTextDirection.Rtl)
     }
 
     @Test
     fun unspecifiedTextDirection_withLtrLocaleList_resolvesToLtr() {
-        val paragraph = multiParagraph(
-            text = AnnotatedString(""),
-            textDirection = TextDirection.Unspecified,
-            localeList = ltrLocaleList
-        )
+        val paragraph =
+            multiParagraph(
+                text = AnnotatedString(""),
+                textDirection = TextDirection.Unspecified,
+                localeList = ltrLocaleList
+            )
 
         assertThat(paragraph.getParagraphDirection(0)).isEqualTo(ResolvedTextDirection.Ltr)
     }
 
     @Test
     fun unspecifiedTextDirection_withRtlLocaleList_resolvesToRtl() {
-        val paragraph = multiParagraph(
-            text = AnnotatedString(""),
-            textDirection = TextDirection.Unspecified,
-            localeList = rtlLocaleList
-        )
+        val paragraph =
+            multiParagraph(
+                text = AnnotatedString(""),
+                textDirection = TextDirection.Unspecified,
+                localeList = rtlLocaleList
+            )
 
         assertThat(paragraph.getParagraphDirection(0)).isEqualTo(ResolvedTextDirection.Rtl)
     }
@@ -116,13 +115,14 @@ class MultiParagraphIntegrationTextDirectionTest {
 
             val width = multiParagraphIntrinsics(text, fontSize).maxIntrinsicWidth
 
-            val paragraph = multiParagraph(
-                text = text,
-                fontSize = fontSize,
-                textDirection = TextDirection.Content,
-                localeList = ltrLocaleList,
-                width = width
-            )
+            val paragraph =
+                multiParagraph(
+                    text = text,
+                    fontSize = fontSize,
+                    textDirection = TextDirection.Content,
+                    localeList = ltrLocaleList,
+                    width = width
+                )
 
             // First paragraph should be rendered as: "a .", dot is visually after "a ".
             assertThat(paragraph.getHorizontalPosition(2, true))
@@ -149,13 +149,14 @@ class MultiParagraphIntegrationTextDirectionTest {
 
             val width = multiParagraphIntrinsics(text, fontSize).maxIntrinsicWidth
             assertThat(width).isLessThan(Int.MAX_VALUE)
-            val paragraph = multiParagraph(
-                text = text,
-                fontSize = fontSize,
-                textDirection = TextDirection.Content,
-                localeList = rtlLocaleList,
-                width = width
-            )
+            val paragraph =
+                multiParagraph(
+                    text = text,
+                    fontSize = fontSize,
+                    textDirection = TextDirection.Content,
+                    localeList = rtlLocaleList,
+                    width = width
+                )
 
             // First paragraph should be rendered as: "a .", dot is visually after "a ".
             assertThat(paragraph.getHorizontalPosition(2, true))
@@ -182,12 +183,13 @@ class MultiParagraphIntegrationTextDirectionTest {
 
             val width = multiParagraphIntrinsics(text, fontSize).maxIntrinsicWidth
 
-            val paragraph = multiParagraph(
-                text = text,
-                fontSize = fontSize,
-                textDirection = TextDirection.Ltr,
-                width = width
-            )
+            val paragraph =
+                multiParagraph(
+                    text = text,
+                    fontSize = fontSize,
+                    textDirection = TextDirection.Ltr,
+                    width = width
+                )
 
             // First paragraph should be rendered as: "a .", dot is visually after "a ".
             assertThat(paragraph.getHorizontalPosition(2, true))
@@ -214,12 +216,13 @@ class MultiParagraphIntegrationTextDirectionTest {
 
             val width = multiParagraphIntrinsics(text, fontSize).maxIntrinsicWidth
 
-            val paragraph = multiParagraph(
-                text = text,
-                fontSize = fontSize,
-                textDirection = TextDirection.Rtl,
-                width = width
-            )
+            val paragraph =
+                multiParagraph(
+                    text = text,
+                    fontSize = fontSize,
+                    textDirection = TextDirection.Rtl,
+                    width = width
+                )
 
             // First paragraph should be rendered as: ". a", dot is visually before " a".
             assertThat(paragraph.getHorizontalPosition(2, true))
@@ -259,10 +262,7 @@ class MultiParagraphIntegrationTextDirectionTest {
     ): MultiParagraphIntrinsics {
         return MultiParagraphIntrinsics(
             text,
-            style = TextStyle(
-                fontFamily = fontFamilyMeasureFont,
-                fontSize = fontSize
-            ),
+            style = TextStyle(fontFamily = fontFamilyMeasureFont, fontSize = fontSize),
             placeholders = placeholders,
             density = defaultDensity,
             fontFamilyResolver = UncachedFontFamilyResolver(context)
@@ -278,15 +278,17 @@ class MultiParagraphIntegrationTextDirectionTest {
     ): MultiParagraph {
         return MultiParagraph(
             annotatedString = text,
-            style = TextStyle(
-                fontFamily = fontFamilyMeasureFont,
-                fontSize = fontSize,
-                localeList = localeList,
-                textDirection = textDirection
-            ),
+            style =
+                TextStyle(
+                    fontFamily = fontFamilyMeasureFont,
+                    fontSize = fontSize,
+                    localeList = localeList,
+                    textDirection = textDirection
+                ),
             constraints = Constraints(maxWidth = width.ceilToInt()),
             density = defaultDensity,
-            fontFamilyResolver = UncachedFontFamilyResolver(context)
+            fontFamilyResolver = UncachedFontFamilyResolver(context),
+            overflow = TextOverflow.Clip
         )
     }
 }

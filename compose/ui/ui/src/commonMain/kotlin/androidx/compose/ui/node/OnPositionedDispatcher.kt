@@ -19,8 +19,8 @@ package androidx.compose.ui.node
 import androidx.compose.runtime.collection.mutableVectorOf
 
 /**
- * Tracks the nodes being positioned and dispatches OnPositioned callbacks when we finished
- * the measure/layout pass.
+ * Tracks the nodes being positioned and dispatches OnPositioned callbacks when we finished the
+ * measure/layout pass.
  */
 internal class OnPositionedDispatcher {
     private val layoutNodes = mutableVectorOf<LayoutNode>()
@@ -31,6 +31,10 @@ internal class OnPositionedDispatcher {
     fun onNodePositioned(node: LayoutNode) {
         layoutNodes += node
         node.needsOnPositionedDispatch = true
+    }
+
+    fun remove(node: LayoutNode) {
+        layoutNodes.remove(node)
     }
 
     fun onRootNodePositioned(rootNode: LayoutNode) {
@@ -72,9 +76,7 @@ internal class OnPositionedDispatcher {
         layoutNode.dispatchOnPositionedCallbacks()
         layoutNode.needsOnPositionedDispatch = false
 
-        layoutNode.forEachChild { child ->
-            dispatchHierarchy(child)
-        }
+        layoutNode.forEachChild { child -> dispatchHierarchy(child) }
     }
 
     internal companion object {

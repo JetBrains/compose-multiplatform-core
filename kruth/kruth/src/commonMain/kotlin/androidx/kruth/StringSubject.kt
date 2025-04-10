@@ -20,303 +20,374 @@ import androidx.kruth.Fact.Companion.fact
 import androidx.kruth.Fact.Companion.simpleFact
 
 /**
- * Propositions for string subjects.
+ * Propositions for [String] subjects.
+ *
+ * @constructor Constructor for use by subclasses. If you want to create an instance of this class
+ *   itself, call [check(...)][Subject.check].[that(actual)][StandardSubjectBuilder.that].
  */
-class StringSubject internal constructor(
-    actual: String?,
-    metadata: FailureMetadata = FailureMetadata(),
-) : ComparableSubject<String>(actual = actual, metadata = metadata),
-    PlatformStringSubject by PlatformStringSubjectImpl(actual, metadata) {
+expect open class StringSubject protected constructor(metadata: FailureMetadata, actual: String?) :
+    ComparableSubject<String> {
 
-    /**
-     * Fails if the string does not contain the given sequence.
-     */
-    fun contains(charSequence: CharSequence) {
-        metadata.assertNotNull(actual)
+    internal constructor(actual: String?, metadata: FailureMetadata)
 
-        metadata.assertTrue(actual.contains(charSequence)) {
-            "Expected to contain \"$charSequence\", but was: \"$actual\""
-        }
-    }
+    /** Fails if the string does not contain the given sequence. */
+    open fun contains(charSequence: CharSequence?)
 
-    /** Fails if the string does not have the given length.  */
-    fun hasLength(expectedLength: Int) {
-        metadata.assertNotNull(actual)
+    /** Fails if the string does not have the given length. */
+    open fun hasLength(expectedLength: Int)
 
-        metadata.assertTrue(actual.length == expectedLength) {
-            "Expected to have length $expectedLength, but was: \"$actual\""
-        }
-    }
+    /** Fails if the string is not equal to the zero-length "empty string." */
+    open fun isEmpty()
 
-    /** Fails if the string is not equal to the zero-length "empty string."  */
-    fun isEmpty() {
-        metadata.assertNotNull(actual)
-        if (actual.isNotEmpty()) {
-            metadata.fail(
-                """
-                    expected to be empty
-                    | but was $actual
-                """.trimMargin()
-            )
-        }
-    }
+    /** Fails if the string is equal to the zero-length "empty string." */
+    open fun isNotEmpty()
 
-    /** Fails if the string is equal to the zero-length "empty string."  */
-    fun isNotEmpty() {
-        metadata.assertNotNull(actual)
-        if (actual.isEmpty()) {
-            metadata.fail("expected not to be empty")
-        }
-    }
+    /** Fails if the string contains the given sequence. */
+    open fun doesNotContain(charSequence: CharSequence?)
 
-    /** Fails if the string contains the given sequence.  */
-    fun doesNotContain(string: CharSequence) {
-        metadata.assertNotNull(actual) { "expected a string that does not contain $string" }
+    /** Fails if the string does not start with the given string. */
+    open fun startsWith(string: String?)
 
-        if (actual.contains(string)) {
-            metadata.fail(
-                """
-                    expected not to contain $string
-                    | but was $actual
-                """.trimMargin()
-            )
-        }
-    }
-
-    /** Fails if the string does not start with the given string.  */
-    fun startsWith(string: String) {
-        metadata.assertNotNull(actual) { "expected a string that starts with $string" }
-
-        if (!actual.startsWith(string)) {
-            metadata.fail(
-                """
-                    expected to start with $string
-                    | but was $actual
-                """.trimMargin()
-            )
-        }
-    }
-
-    /** Fails if the string does not end with the given string.  */
-    fun endsWith(string: String) {
-        metadata.assertNotNull(actual) { "expected a string that ends with $string" }
-
-        if (!actual.endsWith(string)) {
-            metadata.fail(
-                """
-                    expected to end with $string
-                    | but was $actual
-                """.trimMargin()
-            )
-        }
-    }
+    /** Fails if the string does not end with the given string. */
+    open fun endsWith(string: String?)
 
     /** Fails if the string does not match the given [regex]. */
-    fun matches(regex: String) {
-        matchesImpl(regex.toRegex()) {
-            "Looks like you want to use .isEqualTo() for an exact equality assertion."
-        }
-    }
+    open fun matches(regex: String?)
 
     /** Fails if the string does not match the given [regex]. */
-    fun matches(regex: Regex) {
-        matchesImpl(regex) {
-            "If you want an exact equality assertion you can escape your regex with Regex.escape()."
-        }
-    }
+    fun matches(regex: Regex?)
 
-    /** Fails if the string matches the given regex.  */
-    fun doesNotMatch(regex: String) {
-        doesNotMatchImpl(regex.toRegex())
-    }
+    /** Fails if the string matches the given regex. */
+    open fun doesNotMatch(regex: String?)
 
-    /** Fails if the string matches the given regex.  */
-    fun doesNotMatch(regex: Regex) {
-        doesNotMatchImpl(regex)
-    }
+    /** Fails if the string matches the given regex. */
+    fun doesNotMatch(regex: Regex?)
 
-    /** Fails if the string does not contain a match on the given regex.  */
-    fun containsMatch(regex: Regex) {
-        containsMatchImpl(regex)
-    }
+    /** Fails if the string does not contain a match on the given regex. */
+    open fun containsMatch(regex: String?)
 
-    /** Fails if the string does not contain a match on the given regex.  */
-    fun containsMatch(regex: String) {
-        containsMatchImpl(regex.toRegex())
-    }
+    /** Fails if the string does not contain a match on the given regex. */
+    fun containsMatch(regex: Regex?)
 
-    /** Fails if the string contains a match on the given regex.  */
-    fun doesNotContainMatch(regex: Regex) {
-        doesNotContainMatchImpl(regex)
-    }
+    /** Fails if the string contains a match on the given regex. */
+    open fun doesNotContainMatch(regex: String?)
 
-    /** Fails if the string contains a match on the given regex.  */
-    fun doesNotContainMatch(regex: String) {
-        if (actual == null) {
-            failWithActual("expected a string that does not contain a match for", regex)
-        }
-
-        if (regex.toRegex().containsMatchIn(actual)) {
-            failWithActual("expected not to contain a match for", regex)
-        }
-    }
+    /** Fails if the string contains a match on the given regex. */
+    fun doesNotContainMatch(regex: Regex?)
 
     /**
      * Returns a [StringSubject]-like instance that will ignore the case of the characters.
      *
-     * Character equality ignoring case is defined as follows: Characters must be equal either
-     * after calling [Char.lowercaseChar] or after calling [Char.uppercaseChar].
-     * Note that this is independent of any locale.
+     * Character equality ignoring case is defined as follows: Characters must be equal either after
+     * calling [Char.lowercaseChar] or after calling [Char.uppercaseChar]. Note that this is
+     * independent of any locale.
      */
-    fun ignoringCase(): CaseInsensitiveStringComparison =
-        CaseInsensitiveStringComparison()
+    open fun ignoringCase(): CaseInsensitiveStringComparison
 
     inner class CaseInsensitiveStringComparison internal constructor() {
         /**
          * Fails if the subject is not equal to the given sequence (while ignoring case). For the
          * purposes of this comparison, two strings are equal if any of the following is true:
-         *
-         *  * they are equal according to [String.equals] with `ignoreCase = true`
-         *  * they are both null
+         * * they are equal according to [String.equals] with `ignoreCase = true`
+         * * they are both null
          *
          * Example: "abc" is equal to "ABC", but not to "abcd".
          */
-        fun isEqualTo(expected: String?) {
-            when {
-                (actual == null) && (expected != null) ->
-                    metadata.fail(
-                        "Expected a string equal to \"$expected\" (case is ignored), but was null"
-                    )
-
-                (expected == null) && (actual != null) ->
-                    metadata.fail(
-                        "Expected a string that is null (null reference), but was \"$actual\""
-                    )
-
-                !actual.equals(expected, ignoreCase = true) ->
-                    metadata.fail(
-                        "Expected a string equal to \"$expected\" (case is ignored), " +
-                            "but was \"$actual\""
-                    )
-            }
-        }
+        fun isEqualTo(expected: String?)
 
         /**
          * Fails if the subject is equal to the given string (while ignoring case). The meaning of
          * equality is the same as for the [isEqualTo] method.
          */
-        fun isNotEqualTo(unexpected: String?) {
-            when {
-                (actual == null) && (unexpected == null) ->
-                    metadata.fail(
-                        "Expected a string not equal to null (null reference), but it was null"
-                    )
+        fun isNotEqualTo(unexpected: String?)
 
-                actual.equals(unexpected, ignoreCase = true) ->
-                    metadata.fail(
-                        "Expected a string not equal to \"$unexpected\" (case is ignored), " +
-                            "but it was equal. Actual string: \"$actual\"."
-                    )
-            }
-        }
+        /** Fails if the string does not contain the given sequence (while ignoring case). */
+        fun contains(expected: CharSequence?)
 
-        /** Fails if the string does not contain the given sequence (while ignoring case).  */
-        fun contains(expected: CharSequence?) {
-            requireNonNull(expected)
-
-            when {
-                actual == null ->
-                    metadata.fail(
-                        "Expected a string that contains \"$expected\" (case is ignored), " +
-                            "but was null"
-                    )
-
-                !actual.contains(expected, ignoreCase = true) ->
-                    metadata.fail(
-                        "Expected to contain \"$expected\" (case is ignored), but was \"$actual\""
-                    )
-            }
-        }
-
-        /** Fails if the string contains the given sequence (while ignoring case).  */
-        fun doesNotContain(expected: CharSequence?) {
-            requireNonNull(expected)
-
-            when {
-                actual == null ->
-                    metadata.fail(
-                        "Expected a string that does not contain \"$expected\" " +
-                            "(case is ignored), but was null"
-                    )
-
-                actual.contains(expected, ignoreCase = true) ->
-                    metadata.fail(
-                        "Expected a string that does not contain \"$expected\" " +
-                            "(case is ignored), but it was. Actual string: \"$actual\"."
-                    )
-            }
-        }
+        /** Fails if the string contains the given sequence (while ignoring case). */
+        fun doesNotContain(expected: CharSequence?)
     }
 }
 
-internal inline fun Subject<String>.matchesImpl(regex: Regex, equalToStringErrorMsg: () -> String) {
+/** Fails if the string does not contain the given sequence. */
+internal fun StringSubject.commonContains(charSequence: CharSequence?) {
+    requireNonNull(charSequence)
     if (actual == null) {
-        failWithActualInternal("Expected a string that matches", regex)
+        failWithActualInternal("expected a string that contains", charSequence)
+    } else if (!actual.contains(charSequence)) {
+        failWithActualInternal("expected to contain", charSequence)
     }
+}
 
-    if (actual.matches(regex)) {
+/** Fails if the string does not have the given length. */
+internal fun StringSubject.commonHasLength(expectedLength: Int) {
+    require(expectedLength >= 0) { "expectedLength($expectedLength) must be >= 0" }
+    checkInternal("length").that(requireNonNull(actual).length).isEqualTo(expectedLength)
+}
+
+/** Fails if the string is not equal to the zero-length "empty string." */
+internal fun StringSubject.commonIsEmpty() {
+    if (actual == null) {
+        failWithActualInternal(simpleFact("expected an empty string"))
+    } else if (actual.isNotEmpty()) {
+        failWithActualInternal(simpleFact("expected to be string"))
+    }
+}
+
+/** Fails if the string is equal to the zero-length "empty string." */
+internal fun StringSubject.commonIsNotEmpty() {
+    if (actual == null) {
+        failWithActualInternal(simpleFact("expected a non-empty string"))
+    } else if (actual.isEmpty()) {
+        failWithoutActualInternal(simpleFact("expected not to be empty"))
+    }
+}
+
+/** Fails if the string contains the given sequence. */
+internal fun StringSubject.commonDoesNotContain(charSequence: CharSequence?) {
+    requireNonNull(charSequence)
+    if (actual == null) {
+        failWithActualInternal("expected a string that does not contain", charSequence)
+    } else if (actual.contains(charSequence)) {
+        failWithActualInternal("expected not to contain", charSequence)
+    }
+}
+
+/** Fails if the string does not start with the given string. */
+internal fun StringSubject.commonStartsWith(string: String?) {
+    requireNonNull(string)
+    if (actual == null) {
+        failWithActualInternal("expected a string that starts with", string)
+    } else if (!actual.startsWith(string)) {
+        failWithActualInternal("expected to start with", string)
+    }
+}
+
+/** Fails if the string does not end with the given string. */
+internal fun StringSubject.commonEndsWith(string: String?) {
+    requireNonNull(string)
+    if (actual == null) {
+        failWithActualInternal("expected a string that ends with", string)
+    } else if (!actual.endsWith(string)) {
+        failWithActualInternal("expected to end with", string)
+    }
+}
+
+/** Fails if the string does not match the given [regex]. */
+internal fun StringSubject.commonMatches(regex: String?) {
+    requireNonNull(regex)
+
+    if (actual == null) {
+        failWithActualInternal("expected a string that matches", regex)
+    } else if (actual.matches(regex.toRegex())) {
+        return
+    } else if (regex == actual) {
+        failWithoutActualInternal(
+            fact("expected to match", regex),
+            fact("but was", actual),
+            simpleFact("Looks like you want to use .isEqualTo() for an exact equality assertion."),
+        )
+    } else {
+        failWithActualInternal("expected to match", regex)
+    }
+}
+
+/** Fails if the string does not match the given [regex]. */
+internal fun StringSubject.commonMatches(regex: Regex?) {
+    requireNonNull(regex)
+
+    if (actual == null) {
+        failWithActualInternal("expected a string that matches", regex)
+    } else if (actual.matches(regex)) {
+        return
+    } else if (regex.toString() == actual) {
+        failWithoutActualInternal(
+            fact("expected to match", regex),
+            fact("but was", actual),
+            simpleFact(
+                "If you want an exact equality assertion you can escape your regex with " +
+                    "Regex.escape()."
+            ),
+        )
+    } else if (regex.find(actual) != null) {
+        failWithoutActualInternal(
+            fact("expected to match", regex),
+            fact("but was", actual),
+            simpleFact("Did you mean to call containsMatch() instead of match()?")
+        )
+    } else {
+        failWithActualInternal("expected to match", regex)
+    }
+}
+
+/** Fails if the string matches the given regex. */
+internal fun StringSubject.commonDoesNotMatch(regex: String?) {
+    requireNonNull(regex)
+    doesNotMatchImpl(regex.toRegex())
+}
+
+/** Fails if the string matches the given regex. */
+internal fun StringSubject.commonDoesNotMatch(regex: Regex?) {
+    requireNonNull(regex)
+    doesNotMatchImpl(regex)
+}
+
+/** Fails if the string does not contain a match on the given regex. */
+internal fun StringSubject.commonContainsMatch(regex: String?) {
+    requireNonNull(regex)
+    containsMatchImpl(regex.toRegex())
+}
+
+/** Fails if the string does not contain a match on the given regex. */
+internal fun StringSubject.commonContainsMatch(regex: Regex?) {
+    requireNonNull(regex)
+    containsMatchImpl(regex)
+}
+
+/** Fails if the string contains a match on the given regex. */
+internal fun StringSubject.commonDoesNotContainMatch(regex: String?) {
+    requireNonNull(regex)
+    if (actual == null) {
+        failWithActualInternal("expected a string that does not contain a match for", regex)
+    } else if (regex.toRegex().containsMatchIn(actual)) {
+        failWithActualInternal("expected not to contain a match for", regex)
+    }
+}
+
+/** Fails if the string contains a match on the given regex. */
+internal fun StringSubject.commonDoesNotContainMatch(regex: Regex?) {
+    requireNonNull(regex)
+    doesNotContainMatchImpl(regex)
+}
+
+internal fun StringSubject.commonIgnoringCase(): StringSubject.CaseInsensitiveStringComparison =
+    CaseInsensitiveStringComparison()
+
+internal fun StringSubject.commonCaseInsensitiveStringComparisonIsEqualTo(expected: String?) {
+    if ((actual == null) && (expected != null)) {
+        failWithoutActualInternal(
+            fact("expected a string that is equal to", expected),
+            fact("but was", actual),
+            simpleFact("(case is ignored)")
+        )
+    } else if ((expected == null) && (actual != null)) {
+        failWithoutActualInternal(
+            fact("expected", "null (null reference)"),
+            fact("but was", actual),
+            simpleFact("(case is ignored)")
+        )
+    } else if (!actual.equals(expected, ignoreCase = true)) {
+        failWithoutActualInternal(
+            fact("expected", expected),
+            fact("but was", actual),
+            simpleFact("(case is ignored)")
+        )
+    }
+}
+
+internal fun StringSubject.commonCaseInsensitiveStringComparisonIsNotEqualTo(unexpected: String?) {
+    if ((actual == null) && (unexpected == null)) {
+        failWithoutActualInternal(
+            fact("expected a string that is not equal to", "null (null reference)"),
+            simpleFact("(case is ignored)")
+        )
+    } else if (actual.equals(unexpected, ignoreCase = true)) {
+        failWithoutActualInternal(
+            fact("expected not to be", unexpected),
+            fact("but was", actual),
+            simpleFact("(case is ignored)")
+        )
+    }
+}
+
+/** Fails if the string does not contain the given sequence (while ignoring case). */
+internal fun StringSubject.commonCaseInsensitiveStringComparisonContains(expected: CharSequence?) {
+    requireNonNull(expected)
+
+    if (actual == null) {
+        failWithoutActualInternal(
+            fact("expected a string that contains", expected),
+            fact("but was", actual),
+            simpleFact("(case is ignored)")
+        )
+    } else if (!actual.contains(expected, ignoreCase = true)) {
+        failWithoutActualInternal(
+            fact("expected to contain", expected),
+            fact("but was", actual),
+            simpleFact("(case is ignored)")
+        )
+    }
+}
+
+/** Fails if the string contains the given sequence (while ignoring case). */
+internal fun StringSubject.commonCaseInsensitiveStringComparisonDoesNotContain(
+    expected: CharSequence?
+) {
+    requireNonNull(expected)
+    if (actual == null) {
+        failWithoutActualInternal(
+            fact("expected a string that does not contain", expected),
+            fact("but was", actual),
+            simpleFact("(case is ignored)")
+        )
+    } else if (actual.contains(expected, ignoreCase = true)) {
+        failWithoutActualInternal(
+            fact("expected not to contain", expected),
+            fact("but was", actual),
+            simpleFact("(case is ignored)")
+        )
+    }
+}
+
+internal inline fun Subject<String>.matchesImpl(
+    regex: Regex,
+    equalToStringErrorMsg: () -> String,
+) {
+    if (actual == null) {
+        failWithActualInternal("expected a string that matches", regex)
+    } else if (actual.matches(regex)) {
         return
     }
 
     if (regex.toString() == actual) {
         failWithoutActualInternal(
-            fact("Expected to match", regex),
+            fact("expected to match", regex),
             fact("but was", actual),
             simpleFact(equalToStringErrorMsg()),
         )
     } else {
-        failWithActualInternal("Expected to match", regex);
+        failWithActualInternal("expected to match", regex)
     }
 }
 
 internal fun Subject<String>.doesNotMatchImpl(regex: Regex) {
     if (actual == null) {
-        failWithActualInternal("Expected a string that does not match", regex)
-    }
-
-    if (actual.matches(regex)) {
-        failWithActualInternal("Expected not to match", regex)
+        failWithActualInternal("expected a string that does not match", regex)
+    } else if (actual.matches(regex)) {
+        failWithActualInternal("expected not to match", regex)
     }
 }
 
 internal fun Subject<String>.containsMatchImpl(regex: Regex) {
     if (actual == null) {
-        failWithActualInternal("Expected a string that contains a match for", regex)
-    }
-
-    if (!regex.containsMatchIn(actual)) {
-        failWithActualInternal("Expected to contain a match for", regex)
+        failWithActualInternal("expected a string that contains a match for", regex)
+    } else if (!regex.containsMatchIn(actual)) {
+        failWithActualInternal("expected to contain a match for", regex)
     }
 }
 
 internal fun Subject<String>.doesNotContainMatchImpl(regex: Regex) {
     if (actual == null) {
         failWithActualInternal("expected a string that does not contain a match for", regex)
+        return
     }
 
     val result = regex.find(actual)
     if (result != null) {
         failWithoutActualInternal(
-            fact("Expected not to contain a match for", regex),
+            fact("expected not to contain a match for", regex),
             fact("but contained", result.value),
-            fact("Full string", actual)
+            fact("full string", actual)
         )
     }
 }
-
-internal expect interface PlatformStringSubject
-
-internal expect class PlatformStringSubjectImpl(
-    actual: String?,
-    metadata: FailureMetadata,
-) : Subject<String>, PlatformStringSubject

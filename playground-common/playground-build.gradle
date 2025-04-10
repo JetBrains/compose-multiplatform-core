@@ -40,16 +40,12 @@ buildscript {
             }
         }
         gradlePluginPortal().content {
-            it.includeModule("gradle.plugin.com.github.johnrengelman", "shadow")
+            it.includeModule("com.gradleup.shadow", "shadow-gradle-plugin")
             it.includeModule("me.champeau.gradle", "japicmp-gradle-plugin")
         }
     }
     ext.repos = [:]
 }
-
-apply from: "$supportRootFolder/buildSrc/dependencies.gradle"
-apply from: "$supportRootFolder/buildSrc/out.gradle"
-init.chooseOutDir("/${rootProject.name}")
 
 apply plugin: AndroidXRootPlugin
 apply plugin: AndroidXPlaygroundRootPlugin

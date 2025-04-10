@@ -24,14 +24,14 @@ import static androidx.camera.core.impl.utils.TransformUtils.rectToSize;
 import android.graphics.Matrix;
 import android.graphics.RectF;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageInfo;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.UseCase;
 import androidx.camera.view.TransformExperimental;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Factory for extracting transform info from {@link ImageProxy}.
@@ -44,7 +44,6 @@ import androidx.camera.view.TransformExperimental;
  * @see OutputTransform
  * @see CoordinateTransform
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 @TransformExperimental
 public final class ImageProxyTransformFactory {
 
@@ -105,8 +104,7 @@ public final class ImageProxyTransformFactory {
      * {@link ImageProxy} can be the output of {@link ImageAnalysis} or in-memory
      * {@link ImageCapture}.
      */
-    @NonNull
-    public OutputTransform getOutputTransform(@NonNull ImageProxy imageProxy) {
+    public @NonNull OutputTransform getOutputTransform(@NonNull ImageProxy imageProxy) {
         // Map the viewport to output.
         int rotationDegrees = getRotationDegrees(imageProxy);
         RectF source = getCropRect(imageProxy);

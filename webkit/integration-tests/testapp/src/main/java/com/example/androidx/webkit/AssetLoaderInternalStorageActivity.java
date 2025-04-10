@@ -28,12 +28,12 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebViewAssetLoader;
 import androidx.webkit.WebViewAssetLoader.InternalStoragePathHandler;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -48,9 +48,9 @@ public class AssetLoaderInternalStorageActivity extends AppCompatActivity {
     private static final String DEMO_HTML_CONTENT =
             "<h3 id=\"data_success_msg\">Successfully loaded html from app files dir!</h3>";
 
-    @NonNull private File mPublicDir;
-    @NonNull private File mDemoFile;
-    @NonNull private WebView mWebView;
+    private @NonNull File mPublicDir;
+    private @NonNull File mDemoFile;
+    private @NonNull WebView mWebView;
 
     private static class MyWebViewClient extends WebViewClient {
         private final WebViewAssetLoader mAssetLoader;
@@ -67,10 +67,9 @@ public class AssetLoaderInternalStorageActivity extends AppCompatActivity {
         }
 
         @Override
-        @RequiresApi(21)
         public WebResourceResponse shouldInterceptRequest(WebView view,
                                             WebResourceRequest request) {
-            return mAssetLoader.shouldInterceptRequest(Api21Impl.getUrl(request));
+            return mAssetLoader.shouldInterceptRequest(request.getUrl());
         }
 
         /** @noinspection RedundantSuppression*/

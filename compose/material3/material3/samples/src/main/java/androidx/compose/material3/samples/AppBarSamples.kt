@@ -18,11 +18,18 @@ package androidx.compose.material3.samples
 
 import androidx.annotation.Sampled
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
@@ -32,23 +39,34 @@ import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FabPosition
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FlexibleBottomAppBar
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MediumFlexibleTopAppBar
 import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TwoRowsTopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.datasource.LoremIpsum
 import androidx.compose.ui.unit.dp
 
 /**
@@ -65,11 +83,7 @@ fun SimpleTopAppBar() {
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        "Simple TopAppBar",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Text("Simple TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis)
                 },
                 navigationIcon = {
                     IconButton(onClick = { /* doSomething() */ }) {
@@ -99,9 +113,63 @@ fun SimpleTopAppBar() {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                    )
+                }
+            }
+        }
+    )
+}
+
+/**
+ * A sample for a simple use of small [TopAppBar] with a subtitle.
+ *
+ * The top app bar here does not react to any scroll events in the content under it.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Preview
+@Sampled
+@Composable
+fun SimpleTopAppBarWithSubtitle() {
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("Simple TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                },
+                subtitle = { Text("Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                navigationIcon = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.Menu,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.Favorite,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                },
+                scrollBehavior = scrollBehavior
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                contentPadding = innerPadding,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                     )
                 }
             }
@@ -123,11 +191,7 @@ fun SimpleCenterAlignedTopAppBar() {
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Text(
-                        "Centered TopAppBar",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Text("Centered TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis)
                 },
                 navigationIcon = {
                     IconButton(onClick = { /* doSomething() */ }) {
@@ -157,9 +221,64 @@ fun SimpleCenterAlignedTopAppBar() {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                    )
+                }
+            }
+        }
+    )
+}
+
+/**
+ * A sample for a simple use of small [CenterAlignedTopAppBar] with a subtitle.
+ *
+ * The top app bar here does not react to any scroll events in the content under it.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Preview
+@Sampled
+@Composable
+fun SimpleCenterAlignedTopAppBarWithSubtitle() {
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("Simple TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                },
+                subtitle = { Text("Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                titleHorizontalAlignment = Alignment.CenterHorizontally,
+                navigationIcon = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.Menu,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.Favorite,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                },
+                scrollBehavior = scrollBehavior
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                contentPadding = innerPadding,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                     )
                 }
             }
@@ -183,13 +302,7 @@ fun PinnedTopAppBar() {
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        "TopAppBar",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                },
+                title = { Text("TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
@@ -226,9 +339,7 @@ fun PinnedTopAppBar() {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                     )
                 }
             }
@@ -237,10 +348,10 @@ fun PinnedTopAppBar() {
 }
 
 /**
- * A sample for a small [TopAppBar] that collapses when the content is scrolled up, and
- * appears when the content scrolled down.
+ * A sample for a small [TopAppBar] that collapses when the content is scrolled up, and appears when
+ * the content scrolled down.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -250,13 +361,8 @@ fun EnterAlwaysTopAppBar() {
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        "TopAppBar",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                },
+                title = { Text("TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                subtitle = { Text("Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
@@ -286,9 +392,7 @@ fun EnterAlwaysTopAppBar() {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                     )
                 }
             }
@@ -297,8 +401,8 @@ fun EnterAlwaysTopAppBar() {
 }
 
 /**
- * A sample for a [MediumTopAppBar] that collapses when the content is scrolled up, and
- * appears when the content is completely scrolled back down.
+ * A sample for a [MediumTopAppBar] that collapses when the content is scrolled up, and appears when
+ * the content is completely scrolled back down.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
@@ -311,11 +415,7 @@ fun ExitUntilCollapsedMediumTopAppBar() {
         topBar = {
             MediumTopAppBar(
                 title = {
-                    Text(
-                        "Medium TopAppBar",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Text("Medium TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis)
                 },
                 navigationIcon = {
                     IconButton(onClick = { /* doSomething() */ }) {
@@ -346,9 +446,7 @@ fun ExitUntilCollapsedMediumTopAppBar() {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                     )
                 }
             }
@@ -357,8 +455,64 @@ fun ExitUntilCollapsedMediumTopAppBar() {
 }
 
 /**
- * A sample for a [LargeTopAppBar] that collapses when the content is scrolled up, and
- * appears when the content is completely scrolled back down.
+ * A sample for a [MediumFlexibleTopAppBar] that collapses when the content is scrolled up, and
+ * appears when the content is completely scrolled back down, centered with subtitle.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Preview
+@Sampled
+@Composable
+fun ExitUntilCollapsedCenterAlignedMediumFlexibleTopAppBar() {
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            MediumFlexibleTopAppBar(
+                title = {
+                    Text("Medium TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                },
+                subtitle = { Text("Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                titleHorizontalAlignment = Alignment.CenterHorizontally,
+                navigationIcon = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.Menu,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.Favorite,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                },
+                scrollBehavior = scrollBehavior
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                contentPadding = innerPadding,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                    )
+                }
+            }
+        }
+    )
+}
+
+/**
+ * A sample for a [LargeTopAppBar] that collapses when the content is scrolled up, and appears when
+ * the content is completely scrolled back down.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
@@ -370,13 +524,7 @@ fun ExitUntilCollapsedLargeTopAppBar() {
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
-                title = {
-                    Text(
-                        "Large TopAppBar",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                },
+                title = { Text("Large TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = { /* doSomething() */ }) {
                         Icon(
@@ -406,10 +554,122 @@ fun ExitUntilCollapsedLargeTopAppBar() {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                     )
+                }
+            }
+        }
+    )
+}
+
+/**
+ * A sample for a [LargeFlexibleTopAppBar] that collapses when the content is scrolled up, and
+ * appears when the content is completely scrolled back down, centered with subtitle.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Preview
+@Sampled
+@Composable
+fun ExitUntilCollapsedCenterAlignedLargeFlexibleTopAppBar() {
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            LargeFlexibleTopAppBar(
+                title = { Text("Large TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                subtitle = { Text("Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                titleHorizontalAlignment = Alignment.CenterHorizontally,
+                navigationIcon = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.Menu,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.Favorite,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                },
+                scrollBehavior = scrollBehavior
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                contentPadding = innerPadding,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                    )
+                }
+            }
+        }
+    )
+}
+
+/**
+ * A sample for a [TwoRowsTopAppBar] that collapses when the content is scrolled up, and appears
+ * when the content is completely scrolled back down.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Preview
+@Sampled
+@Composable
+fun CustomTwoRowsTopAppBar() {
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            TwoRowsTopAppBar(
+                title = { expanded ->
+                    if (expanded) {
+                        Text("Expanded TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    } else {
+                        Text("Collapsed TopAppBar", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                },
+                subtitle = { expanded ->
+                    if (expanded) {
+                        Text(
+                            "Expanded Subtitle",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(bottom = 24.dp)
+                        )
+                    } else {
+                        Text("Collapsed Subtitle", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                },
+                collapsedHeight = 64.dp,
+                expandedHeight = 156.dp,
+                navigationIcon = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.Menu,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                },
+                scrollBehavior = scrollBehavior
+            )
+        },
+        content = { innerPadding ->
+            Column(
+                Modifier.fillMaxWidth().padding(innerPadding).verticalScroll(rememberScrollState())
+            ) {
+                CompositionLocalProvider(
+                    LocalTextStyle provides MaterialTheme.typography.bodyLarge
+                ) {
+                    Text(text = remember { LoremIpsum().values.first() })
                 }
             }
         }
@@ -458,8 +718,8 @@ fun BottomAppBarWithFAB() {
 }
 
 /**
- * A sample for a [BottomAppBar] that collapses when the content is scrolled up, and
- * appears when the content scrolled down.
+ * A sample for a [BottomAppBar] that collapses when the content is scrolled up, and appears when
+ * the content scrolled down.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
@@ -479,7 +739,7 @@ fun ExitAlwaysBottomAppBar() {
                         Icon(Icons.Filled.Edit, contentDescription = "Localized description")
                     }
                 },
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
             )
         },
         floatingActionButton = {
@@ -503,9 +763,321 @@ fun ExitAlwaysBottomAppBar() {
                     Text(
                         text = list[it],
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                    )
+                }
+            }
+        }
+    )
+}
+
+/**
+ * A sample for a [FlexibleBottomAppBar] that collapses when the content is scrolled up, and appears
+ * when the content scrolled down. The content is spaced around.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Preview
+@Sampled
+@Composable
+fun ExitAlwaysBottomAppBarSpacedAround() {
+    val scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        bottomBar = {
+            FlexibleBottomAppBar(
+                horizontalArrangement = Arrangement.SpaceAround,
+                contentPadding = PaddingValues(horizontal = 0.dp),
+                scrollBehavior = scrollBehavior,
+                content = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                    FilledIconButton(
+                        modifier = Modifier.width(56.dp),
+                        onClick = { /* doSomething() */ }
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = "Localized description")
+                    }
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(Icons.Filled.Check, contentDescription = "Localized description")
+                    }
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(Icons.Filled.Edit, contentDescription = "Localized description")
+                    }
+                }
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                contentPadding = innerPadding,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                    )
+                }
+            }
+        }
+    )
+}
+
+/**
+ * A sample for a [FlexibleBottomAppBar] that collapses when the content is scrolled up, and appears
+ * when the content scrolled down. The content is spaced between.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Preview
+@Sampled
+@Composable
+fun ExitAlwaysBottomAppBarSpacedBetween() {
+    val scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        bottomBar = {
+            FlexibleBottomAppBar(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                scrollBehavior = scrollBehavior,
+                content = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                    FilledIconButton(
+                        modifier = Modifier.width(56.dp),
+                        onClick = { /* doSomething() */ }
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = "Localized description")
+                    }
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(Icons.Filled.Check, contentDescription = "Localized description")
+                    }
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(Icons.Filled.Edit, contentDescription = "Localized description")
+                    }
+                }
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                contentPadding = innerPadding,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                    )
+                }
+            }
+        }
+    )
+}
+
+/**
+ * A sample for a [FlexibleBottomAppBar] that collapses when the content is scrolled up, and appears
+ * when the content scrolled down. The content is spaced evenly.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Preview
+@Sampled
+@Composable
+fun ExitAlwaysBottomAppBarSpacedEvenly() {
+    val scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        bottomBar = {
+            FlexibleBottomAppBar(
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                contentPadding = PaddingValues(horizontal = 0.dp),
+                scrollBehavior = scrollBehavior,
+                content = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                    FilledIconButton(
+                        modifier = Modifier.width(56.dp),
+                        onClick = { /* doSomething() */ }
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = "Localized description")
+                    }
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(Icons.Filled.Check, contentDescription = "Localized description")
+                    }
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(Icons.Filled.Edit, contentDescription = "Localized description")
+                    }
+                }
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                contentPadding = innerPadding,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                    )
+                }
+            }
+        }
+    )
+}
+
+/**
+ * A sample for a [FlexibleBottomAppBar] that collapses when the content is scrolled up, and appears
+ * when the content scrolled down. The content arrangement is fixed.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Preview
+@Sampled
+@Composable
+fun ExitAlwaysBottomAppBarFixed() {
+    val scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        bottomBar = {
+            FlexibleBottomAppBar(
+                horizontalArrangement = BottomAppBarDefaults.FlexibleFixedHorizontalArrangement,
+                scrollBehavior = scrollBehavior,
+                content = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                    FilledIconButton(
+                        modifier = Modifier.width(56.dp),
+                        onClick = { /* doSomething() */ }
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = "Localized description")
+                    }
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(Icons.Filled.Check, contentDescription = "Localized description")
+                    }
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(Icons.Filled.Edit, contentDescription = "Localized description")
+                    }
+                }
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                contentPadding = innerPadding,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                    )
+                }
+            }
+        }
+    )
+}
+
+/**
+ * A sample for a vibrant [FlexibleBottomAppBar] that collapses when the content is scrolled up, and
+ * appears when the content scrolled down. The content arrangement is fixed.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Preview
+@Sampled
+@Composable
+fun ExitAlwaysBottomAppBarFixedVibrant() {
+    val scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        bottomBar = {
+            FlexibleBottomAppBar(
+                horizontalArrangement = BottomAppBarDefaults.FlexibleFixedHorizontalArrangement,
+                scrollBehavior = scrollBehavior,
+                containerColor =
+                    MaterialTheme.colorScheme.primaryContainer, // TODO(b/356885344): tokens
+                content = {
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "Localized description"
+                        )
+                    }
+                    FilledIconButton(
+                        modifier = Modifier.width(56.dp),
+                        onClick = { /* doSomething() */ }
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = "Localized description")
+                    }
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(Icons.Filled.Check, contentDescription = "Localized description")
+                    }
+                    IconButton(onClick = { /* doSomething() */ }) {
+                        Icon(Icons.Filled.Edit, contentDescription = "Localized description")
+                    }
+                }
+            )
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                contentPadding = innerPadding,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val list = (0..75).map { it.toString() }
+                items(count = list.size) {
+                    Text(
+                        text = list[it],
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                     )
                 }
             }

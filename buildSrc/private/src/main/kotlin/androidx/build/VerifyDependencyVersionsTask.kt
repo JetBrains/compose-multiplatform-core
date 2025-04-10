@@ -128,15 +128,8 @@ data class AndroidXDependency(
 }
 
 internal fun Project.createVerifyDependencyVersionsTask():
-    TaskProvider<VerifyDependencyVersionsTask>? {
-    /**
-     * Ignore -Pandroidx.useMaxDepVersions when verifying dependency versions because it is a
-     * hypothetical build which is only intended to check for forward compatibility.
-     */
-    if (project.usingMaxDepVersions()) {
-        return null
-    }
-
+    TaskProvider<VerifyDependencyVersionsTask> {
+    val usingMaxDepsVersions = project.usingMaxDepVersions()
     val taskProvider =
         tasks.register("verifyDependencyVersions", VerifyDependencyVersionsTask::class.java) { task
             ->
@@ -144,7 +137,7 @@ internal fun Project.createVerifyDependencyVersionsTask():
             task.androidXDependencySet.set(
                 project.provider {
                     val dependencies = mutableSetOf<AndroidXDependency>()
-                    project.configurations.filter(::shouldVerifyConfiguration).forEach {
+                    project.configurations.filter(project::shouldVerifyConfiguration).forEach {
                         configuration ->
                         configuration.allDependencies.filter(::shouldVerifyDependency).forEach {
                             dependency ->
@@ -161,13 +154,22 @@ internal fun Project.createVerifyDependencyVersionsTask():
                     dependencies
                 }
             )
+            task.onlyIf {
+                /**
+                 * Ignore -Pandroidx.useMaxDepVersions when verifying dependency versions because it
+                 * is a hypothetical build which is only intended to check for forward
+                 * compatibility.
+                 */
+                !usingMaxDepsVersions.get()
+            }
             task.cacheEvenIfNoOutputs()
         }
+
     addToBuildOnServer(taskProvider)
     return taskProvider
 }
 
-private fun shouldVerifyConfiguration(configuration: Configuration): Boolean {
+private fun Project.shouldVerifyConfiguration(configuration: Configuration): Boolean {
     // Only verify configurations that are exported to POM. In an ideal world, this would be an
     // inclusion derived from the mappings used by the Maven Publish Plugin; however, since we
     // don't have direct access to those, this should remain an exclusion list.
@@ -179,6 +181,7 @@ private fun shouldVerifyConfiguration(configuration: Configuration): Boolean {
     if (name.startsWith("androidAndroidTest")) return false
     if (name.startsWith("androidCommonTest")) return false
     if (name.startsWith("androidInstrumentedTest")) return false
+    if (name.startsWith("androidReleaseUnitTest")) return false
     if (name.startsWith("androidUnitTest")) return false
     if (name.startsWith("debug")) return false
     if (name.startsWith("androidDebug")) return false
@@ -191,6 +194,10 @@ private fun shouldVerifyConfiguration(configuration: Configuration): Boolean {
     if (name == "errorprone") return false
     if (name.startsWith("lint")) return false
     if (name == "metalava") return false
+
+    // Don't check bundled inspector configurations.
+    if (name == "consumeInspector") return false
+    if (name == "importInspectorImplementation") return false
 
     // Don't check any configurations that directly bundle the dependencies with the output
     if (name == "bundleInside") return false
@@ -215,11 +222,24 @@ private fun shouldVerifyConfiguration(configuration: Configuration): Boolean {
     if (name.endsWith("DependenciesMetadata")) return false
 
     // don't verify test configurations of KMP projects
-    if (name.contains("JvmTest")) return false
-    if (name.contains("commonTest")) return false
-    if (name.contains("nativeTest")) return false
     if (name.contains("TestCompilation")) return false
     if (name.contains("TestCompile")) return false
+    if (name.contains("commonTest", ignoreCase = true)) return false
+    if (name.contains("nativeTest", ignoreCase = true)) return false
+    if (name.contains("TestCInterop", ignoreCase = true)) return false
+    if (
+        multiplatformExtension?.targets?.any {
+            name.contains("${it.name}Test", ignoreCase = true)
+        } == true
+    ) {
+        return false
+    }
+
+    // don't verify baseline profile generating project dependencies
+    if (name == "baselineProfile") return false
+
+    // don't verify samples
+    if (name == "samples") return false
 
     return true
 }
@@ -229,12 +249,13 @@ private fun shouldVerifyDependency(dependency: Dependency): Boolean {
     if (dependency.group == null) return false
     if (!dependency.group.toString().startsWith("androidx.")) return false
     if (dependency.name == "annotation-sampled") return false
-    if (dependency.version == AndroidXPlaygroundRootImplPlugin.SNAPSHOT_MARKER) {
+    if (dependency.version == SNAPSHOT_MARKER) {
         // This only happens in playground builds where this magic version gets replaced with
         // the version from the snapshotBuildId defined in playground-common/playground.properties.
         // It is best to leave their validation to the aosp build to ensure it is the right
         // version.
         return false
     }
+
     return true
 }

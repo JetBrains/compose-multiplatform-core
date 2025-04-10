@@ -20,6 +20,7 @@ import androidx.arch.core.executor.ArchTaskExecutor
 import androidx.arch.core.executor.DefaultTaskExecutor
 import androidx.test.filters.SmallTest
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.test.Ignore
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
@@ -27,9 +28,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
-/**
- * A small test to verify Room's executor is used as dispatcher for DAO suspend functions.
- */
+/** A small test to verify Room's executor is used as dispatcher for DAO suspend functions. */
 @SmallTest
 class SuspendRoomDispatcherTest : TestDatabaseTest() {
 
@@ -37,12 +36,15 @@ class SuspendRoomDispatcherTest : TestDatabaseTest() {
 
     @Before
     fun setup() {
-        ArchTaskExecutor.getInstance().setDelegate(object : DefaultTaskExecutor() {
-            override fun executeOnDiskIO(runnable: Runnable) {
-                executeCount.incrementAndGet()
-                super.executeOnDiskIO(runnable)
-            }
-        })
+        ArchTaskExecutor.getInstance()
+            .setDelegate(
+                object : DefaultTaskExecutor() {
+                    override fun executeOnDiskIO(runnable: Runnable) {
+                        executeCount.incrementAndGet()
+                        super.executeOnDiskIO(runnable)
+                    }
+                }
+            )
     }
 
     @After
@@ -51,6 +53,7 @@ class SuspendRoomDispatcherTest : TestDatabaseTest() {
     }
 
     @Test
+    @Ignore("b/388063342")
     fun testIODispatcher() {
         runBlocking {
             booksDao.getBooksSuspend()

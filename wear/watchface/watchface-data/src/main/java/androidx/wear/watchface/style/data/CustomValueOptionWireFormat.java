@@ -16,9 +16,10 @@
 
 package androidx.wear.watchface.style.data;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Wire format for {@link androidx.wear.watchface.style.CustomValueStyleSetting.CustomValueOption}.
@@ -31,7 +32,7 @@ public class CustomValueOptionWireFormat extends OptionWireFormat {
 
     // WARNING: This class is held in a list and can't change due to flaws in VersionedParcelable.
 
-    public CustomValueOptionWireFormat(@NonNull byte[] id) {
+    public CustomValueOptionWireFormat(byte @NonNull [] id) {
         super(id);
     }
 }

@@ -17,9 +17,10 @@
 package androidx.wear.protolayout.material;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represent the container for default color scheme in your Tile, that can be used to create color
@@ -50,13 +51,13 @@ public class Colors {
     public static final int ON_SURFACE = 0xFFFFFFFF;
 
     /** The default color scheme to be used in ProtoLayout Material components. */
-    @NonNull
-    public static final Colors DEFAULT = new Colors(PRIMARY, ON_PRIMARY, SURFACE, ON_SURFACE);
+    public static final @NonNull Colors DEFAULT =
+            new Colors(PRIMARY, ON_PRIMARY, SURFACE, ON_SURFACE);
 
-    private @ColorInt final int mPrimary;
-    private @ColorInt final int mOnPrimary;
-    private @ColorInt final int mSurface;
-    private @ColorInt final int mOnSurface;
+    @ColorInt private final int mPrimary;
+    @ColorInt private final int mOnPrimary;
+    @ColorInt private final int mSurface;
+    @ColorInt private final int mOnSurface;
 
     /**
      * Constructor for {@link Colors} object.

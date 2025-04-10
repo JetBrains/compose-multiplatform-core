@@ -22,12 +22,13 @@ import android.annotation.SuppressLint;
 
 import androidx.annotation.Dimension;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.proto.LayoutElementProto;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -131,22 +132,21 @@ public class PrimaryLayout implements androidx.wear.tiles.LayoutElementBuilders.
             value = {CHIP_PRESENT, PRIMARY_LABEL_PRESENT, SECONDARY_LABEL_PRESENT, CONTENT_PRESENT})
     @interface ContentBits {}
 
-    @NonNull private final androidx.wear.tiles.LayoutElementBuilders.Box mImpl;
+    private final androidx.wear.tiles.LayoutElementBuilders.@NonNull Box mImpl;
 
     // This contains inner columns and primary chip.
-    @NonNull
-    private final List<androidx.wear.tiles.LayoutElementBuilders.LayoutElement> mAllContent;
+    private final @NonNull List<androidx.wear.tiles.LayoutElementBuilders.LayoutElement>
+            mAllContent;
 
     // This contains optional labels, spacers and main content.
-    @NonNull
-    private final List<androidx.wear.tiles.LayoutElementBuilders.LayoutElement> mPrimaryLabel;
+    private final @NonNull List<androidx.wear.tiles.LayoutElementBuilders.LayoutElement>
+            mPrimaryLabel;
 
     // This contains optional labels, spacers and main content.
-    @NonNull
-    private final List<androidx.wear.tiles.LayoutElementBuilders.LayoutElement>
+    private final @NonNull List<androidx.wear.tiles.LayoutElementBuilders.LayoutElement>
             mContentAndSecondaryLabel;
 
-    PrimaryLayout(@NonNull androidx.wear.tiles.LayoutElementBuilders.Box layoutElement) {
+    PrimaryLayout(androidx.wear.tiles.LayoutElementBuilders.@NonNull Box layoutElement) {
         this.mImpl = layoutElement;
         this.mAllContent =
                 ((androidx.wear.tiles.LayoutElementBuilders.Column)
@@ -170,25 +170,22 @@ public class PrimaryLayout implements androidx.wear.tiles.LayoutElementBuilders.
     /** Builder class for {@link PrimaryLayout}. */
     public static final class Builder
             implements androidx.wear.tiles.LayoutElementBuilders.LayoutElement.Builder {
-        @NonNull
-        private final androidx.wear.tiles.DeviceParametersBuilders.DeviceParameters
+        private final androidx.wear.tiles.DeviceParametersBuilders.@NonNull DeviceParameters
                 mDeviceParameters;
 
-        @Nullable
-        private androidx.wear.tiles.LayoutElementBuilders.LayoutElement mPrimaryChip = null;
+        private androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement mPrimaryChip =
+                null;
 
-        @Nullable
-        private androidx.wear.tiles.LayoutElementBuilders.LayoutElement mPrimaryLabelText = null;
+        private androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement
+                mPrimaryLabelText = null;
 
-        @Nullable
-        private androidx.wear.tiles.LayoutElementBuilders.LayoutElement mSecondaryLabelText = null;
+        private androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement
+                mSecondaryLabelText = null;
 
-        @NonNull
-        private androidx.wear.tiles.LayoutElementBuilders.LayoutElement mContent =
+        private androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement mContent =
                 new androidx.wear.tiles.LayoutElementBuilders.Box.Builder().build();
 
-        @NonNull
-        private androidx.wear.tiles.DimensionBuilders.DpProp mVerticalSpacerHeight =
+        private androidx.wear.tiles.DimensionBuilders.@NonNull DpProp mVerticalSpacerHeight =
                 LayoutDefaults.DEFAULT_VERTICAL_SPACER_HEIGHT;
 
         private byte mMetadataContentByte = 0;
@@ -199,8 +196,7 @@ public class PrimaryLayout implements androidx.wear.tiles.LayoutElementBuilders.
          * #setPrimaryLabelTextContent} and {@link #setSecondaryLabelTextContent}.
          */
         public Builder(
-                @NonNull
-                        androidx.wear.tiles.DeviceParametersBuilders.DeviceParameters
+                androidx.wear.tiles.DeviceParametersBuilders.@NonNull DeviceParameters
                                 deviceParameters) {
             this.mDeviceParameters = deviceParameters;
         }
@@ -211,18 +207,16 @@ public class PrimaryLayout implements androidx.wear.tiles.LayoutElementBuilders.
          * but it is strongly recommended to add a {@link CompactChip} as the layout is optimized
          * for it.
          */
-        @NonNull
-        public Builder setPrimaryChipContent(
-                @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement compactChip) {
+        public @NonNull Builder setPrimaryChipContent(
+                androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement compactChip) {
             this.mPrimaryChip = compactChip;
             mMetadataContentByte = (byte) (mMetadataContentByte | CHIP_PRESENT);
             return this;
         }
 
         /** Sets the content in the primary label slot which will be above the main content. */
-        @NonNull
-        public Builder setPrimaryLabelTextContent(
-                @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement primaryLabelText) {
+        public @NonNull Builder setPrimaryLabelTextContent(
+                androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement primaryLabelText) {
             this.mPrimaryLabelText = primaryLabelText;
             mMetadataContentByte = (byte) (mMetadataContentByte | PRIMARY_LABEL_PRESENT);
             return this;
@@ -232,10 +226,8 @@ public class PrimaryLayout implements androidx.wear.tiles.LayoutElementBuilders.
          * Sets the content in the primary label slot which will be below the main content. It is
          * highly recommended to have primary label set when having secondary label.
          */
-        @NonNull
-        public Builder setSecondaryLabelTextContent(
-                @NonNull
-                        androidx.wear.tiles.LayoutElementBuilders.LayoutElement
+        public @NonNull Builder setSecondaryLabelTextContent(
+                androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement
                                 secondaryLabelText) {
             this.mSecondaryLabelText = secondaryLabelText;
             mMetadataContentByte = (byte) (mMetadataContentByte | SECONDARY_LABEL_PRESENT);
@@ -252,9 +244,8 @@ public class PrimaryLayout implements androidx.wear.tiles.LayoutElementBuilders.
          * set to {@code expand} to use all the available space, rather than an explicit width which
          * may lead to clipping.
          */
-        @NonNull
-        public Builder setContent(
-                @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement content) {
+        public @NonNull Builder setContent(
+                androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement content) {
             this.mContent = content;
             mMetadataContentByte = (byte) (mMetadataContentByte | CONTENT_PRESENT);
             return this;
@@ -265,11 +256,10 @@ public class PrimaryLayout implements androidx.wear.tiles.LayoutElementBuilders.
          * secondary label if there is any. If not set, {@link
          * LayoutDefaults#DEFAULT_VERTICAL_SPACER_HEIGHT} will be used.
          */
-        @NonNull
         // The @Dimension(unit = DP) on dp() is seemingly being ignored, so lint complains that
         // we're passing PX to something expecting DP. Just suppress the warning for now.
         @SuppressLint("ResourceType")
-        public Builder setVerticalSpacerHeight(@Dimension(unit = DP) float height) {
+        public @NonNull Builder setVerticalSpacerHeight(@Dimension(unit = DP) float height) {
             this.mVerticalSpacerHeight = androidx.wear.tiles.DimensionBuilders.dp(height);
             return this;
         }
@@ -278,9 +268,8 @@ public class PrimaryLayout implements androidx.wear.tiles.LayoutElementBuilders.
         // The @Dimension(unit = DP) on dp() is seemingly being ignored, so lint complains that
         // we're passing DP to something expecting PX. Just suppress the warning for now.
         @SuppressLint("ResourceType")
-        @NonNull
         @Override
-        public PrimaryLayout build() {
+        public @NonNull PrimaryLayout build() {
             float topPadding = getTopPadding();
             float bottomPadding = getBottomPadding();
             float horizontalPadding = getHorizontalPadding();
@@ -497,8 +486,8 @@ public class PrimaryLayout implements androidx.wear.tiles.LayoutElementBuilders.
         }
 
         /** Returns the spacer height to be placed above primary label to accommodate Tile icon. */
-        @NonNull
-        private androidx.wear.tiles.DimensionBuilders.DpProp getPrimaryLabelTopSpacerHeight() {
+        private androidx.wear.tiles.DimensionBuilders.@NonNull DpProp
+                getPrimaryLabelTopSpacerHeight() {
             return androidx.wear.tiles.material.Helper.isRoundDevice(mDeviceParameters)
                     ? LayoutDefaults.PRIMARY_LAYOUT_PRIMARY_LABEL_SPACER_HEIGHT_ROUND_DP
                     : LayoutDefaults.PRIMARY_LAYOUT_PRIMARY_LABEL_SPACER_HEIGHT_SQUARE_DP;
@@ -506,8 +495,8 @@ public class PrimaryLayout implements androidx.wear.tiles.LayoutElementBuilders.
     }
 
     /** Get the primary label content from this layout. */
-    @Nullable
-    public androidx.wear.tiles.LayoutElementBuilders.LayoutElement getPrimaryLabelTextContent() {
+    public androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement
+            getPrimaryLabelTextContent() {
         if (!areElementsPresent(PRIMARY_LABEL_PRESENT)) {
             return null;
         }
@@ -515,8 +504,8 @@ public class PrimaryLayout implements androidx.wear.tiles.LayoutElementBuilders.
     }
 
     /** Get the secondary label content from this layout. */
-    @Nullable
-    public androidx.wear.tiles.LayoutElementBuilders.LayoutElement getSecondaryLabelTextContent() {
+    public androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement
+            getSecondaryLabelTextContent() {
         if (!areElementsPresent(SECONDARY_LABEL_PRESENT)) {
             return null;
         }
@@ -525,8 +514,7 @@ public class PrimaryLayout implements androidx.wear.tiles.LayoutElementBuilders.
     }
 
     /** Get the inner content from this layout. */
-    @Nullable
-    public androidx.wear.tiles.LayoutElementBuilders.LayoutElement getContent() {
+    public androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement getContent() {
         if (!areElementsPresent(CONTENT_PRESENT)) {
             return null;
         }
@@ -537,8 +525,8 @@ public class PrimaryLayout implements androidx.wear.tiles.LayoutElementBuilders.
     }
 
     /** Get the primary chip content from this layout. */
-    @Nullable
-    public androidx.wear.tiles.LayoutElementBuilders.LayoutElement getPrimaryChipContent() {
+    public androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement
+            getPrimaryChipContent() {
         if (areElementsPresent(CHIP_PRESENT)) {
             return ((androidx.wear.tiles.LayoutElementBuilders.Box)
                             mAllContent.get(PRIMARY_CHIP_POSITION))
@@ -573,8 +561,7 @@ public class PrimaryLayout implements androidx.wear.tiles.LayoutElementBuilders.
     }
 
     /** Returns metadata tag set to this PrimaryLayout. */
-    @NonNull
-    byte[] getMetadataTag() {
+    byte @NonNull [] getMetadataTag() {
         return androidx.wear.tiles.material.Helper.getMetadataTagBytes(
                 androidx.wear.tiles.material.Helper.checkNotNull(
                         androidx.wear.tiles.material.Helper.checkNotNull(mImpl.getModifiers())
@@ -587,9 +574,8 @@ public class PrimaryLayout implements androidx.wear.tiles.LayoutElementBuilders.
      * container's content with {@code container.getContents().get(index)}) if that element can be
      * converted to PrimaryLayout. Otherwise, it will return null.
      */
-    @Nullable
-    public static PrimaryLayout fromLayoutElement(
-            @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement element) {
+    public static @Nullable PrimaryLayout fromLayoutElement(
+            androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement element) {
         if (element instanceof PrimaryLayout) {
             return (PrimaryLayout) element;
         }
@@ -606,17 +592,15 @@ public class PrimaryLayout implements androidx.wear.tiles.LayoutElementBuilders.
         return new PrimaryLayout(boxElement);
     }
 
-    @NonNull
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public LayoutElementProto.LayoutElement toLayoutElementProto() {
+    public LayoutElementProto.@NonNull LayoutElement toLayoutElementProto() {
         return mImpl.toLayoutElementProto();
     }
 
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @Nullable
     @Override
-    public Fingerprint getFingerprint() {
+    public @Nullable Fingerprint getFingerprint() {
         return mImpl.getFingerprint();
     }
 }

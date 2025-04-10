@@ -19,19 +19,57 @@ package androidx.compose.ui.platform
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.internal.JvmDefaultWithCompatibility
 
-/**
- * Interface for text-related toolbar.
- */
+/** Interface for text-related toolbar. */
 @JvmDefaultWithCompatibility
 interface TextToolbar {
     /**
      * Show the floating toolbar(post-M) or primary toolbar(pre-M) for copying, cutting and pasting
      * text.
-     * @param rect region of interest. The selected region around which the floating toolbar
-     * should show. This rect is in global coordinates system.
-     * @param onCopyRequested callback to copy text into ClipBoardManager.
-     * @param onPasteRequested callback to get text from ClipBoardManager and paste it.
-     * @param onCutRequested callback to cut text and copy the text into ClipBoardManager.
+     *
+     * @param rect region of interest. The selected region around which the floating toolbar should
+     *   show. This rect is in global coordinates system.
+     * @param onCopyRequested callback to copy text into ClipBoardManager. If null, the copy option
+     *   will not be shown.
+     * @param onPasteRequested callback to get text from ClipBoardManager and paste it. If null, the
+     *   paste option will not be shown.
+     * @param onCutRequested callback to cut text and copy the text into ClipBoardManager. If null,
+     *   the cut option will not be shown.
+     * @param onSelectAllRequested callback to select all the text content. If null, the select all
+     *   option will not be shown.
+     * @param onAutofillRequested callback to autofill the field. If null, the autofill option will
+     *   not be shown.
+     */
+    fun showMenu(
+        rect: Rect,
+        onCopyRequested: (() -> Unit)? = null,
+        onPasteRequested: (() -> Unit)? = null,
+        onCutRequested: (() -> Unit)? = null,
+        onSelectAllRequested: (() -> Unit)? = null,
+        onAutofillRequested: (() -> Unit)? = null
+    ) {
+        showMenu(
+            rect = rect,
+            onCopyRequested = onCopyRequested,
+            onPasteRequested = onPasteRequested,
+            onCutRequested = onCutRequested,
+            onSelectAllRequested = onSelectAllRequested
+        )
+    }
+
+    /**
+     * Show the floating toolbar(post-M) or primary toolbar(pre-M) for copying, cutting and pasting
+     * text.
+     *
+     * @param rect region of interest. The selected region around which the floating toolbar should
+     *   show. This rect is in global coordinates system.
+     * @param onCopyRequested callback to copy text into ClipBoardManager. If null, the copy option
+     *   will not be shown.
+     * @param onPasteRequested callback to get text from ClipBoardManager and paste it. If null, the
+     *   paste option will not be shown.
+     * @param onCutRequested callback to cut text and copy the text into ClipBoardManager. If null,
+     *   the cut option will not be shown.
+     * @param onSelectAllRequested callback to select all the text content. If null, the select all
+     *   option will not be shown.
      */
     fun showMenu(
         rect: Rect,
@@ -41,9 +79,7 @@ interface TextToolbar {
         onSelectAllRequested: (() -> Unit)? = null
     )
 
-    /**
-     * Hide the floating toolbar(post-M) or primary toolbar(pre-M).
-     */
+    /** Hide the floating toolbar(post-M) or primary toolbar(pre-M). */
     fun hide()
 
     /**

@@ -19,11 +19,13 @@ package androidx.room
 import androidx.room.migration.AutoMigrationSpec
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteOpenHelper
+import kotlin.reflect.KClass
 import org.mockito.kotlin.mock
 
 internal class BuilderTest_TestDatabase_Impl : BuilderTest.TestDatabase() {
     lateinit var mConfig: DatabaseConfiguration
     var mAutoMigrations = listOf<Migration>(BuilderTest.EmptyMigration(1, 2))
+
     override fun init(configuration: DatabaseConfiguration) {
         super.init(configuration)
         mConfig = configuration
@@ -43,8 +45,9 @@ internal class BuilderTest_TestDatabase_Impl : BuilderTest.TestDatabase() {
     }
 
     override fun clearAllTables() {}
-    override fun getAutoMigrations(
-        autoMigrationSpecs: Map<Class<out AutoMigrationSpec>, AutoMigrationSpec>
+
+    override fun createAutoMigrations(
+        autoMigrationSpecs: Map<KClass<out AutoMigrationSpec>, AutoMigrationSpec>
     ): List<Migration> {
         return mAutoMigrations
     }

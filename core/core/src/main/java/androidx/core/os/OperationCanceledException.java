@@ -17,8 +17,9 @@
 package androidx.core.os;
 
 
-import androidx.annotation.Nullable;
 import androidx.core.util.ObjectsCompat;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An exception type that is thrown when an operation in progress is canceled.

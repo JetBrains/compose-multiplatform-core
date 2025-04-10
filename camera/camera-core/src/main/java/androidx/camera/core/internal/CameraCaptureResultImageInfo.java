@@ -18,15 +18,15 @@ package androidx.camera.core.internal;
 
 import android.graphics.Matrix;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
+import androidx.camera.core.FlashState;
 import androidx.camera.core.ImageInfo;
 import androidx.camera.core.impl.CameraCaptureResult;
 import androidx.camera.core.impl.TagBundle;
 import androidx.camera.core.impl.utils.ExifData;
 
+import org.jspecify.annotations.NonNull;
+
 /** An ImageInfo that is created by a {@link CameraCaptureResult}. */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class CameraCaptureResultImageInfo implements ImageInfo {
     private final CameraCaptureResult mCameraCaptureResult;
 
@@ -36,8 +36,7 @@ public final class CameraCaptureResultImageInfo implements ImageInfo {
     }
 
     @Override
-    @NonNull
-    public TagBundle getTagBundle() {
+    public @NonNull TagBundle getTagBundle() {
         return mCameraCaptureResult.getTagBundle();
     }
 
@@ -51,19 +50,23 @@ public final class CameraCaptureResultImageInfo implements ImageInfo {
         return 0;
     }
 
-    @NonNull
     @Override
-    public Matrix getSensorToBufferTransformMatrix() {
+    public @NonNull Matrix getSensorToBufferTransformMatrix() {
         return new Matrix();
     }
 
+    @FlashState.FlashState
     @Override
-    public void populateExifData(@NonNull ExifData.Builder exifBuilder) {
+    public int getFlashState() {
+        return mCameraCaptureResult.getFlashState().toFlashState();
+    }
+
+    @Override
+    public void populateExifData(ExifData.@NonNull Builder exifBuilder) {
         mCameraCaptureResult.populateExifData(exifBuilder);
     }
 
-    @NonNull
-    public CameraCaptureResult getCameraCaptureResult() {
+    public @NonNull CameraCaptureResult getCameraCaptureResult() {
         return mCameraCaptureResult;
     }
 }

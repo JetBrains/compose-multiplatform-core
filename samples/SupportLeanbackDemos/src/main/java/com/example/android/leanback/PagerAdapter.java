@@ -16,10 +16,11 @@
 
 package com.example.android.leanback;
 
-import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentStatePagerAdapter;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * PagerAdapter
@@ -32,9 +33,8 @@ public class PagerAdapter extends FragmentStatePagerAdapter {
         this.mNumOfTabs = numOfTabs;
     }
 
-    @NonNull
     @Override
-    public Fragment getItem(int position) {
+    public @NonNull Fragment getItem(int position) {
         return new TabFragment();
     }
 

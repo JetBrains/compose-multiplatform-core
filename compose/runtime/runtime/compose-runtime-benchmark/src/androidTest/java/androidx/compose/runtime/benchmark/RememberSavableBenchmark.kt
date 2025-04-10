@@ -20,7 +20,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.autoSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.test.annotation.UiThreadTest
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -34,76 +33,55 @@ import org.junit.runners.MethodSorters
 @OptIn(ExperimentalCoroutinesApi::class, ExperimentalTestApi::class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class RememberSaveableBenchmark : ComposeBenchmarkBase() {
-    @UiThreadTest
     @Test
     fun rememberSaveable_1() = runBlockingTestWithFrameClock {
         measureComposeFocused {
-            @Suppress("UNUSED_VARIABLE")
-            val i: Int = rememberSaveable {
-                10
-            }
+            @Suppress("UNUSED_VARIABLE") val i: Int = rememberSaveable { 10 }
         }
     }
 
-    @UiThreadTest
     @Test
     fun rememberSaveable_10() = runBlockingTestWithFrameClock {
         measureComposeFocused {
             repeat(10) {
-                @Suppress("UNUSED_VARIABLE")
-                val i: Int = rememberSaveable {
-                    10
-                }
+                @Suppress("UNUSED_VARIABLE") val i: Int = rememberSaveable { 10 }
             }
         }
     }
 
-    @UiThreadTest
     @Test
     fun rememberSaveable_100() = runBlockingTestWithFrameClock {
         measureComposeFocused {
             repeat(100) {
-                @Suppress("UNUSED_VARIABLE")
-                val i: Int = rememberSaveable {
-                    10
-                }
+                @Suppress("UNUSED_VARIABLE") val i: Int = rememberSaveable { 10 }
             }
         }
     }
 
-    @UiThreadTest
     @Test
     fun rememberSaveable_mutable_1() = runBlockingTestWithFrameClock {
         measureComposeFocused {
             @Suppress("UNUSED_VARIABLE")
-            val i = rememberSaveable(stateSaver = autoSaver()) {
-                mutableStateOf(10)
-            }
+            val i = rememberSaveable(stateSaver = autoSaver()) { mutableStateOf(10) }
         }
     }
 
-    @UiThreadTest
     @Test
     fun rememberSaveable_mutable_10() = runBlockingTestWithFrameClock {
         measureComposeFocused {
             repeat(10) {
                 @Suppress("UNUSED_VARIABLE")
-                val i = rememberSaveable(stateSaver = autoSaver()) {
-                    mutableStateOf(10)
-                }
+                val i = rememberSaveable(stateSaver = autoSaver()) { mutableStateOf(10) }
             }
         }
     }
 
-    @UiThreadTest
     @Test
     fun rememberSaveable_mutable_100() = runBlockingTestWithFrameClock {
         measureComposeFocused {
             repeat(100) {
                 @Suppress("UNUSED_VARIABLE")
-                val i = rememberSaveable(stateSaver = autoSaver()) {
-                    mutableStateOf(10)
-                }
+                val i = rememberSaveable(stateSaver = autoSaver()) { mutableStateOf(10) }
             }
         }
     }

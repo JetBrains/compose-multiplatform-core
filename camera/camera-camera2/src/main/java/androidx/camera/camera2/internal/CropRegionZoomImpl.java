@@ -21,9 +21,7 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
-import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
@@ -32,7 +30,8 @@ import androidx.camera.core.impl.Config;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.util.Preconditions;
 
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
+import org.jspecify.annotations.NonNull;
+
 final class CropRegionZoomImpl implements ZoomControl.ZoomImpl {
     public static final float MIN_DIGITAL_ZOOM = 1.0f;
 
@@ -66,7 +65,7 @@ final class CropRegionZoomImpl implements ZoomControl.ZoomImpl {
 
     @OptIn(markerClass = ExperimentalCamera2Interop.class)
     @Override
-    public void addRequestOption(@NonNull Camera2ImplConfig.Builder builder) {
+    public void addRequestOption(Camera2ImplConfig.@NonNull Builder builder) {
         if (mCurrentCropRect != null) {
             builder.setCaptureRequestOptionWithPriority(CaptureRequest.SCALER_CROP_REGION,
                     mCurrentCropRect, Config.OptionPriority.REQUIRED);
@@ -93,8 +92,7 @@ final class CropRegionZoomImpl implements ZoomControl.ZoomImpl {
                         CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE));
     }
 
-    @NonNull
-    private static Rect getCropRectByRatio(@NonNull Rect sensorRect, float ratio) {
+    private static @NonNull Rect getCropRectByRatio(@NonNull Rect sensorRect, float ratio) {
         float cropWidth = (sensorRect.width() / ratio);
         float cropHeight = (sensorRect.height() / ratio);
         float left = ((sensorRect.width() - cropWidth) / 2.0f);
@@ -105,7 +103,7 @@ final class CropRegionZoomImpl implements ZoomControl.ZoomImpl {
 
     @Override
     public void setZoomRatio(float zoomRatio,
-            @NonNull CallbackToFutureAdapter.Completer<Void> completer) {
+            CallbackToFutureAdapter.@NonNull Completer<Void> completer) {
         Rect sensorRect = getSensorRect();
         mCurrentCropRect = getCropRectByRatio(sensorRect, zoomRatio);
 
@@ -138,9 +136,8 @@ final class CropRegionZoomImpl implements ZoomControl.ZoomImpl {
         }
     }
 
-    @NonNull
     @Override
-    public Rect getCropSensorRegion() {
+    public @NonNull Rect getCropSensorRegion() {
         return mCurrentCropRect != null ? mCurrentCropRect : getSensorRect();
     }
 }

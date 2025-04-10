@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package androidx.room.compiler.processing.util.compiler
 
 import com.google.devtools.ksp.AbstractKotlinSymbolProcessingExtension
@@ -29,6 +28,7 @@ import org.jetbrains.kotlin.cli.jvm.config.JavaSourceRoot
 import org.jetbrains.kotlin.cli.jvm.config.JvmClasspathRoot
 import org.jetbrains.kotlin.com.intellij.core.CoreApplicationEnvironment
 import org.jetbrains.kotlin.com.intellij.mock.MockProject
+import org.jetbrains.kotlin.com.intellij.openapi.Disposable
 import org.jetbrains.kotlin.com.intellij.psi.PsiTreeChangeAdapter
 import org.jetbrains.kotlin.com.intellij.psi.PsiTreeChangeListener
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
@@ -36,15 +36,12 @@ import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.languageVersionSettings
 import org.jetbrains.kotlin.resolve.extensions.AnalysisHandlerExtension
 
-/**
- * Registers the KSP component for the kotlin compilation.
- */
+/** Registers the KSP component for the kotlin compilation. */
 @Suppress("DEPRECATION") // TODO: Migrate ComponentRegistrar to CompilerPluginRegistrar
 @OptIn(ExperimentalCompilerApi::class)
 internal class TestKspRegistrar(
     val kspWorkingDir: File,
     val baseOptions: KspOptions.Builder,
-
     val processorProviders: List<SymbolProcessorProvider>,
     val messageCollector: MessageCollector
 ) : @Suppress("DEPRECATION") org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar {
@@ -58,37 +55,31 @@ internal class TestKspRegistrar(
             incrementalLog = false
             languageVersionSettings = configuration.languageVersionSettings
             // NOT supported yet, hence we set a default
-            classOutputDir = classOutputDir ?: kspWorkingDir.resolve(
-                KspCliOption
-                    .CLASS_OUTPUT_DIR_OPTION.optionName
-            )
+            classOutputDir =
+                classOutputDir
+                    ?: kspWorkingDir.resolve(KspCliOption.CLASS_OUTPUT_DIR_OPTION.optionName)
             // NOT supported yet, hence we set a default
-            resourceOutputDir = resourceOutputDir ?: kspWorkingDir.resolve(
-                KspCliOption.RESOURCE_OUTPUT_DIR_OPTION.optionName
-            )
-            cachesDir = cachesDir ?: kspWorkingDir.resolve(
-                KspCliOption.CACHES_DIR_OPTION.optionName
-            )
-
-            kspOutputDir = kspOutputDir ?: kspWorkingDir.resolve(
-                KspCliOption.KSP_OUTPUT_DIR_OPTION.optionName
-            )
+            resourceOutputDir =
+                resourceOutputDir
+                    ?: kspWorkingDir.resolve(KspCliOption.RESOURCE_OUTPUT_DIR_OPTION.optionName)
+            cachesDir =
+                cachesDir ?: kspWorkingDir.resolve(KspCliOption.CACHES_DIR_OPTION.optionName)
+            kspOutputDir =
+                kspOutputDir ?: kspWorkingDir.resolve(KspCliOption.KSP_OUTPUT_DIR_OPTION.optionName)
             val contentRoots = configuration[CLIConfigurationKeys.CONTENT_ROOTS] ?: emptyList()
-
             compileClasspath.addAll(
                 contentRoots.filterIsInstance<JvmClasspathRoot>().map { it.file }
             )
-
-            javaSourceRoots.addAll(
-                contentRoots.filterIsInstance<JavaSourceRoot>().map { it.file }
-            )
+            javaSourceRoots.addAll(contentRoots.filterIsInstance<JavaSourceRoot>().map { it.file })
         }
-        val logger = MessageCollectorBasedKSPLogger(
-            messageCollector = messageCollector,
-            wrappedMessageCollector = messageCollector,
-            allWarningsAsErrors = baseOptions.allWarningsAsErrors
-        )
+        val logger =
+            MessageCollectorBasedKSPLogger(
+                messageCollector = messageCollector,
+                wrappedMessageCollector = messageCollector,
+                allWarningsAsErrors = baseOptions.allWarningsAsErrors
+            )
         val options = baseOptions.build()
+        @Suppress("UnstableApiUsage") // For K1.
         AnalysisHandlerExtension.registerExtension(
             project,
             TestKspExtension(
@@ -109,13 +100,15 @@ internal class TestKspRegistrar(
         options: KspOptions,
         processorProviders: List<SymbolProcessorProvider>,
         logger: KSPLogger
-    ) : AbstractKotlinSymbolProcessingExtension(
-        options = options,
-        logger = logger,
-        testMode = false
-    ) {
+    ) :
+        AbstractKotlinSymbolProcessingExtension(
+            options = options,
+            logger = logger,
+            testMode = false
+        ) {
         private val loadedProviders = processorProviders
 
-        override fun loadProviders() = loadedProviders
+        override fun loadProviders(rootDisposable: Disposable): List<SymbolProcessorProvider> =
+            loadedProviders
     }
 }

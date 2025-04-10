@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-@file:SuppressLint("ClassVerificationFailure") // Entire file is RequiresApi(26)
 @file:Suppress("NOTHING_TO_INLINE") // Aliases to other public API.
 
 package androidx.core.util
 
-import android.annotation.SuppressLint
 import android.util.Half
 import androidx.annotation.HalfFloat
 import androidx.annotation.RequiresApi
@@ -39,21 +37,18 @@ public inline fun @receiver:HalfFloat Short.toHalf(): Half = Half.valueOf(this)
  *
  * @see Half.valueOf
  */
-@RequiresApi(26)
-public inline fun Float.toHalf(): Half = Half.valueOf(this)
+@RequiresApi(26) public inline fun Float.toHalf(): Half = Half.valueOf(this)
 
 /**
  * Returns a [Half] instance representing given [Double].
  *
  * @see Half.valueOf
  */
-@RequiresApi(26)
-public inline fun Double.toHalf(): Half = toFloat().toHalf()
+@RequiresApi(26) public inline fun Double.toHalf(): Half = toFloat().toHalf()
 
 /**
  * Returns a [Half] instance representing given [String].
  *
  * @see Half.valueOf
  */
-@RequiresApi(26)
-public inline fun String.toHalf(): Half = Half.valueOf(this)
+@RequiresApi(26) public inline fun String.toHalf(): Half = Half.valueOf(this)

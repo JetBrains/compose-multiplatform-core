@@ -18,10 +18,11 @@ import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.leanback.widget.Presenter;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public class StringPresenter extends Presenter {
     private static final String TAG = "StringPresenter";

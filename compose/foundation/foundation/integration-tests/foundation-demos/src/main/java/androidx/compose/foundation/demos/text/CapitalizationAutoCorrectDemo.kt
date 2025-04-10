@@ -27,7 +27,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -38,44 +37,43 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
-private val KeyboardOptionsList = listOf(
-    ImeOptionsData(
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Text,
-            capitalization = KeyboardCapitalization.Characters
+private val KeyboardOptionsList =
+    listOf(
+        ImeOptionsData(
+            keyboardOptions =
+                KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    capitalization = KeyboardCapitalization.Characters
+                ),
+            name = "Capitalize Characters"
         ),
-
-        name = "Capitalize Characters"
-    ),
-    ImeOptionsData(
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Text,
-            capitalization = KeyboardCapitalization.Words
+        ImeOptionsData(
+            keyboardOptions =
+                KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    capitalization = KeyboardCapitalization.Words
+                ),
+            name = "Capitalize Words"
         ),
-        name = "Capitalize Words"
-    ),
-    ImeOptionsData(
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Text,
-            capitalization = KeyboardCapitalization.Sentences
+        ImeOptionsData(
+            keyboardOptions =
+                KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    capitalization = KeyboardCapitalization.Sentences
+                ),
+            name = "Capitalize Sentences"
         ),
-        name = "Capitalize Sentences"
-    ),
-    ImeOptionsData(
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Text,
-            autoCorrect = true
+        ImeOptionsData(
+            keyboardOptions =
+                KeyboardOptions(autoCorrectEnabled = true, keyboardType = KeyboardType.Text),
+            name = "AutoCorrect On"
         ),
-        name = "AutoCorrect On"
-    ),
-    ImeOptionsData(
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Text,
-            autoCorrect = false
-        ),
-        name = "AutoCorrect Off"
+        ImeOptionsData(
+            keyboardOptions =
+                KeyboardOptions(autoCorrectEnabled = false, keyboardType = KeyboardType.Text),
+            name = "AutoCorrect Off"
+        )
     )
-)
 
 @Preview
 @Composable
@@ -88,12 +86,10 @@ fun CapitalizationAutoCorrectDemo() {
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun MyTextField(data: ImeOptionsData) {
-    var state by rememberSaveable(stateSaver = TextFieldValue.Saver) {
-        mutableStateOf(TextFieldValue())
-    }
+    var state by
+        rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue()) }
     val keyboardController = LocalSoftwareKeyboardController.current
     BasicTextField(
         modifier = demoTextFieldModifiers.defaultMinSize(100.dp),

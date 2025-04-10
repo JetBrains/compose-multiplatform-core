@@ -24,10 +24,10 @@ import java.util.concurrent.CancellationException
  * Functions in a [PrivacySandboxInterface] annotated interface must obey the following rules:
  * - Functions with return values must suspend
  * - Parameter types may be primitives, [PrivacySandboxValue], [PrivacySandboxCallback],
- *   [PrivacySandboxInterface], or lists of primitives or [PrivacySandboxValue]. Nullable types
- *   are allowed.
- * - Return types may be primitives, [PrivacySandboxValue], [PrivacySandboxInterface], or lists
- *   of primitives or [PrivacySandboxValue]. Nullable types are allowed.
+ *   [PrivacySandboxInterface], or lists of primitives or [PrivacySandboxValue]. Nullable types are
+ *   allowed.
+ * - Return types may be primitives, [PrivacySandboxValue], [PrivacySandboxInterface], or lists of
+ *   primitives or [PrivacySandboxValue]. Nullable types are allowed.
  *
  * Suspend functions operate as follows:
  * - The main thread is used by default
@@ -39,9 +39,10 @@ import java.util.concurrent.CancellationException
  * rethrown to app developers as `PrivacySandboxException` with a full stack trace. Errors in
  * non-suspend functions will not be rethrown.
  *
- * [PrivacySandboxInterface] annotated interfaces may not extend any interface except for
- * [androidx.privacysandbox.ui.core.SandboxedUiAdapter], which can be used to provide SDK content in
- * an app's UI. These interfaces may also have any other functions that are normally allowed.
+ * [PrivacySandboxInterface] annotated interfaces may not extend any interface except for one of the
+ * Privacy Sandbox UI adapters, such as [androidx.privacysandbox.ui.core.SandboxedUiAdapter] or
+ * [androidx.privacysandbox.ui.core.SharedUiAdapter], which can be used to provide SDK content in an
+ * app's UI. These interfaces may also have any other functions that are normally allowed.
  *
  * Usage example:
  * ```

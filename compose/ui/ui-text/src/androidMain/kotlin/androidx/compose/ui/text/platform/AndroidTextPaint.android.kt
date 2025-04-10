@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asComposePaint
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -49,20 +50,33 @@ internal class AndroidTextPaint(flags: Int, density: Float) : TextPaint(flags) {
     }
 
     // A wrapper to use Compose Paint APIs on this TextPaint
-    private val composePaint: Paint = this.asComposePaint()
+    private var backingComposePaint: Paint? = null
+    private val composePaint: Paint
+        get() {
+            val finalBackingComposePaint = backingComposePaint
+            if (finalBackingComposePaint != null) return finalBackingComposePaint
+            return this.asComposePaint().also { backingComposePaint = it }
+        }
 
     private var textDecoration: TextDecoration = TextDecoration.None
 
-    @VisibleForTesting
-    internal var shadow: Shadow = Shadow.None
+    private var backingBlendMode: BlendMode = DrawScope.DefaultBlendMode
 
-    @VisibleForTesting
-    internal var brush: Brush? = null
+    @VisibleForTesting internal var shadow: Shadow = Shadow.None
+
+    /**
+     * Different than other backing properties, this variable only exists to enable easy comparison
+     * between the last set color and the new color that is going to be set. Color conversion from
+     * Compose to platform color primitive integer is expensive, so it is more efficient to skip
+     * this conversion if the color is not going to change at all.
+     */
+    private var lastColor: Color? = null
+
+    @VisibleForTesting internal var brush: Brush? = null
 
     internal var shaderState: State<Shader?>? = null
 
-    @VisibleForTesting
-    internal var brushSize: Size? = null
+    @VisibleForTesting internal var brushSize: Size? = null
 
     private var drawStyle: DrawStyle? = null
 
@@ -93,8 +107,9 @@ internal class AndroidTextPaint(flags: Int, density: Float) : TextPaint(flags) {
     }
 
     fun setColor(color: Color) {
-        if (color.isSpecified) {
-            composePaint.color = color
+        if (lastColor != color && color.isSpecified) {
+            this.lastColor = color
+            this.color = color.toArgb()
             clearShader()
         }
     }
@@ -122,12 +137,11 @@ internal class AndroidTextPaint(flags: Int, density: Float) : TextPaint(flags) {
                     if (size.isSpecified) {
                         this.brush = brush
                         this.brushSize = size
-                        this.shaderState = derivedStateOf {
-                            brush.createShader(size)
-                        }
+                        this.shaderState = derivedStateOf { brush.createShader(size) }
                     }
                 }
                 composePaint.shader = this.shaderState?.value
+                this.lastColor = null
                 setAlpha(alpha)
             }
         }
@@ -142,7 +156,9 @@ internal class AndroidTextPaint(flags: Int, density: Float) : TextPaint(flags) {
                     // Stroke properties such as strokeWidth, strokeMiter are not re-set because
                     // Fill style should make those properties no-op. Next time the style is set
                     // as Stroke, stroke properties get re-set as well.
-                    composePaint.style = PaintingStyle.Fill
+
+                    // avoid unnecessarily allocating a composePaint object in hot path.
+                    this.style = Style.FILL
                 }
                 is Stroke -> {
                     composePaint.style = PaintingStyle.Stroke
@@ -158,23 +174,26 @@ internal class AndroidTextPaint(flags: Int, density: Float) : TextPaint(flags) {
 
     // BlendMode is only available to DrawScope.drawText.
     // not intended to be used by TextStyle/SpanStyle.
-    var blendMode: BlendMode by composePaint::blendMode
+    var blendMode: BlendMode
+        get() {
+            return backingBlendMode
+        }
+        set(value) {
+            if (value == backingBlendMode) return
+            composePaint.blendMode = value
+            backingBlendMode = value
+        }
 
-    /**
-     * Clears all shader related cache parameters and native shader property.
-     */
+    /** Clears all shader related cache parameters and native shader property. */
     private fun clearShader() {
         this.shaderState = null
         this.brush = null
         this.brushSize = null
-        composePaint.shader = null
+        this.shader = null
     }
 }
 
-/**
- * Accepts an alpha value in the range [0f, 1f] then maps to an integer value
- * in [0, 255] range.
- */
+/** Accepts an alpha value in the range [0f, 1f] then maps to an integer value in [0, 255] range. */
 internal fun TextPaint.setAlpha(alpha: Float) {
     if (!alpha.isNaN()) {
         val alphaInt = alpha.fastCoerceIn(0f, 1f).times(255).fastRoundToInt()

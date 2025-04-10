@@ -1,18 +1,20 @@
-import androidx.build.Publish
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
 }
 
-android {
-    defaultConfig {
-        multiDexEnabled true
-    }
-}
-
 dependencies {
-    api("androidx.annotation:annotation:1.2.0")
+    api(libs.jspecify)
+    api("androidx.annotation:annotation:1.8.1")
     api("androidx.interpolator:interpolator:1.0.0")
     api("androidx.core:core:1.1.0")
     api(project(":leanback:leanback-grid"))
@@ -29,16 +31,16 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.multidex)
-    androidTestImplementation(libs.espressoCore, excludes.espresso)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy) // DexMaker has it"s own MockMaker
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy) // DexMaker has it"s own MockMaker
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(project(":internal-testutils-espresso"))
     androidTestImplementation(project(":internal-testutils-runtime"))
     androidTestImplementation(project(":internal-testutils-common"))
 }
 
 android {
+    compileSdk = 35
     sourceSets {
         main.java.srcDirs += [
                 "common",
@@ -46,14 +48,16 @@ android {
                 "api21",
         ]
     }
-    namespace "androidx.leanback"
+    namespace = "androidx.leanback"
 }
 
 androidx {
     name = "Leanback"
-    publish = Publish.SNAPSHOT_AND_RELEASE
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.LEANBACK
     inceptionYear = "2014"
     description = "Android Support Leanback v17"
     failOnDeprecationWarnings = false
+    // TODO: b/326456246
+    optOutJSpecify = true
 }

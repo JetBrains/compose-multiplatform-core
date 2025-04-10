@@ -16,10 +16,11 @@
 package androidx.car.app.hardware.info;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
 import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.annotations.RequiresCarApi;
 import androidx.car.app.hardware.common.OnCarDataAvailableListener;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -35,7 +36,7 @@ public interface CarInfo {
      * @param executor the executor which will be used for invoking the listener
      * @param listener the listener that will be invoked when data is available
      */
-    void fetchModel(@NonNull /* @CallbackExecutor */ Executor executor,
+    void fetchModel(/* @CallbackExecutor */ @NonNull Executor executor,
             @NonNull OnCarDataAvailableListener<Model> listener);
 
     /**
@@ -44,8 +45,25 @@ public interface CarInfo {
      * @param executor the executor which will be used for invoking the listener
      * @param listener the listener that will be invoked when data is available
      */
-    void fetchEnergyProfile(@NonNull /* @CallbackExecutor */ Executor executor,
+    void fetchEnergyProfile(/* @CallbackExecutor */ @NonNull Executor executor,
             @NonNull OnCarDataAvailableListener<EnergyProfile> listener);
+
+    /**
+     * Request the {@link ExteriorDimensions} information about the vehicle. This will only return
+     * meaningful data on select Automotive vehicles running SDK 30 and above.
+     *
+     * <p>This requires the {@code android.car.permission.CAR_INFO} permission.
+     *
+     * <p>See
+     * <a href="https://developer.android.com/reference/android/car/VehiclePropertyIds#INFO_EXTERIOR_DIMENSIONS">VehiclePropertyIds#INFO_EXTERIOR_DIMENSIONS</a>
+     *
+     * @param executor the executor which will be used for invoking the listener
+     * @param listener the listener that will be invoked when data is available
+     */
+    @RequiresCarApi(7)
+    default void fetchExteriorDimensions(/* @CallbackExecutor */ @NonNull Executor executor,
+            @NonNull OnCarDataAvailableListener<ExteriorDimensions> listener) {
+    }
 
     /**
      * Setup an ongoing listener to receive {@link TollCard} information from the car hardware.
@@ -55,7 +73,7 @@ public interface CarInfo {
      * @param executor the executor which will be used for invoking the listener
      * @param listener the listener that will be invoked when data is available
      */
-    void addTollListener(@NonNull /* @CallbackExecutor */ Executor executor,
+    void addTollListener(/* @CallbackExecutor */ @NonNull Executor executor,
             @NonNull OnCarDataAvailableListener<TollCard> listener);
 
     /**
@@ -75,7 +93,7 @@ public interface CarInfo {
      * @param executor the executor which will be used for invoking the listener
      * @param listener the listener that will be invoked when data is available
      */
-    void addEnergyLevelListener(@NonNull /* @CallbackExecutor */ Executor executor,
+    void addEnergyLevelListener(/* @CallbackExecutor */ @NonNull Executor executor,
             @NonNull OnCarDataAvailableListener<EnergyLevel> listener);
 
     /**
@@ -95,7 +113,7 @@ public interface CarInfo {
      * @param executor the executor which will be used for invoking the listener
      * @param listener the listener that will be invoked when data is available
      */
-    void addSpeedListener(@NonNull /* @CallbackExecutor */ Executor executor,
+    void addSpeedListener(/* @CallbackExecutor */ @NonNull Executor executor,
             @NonNull OnCarDataAvailableListener<Speed> listener);
 
     /**
@@ -115,7 +133,7 @@ public interface CarInfo {
      * @param executor the executor which will be used for invoking the listener
      * @param listener the listener that will be invoked when data is available
      */
-    void addMileageListener(@NonNull /* @CallbackExecutor */ Executor executor,
+    void addMileageListener(/* @CallbackExecutor */ @NonNull Executor executor,
             @NonNull OnCarDataAvailableListener<Mileage> listener);
 
     /**
@@ -136,7 +154,7 @@ public interface CarInfo {
      * @param listener the listener that will be invoked when data is available
      */
     @ExperimentalCarApi
-    void addEvStatusListener(@NonNull /* @CallbackExecutor */ Executor executor,
+    void addEvStatusListener(/* @CallbackExecutor */ @NonNull Executor executor,
             @NonNull OnCarDataAvailableListener<EvStatus> listener);
 
     /**

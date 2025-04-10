@@ -12,7 +12,8 @@ package androidx.glance.appwidget {
 
   public final class AppWidgetComposerKt {
     method public static suspend Object? compose(androidx.glance.appwidget.GlanceAppWidget, android.content.Context context, optional androidx.glance.GlanceId id, optional android.os.Bundle? options, optional androidx.compose.ui.unit.DpSize? size, optional Object? state, kotlin.coroutines.Continuation<? super android.widget.RemoteViews>);
-    method @SuppressCompatibility @androidx.glance.ExperimentalGlanceApi public static kotlinx.coroutines.flow.Flow<android.widget.RemoteViews> runComposition(androidx.glance.appwidget.GlanceAppWidget, android.content.Context context, optional androidx.glance.GlanceId id, optional android.os.Bundle options, optional java.util.List<androidx.compose.ui.unit.DpSize>? sizes, optional Object? state);
+    method public static suspend Object? composeForPreview(androidx.glance.appwidget.GlanceAppWidget, android.content.Context context, int widgetCategory, optional android.appwidget.AppWidgetProviderInfo? info, kotlin.coroutines.Continuation<? super android.widget.RemoteViews>);
+    method @SuppressCompatibility @androidx.glance.ExperimentalGlanceApi public static kotlinx.coroutines.flow.Flow<android.widget.RemoteViews> runComposition(androidx.glance.appwidget.GlanceAppWidget, android.content.Context context, optional androidx.glance.GlanceId id, optional android.os.Bundle options, optional java.util.List<androidx.compose.ui.unit.DpSize>? sizes, optional Object? state, optional android.content.ComponentName lambdaReceiver);
   }
 
   public final class BackgroundKt {
@@ -41,7 +42,7 @@ package androidx.glance.appwidget {
 
   public final class CompositionLocalsKt {
     method public static androidx.compose.runtime.ProvidableCompositionLocal<android.os.Bundle> getLocalAppWidgetOptions();
-    property public static final androidx.compose.runtime.ProvidableCompositionLocal<android.os.Bundle> LocalAppWidgetOptions;
+    property public static androidx.compose.runtime.ProvidableCompositionLocal<android.os.Bundle> LocalAppWidgetOptions;
   }
 
   public final class CornerRadiusKt {
@@ -53,31 +54,41 @@ package androidx.glance.appwidget {
   }
 
   public abstract class GlanceAppWidget {
+    ctor public GlanceAppWidget();
     ctor public GlanceAppWidget(optional @LayoutRes int errorUiLayout);
+    method public androidx.glance.appwidget.PreviewSizeMode getPreviewSizeMode();
     method public androidx.glance.appwidget.SizeMode getSizeMode();
-    method public androidx.glance.state.GlanceStateDefinition<?>? getStateDefinition();
+    method public androidx.glance.state.GlanceStateDefinition<? extends java.lang.Object?>? getStateDefinition();
     method @kotlin.jvm.Throws(exceptionClasses=Throwable::class) public void onCompositionError(android.content.Context context, androidx.glance.GlanceId glanceId, int appWidgetId, Throwable throwable) throws java.lang.Throwable;
     method public suspend Object? onDelete(android.content.Context context, androidx.glance.GlanceId glanceId, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public abstract suspend Object? provideGlance(android.content.Context context, androidx.glance.GlanceId id, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? providePreview(android.content.Context context, int widgetCategory, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public final suspend Object? update(android.content.Context context, androidx.glance.GlanceId id, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    property public androidx.glance.appwidget.PreviewSizeMode previewSizeMode;
     property public androidx.glance.appwidget.SizeMode sizeMode;
-    property public androidx.glance.state.GlanceStateDefinition<?>? stateDefinition;
+    property public androidx.glance.state.GlanceStateDefinition<? extends java.lang.Object?>? stateDefinition;
   }
 
   public final class GlanceAppWidgetKt {
-    method public static suspend Object? provideContent(androidx.glance.appwidget.GlanceAppWidget, kotlin.jvm.functions.Function0<kotlin.Unit> content, kotlin.coroutines.Continuation<?>);
+    method public static suspend Object? provideContent(androidx.glance.appwidget.GlanceAppWidget, kotlin.jvm.functions.Function0<kotlin.Unit> content, kotlin.coroutines.Continuation<? extends java.lang.Object?>);
     method public static suspend Object? updateAll(androidx.glance.appwidget.GlanceAppWidget, android.content.Context context, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method public static suspend inline <reified State> void updateIf(androidx.glance.appwidget.GlanceAppWidget, android.content.Context context, kotlin.jvm.functions.Function1<? super State,java.lang.Boolean> predicate);
+    method public static suspend inline <reified State> Object? updateIf(androidx.glance.appwidget.GlanceAppWidget, android.content.Context context, kotlin.jvm.functions.Function1<? super State,java.lang.Boolean> predicate, kotlin.coroutines.Continuation<? super kotlin.Unit>);
   }
 
   public final class GlanceAppWidgetManager {
     ctor public GlanceAppWidgetManager(android.content.Context context);
     method public int getAppWidgetId(androidx.glance.GlanceId glanceId);
-    method public suspend Object? getAppWidgetSizes(androidx.glance.GlanceId glanceId, kotlin.coroutines.Continuation<? super java.util.List<? extends androidx.compose.ui.unit.DpSize>>);
+    method public suspend Object? getAppWidgetSizes(androidx.glance.GlanceId glanceId, kotlin.coroutines.Continuation<? super java.util.List<androidx.compose.ui.unit.DpSize>>);
     method public androidx.glance.GlanceId? getGlanceIdBy(android.content.Intent configurationIntent);
     method public androidx.glance.GlanceId getGlanceIdBy(int appWidgetId);
     method public suspend <T extends androidx.glance.appwidget.GlanceAppWidget> Object? getGlanceIds(Class<T> provider, kotlin.coroutines.Continuation<? super java.util.List<? extends androidx.glance.GlanceId>>);
+    method public suspend <T extends androidx.glance.appwidget.GlanceAppWidgetReceiver> Object? requestPinGlanceAppWidget(Class<T> receiver, optional androidx.glance.appwidget.GlanceAppWidget? preview, optional androidx.compose.ui.unit.DpSize? previewSize, optional Object? previewState, optional android.app.PendingIntent? successCallback, kotlin.coroutines.Continuation<? super java.lang.Boolean>);
     method public suspend <T extends androidx.glance.appwidget.GlanceAppWidgetReceiver> Object? requestPinGlanceAppWidget(Class<T> receiver, optional androidx.glance.appwidget.GlanceAppWidget? preview, optional Object? previewState, optional android.app.PendingIntent? successCallback, kotlin.coroutines.Continuation<? super java.lang.Boolean>);
+    method public suspend Object? setWidgetPreviews(kotlin.reflect.KClass<? extends androidx.glance.appwidget.GlanceAppWidgetReceiver> receiver, optional androidx.collection.IntSet widgetCategories, kotlin.coroutines.Continuation<? super java.lang.Boolean>);
+  }
+
+  public final class GlanceAppWidgetManagerKt {
+    method public static suspend inline <reified T extends androidx.glance.appwidget.GlanceAppWidgetReceiver> Object? setWidgetPreviews(androidx.glance.appwidget.GlanceAppWidgetManager, optional androidx.collection.IntSet widgetCategories, kotlin.coroutines.Continuation<? super java.lang.Boolean>);
   }
 
   public abstract class GlanceAppWidgetReceiver extends android.appwidget.AppWidgetProvider {
@@ -91,11 +102,17 @@ package androidx.glance.appwidget {
   }
 
   public static final class GlanceAppWidgetReceiver.Companion {
+    property public static String ACTION_DEBUG_UPDATE;
   }
 
   @SuppressCompatibility @androidx.glance.appwidget.ExperimentalGlanceRemoteViewsApi public final class GlanceRemoteViews {
     ctor public GlanceRemoteViews();
     method public suspend Object? compose(android.content.Context context, long size, optional Object? state, optional android.os.Bundle appWidgetOptions, kotlin.jvm.functions.Function0<kotlin.Unit> content, kotlin.coroutines.Continuation<? super androidx.glance.appwidget.RemoteViewsCompositionResult>);
+  }
+
+  public class GlanceRemoteViewsService extends android.widget.RemoteViewsService {
+    ctor public GlanceRemoteViewsService();
+    method public android.widget.RemoteViewsService.RemoteViewsFactory onGetViewFactory(android.content.Intent? intent);
   }
 
   public final class ImageProvidersKt {
@@ -107,11 +124,19 @@ package androidx.glance.appwidget {
     method @androidx.compose.runtime.Composable public static void LinearProgressIndicator(float progress, optional androidx.glance.GlanceModifier modifier, optional androidx.glance.unit.ColorProvider color, optional androidx.glance.unit.ColorProvider backgroundColor);
   }
 
+  public class MyPackageReplacedReceiver extends android.content.BroadcastReceiver {
+    ctor public MyPackageReplacedReceiver();
+    method public void onReceive(android.content.Context? context, android.content.Intent? intent);
+  }
+
+  public sealed interface PreviewSizeMode extends androidx.glance.appwidget.SizeMode {
+  }
+
   public final class ProgressIndicatorDefaults {
     method public androidx.glance.unit.ColorProvider getBackgroundColorProvider();
     method public androidx.glance.unit.ColorProvider getIndicatorColorProvider();
-    property public final androidx.glance.unit.ColorProvider BackgroundColorProvider;
-    property public final androidx.glance.unit.ColorProvider IndicatorColorProvider;
+    property public androidx.glance.unit.ColorProvider BackgroundColorProvider;
+    property public androidx.glance.unit.ColorProvider IndicatorColorProvider;
     field public static final androidx.glance.appwidget.ProgressIndicatorDefaults INSTANCE;
   }
 
@@ -135,7 +160,7 @@ package androidx.glance.appwidget {
   @SuppressCompatibility @androidx.glance.appwidget.ExperimentalGlanceRemoteViewsApi public final class RemoteViewsCompositionResult {
     ctor public RemoteViewsCompositionResult(android.widget.RemoteViews remoteViews);
     method public android.widget.RemoteViews getRemoteViews();
-    property public final android.widget.RemoteViews remoteViews;
+    property public android.widget.RemoteViews remoteViews;
   }
 
   public sealed interface SizeMode {
@@ -145,13 +170,13 @@ package androidx.glance.appwidget {
     field public static final androidx.glance.appwidget.SizeMode.Exact INSTANCE;
   }
 
-  public static final class SizeMode.Responsive implements androidx.glance.appwidget.SizeMode {
+  public static final class SizeMode.Responsive implements androidx.glance.appwidget.PreviewSizeMode androidx.glance.appwidget.SizeMode {
     ctor public SizeMode.Responsive(java.util.Set<androidx.compose.ui.unit.DpSize> sizes);
     method public java.util.Set<androidx.compose.ui.unit.DpSize> getSizes();
-    property public final java.util.Set<androidx.compose.ui.unit.DpSize> sizes;
+    property public java.util.Set<androidx.compose.ui.unit.DpSize> sizes;
   }
 
-  public static final class SizeMode.Single implements androidx.glance.appwidget.SizeMode {
+  public static final class SizeMode.Single implements androidx.glance.appwidget.PreviewSizeMode androidx.glance.appwidget.SizeMode {
     field public static final androidx.glance.appwidget.SizeMode.Single INSTANCE;
   }
 
@@ -170,12 +195,30 @@ package androidx.glance.appwidget {
     method @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.glance.ExperimentalGlanceApi public static void Switch(boolean checked, kotlin.jvm.functions.Function0<kotlin.Unit> onCheckedChange, optional androidx.glance.GlanceModifier modifier, optional String text, optional androidx.glance.text.TextStyle? style, optional androidx.glance.appwidget.SwitchColors colors, optional int maxLines, optional String? key);
   }
 
+  public class UnmanagedSessionReceiver extends android.content.BroadcastReceiver {
+    ctor public UnmanagedSessionReceiver();
+    method public void onReceive(android.content.Context? context, android.content.Intent? intent);
+  }
+
 }
 
 package androidx.glance.appwidget.action {
 
   public interface ActionCallback {
     method public suspend Object? onAction(android.content.Context context, androidx.glance.GlanceId glanceId, androidx.glance.action.ActionParameters parameters, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+  }
+
+  public class ActionCallbackBroadcastReceiver extends android.content.BroadcastReceiver {
+    ctor public ActionCallbackBroadcastReceiver();
+    method public void onReceive(android.content.Context? context, android.content.Intent? intent);
+  }
+
+  public class ActionTrampolineActivity extends android.app.Activity {
+    ctor public ActionTrampolineActivity();
+  }
+
+  public class InvisibleActionTrampolineActivity extends android.app.Activity {
+    ctor public InvisibleActionTrampolineActivity();
   }
 
   public final class RunCallbackActionKt {
@@ -205,7 +248,30 @@ package androidx.glance.appwidget.action {
 
   public final class ToggleableKt {
     method public static androidx.glance.action.ActionParameters.Key<java.lang.Boolean> getToggleableStateKey();
-    property public static final androidx.glance.action.ActionParameters.Key<java.lang.Boolean> ToggleableStateKey;
+    property public static androidx.glance.action.ActionParameters.Key<java.lang.Boolean> ToggleableStateKey;
+  }
+
+}
+
+package androidx.glance.appwidget.components {
+
+  public final class ButtonsKt {
+    method @androidx.compose.runtime.Composable public static void CircleIconButton(androidx.glance.ImageProvider imageProvider, String? contentDescription, androidx.glance.action.Action onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.unit.ColorProvider? backgroundColor, optional androidx.glance.unit.ColorProvider contentColor);
+    method @androidx.compose.runtime.Composable public static void CircleIconButton(androidx.glance.ImageProvider imageProvider, String? contentDescription, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.unit.ColorProvider? backgroundColor, optional androidx.glance.unit.ColorProvider contentColor, optional String? key);
+    method @androidx.compose.runtime.Composable public static void FilledButton(String text, androidx.glance.action.Action onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.ImageProvider? icon, optional androidx.glance.ButtonColors colors, optional int maxLines);
+    method @androidx.compose.runtime.Composable public static void FilledButton(String text, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.ImageProvider? icon, optional androidx.glance.ButtonColors colors, optional int maxLines, optional String? key);
+    method @androidx.compose.runtime.Composable public static void OutlineButton(String text, androidx.glance.unit.ColorProvider contentColor, androidx.glance.action.Action onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.ImageProvider? icon, optional int maxLines);
+    method @androidx.compose.runtime.Composable public static void OutlineButton(String text, androidx.glance.unit.ColorProvider contentColor, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.ImageProvider? icon, optional int maxLines, optional String? key);
+    method @androidx.compose.runtime.Composable public static void SquareIconButton(androidx.glance.ImageProvider imageProvider, String? contentDescription, androidx.glance.action.Action onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.unit.ColorProvider backgroundColor, optional androidx.glance.unit.ColorProvider contentColor);
+    method @androidx.compose.runtime.Composable public static void SquareIconButton(androidx.glance.ImageProvider imageProvider, String? contentDescription, kotlin.jvm.functions.Function0<kotlin.Unit> onClick, optional androidx.glance.GlanceModifier modifier, optional boolean enabled, optional androidx.glance.unit.ColorProvider backgroundColor, optional androidx.glance.unit.ColorProvider contentColor, optional String? key);
+  }
+
+  public final class ScaffoldKt {
+    method @androidx.compose.runtime.Composable public static void Scaffold(optional androidx.glance.GlanceModifier modifier, optional kotlin.jvm.functions.Function0<kotlin.Unit>? titleBar, optional androidx.glance.unit.ColorProvider backgroundColor, optional float horizontalPadding, kotlin.jvm.functions.Function0<kotlin.Unit> content);
+  }
+
+  public final class TitleBarKt {
+    method @androidx.compose.runtime.Composable public static void TitleBar(androidx.glance.ImageProvider startIcon, String title, optional androidx.glance.unit.ColorProvider? iconColor, optional androidx.glance.unit.ColorProvider textColor, optional androidx.glance.GlanceModifier modifier, optional androidx.glance.text.FontFamily? fontFamily, optional kotlin.jvm.functions.Function1<? super androidx.glance.layout.RowScope,kotlin.Unit> actions);
   }
 
 }
@@ -218,13 +284,13 @@ package androidx.glance.appwidget.lazy {
   @RequiresApi(31) public static final class GridCells.Adaptive extends androidx.glance.appwidget.lazy.GridCells {
     ctor public GridCells.Adaptive(float minSize);
     method public float getMinSize();
-    property public final float minSize;
+    property public float minSize;
   }
 
   public static final class GridCells.Fixed extends androidx.glance.appwidget.lazy.GridCells {
     ctor public GridCells.Fixed(int count);
     method public int getCount();
-    property public final int count;
+    property public int count;
   }
 
   @androidx.glance.appwidget.lazy.LazyScopeMarker public interface LazyItemScope {
@@ -234,9 +300,9 @@ package androidx.glance.appwidget.lazy {
     method @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.glance.ExperimentalGlanceApi public static void LazyColumn(android.os.Bundle activityOptions, optional androidx.glance.GlanceModifier modifier, optional int horizontalAlignment, kotlin.jvm.functions.Function1<? super androidx.glance.appwidget.lazy.LazyListScope,kotlin.Unit> content);
     method @androidx.compose.runtime.Composable public static void LazyColumn(optional androidx.glance.GlanceModifier modifier, optional int horizontalAlignment, kotlin.jvm.functions.Function1<? super androidx.glance.appwidget.lazy.LazyListScope,kotlin.Unit> content);
     method public static inline <T> void items(androidx.glance.appwidget.lazy.LazyListScope, java.util.List<? extends T> items, optional kotlin.jvm.functions.Function1<? super T,java.lang.Long> itemId, kotlin.jvm.functions.Function2<? super androidx.glance.appwidget.lazy.LazyItemScope,? super T,kotlin.Unit> itemContent);
-    method public static inline <T> void items(androidx.glance.appwidget.lazy.LazyListScope, T![] items, optional kotlin.jvm.functions.Function1<? super T,java.lang.Long> itemId, kotlin.jvm.functions.Function2<? super androidx.glance.appwidget.lazy.LazyItemScope,? super T,kotlin.Unit> itemContent);
+    method public static inline <T> void items(androidx.glance.appwidget.lazy.LazyListScope, T[] items, optional kotlin.jvm.functions.Function1<? super T,java.lang.Long> itemId, kotlin.jvm.functions.Function2<? super androidx.glance.appwidget.lazy.LazyItemScope,? super T,kotlin.Unit> itemContent);
     method public static inline <T> void itemsIndexed(androidx.glance.appwidget.lazy.LazyListScope, java.util.List<? extends T> items, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,java.lang.Long> itemId, kotlin.jvm.functions.Function3<? super androidx.glance.appwidget.lazy.LazyItemScope,? super java.lang.Integer,? super T,kotlin.Unit> itemContent);
-    method public static inline <T> void itemsIndexed(androidx.glance.appwidget.lazy.LazyListScope, T![] items, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,java.lang.Long> itemId, kotlin.jvm.functions.Function3<? super androidx.glance.appwidget.lazy.LazyItemScope,? super java.lang.Integer,? super T,kotlin.Unit> itemContent);
+    method public static inline <T> void itemsIndexed(androidx.glance.appwidget.lazy.LazyListScope, T[] items, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,java.lang.Long> itemId, kotlin.jvm.functions.Function3<? super androidx.glance.appwidget.lazy.LazyItemScope,? super java.lang.Integer,? super T,kotlin.Unit> itemContent);
   }
 
   @androidx.glance.appwidget.lazy.LazyScopeMarker @kotlin.jvm.JvmDefaultWithCompatibility public interface LazyListScope {
@@ -247,6 +313,7 @@ package androidx.glance.appwidget.lazy {
   }
 
   public static final class LazyListScope.Companion {
+    property public static long UnspecifiedItemId;
     field public static final long UnspecifiedItemId = -9223372036854775808L; // 0x8000000000000000L
   }
 
@@ -257,9 +324,9 @@ package androidx.glance.appwidget.lazy {
     method @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.glance.ExperimentalGlanceApi public static void LazyVerticalGrid(androidx.glance.appwidget.lazy.GridCells gridCells, android.os.Bundle activityOptions, optional androidx.glance.GlanceModifier modifier, optional int horizontalAlignment, kotlin.jvm.functions.Function1<? super androidx.glance.appwidget.lazy.LazyVerticalGridScope,kotlin.Unit> content);
     method @androidx.compose.runtime.Composable public static void LazyVerticalGrid(androidx.glance.appwidget.lazy.GridCells gridCells, optional androidx.glance.GlanceModifier modifier, optional int horizontalAlignment, kotlin.jvm.functions.Function1<? super androidx.glance.appwidget.lazy.LazyVerticalGridScope,kotlin.Unit> content);
     method public static inline <T> void items(androidx.glance.appwidget.lazy.LazyVerticalGridScope, java.util.List<? extends T> items, optional kotlin.jvm.functions.Function1<? super T,java.lang.Long> itemId, kotlin.jvm.functions.Function2<? super androidx.glance.appwidget.lazy.LazyItemScope,? super T,kotlin.Unit> itemContent);
-    method public static inline <T> void items(androidx.glance.appwidget.lazy.LazyVerticalGridScope, T![] items, optional kotlin.jvm.functions.Function1<? super T,java.lang.Long> itemId, kotlin.jvm.functions.Function2<? super androidx.glance.appwidget.lazy.LazyItemScope,? super T,kotlin.Unit> itemContent);
+    method public static inline <T> void items(androidx.glance.appwidget.lazy.LazyVerticalGridScope, T[] items, optional kotlin.jvm.functions.Function1<? super T,java.lang.Long> itemId, kotlin.jvm.functions.Function2<? super androidx.glance.appwidget.lazy.LazyItemScope,? super T,kotlin.Unit> itemContent);
     method public static inline <T> void itemsIndexed(androidx.glance.appwidget.lazy.LazyVerticalGridScope, java.util.List<? extends T> items, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,java.lang.Long> itemId, kotlin.jvm.functions.Function3<? super androidx.glance.appwidget.lazy.LazyItemScope,? super java.lang.Integer,? super T,kotlin.Unit> itemContent);
-    method public static inline <T> void itemsIndexed(androidx.glance.appwidget.lazy.LazyVerticalGridScope, T![] items, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,java.lang.Long> itemId, kotlin.jvm.functions.Function3<? super androidx.glance.appwidget.lazy.LazyItemScope,? super java.lang.Integer,? super T,kotlin.Unit> itemContent);
+    method public static inline <T> void itemsIndexed(androidx.glance.appwidget.lazy.LazyVerticalGridScope, T[] items, optional kotlin.jvm.functions.Function2<? super java.lang.Integer,? super T,java.lang.Long> itemId, kotlin.jvm.functions.Function3<? super androidx.glance.appwidget.lazy.LazyItemScope,? super java.lang.Integer,? super T,kotlin.Unit> itemContent);
   }
 
   @androidx.glance.appwidget.lazy.LazyScopeMarker @kotlin.jvm.JvmDefaultWithCompatibility public interface LazyVerticalGridScope {
@@ -270,6 +337,7 @@ package androidx.glance.appwidget.lazy {
   }
 
   public static final class LazyVerticalGridScope.Companion {
+    property public static long UnspecifiedItemId;
     field public static final long UnspecifiedItemId = -9223372036854775808L; // 0x8000000000000000L
   }
 
@@ -280,8 +348,8 @@ package androidx.glance.appwidget.state {
   public final class GlanceAppWidgetStateKt {
     method public static suspend <T> Object? getAppWidgetState(android.content.Context context, androidx.glance.state.GlanceStateDefinition<T> definition, androidx.glance.GlanceId glanceId, kotlin.coroutines.Continuation<? super T>);
     method public static suspend <T> Object? getAppWidgetState(androidx.glance.appwidget.GlanceAppWidget, android.content.Context context, androidx.glance.GlanceId glanceId, kotlin.coroutines.Continuation<? super T>);
-    method public static suspend Object? updateAppWidgetState(android.content.Context context, androidx.glance.GlanceId glanceId, kotlin.jvm.functions.Function2<? super androidx.datastore.preferences.core.MutablePreferences,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,?> updateState, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method public static suspend <T> Object? updateAppWidgetState(android.content.Context context, androidx.glance.state.GlanceStateDefinition<T> definition, androidx.glance.GlanceId glanceId, kotlin.jvm.functions.Function2<? super T,? super kotlin.coroutines.Continuation<? super T>,?> updateState, kotlin.coroutines.Continuation<? super T>);
+    method public static suspend Object? updateAppWidgetState(android.content.Context context, androidx.glance.GlanceId glanceId, kotlin.jvm.functions.Function2<? super androidx.datastore.preferences.core.MutablePreferences,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> updateState, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public static suspend <T> Object? updateAppWidgetState(android.content.Context context, androidx.glance.state.GlanceStateDefinition<T> definition, androidx.glance.GlanceId glanceId, kotlin.jvm.functions.Function2<? super T,? super kotlin.coroutines.Continuation<? super T>,? extends java.lang.Object?> updateState, kotlin.coroutines.Continuation<? super T>);
   }
 
 }

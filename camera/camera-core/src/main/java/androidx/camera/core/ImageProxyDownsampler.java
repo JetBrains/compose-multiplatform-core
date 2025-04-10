@@ -19,13 +19,11 @@ package androidx.camera.core;
 import android.graphics.ImageFormat;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
+import org.jspecify.annotations.NonNull;
 
 import java.nio.ByteBuffer;
 
 /** Utility functions for downsampling an {@link ImageProxy}. */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 final class ImageProxyDownsampler {
 
     private ImageProxyDownsampler() {
@@ -205,8 +203,7 @@ final class ImageProxyDownsampler {
             }
 
             @Override
-            @NonNull
-            public ByteBuffer getBuffer() {
+            public @NonNull ByteBuffer getBuffer() {
                 return mBuffer;
             }
         };
@@ -246,8 +243,7 @@ final class ImageProxyDownsampler {
         }
 
         @Override
-        @NonNull
-        public PlaneProxy[] getPlanes() {
+        public PlaneProxy @NonNull [] getPlanes() {
             return mDownsampledPlanes;
         }
     }

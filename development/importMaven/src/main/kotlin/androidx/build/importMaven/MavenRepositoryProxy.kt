@@ -102,11 +102,13 @@ class MavenRepositoryProxy private constructor(
                 server.resolvedConnectors().first().let {
                     URL(
                         it.type.name.lowercase(),
-                        it.host,
+                        // Always use `localhost` for local loopback given this is secure for `http` URLs.
+                        "localhost",
                         it.port,
                         ""
                     )
-                    URI("${it.type.name.lowercase()}://${it.host}:${it.port}")
+                    // Always use `localhost` for local loopback given this is secure for `http` URIs.
+                    URI("${it.type.name.lowercase()}://localhost:${it.port}")
                 }
             }
             block(url)

@@ -24,7 +24,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.activity.ComponentActivity;
-import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.FlowLiveDataConversions;
 import androidx.wear.watchface.complications.ComplicationDataSourceInfo;
@@ -33,6 +32,8 @@ import androidx.wear.watchface.complications.rendering.ComplicationDrawable;
 import androidx.wear.watchface.editor.ListenableEditorSession;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.ExecutionException;
 
@@ -45,7 +46,7 @@ public class ConfigActivity extends ComponentActivity {
     private ImageView mComplicationPreview;
     private ComplicationDrawable mComplicationPreviewDrawable;
 
-    @Nullable private ListenableEditorSession mEditorSession;
+    private @Nullable ListenableEditorSession mEditorSession;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {

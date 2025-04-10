@@ -25,19 +25,21 @@ import com.android.tools.lint.detector.api.CURRENT_API
 private const val CL_COMPOSE_NEW_ISSUE = "new?component=323867&template=1023345"
 
 class ConstraintLayoutComposeIssueRegistry : IssueRegistry() {
-    override val api = 14
+    override val api = 16
 
     override val minApi = CURRENT_API
 
-    override val issues = listOf(
-        ConstraintLayoutDslDetector.IncorrectReferencesDeclarationIssue,
-        ConstraintLayoutDslDetector.IncorrectMatchParentUsageIssue,
-        ConstraintLayoutDslDetector.IncorrectChainMarginsUsageIssue
-    )
+    override val issues =
+        listOf(
+            ConstraintLayoutDslDetector.IncorrectReferencesDeclarationIssue,
+            ConstraintLayoutDslDetector.IncorrectMatchParentUsageIssue,
+            ConstraintLayoutDslDetector.IncorrectChainMarginsUsageIssue
+        )
 
-    override val vendor = Vendor(
-        feedbackUrl = "https://issuetracker.google.com/issues/$CL_COMPOSE_NEW_ISSUE",
-        identifier = "androidx.constraintlayout.compose",
-        vendorName = "Android Open Source Project",
-    )
+    override val vendor =
+        Vendor(
+            feedbackUrl = "https://issuetracker.google.com/issues/$CL_COMPOSE_NEW_ISSUE",
+            identifier = "androidx.constraintlayout.compose",
+            vendorName = "Android Open Source Project",
+        )
 }

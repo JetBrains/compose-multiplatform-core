@@ -18,9 +18,8 @@ package androidx.camera.core.impl;
 
 import android.util.ArrayMap;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -34,7 +33,6 @@ import java.util.TreeMap;
  * <p>OptionsBundle is a collection of {@link Config.Option}s and their values which can be
  * queried based on exact {@link Config.Option} objects or based on Option ids.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public class OptionsBundle implements Config {
     protected static final Comparator<Option<?>> ID_COMPARE =
             (o1, o2) -> {
@@ -58,8 +56,7 @@ public class OptionsBundle implements Config {
      * @param otherConfig Configuration containing options/values to be copied.
      * @return A new OptionsBundle pre-populated with options/values.
      */
-    @NonNull
-    public static OptionsBundle from(@NonNull Config otherConfig) {
+    public static @NonNull OptionsBundle from(@NonNull Config otherConfig) {
         // No need to create another instance since OptionsBundle is immutable
         if (OptionsBundle.class.equals(otherConfig.getClass())) {
             return (OptionsBundle) otherConfig;
@@ -86,14 +83,12 @@ public class OptionsBundle implements Config {
      *
      * @return An OptionsBundle pre-populated with no options/values.
      */
-    @NonNull
-    public static OptionsBundle emptyBundle() {
+    public static @NonNull OptionsBundle emptyBundle() {
         return EMPTY_BUNDLE;
     }
 
     @Override
-    @NonNull
-    public Set<Option<?>> listOptions() {
+    public @NonNull Set<Option<?>> listOptions() {
         return Collections.unmodifiableSet(mOptions.keySet());
     }
 
@@ -103,8 +98,7 @@ public class OptionsBundle implements Config {
     }
 
     @Override
-    @Nullable
-    public <ValueT> ValueT retrieveOption(@NonNull Option<ValueT> id) {
+    public <ValueT> @Nullable ValueT retrieveOption(@NonNull Option<ValueT> id) {
         Map<OptionPriority, Object> values = mOptions.get(id);
         if (values == null) {
             throw new IllegalArgumentException("Option does not exist: " + id);
@@ -117,9 +111,8 @@ public class OptionsBundle implements Config {
     }
 
     @Override
-    @Nullable
     @SuppressWarnings("unchecked")
-    public <ValueT> ValueT retrieveOption(@NonNull Option<ValueT> id,
+    public <ValueT> @Nullable ValueT retrieveOption(@NonNull Option<ValueT> id,
             @Nullable ValueT valueIfMissing) {
         try {
             return retrieveOption(id);
@@ -129,8 +122,7 @@ public class OptionsBundle implements Config {
     }
 
     @Override
-    @Nullable
-    public <ValueT> ValueT retrieveOptionWithPriority(@NonNull Option<ValueT> id,
+    public <ValueT> @Nullable ValueT retrieveOptionWithPriority(@NonNull Option<ValueT> id,
             @NonNull OptionPriority priority) {
         Map<OptionPriority, Object> values = mOptions.get(id);
         if (values == null) {
@@ -146,8 +138,7 @@ public class OptionsBundle implements Config {
     }
 
     @Override
-    @NonNull
-    public OptionPriority getOptionPriority(@NonNull Option<?> opt) {
+    public @NonNull OptionPriority getOptionPriority(@NonNull Option<?> opt) {
         Map<OptionPriority, Object> values = mOptions.get(opt);
         if (values == null) {
             throw new IllegalArgumentException("Option does not exist: " + opt);
@@ -174,9 +165,8 @@ public class OptionsBundle implements Config {
         }
     }
 
-    @NonNull
     @Override
-    public Set<OptionPriority> getPriorities(@NonNull Option<?> opt) {
+    public @NonNull Set<OptionPriority> getPriorities(@NonNull Option<?> opt) {
         Map<OptionPriority, Object> values = mOptions.get(opt);
         if (values == null) {
             return Collections.emptySet();

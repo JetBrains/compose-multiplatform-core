@@ -16,7 +16,6 @@
 
 package androidx.car.app.sample.showcase.common.screens.navigationdemos;
 
-import androidx.annotation.NonNull;
 import androidx.car.app.CarContext;
 import androidx.car.app.Screen;
 import androidx.car.app.model.CarIcon;
@@ -28,21 +27,24 @@ import androidx.car.app.sample.showcase.common.R;
 import androidx.core.graphics.drawable.IconCompat;
 import androidx.lifecycle.DefaultLifecycleObserver;
 
+import org.jspecify.annotations.NonNull;
+
 /** A screen that shows the navigation template in routing state showing a junction image. */
 public final class JunctionImageDemoScreen extends Screen implements DefaultLifecycleObserver {
+    private final RoutingDemoModelFactory mRoutingDemoModelFactory;
     public JunctionImageDemoScreen(@NonNull CarContext carContext) {
         super(carContext);
+        mRoutingDemoModelFactory = new RoutingDemoModelFactory(carContext);
     }
 
-    @NonNull
     @Override
-    public Template onGetTemplate() {
+    public @NonNull Template onGetTemplate() {
         CarContext carContext = getCarContext();
         return new NavigationTemplate.Builder()
                 .setNavigationInfo(
                         new RoutingInfo.Builder()
                                 .setCurrentStep(
-                                        RoutingDemoModels.getCurrentStep(carContext),
+                                        mRoutingDemoModelFactory.getCurrentStep(),
                                         Distance.create(200, Distance.UNIT_METERS))
                                 .setJunctionImage(
                                         new CarIcon.Builder(
@@ -51,8 +53,8 @@ public final class JunctionImageDemoScreen extends Screen implements DefaultLife
                                                         R.drawable.junction_image))
                                                 .build())
                                 .build())
-                .setDestinationTravelEstimate(RoutingDemoModels.getTravelEstimate(carContext))
-                .setActionStrip(RoutingDemoModels.getActionStrip(getCarContext(), this::finish))
+                .setDestinationTravelEstimate(mRoutingDemoModelFactory.getTravelEstimate())
+                .setActionStrip(mRoutingDemoModelFactory.getActionStrip(this::finish))
                 .build();
     }
 }

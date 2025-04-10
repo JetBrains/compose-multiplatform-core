@@ -27,6 +27,7 @@ import androidx.annotation.RequiresApi
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.assertAgainstGolden
 import androidx.wear.watchface.ComplicationSlotBoundsType
@@ -89,7 +90,7 @@ abstract class HeadlessWatchFaceClientTestBase {
 
 @RunWith(AndroidJUnit4::class)
 @MediumTest
-@RequiresApi(Build.VERSION_CODES.O_MR1)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
 class HeadlessWatchFaceClientTest : HeadlessWatchFaceClientTestBase() {
     @Suppress("DEPRECATION", "NewApi") // defaultDataSourceType
     @Test
@@ -235,11 +236,11 @@ class HeadlessWatchFaceClientTest : HeadlessWatchFaceClientTestBase() {
 
 @RunWith(AndroidJUnit4::class)
 @MediumTest
-@RequiresApi(Build.VERSION_CODES.O_MR1)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1)
 class HeadlessWatchFaceClientScreenshotTest : HeadlessWatchFaceClientTestBase() {
     @get:Rule
     val screenshotRule: AndroidXScreenshotTestRule =
-        AndroidXScreenshotTestRule("wear/wear-watchface-client")
+        AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
 
     private val complications = createTestComplications(context)
 

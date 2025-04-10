@@ -17,9 +17,11 @@
 package androidx.glance.appwidget.preview
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.Button
 import androidx.glance.GlanceModifier
+import androidx.glance.LocalSize
 import androidx.glance.action.Action
 import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.layout.Alignment
@@ -35,17 +37,13 @@ import androidx.glance.text.TextStyle
 
 @Composable
 fun FirstGlancePreview() {
-    Column(
-        modifier = GlanceModifier
-            .fillMaxSize()
-            .appWidgetBackground()
-            .padding(16.dp)
-    ) {
+    Column(modifier = GlanceModifier.fillMaxSize().appWidgetBackground().padding(16.dp)) {
         Text(
-            text = "First Glance widget",
-            modifier = GlanceModifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
+            text =
+                "First Glance widget, LocalSize = ${LocalSize.current.let {
+                if (it == DpSize.Unspecified) "Unspecified" else "${it.width} x ${it.height}"
+            }}",
+            modifier = GlanceModifier.fillMaxWidth().padding(bottom = 8.dp),
             style = TextStyle(fontWeight = FontWeight.Bold),
         )
         Row(
@@ -55,12 +53,12 @@ fun FirstGlancePreview() {
             Button(
                 text = "Button 1",
                 modifier = GlanceModifier.height(48.dp),
-                onClick = object : Action { }
+                onClick = object : Action {}
             )
             Button(
                 text = "Button 2",
                 modifier = GlanceModifier.height(48.dp),
-                onClick = object : Action { }
+                onClick = object : Action {}
             )
         }
     }

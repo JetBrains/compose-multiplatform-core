@@ -16,6 +16,7 @@
 
 package androidx.room.compiler.processing.javac
 
+import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.processing.XElement
 import androidx.room.compiler.processing.XMemberContainer
 import androidx.room.compiler.processing.XNullability
@@ -36,8 +37,11 @@ internal class JavacTypeParameterElement(
         get() = element.simpleName.toString()
 
     override val typeVariableName: TypeVariableName by lazy {
-        TypeVariableName.get(name, *bounds.map { it.typeName }.toTypedArray())
+        asTypeVariableName().java as TypeVariableName
     }
+
+    override fun asTypeVariableName() =
+        XTypeName.getTypeVariableName(name, bounds.map { it.asTypeName() })
 
     override val bounds: List<XType> by lazy {
         element.bounds.mapIndexed { i, bound ->

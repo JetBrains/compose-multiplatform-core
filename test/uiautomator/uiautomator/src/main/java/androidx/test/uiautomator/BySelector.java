@@ -16,12 +16,15 @@
 
 package androidx.test.uiautomator;
 
+import static android.view.Display.INVALID_DISPLAY;
+
 import static java.util.Objects.requireNonNull;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.test.uiautomator.util.Patterns;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -68,7 +71,10 @@ public class BySelector {
 
 
     /** Clients should not instanciate this class directly. Use the {@link By} factory class instead. */
-    BySelector() { }
+    BySelector() {
+        final int defaultDisplayId = Configurator.getInstance().getDefaultDisplayId();
+        mDisplayId = defaultDisplayId == INVALID_DISPLAY ? null : defaultDisplayId;
+    }
 
     /**
      * Constructs a new {@link BySelector} and copies the criteria from {@code original}.

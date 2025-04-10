@@ -31,10 +31,10 @@ import android.opengl.EGLExt;
 import android.opengl.EGLSurface;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.Logger;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,30 +46,22 @@ import java.util.Objects;
  * <p>Allows registering and unregistering output Surfaces and manages their corresponding
  * {@link EGLSurface}.
  */
-@RequiresApi(21)
 public class GlContext {
 
     private static final String TAG = "GlContext";
 
     // EGL setup
-    @Nullable
-    private EGLDisplay mEglDisplay = EGL14.EGL_NO_DISPLAY;
-    @Nullable
-    private EGLContext mEglContext = EGL14.EGL_NO_CONTEXT;
-    @Nullable
-    private EGLConfig mEglConfig = null;
+    private @Nullable EGLDisplay mEglDisplay = EGL14.EGL_NO_DISPLAY;
+    private @Nullable EGLContext mEglContext = EGL14.EGL_NO_CONTEXT;
+    private @Nullable EGLConfig mEglConfig = null;
 
     // Current output Surface being drawn to.
-    @Nullable
-    private EglSurface mCurrentSurface = null;
+    private @Nullable EglSurface mCurrentSurface = null;
     // A temporary output Surface. This is used when no Surface has been registered yet.
-    @Nullable
-    private EglSurface mTempSurface = null;
-    @NonNull
-    private final Map<Surface, EglSurface> mRegisteredSurfaces = new HashMap<>();
+    private @Nullable EglSurface mTempSurface = null;
+    private final @NonNull Map<Surface, EglSurface> mRegisteredSurfaces = new HashMap<>();
 
-    @Nullable
-    private Thread mGlThread;
+    private @Nullable Thread mGlThread;
 
     void init() {
         checkState(Objects.equals(mEglDisplay, EGL14.EGL_NO_DISPLAY), "Already initialized");
@@ -251,8 +243,7 @@ public class GlContext {
         }
     }
 
-    @Nullable
-    private EglSurface createEglSurface(@NonNull Surface surface) {
+    private @Nullable EglSurface createEglSurface(@NonNull Surface surface) {
         EGLSurface eglSurface;
         try {
             int[] surfaceAttrib = {

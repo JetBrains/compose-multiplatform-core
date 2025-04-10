@@ -16,15 +16,29 @@
 
 package androidx.baselineprofile.gradle.utils
 
-import org.gradle.configurationcache.extensions.capitalized
+import java.util.Locale
 
 fun camelCase(vararg strings: String): String {
     if (strings.isEmpty()) return ""
-    return StringBuilder().apply {
-        var shouldCapitalize = false
-        for (str in strings.filter { it.isNotBlank() }) {
-            append(if (shouldCapitalize) str.capitalized() else str)
-            shouldCapitalize = true
+    return StringBuilder()
+        .apply {
+            var shouldCapitalize = false
+            for (str in strings.filter { it.isNotBlank() }) {
+                append(if (shouldCapitalize) str.capitalized() else str)
+                shouldCapitalize = true
+            }
         }
-    }.toString()
+        .toString()
 }
+
+internal fun CharSequence.capitalized(): String =
+    when {
+        isEmpty() -> ""
+        else ->
+            get(0).let { initial ->
+                when {
+                    initial.isLowerCase() -> initial.titlecase(Locale.getDefault()) + substring(1)
+                    else -> toString()
+                }
+            }
+    }

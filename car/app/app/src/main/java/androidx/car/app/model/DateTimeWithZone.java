@@ -23,13 +23,13 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.car.app.annotations.CarProtocol;
 import androidx.car.app.annotations.KeepFields;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -62,8 +62,7 @@ public final class DateTimeWithZone {
 
     private final long mTimeSinceEpochMillis;
     private final int mZoneOffsetSeconds;
-    @Nullable
-    private final String mZoneShortName;
+    private final @Nullable String mZoneShortName;
 
     /** Returns the number of milliseconds from the epoch of 1970-01-01T00:00:00Z. */
     public long getTimeSinceEpochMillis() {
@@ -80,14 +79,12 @@ public final class DateTimeWithZone {
      * Returns the abbreviated name of the time zone, for example "PST" for Pacific Standard
      * Time.
      */
-    @Nullable
-    public String getZoneShortName() {
+    public @Nullable String getZoneShortName() {
         return mZoneShortName;
     }
 
     @Override
-    @NonNull
-    public String toString() {
+    public @NonNull String toString() {
         return "[time since epoch (ms): " + mTimeSinceEpochMillis
                 + "( " + new Date(mTimeSinceEpochMillis) + ") "
                 + " zone offset (s): " + mZoneOffsetSeconds
@@ -132,8 +129,7 @@ public final class DateTimeWithZone {
      *                                  or if {@code zoneShortName} is empty
      * @throws NullPointerException     if {@code zoneShortName} is {@code null}
      */
-    @NonNull
-    public static DateTimeWithZone create(
+    public static @NonNull DateTimeWithZone create(
             long timeSinceEpochMillis, @IntRange(from = -64800, to = 64800) int zoneOffsetSeconds,
             @NonNull String zoneShortName) {
         if (timeSinceEpochMillis < 0) {
@@ -162,8 +158,8 @@ public final class DateTimeWithZone {
      * @throws IllegalArgumentException if {@code timeSinceEpochMillis} is a negative value
      * @throws NullPointerException     if {@code timeZone} is {@code null}
      */
-    @NonNull
-    public static DateTimeWithZone create(long timeSinceEpochMillis, @NonNull TimeZone timeZone) {
+    public static @NonNull DateTimeWithZone create(long timeSinceEpochMillis,
+            @NonNull TimeZone timeZone) {
         if (timeSinceEpochMillis < 0) {
             throw new IllegalArgumentException(
                     "timeSinceEpochMillis must be greater than or equal to zero");
@@ -185,8 +181,7 @@ public final class DateTimeWithZone {
      * @throws NullPointerException if {@code zonedDateTime} is {@code null}
      */
     @RequiresApi(26)
-    @NonNull
-    public static DateTimeWithZone create(@NonNull ZonedDateTime zonedDateTime) {
+    public static @NonNull DateTimeWithZone create(@NonNull ZonedDateTime zonedDateTime) {
         return Api26Impl.create(zonedDateTime);
     }
 
@@ -212,9 +207,7 @@ public final class DateTimeWithZone {
         private Api26Impl() {
         }
 
-        @DoNotInline
-        @NonNull
-        public static DateTimeWithZone create(@NonNull ZonedDateTime zonedDateTime) {
+        public static @NonNull DateTimeWithZone create(@NonNull ZonedDateTime zonedDateTime) {
             LocalDateTime localDateTime = requireNonNull(zonedDateTime).toLocalDateTime();
             ZoneId zoneId = zonedDateTime.getZone();
             ZoneOffset zoneOffset = zoneId.getRules().getOffset(localDateTime);

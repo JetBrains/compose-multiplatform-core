@@ -29,23 +29,24 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.InternalTestApi
 import androidx.compose.ui.test.TestMonotonicFrameClock
 import androidx.compose.ui.test.frameDelayMillis
+import androidx.compose.ui.test.internal.DelayPropagatingContinuationInterceptorWrapper
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.ContinuationInterceptor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
-/**
- * Factory method to provide implementation of [ComposeBenchmarkScope].
- */
+/** Factory method to provide implementation of [ComposeBenchmarkScope]. */
 fun <T : ComposeTestCase> createAndroidComposeBenchmarkRunner(
     testCaseFactory: () -> T,
     activity: ComponentActivity
@@ -61,47 +62,59 @@ internal class AndroidComposeTestCaseRunner<T : ComposeTestCase>(
 
     override val measuredWidth: Int
         get() = view!!.measuredWidth
+
     override val measuredHeight: Int
         get() = view!!.measuredHeight
 
     internal var view: View? = null
         private set
+
     override fun getHostView(): View = view!!
 
     override var didLastRecomposeHaveChanges = false
         private set
 
     private val supportsRenderNode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-    private val supportsMRenderNode = Build.VERSION.SDK_INT < Build.VERSION_CODES.P &&
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+    private val supportsMRenderNode =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.P &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
 
     private val screenWithSpec: Int
     private val screenHeightSpec: Int
 
     @Suppress("NewApi") // NewApi doesn't understand Kotlin `when` (b/189459502)
-    private val capture = when {
-        supportsRenderNode -> RenderNodeCapture()
-        supportsMRenderNode -> MRenderNodeCapture()
-        else -> PictureCapture()
-    }
+    private val capture =
+        when {
+            supportsRenderNode -> RenderNodeCapture()
+            supportsMRenderNode -> MRenderNodeCapture()
+            else -> PictureCapture()
+        }
 
     private var canvas: Canvas? = null
 
     private val testCoroutineDispatcher = UnconfinedTestDispatcher()
-    private val frameClock = TestMonotonicFrameClock(
-        CoroutineScope(testCoroutineDispatcher + testCoroutineDispatcher.scheduler)
-    )
+    private val frameClock =
+        TestMonotonicFrameClock(
+            CoroutineScope(testCoroutineDispatcher + testCoroutineDispatcher.scheduler)
+        )
+
+    private val continuationCountInterceptor =
+        ContinuationCountInterceptor(frameClock.continuationInterceptor)
 
     @OptIn(ExperimentalTestApi::class)
-    private val recomposerApplyCoroutineScope = CoroutineScope(
-        frameClock + frameClock.continuationInterceptor + Job()
-    )
-    private val recomposer: Recomposer = Recomposer(recomposerApplyCoroutineScope.coroutineContext)
-        .also { recomposerApplyCoroutineScope.launch { it.runRecomposeAndApplyChanges() } }
+    private val recomposerApplyCoroutineScope =
+        CoroutineScope(continuationCountInterceptor + frameClock + Job())
+    private val recomposer: Recomposer =
+        Recomposer(recomposerApplyCoroutineScope.coroutineContext).also {
+            recomposerApplyCoroutineScope.launch { it.runRecomposeAndApplyChanges() }
+        }
 
     private var simulationState: SimulationState = SimulationState.Initialized
 
     private var testCase: T? = null
+
+    private val owner: ViewRootForTest?
+        get() = findViewRootForTest(activity)
 
     init {
         val displayMetrics = DisplayMetrics()
@@ -127,8 +140,9 @@ internal class AndroidComposeTestCaseRunner<T : ComposeTestCase>(
             "Need to call onPreEmitContent before emitContent!"
         }
 
+        continuationCountInterceptor.reset()
         activity.setContent(recomposer) { testCase!!.Content() }
-        view = findViewRootForTest(activity)!!.view
+        view = owner!!.view
         Snapshot.notifyObjectsInitialized()
         simulationState = SimulationState.EmitContentDone
     }
@@ -142,11 +156,19 @@ internal class AndroidComposeTestCaseRunner<T : ComposeTestCase>(
         return recomposer.hasPendingWork
     }
 
+    override fun hasPendingMeasureOrLayout(): Boolean {
+        return owner?.hasPendingMeasureOrLayout ?: false
+    }
+
+    override fun hasPendingDraw(): Boolean {
+        return view?.isDirty ?: false
+    }
+
     /**
      * The reason we have this method is that if a model gets changed in the same frame as created
-     * it won'd trigger pending frame. So [Recompose#hasPendingChanges] stays false. Committing
-     * the current frame does not help either. So we need to check this in order to know if we
-     * need to recompose.
+     * it won'd trigger pending frame. So [Recompose#hasPendingChanges] stays false. Committing the
+     * current frame does not help either. So we need to check this in order to know if we need to
+     * recompose.
      */
     private fun hasPendingChangesInFrame(): Boolean {
         return Snapshot.current.hasPendingChanges()
@@ -204,7 +226,12 @@ internal class AndroidComposeTestCaseRunner<T : ComposeTestCase>(
             "Layout can be only executed after measure, current state is '$simulationState'"
         }
         val view = getView()
-        view.layout(view.left, view.top, view.right, view.bottom)
+        view.layout(
+            /* l= */ 0,
+            /* t= */ 0,
+            /* r= */ view.measuredWidth,
+            /* b= */ view.measuredHeight
+        )
         simulationState = SimulationState.LayoutDone
     }
 
@@ -290,6 +317,10 @@ internal class AndroidComposeTestCaseRunner<T : ComposeTestCase>(
     override fun getTestCase(): T {
         return testCase!!
     }
+
+    override fun getCoroutineLaunchedCount(): Int {
+        return continuationCountInterceptor.continuationCount - InternallyLaunchedCoroutines
+    }
 }
 
 private enum class SimulationState {
@@ -339,6 +370,7 @@ private fun invalidateViews(view: View) {
 // potentially unloaded class, RenderNodeCapture.
 private interface DrawCapture {
     fun beginRecording(width: Int, height: Int): Canvas
+
     fun endRecording()
 }
 
@@ -387,8 +419,29 @@ private class MRenderNodeCapture : DrawCapture {
 
 @RequiresApi(28)
 private object BitmapHelper {
-    @DoNotInline
     fun createBitmap(picture: Picture): Bitmap {
         return Bitmap.createBitmap(picture)
     }
 }
+
+@OptIn(InternalTestApi::class)
+private class ContinuationCountInterceptor(private val parentInterceptor: ContinuationInterceptor) :
+    DelayPropagatingContinuationInterceptorWrapper(parentInterceptor) {
+    var continuationCount = 0
+        private set
+
+    override fun <T> interceptContinuation(continuation: Continuation<T>): Continuation<T> {
+        continuationCount++
+        return parentInterceptor.interceptContinuation(continuation)
+    }
+
+    override fun releaseInterceptedContinuation(continuation: Continuation<*>) {
+        parentInterceptor.releaseInterceptedContinuation(continuation)
+    }
+
+    fun reset() {
+        continuationCount = 0
+    }
+}
+
+private const val InternallyLaunchedCoroutines = 4

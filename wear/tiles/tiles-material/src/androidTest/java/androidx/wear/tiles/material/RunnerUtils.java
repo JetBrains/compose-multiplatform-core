@@ -22,12 +22,13 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.screenshot.AndroidXScreenshotTestRule;
 import androidx.test.screenshot.matchers.MSSIMMatcher;
 import androidx.wear.tiles.material.testapp.GoldenTestActivity;
+
+import org.jspecify.annotations.NonNull;
 
 @SuppressWarnings("deprecation")
 public class RunnerUtils {
@@ -40,7 +41,7 @@ public class RunnerUtils {
 
     public static void runSingleScreenshotTest(
             @NonNull AndroidXScreenshotTestRule rule,
-            @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement layoutElement,
+            androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement layoutElement,
             @NonNull String expected) {
         byte[] layoutElementPayload = layoutElement.toLayoutElementProto().toByteArray();
 

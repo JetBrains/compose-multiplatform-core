@@ -16,10 +16,12 @@
 
 package androidx.camera.core.internal.compat.quirk;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.impl.Quirk;
+import androidx.camera.core.impl.QuirkSettingsHolder;
+import androidx.camera.core.impl.Quirks;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -39,6 +41,11 @@ public class DeviceQuirks {
     private DeviceQuirks() {
     }
 
+    /** Returns all device specific quirks loaded on the current device. */
+    public static @NonNull Quirks getAll() {
+        return new Quirks(DeviceQuirksLoader.loadQuirks(QuirkSettingsHolder.DEFAULT));
+    }
+
     /**
      * Retrieves a specific device {@link Quirk} instance given its type.
      *
@@ -46,11 +53,9 @@ public class DeviceQuirks {
      * @return A device {@link Quirk} instance of the provided type, or {@code null} if it isn't
      * found.
      */
-    @RequiresApi(21)
     @SuppressWarnings("unchecked")
-    @Nullable
-    public static <T extends Quirk> T get(@NonNull final Class<T> quirkClass) {
-        final List<Quirk> quirks = DeviceQuirksLoader.loadQuirks();
+    public static <T extends Quirk> @Nullable T get(final @NonNull Class<T> quirkClass) {
+        final List<Quirk> quirks = DeviceQuirksLoader.loadQuirks(QuirkSettingsHolder.DEFAULT);
         for (final Quirk quirk : quirks) {
             if (quirk.getClass() == quirkClass) {
                 return (T) quirk;

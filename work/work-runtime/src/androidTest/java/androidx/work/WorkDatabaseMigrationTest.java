@@ -56,7 +56,6 @@ import android.database.sqlite.SQLiteException;
 import android.net.Uri;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.room.testing.MigrationTestHelper;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 import androidx.test.core.app.ApplicationProvider;
@@ -83,6 +82,7 @@ import androidx.work.impl.model.WorkTypeConverters;
 import androidx.work.worker.TestWorker;
 
 import org.hamcrest.Matchers;
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -682,8 +682,7 @@ public class WorkDatabaseMigrationTest {
     }
 
     // doesn't have COLUMN_RUN_IN_FOREGROUND
-    @NonNull
-    private ContentValues contentValuesPre8(String workSpecId) {
+    private @NonNull ContentValues contentValuesPre8(String workSpecId) {
         ContentValues contentValues = new ContentValues();
         contentValues.put("id", workSpecId);
         contentValues.put("state", WorkTypeConverters.StateIds.ENQUEUED);

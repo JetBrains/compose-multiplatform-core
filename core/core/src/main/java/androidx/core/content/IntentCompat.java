@@ -31,11 +31,12 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Parcelable;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
+import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
@@ -117,8 +118,7 @@ public final class IntentCompat {
      * @return Returns a newly created Intent that can be used to launch the
      * activity as a main application entry.
      */
-    @NonNull
-    public static Intent makeMainSelectorActivity(@NonNull String selectorAction,
+    public static @NonNull Intent makeMainSelectorActivity(@NonNull String selectorAction,
             @NonNull String selectorCategory) {
         return Intent.makeMainSelectorActivity(selectorAction, selectorCategory);
     }
@@ -161,8 +161,7 @@ public final class IntentCompat {
      * @return Returns a newly created Intent that can be used to launch an activity where users
      * can manage unused app restrictions for a specific app.
      */
-    @NonNull
-    public static Intent createManageUnusedAppRestrictionsIntent(@NonNull Context context,
+    public static @NonNull Intent createManageUnusedAppRestrictionsIntent(@NonNull Context context,
             @NonNull String packageName) {
         if (!areUnusedAppRestrictionsAvailable(context.getPackageManager())) {
             throw new UnsupportedOperationException(
@@ -199,7 +198,7 @@ public final class IntentCompat {
 
     /**
      * Retrieve extended data from the intent.
-     *
+     * <p>
      * Compatibility behavior:
      * <ul>
      *     <li>SDK 34 and later, this method matches platform behavior.
@@ -215,11 +214,11 @@ public final class IntentCompat {
      *
      * @see Intent#putExtra(String, Parcelable)
      */
-    @Nullable
     @SuppressWarnings({"deprecation", "unchecked"})
-    public static <T> T getParcelableExtra(@NonNull Intent in, @Nullable String name,
+    public static <T> @Nullable T getParcelableExtra(@NonNull Intent in, @Nullable String name,
             @NonNull Class<T> clazz) {
         if (Build.VERSION.SDK_INT >= 34) {
+            // Don't call this API on SDK 33 due to b/232589966.
             return Api33Impl.getParcelableExtra(in, name, clazz);
         } else {
             T extra = in.getParcelableExtra(name);
@@ -229,7 +228,7 @@ public final class IntentCompat {
 
     /**
      * Retrieve extended data from the intent.
-     *
+     * <p>
      * Compatibility behavior:
      * <ul>
      *     <li>SDK 34 and later, this method matches platform behavior.
@@ -245,12 +244,12 @@ public final class IntentCompat {
      *
      * @see Intent#putExtra(String, Parcelable[])
      */
-    @Nullable
     @SuppressWarnings({"deprecation"})
     @SuppressLint({"ArrayReturn", "NullableCollection"})
-    public static Parcelable[] getParcelableArrayExtra(@NonNull Intent in, @Nullable String name,
-            @NonNull Class<? extends Parcelable> clazz) {
+    public static Parcelable @Nullable [] getParcelableArrayExtra(@NonNull Intent in,
+            @Nullable String name, @NonNull Class<? extends Parcelable> clazz) {
         if (Build.VERSION.SDK_INT >= 34) {
+            // Don't call this API on SDK 33 due to b/232589966.
             return Api33Impl.getParcelableArrayExtra(in, name, clazz);
         } else {
             return in.getParcelableArrayExtra(name);
@@ -259,7 +258,7 @@ public final class IntentCompat {
 
     /**
      * Retrieve extended data from the intent.
-     *
+     * <p>
      * Compatibility behavior:
      * <ul>
      *     <li>SDK 34 and later, this method matches platform behavior.
@@ -277,15 +276,46 @@ public final class IntentCompat {
      *
      * @see Intent#putParcelableArrayListExtra(String, ArrayList)
      */
-    @Nullable
     @SuppressWarnings({"deprecation", "unchecked"})
     @SuppressLint({"ConcreteCollection", "NullableCollection"})
-    public static <T> ArrayList<T> getParcelableArrayListExtra(
+    public static <T> @Nullable ArrayList<T> getParcelableArrayListExtra(
             @NonNull Intent in, @Nullable String name, @NonNull Class<? extends T> clazz) {
         if (Build.VERSION.SDK_INT >= 34) {
+            // Don't call this API on SDK 33 due to b/232589966.
             return Api33Impl.getParcelableArrayListExtra(in, name, clazz);
         } else {
             return (ArrayList<T>) in.getParcelableArrayListExtra(name);
+        }
+    }
+
+    /**
+     * Returns the value associated with the given key or {@code null} if:
+     * <ul>
+     *     <li>No mapping of the desired type exists for the given key.
+     *     <li>A {@code null} value is explicitly associated with the key.
+     *     <li>The object is not of type {@code clazz}.
+     * </ul>
+     * Compatibility behavior:
+     * <ul>
+     *     <li>SDK 34 and above, this method matches platform behavior.
+     *     <li>SDK 33 and below, the object type is checked after deserialization.
+     * </ul>
+     *
+     *
+     * @param in The bundle to retrieve from.
+     * @param key a String, or {@code null}
+     * @param clazz The type of the object expected
+     * @return a Serializable value, or {@code null}
+     */
+    @SuppressWarnings({"deprecation", "unchecked"})
+    public static <T extends Serializable> @Nullable T getSerializableExtra(@NonNull Intent in,
+            @Nullable String key, @NonNull Class<T> clazz) {
+        if (Build.VERSION.SDK_INT >= 34) {
+            // Don't call this API on SDK 33 due to b/232589966.
+            return Api33Impl.getSerializableExtra(in, key, clazz);
+        } else {
+            Serializable serializable = in.getSerializableExtra(key);
+            return clazz.isInstance(serializable) ? (T) serializable : null;
         }
     }
 
@@ -295,22 +325,24 @@ public final class IntentCompat {
             // This class is non-instantiable.
         }
 
-        @DoNotInline
         static <T> T getParcelableExtra(@NonNull Intent in, @Nullable String name,
                 @NonNull Class<T> clazz) {
             return in.getParcelableExtra(name, clazz);
         }
 
-        @DoNotInline
         static <T> T[] getParcelableArrayExtra(@NonNull Intent in, @Nullable String name,
                 @NonNull Class<T> clazz) {
             return in.getParcelableArrayExtra(name, clazz);
         }
 
-        @DoNotInline
         static <T> ArrayList<T> getParcelableArrayListExtra(@NonNull Intent in,
                 @Nullable String name, @NonNull Class<? extends T> clazz) {
             return in.getParcelableArrayListExtra(name, clazz);
+        }
+
+        static <T extends Serializable> T getSerializableExtra(@NonNull Intent in,
+                @Nullable String name, @NonNull Class<T> clazz) {
+            return in.getSerializableExtra(name, clazz);
         }
     }
 }

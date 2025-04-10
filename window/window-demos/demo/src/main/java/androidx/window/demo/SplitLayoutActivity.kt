@@ -17,16 +17,16 @@
 package androidx.window.demo
 
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.window.demo.common.EdgeToEdgeActivity
 import androidx.window.layout.WindowInfoTracker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 /** Demo of [SplitLayout]. */
-class SplitLayoutActivity : AppCompatActivity() {
+class SplitLayoutActivity : EdgeToEdgeActivity() {
 
     private lateinit var splitLayout: SplitLayout
 
@@ -45,9 +45,7 @@ class SplitLayoutActivity : AppCompatActivity() {
                 // and stops collection when the lifecycle is STOPPED
                 WindowInfoTracker.getOrCreate(this@SplitLayoutActivity)
                     .windowLayoutInfo(this@SplitLayoutActivity)
-                    .collect { newLayoutInfo ->
-                        splitLayout.updateWindowLayout(newLayoutInfo)
-                    }
+                    .collect { newLayoutInfo -> splitLayout.updateWindowLayout(newLayoutInfo) }
             }
         }
     }

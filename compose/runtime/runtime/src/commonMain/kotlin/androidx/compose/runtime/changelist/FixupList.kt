@@ -25,12 +25,15 @@ import androidx.compose.runtime.changelist.Operation.PostInsertNodeFixup
 import androidx.compose.runtime.changelist.Operation.UpdateNode
 import androidx.compose.runtime.runtimeCheck
 
-internal class FixupList : OperationsDebugStringFormattable {
+internal class FixupList : OperationsDebugStringFormattable() {
     private val operations = Operations()
     private val pendingOperations = Operations()
 
-    val size: Int get() = operations.size
+    val size: Int
+        get() = operations.size
+
     fun isEmpty() = operations.isEmpty()
+
     fun isNotEmpty() = operations.isNotEmpty()
 
     fun clear() {
@@ -41,20 +44,22 @@ internal class FixupList : OperationsDebugStringFormattable {
     fun executeAndFlushAllPendingFixups(
         applier: Applier<*>,
         slots: SlotWriter,
-        rememberManager: RememberManager
+        rememberManager: RememberManager,
+        errorContext: OperationErrorContext?
     ) {
         runtimeCheck(pendingOperations.isEmpty()) {
             "FixupList has pending fixup operations that were not realized. " +
                 "Were there mismatched insertNode() and endNodeInsert() calls?"
         }
-        operations.executeAndFlushAllPendingOperations(applier, slots, rememberManager)
+        operations.executeAndFlushAllPendingOperations(
+            applier,
+            slots,
+            rememberManager,
+            errorContext
+        )
     }
 
-    fun createAndInsertNode(
-        factory: () -> Any?,
-        insertIndex: Int,
-        groupAnchor: Anchor
-    ) {
+    fun createAndInsertNode(factory: () -> Any?, insertIndex: Int, groupAnchor: Anchor) {
         operations.push(InsertNodeFixup) {
             setObject(InsertNodeFixup.Factory, factory)
             setInt(InsertNodeFixup.InsertIndex, insertIndex)

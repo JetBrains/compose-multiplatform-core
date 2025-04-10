@@ -18,7 +18,6 @@ package androidx.camera.camera2.pipe.integration.compat.quirk
 
 import android.annotation.SuppressLint
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraGraph.Flags.FinalizeSessionOnCloseBehavior
 import androidx.camera.core.impl.Quirk
 import java.util.Locale
@@ -28,23 +27,21 @@ import java.util.Locale
  * CameraGraph is stopped or closed.
  *
  * QuirkSummary
- * - Bug Id:      277310425
+ * - Bug Id: 277310425
  * - Description: When CameraX sets up its video recorder, it waits for the previous Surfaces to be
- *                released before setting them in the new CameraGraph. However, CameraPipe would
- *                also wait for the Surfaces to be set before it creates a new capture session and
- *                finalize the previous session, and therefore not releasing the Surfaces. This
- *                essentially creates a deadlock, and this quirk would enable a behavior in
- *                CameraPipe such that the current session gets finalized either immediately or on a
- *                timeout after the CameraGraph is stopped or closed.
- * - Device(s):   All devices.
+ *   released before setting them in the new CameraGraph. However, CameraPipe would also wait for
+ *   the Surfaces to be set before it creates a new capture session and finalize the previous
+ *   session, and therefore not releasing the Surfaces. This essentially creates a deadlock, and
+ *   this quirk would enable a behavior in CameraPipe such that the current session gets finalized
+ *   either immediately or on a timeout after the CameraGraph is stopped or closed.
+ * - Device(s): All devices.
  */
 @SuppressLint("CameraXQuirksClassDetector")
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
-class FinalizeSessionOnCloseQuirk : Quirk {
-    companion object {
-        fun isEnabled() = true
+public class FinalizeSessionOnCloseQuirk : Quirk {
+    public companion object {
+        public fun isEnabled(): Boolean = true
 
-        fun getBehavior() =
+        public fun getBehavior(): FinalizeSessionOnCloseBehavior =
             if (CameraQuirks.isImmediateSurfaceReleaseAllowed()) {
                 // Finalize immediately for devices that allow immediate Surface reuse.
                 FinalizeSessionOnCloseBehavior.IMMEDIATE

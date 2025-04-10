@@ -21,22 +21,27 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.runEmptyComposeUiTest
+import androidx.compose.ui.test.runComposeUiTest
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.testing.launchFragmentInContainer
-import androidx.test.filters.MediumTest
-import kotlin.test.assertTrue
+import androidx.test.filters.LargeTest
 import org.junit.Test
 
-@MediumTest
+@LargeTest
 @OptIn(ExperimentalTestApi::class)
 class WindowInfoTest {
     @Test
-    fun launchFragment_windowInfo_isWindowFocused_true() = runEmptyComposeUiTest {
-        launchFragmentInContainer<TestFragment>()
+    fun launchFragment_windowInfo_isWindowFocused_true() {
+        runComposeUiTest {
+            launchFragmentInContainer<TestFragment>().onFragment {
+                waitUntil("isWindowFocused", timeoutMillis = 5_000) { it.isWindowFocused == true }
+            }
+        }
     }
 
     class TestFragment : Fragment() {
+        var isWindowFocused: Boolean? = null
+
         override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,
@@ -44,16 +49,18 @@ class WindowInfoTest {
         ): View? {
             return container?.let {
                 ComposeView(container.context).apply {
-                    layoutParams = ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
-                    )
+                    layoutParams =
+                        ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
+                        )
                 }
             }
         }
+
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             (view as ComposeView).setContent {
-                assertTrue { LocalWindowInfo.current.isWindowFocused }
+                isWindowFocused = LocalWindowInfo.current.isWindowFocused
             }
         }
     }

@@ -33,12 +33,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@Suppress("RememberReturnType")
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class SaveableStateHolderTest {
 
-    @get:Rule
-    val rule = createAndroidComposeRule<Activity>()
+    @get:Rule val rule = createAndroidComposeRule<Activity>()
 
     private val restorationTester = StateRestorationTester(rule)
 
@@ -125,9 +125,7 @@ class SaveableStateHolderTest {
             }
         }
 
-        rule.runOnIdle {
-            screen = Screens.Screen2
-        }
+        rule.runOnIdle { screen = Screens.Screen2 }
 
         // wait for the screen switch to apply
         rule.runOnIdle {
@@ -179,9 +177,7 @@ class SaveableStateHolderTest {
         restorationTester.emulateSavedInstanceStateRestore()
 
         // switch back to screen1
-        rule.runOnIdle {
-            screen = Screens.Screen1
-        }
+        rule.runOnIdle { screen = Screens.Screen1 }
 
         rule.runOnIdle {
             assertThat(numberOnScreen1).isEqualTo(2)
@@ -220,9 +216,7 @@ class SaveableStateHolderTest {
             screen = Screens.Screen1
         }
 
-        rule.runOnIdle {
-            assertThat(restorableNumberOnScreen1).isEqualTo(1)
-        }
+        rule.runOnIdle { assertThat(restorableNumberOnScreen1).isEqualTo(1) }
     }
 
     @Test
@@ -256,9 +250,7 @@ class SaveableStateHolderTest {
             screen = Screens.Screen1
         }
 
-        rule.runOnIdle {
-            assertThat(restorableNumberOnScreen1).isEqualTo(1)
-        }
+        rule.runOnIdle { assertThat(restorableNumberOnScreen1).isEqualTo(1) }
     }
 
     @Test
@@ -288,9 +280,7 @@ class SaveableStateHolderTest {
             showFirstPage = true
         }
 
-        rule.runOnIdle {
-            assertThat(firstPageState!!.value).isEqualTo(1)
-        }
+        rule.runOnIdle { assertThat(firstPageState!!.value).isEqualTo(1) }
     }
 
     @Test
@@ -301,14 +291,11 @@ class SaveableStateHolderTest {
         rule.setContent {
             CompositionLocalProvider(LocalSaveableStateRegistry provides registry) {
                 val holder = rememberSaveableStateHolder()
-                holder.SaveableStateProvider(showFirstPage) {
-                }
+                holder.SaveableStateProvider(showFirstPage) {}
             }
         }
 
-        rule.runOnIdle {
-            showFirstPage = false
-        }
+        rule.runOnIdle { showFirstPage = false }
 
         rule.runOnIdle {
             val savedData = registry.performSave()

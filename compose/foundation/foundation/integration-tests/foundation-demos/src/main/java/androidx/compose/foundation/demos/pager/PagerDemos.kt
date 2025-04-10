@@ -32,7 +32,6 @@
 
 package androidx.compose.foundation.demos.pager
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
@@ -59,19 +58,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 
-val SimplePager = listOf(
-    ComposableDemo("Horizontal") { HorizontalPagerDemo() },
-    ComposableDemo("Vertical") { VerticalPagerDemo() },
-)
+val SimplePager =
+    listOf(
+        ComposableDemo("Horizontal") { HorizontalPagerDemo() },
+        ComposableDemo("Vertical") { VerticalPagerDemo() },
+    )
 
-val PagerDemos = listOf(
-    DemoCategory("Simple", SimplePager),
-    DemoCategory("Carrousel", Carrousel),
-    DemoCategory("State Interactions", PagerStateInteractions),
-    DemoCategory("Snap Position", SnapPositionDemos),
-)
+val PagerDemos =
+    listOf(
+        DemoCategory("Simple", SimplePager),
+        DemoCategory("Carrousel", Carrousel),
+        DemoCategory("State Interactions", PagerStateInteractions),
+        DemoCategory("Snap Position", SnapPositionDemos),
+    )
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun VerticalPagerDemo() {
     val pagerState = rememberPagerState { PagesCount }
@@ -83,7 +83,6 @@ private fun VerticalPagerDemo() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun HorizontalPagerDemo() {
     val pagerState = rememberPagerState { PagesCount }
@@ -99,19 +98,18 @@ internal fun HorizontalPagerDemo() {
 @Composable
 internal fun PagerItem(index: Int) {
     Box(
-        modifier = Modifier
-            .focusable()
-            .padding(10.dp)
-            .background(Color.Blue)
-            .fillMaxWidth()
-            .aspectRatio(1f),
+        modifier =
+            Modifier.focusable()
+                .padding(10.dp)
+                .background(Color.Blue)
+                .fillMaxWidth()
+                .aspectRatio(1f),
         contentAlignment = Alignment.Center
     ) {
         Text(text = index.toString(), fontSize = 32.sp)
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun PagerControls(modifier: Modifier = Modifier, pagerState: PagerState) {
     val animationScope = rememberCoroutineScope()
@@ -119,25 +117,23 @@ internal fun PagerControls(modifier: Modifier = Modifier, pagerState: PagerState
         Button(onClick = { animationScope.launch { pagerState.animateScrollToPage(0) } }) {
             Text(text = "Start")
         }
-        Button(onClick = {
-            animationScope.launch {
-                pagerState.animateScrollToPage(pagerState.currentPage - 1)
+        Button(
+            onClick = {
+                animationScope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) }
             }
-        }) {
+        ) {
             Text(text = "Previous")
         }
-        Button(onClick = {
-            animationScope.launch {
-                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+        Button(
+            onClick = {
+                animationScope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
             }
-        }) {
+        ) {
             Text(text = "Next")
         }
-        Button(onClick = {
-            animationScope.launch {
-                pagerState.animateScrollToPage(PagesCount - 1)
-            }
-        }) {
+        Button(
+            onClick = { animationScope.launch { pagerState.animateScrollToPage(PagesCount - 1) } }
+        ) {
             Text(text = "End")
         }
     }

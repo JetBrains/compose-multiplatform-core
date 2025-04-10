@@ -16,18 +16,33 @@
 
 package androidx.camera.camera2.pipe.graph
 
-import android.hardware.camera2.CameraCharacteristics
+import android.content.Context
+import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
+import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL
 import android.os.Build
 import android.util.Size
+import androidx.camera.camera2.pipe.CameraBackendFactory
 import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelExternal
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelLegacy
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelLimited
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.OutputStream
 import androidx.camera.camera2.pipe.StreamFormat
+import androidx.camera.camera2.pipe.internal.CameraBackendsImpl
+import androidx.camera.camera2.pipe.testing.CameraControllerSimulator
+import androidx.camera.camera2.pipe.testing.FakeCameraBackend
+import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.FakeGraphConfigs
+import androidx.camera.camera2.pipe.testing.FakeGraphProcessor
+import androidx.camera.camera2.pipe.testing.FakeThreads
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.TestScope
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
@@ -37,11 +52,46 @@ import org.robolectric.annotation.internal.DoNotInstrument
 @DoNotInstrument
 @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 internal class StreamGraphImplTest {
+    private val testScope = TestScope()
+
+    private val context = ApplicationProvider.getApplicationContext() as Context
+    private val metadata =
+        FakeCameraMetadata(
+            mapOf(INFO_SUPPORTED_HARDWARE_LEVEL to INFO_SUPPORTED_HARDWARE_LEVEL_FULL),
+        )
     private val config = FakeGraphConfigs
+    private val fakeGraphProcessor = FakeGraphProcessor()
+
+    private val stream1Config =
+        CameraStream.Config.create(Size(1280, 720), StreamFormat.YUV_420_888)
+    private val stream2Config =
+        CameraStream.Config.create(Size(1920, 1080), StreamFormat.YUV_420_888)
+
+    private val graphId = CameraGraphId.nextId()
+    private val graphConfig =
+        CameraGraph.Config(
+            camera = metadata.camera,
+            streams = listOf(stream1Config, stream2Config),
+        )
+    private val threads = FakeThreads.fromTestScope(testScope)
+    private val backend = FakeCameraBackend(fakeCameras = mapOf(metadata.camera to metadata))
+    private val backends =
+        CameraBackendsImpl(
+            defaultBackendId = backend.id,
+            cameraBackends = mapOf(backend.id to CameraBackendFactory { backend }),
+            context,
+            threads
+        )
+    private val cameraContext = CameraBackendsImpl.CameraBackendContext(context, threads, backends)
+    private val cameraController =
+        CameraControllerSimulator(cameraContext, graphId, graphConfig, fakeGraphProcessor)
+    private val cameraControllerProvider: () -> CameraControllerSimulator = { cameraController }
 
     @Test
     fun testPrecomputedTestData() {
-        val streamGraph = StreamGraphImpl(config.fakeMetadata, config.graphConfig)
+        val streamGraph =
+            StreamGraphImpl(config.fakeMetadata, config.graphConfig, cameraControllerProvider)
+        cameraController.streamGraph = streamGraph
 
         assertThat(streamGraph.streams).hasSize(10)
         assertThat(streamGraph.streams).hasSize(10)
@@ -73,7 +123,9 @@ internal class StreamGraphImplTest {
 
     @Test
     fun testStreamGraphPopulatesCameraId() {
-        val streamGraph = StreamGraphImpl(config.fakeMetadata, config.graphConfig)
+        val streamGraph =
+            StreamGraphImpl(config.fakeMetadata, config.graphConfig, cameraControllerProvider)
+        cameraController.streamGraph = streamGraph
         val stream = streamGraph[config.streamConfig1]!!
         assertThat(config.streamConfig1.outputs.single().camera).isNull()
         assertThat(stream.outputs.single().camera).isEqualTo(config.graphConfig.camera)
@@ -81,7 +133,6 @@ internal class StreamGraphImplTest {
 
     @Test
     fun testStreamWithMultipleOutputs() {
-
         val streamConfig =
             CameraStream.Config.create(
                 listOf(
@@ -95,7 +146,9 @@ internal class StreamGraphImplTest {
                 camera = CameraId("0"),
                 streams = listOf(streamConfig),
             )
-        val streamGraph = StreamGraphImpl(config.fakeMetadata, graphConfig)
+        val streamGraph =
+            StreamGraphImpl(config.fakeMetadata, graphConfig, cameraControllerProvider)
+        cameraController.streamGraph = streamGraph
 
         assertThat(streamGraph.streams).hasSize(1)
         assertThat(streamGraph.streams).hasSize(1)
@@ -104,318 +157,327 @@ internal class StreamGraphImplTest {
 
     @Test
     fun testOutputSortingWithStreamUseCase() {
-
-        val streamConfig =
+        val streamConfigA =
             CameraStream.Config.create(
-                listOf(
-                    OutputStream.Config.create(
-                        Size(800, 600), StreamFormat.UNKNOWN,
-                        streamUseCase = OutputStream.StreamUseCase.VIDEO_RECORD
-                    ),
-                    OutputStream.Config.create(
-                        Size(1600, 1200), StreamFormat.UNKNOWN,
-                        streamUseCase = OutputStream.StreamUseCase.PREVIEW
-                    ),
-                    OutputStream.Config.create(
-                        Size(800, 600), StreamFormat.UNKNOWN,
-                        streamUseCase = OutputStream.StreamUseCase.DEFAULT
-                    ),
-                )
+                Size(800, 600),
+                StreamFormat.UNKNOWN,
+                streamUseCase = OutputStream.StreamUseCase.VIDEO_RECORD
+            )
+        val streamConfigB =
+            CameraStream.Config.create(
+                Size(1600, 1200),
+                StreamFormat.UNKNOWN,
+                streamUseCase = OutputStream.StreamUseCase.PREVIEW
+            )
+        val streamConfigC =
+            CameraStream.Config.create(
+                Size(800, 600),
+                StreamFormat.UNKNOWN,
+                streamUseCase = OutputStream.StreamUseCase.DEFAULT
             )
         val graphConfig =
             CameraGraph.Config(
                 camera = CameraId("0"),
-                streams = listOf(streamConfig),
+                streams = listOf(streamConfigA, streamConfigB, streamConfigC),
             )
-        val streamGraph = StreamGraphImpl(config.fakeMetadata, graphConfig)
 
-        val stream1 = streamGraph.outputs[0]
-        assertThat(stream1.streamUseCase).isEqualTo(OutputStream.StreamUseCase.PREVIEW)
+        val streamGraph =
+            StreamGraphImpl(config.fakeMetadata, graphConfig, cameraControllerProvider)
+        cameraController.streamGraph = streamGraph
 
-        val stream2 = streamGraph.outputs[1]
-        assertThat(stream2.streamUseCase).isEqualTo(OutputStream.StreamUseCase.DEFAULT)
+        // Get the stream for each streamConfig
+        val streamA = streamGraph[streamConfigA]
+        val streamB = streamGraph[streamConfigB]
+        val streamC = streamGraph[streamConfigC]
 
-        val stream3 = streamGraph.outputs[2]
-        assertThat(stream3.streamUseCase).isEqualTo(OutputStream.StreamUseCase.VIDEO_RECORD)
+        // Read the list of outputConfigs (in order)
+        val outputConfigAt0 = streamGraph.outputConfigs[0]
+        val outputConfigAt1 = streamGraph.outputConfigs[1]
+        val outputConfigAt2 = streamGraph.outputConfigs[2]
+
+        // Assert that the outputConfig order is B, C, A because:
+        // B is moved to the front of the list, because it is a PREVIEW stream.
+        // A is moved to the end of the list, because it is a VIDEO_RECORD output stream
+        assertThat(outputConfigAt0.streams).containsExactly(streamB)
+        assertThat(outputConfigAt1.streams).containsExactly(streamC)
+        assertThat(outputConfigAt2.streams).containsExactly(streamA)
     }
 
     @Test
     fun testOutputSortingWithOutputType() {
-
-        val streamConfig =
+        val streamConfigA =
             CameraStream.Config.create(
-                listOf(
-                    OutputStream.Config.create(
-                        Size(800, 600), StreamFormat.UNKNOWN,
-                        outputType = OutputStream.OutputType.SURFACE
-                    ),
-                    OutputStream.Config.create(
-                        Size(1600, 1200), StreamFormat.UNKNOWN,
-                        outputType = OutputStream.OutputType.SURFACE_TEXTURE
-                    ),
-                    OutputStream.Config.create(
-                        Size(800, 600), StreamFormat.UNKNOWN,
-                        outputType = OutputStream.OutputType.SURFACE_VIEW
-                    ),
-                )
+                Size(800, 600),
+                StreamFormat.UNKNOWN,
+                outputType = OutputStream.OutputType.SURFACE
+            )
+        val streamConfigB =
+            CameraStream.Config.create(
+                Size(1600, 1200),
+                StreamFormat.UNKNOWN,
+                outputType = OutputStream.OutputType.SURFACE_TEXTURE
+            )
+        val streamConfigC =
+            CameraStream.Config.create(
+                Size(800, 600),
+                StreamFormat.UNKNOWN,
+                outputType = OutputStream.OutputType.SURFACE_VIEW
             )
         val graphConfig =
             CameraGraph.Config(
                 camera = CameraId("0"),
-                streams = listOf(streamConfig),
+                streams = listOf(streamConfigA, streamConfigB, streamConfigC),
             )
-        val streamGraph = StreamGraphImpl(config.fakeMetadata, graphConfig)
 
-        val stream1 = streamGraph.outputs[0]
-        val stream2 = streamGraph.outputs[1]
-        val stream3 = streamGraph.outputs[2]
+        val streamGraph =
+            StreamGraphImpl(config.fakeMetadata, graphConfig, cameraControllerProvider)
+        cameraController.streamGraph = streamGraph
+
+        // Get the stream for each streamConfig
+        val streamA = streamGraph[streamConfigA]
+        val streamB = streamGraph[streamConfigB]
+        val streamC = streamGraph[streamConfigC]
+
+        // Read the list of outputConfigs (in order)
+        val outputConfigAt0 = streamGraph.outputConfigs[0]
+        val outputConfigAt1 = streamGraph.outputConfigs[1]
+        val outputConfigAt2 = streamGraph.outputConfigs[2]
 
         if (deferredStreamsAreSupported(config.fakeMetadata, graphConfig)) {
-            assertThat(stream1.outputType).isEqualTo(OutputStream.OutputType.SURFACE_VIEW)
-            assertThat(stream2.outputType).isEqualTo(OutputStream.OutputType.SURFACE_TEXTURE)
-            assertThat(stream3.outputType).isNull()
+            // Assert that the outputConfig order is C, B, A because:
+            // B and C are moved to the front of the list because they are
+            // SURFACE_VIEW/SURFACE_TEXTURE
+            // C is sorted before B because SURFACE_VIEW has higher precedence than SURFACE_TEXTURE
+            assertThat(outputConfigAt0.streams).containsExactly(streamC)
+            assertThat(outputConfigAt1.streams).containsExactly(streamB)
+            assertThat(outputConfigAt2.streams).containsExactly(streamA)
         } else {
-            assertThat(stream1.outputType).isNull()
-            assertThat(stream2.outputType).isNull()
-            assertThat(stream3.outputType).isNull()
+            // If deferred streams are not supported, the difference between
+            // SURFACE_VIEW/SURFACE_TEXTURE do not matter, and the order is preserved.
+            assertThat(outputConfigAt0.streams).containsExactly(streamA)
+            assertThat(outputConfigAt1.streams).containsExactly(streamB)
+            assertThat(outputConfigAt2.streams).containsExactly(streamC)
         }
     }
 
     @Test
     fun testOutputSortingWithStreamFormat() {
-
-        val streamConfig =
-            CameraStream.Config.create(
-                listOf(
-                    OutputStream.Config.create(
-                        Size(800, 600), StreamFormat.PRIVATE
-                    ),
-                    OutputStream.Config.create(
-                        Size(1600, 1200), StreamFormat.UNKNOWN
-                    ),
-                    OutputStream.Config.create(
-                        Size(800, 600), StreamFormat.DEPTH_POINT_CLOUD
-                    ),
-                )
-            )
+        val streamConfigA =
+            CameraStream.Config.create(Size(800, 600), StreamFormat.DEPTH_POINT_CLOUD)
+        val streamConfigB = CameraStream.Config.create(Size(1600, 1200), StreamFormat.PRIVATE)
+        val streamConfigC = CameraStream.Config.create(Size(800, 600), StreamFormat.UNKNOWN)
         val graphConfig =
             CameraGraph.Config(
                 camera = CameraId("0"),
-                streams = listOf(streamConfig),
+                streams = listOf(streamConfigA, streamConfigB, streamConfigC),
             )
-        val streamGraph = StreamGraphImpl(config.fakeMetadata, graphConfig)
 
-        val stream1 = streamGraph.outputs[0]
-        assertThat(stream1.format).isEqualTo(StreamFormat.UNKNOWN)
+        val streamGraph =
+            StreamGraphImpl(config.fakeMetadata, graphConfig, cameraControllerProvider)
+        cameraController.streamGraph = streamGraph
 
-        val stream2 = streamGraph.outputs[1]
-        assertThat(stream2.format).isEqualTo(StreamFormat.PRIVATE)
+        // Get the stream for each streamConfig
+        val streamA = streamGraph[streamConfigA]
+        val streamB = streamGraph[streamConfigB]
+        val streamC = streamGraph[streamConfigC]
 
-        val stream3 = streamGraph.outputs[2]
-        assertThat(stream3.format).isEqualTo(StreamFormat.DEPTH_POINT_CLOUD)
+        // Read the list of outputConfigs (in order)
+        val outputConfigAt0 = streamGraph.outputConfigs[0]
+        val outputConfigAt1 = streamGraph.outputConfigs[1]
+        val outputConfigAt2 = streamGraph.outputConfigs[2]
+
+        // Assert that the outputConfig order is C, B, A because:
+        // B and C are moved to the front of the list because they are UNKNOWN/PRIVATE
+        // C is sorted before B because UNKNOWN has higher precedence than PRIVATE
+        assertThat(outputConfigAt0.streams).containsExactly(streamC)
+        assertThat(outputConfigAt1.streams).containsExactly(streamB)
+        assertThat(outputConfigAt2.streams).containsExactly(streamA)
     }
 
     @Test
     fun testOutputSortingWithNoConditionsMet() {
-
-        val streamConfig =
-            CameraStream.Config.create(
-                listOf(
-                    OutputStream.Config.create(
-                        Size(800, 600), StreamFormat.YUV_420_888,
-                        streamUseCase = OutputStream.StreamUseCase.DEFAULT,
-                        outputType = OutputStream.OutputType.SURFACE
-                    ),
-                    OutputStream.Config.create(
-                        Size(1600, 1200), StreamFormat.DEPTH16,
-                        streamUseCase = OutputStream.StreamUseCase.DEFAULT,
-                        outputType = OutputStream.OutputType.SURFACE
-                    ),
-                    OutputStream.Config.create(
-                        Size(800, 600), StreamFormat.JPEG,
-                        streamUseCase = OutputStream.StreamUseCase.VIDEO_CALL,
-                        outputType = OutputStream.OutputType.SURFACE
-                    ),
-                )
-            )
+        val streamConfigA = CameraStream.Config.create(Size(800, 600), StreamFormat.YUV_420_888)
+        val streamConfigB = CameraStream.Config.create(Size(1600, 1200), StreamFormat.YUV_420_888)
+        val streamConfigC = CameraStream.Config.create(Size(800, 600), StreamFormat.YUV_420_888)
         val graphConfig =
             CameraGraph.Config(
                 camera = CameraId("0"),
-                streams = listOf(streamConfig),
+                streams = listOf(streamConfigA, streamConfigB, streamConfigC),
             )
-        val streamGraph = StreamGraphImpl(config.fakeMetadata, graphConfig)
 
-        val stream1 = streamGraph.outputs[0]
-        assertThat(stream1.format).isEqualTo(StreamFormat.YUV_420_888)
+        val streamGraph =
+            StreamGraphImpl(config.fakeMetadata, graphConfig, cameraControllerProvider)
+        cameraController.streamGraph = streamGraph
 
-        val stream2 = streamGraph.outputs[1]
-        assertThat(stream2.format).isEqualTo(StreamFormat.DEPTH16)
+        // Get the stream for each streamConfig
+        val streamA = streamGraph[streamConfigA]
+        val streamB = streamGraph[streamConfigB]
+        val streamC = streamGraph[streamConfigC]
 
-        val stream3 = streamGraph.outputs[2]
-        assertThat(stream3.format).isEqualTo(StreamFormat.JPEG)
+        // Read the list of outputConfigs (in order)
+        val outputConfigAt0 = streamGraph.outputConfigs[0]
+        val outputConfigAt1 = streamGraph.outputConfigs[1]
+        val outputConfigAt2 = streamGraph.outputConfigs[2]
+
+        // Assert that the outputConfig order is A, B, C.
+        assertThat(outputConfigAt0.streams).containsExactly(streamA)
+        assertThat(outputConfigAt1.streams).containsExactly(streamB)
+        assertThat(outputConfigAt2.streams).containsExactly(streamC)
     }
 
     @Test
     fun testOutputSortingWithSameStreamUseCase() {
-
-        val streamConfig =
+        val streamConfigA =
             CameraStream.Config.create(
-                listOf(
-                    OutputStream.Config.create(
-                        Size(800, 600), StreamFormat.PRIVATE,
-                        streamUseCase = OutputStream.StreamUseCase.PREVIEW,
-                        outputType = OutputStream.OutputType.SURFACE_TEXTURE
-                    ),
-                    OutputStream.Config.create(
-                        Size(1600, 1200), StreamFormat.UNKNOWN,
-                        streamUseCase = OutputStream.StreamUseCase.PREVIEW,
-                        outputType = OutputStream.OutputType.SURFACE_VIEW
-                    ),
-                    OutputStream.Config.create(
-                        Size(800, 600), StreamFormat.RAW12,
-                        streamUseCase = OutputStream.StreamUseCase.PREVIEW,
-                        outputType = OutputStream.OutputType.SURFACE
-                    ),
-                )
+                Size(800, 600),
+                StreamFormat.RAW12,
+                streamUseCase = OutputStream.StreamUseCase.PREVIEW,
+                outputType = OutputStream.OutputType.SURFACE
+            )
+        val streamConfigB =
+            CameraStream.Config.create(
+                Size(1600, 1200),
+                StreamFormat.UNKNOWN,
+                streamUseCase = OutputStream.StreamUseCase.PREVIEW,
+                outputType = OutputStream.OutputType.SURFACE_VIEW
+            )
+        val streamConfigC =
+            CameraStream.Config.create(
+                Size(800, 600),
+                StreamFormat.PRIVATE,
+                streamUseCase = OutputStream.StreamUseCase.PREVIEW,
+                outputType = OutputStream.OutputType.SURFACE_TEXTURE
             )
         val graphConfig =
             CameraGraph.Config(
                 camera = CameraId("0"),
-                streams = listOf(streamConfig),
+                streams = listOf(streamConfigA, streamConfigB, streamConfigC),
             )
-        val streamGraph = StreamGraphImpl(config.fakeMetadata, graphConfig)
 
-        val stream1 = streamGraph.outputs[0]
-        assertThat(stream1.format).isEqualTo(StreamFormat.PRIVATE)
+        val streamGraph =
+            StreamGraphImpl(config.fakeMetadata, graphConfig, cameraControllerProvider)
+        cameraController.streamGraph = streamGraph
 
-        val stream2 = streamGraph.outputs[1]
-        assertThat(stream2.format).isEqualTo(StreamFormat.UNKNOWN)
+        // Get the stream for each streamConfig
+        val streamA = streamGraph[streamConfigA]
+        val streamB = streamGraph[streamConfigB]
+        val streamC = streamGraph[streamConfigC]
 
-        val stream3 = streamGraph.outputs[2]
-        assertThat(stream3.format).isEqualTo(StreamFormat.RAW12)
+        // Read the list of outputConfigs (in order)
+        val outputConfigAt0 = streamGraph.outputConfigs[0]
+        val outputConfigAt1 = streamGraph.outputConfigs[1]
+        val outputConfigAt2 = streamGraph.outputConfigs[2]
+
+        // Assert that the outputConfig order is A, B, C:
+        // All outputs specify StreamUseCase.PREVIEW, and any additional ordering is preserved.
+        assertThat(outputConfigAt0.streams).containsExactly(streamA)
+        assertThat(outputConfigAt1.streams).containsExactly(streamB)
+        assertThat(outputConfigAt2.streams).containsExactly(streamC)
     }
 
     @Test
     fun testOutputSortingWithSameOutputType() {
-
-        val streamConfig =
+        val streamConfigA =
             CameraStream.Config.create(
-                listOf(
-                    OutputStream.Config.create(
-                        Size(800, 600), StreamFormat.UNKNOWN,
-                        streamUseCase = OutputStream.StreamUseCase.DEFAULT,
-                        outputType = OutputStream.OutputType.SURFACE_TEXTURE
-                    ),
-                    OutputStream.Config.create(
-                        Size(1600, 1200), StreamFormat.UNKNOWN,
-                        streamUseCase = OutputStream.StreamUseCase.VIDEO_CALL,
-                        outputType = OutputStream.OutputType.SURFACE_TEXTURE
-                    ),
-                    OutputStream.Config.create(
-                        Size(800, 600), StreamFormat.UNKNOWN,
-                        streamUseCase = OutputStream.StreamUseCase.STILL_CAPTURE,
-                        outputType = OutputStream.OutputType.SURFACE_TEXTURE
-                    ),
-                )
+                Size(800, 600),
+                StreamFormat.UNKNOWN,
+                streamUseCase = OutputStream.StreamUseCase.DEFAULT,
+                outputType = OutputStream.OutputType.SURFACE_TEXTURE
+            )
+        val streamConfigB =
+            CameraStream.Config.create(
+                Size(1600, 1200),
+                StreamFormat.UNKNOWN,
+                streamUseCase = OutputStream.StreamUseCase.VIDEO_CALL,
+                outputType = OutputStream.OutputType.SURFACE_TEXTURE
+            )
+        val streamConfigC =
+            CameraStream.Config.create(
+                Size(800, 600),
+                StreamFormat.UNKNOWN,
+                streamUseCase = OutputStream.StreamUseCase.STILL_CAPTURE,
+                outputType = OutputStream.OutputType.SURFACE_TEXTURE
             )
         val graphConfig =
             CameraGraph.Config(
                 camera = CameraId("0"),
-                streams = listOf(streamConfig),
+                streams = listOf(streamConfigA, streamConfigB, streamConfigC),
             )
-        val streamGraph = StreamGraphImpl(config.fakeMetadata, graphConfig)
 
-        val stream1 = streamGraph.outputs[0]
-        assertThat(stream1.streamUseCase).isEqualTo(OutputStream.StreamUseCase.DEFAULT)
+        val streamGraph =
+            StreamGraphImpl(config.fakeMetadata, graphConfig, cameraControllerProvider)
+        cameraController.streamGraph = streamGraph
 
-        val stream2 = streamGraph.outputs[1]
-        assertThat(stream2.streamUseCase).isEqualTo(OutputStream.StreamUseCase.VIDEO_CALL)
+        // Get the stream for each streamConfig
+        val streamA = streamGraph[streamConfigA]
+        val streamB = streamGraph[streamConfigB]
+        val streamC = streamGraph[streamConfigC]
 
-        val stream3 = streamGraph.outputs[2]
-        assertThat(stream3.streamUseCase).isEqualTo(OutputStream.StreamUseCase.STILL_CAPTURE)
-    }
+        // Read the list of outputConfigs (in order)
+        val outputConfigAt0 = streamGraph.outputConfigs[0]
+        val outputConfigAt1 = streamGraph.outputConfigs[1]
+        val outputConfigAt2 = streamGraph.outputConfigs[2]
 
-    @Test
-    fun testOutputSortingWithSameImageFormat() {
-
-        val streamConfig =
-            CameraStream.Config.create(
-                listOf(
-                    OutputStream.Config.create(
-                        Size(800, 600), StreamFormat.UNKNOWN,
-                        streamUseCase = OutputStream.StreamUseCase.VIDEO_RECORD,
-                        outputType = OutputStream.OutputType.SURFACE
-                    ),
-                    OutputStream.Config.create(
-                        Size(1600, 1200), StreamFormat.UNKNOWN,
-                        streamUseCase = OutputStream.StreamUseCase.VIDEO_CALL,
-                        outputType = OutputStream.OutputType.SURFACE
-                    ),
-                    OutputStream.Config.create(
-                        Size(800, 600), StreamFormat.UNKNOWN,
-                        streamUseCase = OutputStream.StreamUseCase.STILL_CAPTURE,
-                        outputType = OutputStream.OutputType.SURFACE
-                    ),
-                )
-            )
-        val graphConfig =
-            CameraGraph.Config(
-                camera = CameraId("0"),
-                streams = listOf(streamConfig),
-            )
-        val streamGraph = StreamGraphImpl(config.fakeMetadata, graphConfig)
-
-        val stream1 = streamGraph.outputs[0]
-        assertThat(stream1.streamUseCase).isEqualTo(OutputStream.StreamUseCase.VIDEO_CALL)
-
-        val stream2 = streamGraph.outputs[1]
-        assertThat(stream2.streamUseCase).isEqualTo(OutputStream.StreamUseCase.STILL_CAPTURE)
-
-        val stream3 = streamGraph.outputs[2]
-        assertThat(stream3.streamUseCase).isEqualTo(OutputStream.StreamUseCase.VIDEO_RECORD)
+        // Assert that the outputConfig order is A, B, C because all outputType are SURFACE_TEXTURE,
+        // and order should be preserved since there are no other conditions.
+        assertThat(outputConfigAt0.streams).containsExactly(streamA)
+        assertThat(outputConfigAt1.streams).containsExactly(streamB)
+        assertThat(outputConfigAt2.streams).containsExactly(streamC)
     }
 
     @Test
     fun testOutputSortingWithStreamUseHint() {
-
-        val streamConfig =
+        val streamConfigA =
             CameraStream.Config.create(
-                listOf(
-                    OutputStream.Config.create(
-                        Size(800, 600), StreamFormat.UNKNOWN,
-                        streamUseCase = OutputStream.StreamUseCase.DEFAULT,
-                        streamUseHint = OutputStream.StreamUseHint.VIDEO_RECORD
-                    ),
-                    OutputStream.Config.create(
-                        Size(1600, 1200), StreamFormat.UNKNOWN,
-                        streamUseCase = OutputStream.StreamUseCase.PREVIEW
-                    ),
-                    OutputStream.Config.create(
-                        Size(800, 600), StreamFormat.UNKNOWN,
-                        streamUseCase = OutputStream.StreamUseCase.STILL_CAPTURE
-                    ),
-                )
+                Size(800, 600),
+                StreamFormat.UNKNOWN,
+                streamUseCase = OutputStream.StreamUseCase.DEFAULT,
+                streamUseHint = OutputStream.StreamUseHint.VIDEO_RECORD
+            )
+        val streamConfigB =
+            CameraStream.Config.create(
+                Size(1600, 1200),
+                StreamFormat.UNKNOWN,
+                streamUseCase = OutputStream.StreamUseCase.VIDEO_CALL
+            )
+        val streamConfigC =
+            CameraStream.Config.create(
+                Size(800, 600),
+                StreamFormat.UNKNOWN,
+                streamUseCase = OutputStream.StreamUseCase.STILL_CAPTURE
             )
         val graphConfig =
             CameraGraph.Config(
                 camera = CameraId("0"),
-                streams = listOf(streamConfig),
+                streams = listOf(streamConfigA, streamConfigB, streamConfigC),
             )
-        val streamGraph = StreamGraphImpl(config.fakeMetadata, graphConfig)
 
-        val stream1 = streamGraph.outputs[0]
-        assertThat(stream1.streamUseCase).isEqualTo(OutputStream.StreamUseCase.PREVIEW)
+        val streamGraph =
+            StreamGraphImpl(config.fakeMetadata, graphConfig, cameraControllerProvider)
+        cameraController.streamGraph = streamGraph
 
-        val stream2 = streamGraph.outputs[1]
-        assertThat(stream2.streamUseCase).isEqualTo(OutputStream.StreamUseCase.STILL_CAPTURE)
+        // Get the stream for each streamConfig
+        val streamA = streamGraph[streamConfigA]
+        val streamB = streamGraph[streamConfigB]
+        val streamC = streamGraph[streamConfigC]
 
-        val stream3 = streamGraph.outputs[2]
-        assertThat(stream3.streamUseCase).isEqualTo(OutputStream.StreamUseCase.DEFAULT)
+        // Read the list of outputConfigs (in order)
+        val outputConfigAt0 = streamGraph.outputConfigs[0]
+        val outputConfigAt1 = streamGraph.outputConfigs[1]
+        val outputConfigAt2 = streamGraph.outputConfigs[2]
+
+        // Assert that the outputConfig order is B, C, A because A is moved to the bottom of the
+        // list due to StreamUseHint.VIDEO_RECORD
+        assertThat(outputConfigAt0.streams).containsExactly(streamB)
+        assertThat(outputConfigAt1.streams).containsExactly(streamC)
+        assertThat(outputConfigAt2.streams).containsExactly(streamA)
     }
 
     @Test
     fun testStreamMapConvertsConfigObjectsToStreamIds() {
-        val streamGraph = StreamGraphImpl(config.fakeMetadata, config.graphConfig)
+        val streamGraph =
+            StreamGraphImpl(config.fakeMetadata, config.graphConfig, cameraControllerProvider)
+        cameraController.streamGraph = streamGraph
 
         assertThat(streamGraph[config.streamConfig1]).isNotNull()
         assertThat(streamGraph[config.streamConfig2]).isNotNull()
@@ -436,8 +498,10 @@ internal class StreamGraphImplTest {
 
     @Test
     fun testStreamMapIdsAreNotEqualAcrossMultipleStreamMapInstances() {
-        val streamGraphA = StreamGraphImpl(config.fakeMetadata, config.graphConfig)
-        val streamGraphB = StreamGraphImpl(config.fakeMetadata, config.graphConfig)
+        val streamGraphA =
+            StreamGraphImpl(config.fakeMetadata, config.graphConfig, cameraControllerProvider)
+        val streamGraphB =
+            StreamGraphImpl(config.fakeMetadata, config.graphConfig, cameraControllerProvider)
 
         val stream1A = streamGraphA[config.streamConfig1]!!
         val stream1B = streamGraphB[config.streamConfig1]!!
@@ -448,7 +512,9 @@ internal class StreamGraphImplTest {
 
     @Test
     fun testSharedStreamsHaveOneOutputConfig() {
-        val streamGraph = StreamGraphImpl(config.fakeMetadata, config.graphConfig)
+        val streamGraph =
+            StreamGraphImpl(config.fakeMetadata, config.graphConfig, cameraControllerProvider)
+        cameraController.streamGraph = streamGraph
         val stream1 = streamGraph[config.sharedStreamConfig1]!!
         val stream2 = streamGraph[config.sharedStreamConfig2]!!
 
@@ -464,7 +530,9 @@ internal class StreamGraphImplTest {
 
     @Test
     fun testSharedStreamsHaveDifferentOutputStreams() {
-        val streamGraph = StreamGraphImpl(config.fakeMetadata, config.graphConfig)
+        val streamGraph =
+            StreamGraphImpl(config.fakeMetadata, config.graphConfig, cameraControllerProvider)
+        cameraController.streamGraph = streamGraph
         val stream1 = streamGraph[config.sharedStreamConfig1]!!
         val stream2 = streamGraph[config.sharedStreamConfig2]!!
 
@@ -473,7 +541,9 @@ internal class StreamGraphImplTest {
 
     @Test
     fun testGroupedStreamsHaveSameGroupNumber() {
-        val streamGraph = StreamGraphImpl(config.fakeMetadata, config.graphConfig)
+        val streamGraph =
+            StreamGraphImpl(config.fakeMetadata, config.graphConfig, cameraControllerProvider)
+        cameraController.streamGraph = streamGraph
         val stream1 = streamGraph[config.streamConfig1]!!
         val stream2 = streamGraph[config.streamConfig2]!!
 
@@ -495,7 +565,9 @@ internal class StreamGraphImplTest {
 
     @Test
     fun testDefaultAndPropagatedMirrorModes() {
-        val streamGraph = StreamGraphImpl(config.fakeMetadata, config.graphConfig)
+        val streamGraph =
+            StreamGraphImpl(config.fakeMetadata, config.graphConfig, cameraControllerProvider)
+        cameraController.streamGraph = streamGraph
         val stream1 = streamGraph[config.streamConfig1]!!
         assertThat(stream1.outputs.single().mirrorMode).isNull()
 
@@ -506,7 +578,9 @@ internal class StreamGraphImplTest {
 
     @Test
     fun testDefaultAndPropagatedTimestampBases() {
-        val streamGraph = StreamGraphImpl(config.fakeMetadata, config.graphConfig)
+        val streamGraph =
+            StreamGraphImpl(config.fakeMetadata, config.graphConfig, cameraControllerProvider)
+        cameraController.streamGraph = streamGraph
         val stream1 = streamGraph[config.streamConfig1]!!
         assertThat(stream1.outputs.single().timestampBase).isNull()
 
@@ -517,7 +591,9 @@ internal class StreamGraphImplTest {
 
     @Test
     fun testDefaultAndPropagatedDynamicRangeProfiles() {
-        val streamGraph = StreamGraphImpl(config.fakeMetadata, config.graphConfig)
+        val streamGraph =
+            StreamGraphImpl(config.fakeMetadata, config.graphConfig, cameraControllerProvider)
+        cameraController.streamGraph = streamGraph
         val stream1 = streamGraph[config.streamConfig1]!!
         assertThat(stream1.outputs.single().dynamicRangeProfile).isNull()
 
@@ -528,7 +604,9 @@ internal class StreamGraphImplTest {
 
     @Test
     fun testDefaultAndPropagatedStreamUseCases() {
-        val streamGraph = StreamGraphImpl(config.fakeMetadata, config.graphConfig)
+        val streamGraph =
+            StreamGraphImpl(config.fakeMetadata, config.graphConfig, cameraControllerProvider)
+        cameraController.streamGraph = streamGraph
         val stream1 = streamGraph[config.streamConfig1]!!
         assertThat(stream1.outputs.single().streamUseCase).isNull()
 
@@ -539,7 +617,9 @@ internal class StreamGraphImplTest {
 
     @Test
     fun testDefaultAndPropagatedStreamUseHints() {
-        val streamGraph = StreamGraphImpl(config.fakeMetadata, config.graphConfig)
+        val streamGraph =
+            StreamGraphImpl(config.fakeMetadata, config.graphConfig, cameraControllerProvider)
+        cameraController.streamGraph = streamGraph
         val stream1 = streamGraph[config.streamConfig1]!!
         assertThat(stream1.outputs.single().streamUseCase).isNull()
 
@@ -548,16 +628,30 @@ internal class StreamGraphImplTest {
             .isEqualTo(OutputStream.StreamUseHint.VIDEO_RECORD)
     }
 
+    @Test
+    fun testGetOutputLatency() {
+        val streamGraph =
+            StreamGraphImpl(config.fakeMetadata, config.graphConfig, cameraControllerProvider)
+        cameraController.streamGraph = streamGraph
+        val stream1 = streamGraph[config.streamConfig1]!!
+        assertThat(streamGraph.getOutputLatency(stream1.id)).isNull()
+        cameraController.simulateOutputLatency()
+        assertThat(
+            streamGraph
+                .getOutputLatency(stream1.id)
+                ?.equals(cameraController.outputLatencySet?.estimatedLatencyNs)
+        )
+    }
+
     private fun deferredStreamsAreSupported(
         cameraMetadata: CameraMetadata,
         graphConfig: CameraGraph.Config
     ): Boolean {
-        val hardwareLevel = cameraMetadata[CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL]
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
             graphConfig.sessionMode == CameraGraph.OperatingMode.NORMAL &&
-            hardwareLevel != CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY &&
-            hardwareLevel != CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED &&
+            !cameraMetadata.isHardwareLevelLegacy &&
+            !cameraMetadata.isHardwareLevelLimited &&
             (Build.VERSION.SDK_INT < Build.VERSION_CODES.P ||
-                hardwareLevel != CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_EXTERNAL)
+                !cameraMetadata.isHardwareLevelExternal)
     }
 }

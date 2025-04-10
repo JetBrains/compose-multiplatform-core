@@ -17,7 +17,7 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -29,13 +29,13 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 29
+        minSdk = 29
     }
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile('proguard-android.txt')
         }
 
@@ -52,5 +52,5 @@ android {
         sourceCompatibility 1.8
         targetCompatibility 1.8
     }
-    namespace "androidx.wear.watchface.complications.datasource.samples"
+    namespace = "androidx.wear.watchface.complications.datasource.samples"
 }

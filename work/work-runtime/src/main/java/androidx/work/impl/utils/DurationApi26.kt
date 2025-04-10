@@ -15,13 +15,12 @@
  */
 @file:RequiresApi(26)
 @file:JvmName("DurationApi26Impl")
+
 package androidx.work.impl.utils
 
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import java.time.Duration
 
-@DoNotInline
 internal fun Duration.toMillisCompat(): Long {
     return this.toMillis()
 }

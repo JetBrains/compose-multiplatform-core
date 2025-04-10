@@ -16,8 +16,8 @@
 
 package androidx.wear.protolayout.expression.pipeline;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -74,5 +74,10 @@ class DynamicDataTransformNode<I, O> implements DynamicDataNode<O> {
 
     public DynamicTypeValueReceiverWithPreUpdate<I> getIncomingCallback() {
         return mCallback;
+    }
+
+    @Override
+    public int getCost() {
+        return DEFAULT_NODE_COST;
     }
 }

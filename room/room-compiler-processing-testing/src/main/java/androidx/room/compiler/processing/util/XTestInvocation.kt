@@ -19,22 +19,19 @@ package androidx.room.compiler.processing.util
 import androidx.room.compiler.processing.ExperimentalProcessingApi
 import androidx.room.compiler.processing.XProcessingEnv
 import androidx.room.compiler.processing.XRoundEnv
+import androidx.room.compiler.processing.compat.XConverters.toKS
 import com.google.common.truth.Truth
 import kotlin.reflect.KClass
 
-/**
- * Data holder for XProcessing tests to access the processing environment.
- */
+/** Data holder for XProcessing tests to access the processing environment. */
 @ExperimentalProcessingApi
-class XTestInvocation(
-    processingEnv: XProcessingEnv,
-    roundEnv: XRoundEnv
-) {
+class XTestInvocation(processingEnv: XProcessingEnv, roundEnv: XRoundEnv) {
     val processingEnv: XProcessingEnv = processingEnv
         get() {
             assertNotDisposed()
             return field
         }
+
     val roundEnv: XRoundEnv = roundEnv
         get() {
             assertNotDisposed()
@@ -42,19 +39,19 @@ class XTestInvocation(
         }
 
     /**
-     * Set to true after callback is called to ensure the test does not re-use an invocation that
-     * is no longer usable (no longer in the process method of the processor)
+     * Set to true after callback is called to ensure the test does not re-use an invocation that is
+     * no longer usable (no longer in the process method of the processor)
      */
     private var disposed = false
 
-    /**
-     * Extension mechanism to allow putting objects into invocation that can be retrieved later.
-     */
+    /** Extension mechanism to allow putting objects into invocation that can be retrieved later. */
     private val userData = mutableMapOf<KClass<*>, Any>()
 
     private val postCompilationAssertions = mutableListOf<CompilationResultSubject.() -> Unit>()
 
     val isKsp: Boolean = processingEnv.backend == XProcessingEnv.Backend.KSP
+
+    val isKsp2: Boolean = isKsp && processingEnv.toKS().kspVersion >= KotlinVersion(2, 0)
 
     /**
      * Registers a block that will be called with a [CompilationResultSubject] when compilation
@@ -67,18 +64,13 @@ class XTestInvocation(
         postCompilationAssertions.add(block)
     }
 
-    internal fun runPostCompilationChecks(
-        compilationResultSubject: CompilationResultSubject
-    ) {
-        postCompilationAssertions.forEach {
-            it(compilationResultSubject)
-        }
+    internal fun runPostCompilationChecks(compilationResultSubject: CompilationResultSubject) {
+        postCompilationAssertions.forEach { it(compilationResultSubject) }
     }
 
     fun <T : Any> getUserData(key: KClass<T>): T? {
         assertNotDisposed()
-        @Suppress("UNCHECKED_CAST")
-        return userData[key] as T?
+        @Suppress("UNCHECKED_CAST") return userData[key] as T?
     }
 
     fun <T : Any> putUserData(key: KClass<T>, value: T) {
@@ -90,9 +82,7 @@ class XTestInvocation(
         getUserData(key)?.let {
             return it
         }
-        return create().also {
-            putUserData(key, it)
-        }
+        return create().also { putUserData(key, it) }
     }
 
     fun dispose() {

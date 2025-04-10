@@ -18,17 +18,23 @@ package androidx.camera.extensions.impl.advanced;
 
 import android.graphics.ImageFormat;
 
-import androidx.annotation.RequiresApi;
-
 /**
  * A sample night implementation for testing long processing capture. It is capable of outputting
  * the postview(YUV format) and the process progress event. ImageAnalysis is not supported.
  *
  * @since 1.2
  */
-@RequiresApi(21)
-public class NightAdvancedExtenderImpl extends LongCaptureAdvancedExtenderImpl {
+public class NightAdvancedExtenderImpl extends ConfigurableAdvancedExtenderImpl {
     public NightAdvancedExtenderImpl() {
-        super(/* postviewFormat */ ImageFormat.YUV_420_888);
+        super(/* longDurationCapture */ true,
+                /* postviewFormat */ ImageFormat.YUV_420_888,
+                /* invokeOnCaptureCompleted */ true);
     }
+
+    /**
+     * This method is used to check if test lib is running. If OEM implementation exists, invoking
+     * this method will throw {@link NoSuchMethodError}. This can be used to determine if OEM
+     * implementation is used or not.
+     */
+    public static void checkTestlibRunning() {}
 }

@@ -16,148 +16,147 @@
 
 package androidx.core.uwb
 
-import androidx.annotation.IntRange;
+import androidx.annotation.IntRange
 
 /**
  * Set of parameters which should be passed to the UWB chip to start ranging.
  *
- * @property uwbConfigType
- * The UWB configuration type. One type specifies one fixed set of pre-defined parameters. The
- * UWB config type includes [CONFIG_UNICAST_DS_TWR] and [CONFIG_MULTICAST_DS_TWR].
- *
- * @property sessionId
- * The ID of the ranging session. If the value is SESSION_ID_UNSET (0), it will
- * be created from the hash of controller address and complex channel values.
+ * @property uwbConfigType The UWB configuration type. One type specifies one fixed set of
+ *   pre-defined parameters. The UWB config type includes [CONFIG_UNICAST_DS_TWR] and
+ *   [CONFIG_MULTICAST_DS_TWR].
+ * @property sessionId The ID of the ranging session. If the value is SESSION_ID_UNSET (0), it will
+ *   be created from the hash of controller address and complex channel values.
  *
  * The same session IDs should be used at both ends (Controller and controlee).
  *
- * @property subSessionId
- * The ID of the ranging sub-session. This value should be set when the Provisioned STS
- * individual responder case is used.
- * If other config is used, it should remain SUB_SESSION_UNSET (0)
- *
- * @property sessionKeyInfo
- * The session key info to use for the ranging.
- * If the profile uses STATIC STS, this byte array is 8-byte long with first two bytes as
- * Vendor_ID and next six bytes as STATIC_STS_IV. If the profile uses PROVISIONED STS, this
- * byte array is 16 or 32-byte long which represent session key.
+ * @property subSessionId The ID of the ranging sub-session. This value should be set when the
+ *   Provisioned STS individual responder case is used. If other config is used, it should remain
+ *   SUB_SESSION_UNSET (0)
+ * @property sessionKeyInfo The session key info to use for the ranging. If the profile uses STATIC
+ *   STS, this byte array is 8-byte long with first two bytes as Vendor_ID and next six bytes as
+ *   STATIC_STS_IV. If the profile uses PROVISIONED STS, this byte array is 16 or 32-byte long which
+ *   represent session key.
  *
  * The same session keys should be used at both ends (Controller and controlee).
  *
- * @property subSessionKeyInfo
- * The sub-session key info to use for the ranging. This byte array is 16 or 32-byte long when
- * the profile uses PROVISIONED STS individual responder cases.
- * If other STS is used, this field should remain null.
- *
- * @property complexChannel
- * Optional. If device type is ROLE_CONTROLEE then complex channel should be set.
- *
- * @property peerDevices
- * The peers to perform ranging with. If using unicast, length should be 1.
- *
- * @property updateRateType
- * The update rate type of the ranging data. The update rate types include
- * [RANGING_UPDATE_RATE_AUTOMATIC], [RANGING_UPDATE_RATE_FREQUENT], and
- * [RANGING_UPDATE_RATE_INFREQUENT].
- *
- * @property uwbRangeDataNtfConfig
- * Configurable range data notification reports for a UWB session.
- *
- * @property slotDurationMillis
- * The slot duration of the ranging session in millisecond. The available slot durations are
- * [RANGING_SLOT_DURATION_1_MILLIS] and [RANGING_SLOT_DURATION_2_MILLIS].
- * Default to [RANGING_SLOT_DURATION_2_MILLIS].
- *
- * @property isAoaDisabled
- * The indicator of whether angle of arrival (AoA) is disabled. Default to false.
+ * @property subSessionKeyInfo The sub-session key info to use for the ranging. This byte array is
+ *   16 or 32-byte long when the profile uses PROVISIONED STS individual responder cases. If other
+ *   STS is used, this field should remain null.
+ * @property complexChannel Optional. If device type is ROLE_CONTROLEE then complex channel should
+ *   be set.
+ * @property peerDevices The peers to perform ranging with. If using unicast, length should be 1.
+ * @property updateRateType The update rate type of the ranging data. The update rate types include
+ *   [RANGING_UPDATE_RATE_AUTOMATIC], [RANGING_UPDATE_RATE_FREQUENT], and
+ *   [RANGING_UPDATE_RATE_INFREQUENT].
+ * @property uwbRangeDataNtfConfig Configurable range data notification reports for a UWB session.
+ * @property slotDurationMillis The slot duration of the ranging session in millisecond. The
+ *   available slot durations are [RANGING_SLOT_DURATION_1_MILLIS] and
+ *   [RANGING_SLOT_DURATION_2_MILLIS]. Default to [RANGING_SLOT_DURATION_2_MILLIS].
+ * @property isAoaDisabled The indicator of whether angle of arrival (AoA) is disabled. Default to
+ *   false.
  */
-class RangingParameters
+public class RangingParameters
 @JvmOverloads
 constructor(
-    val uwbConfigType: Int,
-    val sessionId: Int,
-    val subSessionId: Int,
-    val sessionKeyInfo: ByteArray?,
-    val subSessionKeyInfo: ByteArray?,
-    val complexChannel: UwbComplexChannel?,
-    val peerDevices: List<UwbDevice>,
-    val updateRateType: Int,
-    val uwbRangeDataNtfConfig: UwbRangeDataNtfConfig? = null,
+    public val uwbConfigType: Int,
+    public val sessionId: Int,
+    public val subSessionId: Int,
+    public val sessionKeyInfo: ByteArray?,
+    public val subSessionKeyInfo: ByteArray?,
+    public val complexChannel: UwbComplexChannel?,
+    public val peerDevices: List<UwbDevice>,
+    public val updateRateType: Int,
+    public val uwbRangeDataNtfConfig: UwbRangeDataNtfConfig? = null,
     @IntRange(from = RANGING_SLOT_DURATION_1_MILLIS, to = RANGING_SLOT_DURATION_2_MILLIS)
-    val slotDurationMillis: Long = RANGING_SLOT_DURATION_2_MILLIS,
-    val isAoaDisabled: Boolean = false
+    public val slotDurationMillis: Long = RANGING_SLOT_DURATION_2_MILLIS,
+    public val isAoaDisabled: Boolean = false
 ) {
-    companion object {
+    init {
+        if (
+            uwbConfigType == CONFIG_UNICAST_DS_TWR ||
+                uwbConfigType == CONFIG_MULTICAST_DS_TWR ||
+                uwbConfigType == CONFIG_UNICAST_DS_TWR_NO_AOA
+        ) {
+            require(sessionKeyInfo != null && sessionKeyInfo.size == 8) {
+                throw IllegalArgumentException(
+                    "Session key should be 8 bytes in length for static STS."
+                )
+            }
+        }
+        if (
+            uwbConfigType == CONFIG_PROVISIONED_UNICAST_DS_TWR ||
+                uwbConfigType == CONFIG_PROVISIONED_MULTICAST_DS_TWR ||
+                uwbConfigType == CONFIG_PROVISIONED_UNICAST_DS_TWR_NO_AOA ||
+                uwbConfigType == CONFIG_PROVISIONED_INDIVIDUAL_MULTICAST_DS_TWR
+        ) {
+            require(sessionKeyInfo != null && sessionKeyInfo.size == 16) {
+                throw IllegalArgumentException(
+                    "At present, only 16 byte session key is supported for provisioned STS."
+                )
+            }
+        }
+    }
+
+    public companion object {
 
         /**
          * Pre-defined unicast STATIC STS DS-TWR ranging.
          *
-         * deferred mode,
-         * ranging interval = 240 ms,
-         * slot duration = 2400 RSTU,
-         * slots per ranging round = 6
+         * deferred mode, ranging interval = 240 ms, slot duration = 2400 RSTU, slots per ranging
+         * round = 6, hopping mode is enabled
          *
          * All other MAC parameters use FiRa/UCI default values.
          *
          * <p> Typical use case: device tracking tags
          */
-        const val CONFIG_UNICAST_DS_TWR = 1
+        public const val CONFIG_UNICAST_DS_TWR: Int = 1
 
         /**
          * Pre-defined one-to-many STATIC STS DS-TWR ranging
          *
-         * deferred mode,
-         * ranging interval = 200 ms,
-         * slot duration = 2400 RSTU,
-         * slots per ranging round = 20
+         * deferred mode, ranging interval = 200 ms, slot duration = 2400 RSTU, slots per ranging
+         * round = 20, hopping mode is enabled
          *
          * All other MAC parameters use FiRa/UCI default values.
          *
          * <p> Typical use case: smart phone interacts with many smart devices
          */
-        const val CONFIG_MULTICAST_DS_TWR = 2
+        public const val CONFIG_MULTICAST_DS_TWR: Int = 2
 
         /** Same as CONFIG_UNICAST_DS_TWR, except AoA data is not reported. */
         internal const val CONFIG_UNICAST_DS_TWR_NO_AOA = 3
 
         /** Same as CONFIG_UNICAST_DS_TWR, except P-STS security mode is enabled. */
-        const val CONFIG_PROVISIONED_UNICAST_DS_TWR = 4
+        public const val CONFIG_PROVISIONED_UNICAST_DS_TWR: Int = 4
 
         /** Same as CONFIG_MULTICAST_DS_TWR, except P-STS security mode is enabled. */
-        const val CONFIG_PROVISIONED_MULTICAST_DS_TWR = 5
+        public const val CONFIG_PROVISIONED_MULTICAST_DS_TWR: Int = 5
 
         /** Same as CONFIG_UNICAST_DS_TWR_NO_AOA, except P-STS security mode is enabled. */
-        internal const val CONFIG_PROVISIONED_UNICAST_DS_TWR_NO_AOA = 6
-
-        /** Same as CONFIG_MULTICAST_DS_TWR, except P-STS individual controlee key mode is enabled. */
-        const val CONFIG_PROVISIONED_INDIVIDUAL_MULTICAST_DS_TWR = 7
+        internal const val CONFIG_PROVISIONED_UNICAST_DS_TWR_NO_AOA: Int = 6
 
         /**
-         * When the screen is on, the reporting interval is hundreds of milliseconds.
-         * When the screen is off, the reporting interval is a few seconds.
+         * Same as CONFIG_MULTICAST_DS_TWR, except P-STS individual controlee key mode is enabled.
          */
-        const val RANGING_UPDATE_RATE_AUTOMATIC = 1
+        public const val CONFIG_PROVISIONED_INDIVIDUAL_MULTICAST_DS_TWR: Int = 7
 
         /**
-         * The reporting interval is the same as in the AUTOMATIC screen-off case. The
-         * The power consumption is optimized by turning off the radio between ranging
-         * reports. (The implementation is hardware and software dependent and it may
-         * change between different versions.)
+         * The update rate that differs across different config id. It is 240 millisecond for
+         * [CONFIG_UNICAST_DS_TWR] and [CONFIG_PROVISIONED_UNICAST_DS_TWR], and is 200 millisecond
+         * for other config ids.
          */
-        const val RANGING_UPDATE_RATE_INFREQUENT = 2
+        public const val RANGING_UPDATE_RATE_AUTOMATIC: Int = 1
 
-        /**
-         * The reporting interval is the same as in the AUTOMATIC screen-on case.
-         *
-         * The actual reporting interval is UwbConfigId related. Different
-         * configuration may use different values. (The default reporting interval at INFREQUENT mode is 4 seconds)
-         */
-        const val RANGING_UPDATE_RATE_FREQUENT = 3
+        /** 120 millisecond update rate for all config ids. */
+        public const val RANGING_UPDATE_RATE_INFREQUENT: Int = 2
+
+        /** 600 millisecond update rate for all config ids. */
+        public const val RANGING_UPDATE_RATE_FREQUENT: Int = 3
 
         /** 1 millisecond slot duration */
-        const val RANGING_SLOT_DURATION_1_MILLIS = 1L
+        public const val RANGING_SLOT_DURATION_1_MILLIS: Long = 1L
 
         /** 2 millisecond slot duration */
-        const val RANGING_SLOT_DURATION_2_MILLIS = 2L
+        public const val RANGING_SLOT_DURATION_2_MILLIS: Long = 2L
     }
 }

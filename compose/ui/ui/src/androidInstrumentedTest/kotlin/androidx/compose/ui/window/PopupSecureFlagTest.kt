@@ -50,21 +50,20 @@ class PopupSecureFlagTest(private val setSecureFlagOnActivity: Boolean) {
     }
 
     @get:Rule
-    val rule = createAndroidComposeRule(
-        if (setSecureFlagOnActivity) {
-            ActivityWithFlagSecure::class.java
-        } else {
-            ComponentActivity::class.java
-        }
-    )
+    val rule =
+        createAndroidComposeRule(
+            if (setSecureFlagOnActivity) {
+                ActivityWithFlagSecure::class.java
+            } else {
+                ComponentActivity::class.java
+            }
+        )
 
     private val testTag = "testedPopup"
 
     @Test
     fun noFlagSetOnPopup() {
-        rule.setContent {
-            TestPopup(PopupProperties())
-        }
+        rule.setContent { TestPopup(PopupProperties()) }
 
         if (setSecureFlagOnActivity) {
             // Flag was inherited from the Activity
@@ -77,9 +76,7 @@ class PopupSecureFlagTest(private val setSecureFlagOnActivity: Boolean) {
 
     @Test
     fun forcedFlagOnPopupToDisabled() {
-        rule.setContent {
-            TestPopup(PopupProperties(securePolicy = SecureFlagPolicy.SecureOff))
-        }
+        rule.setContent { TestPopup(PopupProperties(securePolicy = SecureFlagPolicy.SecureOff)) }
 
         // This tests that we also override the flag from the Activity
         assertThat(isSecureFlagEnabledForPopup()).isFalse()
@@ -87,21 +84,17 @@ class PopupSecureFlagTest(private val setSecureFlagOnActivity: Boolean) {
 
     @Test
     fun forcedFlagOnPopupToEnabled() {
-        rule.setContent {
-            TestPopup(PopupProperties(securePolicy = SecureFlagPolicy.SecureOn))
-        }
+        rule.setContent { TestPopup(PopupProperties(securePolicy = SecureFlagPolicy.SecureOn)) }
 
         assertThat(isSecureFlagEnabledForPopup()).isTrue()
     }
 
     @Test
     fun toggleFlagOnPopup() {
-        var properties: PopupProperties
-        by mutableStateOf(PopupProperties(securePolicy = SecureFlagPolicy.SecureOff))
+        var properties: PopupProperties by
+            mutableStateOf(PopupProperties(securePolicy = SecureFlagPolicy.SecureOff))
 
-        rule.setContent {
-            TestPopup(properties)
-        }
+        rule.setContent { TestPopup(properties) }
 
         assertThat(isSecureFlagEnabledForPopup()).isFalse()
 
@@ -114,14 +107,54 @@ class PopupSecureFlagTest(private val setSecureFlagOnActivity: Boolean) {
         assertThat(isSecureFlagEnabledForPopup()).isEqualTo(setSecureFlagOnActivity)
     }
 
+    @Test
+    fun toggleFlagOnPopup_customFlagsOverload() {
+        var properties: PopupProperties by
+            mutableStateOf(
+                PopupProperties(
+                    flags = WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+                    inheritSecurePolicy = false,
+                )
+            )
+
+        rule.setContent { TestPopup(properties) }
+
+        assertThat(isSecureFlagEnabledForPopup()).isFalse()
+
+        // Toggle flag
+        properties =
+            PopupProperties(
+                flags =
+                    WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
+                        WindowManager.LayoutParams.FLAG_SECURE,
+                inheritSecurePolicy = false,
+            )
+        assertThat(isSecureFlagEnabledForPopup()).isTrue()
+
+        // Set to inherit
+        properties =
+            PopupProperties(
+                flags = WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+                inheritSecurePolicy = true,
+            )
+        assertThat(isSecureFlagEnabledForPopup()).isEqualTo(setSecureFlagOnActivity)
+
+        // Check that inherited value overrides `flags` value
+        properties =
+            PopupProperties(
+                flags =
+                    WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
+                        WindowManager.LayoutParams.FLAG_SECURE,
+                inheritSecurePolicy = true,
+            )
+        assertThat(isSecureFlagEnabledForPopup()).isEqualTo(setSecureFlagOnActivity)
+    }
+
     @Composable
     fun TestPopup(popupProperties: PopupProperties) {
         SimpleContainer {
             PopupTestTag(testTag) {
-                Popup(
-                    alignment = Alignment.Center,
-                    properties = popupProperties
-                ) {
+                Popup(alignment = Alignment.Center, properties = popupProperties) {
                     SimpleContainer(Modifier.size(50.dp), content = {})
                 }
             }
@@ -130,7 +163,7 @@ class PopupSecureFlagTest(private val setSecureFlagOnActivity: Boolean) {
 
     private fun isSecureFlagEnabledForPopup(): Boolean {
         // Make sure that current measurement/drawing is finished
-        rule.runOnIdle { }
+        rule.runOnIdle {}
         val popupMatcher = PopupLayoutMatcher(testTag)
         Espresso.onView(CoreMatchers.instanceOf(Owner::class.java))
             .inRoot(popupMatcher)

@@ -17,9 +17,17 @@
 package androidx.camera.testing.fakes;
 
 
+import static android.graphics.ImageFormat.JPEG;
+import static android.graphics.ImageFormat.JPEG_R;
+
+import static androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_1080P;
+import static androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_480P;
+import static androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_720P;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import android.os.Build;
+import android.util.Range;
 import android.util.Size;
 
 import androidx.camera.core.CameraSelector;
@@ -33,7 +41,10 @@ import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
@@ -75,6 +86,17 @@ public final class FakeCameraInfoTest {
     }
 
     @Test
+    public void canRetrieveSupportedOutputFormats() {
+        mFakeCameraInfo.setSupportedResolutions(JPEG, new ArrayList<>());
+        mFakeCameraInfo.setSupportedResolutions(JPEG_R, new ArrayList<>());
+
+        Set<Integer> formats = new HashSet<>();
+        formats.add(JPEG);
+        formats.add(JPEG_R);
+        assertThat(mFakeCameraInfo.getSupportedOutputFormats()).containsExactlyElementsIn(formats);
+    }
+
+    @Test
     public void canRetrieveSupportedFpsRanges() {
         assertThat(mFakeCameraInfo.getSupportedFrameRateRanges()).isNotEmpty();
 
@@ -83,5 +105,50 @@ public final class FakeCameraInfoTest {
     @Test
     public void canRetrieveSupportedDynamicRanges() {
         assertThat(mFakeCameraInfo.getSupportedDynamicRanges()).isNotEmpty();
+    }
+
+    @Test
+    public void canRetrieveIsHighSpeedSupported() {
+        assertThat(mFakeCameraInfo.isHighSpeedSupported()).isFalse();
+
+        mFakeCameraInfo.setHighSpeedSupported(true);
+
+        assertThat(mFakeCameraInfo.isHighSpeedSupported()).isTrue();
+    }
+
+    @Test
+    public void canRetrieveSupportedHighSpeedSizesAndRanges() {
+        List<Size> sizes120p = Arrays.asList(RESOLUTION_1080P, RESOLUTION_480P);
+        List<Size> sizes240fps = Arrays.asList(RESOLUTION_720P, RESOLUTION_480P);
+        Range<Integer> fps120 = Range.create(120, 120);
+        Range<Integer> fps240 = Range.create(240, 240);
+        mFakeCameraInfo.setSupportedHighSpeedResolutions(fps120, sizes120p);
+        mFakeCameraInfo.setSupportedHighSpeedResolutions(fps240, sizes240fps);
+
+        // getSupportedHighSpeedResolutions
+        assertThat(mFakeCameraInfo.getSupportedHighSpeedResolutions())
+                .containsExactly(RESOLUTION_1080P, RESOLUTION_720P, RESOLUTION_480P);
+
+        // getSupportedHighSpeedResolutionsFor
+        assertThat(mFakeCameraInfo.getSupportedHighSpeedResolutionsFor(fps120))
+                .containsExactlyElementsIn(sizes120p);
+        assertThat(mFakeCameraInfo.getSupportedHighSpeedResolutionsFor(fps240))
+                .containsExactlyElementsIn(sizes240fps);
+        assertThat(mFakeCameraInfo.getSupportedHighSpeedResolutionsFor(Range.create(1, 1)))
+                .isEmpty();
+
+        // getSupportedHighSpeedFrameRateRanges
+        assertThat(mFakeCameraInfo.getSupportedHighSpeedFrameRateRanges())
+                .containsExactly(fps120, fps240);
+
+        // getSupportedHighSpeedFrameRateRangesFor
+        assertThat(mFakeCameraInfo.getSupportedHighSpeedFrameRateRangesFor(new Size(1, 1)))
+                .isEmpty();
+        assertThat(mFakeCameraInfo.getSupportedHighSpeedFrameRateRangesFor(RESOLUTION_480P))
+                .containsExactly(fps120, fps240);
+        assertThat(mFakeCameraInfo.getSupportedHighSpeedFrameRateRangesFor(RESOLUTION_720P))
+                .containsExactly(fps240);
+        assertThat(mFakeCameraInfo.getSupportedHighSpeedFrameRateRangesFor(RESOLUTION_1080P))
+                .containsExactly(fps120);
     }
 }

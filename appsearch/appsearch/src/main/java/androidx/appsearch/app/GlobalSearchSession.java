@@ -18,15 +18,19 @@ package androidx.appsearch.app;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresFeature;
 import androidx.appsearch.exceptions.AppSearchException;
+import androidx.appsearch.flags.FlaggedApi;
+import androidx.appsearch.flags.Flags;
 import androidx.appsearch.observer.ObserverCallback;
 import androidx.appsearch.observer.ObserverSpec;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+
 import java.io.Closeable;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 /**
@@ -52,16 +56,41 @@ public interface GlobalSearchSession extends Closeable {
      * @param databaseName the name of the database to get from
      * @param request a request containing a namespace and IDs of the documents to retrieve.
      */
-    @NonNull
-    // @exportToFramework:startStrip()
     @RequiresFeature(
             enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
             name = Features.GLOBAL_SEARCH_SESSION_GET_BY_ID)
-    // @exportToFramework:endStrip()
-    ListenableFuture<AppSearchBatchResult<String, GenericDocument>> getByDocumentIdAsync(
+    @NonNull ListenableFuture<AppSearchBatchResult<String, GenericDocument>> getByDocumentIdAsync(
             @NonNull String packageName,
             @NonNull String databaseName,
             @NonNull GetByDocumentIdRequest request);
+
+    /**
+     * Opens a batch of AppSearch Blobs for reading.
+     *
+     * <p>See {@link AppSearchSession#openBlobForReadAsync} for a general description when a blob
+     * is open for read.
+     *
+     * <p class="caution">
+     * The returned {@link OpenBlobForReadResponse} must be closed after use to avoid
+     * resource leaks. Failing to close it will result in system file descriptor exhaustion.
+     * </p>
+     *
+     * @param handles The {@link AppSearchBlobHandle}s that identifies the blobs.
+     * @return a response containing the readable file descriptors.
+     *
+     * @see GenericDocument.Builder#setPropertyBlobHandle
+     *
+     */
+    @RequiresFeature(
+            enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
+            name = Features.BLOB_STORAGE)
+    @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
+    @ExperimentalAppSearchApi
+    default @NonNull ListenableFuture<OpenBlobForReadResponse> openBlobForReadAsync(
+            @NonNull Set<AppSearchBlobHandle> handles) {
+        throw new UnsupportedOperationException(Features.BLOB_STORAGE
+                + " is not available on this AppSearch implementation.");
+    }
 
     /**
      * Retrieves documents from all AppSearch databases that the querying application has access to.
@@ -86,8 +115,7 @@ public interface GlobalSearchSession extends Closeable {
      *                        match type, etc.
      * @return a {@link SearchResults} object for retrieved matched documents.
      */
-    @NonNull
-    SearchResults search(@NonNull String queryExpression, @NonNull SearchSpec searchSpec);
+    @NonNull SearchResults search(@NonNull String queryExpression, @NonNull SearchSpec searchSpec);
 
     /**
      * Reports that a particular document has been used from a system surface.
@@ -106,8 +134,8 @@ public interface GlobalSearchSession extends Closeable {
      *     {@link AppSearchResult#RESULT_SECURITY_ERROR} if this API is invoked by an app which
      *     is not part of the system.
      */
-    @NonNull
-    ListenableFuture<Void> reportSystemUsageAsync(@NonNull ReportSystemUsageRequest request);
+    @NonNull ListenableFuture<Void> reportSystemUsageAsync(
+            @NonNull ReportSystemUsageRequest request);
 
     /**
      * Retrieves the collection of schemas most recently successfully provided to
@@ -126,21 +154,17 @@ public interface GlobalSearchSession extends Closeable {
      */
     // This call hits disk; async API prevents us from treating these calls as properties.
     @SuppressLint("KotlinPropertyAccess")
-    @NonNull
-    // @exportToFramework:startStrip()
     @RequiresFeature(
             enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
             name = Features.GLOBAL_SEARCH_SESSION_GET_SCHEMA)
-    // @exportToFramework:endStrip()
-    ListenableFuture<GetSchemaResponse> getSchemaAsync(@NonNull String packageName,
+    @NonNull ListenableFuture<GetSchemaResponse> getSchemaAsync(@NonNull String packageName,
             @NonNull String databaseName);
 
     /**
      * Returns the {@link Features} to check for the availability of certain features
      * for this session.
      */
-    @NonNull
-    Features getFeatures();
+    @NonNull Features getFeatures();
 
     /**
      * Adds an {@link ObserverCallback} to monitor changes within the databases owned by
@@ -170,11 +194,9 @@ public interface GlobalSearchSession extends Closeable {
      * @throws UnsupportedOperationException if this feature is not available on this
      *                                       AppSearch implementation.
      */
-    // @exportToFramework:startStrip()
     @RequiresFeature(
             enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
             name = Features.GLOBAL_SEARCH_SESSION_REGISTER_OBSERVER_CALLBACK)
-    // @exportToFramework:endStrip()
     void registerObserverCallback(
             @NonNull String targetPackageName,
             @NonNull ObserverSpec spec,
@@ -204,11 +226,9 @@ public interface GlobalSearchSession extends Closeable {
      * @throws UnsupportedOperationException if this feature is not available on this
      *                                       AppSearch implementation.
      */
-    // @exportToFramework:startStrip()
     @RequiresFeature(
             enforcement = "androidx.appsearch.app.Features#isFeatureSupported",
             name = Features.GLOBAL_SEARCH_SESSION_REGISTER_OBSERVER_CALLBACK)
-    // @exportToFramework:endStrip()
     void unregisterObserverCallback(
             @NonNull String targetPackageName, @NonNull ObserverCallback observer)
             throws AppSearchException;

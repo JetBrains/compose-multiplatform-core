@@ -20,6 +20,7 @@ import android.content.ComponentName
 import android.os.Bundle
 import androidx.credentials.CredentialOption.Companion.createFrom
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert
@@ -36,19 +37,40 @@ class GetCustomCredentialOptionTest {
             "Expected empty type to throw IAE",
             IllegalArgumentException::class.java
         ) {
-            GetCustomCredentialOption(
-                "",
-                Bundle(),
-                Bundle(),
-                false,
-                false
-            )
+            GetCustomCredentialOption("", Bundle(), Bundle(), false, false)
         }
     }
 
     @Test
     fun constructor_nonEmptyTypeNonNullBundle_success() {
         GetCustomCredentialOption("T", Bundle(), Bundle(), true, true)
+    }
+
+    @Test
+    fun constructor_priorityNotPassedIn_defaultPriorityRetrievedSuccess() {
+        val customCredentialOption = GetCustomCredentialOption("T", Bundle(), Bundle(), true, false)
+
+        assertThat(customCredentialOption.typePriorityHint)
+            .isEqualTo(EXPECTED_CUSTOM_DEFAULT_PRIORITY)
+    }
+
+    @Test
+    fun constructor_priorityPassedIn_setPriorityRetrievedSuccess() {
+        val expectedOverwrittenPriorityHint = CredentialOption.PRIORITY_OIDC_OR_SIMILAR
+
+        val customCredentialOption =
+            GetCustomCredentialOption(
+                "T",
+                Bundle(),
+                Bundle(),
+                true,
+                false,
+                emptySet(),
+                expectedOverwrittenPriorityHint
+            )
+
+        assertThat(customCredentialOption.typePriorityHint)
+            .isEqualTo(expectedOverwrittenPriorityHint)
     }
 
     @Test
@@ -60,32 +82,31 @@ class GetCustomCredentialOptionTest {
         expectedCandidateQueryDataBundle.putBoolean("key", true)
         val expectedAutoSelectAllowed = true
         val expectedSystemProvider = true
-        val expectedAllowedProviders: Set<ComponentName> = setOf(
-            ComponentName("pkg", "cls"),
-            ComponentName("pkg2", "cls2")
+        val expectedAllowedProviders: Set<ComponentName> =
+            setOf(ComponentName("pkg", "cls"), ComponentName("pkg2", "cls2"))
+        val expectedPriorityCategoryValue = EXPECTED_CUSTOM_DEFAULT_PRIORITY
+        expectedBundle.putInt(
+            CredentialOption.BUNDLE_KEY_TYPE_PRIORITY_VALUE,
+            expectedPriorityCategoryValue
         )
 
-        val option = GetCustomCredentialOption(
-            expectedType,
-            expectedBundle,
-            expectedCandidateQueryDataBundle,
-            expectedSystemProvider,
-            expectedAutoSelectAllowed,
-            expectedAllowedProviders
-        )
+        val option =
+            GetCustomCredentialOption(
+                expectedType,
+                expectedBundle,
+                expectedCandidateQueryDataBundle,
+                expectedSystemProvider,
+                expectedAutoSelectAllowed,
+                expectedAllowedProviders
+            )
 
         assertThat(option.type).isEqualTo(expectedType)
         assertThat(equals(option.requestData, expectedBundle)).isTrue()
-        assertThat(
-            equals(
-                option.candidateQueryData,
-                expectedCandidateQueryDataBundle
-            )
-        ).isTrue()
+        assertThat(equals(option.candidateQueryData, expectedCandidateQueryDataBundle)).isTrue()
         assertThat(option.isAutoSelectAllowed).isEqualTo(expectedAutoSelectAllowed)
         assertThat(option.isSystemProviderRequired).isEqualTo(expectedSystemProvider)
-        assertThat(option.allowedProviders)
-            .containsAtLeastElementsIn(expectedAllowedProviders)
+        assertThat(option.allowedProviders).containsAtLeastElementsIn(expectedAllowedProviders)
+        assertThat(option.typePriorityHint).isEqualTo(EXPECTED_CUSTOM_DEFAULT_PRIORITY)
     }
 
     @Test
@@ -97,37 +118,82 @@ class GetCustomCredentialOptionTest {
         expectedCandidateQueryDataBundle.putBoolean("key", true)
         val expectedSystemProvider = true
         val expectedAutoSelectAllowed = false
-        val expectedAllowedProviders: Set<ComponentName> = setOf(
-            ComponentName("pkg", "cls"),
-            ComponentName("pkg2", "cls2")
-        )
-        val option = GetCustomCredentialOption(
-            expectedType,
-            expectedBundle,
-            expectedCandidateQueryDataBundle,
-            expectedSystemProvider,
-            expectedAutoSelectAllowed,
-            expectedAllowedProviders
-        )
+        val expectedAllowedProviders: Set<ComponentName> =
+            setOf(ComponentName("pkg", "cls"), ComponentName("pkg2", "cls2"))
+        val expectedPriorityHint = CredentialOption.PRIORITY_OIDC_OR_SIMILAR
+        val option =
+            GetCustomCredentialOption(
+                expectedType,
+                expectedBundle,
+                expectedCandidateQueryDataBundle,
+                expectedSystemProvider,
+                expectedAutoSelectAllowed,
+                expectedAllowedProviders,
+                expectedPriorityHint
+            )
 
-        val convertedOption = createFrom(
-            option.type, option.requestData, option.candidateQueryData,
-            option.isSystemProviderRequired, option.allowedProviders
-        )
+        val convertedOption =
+            createFrom(
+                option.type,
+                option.requestData,
+                option.candidateQueryData,
+                option.isSystemProviderRequired,
+                option.allowedProviders
+            )
 
         assertThat(convertedOption).isInstanceOf(GetCustomCredentialOption::class.java)
         val actualOption = convertedOption as GetCustomCredentialOption
         assertThat(actualOption.type).isEqualTo(expectedType)
         assertThat(equals(actualOption.requestData, expectedBundle)).isTrue()
-        assertThat(
-            equals(
-                actualOption.candidateQueryData,
-                expectedCandidateQueryDataBundle
-            )
-        ).isTrue()
+        assertThat(equals(actualOption.candidateQueryData, expectedCandidateQueryDataBundle))
+            .isTrue()
         assertThat(actualOption.isAutoSelectAllowed).isEqualTo(expectedAutoSelectAllowed)
         assertThat(actualOption.isSystemProviderRequired).isEqualTo(expectedSystemProvider)
         assertThat(actualOption.allowedProviders)
             .containsAtLeastElementsIn(expectedAllowedProviders)
+        assertThat(actualOption.typePriorityHint).isEqualTo(expectedPriorityHint)
+    }
+
+    @SdkSuppress(minSdkVersion = 34)
+    @Test
+    fun frameworkConversion_frameworkClass_success() {
+        val expectedType = "TYPE"
+        val expectedBundle = Bundle()
+        expectedBundle.putString("Test", "Test")
+        val expectedCandidateQueryDataBundle = Bundle()
+        expectedCandidateQueryDataBundle.putBoolean("key", true)
+        val expectedSystemProvider = true
+        val expectedAutoSelectAllowed = false
+        val expectedAllowedProviders: Set<ComponentName> =
+            setOf(ComponentName("pkg", "cls"), ComponentName("pkg2", "cls2"))
+        val expectedPriorityHint = CredentialOption.PRIORITY_OIDC_OR_SIMILAR
+        val option =
+            GetCustomCredentialOption(
+                expectedType,
+                expectedBundle,
+                expectedCandidateQueryDataBundle,
+                expectedSystemProvider,
+                expectedAutoSelectAllowed,
+                expectedAllowedProviders,
+                expectedPriorityHint
+            )
+
+        val convertedOption =
+            createFrom(
+                android.credentials.CredentialOption.Builder(
+                        option.type,
+                        option.requestData,
+                        option.candidateQueryData
+                    )
+                    .setAllowedProviders(option.allowedProviders)
+                    .setIsSystemProviderRequired(option.isSystemProviderRequired)
+                    .build()
+            )
+
+        assertEquals(convertedOption, option)
+    }
+
+    private companion object {
+        private const val EXPECTED_CUSTOM_DEFAULT_PRIORITY = CredentialOption.PRIORITY_DEFAULT
     }
 }

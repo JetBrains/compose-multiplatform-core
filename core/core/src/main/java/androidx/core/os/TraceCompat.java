@@ -17,9 +17,9 @@ import android.os.Build;
 import android.os.Trace;
 import android.util.Log;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -50,7 +50,7 @@ public final class TraceCompat {
     private static Method sTraceCounterMethod;
 
     static {
-        if (Build.VERSION.SDK_INT >= 18 && Build.VERSION.SDK_INT < 29) {
+        if (Build.VERSION.SDK_INT < 29) {
             try {
                 Field traceTagAppField = Trace.class.getField("TRACE_TAG_APP");
                 sTraceTagApp = traceTagAppField.getLong(null);
@@ -189,22 +189,18 @@ public final class TraceCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static boolean isEnabled() {
             return Trace.isEnabled();
         }
 
-        @DoNotInline
         static void endAsyncSection(String methodName, int cookie) {
             Trace.endAsyncSection(methodName, cookie);
         }
 
-        @DoNotInline
         static void beginAsyncSection(String methodName, int cookie) {
             Trace.beginAsyncSection(methodName, cookie);
         }
 
-        @DoNotInline
         static void setCounter(String counterName, long counterValue) {
             Trace.setCounter(counterName, counterValue);
         }

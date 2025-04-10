@@ -15,38 +15,46 @@
  */
 
 @file:Suppress("NOTHING_TO_INLINE")
-@file:RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 
 package androidx.camera.camera2.pipe
 
-import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
+@JvmDefaultWithCompatibility
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 /** Methods for querying, iterating, and selecting the Cameras that are available on the device. */
-interface CameraDevices {
+public interface CameraDevices {
+    /**
+     * A flow of the list of currently openable [CameraId]s from the provided CameraBackend. It
+     * should continuously return a list of current cameras, and the list should be updated camera
+     * availability changes, e.g., an external camera is plugged or unplugged. The flow should also
+     * replay the most recent value for each new subscriber.
+     */
+    public fun cameraIdsFlow(cameraBackendId: CameraBackendId? = null): Flow<List<CameraId>>
+
     /**
      * Read the list of currently openable [CameraId]s from the provided CameraBackend, suspending
      * if needed. By default this will load the list of openable [CameraId]s from the default
      * backend.
      */
-    suspend fun getCameraIds(cameraBackendId: CameraBackendId? = null): List<CameraId>?
+    public suspend fun getCameraIds(cameraBackendId: CameraBackendId? = null): List<CameraId>?
 
     /**
      * Read the list of currently openable [CameraId]s from the provided CameraBackend, blocking the
      * thread if needed. By default this will load the list of openable [CameraId]s from the default
      * backend.
      */
-    fun awaitCameraIds(cameraBackendId: CameraBackendId? = null): List<CameraId>?
+    public fun awaitCameraIds(cameraBackendId: CameraBackendId? = null): List<CameraId>?
 
     /**
      * Read the set of [CameraId] sets that can be operated concurrently from the provided
      * CameraBackend, suspending if needed. By default this will load the set of [CameraId] sets
      * from the default backend.
      */
-    suspend fun getConcurrentCameraIds(
+    public suspend fun getConcurrentCameraIds(
         cameraBackendId: CameraBackendId? = null
     ): Set<Set<CameraId>>?
 
@@ -55,13 +63,15 @@ interface CameraDevices {
      * CameraBackend, blocking the thread if needed. By default this will load the set of [CameraId]
      * sets from the default backend.
      */
-    fun awaitConcurrentCameraIds(cameraBackendId: CameraBackendId? = null): Set<Set<CameraId>>?
+    public fun awaitConcurrentCameraIds(
+        cameraBackendId: CameraBackendId? = null
+    ): Set<Set<CameraId>>?
 
     /**
      * Read metadata for a specific camera id, suspending if needed. By default, this method will
      * query metadata from the default backend if one is not specified.
      */
-    suspend fun getCameraMetadata(
+    public suspend fun getCameraMetadata(
         cameraId: CameraId,
         cameraBackendId: CameraBackendId? = null
     ): CameraMetadata?
@@ -70,10 +80,38 @@ interface CameraDevices {
      * Read metadata for a specific camera id, blocking if needed. By default, this method will
      * query metadata from the default backend if one is not specified.
      */
-    fun awaitCameraMetadata(
+    public fun awaitCameraMetadata(
         cameraId: CameraId,
         cameraBackendId: CameraBackendId? = null
     ): CameraMetadata?
+
+    /**
+     * Opens the camera device indicated by the cameraId, so that any subsequent open calls will
+     * potentially have a better latency.
+     */
+    public fun prewarm(cameraId: CameraId, cameraBackendId: CameraBackendId? = null)
+
+    /** Non blocking operation that disconnects the underlying active Camera. */
+    public fun disconnect(cameraId: CameraId, cameraBackendId: CameraBackendId? = null)
+
+    /**
+     * Disconnects the underlying active Camera. Once fully closed, the returned [Deferred] should
+     * be completed. It is synchronous with the other operations within this class.
+     */
+    public fun disconnectAsync(
+        cameraId: CameraId,
+        cameraBackendId: CameraBackendId? = null
+    ): Deferred<Unit>
+
+    /** Non blocking operation that disconnects all active Cameras. */
+    public fun disconnectAll(cameraBackendId: CameraBackendId? = null)
+
+    /**
+     * Non blocking operation that disconnects all active Cameras. Once all connections are fully
+     * closed, the returned [Deferred] should be completed. It is synchronous with the other
+     * operations within this class.
+     */
+    public fun disconnectAllAsync(cameraBackendId: CameraBackendId? = null): Deferred<Unit>
 
     /**
      * Iterate and return a list of CameraId's on the device that are capable of being opened. Some
@@ -85,7 +123,7 @@ interface CameraDevices {
         replaceWith = ReplaceWith("awaitCameraIds"),
         level = DeprecationLevel.WARNING
     )
-    fun findAll(): List<CameraId>
+    public fun findAll(): List<CameraId>
 
     /**
      * Load the list of CameraIds from the Camera2 CameraManager, suspending if the list of
@@ -96,7 +134,7 @@ interface CameraDevices {
         replaceWith = ReplaceWith("getCameraIds"),
         level = DeprecationLevel.WARNING
     )
-    suspend fun ids(): List<CameraId>
+    public suspend fun ids(): List<CameraId>
 
     /**
      * Load CameraMetadata for a specific CameraId. Loading CameraMetadata can take a non-zero
@@ -108,7 +146,7 @@ interface CameraDevices {
         replaceWith = ReplaceWith("getCameraMetadata"),
         level = DeprecationLevel.WARNING
     )
-    suspend fun getMetadata(camera: CameraId): CameraMetadata
+    public suspend fun getMetadata(camera: CameraId): CameraMetadata
 
     /**
      * Load CameraMetadata for a specific CameraId and block the calling thread until the result is
@@ -119,24 +157,21 @@ interface CameraDevices {
         replaceWith = ReplaceWith("awaitCameraMetadata"),
         level = DeprecationLevel.WARNING
     )
-    fun awaitMetadata(camera: CameraId): CameraMetadata
+    public fun awaitMetadata(camera: CameraId): CameraMetadata
 }
 
-/**
- * CameraId represents a typed identifier for a camera represented as a non-blank String.
- */
+/** CameraId represents a typed identifier for a camera represented as a non-blank String. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @JvmInline
-value class CameraId(val value: String) {
+public value class CameraId(public val value: String) {
     init {
-        require(value.isNotBlank()) {
-            "CameraId cannot be null or blank!"
-        }
+        require(value.isNotBlank()) { "CameraId cannot be null or blank!" }
     }
 
-    companion object {
-        inline fun fromCamera2Id(value: String): CameraId = CameraId(value)
-        inline fun fromCamera1Id(value: Int): CameraId = CameraId("$value")
+    public companion object {
+        public inline fun fromCamera2Id(value: String): CameraId = CameraId(value)
+
+        public inline fun fromCamera1Id(value: Int): CameraId = CameraId("$value")
     }
 
     /**
@@ -144,8 +179,9 @@ value class CameraId(val value: String) {
      *
      * @return The parsed Camera1 id, or null if the value cannot be parsed as a Camera1 id.
      */
-    inline fun toCamera1Id(): Int? = value.toIntOrNull()
-    override fun toString(): String = "Camera $value"
+    public inline fun toCamera1Id(): Int? = value.toIntOrNull()
+
+    override fun toString(): String = "CameraId-$value"
 }
 
 /**
@@ -154,7 +190,7 @@ value class CameraId(val value: String) {
  * last.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun CameraDevices.find(
+public fun CameraDevices.find(
     cameraBackendId: CameraBackendId? = null,
     includePhysicalCameraMetadata: Boolean = false
 ): Flow<CameraMetadata> = flow {
@@ -177,9 +213,10 @@ fun CameraDevices.find(
             for (physicalId in metadata.physicalCameraIds) {
                 if (!visited.contains(physicalId)) {
                     val physicalMetadata = this@find.getCameraMetadata(physicalId, cameraBackendId)
-                    if (physicalMetadata != null &&
-                        physicalMetadata.camera == physicalId &&
-                        visited.add(physicalId)
+                    if (
+                        physicalMetadata != null &&
+                            physicalMetadata.camera == physicalId &&
+                            visited.add(physicalId)
                     ) {
                         emit(physicalMetadata)
                     }

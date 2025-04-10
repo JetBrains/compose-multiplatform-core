@@ -46,13 +46,13 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.core.view.AccessibilityDelegateCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.SdkSuppress;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -60,7 +60,6 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
 
 /**
  * Includes tests for {@link LinearLayoutManager}.
@@ -892,8 +891,8 @@ public class LinearLayoutManagerTest extends BaseLinearLayoutManagerTest {
                 .findViewHolderForAdapterPosition(childBeingPushOut);
         final int originalAccessibility = ViewCompat.getImportantForAccessibility(
                 itemViewHolder.itemView);
-        assertTrue(ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_AUTO == originalAccessibility
-                || ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_YES == originalAccessibility);
+        assertTrue(View.IMPORTANT_FOR_ACCESSIBILITY_AUTO == originalAccessibility
+                || View.IMPORTANT_FOR_ACCESSIBILITY_YES == originalAccessibility);
 
         itemAnimator.expect(ItemAnimatorTestDouble.MOVE_START, 1);
         mActivityRule.runOnUiThread(new Runnable() {
@@ -908,8 +907,8 @@ public class LinearLayoutManagerTest extends BaseLinearLayoutManagerTest {
         // RV Changes accessiblity after onMoveStart, so wait one more cycle.
         waitOneCycle();
         assertTrue(itemAnimator.getMovesAnimations().contains(itemViewHolder));
-        assertEquals(ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS,
-                ViewCompat.getImportantForAccessibility(itemViewHolder.itemView));
+        assertEquals(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS,
+                itemViewHolder.itemView.getImportantForAccessibility());
 
         // notify Change again to run predictive animation.
         mLayoutManager.expectLayouts(2);
@@ -935,8 +934,8 @@ public class LinearLayoutManagerTest extends BaseLinearLayoutManagerTest {
         // the important for accessibility should be reset to YES/AUTO:
         final int newAccessibility = ViewCompat.getImportantForAccessibility(
                 itemViewHolder.itemView);
-        assertTrue(ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_AUTO == newAccessibility
-                || ViewCompat.IMPORTANT_FOR_ACCESSIBILITY_YES == newAccessibility);
+        assertTrue(View.IMPORTANT_FOR_ACCESSIBILITY_AUTO == newAccessibility
+                || View.IMPORTANT_FOR_ACCESSIBILITY_YES == newAccessibility);
     }
 
     @Test

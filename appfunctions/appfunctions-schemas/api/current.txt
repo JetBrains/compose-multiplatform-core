@@ -1,0 +1,403 @@
+// Signature format: 4.0
+package androidx.appfunctions {
+
+  public interface AppFunctionOpenable {
+    method public android.app.PendingIntent getIntentToOpen();
+    property public abstract android.app.PendingIntent intentToOpen;
+  }
+
+}
+
+package androidx.appfunctions.schema.calendars {
+
+  public interface AppFunctionCalendarEvent {
+    method public default String? getDescription();
+    method public java.time.Instant getEndsAt();
+    method public String getId();
+    method public default String? getLocation();
+    method public default String? getRecurrenceSchedule();
+    method public default String? getSelfAttendeeStatus();
+    method public java.time.Instant getStartsAt();
+    method public default String? getStatus();
+    method public java.time.ZoneId getTimeZone();
+    method public String getTitle();
+    method public default boolean isAllDay();
+    method public default boolean isInPublicCalendar();
+    method public default boolean isOrganizer();
+    method public default boolean isReadOnly();
+    property public default String? description;
+    property public abstract java.time.Instant endsAt;
+    property public abstract String id;
+    property public default boolean isAllDay;
+    property public default boolean isInPublicCalendar;
+    property public default boolean isOrganizer;
+    property public default boolean isReadOnly;
+    property public default String? location;
+    property public default String? recurrenceSchedule;
+    property public default String? selfAttendeeStatus;
+    property public abstract java.time.Instant startsAt;
+    property public default String? status;
+    property public abstract java.time.ZoneId timeZone;
+    property public abstract String title;
+    field public static final String ATTENDEE_ACCEPTED = "ACCEPTED";
+    field public static final String ATTENDEE_DECLINED = "DECLINED";
+    field public static final String ATTENDEE_TENTATIVE = "TENTATIVE";
+    field public static final androidx.appfunctions.schema.calendars.AppFunctionCalendarEvent.Companion Companion;
+    field public static final String EVENT_CANCELLED = "CANCELLED";
+    field public static final String EVENT_CONFIRMED = "CONFIRMED";
+    field public static final String EVENT_TENTATIVE = "TENTATIVE";
+  }
+
+  public static final class AppFunctionCalendarEvent.Companion {
+    property public static String ATTENDEE_ACCEPTED;
+    property public static String ATTENDEE_DECLINED;
+    property public static String ATTENDEE_TENTATIVE;
+    property public static String EVENT_CANCELLED;
+    property public static String EVENT_CONFIRMED;
+    property public static String EVENT_TENTATIVE;
+    field public static final String ATTENDEE_ACCEPTED = "ACCEPTED";
+    field public static final String ATTENDEE_DECLINED = "DECLINED";
+    field public static final String ATTENDEE_TENTATIVE = "TENTATIVE";
+    field public static final String EVENT_CANCELLED = "CANCELLED";
+    field public static final String EVENT_CONFIRMED = "CONFIRMED";
+    field public static final String EVENT_TENTATIVE = "TENTATIVE";
+  }
+
+  public final class CalendarsKt {
+    property public static String APP_FUNCTION_SCHEMA_CATEGORY_CALENDAR;
+    field public static final String APP_FUNCTION_SCHEMA_CATEGORY_CALENDAR = "calendar";
+  }
+
+  public interface GetCalendarEventsAppFunction<Parameters extends androidx.appfunctions.schema.calendars.GetCalendarEventsAppFunction.Parameters, Response extends androidx.appfunctions.schema.calendars.GetCalendarEventsAppFunction.Response> {
+    method public suspend Object? getCalendarEvents(androidx.appfunctions.AppFunctionContext appFunctionContext, Parameters parameters, kotlin.coroutines.Continuation<? super Response>);
+    field public static final androidx.appfunctions.schema.calendars.GetCalendarEventsAppFunction.Companion Companion;
+  }
+
+  public static final class GetCalendarEventsAppFunction.Companion {
+  }
+
+  public static interface GetCalendarEventsAppFunction.Parameters {
+    method public java.util.List<java.lang.String> getCalendarEventIds();
+    property public abstract java.util.List<java.lang.String> calendarEventIds;
+  }
+
+  public static interface GetCalendarEventsAppFunction.Response {
+    method public java.util.List<androidx.appfunctions.schema.calendars.AppFunctionCalendarEvent> getCalendarEvents();
+    property public abstract java.util.List<androidx.appfunctions.schema.calendars.AppFunctionCalendarEvent> calendarEvents;
+  }
+
+}
+
+package androidx.appfunctions.schema.files {
+
+  public interface AppFunctionFile {
+    method public String getId();
+    method public String getName();
+    property public abstract String id;
+    property public abstract String name;
+  }
+
+  public final class FilesKt {
+    property public static String APP_FUNCTION_SCHEMA_CATEGORY_FILES;
+    field public static final String APP_FUNCTION_SCHEMA_CATEGORY_FILES = "files";
+  }
+
+  public interface FindFilesAppFunction<Parameters extends androidx.appfunctions.schema.files.FindFilesAppFunction.Parameters, Response extends androidx.appfunctions.schema.files.FindFilesAppFunction.Response> {
+    method public suspend Object? findFiles(androidx.appfunctions.AppFunctionContext appFunctionContext, Parameters params, kotlin.coroutines.Continuation<? super Response>);
+    field public static final androidx.appfunctions.schema.files.FindFilesAppFunction.Companion Companion;
+    field public static final int SCHEMA_VERSION = 2; // 0x2
+  }
+
+  public static final class FindFilesAppFunction.Companion {
+    property public static int SCHEMA_VERSION;
+    field public static final int SCHEMA_VERSION = 2; // 0x2
+  }
+
+  public static interface FindFilesAppFunction.Parameters {
+    method public default java.util.List<java.lang.String> getFileTypes();
+    method public default String? getQuery();
+    property public default java.util.List<java.lang.String> fileTypes;
+    property public default String? query;
+  }
+
+  public static interface FindFilesAppFunction.Response {
+    method public java.util.List<androidx.appfunctions.schema.files.AppFunctionFile> getFiles();
+    property public abstract java.util.List<androidx.appfunctions.schema.files.AppFunctionFile> files;
+  }
+
+  public interface GetFileContentUrisAppFunction<Parameters extends androidx.appfunctions.schema.files.GetFileContentUrisAppFunction.Parameters, Response extends androidx.appfunctions.schema.files.GetFileContentUrisAppFunction.Response> {
+    method public suspend Object? getFileContentUris(androidx.appfunctions.AppFunctionContext appFunctionContext, Parameters params, kotlin.coroutines.Continuation<? super Response>);
+    field public static final androidx.appfunctions.schema.files.GetFileContentUrisAppFunction.Companion Companion;
+    field public static final int SCHEMA_VERSION = 2; // 0x2
+  }
+
+  public static final class GetFileContentUrisAppFunction.Companion {
+    property public static int SCHEMA_VERSION;
+    field public static final int SCHEMA_VERSION = 2; // 0x2
+  }
+
+  public static interface GetFileContentUrisAppFunction.FileContentUri {
+    method public String getId();
+    method public android.net.Uri getUri();
+    property public abstract String id;
+    property public abstract android.net.Uri uri;
+  }
+
+  public static interface GetFileContentUrisAppFunction.Parameters {
+    method public java.util.List<java.lang.String> getFileIds();
+    property public abstract java.util.List<java.lang.String> fileIds;
+  }
+
+  public static interface GetFileContentUrisAppFunction.Response {
+    method public java.util.List<androidx.appfunctions.schema.files.GetFileContentUrisAppFunction.FileContentUri> getFileContentUris();
+    property public abstract java.util.List<androidx.appfunctions.schema.files.GetFileContentUrisAppFunction.FileContentUri> fileContentUris;
+  }
+
+}
+
+package androidx.appfunctions.schema.notes {
+
+  public interface AppFunctionNote {
+    method public default java.util.List<androidx.appfunctions.schema.notes.AppFunctionNote.Attachment> getAttachments();
+    method public default String? getContent();
+    method public default String? getGroupId();
+    method public String getId();
+    method public String getTitle();
+    property public default java.util.List<androidx.appfunctions.schema.notes.AppFunctionNote.Attachment> attachments;
+    property public default String? content;
+    property public default String? groupId;
+    property public abstract String id;
+    property public abstract String title;
+  }
+
+  public static interface AppFunctionNote.Attachment {
+    method public String getDisplayName();
+    method public default String? getMimeType();
+    method public android.net.Uri getUri();
+    property public abstract String displayName;
+    property public default String? mimeType;
+    property public abstract android.net.Uri uri;
+  }
+
+  public interface AppFunctionNotesGroup {
+    method public String getId();
+    method public String getLabel();
+    property public abstract String id;
+    property public abstract String label;
+  }
+
+  public interface CreateNoteAppFunction<Parameters extends androidx.appfunctions.schema.notes.CreateNoteAppFunction.Parameters, Response extends androidx.appfunctions.schema.notes.CreateNoteAppFunction.Response> {
+    method public suspend Object? createNote(androidx.appfunctions.AppFunctionContext appFunctionContext, Parameters parameters, kotlin.coroutines.Continuation<? super Response>);
+    field public static final androidx.appfunctions.schema.notes.CreateNoteAppFunction.Companion Companion;
+  }
+
+  public static final class CreateNoteAppFunction.Companion {
+  }
+
+  public static interface CreateNoteAppFunction.Parameters {
+    method public default java.util.List<androidx.appfunctions.schema.notes.AppFunctionNote.Attachment> getAttachments();
+    method public default String? getContent();
+    method public default String? getExternalUuid();
+    method public default String? getGroupId();
+    method public String getTitle();
+    property public default java.util.List<androidx.appfunctions.schema.notes.AppFunctionNote.Attachment> attachments;
+    property public default String? content;
+    property public default String? externalUuid;
+    property public default String? groupId;
+    property public abstract String title;
+  }
+
+  public static interface CreateNoteAppFunction.Response {
+    method public androidx.appfunctions.schema.notes.AppFunctionNote getCreatedNote();
+    property public abstract androidx.appfunctions.schema.notes.AppFunctionNote createdNote;
+  }
+
+  public interface CreateNotesGroupAppFunction<Parameters extends androidx.appfunctions.schema.notes.CreateNotesGroupAppFunction.Parameters, Response extends androidx.appfunctions.schema.notes.CreateNotesGroupAppFunction.Response> {
+    method public suspend Object? createNotesGroup(androidx.appfunctions.AppFunctionContext appFunctionContext, Parameters parameters, kotlin.coroutines.Continuation<? super Response>);
+    field public static final androidx.appfunctions.schema.notes.CreateNotesGroupAppFunction.Companion Companion;
+  }
+
+  public static final class CreateNotesGroupAppFunction.Companion {
+  }
+
+  public static interface CreateNotesGroupAppFunction.Parameters {
+    method public String getLabel();
+    property public abstract String label;
+  }
+
+  public static interface CreateNotesGroupAppFunction.Response {
+    method public androidx.appfunctions.schema.notes.AppFunctionNotesGroup getCreatedGroup();
+    property public abstract androidx.appfunctions.schema.notes.AppFunctionNotesGroup createdGroup;
+  }
+
+  public interface DeleteNotesAppFunction<Parameters extends androidx.appfunctions.schema.notes.DeleteNotesAppFunction.Parameters, Response extends androidx.appfunctions.schema.notes.DeleteNotesAppFunction.Response> {
+    method public suspend Object? deleteNotes(androidx.appfunctions.AppFunctionContext appFunctionContext, Parameters parameters, kotlin.coroutines.Continuation<? super Response>);
+    field public static final androidx.appfunctions.schema.notes.DeleteNotesAppFunction.Companion Companion;
+  }
+
+  public static final class DeleteNotesAppFunction.Companion {
+  }
+
+  public static interface DeleteNotesAppFunction.Parameters {
+    method public java.util.List<java.lang.String> getNoteIds();
+    property public abstract java.util.List<java.lang.String> noteIds;
+  }
+
+  public static interface DeleteNotesAppFunction.Response {
+    method public java.util.List<java.lang.String> getNoteIds();
+    property public abstract java.util.List<java.lang.String> noteIds;
+  }
+
+  public interface DeleteNotesGroupsAppFunction<Parameters extends androidx.appfunctions.schema.notes.DeleteNotesGroupsAppFunction.Parameters, Response extends androidx.appfunctions.schema.notes.DeleteNotesGroupsAppFunction.Response> {
+    method public suspend Object? deleteNotesGroups(androidx.appfunctions.AppFunctionContext appFunctionContext, Parameters parameters, kotlin.coroutines.Continuation<? super Response>);
+    field public static final androidx.appfunctions.schema.notes.DeleteNotesGroupsAppFunction.Companion Companion;
+  }
+
+  public static final class DeleteNotesGroupsAppFunction.Companion {
+  }
+
+  public static interface DeleteNotesGroupsAppFunction.Parameters {
+    method public java.util.List<java.lang.String> getGroupIds();
+    property public abstract java.util.List<java.lang.String> groupIds;
+  }
+
+  public static interface DeleteNotesGroupsAppFunction.Response {
+    method public java.util.List<java.lang.String> getGroupIds();
+    property public abstract java.util.List<java.lang.String> groupIds;
+  }
+
+  public interface FindNotesAppFunction<Parameters extends androidx.appfunctions.schema.notes.FindNotesAppFunction.Parameters, Response extends androidx.appfunctions.schema.notes.FindNotesAppFunction.Response> {
+    method public suspend Object? findNotes(androidx.appfunctions.AppFunctionContext appFunctionContext, Parameters parameters, kotlin.coroutines.Continuation<? super Response>);
+    field public static final androidx.appfunctions.schema.notes.FindNotesAppFunction.Companion Companion;
+  }
+
+  public static final class FindNotesAppFunction.Companion {
+  }
+
+  public static interface FindNotesAppFunction.Parameters {
+    method public default java.time.LocalDateTime? getModifiedAfter();
+    method public default java.time.LocalDateTime? getModifiedBefore();
+    method public default String? getQuery();
+    property public default java.time.LocalDateTime? modifiedAfter;
+    property public default java.time.LocalDateTime? modifiedBefore;
+    property public default String? query;
+  }
+
+  public static interface FindNotesAppFunction.Response {
+    method public java.util.List<androidx.appfunctions.schema.notes.AppFunctionNote> getNotes();
+    property public abstract java.util.List<androidx.appfunctions.schema.notes.AppFunctionNote> notes;
+  }
+
+  public interface FindNotesGroupsAppFunction<Parameters extends androidx.appfunctions.schema.notes.FindNotesGroupsAppFunction.Parameters, Response extends androidx.appfunctions.schema.notes.FindNotesGroupsAppFunction.Response> {
+    method public suspend Object? findNotesGroups(androidx.appfunctions.AppFunctionContext appFunctionContext, Parameters parameters, kotlin.coroutines.Continuation<? super Response>);
+    field public static final androidx.appfunctions.schema.notes.FindNotesGroupsAppFunction.Companion Companion;
+  }
+
+  public static final class FindNotesGroupsAppFunction.Companion {
+  }
+
+  public static interface FindNotesGroupsAppFunction.Parameters {
+    method public default String? getQuery();
+    property public default String? query;
+  }
+
+  public static interface FindNotesGroupsAppFunction.Response {
+    method public java.util.List<androidx.appfunctions.schema.notes.AppFunctionNotesGroup> getGroups();
+    property public abstract java.util.List<androidx.appfunctions.schema.notes.AppFunctionNotesGroup> groups;
+  }
+
+  public interface GetNotesAppFunction<Parameters extends androidx.appfunctions.schema.notes.GetNotesAppFunction.Parameters, Response extends androidx.appfunctions.schema.notes.GetNotesAppFunction.Response> {
+    method public suspend Object? getNotes(androidx.appfunctions.AppFunctionContext appFunctionContext, Parameters parameters, kotlin.coroutines.Continuation<? super Response>);
+    field public static final androidx.appfunctions.schema.notes.GetNotesAppFunction.Companion Companion;
+  }
+
+  public static final class GetNotesAppFunction.Companion {
+  }
+
+  public static interface GetNotesAppFunction.Parameters {
+    method public java.util.List<java.lang.String> getNoteIds();
+    property public abstract java.util.List<java.lang.String> noteIds;
+  }
+
+  public static interface GetNotesAppFunction.Response {
+    method public java.util.List<androidx.appfunctions.schema.notes.AppFunctionNote> getNotes();
+    property public abstract java.util.List<androidx.appfunctions.schema.notes.AppFunctionNote> notes;
+  }
+
+  public final class NotesKt {
+    property public static String APP_FUNCTION_SCHEMA_CATEGORY_NOTES;
+    field public static final String APP_FUNCTION_SCHEMA_CATEGORY_NOTES = "notes";
+  }
+
+  public interface ShowNoteAppFunction<Parameters extends androidx.appfunctions.schema.notes.ShowNoteAppFunction.Parameters, Response extends androidx.appfunctions.schema.notes.ShowNoteAppFunction.Response> {
+    method public suspend Object? showNote(androidx.appfunctions.AppFunctionContext appFunctionContext, Parameters parameters, kotlin.coroutines.Continuation<? super Response>);
+    field public static final androidx.appfunctions.schema.notes.ShowNoteAppFunction.Companion Companion;
+  }
+
+  public static final class ShowNoteAppFunction.Companion {
+  }
+
+  public static interface ShowNoteAppFunction.Parameters {
+    method public String getNoteId();
+    property public abstract String noteId;
+  }
+
+  public static interface ShowNoteAppFunction.Response extends androidx.appfunctions.AppFunctionOpenable {
+  }
+
+  public interface UpdateNoteAppFunction<Parameters extends androidx.appfunctions.schema.notes.UpdateNoteAppFunction.Parameters, Response extends androidx.appfunctions.schema.notes.UpdateNoteAppFunction.Response> {
+    method public suspend Object? updateNote(androidx.appfunctions.AppFunctionContext appFunctionContext, Parameters parameters, kotlin.coroutines.Continuation<? super Response>);
+    field public static final androidx.appfunctions.schema.notes.UpdateNoteAppFunction.Companion Companion;
+  }
+
+  public static final class UpdateNoteAppFunction.Companion {
+  }
+
+  public static interface UpdateNoteAppFunction.Parameters {
+    method public default androidx.appfunctions.schema.types.SetField<java.util.List<androidx.appfunctions.schema.notes.AppFunctionNote.Attachment>>? getAttachments();
+    method public default androidx.appfunctions.schema.types.SetField<java.lang.String?>? getContent();
+    method public String getNoteId();
+    method public default androidx.appfunctions.schema.types.SetField<java.lang.String>? getTitle();
+    property public default androidx.appfunctions.schema.types.SetField<java.util.List<androidx.appfunctions.schema.notes.AppFunctionNote.Attachment>>? attachments;
+    property public default androidx.appfunctions.schema.types.SetField<java.lang.String?>? content;
+    property public abstract String noteId;
+    property public default androidx.appfunctions.schema.types.SetField<java.lang.String>? title;
+  }
+
+  public static interface UpdateNoteAppFunction.Response {
+    method public androidx.appfunctions.schema.notes.AppFunctionNote getUpdatedNote();
+    property public abstract androidx.appfunctions.schema.notes.AppFunctionNote updatedNote;
+  }
+
+  public interface UpdateNotesGroupAppFunction<Parameters extends androidx.appfunctions.schema.notes.UpdateNotesGroupAppFunction.Parameters, Response extends androidx.appfunctions.schema.notes.UpdateNotesGroupAppFunction.Response> {
+    method public suspend Object? updateNotesGroup(androidx.appfunctions.AppFunctionContext appFunctionContext, Parameters parameters, kotlin.coroutines.Continuation<? super Response>);
+    field public static final androidx.appfunctions.schema.notes.UpdateNotesGroupAppFunction.Companion Companion;
+  }
+
+  public static final class UpdateNotesGroupAppFunction.Companion {
+  }
+
+  public static interface UpdateNotesGroupAppFunction.Parameters {
+    method public default androidx.appfunctions.schema.types.SetField<java.lang.String>? getLabel();
+    method public String getNotesGroupId();
+    property public default androidx.appfunctions.schema.types.SetField<java.lang.String>? label;
+    property public abstract String notesGroupId;
+  }
+
+  public static interface UpdateNotesGroupAppFunction.Response {
+    method public androidx.appfunctions.schema.notes.AppFunctionNotesGroup getUpdatedNotesGroup();
+    property public abstract androidx.appfunctions.schema.notes.AppFunctionNotesGroup updatedNotesGroup;
+  }
+
+}
+
+package androidx.appfunctions.schema.types {
+
+  @androidx.appfunctions.AppFunctionSerializable public final class SetField<T> {
+    ctor public SetField(T value);
+    method public T getValue();
+    property public T value;
+  }
+
+}
+

@@ -38,8 +38,6 @@ import android.text.TextUtils;
 import android.util.DisplayMetrics;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
@@ -47,6 +45,9 @@ import androidx.annotation.VisibleForTesting;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.IconCompat;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.InputStream;
 import java.lang.annotation.Retention;
@@ -186,8 +187,8 @@ public class ShortcutManagerCompat {
      * @see IntentSender
      * @see android.app.PendingIntent#getIntentSender()
      */
-    public static boolean requestPinShortcut(@NonNull final Context context,
-            @NonNull ShortcutInfoCompat shortcut, @Nullable final IntentSender callback) {
+    public static boolean requestPinShortcut(final @NonNull Context context,
+            @NonNull ShortcutInfoCompat shortcut, final @Nullable IntentSender callback) {
         if (Build.VERSION.SDK_INT <= 32
                 && shortcut.isExcludedFromSurfaces(ShortcutInfoCompat.SURFACE_LAUNCHER)) {
             // A shortcut that is not frequently used cannot be pinned to WorkSpace.
@@ -234,8 +235,7 @@ public class ShortcutManagerCompat {
      *
      * @see Intent#ACTION_CREATE_SHORTCUT
      */
-    @NonNull
-    public static Intent createShortcutResultIntent(@NonNull Context context,
+    public static @NonNull Intent createShortcutResultIntent(@NonNull Context context,
             @NonNull ShortcutInfoCompat shortcut) {
         Intent result = null;
         if (Build.VERSION.SDK_INT >= 26) {
@@ -276,8 +276,7 @@ public class ShortcutManagerCompat {
      *
      * @throws IllegalStateException when the user is locked.
      */
-    @NonNull
-    public static List<ShortcutInfoCompat> getShortcuts(@NonNull final Context context,
+    public static @NonNull List<ShortcutInfoCompat> getShortcuts(final @NonNull Context context,
             @ShortcutMatchFlags int matchFlags) {
         if (Build.VERSION.SDK_INT >= 30) {
             final List<ShortcutInfo> shortcuts =
@@ -367,7 +366,7 @@ public class ShortcutManagerCompat {
      *
      * @throws IllegalStateException when the user is locked.
      */
-    public static boolean isRateLimitingActive(@NonNull final Context context) {
+    public static boolean isRateLimitingActive(final @NonNull Context context) {
         Preconditions.checkNotNull(context);
         if (Build.VERSION.SDK_INT >= 25) {
             return context.getSystemService(ShortcutManager.class).isRateLimitingActive();
@@ -387,7 +386,7 @@ public class ShortcutManagerCompat {
      * 1 + 2 * {@link android.graphics.drawable.AdaptiveIconDrawable#getExtraInsetFraction()} to
      * the returned size.
      */
-    public static int getIconMaxWidth(@NonNull final Context context) {
+    public static int getIconMaxWidth(final @NonNull Context context) {
         Preconditions.checkNotNull(context);
         if (Build.VERSION.SDK_INT >= 25) {
             return context.getSystemService(ShortcutManager.class).getIconMaxWidth();
@@ -398,7 +397,7 @@ public class ShortcutManagerCompat {
     /**
      * Return the max height for icons, in pixels.
      */
-    public static int getIconMaxHeight(@NonNull final Context context) {
+    public static int getIconMaxHeight(final @NonNull Context context) {
         Preconditions.checkNotNull(context);
         if (Build.VERSION.SDK_INT >= 25) {
             return context.getSystemService(ShortcutManager.class).getIconMaxHeight();
@@ -423,8 +422,8 @@ public class ShortcutManagerCompat {
      * <p>This method is not supported on devices running SDK < 25 since the platform class will
      * not be available.
      */
-    public static void reportShortcutUsed(@NonNull final Context context,
-            @NonNull final String shortcutId) {
+    public static void reportShortcutUsed(final @NonNull Context context,
+            final @NonNull String shortcutId) {
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(shortcutId);
         if (Build.VERSION.SDK_INT >= 25) {
@@ -460,8 +459,8 @@ public class ShortcutManagerCompat {
      *
      * @throws IllegalStateException when the user is locked.
      */
-    public static boolean setDynamicShortcuts(@NonNull final Context context,
-            @NonNull final List<ShortcutInfoCompat> shortcutInfoList) {
+    public static boolean setDynamicShortcuts(final @NonNull Context context,
+            final @NonNull List<ShortcutInfoCompat> shortcutInfoList) {
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(shortcutInfoList);
         final List<ShortcutInfoCompat> clone = removeShortcutsExcludedFromSurface(
@@ -492,8 +491,7 @@ public class ShortcutManagerCompat {
      * Re-publishing returned {@link ShortcutInfo}s via APIs such as
      * {@link #addDynamicShortcuts(Context, List)} may cause loss of information such as icons.
      */
-    @NonNull
-    public static List<ShortcutInfoCompat> getDynamicShortcuts(@NonNull Context context) {
+    public static @NonNull List<ShortcutInfoCompat> getDynamicShortcuts(@NonNull Context context) {
         if (Build.VERSION.SDK_INT >= 25) {
             List<ShortcutInfo> shortcuts = context.getSystemService(
                     ShortcutManager.class).getDynamicShortcuts();
@@ -552,8 +550,8 @@ public class ShortcutManagerCompat {
     }
 
     @VisibleForTesting
-    static boolean convertUriIconToBitmapIcon(@NonNull final Context context,
-            @NonNull final ShortcutInfoCompat info) {
+    static boolean convertUriIconToBitmapIcon(final @NonNull Context context,
+            final @NonNull ShortcutInfoCompat info) {
         if (info.mIcon == null) {
             return false;
         }
@@ -576,8 +574,8 @@ public class ShortcutManagerCompat {
     }
 
     @VisibleForTesting
-    static void convertUriIconsToBitmapIcons(@NonNull final Context context,
-            @NonNull final List<ShortcutInfoCompat> shortcutInfoList) {
+    static void convertUriIconsToBitmapIcons(final @NonNull Context context,
+            final @NonNull List<ShortcutInfoCompat> shortcutInfoList) {
         final List<ShortcutInfoCompat> shortcuts = new ArrayList<>(shortcutInfoList);
         for (ShortcutInfoCompat info : shortcuts) {
             if (!convertUriIconToBitmapIcon(context, info)) {
@@ -603,8 +601,8 @@ public class ShortcutManagerCompat {
      *
      * @throws IllegalStateException when the user is locked.
      */
-    public static void disableShortcuts(@NonNull final Context context,
-            @NonNull final List<String> shortcutIds, @Nullable final CharSequence disabledMessage) {
+    public static void disableShortcuts(final @NonNull Context context,
+            final @NonNull List<String> shortcutIds, final @Nullable CharSequence disabledMessage) {
         if (Build.VERSION.SDK_INT >= 25) {
             context.getSystemService(ShortcutManager.class)
                     .disableShortcuts(shortcutIds, disabledMessage);
@@ -632,8 +630,8 @@ public class ShortcutManagerCompat {
      *
      * @throws IllegalStateException when the user is locked.
      */
-    public static void enableShortcuts(@NonNull final Context context,
-            @NonNull final List<ShortcutInfoCompat> shortcutInfoList) {
+    public static void enableShortcuts(final @NonNull Context context,
+            final @NonNull List<ShortcutInfoCompat> shortcutInfoList) {
         final List<ShortcutInfoCompat> clone = removeShortcutsExcludedFromSurface(
                 shortcutInfoList, ShortcutInfoCompat.SURFACE_LAUNCHER);
         if (Build.VERSION.SDK_INT >= 25) {
@@ -698,8 +696,8 @@ public class ShortcutManagerCompat {
      *
      * @throws IllegalStateException when the user is locked.
      */
-    public static void removeLongLivedShortcuts(@NonNull final Context context,
-            @NonNull final List<String> shortcutIds) {
+    public static void removeLongLivedShortcuts(final @NonNull Context context,
+            final @NonNull List<String> shortcutIds) {
         if (Build.VERSION.SDK_INT < 30) {
             removeDynamicShortcuts(context, shortcutIds);
             return;
@@ -745,8 +743,8 @@ public class ShortcutManagerCompat {
      *
      * @throws IllegalStateException when the user is locked.
      */
-    public static boolean pushDynamicShortcut(@NonNull final Context context,
-            @NonNull final ShortcutInfoCompat shortcut) {
+    public static boolean pushDynamicShortcut(final @NonNull Context context,
+            final @NonNull ShortcutInfoCompat shortcut) {
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(shortcut);
 
@@ -800,7 +798,7 @@ public class ShortcutManagerCompat {
     }
 
     private static String getShortcutInfoCompatWithLowestRank(
-            @NonNull final List<ShortcutInfoCompat> shortcuts) {
+            final @NonNull List<ShortcutInfoCompat> shortcuts) {
         int rank = -1;
         String target = null;
         for (ShortcutInfoCompat s : shortcuts) {
@@ -827,7 +825,7 @@ public class ShortcutManagerCompat {
         return sShortcutInfoChangeListeners;
     }
 
-    private static int getIconDimensionInternal(@NonNull final Context context,
+    private static int getIconDimensionInternal(final @NonNull Context context,
             final boolean isHorizontal) {
         final ActivityManager am = (ActivityManager)
                 context.getSystemService(Context.ACTIVITY_SERVICE);
@@ -905,9 +903,8 @@ public class ShortcutManagerCompat {
         return sShortcutInfoChangeListeners;
     }
 
-    @NonNull
-    private static List<ShortcutInfoCompat> removeShortcutsExcludedFromSurface(
-            @NonNull final List<ShortcutInfoCompat> shortcuts, final int surfaces) {
+    private static @NonNull List<ShortcutInfoCompat> removeShortcutsExcludedFromSurface(
+            final @NonNull List<ShortcutInfoCompat> shortcuts, final int surfaces) {
         Objects.requireNonNull(shortcuts);
         if (Build.VERSION.SDK_INT > 32) return shortcuts;
         final List<ShortcutInfoCompat> clone = new ArrayList<>(shortcuts);
@@ -921,7 +918,7 @@ public class ShortcutManagerCompat {
 
     @RequiresApi(25)
     private static class Api25Impl {
-        static String getShortcutInfoWithLowestRank(@NonNull final List<ShortcutInfo> shortcuts) {
+        static String getShortcutInfoWithLowestRank(final @NonNull List<ShortcutInfo> shortcuts) {
             int rank = -1;
             String target = null;
             for (ShortcutInfo s : shortcuts) {

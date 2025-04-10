@@ -16,7 +16,9 @@
 
 package androidx.camera.testing.impl;
 
-import androidx.annotation.RequiresApi;
+import org.jspecify.annotations.NonNull;
+import org.junit.rules.TestRule;
+import org.junit.runners.model.Statement;
 
 import java.lang.ref.PhantomReference;
 import java.lang.ref.ReferenceQueue;
@@ -25,7 +27,6 @@ import java.util.concurrent.TimeoutException;
 /**
  * Utility class for tests containing methods related to garbage collection.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class GarbageCollectionUtil {
 
     private static final long FINALIZE_TIMEOUT_MILLIS = 200L;
@@ -35,19 +36,41 @@ public final class GarbageCollectionUtil {
      * Causes garbage collection and ensures finalization has run before returning.
      */
     public static void runFinalization() throws TimeoutException, InterruptedException {
+        runFinalization(NUM_GC_ITERATIONS);
+    }
+
+    /**
+     * Runs garbage collection and ensures finalization for a specified number of iterations.
+     */
+    private static void runFinalization(int numGcIterations)
+            throws TimeoutException, InterruptedException {
         ReferenceQueue<Object> finalizeAwaitQueue = new ReferenceQueue<>();
         PhantomReference<Object> finalizeSignal;
         // Ensure finalization occurs multiple times
-        for (int i = 0; i < NUM_GC_ITERATIONS; ++i) {
+        for (int i = 0; i < numGcIterations; ++i) {
             finalizeSignal = new PhantomReference<>(new Object(), finalizeAwaitQueue);
             Runtime.getRuntime().gc();
             Runtime.getRuntime().runFinalization();
             if (finalizeAwaitQueue.remove(FINALIZE_TIMEOUT_MILLIS) == null) {
                 throw new TimeoutException(
-                        "Finalization failed on iteration " + (i + 1) + " of " + NUM_GC_ITERATIONS);
+                        "Finalization failed on iteration " + (i + 1) + " of " + numGcIterations);
             }
             finalizeSignal.clear();
         }
+    }
+
+    /**
+     * Returns a TestRule that runs garbage collection and ensures finalization after each test.
+     */
+    public static @NonNull TestRule getGcRule() {
+        return (base, description) -> new Statement() {
+            @Override
+            public void evaluate() throws Throwable {
+                base.evaluate();
+                // GC is slow. Doing it once already triples the time for some tests.
+                runFinalization(/* numGcIterations= */1);
+            }
+        };
     }
 
     // Ensure this utility class can't be instantiated

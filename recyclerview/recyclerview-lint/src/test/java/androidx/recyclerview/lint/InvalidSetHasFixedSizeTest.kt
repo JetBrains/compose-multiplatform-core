@@ -21,15 +21,17 @@ import androidx.recyclerview.lint.Stubs.VIEW
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest.kotlin
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest.xml
 import com.android.tools.lint.checks.infrastructure.TestLintTask.lint
+import com.android.tools.lint.checks.infrastructure.TestMode
 import org.junit.Test
 
 class InvalidSetHasFixedSizeTest {
 
     @Test
     fun testCorrectUseOfHasFixedSize() {
-        val resourceIds = kotlin(
-            "com/example/R.kt",
-            """
+        val resourceIds =
+            kotlin(
+                    "com/example/R.kt",
+                    """
             package com.example
 
             object R {
@@ -38,11 +40,14 @@ class InvalidSetHasFixedSizeTest {
                 }
             }
         """
-        ).indented().within("src")
+                )
+                .indented()
+                .within("src")
 
-        val source = kotlin(
-            "com/example/Example.kt",
-            """
+        val source =
+            kotlin(
+                    "com/example/Example.kt",
+                    """
             package com.example
 
             import android.view.View
@@ -56,27 +61,27 @@ class InvalidSetHasFixedSizeTest {
                 }
             }
         """
-        ).indented().within("src")
+                )
+                .indented()
+                .within("src")
 
-        val layoutFile = xml(
-            "layout/recycler_view.xml",
-            """<?xml version="1.0" encoding="utf-8"?>
+        val layoutFile =
+            xml(
+                    "layout/recycler_view.xml",
+                    """<?xml version="1.0" encoding="utf-8"?>
                 <androidx.recyclerview.widget.RecyclerView
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     android:id="@+id/my_recycler_view"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"/>
-            """.trimIndent()
-        ).indented().within("res")
+            """
+                        .trimIndent()
+                )
+                .indented()
+                .within("res")
 
         lint()
-            .files(
-                VIEW,
-                RECYCLER_VIEW,
-                layoutFile,
-                resourceIds,
-                source
-            )
+            .files(VIEW, RECYCLER_VIEW, layoutFile, resourceIds, source)
             .issues(InvalidSetHasFixedSizeDetector.ISSUE)
             .run()
             .expectClean()
@@ -84,9 +89,10 @@ class InvalidSetHasFixedSizeTest {
 
     @Test
     fun testCorrectUseOfHasFixedSize2() {
-        val resourceIds = kotlin(
-            "com/example/R.kt",
-            """
+        val resourceIds =
+            kotlin(
+                    "com/example/R.kt",
+                    """
             package com.example
 
             object R {
@@ -95,11 +101,14 @@ class InvalidSetHasFixedSizeTest {
                 }
             }
         """
-        ).indented().within("src")
+                )
+                .indented()
+                .within("src")
 
-        val source = kotlin(
-            "com/example/Example.kt",
-            """
+        val source =
+            kotlin(
+                    "com/example/Example.kt",
+                    """
             package com.example
 
             import android.view.View
@@ -115,27 +124,27 @@ class InvalidSetHasFixedSizeTest {
                 }
             }
         """
-        ).indented().within("src")
+                )
+                .indented()
+                .within("src")
 
-        val layoutFile = xml(
-            "layout/recycler_view.xml",
-            """<?xml version="1.0" encoding="utf-8"?>
+        val layoutFile =
+            xml(
+                    "layout/recycler_view.xml",
+                    """<?xml version="1.0" encoding="utf-8"?>
                 <androidx.recyclerview.widget.RecyclerView
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     android:id="@+id/my_recycler_view"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"/>
-            """.trimIndent()
-        ).indented().within("res")
+            """
+                        .trimIndent()
+                )
+                .indented()
+                .within("res")
 
         lint()
-            .files(
-                VIEW,
-                RECYCLER_VIEW,
-                layoutFile,
-                resourceIds,
-                source
-            )
+            .files(VIEW, RECYCLER_VIEW, layoutFile, resourceIds, source)
             .issues(InvalidSetHasFixedSizeDetector.ISSUE)
             .run()
             .expectClean()
@@ -143,9 +152,10 @@ class InvalidSetHasFixedSizeTest {
 
     @Test
     fun testInCorrectUsageOfFixedSize() {
-        val resourceIds = kotlin(
-            "com/example/R.kt",
-            """
+        val resourceIds =
+            kotlin(
+                    "com/example/R.kt",
+                    """
             package com.example
 
             object R {
@@ -154,11 +164,14 @@ class InvalidSetHasFixedSizeTest {
                 }
             }
         """
-        ).indented().within("src")
+                )
+                .indented()
+                .within("src")
 
-        val source = kotlin(
-            "com/example/Example.kt",
-            """
+        val source =
+            kotlin(
+                    "com/example/Example.kt",
+                    """
             package com.example
 
             import android.view.View
@@ -172,46 +185,46 @@ class InvalidSetHasFixedSizeTest {
                 }
             }
         """
-        ).indented().within("src")
+                )
+                .indented()
+                .within("src")
 
-        val layoutFile = xml(
-            "layout/recycler_view.xml",
-            """<?xml version="1.0" encoding="utf-8"?>
+        val layoutFile =
+            xml(
+                    "layout/recycler_view.xml",
+                    """<?xml version="1.0" encoding="utf-8"?>
                 <androidx.recyclerview.widget.RecyclerView
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     android:id="@+id/my_recycler_view"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"/>
-            """.trimIndent()
-        ).indented().within("res")
+            """
+                        .trimIndent()
+                )
+                .indented()
+                .within("res")
 
         lint()
-            .files(
-                VIEW,
-                RECYCLER_VIEW,
-                layoutFile,
-                resourceIds,
-                source
-            )
+            .files(VIEW, RECYCLER_VIEW, layoutFile, resourceIds, source)
             .issues(InvalidSetHasFixedSizeDetector.ISSUE)
             .run()
-            /* ktlint-disable max-line-length */
             .expect(
                 """
                 src/com/example/Example.kt:10: Error: When using `setHasFixedSize() in an RecyclerView, wrap_content cannot be used as a value for size in the scrolling direction. [InvalidSetHasFixedSize]
                         recyclerView?.setHasFixedSize(true)
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 1 errors, 0 warnings
-                """.trimIndent()
+                """
+                    .trimIndent()
             )
-        /* ktlint-enable max-line-length */
     }
 
     @Test
     fun testInCorrectUsageOfFixedSize2() {
-        val resourceIds = kotlin(
-            "com/example/R.kt",
-            """
+        val resourceIds =
+            kotlin(
+                    "com/example/R.kt",
+                    """
             package com.example
 
             object R {
@@ -220,11 +233,14 @@ class InvalidSetHasFixedSizeTest {
                 }
             }
         """
-        ).indented().within("src")
+                )
+                .indented()
+                .within("src")
 
-        val source = kotlin(
-            "com/example/Example.kt",
-            """
+        val source =
+            kotlin(
+                    "com/example/Example.kt",
+                    """
             package com.example
 
             import android.view.View
@@ -238,47 +254,47 @@ class InvalidSetHasFixedSizeTest {
                 }
             }
         """
-        ).indented().within("src")
+                )
+                .indented()
+                .within("src")
 
-        val layoutFile = xml(
-            "layout/recycler_view.xml",
-            """<?xml version="1.0" encoding="utf-8"?>
+        val layoutFile =
+            xml(
+                    "layout/recycler_view.xml",
+                    """<?xml version="1.0" encoding="utf-8"?>
                 <androidx.recyclerview.widget.RecyclerView
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     android:id="@+id/my_recycler_view"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:orientation="horizontal" />
-            """.trimIndent()
-        ).indented().within("res")
+            """
+                        .trimIndent()
+                )
+                .indented()
+                .within("res")
 
         lint()
-            .files(
-                VIEW,
-                RECYCLER_VIEW,
-                layoutFile,
-                resourceIds,
-                source
-            )
+            .files(VIEW, RECYCLER_VIEW, layoutFile, resourceIds, source)
             .issues(InvalidSetHasFixedSizeDetector.ISSUE)
             .run()
-            /* ktlint-disable max-line-length */
             .expect(
                 """
                 src/com/example/Example.kt:10: Error: When using `setHasFixedSize() in an RecyclerView, wrap_content cannot be used as a value for size in the scrolling direction. [InvalidSetHasFixedSize]
                         recyclerView?.setHasFixedSize(true)
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 1 errors, 0 warnings
-                """.trimIndent()
+                """
+                    .trimIndent()
             )
-        /* ktlint-enable max-line-length */
     }
 
     @Test
     fun testInCorrectUseOfHasFixedSize3() {
-        val resourceIds = kotlin(
-            "com/example/R.kt",
-            """
+        val resourceIds =
+            kotlin(
+                    "com/example/R.kt",
+                    """
             package com.example
 
             object R {
@@ -287,11 +303,14 @@ class InvalidSetHasFixedSizeTest {
                 }
             }
         """
-        ).indented().within("src")
+                )
+                .indented()
+                .within("src")
 
-        val source = kotlin(
-            "com/example/Example.kt",
-            """
+        val source =
+            kotlin(
+                    "com/example/Example.kt",
+                    """
             package com.example
 
             import android.view.View
@@ -309,38 +328,38 @@ class InvalidSetHasFixedSizeTest {
                 }
             }
         """
-        ).indented().within("src")
+                )
+                .indented()
+                .within("src")
 
-        val layoutFile = xml(
-            "layout/recycler_view.xml",
-            """<?xml version="1.0" encoding="utf-8"?>
+        val layoutFile =
+            xml(
+                    "layout/recycler_view.xml",
+                    """<?xml version="1.0" encoding="utf-8"?>
                 <androidx.recyclerview.widget.RecyclerView
                     xmlns:android="http://schemas.android.com/apk/res/android"
                     android:id="@+id/my_recycler_view"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"/>
-            """.trimIndent()
-        ).indented().within("res")
+            """
+                        .trimIndent()
+                )
+                .indented()
+                .within("res")
 
         lint()
-            .files(
-                VIEW,
-                RECYCLER_VIEW,
-                layoutFile,
-                resourceIds,
-                source
-            )
+            .files(VIEW, RECYCLER_VIEW, layoutFile, resourceIds, source)
             .issues(InvalidSetHasFixedSizeDetector.ISSUE)
+            .skipTestModes(TestMode.JVM_OVERLOADS)
             .run()
-            /* ktlint-disable max-line-length */
             .expect(
                 """
                 src/com/example/Example.kt:14: Error: When using `setHasFixedSize() in an RecyclerView, wrap_content cannot be used as a value for size in the scrolling direction. [InvalidSetHasFixedSize]
                         recyclerView?.setHasFixedSize(true)
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 1 errors, 0 warnings
-                """.trimIndent()
+                """
+                    .trimIndent()
             )
-        /* ktlint-enable max-line-length */
     }
 }

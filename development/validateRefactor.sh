@@ -32,13 +32,21 @@ function usage() {
 
   Validates that libraries built from the given versions are the same as
   the build outputs built at HEAD. This can be used to validate that a refactor
-  did not change the outputs. If a git treeish is given with no path, the path is considered to be frameworks/support
+  did not change the outputs.
+  If a git treeish is given with no path, the path is considered to be frameworks/support
 
   Example: $0 HEAD^
   Example: $0 prebuilts/androidx/external:HEAD^ frameworks/support:work^
 
-  * A git treeish is what you type when you run 'git checkout <git treeish>'
+    * A git treeish is what you type when you run 'git checkout <git treeish>'
     See also https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddeftree-ishatree-ishalsotreeish .
+
+  You can also supply additional arguments that will be passed through to validateRefactorHelper.py, using -P
+  For example, the baseline arguments that validateRefactorHelper.py accepts.
+  Example: $0 HEAD^ -p agpKmp
+
+  validateRefactor also accepts git treeishes as named arguments using -g
+  Example: $0 -g HEAD^ -p agpKmp
   "
   return 1
 }
@@ -111,33 +119,49 @@ function unzipInPlace() {
 }
 function doBuild() {
   # build androidx
-  echoAndDo ./gradlew createArchive zipDocs --no-daemon --rerun-tasks --offline
+  echoAndDo ./gradlew createAllArchives zipDocs --no-daemon --rerun-tasks --offline -Pandroidx.highMemory -Pandroidx.constraints=true
   archiveName="top-of-tree-m2repository-all-0.zip"
   unzipInPlace "${tempOutPath}/dist/top-of-tree-m2repository-all-0.zip"
   unzipInPlace "${tempOutPath}/dist/docs-tip-of-tree-0.zip"
   unzipInPlace "${tempOutPath}/dist/docs-public-0.zip"
 }
 
-oldCommits="$(expandCommitArgs $@)"
-projectPaths="$(getParticipatingProjectPaths $oldCommits)"
-if echo $projectPaths | grep external/dokka >/dev/null; then
-  if [ "$BUILD_DOKKA" == "" ]; then
-    echo "It doesn't make sense to include the external/dokka project without also setting BUILD_DOKKA=true. Did you mean to set BUILD_DOKKA=true?"
-    exit 1
+nonNamedArgs=()
+oldCommits=()
+passThruArgs=()
+while [ $OPTIND -le "$#" ]; do
+  if getopts ":p:g:" opt; then
+    case $opt in
+      \? ) usage;;
+      g ) oldCommits+="$(expandCommitArgs $OPTARG)";;
+      p ) passThruArgs+="$OPTARG";;
+    esac
+    case $OPTARG in
+      -*) usage;;
+    esac
+  else
+    nonNamedArgs+=("${!OPTIND}")
+    ((OPTIND++))
   fi
-fi
-echo old commits: $oldCommits
+done
+
+oldCommits+="$(expandCommitArgs $nonNamedArgs)"
+
+projectPaths="$(getParticipatingProjectPaths $oldCommits)"
 if [ "$oldCommits" == "" ]; then
   usage
 fi
+
 newCommits="$(getCurrentCommits $projectPaths)"
 cd "$supportRoot"
+if [[ $(git update-index --refresh) ]]; then echo "You have local changes; stash or commit them or this script won't work"; exit 1; fi
+if [[ $(git diff-index --quiet HEAD) ]]; then echo "You have local changes; stash or commit them or this script won't work"; exit 1; fi
+echo old commits: $oldCommits
 echo new commits: $newCommits
-
+cd "$supportRoot"
 oldOutPath="${checkoutRoot}/out-old"
 newOutPath="${checkoutRoot}/out-new"
 tempOutPath="${checkoutRoot}/out"
-
 
 rm -rf "$oldOutPath" "$newOutPath" "$tempOutPath"
 
@@ -158,10 +182,9 @@ fi
 uncheckout "$projectPaths"
 mv "$tempOutPath" "$oldOutPath"
 
+
 echo
 echo diffing results
-# Don't care about maven-metadata files because they have timestamps in them
-# We might care to know whether .sha1 or .md5 files have changed, but changes in those files will always be accompanied by more meaningful changes in other files, so we don't need to show changes in .sha1 or .md5 files
-# We also don't care about several specific files, either
-echoAndDo diff -r -x "*.md5*" -x "*.sha*" -x "*maven-metadata.xml" -x buildSrc.jar -x jetpad-integration.jar -x "top-of-tree-m2repository-all-0.zip" -x noto-emoji-compat-java.jar -x versionedparcelable-annotation.jar -x dokkaTipOfTreeDocs-0.zip "$oldOutPath/dist" "$newOutPath/dist"
+# This script performs the diff, and filters out known issues and non-issues with baselines
+python3 development/validateRefactorHelper.py "$passThruArgs"
 echo end of difference

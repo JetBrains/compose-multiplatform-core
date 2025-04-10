@@ -16,16 +16,11 @@
 
 package androidx.camera.testing.impl;
 
-import static org.junit.Assume.assumeFalse;
-
 import android.os.Build;
-
-import androidx.annotation.RequiresApi;
 
 /**
  * Utility methods for testing related to Android OS.
  */
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class AndroidUtil {
 
     private AndroidUtil() {
@@ -38,6 +33,7 @@ public final class AndroidUtil {
         return Build.FINGERPRINT.startsWith("generic")
                 || Build.FINGERPRINT.startsWith("unknown")
                 || Build.MODEL.contains("google_sdk")
+                || Build.MODEL.contains("gphone")
                 || Build.MODEL.contains("Emulator")
                 || Build.MODEL.contains("Cuttlefish")
                 || Build.MODEL.contains("Android SDK built for x86")
@@ -55,18 +51,9 @@ public final class AndroidUtil {
     }
 
     /**
-     * Skips the test if the current device is emulator that doesn't support video recording.
+     * Checks if the current device is emulator with specific API level.
      */
-    public static void skipVideoRecordingTestIfNotSupportedByEmulator() {
-        // Skip test for b/168175357, b/233661493
-        assumeFalse(
-                "Cuttlefish has MediaCodec dequeInput/Output buffer fails issue. Unable to test.",
-                Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 29
-        );
-        // Skip test for b/268102904
-        assumeFalse(
-                "Emulator API 21 has empty supported qualities. Unable to test.",
-                AndroidUtil.isEmulatorAndAPI21()
-        );
+    public static boolean isEmulator(int apiLevel) {
+        return Build.VERSION.SDK_INT == apiLevel && isEmulator();
     }
 }

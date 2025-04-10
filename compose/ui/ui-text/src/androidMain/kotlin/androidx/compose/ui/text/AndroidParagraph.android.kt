@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.text
 
+import android.graphics.RectF
 import android.os.Build
 import android.text.Spannable
 import android.text.SpannableString
@@ -35,6 +36,8 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toAndroidRectF
+import androidx.compose.ui.graphics.toComposeRect
 import androidx.compose.ui.text.android.InternalPlatformTextApi
 import androidx.compose.ui.text.android.LayoutCompat.ALIGN_CENTER
 import androidx.compose.ui.text.android.LayoutCompat.ALIGN_LEFT
@@ -61,11 +64,16 @@ import androidx.compose.ui.text.android.LayoutCompat.LINE_BREAK_STYLE_NORMAL
 import androidx.compose.ui.text.android.LayoutCompat.LINE_BREAK_STYLE_STRICT
 import androidx.compose.ui.text.android.LayoutCompat.LINE_BREAK_WORD_STYLE_NONE
 import androidx.compose.ui.text.android.LayoutCompat.LINE_BREAK_WORD_STYLE_PHRASE
+import androidx.compose.ui.text.android.LayoutCompat.TEXT_GRANULARITY_CHARACTER
+import androidx.compose.ui.text.android.LayoutCompat.TEXT_GRANULARITY_WORD
 import androidx.compose.ui.text.android.TextLayout
-import androidx.compose.ui.text.android.selection.WordBoundary
+import androidx.compose.ui.text.android.hasSpan
+import androidx.compose.ui.text.android.selection.getWordEnd
+import androidx.compose.ui.text.android.selection.getWordStart
 import androidx.compose.ui.text.android.style.IndentationFixSpan
 import androidx.compose.ui.text.android.style.PlaceholderSpan
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.internal.requirePrecondition
 import androidx.compose.ui.text.platform.AndroidParagraphIntrinsics
 import androidx.compose.ui.text.platform.AndroidTextPaint
 import androidx.compose.ui.text.platform.extensions.setSpan
@@ -76,15 +84,17 @@ import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextOverflow.Companion.Ellipsis
+import androidx.compose.ui.text.style.TextOverflow.Companion.MiddleEllipsis
+import androidx.compose.ui.text.style.TextOverflow.Companion.StartEllipsis
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import java.util.Locale as JavaLocale
 
-/**
- * Android specific implementation for [Paragraph]
- */
+/** Android specific implementation for [Paragraph] */
 // NOTE(text-perf-review): I see most of the APIs in this class just delegate to TextLayout or to
 // AndroidParagraphIntrinsics. Should we consider just having one TextLayout class which
 // implements Paragraph and ParagraphIntrinsics? it seems like all of these types are immutable
@@ -93,62 +103,65 @@ import java.util.Locale as JavaLocale
 internal class AndroidParagraph(
     val paragraphIntrinsics: AndroidParagraphIntrinsics,
     val maxLines: Int,
-    val ellipsis: Boolean,
+    val overflow: TextOverflow,
     val constraints: Constraints
 ) : Paragraph {
     constructor(
         text: String,
         style: TextStyle,
-        spanStyles: List<AnnotatedString.Range<SpanStyle>>,
+        annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
         placeholders: List<AnnotatedString.Range<Placeholder>>,
         maxLines: Int,
-        ellipsis: Boolean,
+        overflow: TextOverflow,
         constraints: Constraints,
         fontFamilyResolver: FontFamily.Resolver,
         density: Density
     ) : this(
-        paragraphIntrinsics = AndroidParagraphIntrinsics(
-            text = text,
-            style = style,
-            placeholders = placeholders,
-            spanStyles = spanStyles,
-            fontFamilyResolver = fontFamilyResolver,
-            density = density
-        ),
+        paragraphIntrinsics =
+            AndroidParagraphIntrinsics(
+                text = text,
+                style = style,
+                annotations = annotations,
+                placeholders = placeholders,
+                fontFamilyResolver = fontFamilyResolver,
+                density = density
+            ),
         maxLines = maxLines,
-        ellipsis = ellipsis,
+        overflow = overflow,
         constraints = constraints
     )
 
     private val layout: TextLayout
 
-    @VisibleForTesting
-    internal val charSequence: CharSequence
+    @VisibleForTesting internal val charSequence: CharSequence
 
     init {
-        require(constraints.minHeight == 0 && constraints.minWidth == 0) {
+        requirePrecondition(constraints.minHeight == 0 && constraints.minWidth == 0) {
             "Setting Constraints.minWidth and Constraints.minHeight is not supported, " +
                 "these should be the default zero values instead."
         }
-        require(maxLines >= 1) { "maxLines should be greater than 0" }
+        requirePrecondition(maxLines >= 1) { "maxLines should be greater than 0" }
 
         val style = paragraphIntrinsics.style
 
-        charSequence = if (shouldAttachIndentationFixSpan(style, ellipsis)) {
-            // When letter spacing, align and ellipsize applied to text, the ellipsized line is
-            // indented wrong. This function adds the IndentationFixSpan in order to fix the issue
-            // with best effort. b/228463206
-            paragraphIntrinsics.charSequence.attachIndentationFixSpan()
-        } else {
-            paragraphIntrinsics.charSequence
-        }
+        charSequence =
+            if (shouldAttachIndentationFixSpan(style, overflow == Ellipsis)) {
+                // When letter spacing, align and ellipsize applied to text, the ellipsized line is
+                // indented wrong. This function adds the IndentationFixSpan in order to fix the
+                // issue
+                // with best effort. b/228463206
+                paragraphIntrinsics.charSequence.attachIndentationFixSpan()
+            } else {
+                paragraphIntrinsics.charSequence
+            }
 
         val alignment = toLayoutAlign(style.textAlign)
 
-        val justificationMode = when (style.textAlign) {
-            TextAlign.Justify -> JUSTIFICATION_MODE_INTER_WORD
-            else -> DEFAULT_JUSTIFICATION_MODE
-        }
+        val justificationMode =
+            when (style.textAlign) {
+                TextAlign.Justify -> JUSTIFICATION_MODE_INTER_WORD
+                else -> DEFAULT_JUSTIFICATION_MODE
+            }
 
         val hyphens = toLayoutHyphenationFrequency(style.paragraphStyle.hyphens)
 
@@ -156,45 +169,83 @@ internal class AndroidParagraph(
         val lineBreakStyle = toLayoutLineBreakStyle(style.lineBreak.strictness)
         val lineBreakWordStyle = toLayoutLineBreakWordStyle(style.lineBreak.wordBreak)
 
-        val ellipsize = if (ellipsis) {
-            TextUtils.TruncateAt.END
-        } else {
-            null
-        }
+        val ellipsize =
+            when (overflow) {
+                Ellipsis -> TextUtils.TruncateAt.END
+                MiddleEllipsis -> TextUtils.TruncateAt.MIDDLE
+                StartEllipsis -> TextUtils.TruncateAt.START
+                else -> null
+            }
 
-        val firstLayout = constructTextLayout(
-            alignment = alignment,
-            justificationMode = justificationMode,
-            ellipsize = ellipsize,
-            maxLines = maxLines,
-            hyphens = hyphens,
-            breakStrategy = breakStrategy,
-            lineBreakStyle = lineBreakStyle,
-            lineBreakWordStyle = lineBreakWordStyle
-        )
+        var firstLayout =
+            constructTextLayout(
+                alignment = alignment,
+                justificationMode = justificationMode,
+                ellipsize = ellipsize,
+                maxLines = maxLines,
+                hyphens = hyphens,
+                breakStrategy = breakStrategy,
+                lineBreakStyle = lineBreakStyle,
+                lineBreakWordStyle = lineBreakWordStyle
+            )
 
-        // Ellipsize if there's not enough vertical space to fit all lines
-        if (ellipsis && firstLayout.height > constraints.maxHeight && maxLines > 1) {
-            val calculatedMaxLines =
-                firstLayout.numberOfLinesThatFitMaxHeight(constraints.maxHeight)
-            layout = if (calculatedMaxLines >= 0 && calculatedMaxLines != maxLines) {
+        // In case of start/middle ellipsis when the letter spacing is enabled and some of the
+        // characters are ellipsized away, we need to remeasure. This is because though
+        // internally ellipsized character are replaced with zero-width U+FEFF character, the
+        // letter spacing is still applied to each such character. It's been fixed on API 35
+        // where letter spacing won't be applied to some special characters including U+FEFF.
+        if (
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM &&
+                textPaint.letterSpacing != 0f &&
+                (overflow == StartEllipsis || overflow == MiddleEllipsis) &&
+                firstLayout.getLineEllipsisCount(0) > 0
+        ) {
+            val beforeEllipsis = firstLayout.getLineEllipsisOffset(0)
+            val afterEllipsis = beforeEllipsis + firstLayout.getLineEllipsisCount(0)
+            val newSpannable =
+                TextUtils.concat(
+                    charSequence.subSequence(0, beforeEllipsis),
+                    Typography.ellipsis.toString(),
+                    charSequence.subSequence(afterEllipsis, charSequence.length)
+                )
+            firstLayout =
                 constructTextLayout(
                     alignment = alignment,
                     justificationMode = justificationMode,
                     ellipsize = ellipsize,
-                    // When we can't fully fit even a single line, measure with one line anyway.
-                    // This will allow to have an ellipsis on that single line. If we measured with
-                    // 0 maxLines, it would measure all lines with no ellipsis even though the first
-                    // line might be partially visible
-                    maxLines = calculatedMaxLines.coerceAtLeast(1),
+                    maxLines = maxLines,
                     hyphens = hyphens,
                     breakStrategy = breakStrategy,
                     lineBreakStyle = lineBreakStyle,
-                    lineBreakWordStyle = lineBreakWordStyle
+                    lineBreakWordStyle = lineBreakWordStyle,
+                    charSequence = newSpannable
                 )
-            } else {
-                firstLayout
-            }
+        }
+
+        // Ellipsize if there's not enough vertical space to fit all lines. Because this only makes
+        // sense for end ellipsis because start/middle only works for a single line.
+        if (overflow == Ellipsis && firstLayout.height > constraints.maxHeight && maxLines > 1) {
+            val calculatedMaxLines =
+                firstLayout.numberOfLinesThatFitMaxHeight(constraints.maxHeight)
+            layout =
+                if (calculatedMaxLines >= 0 && calculatedMaxLines != maxLines) {
+                    constructTextLayout(
+                        alignment = alignment,
+                        justificationMode = justificationMode,
+                        ellipsize = ellipsize,
+                        // When we can't fully fit even a single line, measure with one line anyway.
+                        // This will allow to have an ellipsis on that single line. If we measured
+                        // with 0 maxLines, it would measure all lines with no ellipsis even though
+                        // the first line might be partially visible
+                        maxLines = calculatedMaxLines.coerceAtLeast(1),
+                        hyphens = hyphens,
+                        breakStrategy = breakStrategy,
+                        lineBreakStyle = lineBreakStyle,
+                        lineBreakWordStyle = lineBreakWordStyle
+                    )
+                } else {
+                    firstLayout
+                }
         } else {
             layout = firstLayout
         }
@@ -202,8 +253,11 @@ internal class AndroidParagraph(
         // Brush is not fully realized on text until layout is complete and size information
         // is known. Brush can now be applied to the overall textpaint and all the spans.
         textPaint.setBrush(style.brush, Size(width, height), style.alpha)
-        layout.getShaderBrushSpans().forEach { shaderBrushSpan ->
-            shaderBrushSpan.size = Size(width, height)
+        val shaderBrushSpans = layout.getShaderBrushSpans()
+        if (shaderBrushSpans != null) {
+            for (shaderBrushSpan in shaderBrushSpans) {
+                shaderBrushSpan.size = Size(width, height)
+            }
         }
     }
 
@@ -249,8 +303,9 @@ internal class AndroidParagraph(
                 // truncated due to maxLines limitation. It will return the index of last line.
                 val line = layout.getLineForOffset(start)
                 val exceedsMaxLines = line >= maxLines
-                val isPlaceholderSpanEllipsized = layout.getLineEllipsisCount(line) > 0 &&
-                    end > layout.getLineEllipsisOffset(line)
+                val isPlaceholderSpanEllipsized =
+                    layout.getLineEllipsisCount(line) > 0 &&
+                        end > layout.getLineEllipsisOffset(line)
                 val isPlaceholderSpanTruncated = end > layout.getLineEnd(line)
                 // This Placeholder is ellipsized or truncated, return null instead.
                 if (isPlaceholderSpanEllipsized || isPlaceholderSpanTruncated || exceedsMaxLines) {
@@ -259,33 +314,34 @@ internal class AndroidParagraph(
 
                 val direction = getBidiRunDirection(start)
 
-                val left = when (direction) {
-                    ResolvedTextDirection.Ltr ->
-                        getHorizontalPosition(start, true)
-                    ResolvedTextDirection.Rtl ->
-                        getHorizontalPosition(start, true) - span.widthPx
-                }
+                val left =
+                    when (direction) {
+                        ResolvedTextDirection.Ltr -> getHorizontalPosition(start, true)
+                        ResolvedTextDirection.Rtl ->
+                            getHorizontalPosition(start, true) - span.widthPx
+                    }
                 val right = left + span.widthPx
 
-                val top = with(layout) {
-                    when (span.verticalAlign) {
-                        PlaceholderSpan.ALIGN_ABOVE_BASELINE ->
-                            getLineBaseline(line) - span.heightPx
-                        PlaceholderSpan.ALIGN_TOP -> getLineTop(line)
-                        PlaceholderSpan.ALIGN_BOTTOM -> getLineBottom(line) - span.heightPx
-                        PlaceholderSpan.ALIGN_CENTER ->
-                            (getLineTop(line) + getLineBottom(line) - span.heightPx) / 2
-                        PlaceholderSpan.ALIGN_TEXT_TOP ->
-                            span.fontMetrics.ascent + getLineBaseline(line)
-                        PlaceholderSpan.ALIGN_TEXT_BOTTOM ->
-                            span.fontMetrics.descent + getLineBaseline(line) - span.heightPx
-                        PlaceholderSpan.ALIGN_TEXT_CENTER ->
-                            with(span.fontMetrics) {
-                                (ascent + descent - span.heightPx) / 2 + getLineBaseline(line)
-                            }
-                        else -> throw IllegalStateException("unexpected verticalAlignment")
+                val top =
+                    with(layout) {
+                        when (span.verticalAlign) {
+                            PlaceholderSpan.ALIGN_ABOVE_BASELINE ->
+                                getLineBaseline(line) - span.heightPx
+                            PlaceholderSpan.ALIGN_TOP -> getLineTop(line)
+                            PlaceholderSpan.ALIGN_BOTTOM -> getLineBottom(line) - span.heightPx
+                            PlaceholderSpan.ALIGN_CENTER ->
+                                (getLineTop(line) + getLineBottom(line) - span.heightPx) / 2
+                            PlaceholderSpan.ALIGN_TEXT_TOP ->
+                                span.fontMetrics.ascent + getLineBaseline(line)
+                            PlaceholderSpan.ALIGN_TEXT_BOTTOM ->
+                                span.fontMetrics.descent + getLineBaseline(line) - span.heightPx
+                            PlaceholderSpan.ALIGN_TEXT_CENTER ->
+                                with(span.fontMetrics) {
+                                    (ascent + descent - span.heightPx) / 2 + getLineBaseline(line)
+                                }
+                            else -> throw IllegalStateException("unexpected verticalAlignment")
+                        }
                     }
-                }
 
                 val bottom = top + span.heightPx
 
@@ -306,12 +362,31 @@ internal class AndroidParagraph(
         return layout.getOffsetForHorizontal(line, position.x)
     }
 
+    override fun getRangeForRect(
+        rect: Rect,
+        granularity: TextGranularity,
+        inclusionStrategy: TextInclusionStrategy
+    ): TextRange {
+        val range =
+            layout.getRangeForRect(
+                rect = rect.toAndroidRectF(),
+                granularity = granularity.toLayoutTextGranularity(),
+                inclusionStrategy = { segmentBounds: RectF, area: RectF ->
+                    inclusionStrategy.isIncluded(
+                        segmentBounds.toComposeRect(),
+                        area.toComposeRect()
+                    )
+                }
+            ) ?: return TextRange.Zero
+        return TextRange(range[0], range[1])
+    }
+
     /**
      * Returns the bounding box as Rect of the character for given character offset. Rect includes
      * the top, bottom, left and right of a character.
      */
     override fun getBoundingBox(offset: Int): Rect {
-        require(offset in charSequence.indices) {
+        requirePrecondition(offset in charSequence.indices) {
             "offset($offset) is out of bounds [0,${charSequence.length})"
         }
         val rectF = layout.getBoundingBox(offset)
@@ -339,9 +414,9 @@ internal class AndroidParagraph(
      *
      * @param range the [TextRange] representing the start and end indices in the [Paragraph].
      * @param array the array to fill in the values. The array divided into segments of four where
-     * each index in that segment represents left, top, right, bottom of the character.
+     *   each index in that segment represents left, top, right, bottom of the character.
      * @param arrayStart the inclusive start index in the array where the function will start
-     * filling in the values from
+     *   filling in the values from
      */
     override fun fillBoundingBoxes(
         range: TextRange,
@@ -352,7 +427,7 @@ internal class AndroidParagraph(
     }
 
     override fun getPathForRange(start: Int, end: Int): Path {
-        require(start in 0..end && end <= charSequence.length) {
+        requirePrecondition(start in 0..end && end <= charSequence.length) {
             "start($start) or end($end) is out of range [0..${charSequence.length}]," +
                 " or start > end!"
         }
@@ -362,7 +437,7 @@ internal class AndroidParagraph(
     }
 
     override fun getCursorRect(offset: Int): Rect {
-        require(offset in 0..charSequence.length) {
+        requirePrecondition(offset in 0..charSequence.length) {
             "offset($offset) is out of bounds [0,${charSequence.length}]"
         }
         val horizontal = layout.getPrimaryHorizontal(offset)
@@ -370,20 +445,12 @@ internal class AndroidParagraph(
 
         // The width of the cursor is not taken into account. The callers of this API should use
         // rect.left to get the start X position and then adjust it according to the width if needed
-        return Rect(
-            horizontal,
-            layout.getLineTop(line),
-            horizontal,
-            layout.getLineBottom(line)
-        )
-    }
-
-    private val wordBoundary: WordBoundary by lazy(LazyThreadSafetyMode.NONE) {
-        WordBoundary(textLocale, layout.text)
+        return Rect(horizontal, layout.getLineTop(line), horizontal, layout.getLineBottom(line))
     }
 
     override fun getWordBoundary(offset: Int): TextRange {
-        return TextRange(wordBoundary.getWordStart(offset), wordBoundary.getWordEnd(offset))
+        val wordIterator = layout.wordIterator
+        return TextRange(wordIterator.getWordStart(offset), wordIterator.getWordEnd(offset))
     }
 
     override fun getLineLeft(lineIndex: Int): Float = layout.getLineLeft(lineIndex)
@@ -394,7 +461,7 @@ internal class AndroidParagraph(
 
     internal fun getLineAscent(lineIndex: Int): Float = layout.getLineAscent(lineIndex)
 
-    internal fun getLineBaseline(lineIndex: Int): Float = layout.getLineBaseline(lineIndex)
+    override fun getLineBaseline(lineIndex: Int): Float = layout.getLineBaseline(lineIndex)
 
     internal fun getLineDescent(lineIndex: Int): Float = layout.getLineDescent(lineIndex)
 
@@ -415,6 +482,11 @@ internal class AndroidParagraph(
 
     override fun isLineEllipsized(lineIndex: Int): Boolean = layout.isLineEllipsized(lineIndex)
 
+    internal fun getLineEllipsisOffset(lineIndex: Int): Int =
+        layout.getLineEllipsisOffset(lineIndex)
+
+    internal fun getLineEllipsisCount(lineIndex: Int): Int = layout.getLineEllipsisCount(lineIndex)
+
     override fun getLineForOffset(offset: Int): Int = layout.getLineForOffset(offset)
 
     override fun getHorizontalPosition(offset: Int, usePrimaryDirection: Boolean): Float =
@@ -431,19 +503,19 @@ internal class AndroidParagraph(
     }
 
     override fun getBidiRunDirection(offset: Int): ResolvedTextDirection {
-        return if (layout.isRtlCharAt(offset))
-            ResolvedTextDirection.Rtl
-        else
-            ResolvedTextDirection.Ltr
+        return if (layout.isRtlCharAt(offset)) ResolvedTextDirection.Rtl
+        else ResolvedTextDirection.Ltr
     }
 
-    private fun TextLayout.getShaderBrushSpans(): Array<ShaderBrushSpan> {
-        if (text !is Spanned) return emptyArray()
-        val brushSpans = (text as Spanned).getSpans(
-            0, text.length, ShaderBrushSpan::class.java
-        )
-        if (brushSpans.isEmpty()) return emptyArray()
+    private fun TextLayout.getShaderBrushSpans(): Array<ShaderBrushSpan>? {
+        if (text !is Spanned) return null
+        if (!(text as Spanned).hasSpan(ShaderBrushSpan::class.java)) return null
+        val brushSpans = (text as Spanned).getSpans(0, text.length, ShaderBrushSpan::class.java)
         return brushSpans
+    }
+
+    private fun Spanned.hasSpan(clazz: Class<*>): Boolean {
+        return nextSpanTransition(-1, length, clazz) != length
     }
 
     override fun paint(
@@ -526,7 +598,8 @@ internal class AndroidParagraph(
         hyphens: Int,
         breakStrategy: Int,
         lineBreakStyle: Int,
-        lineBreakWordStyle: Int
+        lineBreakWordStyle: Int,
+        charSequence: CharSequence = this.charSequence,
     ) =
         TextLayout(
             charSequence = charSequence,
@@ -548,37 +621,39 @@ internal class AndroidParagraph(
         )
 }
 
-/**
- * Converts [TextAlign] into [TextLayout] alignment constants.
- */
+/** Converts [TextAlign] into [TextLayout] alignment constants. */
 @OptIn(InternalPlatformTextApi::class)
-private fun toLayoutAlign(align: TextAlign): Int = when (align) {
-    TextAlign.Left -> ALIGN_LEFT
-    TextAlign.Right -> ALIGN_RIGHT
-    TextAlign.Center -> ALIGN_CENTER
-    TextAlign.Start -> ALIGN_NORMAL
-    TextAlign.End -> ALIGN_OPPOSITE
-    else -> DEFAULT_ALIGNMENT
-}
-
-@OptIn(InternalPlatformTextApi::class)
-private fun toLayoutHyphenationFrequency(hyphens: Hyphens): Int = when (hyphens) {
-    Hyphens.Auto -> if (Build.VERSION.SDK_INT <= 32) {
-        HYPHENATION_FREQUENCY_FULL
-    } else {
-        HYPHENATION_FREQUENCY_FULL_FAST
+private fun toLayoutAlign(align: TextAlign): Int =
+    when (align) {
+        TextAlign.Left -> ALIGN_LEFT
+        TextAlign.Right -> ALIGN_RIGHT
+        TextAlign.Center -> ALIGN_CENTER
+        TextAlign.Start -> ALIGN_NORMAL
+        TextAlign.End -> ALIGN_OPPOSITE
+        else -> DEFAULT_ALIGNMENT
     }
-    Hyphens.None -> HYPHENATION_FREQUENCY_NONE
-    else -> DEFAULT_HYPHENATION_FREQUENCY
-}
 
 @OptIn(InternalPlatformTextApi::class)
-private fun toLayoutBreakStrategy(breakStrategy: LineBreak.Strategy): Int = when (breakStrategy) {
-    LineBreak.Strategy.Simple -> BREAK_STRATEGY_SIMPLE
-    LineBreak.Strategy.HighQuality -> BREAK_STRATEGY_HIGH_QUALITY
-    LineBreak.Strategy.Balanced -> BREAK_STRATEGY_BALANCED
-    else -> DEFAULT_BREAK_STRATEGY
-}
+private fun toLayoutHyphenationFrequency(hyphens: Hyphens): Int =
+    when (hyphens) {
+        Hyphens.Auto ->
+            if (Build.VERSION.SDK_INT <= 32) {
+                HYPHENATION_FREQUENCY_FULL
+            } else {
+                HYPHENATION_FREQUENCY_FULL_FAST
+            }
+        Hyphens.None -> HYPHENATION_FREQUENCY_NONE
+        else -> DEFAULT_HYPHENATION_FREQUENCY
+    }
+
+@OptIn(InternalPlatformTextApi::class)
+private fun toLayoutBreakStrategy(breakStrategy: LineBreak.Strategy): Int =
+    when (breakStrategy) {
+        LineBreak.Strategy.Simple -> BREAK_STRATEGY_SIMPLE
+        LineBreak.Strategy.HighQuality -> BREAK_STRATEGY_HIGH_QUALITY
+        LineBreak.Strategy.Balanced -> BREAK_STRATEGY_BALANCED
+        else -> DEFAULT_BREAK_STRATEGY
+    }
 
 @OptIn(InternalPlatformTextApi::class)
 private fun toLayoutLineBreakStyle(lineBreakStrictness: LineBreak.Strictness): Int =
@@ -608,15 +683,27 @@ private fun TextLayout.numberOfLinesThatFitMaxHeight(maxHeight: Int): Int {
 
 private fun shouldAttachIndentationFixSpan(textStyle: TextStyle, ellipsis: Boolean) =
     with(textStyle) {
-        ellipsis && (letterSpacing != 0.sp && letterSpacing != TextUnit.Unspecified) &&
-            (textAlign != TextAlign.Unspecified && textAlign != TextAlign.Start &&
+        ellipsis &&
+            (letterSpacing != 0.sp && letterSpacing != TextUnit.Unspecified) &&
+            (textAlign != TextAlign.Unspecified &&
+                textAlign != TextAlign.Start &&
                 textAlign != TextAlign.Justify)
     }
 
-@OptIn(InternalPlatformTextApi::class)
+// this _will_ be called multiple times on the same ParagraphIntrinsics
 private fun CharSequence.attachIndentationFixSpan(): CharSequence {
     if (isEmpty()) return this
-    val spannable = if (this is Spannable) this else SpannableString(this)
-    spannable.setSpan(IndentationFixSpan(), spannable.length - 1, spannable.length - 1)
+    val spannable = this as? Spannable ?: SpannableString(this)
+    if (!spannable.hasSpan(IndentationFixSpan::class.java)) {
+        spannable.setSpan(IndentationFixSpan(), spannable.length - 1, spannable.length - 1)
+    }
     return spannable
+}
+
+private fun TextGranularity.toLayoutTextGranularity(): Int {
+    return when (this) {
+        TextGranularity.Character -> TEXT_GRANULARITY_CHARACTER
+        TextGranularity.Word -> TEXT_GRANULARITY_WORD
+        else -> TEXT_GRANULARITY_CHARACTER
+    }
 }

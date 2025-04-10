@@ -18,10 +18,11 @@ package androidx.wear.protolayout.material;
 
 import static androidx.wear.protolayout.DimensionBuilders.dp;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.DimensionBuilders.DpProp;
+
+import org.jspecify.annotations.NonNull;
 
 /** Contains the default values used by {@link Chip}. */
 public class ChipDefaults {
@@ -29,23 +30,23 @@ public class ChipDefaults {
 
     /** The default height for standard {@link Chip} */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static final DpProp DEFAULT_HEIGHT = dp(52);
+    public static final @NonNull DpProp DEFAULT_HEIGHT = dp(52);
 
     /** The default height for standard {@link CompactChip} */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static final DpProp COMPACT_HEIGHT = dp(32);
+    public static final @NonNull DpProp COMPACT_HEIGHT = dp(32);
+
+    /** The default minimum width for standard {@link CompactChip} */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public static final @NonNull DpProp COMPACT_MIN_WIDTH = dp(52);
 
     /** The minimum size of tappable target area. */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static final DpProp MIN_TAPPABLE_SQUARE_LENGTH = dp(48);
+    public static final @NonNull DpProp MIN_TAPPABLE_SQUARE_LENGTH = dp(48);
 
     /** The default height for standard {@link TitleChip} */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static final DpProp TITLE_HEIGHT = dp(60);
+    public static final @NonNull DpProp TITLE_HEIGHT = dp(60);
 
     /** The recommended horizontal margin used for width for standard {@link Chip} */
     @RestrictTo(Scope.LIBRARY_GROUP)
@@ -53,54 +54,46 @@ public class ChipDefaults {
 
     /** The recommended horizontal padding for standard {@link Chip} */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static final DpProp HORIZONTAL_PADDING = dp(14);
+    public static final @NonNull DpProp HORIZONTAL_PADDING = dp(14);
 
     /** The recommended horizontal padding for standard {@link CompactChip} */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static final DpProp COMPACT_HORIZONTAL_PADDING = dp(12);
+    public static final @NonNull DpProp COMPACT_HORIZONTAL_PADDING = dp(12);
 
     /** The recommended horizontal padding for standard {@link TitleChip} */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static final DpProp TITLE_HORIZONTAL_PADDING = dp(16);
+    public static final @NonNull DpProp TITLE_HORIZONTAL_PADDING = dp(16);
 
     /** The recommended vertical space between icon and text in standard {@link Chip} */
-    @NonNull static final DpProp ICON_SPACER_WIDTH = dp(6);
+    static final @NonNull DpProp ICON_SPACER_WIDTH = dp(6);
 
     /** The icon size used in standard {@link Chip} */
-    @NonNull static final DpProp ICON_SIZE = dp(24);
+    static final @NonNull DpProp ICON_SIZE = dp(24);
 
     /** The icon size used in standard {@link CompactChip} */
-    @NonNull static final DpProp COMPACT_ICON_SIZE = dp(20);
+    static final @NonNull DpProp COMPACT_ICON_SIZE = dp(20);
 
     /** The recommended colors for a primary {@link Chip}. */
-    @NonNull
-    public static final ChipColors PRIMARY_COLORS = ChipColors.primaryChipColors(Colors.DEFAULT);
+    public static final @NonNull ChipColors PRIMARY_COLORS =
+            ChipColors.primaryChipColors(Colors.DEFAULT);
 
     /** The recommended colors for a secondary {@link Chip}. */
-    @NonNull
-    public static final ChipColors SECONDARY_COLORS =
+    public static final @NonNull ChipColors SECONDARY_COLORS =
             ChipColors.secondaryChipColors(Colors.DEFAULT);
 
     /** The recommended colors for a primary {@link CompactChip}. */
-    @NonNull
-    public static final ChipColors COMPACT_PRIMARY_COLORS =
+    public static final @NonNull ChipColors COMPACT_PRIMARY_COLORS =
             ChipColors.primaryChipColors(Colors.DEFAULT);
 
     /** The recommended colors for a secondary {@link CompactChip}. */
-    @NonNull
-    public static final ChipColors COMPACT_SECONDARY_COLORS =
+    public static final @NonNull ChipColors COMPACT_SECONDARY_COLORS =
             ChipColors.secondaryChipColors(Colors.DEFAULT);
 
     /** The recommended colors for a primary {@link TitleChip}. */
-    @NonNull
-    public static final ChipColors TITLE_PRIMARY_COLORS =
+    public static final @NonNull ChipColors TITLE_PRIMARY_COLORS =
             ChipColors.primaryChipColors(Colors.DEFAULT);
 
     /** The recommended colors for a secondary {@link TitleChip}. */
-    @NonNull
-    public static final ChipColors TITLE_SECONDARY_COLORS =
+    public static final @NonNull ChipColors TITLE_SECONDARY_COLORS =
             ChipColors.secondaryChipColors(Colors.DEFAULT);
 }

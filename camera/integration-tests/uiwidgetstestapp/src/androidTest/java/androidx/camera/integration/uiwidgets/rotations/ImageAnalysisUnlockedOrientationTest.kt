@@ -23,6 +23,7 @@ import androidx.camera.integration.uiwidgets.rotations.RotationUnlocked.Left
 import androidx.camera.integration.uiwidgets.rotations.RotationUnlocked.Natural
 import androidx.camera.integration.uiwidgets.rotations.RotationUnlocked.Right
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.After
 import org.junit.Before
@@ -42,16 +43,17 @@ class ImageAnalysisUnlockedOrientationTest(
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "cameraXConfig={1}, {3}")
-        fun data() = mutableListOf<Array<Any?>>().apply {
-            cameraXConfigList.forEach { config ->
-                add(arrayOf(LENS_FACING_BACK, config, Natural, "Back lens - Natural"))
-                add(arrayOf(LENS_FACING_BACK, config, Left, "Back lens - Left"))
-                add(arrayOf(LENS_FACING_BACK, config, Right, "Back lens - Right"))
-                add(arrayOf(LENS_FACING_FRONT, config, Natural, "Front lens - Natural"))
-                add(arrayOf(LENS_FACING_FRONT, config, Left, "Front lens - Left"))
-                add(arrayOf(LENS_FACING_FRONT, config, Right, "Front lens - Right"))
+        fun data() =
+            mutableListOf<Array<Any?>>().apply {
+                cameraXConfigList.forEach { config ->
+                    add(arrayOf(LENS_FACING_BACK, config, Natural, "Back lens - Natural"))
+                    add(arrayOf(LENS_FACING_BACK, config, Left, "Back lens - Left"))
+                    add(arrayOf(LENS_FACING_BACK, config, Right, "Back lens - Right"))
+                    add(arrayOf(LENS_FACING_FRONT, config, Natural, "Front lens - Natural"))
+                    add(arrayOf(LENS_FACING_FRONT, config, Left, "Front lens - Left"))
+                    add(arrayOf(LENS_FACING_FRONT, config, Right, "Front lens - Right"))
+                }
             }
-        }
     }
 
     @Before
@@ -65,6 +67,7 @@ class ImageAnalysisUnlockedOrientationTest(
     }
 
     @Test
+    @SdkSuppress(maxSdkVersion = 33) // b/360867144: Module crashes on API34
     fun verifyRotation() {
         verifyRotation<UnlockedOrientationActivity>(lensFacing, cameraXConfig) {
             if (rotation.shouldRotate) {
@@ -74,21 +77,19 @@ class ImageAnalysisUnlockedOrientationTest(
     }
 
     private fun rotateDeviceAndWait() {
-        val monitor = Instrumentation.ActivityMonitor(
-            UnlockedOrientationActivity::class.java.name,
-            null,
-            false
-        )
+        val monitor =
+            Instrumentation.ActivityMonitor(
+                UnlockedOrientationActivity::class.java.name,
+                null,
+                false
+            )
         InstrumentationRegistry.getInstrumentation().addMonitor(monitor)
 
         // Rotate
-        rotation.rotate(mDevice)
+        rotation.rotate(device)
 
         // Wait for the activity to be recreated after rotation
-        InstrumentationRegistry.getInstrumentation().waitForMonitorWithTimeout(
-            monitor,
-            2000L
-        )
+        InstrumentationRegistry.getInstrumentation().waitForMonitorWithTimeout(monitor, 2000L)
         InstrumentationRegistry.getInstrumentation().waitForIdleSync()
     }
 }

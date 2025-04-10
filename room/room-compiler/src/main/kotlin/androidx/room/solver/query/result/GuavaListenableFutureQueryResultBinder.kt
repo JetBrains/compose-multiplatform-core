@@ -16,12 +16,16 @@
 
 package androidx.room.solver.query.result
 
+import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.codegen.XPropertySpec
+import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.processing.XType
-import androidx.room.ext.AndroidTypeNames
-import androidx.room.ext.CallableTypeSpecBuilder
-import androidx.room.ext.RoomGuavaTypeNames
+import androidx.room.ext.InvokeWithLambdaParameter
+import androidx.room.ext.LambdaSpec
+import androidx.room.ext.RoomGuavaMemberNames.GUAVA_ROOM_CREATE_LISTENABLE_FUTURE
+import androidx.room.ext.SQLiteDriverTypeNames
 import androidx.room.solver.CodeGenScope
 
 /**
@@ -29,57 +33,57 @@ import androidx.room.solver.CodeGenScope
  *
  * <p>The Future runs on the background thread Executor.
  */
-class GuavaListenableFutureQueryResultBinder(
-    val typeArg: XType,
-    adapter: QueryResultAdapter?
-) : BaseObservableQueryResultBinder(adapter) {
+class GuavaListenableFutureQueryResultBinder(val typeArg: XType, adapter: QueryResultAdapter?) :
+    BaseObservableQueryResultBinder(adapter) {
 
     override fun convertAndReturn(
-        roomSQLiteQueryVar: String,
-        canReleaseQuery: Boolean,
+        sqlQueryVar: String,
         dbProperty: XPropertySpec,
+        bindStatement: (CodeGenScope.(String) -> Unit)?,
+        returnTypeName: XTypeName,
         inTransaction: Boolean,
         scope: CodeGenScope
     ) {
-        val cancellationSignalVar = scope.getTmpVar("_cancellationSignal")
-        scope.builder.apply {
-            addLocalVariable(
-                name = cancellationSignalVar,
-                typeName = AndroidTypeNames.CANCELLATION_SIGNAL,
-                assignExpr = XCodeBlock.ofNewInstance(
-                    language,
-                    AndroidTypeNames.CANCELLATION_SIGNAL,
-                )
+        val connectionVar = scope.getTmpVar("_connection")
+        val performBlock =
+            InvokeWithLambdaParameter(
+                scope = scope,
+                functionName = GUAVA_ROOM_CREATE_LISTENABLE_FUTURE,
+                argFormat = listOf("%N", "%L", "%L"),
+                args = listOf(dbProperty, /* isReadOnly= */ true, inTransaction),
+                lambdaSpec =
+                    object :
+                        LambdaSpec(
+                            parameterTypeName = SQLiteDriverTypeNames.CONNECTION,
+                            parameterName = connectionVar,
+                            returnTypeName = typeArg.asTypeName(),
+                            javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable
+                        ) {
+                        override fun XCodeBlock.Builder.body(scope: CodeGenScope) {
+                            val statementVar = scope.getTmpVar("_stmt")
+                            addLocalVal(
+                                statementVar,
+                                SQLiteDriverTypeNames.STATEMENT,
+                                "%L.prepare(%L)",
+                                connectionVar,
+                                sqlQueryVar
+                            )
+                            beginControlFlow("try")
+                            bindStatement?.invoke(scope, statementVar)
+                            val outVar = scope.getTmpVar("_result")
+                            adapter?.convert(outVar, statementVar, scope)
+                            applyTo { language ->
+                                when (language) {
+                                    CodeLanguage.JAVA -> addStatement("return %L", outVar)
+                                    CodeLanguage.KOTLIN -> addStatement("%L", outVar)
+                                }
+                            }
+                            nextControlFlow("finally")
+                            addStatement("%L.close()", statementVar)
+                            endControlFlow()
+                        }
+                    }
             )
-        }
-
-        // Callable<T> // Note that this callable does not release the query object.
-        val callableImpl = CallableTypeSpecBuilder(scope.language, typeArg.asTypeName()) {
-            addCode(
-                XCodeBlock.builder(language).apply {
-                    createRunQueryAndReturnStatements(
-                        builder = this,
-                        roomSQLiteQueryVar = roomSQLiteQueryVar,
-                        dbProperty = dbProperty,
-                        inTransaction = inTransaction,
-                        scope = scope,
-                        cancellationSignalVar = cancellationSignalVar
-                    )
-                }.build()
-            )
-        }.build()
-
-        scope.builder.apply {
-            addStatement(
-                "return %T.createListenableFuture(%N, %L, %L, %L, %L, %L)",
-                RoomGuavaTypeNames.GUAVA_ROOM,
-                dbProperty,
-                if (inTransaction) "true" else "false",
-                callableImpl,
-                roomSQLiteQueryVar,
-                canReleaseQuery,
-                cancellationSignalVar
-            )
-        }
+        scope.builder.add("return %L", performBlock)
     }
 }

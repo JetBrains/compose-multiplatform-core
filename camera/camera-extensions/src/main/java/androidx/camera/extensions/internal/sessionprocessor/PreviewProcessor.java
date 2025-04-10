@@ -25,8 +25,6 @@ import android.util.Size;
 import android.view.Surface;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.extensions.impl.PreviewImageProcessorImpl;
@@ -34,6 +32,8 @@ import androidx.camera.extensions.impl.ProcessResultImpl;
 import androidx.camera.extensions.internal.ClientVersion;
 import androidx.camera.extensions.internal.ExtensionVersion;
 import androidx.camera.extensions.internal.Version;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -48,16 +48,16 @@ import java.util.List;
  *
  * <p>Please note that output preview surface must be closed AFTER this processor is closed.
  */
-@RequiresApi(21)
 class PreviewProcessor {
     private static final String TAG = "PreviewProcessor";
-    @NonNull
-    final PreviewImageProcessorImpl mPreviewImageProcessor;
-    @NonNull
-    final CaptureResultImageMatcher mCaptureResultImageMatcher = new CaptureResultImageMatcher();
-    final Object mLock = new Object();
+    private final @NonNull PreviewImageProcessorImpl mPreviewImageProcessor;
+    private final @NonNull CaptureResultImageMatcher mCaptureResultImageMatcher =
+            new CaptureResultImageMatcher();
+    private final Object mLock = new Object();
     @GuardedBy("mLock")
-    boolean mIsClosed = false;
+    private boolean mIsClosed = false;
+    @GuardedBy("mLock")
+    private boolean mIsPaused = false;
 
     PreviewProcessor(@NonNull PreviewImageProcessorImpl previewImageProcessor,
             @NonNull Surface previewOutputSurface, @NonNull Size surfaceSize) {
@@ -72,38 +72,54 @@ class PreviewProcessor {
                 @NonNull List<Pair<CaptureResult.Key, Object>> result);
     }
 
+    void pause() {
+        synchronized (mLock) {
+            mIsPaused = true;
+        }
+    }
+
+    void resume() {
+        synchronized (mLock) {
+            mIsPaused = false;
+        }
+    }
+
     void start(@NonNull OnCaptureResultCallback onResultCallback) {
         mCaptureResultImageMatcher.setImageReferenceListener(
                 (imageReference, totalCaptureResult, captureStageId) -> {
                     synchronized (mLock) {
-                        if (mIsClosed) {
+                        if (mIsClosed || mIsPaused) {
                             imageReference.decrement();
-                            Logger.d(TAG, "Ignore image in closed state");
+                            Logger.d(TAG, "Ignore image in closed or paused state");
                             return;
                         }
-                        if (ClientVersion.isMinimumCompatibleVersion(Version.VERSION_1_3)
-                                && ExtensionVersion
-                                .isMinimumCompatibleVersion(Version.VERSION_1_3)) {
-                            mPreviewImageProcessor.process(imageReference.get(), totalCaptureResult,
-                                    new ProcessResultImpl() {
-                                        @Override
-                                        public void onCaptureCompleted(long shutterTimestamp,
-                                                @NonNull List<Pair<CaptureResult.Key, Object>>
-                                                        result) {
-                                            onResultCallback.onCaptureResult(shutterTimestamp,
-                                                    result);
-                                        }
+                        try {
+                            if (ClientVersion.isMinimumCompatibleVersion(Version.VERSION_1_3)
+                                    && ExtensionVersion
+                                    .isMinimumCompatibleVersion(Version.VERSION_1_3)) {
+                                mPreviewImageProcessor.process(imageReference.get(),
+                                        totalCaptureResult,
+                                        new ProcessResultImpl() {
+                                            @Override
+                                            public void onCaptureCompleted(long shutterTimestamp,
+                                                    @NonNull List<Pair<CaptureResult.Key, Object>>
+                                                            result) {
+                                                onResultCallback.onCaptureResult(shutterTimestamp,
+                                                        result);
+                                            }
 
-                                        @Override
-                                        public void onCaptureProcessProgressed(int progress) {
+                                            @Override
+                                            public void onCaptureProcessProgressed(int progress) {
 
-                                        }
-                                    }, CameraXExecutors.ioExecutor());
-                        } else {
-                            mPreviewImageProcessor.process(imageReference.get(),
-                                    totalCaptureResult);
+                                            }
+                                        }, CameraXExecutors.ioExecutor());
+                            } else {
+                                mPreviewImageProcessor.process(imageReference.get(),
+                                        totalCaptureResult);
+                            }
+                        } finally {
+                            imageReference.decrement();
                         }
-                        imageReference.decrement();
                     }
                 });
     }

@@ -15,23 +15,27 @@
  */
 package androidx.compose.ui.text.font
 
+private const val AllFlags = 0xffff
+private const val WeightFlag = 0x1
+private const val StyleFlag = 0x2
+
 /**
- *  Possible options for font synthesis.
+ * Possible options for font synthesis.
  *
- *  `FontSynthesis` is used to specify whether the system should fake bold or slanted
- *  glyphs when the [FontFamily] used does not contain bold or oblique [Font]s.
+ * `FontSynthesis` is used to specify whether the system should fake bold or slanted glyphs when the
+ * [FontFamily] used does not contain bold or oblique [Font]s.
  *
- *  If the font family does not include a requested [FontWeight] or [FontStyle], the system
- *  fakes bold or slanted glyphs when the [Weight] or [Style], respectively, or both when [All]
- *  is set. If this is not desired, use [None] to disable font synthesis.
+ * If the font family does not include a requested [FontWeight] or [FontStyle], the system fakes
+ * bold or slanted glyphs when the [Weight] or [Style], respectively, or both when [All] is set. If
+ * this is not desired, use [None] to disable font synthesis.
  *
- *  It is possible to fake an increase of [FontWeight] but not a decrease. It is possible to fake
- *  a regular font slanted, but not vice versa.
+ * It is possible to fake an increase of [FontWeight] but not a decrease. It is possible to fake a
+ * regular font slanted, but not vice versa.
  *
- *  `FontSynthesis` works the same way as the
- *  [CSS font-synthesis](https://www.w3.org/TR/css-fonts-4/#font-synthesis) property.
+ * `FontSynthesis` works the same way as the
+ * [CSS font-synthesis](https://www.w3.org/TR/css-fonts-4/#font-synthesis) property.
  *
- *  @sample androidx.compose.ui.text.samples.FontFamilySynthesisSample
+ * @sample androidx.compose.ui.text.samples.FontFamilySynthesisSample
  */
 @kotlin.jvm.JvmInline
 value class FontSynthesis internal constructor(internal val value: Int) {
@@ -39,13 +43,14 @@ value class FontSynthesis internal constructor(internal val value: Int) {
     override fun toString(): String {
         return when (this) {
             None -> "None"
-            All -> "All"
             Weight -> "Weight"
             Style -> "Style"
+            All -> "All"
             else -> "Invalid"
         }
     }
 
+    // NOTE: The values below are selected to be used as flags. See isWeightOn for instance.
     companion object {
         /**
          * Turns off font synthesis. Neither bold nor slanted faces are synthesized if they don't
@@ -54,29 +59,29 @@ value class FontSynthesis internal constructor(internal val value: Int) {
         val None = FontSynthesis(0)
 
         /**
+         * Only a bold font is synthesized, if it is not available in the [FontFamily]. Slanted
+         * fonts will not be synthesized.
+         */
+        val Weight = FontSynthesis(WeightFlag)
+
+        /**
+         * Only an slanted font is synthesized, if it is not available in the [FontFamily]. Bold
+         * fonts will not be synthesized.
+         */
+        val Style = FontSynthesis(StyleFlag)
+
+        /**
          * The system synthesizes both bold and slanted fonts if either of them are not available in
          * the [FontFamily]
          */
-        val All = FontSynthesis(1)
-
-        /**
-         * Only a bold font is synthesized, if it is not available in the [FontFamily]. Slanted fonts
-         * will not be synthesized.
-         */
-        val Weight = FontSynthesis(2)
-
-        /**
-         * Only an slanted font is synthesized, if it is not available in the [FontFamily]. Bold fonts
-         * will not be synthesized.
-         */
-        val Style = FontSynthesis(3)
+        val All = FontSynthesis(AllFlags)
     }
 
     internal val isWeightOn: Boolean
-        get() = this == All || this == Weight
+        get() = value and WeightFlag != 0
 
     internal val isStyleOn: Boolean
-        get() = this == All || this == Style
+        get() = value and StyleFlag != 0
 }
 
 /**

@@ -14,7 +14,14 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
+/**
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -34,19 +41,18 @@ dependencies {
     testImplementation(libs.truth)
     testImplementation(libs.robolectric)
     testImplementation(project(":core:core-performance-testing"))
-
-    samples(project(":core:core-performance:core-performance-samples"))
 }
 
 androidx {
     name = "Core Performance"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.CORE_PERFORMANCE
     inceptionYear = "2021"
     description = "This library makes it easy for developers to make UI and feature choices based on Android Performance Class level for GMS devices."
-    metalavaK2UastEnabled = true
+    legacyDisableKotlinStrictApiMode = true
+    samples(project(":core:core-performance:core-performance-samples"))
 }
 
 android {
-    namespace "androidx.core.performance"
+    namespace = "androidx.core.performance"
 }

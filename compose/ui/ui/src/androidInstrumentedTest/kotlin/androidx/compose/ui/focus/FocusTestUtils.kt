@@ -16,16 +16,23 @@
 
 package androidx.compose.ui.focus
 
+import android.content.Context
+import android.os.Build.VERSION.SDK_INT
+import android.view.View
+import android.widget.LinearLayout
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.MeasurePolicy
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -36,10 +43,10 @@ import com.google.common.truth.IterableSubject
  * [View.requestFocus()][android.view.View.requestFocus] will not take focus if the view has no
  * size.
  *
- * @param extraItemForInitialFocus Includes an extra item that takes focus initially. This is
- * useful in cases where we need tests that could be affected by initial focus. Eg. When there is
- * only one focusable item and we clear focus, that item could end up being focused on again by the
- * initial focus logic.
+ * @param extraItemForInitialFocus Includes an extra item that takes focus initially. This is useful
+ *   in cases where we need tests that could be affected by initial focus. Eg. When there is only
+ *   one focusable item and we clear focus, that item could end up being focused on again by the
+ *   initial focus logic.
  */
 internal fun ComposeContentTestRule.setFocusableContent(
     extraItemForInitialFocus: Boolean = true,
@@ -75,22 +82,24 @@ internal fun FocusableBox(
 ) {
     Layout(
         content = content,
-        modifier = modifier
-            .offset { IntOffset(x, y) }
-            .focusRequester(focusRequester ?: remember { FocusRequester() })
-            .onFocusChanged { isFocused.value = it.isFocused }
-            .focusProperties { canFocus = !deactivated }
-            .focusTarget(),
-        measurePolicy = remember(width, height) {
-            MeasurePolicy { measurableList, constraint ->
-                layout(width, height) {
-                    measurableList.forEach {
-                        val placeable = it.measure(constraint)
-                        placeable.placeRelative(0, 0)
+        modifier =
+            modifier
+                .offset { IntOffset(x, y) }
+                .focusRequester(focusRequester ?: remember { FocusRequester() })
+                .onFocusChanged { isFocused.value = it.isFocused }
+                .focusProperties { canFocus = !deactivated }
+                .focusTarget(),
+        measurePolicy =
+            remember(width, height) {
+                MeasurePolicy { measurableList, constraint ->
+                    layout(width, height) {
+                        measurableList.forEach {
+                            val placeable = it.measure(constraint)
+                            placeable.placeRelative(0, 0)
+                        }
                     }
                 }
             }
-        }
     )
 }
 
@@ -98,10 +107,29 @@ internal fun FocusableBox(
  * Asserts that the elements appear in the specified order.
  *
  * Consider using this helper function instead of
- * [containsExactlyElementsIn][com.google.common.truth.IterableSubject.containsExactlyElementsIn]
- * or [containsExactly][com.google.common.truth.IterableSubject.containsExactly] as it also asserts
+ * [containsExactlyElementsIn][com.google.common.truth.IterableSubject.containsExactlyElementsIn] or
+ * [containsExactly][com.google.common.truth.IterableSubject.containsExactly] as it also asserts
  * that the elements are in the specified order.
  */
 fun IterableSubject.isExactly(vararg expected: Any?) {
     return containsExactlyElementsIn(expected).inOrder()
+}
+
+fun FocusableView(context: Context): View {
+    return LinearLayout(context).apply {
+        minimumHeight = 50
+        minimumWidth = 50
+        isFocusable = true
+        isFocusableInTouchMode = true
+    }
+}
+
+@Composable
+fun FocusableComponent(tag: String? = null, modifier: Modifier = Modifier) {
+    Box(modifier.then(if (tag != null) Modifier.testTag(tag) else Modifier).size(50.dp).focusable())
+}
+
+// TODO(b/267253920): Add a compose test API to set/reset InputMode.
+fun android.app.Instrumentation.resetInTouchModeCompat() {
+    if (SDK_INT < 33) setInTouchMode(true) else resetInTouchMode()
 }

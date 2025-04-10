@@ -19,6 +19,7 @@ package androidx.wear.compose.material3.samples
 import androidx.annotation.Sampled
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
@@ -30,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.RadioButton
@@ -37,76 +39,64 @@ import androidx.wear.compose.material3.SplitRadioButton
 import androidx.wear.compose.material3.Text
 
 @Sampled
+@Preview
 @Composable
-fun RadioButton() {
-    Column(modifier = Modifier.selectableGroup()) {
+fun RadioButtonSample() {
+    Column(modifier = Modifier.selectableGroup().fillMaxSize()) {
         var selectedButton by remember { mutableStateOf(0) }
         // RadioButton uses the Radio selection control by default.
         RadioButton(
-            label = {
-                Text("Radio button", maxLines = 3, overflow = TextOverflow.Ellipsis)
-            },
+            label = { Text("Radio button", maxLines = 3, overflow = TextOverflow.Ellipsis) },
             secondaryLabel = {
                 Text("With secondary label", maxLines = 2, overflow = TextOverflow.Ellipsis)
             },
             selected = selectedButton == 0,
-            onSelected = { selectedButton = 0 },
-            icon = {
-                Icon(
-                    Icons.Filled.Favorite,
-                    contentDescription = "Favorite icon"
-                )
-            },
+            onSelect = { selectedButton = 0 },
+            icon = { Icon(Icons.Filled.Favorite, contentDescription = "Favorite icon") },
             enabled = true,
         )
         Spacer(modifier = Modifier.height(4.dp))
         RadioButton(
-            label = {
-                Text("Radio button", maxLines = 3, overflow = TextOverflow.Ellipsis)
-            },
+            label = { Text("Radio button", maxLines = 3, overflow = TextOverflow.Ellipsis) },
             secondaryLabel = {
                 Text("With secondary label", maxLines = 3, overflow = TextOverflow.Ellipsis)
             },
             selected = selectedButton == 1,
-            onSelected = { selectedButton = 1 },
-            icon = {
-                Icon(
-                    Icons.Filled.Favorite,
-                    contentDescription = "Favorite icon"
-                )
-            },
+            onSelect = { selectedButton = 1 },
+            icon = { Icon(Icons.Filled.Favorite, contentDescription = "Favorite icon") },
             enabled = true,
         )
     }
 }
 
 @Sampled
+@Preview
 @Composable
-fun SplitRadioButton() {
+fun SplitRadioButtonSample() {
     Column(modifier = Modifier.selectableGroup()) {
         var selectedButton by remember { mutableStateOf(0) }
         // SplitRadioButton uses the Radio selection control by default.
         SplitRadioButton(
-            label = {
-                Text("First Radio Button", maxLines = 3, overflow = TextOverflow.Ellipsis)
-            },
+            label = { Text("First Button", maxLines = 3, overflow = TextOverflow.Ellipsis) },
             selected = selectedButton == 0,
-            onSelected = { selectedButton = 0 },
-            onClick = {
+            onSelectionClick = { selectedButton = 0 },
+            selectionContentDescription = "First",
+            onContainerClick = {
                 /* Do something */
             },
+            containerClickLabel = "click",
             enabled = true,
         )
         Spacer(modifier = Modifier.height(4.dp))
         SplitRadioButton(
-            label = {
-                Text("Second Radio Button", maxLines = 3, overflow = TextOverflow.Ellipsis)
-            },
+            label = { Text("Second Button", maxLines = 3, overflow = TextOverflow.Ellipsis) },
             selected = selectedButton == 1,
-            onSelected = { selectedButton = 1 },
-            onClick = {
+            onSelectionClick = { selectedButton = 1 },
+            selectionContentDescription = "Second",
+            onContainerClick = {
                 /* Do something */
             },
+            containerClickLabel = "click",
             enabled = true,
         )
     }

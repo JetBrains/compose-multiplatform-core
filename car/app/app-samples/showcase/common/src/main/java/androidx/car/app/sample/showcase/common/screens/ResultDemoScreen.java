@@ -20,13 +20,15 @@ import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
 
-import androidx.annotation.NonNull;
 import androidx.car.app.CarContext;
 import androidx.car.app.Screen;
 import androidx.car.app.model.Action;
+import androidx.car.app.model.Header;
 import androidx.car.app.model.MessageTemplate;
 import androidx.car.app.model.Template;
 import androidx.car.app.sample.showcase.common.R;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A screen to demo the use of {@link CarContext#setCarAppResult(int, android.content.Intent)}
@@ -36,23 +38,24 @@ public class ResultDemoScreen extends Screen {
         super(carContext);
     }
 
-    @NonNull
     @Override
-    public Template onGetTemplate() {
+    public @NonNull Template onGetTemplate() {
         ComponentName callingComponent = getCarContext().getCallingComponent();
         if (callingComponent == null) {
             return new MessageTemplate.Builder(
                     getCarContext().getString(R.string.not_started_for_result_msg))
-                    .setTitle(getCarContext().getString(R.string.result_demo_title))
-                    .setHeaderAction(Action.BACK)
+                    .setHeader(new Header.Builder().setStartHeaderAction(Action.BACK)
+                            .setTitle(getCarContext().getString(R.string.result_demo_title))
+                            .build())
                     .build();
         }
 
         return new MessageTemplate.Builder(
                 getCarContext().getString(R.string.started_for_result_msg,
                         callingComponent.getPackageName()))
-                .setTitle(getCarContext().getString(R.string.result_demo_title))
-                .setHeaderAction(Action.BACK)
+                .setHeader(new Header.Builder().setStartHeaderAction(Action.BACK)
+                        .setTitle(getCarContext().getString(R.string.result_demo_title))
+                        .build())
                 .addAction(new Action.Builder()
                         .setTitle("Okay (action = 'foo')")
                         .setOnClickListener(() -> {

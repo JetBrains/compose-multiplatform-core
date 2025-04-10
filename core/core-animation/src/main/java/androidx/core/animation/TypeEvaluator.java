@@ -16,7 +16,7 @@
 
 package androidx.core.animation;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Interface for use with the {@link ValueAnimator#setEvaluator(TypeEvaluator)} function. Evaluators
@@ -42,7 +42,6 @@ public interface TypeEvaluator<T> {
      * @return A linear interpolation between the start and end values, given the
      *         <code>fraction</code> parameter.
      */
-    @NonNull
-    T evaluate(float fraction, @NonNull T startValue, @NonNull T endValue);
+    @NonNull T evaluate(float fraction, @NonNull T startValue, @NonNull T endValue);
 
 }

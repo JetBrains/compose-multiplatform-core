@@ -20,12 +20,9 @@ import static androidx.credentials.TestUtilsKt.isPostFrameworkApiLevel;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import android.app.Activity;
 import android.content.Context;
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.credentials.exceptions.ClearCredentialException;
 import androidx.credentials.exceptions.ClearCredentialProviderConfigurationException;
 import androidx.credentials.exceptions.CreateCredentialException;
@@ -40,6 +37,7 @@ import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,7 +48,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @RunWith(AndroidJUnit4.class)
 @SmallTest
-@RequiresApi(34)
 @SdkSuppress(minSdkVersion = 34, codeName = "UpsideDownCake")
 public class CredentialManagerJavaTest {
 
@@ -105,34 +102,35 @@ public class CredentialManagerJavaTest {
     }
 
     @Test
-    public void testGetCredentialAsyc_requestBasedApi_successCallbackThrows()
-            throws InterruptedException {
+    public void testGetCredentialAsync_successCallbackThrows() throws InterruptedException {
         if (Looper.myLooper() == null) {
             Looper.prepare();
         }
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<GetCredentialException> loadedResult = new AtomicReference<>();
+        ActivityScenario<TestActivity> activityScenario =
+                ActivityScenario.launch(TestActivity.class);
+        activityScenario.onActivity(activity -> {
+            mCredentialManager.getCredentialAsync(
+                    activity,
+                    new GetCredentialRequest.Builder()
+                            .addCredentialOption(new GetPasswordOption())
+                            .build(),
+                    null,
+                    Runnable::run,
+                    new CredentialManagerCallback<GetCredentialResponse,
+                            GetCredentialException>() {
+                        @Override
+                        public void onError(@NonNull GetCredentialException e) {
+                            loadedResult.set(e);
+                            latch.countDown();
+                        }
 
-        mCredentialManager.getCredentialAsync(
-                new Activity(),
-                new GetCredentialRequest.Builder()
-                        .addCredentialOption(new GetPasswordOption())
-                        .build(),
-                null,
-                Runnable::run,
-                new CredentialManagerCallback<GetCredentialResponse,
-                        GetCredentialException>() {
-                    @Override
-                    public void onError(@NonNull GetCredentialException e) {
-                        loadedResult.set(e);
-                        latch.countDown();
-                    }
-
-                    @Override
-                    public void onResult(@NonNull GetCredentialResponse result) {
-                    }
-                });
-
+                        @Override
+                        public void onResult(@NonNull GetCredentialResponse result) {
+                        }
+                    });
+        });
         latch.await(100L, TimeUnit.MILLISECONDS);
         if (loadedResult.get() == null) {
             return; // A strange flow occurred where an exception wasn't propagated up

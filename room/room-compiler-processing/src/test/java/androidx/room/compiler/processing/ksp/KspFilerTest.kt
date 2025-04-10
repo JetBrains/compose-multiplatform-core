@@ -44,9 +44,14 @@ class KspFilerTest {
     fun originatingFileAddedForTopLevelFunction() {
         runKspTest(sources = listOf(simpleKotlinClass)) { invocation ->
             val sourceElement = invocation.processingEnv.requireTypeElement("foo.bar.Baz")
-            val fileWithTopLevelFun = FileSpec.builder("foo", "Bar.kt").apply {
-                addFunction(FunSpec.builder("baz").addOriginatingElement(sourceElement).build())
-            }.build()
+            val fileWithTopLevelFun =
+                FileSpec.builder("foo", "Bar.kt")
+                    .apply {
+                        addFunction(
+                            FunSpec.builder("baz").addOriginatingElement(sourceElement).build()
+                        )
+                    }
+                    .build()
 
             val codeGenerator = DependencyTrackingCodeGenerator()
             KspFiler(codeGenerator, TestMessager()).write(fileWithTopLevelFun)
@@ -59,14 +64,19 @@ class KspFilerTest {
     fun originatingFileAddedForTopLevelProperty() {
         runKspTest(sources = listOf(simpleKotlinClass)) { invocation ->
             val sourceElement = invocation.processingEnv.requireTypeElement("foo.bar.Baz")
-            val fileWithTopLevelProp = FileSpec.builder("foo", "Bar.kt").apply {
-                addProperty(
-                    PropertySpec.builder("baz", String::class).apply {
-                        initializer("%S", "")
-                        addOriginatingElement(sourceElement)
-                    }.build()
-                )
-            }.build()
+            val fileWithTopLevelProp =
+                FileSpec.builder("foo", "Bar.kt")
+                    .apply {
+                        addProperty(
+                            PropertySpec.builder("baz", String::class)
+                                .apply {
+                                    initializer("%S", "")
+                                    addOriginatingElement(sourceElement)
+                                }
+                                .build()
+                        )
+                    }
+                    .build()
 
             val codeGenerator = DependencyTrackingCodeGenerator()
             KspFiler(codeGenerator, TestMessager()).write(fileWithTopLevelProp)
@@ -79,18 +89,20 @@ class KspFilerTest {
     fun originatingFileAddedForTopLevelElement() {
         runKspTest(sources = listOf(simpleKotlinClass)) { invocation ->
             val sourceElement = invocation.processingEnv.requireTypeElement("foo.bar.Baz")
-            val fileWithType = FileSpec.builder("foo", "Bar.kt").apply {
-                addType(
-                    TypeSpec.classBuilder("Bar").apply {
-                        addOriginatingElement(sourceElement)
-                    }.build()
-                )
-            }.build()
+            val fileWithType =
+                FileSpec.builder("foo", "Bar.kt")
+                    .apply {
+                        addType(
+                            TypeSpec.classBuilder("Bar")
+                                .apply { addOriginatingElement(sourceElement) }
+                                .build()
+                        )
+                    }
+                    .build()
 
             val codeGenerator = DependencyTrackingCodeGenerator()
             KspFiler(codeGenerator, TestMessager()).write(fileWithType)
-            codeGenerator.fileDependencies[fileWithType.name]
-                .containsExactlySimpleKotlinClass()
+            codeGenerator.fileDependencies[fileWithType.name].containsExactlySimpleKotlinClass()
         }
     }
 
@@ -98,22 +110,28 @@ class KspFilerTest {
     fun originatingClassAddedForClassPathAndFileType() {
         runKspTest(sources = listOf(simpleKotlinClass)) { invocation ->
             val sourceElement = invocation.processingEnv.requireTypeElement("foo.bar.Baz")
-            val classPathElement = invocation.processingEnv
-                .requireTypeElement("com.google.devtools.ksp.processing.SymbolProcessor")
-
-            val fileWithType = FileSpec.builder("foo", "Bar.kt").apply {
-                addType(
-                    TypeSpec.classBuilder("Bar").apply {
-                        addOriginatingElement(sourceElement)
-                        addOriginatingElement(classPathElement)
-                    }.build()
+            val classPathElement =
+                invocation.processingEnv.requireTypeElement(
+                    "com.google.devtools.ksp.processing.SymbolProcessor"
                 )
-            }.build()
+
+            val fileWithType =
+                FileSpec.builder("foo", "Bar.kt")
+                    .apply {
+                        addType(
+                            TypeSpec.classBuilder("Bar")
+                                .apply {
+                                    addOriginatingElement(sourceElement)
+                                    addOriginatingElement(classPathElement)
+                                }
+                                .build()
+                        )
+                    }
+                    .build()
 
             val codeGenerator = DependencyTrackingCodeGenerator()
             KspFiler(codeGenerator, TestMessager()).write(fileWithType)
-            codeGenerator.fileDependencies[fileWithType.name]
-                .containsExactlySimpleKotlinClass()
+            codeGenerator.fileDependencies[fileWithType.name].containsExactlySimpleKotlinClass()
             val (file, classDeclarations) = codeGenerator.classDependencies.entries.single()
             assertThat(file).isEqualTo("Bar.kt")
             assertThat(classDeclarations.single())
@@ -124,16 +142,21 @@ class KspFilerTest {
     @Test
     fun originatingClassAddedForClassPathType() {
         runKspTest(sources = listOf()) { invocation ->
-            val classPathElement = invocation.processingEnv
-                .requireTypeElement("com.google.devtools.ksp.processing.SymbolProcessor")
-
-            val fileWithType = FileSpec.builder("foo", "Bar.kt").apply {
-                addType(
-                    TypeSpec.classBuilder("Bar").apply {
-                        addOriginatingElement(classPathElement)
-                    }.build()
+            val classPathElement =
+                invocation.processingEnv.requireTypeElement(
+                    "com.google.devtools.ksp.processing.SymbolProcessor"
                 )
-            }.build()
+
+            val fileWithType =
+                FileSpec.builder("foo", "Bar.kt")
+                    .apply {
+                        addType(
+                            TypeSpec.classBuilder("Bar")
+                                .apply { addOriginatingElement(classPathElement) }
+                                .build()
+                        )
+                    }
+                    .build()
 
             val codeGenerator = DependencyTrackingCodeGenerator()
             KspFiler(codeGenerator, TestMessager()).write(fileWithType)
@@ -146,22 +169,21 @@ class KspFilerTest {
 
     @Test
     fun writeResource() {
-        runKspTest(
-            sources = emptyList()
-        ) { invocation ->
-            invocation.processingEnv.filer.writeResource(
-                filePath = Path("test.log"),
-                originatingElements = emptyList()
-            ).bufferedWriter(Charsets.UTF_8).use {
-                it.write("Hello!")
-            }
-            invocation.processingEnv.filer.writeResource(
-                filePath = Path("META-INF/services/com.test.Foo"),
-                originatingElements = emptyList()
-            ).bufferedWriter(Charsets.UTF_8).use {
-                it.write("Not a real service...")
-            }
+        val logFileName = "test.log"
+        val serviceFileName = "META-INF/services/com.test.Foo"
+        runKspTest(sources = emptyList()) { invocation ->
+            invocation.processingEnv.filer
+                .writeResource(filePath = Path(logFileName), originatingElements = emptyList())
+                .bufferedWriter(Charsets.UTF_8)
+                .use { it.write("Hello!") }
+            invocation.processingEnv.filer
+                .writeResource(filePath = Path(serviceFileName), originatingElements = emptyList())
+                .bufferedWriter(Charsets.UTF_8)
+                .use { it.write("Not a real service...") }
             invocation.assertCompilationResult {
+                generatedTextResourceFileWithPath(logFileName).isEqualTo("Hello!")
+                generatedTextResourceFileWithPath(serviceFileName)
+                    .isEqualTo("Not a real service...")
                 hasNoWarnings()
             }
         }
@@ -181,10 +203,11 @@ class KspFilerTest {
             annotation: XAnnotation?,
             annotationValue: XAnnotationValue?
         ) {
-            var errorMsg = "${kind.name} element: $element " +
-                "annotation: $annotation " +
-                "annotationValue: $annotationValue " +
-                "msg: $msg"
+            var errorMsg =
+                "${kind.name} element: $element " +
+                    "annotation: $annotation " +
+                    "annotationValue: $annotationValue " +
+                    "msg: $msg"
             if (kind == Diagnostic.Kind.ERROR) {
                 error(errorMsg)
             } else {
@@ -229,11 +252,7 @@ class KspFilerTest {
             return OutputStream.nullOutputStream()
         }
 
-        override fun associateByPath(
-            sources: List<KSFile>,
-            path: String,
-            extensionName: String
-        ) {
+        override fun associateByPath(sources: List<KSFile>, path: String, extensionName: String) {
             // no-op for the sake of dependency tracking.
         }
 
@@ -249,13 +268,15 @@ class KspFilerTest {
     }
 
     companion object {
-        val simpleKotlinClass = Source.kotlin(
-            "Baz.kt",
-            """
+        val simpleKotlinClass =
+            Source.kotlin(
+                "Baz.kt",
+                """
                 package foo.bar;
 
                 class Baz
-            """.trimIndent()
-        )
+            """
+                    .trimIndent()
+            )
     }
 }

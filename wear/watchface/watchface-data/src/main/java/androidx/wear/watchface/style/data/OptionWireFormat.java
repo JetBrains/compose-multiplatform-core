@@ -20,12 +20,13 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Wire format for {@link androidx.wear.watchface.style.UserStyleSetting.Option}.
@@ -37,14 +38,13 @@ import androidx.versionedparcelable.VersionedParcelize;
 public class OptionWireFormat implements VersionedParcelable, Parcelable {
     /** Identifier for the option, must be unique within the UserStyleCategory. */
     @ParcelField(1)
-    @NonNull
-    public byte[] mId = new byte[0];
+    public byte @NonNull [] mId = new byte[0];
 
     // WARNING: This class is held in a list and can't change due to flaws in VersionedParcelable.
 
     OptionWireFormat() {}
 
-    public OptionWireFormat(@NonNull byte[] id) {
+    public OptionWireFormat(byte @NonNull [] id) {
         mId = id;
     }
 

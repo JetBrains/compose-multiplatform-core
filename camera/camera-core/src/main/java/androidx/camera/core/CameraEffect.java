@@ -23,13 +23,13 @@ import android.graphics.ImageFormat;
 import android.view.Display;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.processing.SurfaceProcessorInternal;
 import androidx.camera.core.processing.SurfaceProcessorWithExecutor;
 import androidx.core.util.Consumer;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -81,7 +81,6 @@ import java.util.concurrent.Executor;
  * }
  * </code></pre>
  */
-@RequiresApi(21)
 public abstract class CameraEffect {
 
     /**
@@ -90,7 +89,7 @@ public abstract class CameraEffect {
     @Retention(RetentionPolicy.SOURCE)
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @IntDef(flag = true, value = {TRANSFORMATION_ARBITRARY,
-            TRANSFORMATION_CAMERA_AND_SURFACE_ROTATION})
+            TRANSFORMATION_CAMERA_AND_SURFACE_ROTATION, TRANSFORMATION_PASSTHROUGH})
     public @interface Transformations {
     }
 
@@ -101,6 +100,15 @@ public abstract class CameraEffect {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @IntDef(flag = true, value = {PREVIEW, VIDEO_CAPTURE, IMAGE_CAPTURE})
     public @interface Targets {
+    }
+
+    /**
+     * Options for how many outputs the effect handles.
+     */
+    @Retention(RetentionPolicy.SOURCE)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @IntDef(value = {OUTPUT_OPTION_ONE_FOR_ALL_TARGETS, OUTPUT_OPTION_ONE_FOR_EACH_TARGET})
+    public @interface OutputOptions {
     }
 
     /**
@@ -163,18 +171,50 @@ public abstract class CameraEffect {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final int TRANSFORMATION_CAMERA_AND_SURFACE_ROTATION = 1;
 
+    /**
+     * Flag to indicate that the surface processor should be ignored, so no transformation is
+     * required.
+     *
+     * <p>Use this flag if the {@link CameraEffect} only intends to specify the targets of buffer
+     * sharing.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final int TRANSFORMATION_PASSTHROUGH = 2;
+
+    /**
+     * Use this option to receive one output Surface for all the output targets.
+     *
+     * <p>When the effect targets multiple UseCases, e.g. Preview, VideoCapture, the effect will
+     * only receive one output Surface for all the outputs. CameraX is responsible for copying the
+     * processed frames to different output Surfaces.
+     *
+     * <p>Use this option if all UseCases receive the same content.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final int OUTPUT_OPTION_ONE_FOR_ALL_TARGETS = 0;
+
+    /**
+     * Use this option to receive one output Surface for each corresponding output target.
+     *
+     * <p>When the effect targets multiple UseCases, e.g. Preview, VideoCapture, the effect will
+     * receive two output Surfaces, one for Preview and one for VideoCapture. The effect is
+     * responsible for drawing the processed frames to the corresponding output Surfaces.
+     *
+     * <p>Use this option if each UseCase receives different content.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final int OUTPUT_OPTION_ONE_FOR_EACH_TARGET = 1;
+
     @Targets
     private final int mTargets;
+    @OutputOptions
+    private final int mOutputOption;
     @Transformations
     private final int mTransformation;
-    @NonNull
-    private final Executor mExecutor;
-    @Nullable
-    private final SurfaceProcessor mSurfaceProcessor;
-    @Nullable
-    private final ImageProcessor mImageProcessor;
-    @NonNull
-    private final Consumer<Throwable> mErrorListener;
+    private final @NonNull Executor mExecutor;
+    private final @Nullable SurfaceProcessor mSurfaceProcessor;
+    private final @Nullable ImageProcessor mImageProcessor;
+    private final @NonNull Consumer<Throwable> mErrorListener;
 
     /**
      * @param targets        the target {@link UseCase} to which this effect should be applied.
@@ -198,10 +238,22 @@ public abstract class CameraEffect {
                 "Currently ImageProcessor can only target IMAGE_CAPTURE.");
         mTargets = targets;
         mTransformation = TRANSFORMATION_ARBITRARY;
+        mOutputOption = OUTPUT_OPTION_ONE_FOR_ALL_TARGETS;
         mExecutor = executor;
         mSurfaceProcessor = null;
         mImageProcessor = imageProcessor;
         mErrorListener = errorListener;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    protected CameraEffect(
+            @Targets int targets,
+            @Transformations int transformation,
+            @NonNull Executor executor,
+            @NonNull SurfaceProcessor surfaceProcessor,
+            @NonNull Consumer<Throwable> errorListener) {
+        this(targets, OUTPUT_OPTION_ONE_FOR_ALL_TARGETS, transformation, executor, surfaceProcessor,
+                errorListener);
     }
 
     /**
@@ -216,6 +268,7 @@ public abstract class CameraEffect {
      *                         </ul>
      *                         Targeting other {@link UseCase} combinations will throw
      *                         {@link IllegalArgumentException}.
+     * @param outputOption     the option to specify how many output Surface the effect will handle.
      * @param transformation   the transformation that the {@link SurfaceProcessor} will handle.
      * @param executor         the {@link Executor} on which the {@param imageProcessor} and
      *                         {@param errorListener} will be invoked.
@@ -231,12 +284,14 @@ public abstract class CameraEffect {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     protected CameraEffect(
             @Targets int targets,
+            @OutputOptions int outputOption,
             @Transformations int transformation,
             @NonNull Executor executor,
             @NonNull SurfaceProcessor surfaceProcessor,
             @NonNull Consumer<Throwable> errorListener) {
         checkSupportedTargets(SURFACE_PROCESSOR_TARGETS, targets);
         mTargets = targets;
+        mOutputOption = outputOption;
         mTransformation = transformation;
         mExecutor = executor;
         mSurfaceProcessor = surfaceProcessor;
@@ -272,13 +327,8 @@ public abstract class CameraEffect {
             @NonNull Executor executor,
             @NonNull SurfaceProcessor surfaceProcessor,
             @NonNull Consumer<Throwable> errorListener) {
-        checkSupportedTargets(SURFACE_PROCESSOR_TARGETS, targets);
-        mTargets = targets;
-        mTransformation = TRANSFORMATION_ARBITRARY;
-        mExecutor = executor;
-        mSurfaceProcessor = surfaceProcessor;
-        mImageProcessor = null;
-        mErrorListener = errorListener;
+        this(targets, OUTPUT_OPTION_ONE_FOR_ALL_TARGETS, TRANSFORMATION_ARBITRARY, executor,
+                surfaceProcessor, errorListener);
     }
 
     /**
@@ -299,12 +349,20 @@ public abstract class CameraEffect {
     }
 
     /**
+     * Gets the target option.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @OutputOptions
+    public int getOutputOption() {
+        return mOutputOption;
+    }
+
+    /**
      * Gets the {@link Executor} associated with this effect.
      *
      * <p>This method returns the value set in the constructor.
      */
-    @NonNull
-    public Executor getExecutor() {
+    public @NonNull Executor getExecutor() {
         return mExecutor;
     }
 
@@ -314,25 +372,22 @@ public abstract class CameraEffect {
      * <p>This method returns the value set in the constructor. The {@link Throwable} will be the
      * error thrown by this {@link CameraEffect}. For example, {@link ProcessingException}.
      */
-    @NonNull
-    public Consumer<Throwable> getErrorListener() {
+    public @NonNull Consumer<Throwable> getErrorListener() {
         return mErrorListener;
     }
 
     /**
      * Gets the {@link SurfaceProcessor} associated with this effect.
      */
-    @Nullable
-    public SurfaceProcessor getSurfaceProcessor() {
+    public @Nullable SurfaceProcessor getSurfaceProcessor() {
         return mSurfaceProcessor;
     }
 
     /**
      * Gets the {@link ImageProcessor} associated with this effect.
      */
-    @Nullable
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public ImageProcessor getImageProcessor() {
+    public @Nullable ImageProcessor getImageProcessor() {
         return mImageProcessor;
     }
 
@@ -345,8 +400,7 @@ public abstract class CameraEffect {
      * {@link SurfaceProcessor}.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
-    public SurfaceProcessorInternal createSurfaceProcessorInternal() {
+    public @NonNull SurfaceProcessorInternal createSurfaceProcessorInternal() {
         return new SurfaceProcessorWithExecutor(this);
     }
 }

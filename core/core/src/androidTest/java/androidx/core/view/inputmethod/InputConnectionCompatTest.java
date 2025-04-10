@@ -29,29 +29,30 @@ import android.content.ClipDescription;
 import android.content.ContentResolver;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.BaseInstrumentationTestCase;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputContentInfo;
 
 import androidx.core.app.TestActivity;
+import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 import androidx.test.filters.SdkSuppress;
 
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatcher;
 
 import java.util.Objects;
 
-
 @RunWith(AndroidJUnit4.class)
 @MediumTest
-public class InputConnectionCompatTest extends BaseInstrumentationTestCase<TestActivity> {
-    public InputConnectionCompatTest() {
-        super(TestActivity.class);
-    }
+public class InputConnectionCompatTest {
+
+    @Rule
+    public final ActivityScenarioRule<TestActivity> mActivityScenarioRule =
+            new ActivityScenarioRule<>(TestActivity.class);
 
     private static final String COMMIT_CONTENT_ACTION =
             "androidx.core.view.inputmethod.InputConnectionCompat.COMMIT_CONTENT";
@@ -98,7 +99,7 @@ public class InputConnectionCompatTest extends BaseInstrumentationTestCase<TestA
     private static final int TEST_FLAGS = 0;
 
     @Test
-    @SdkSuppress(minSdkVersion = 25)
+    @SdkSuppress(minSdkVersion = 25, excludedSdks = { 30 }) // Excluded due to flakes (b/324889554)
     public void commitContentPlatformApi() {
         EditorInfo editorInfo = new EditorInfo();
         EditorInfoCompat.setContentMimeTypes(editorInfo, TEST_MIME_TYPES);
@@ -204,7 +205,6 @@ public class InputConnectionCompatTest extends BaseInstrumentationTestCase<TestA
         }
         return new ArgumentMatcher<Bundle>() {
             @Override
-            @SuppressWarnings("deprecation")
             public boolean matches(Bundle data) {
                 final Uri contentUri = data.getParcelable(contentUriKey);
                 final ClipDescription description = data.getParcelable(descriptionKey);
@@ -215,6 +215,7 @@ public class InputConnectionCompatTest extends BaseInstrumentationTestCase<TestA
                         && TEST_CLIP_DESCRIPTION.equals(description)
                         && TEST_LINK_URI.equals(linkUri)
                         && flags == TEST_FLAGS
+                        && opts != null
                         && opts.equals(TEST_BUNDLE);
             }
         };

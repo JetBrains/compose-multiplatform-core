@@ -22,9 +22,10 @@ import android.text.Layout;
 import android.text.Layout.Alignment;
 import android.view.Gravity;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Common superclass for layout helpers. Layout helpers are used to calculate bounds for each
@@ -73,8 +74,7 @@ public class LayoutHelper {
     /**
      * @return The {@link ComplicationData} associated with this {@link LayoutHelper}
      */
-    @Nullable
-    public ComplicationData getComplicationData() {
+    public @Nullable ComplicationData getComplicationData() {
         return mComplicationData;
     }
 
@@ -116,8 +116,7 @@ public class LayoutHelper {
     /**
      * @return The {@link Layout.Alignment} to use with short text
      */
-    @NonNull
-    public Layout.Alignment getShortTextAlignment() {
+    public Layout.@NonNull Alignment getShortTextAlignment() {
         return Alignment.ALIGN_CENTER;
     }
 
@@ -138,8 +137,7 @@ public class LayoutHelper {
     /**
      * @return The {@link Layout.Alignment} to use with short title text
      */
-    @NonNull
-    public Layout.Alignment getShortTitleAlignment() {
+    public Layout.@NonNull Alignment getShortTitleAlignment() {
         return Alignment.ALIGN_CENTER;
     }
 
@@ -160,8 +158,7 @@ public class LayoutHelper {
     /**
      * @return The {@link Layout.Alignment} to use with long text
      */
-    @NonNull
-    public Layout.Alignment getLongTextAlignment() {
+    public Layout.@NonNull Alignment getLongTextAlignment() {
         return Alignment.ALIGN_CENTER;
     }
 
@@ -182,8 +179,7 @@ public class LayoutHelper {
     /**
      * @return The {@link Layout.Alignment} to use with long title text
      */
-    @NonNull
-    public Layout.Alignment getLongTitleAlignment() {
+    public Layout.@NonNull Alignment getLongTitleAlignment() {
         return Alignment.ALIGN_CENTER;
     }
 
